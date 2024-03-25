@@ -7,11 +7,11 @@ module Program =
     // this the entry point for your Nu application
     let [<EntryPoint; STAThread>] main _ =
 
-        // initialize Nu
-        Nu.init ()
-
         // point current working directory at program's base directory
         Directory.SetCurrentDirectory AppContext.BaseDirectory
+
+        // initialize Nu
+        Nu.init ()
 
         // this specifies the window configuration used to display the game
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "TerraFirma" }

@@ -394,7 +394,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         if bodyProperties.Sensor then
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape
-            ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
+            ghost.CollisionFlags <- ghost.CollisionFlags ||| CollisionFlags.NoContactResponse
             ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
             ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
             ghost.UserIndex <- userIndex

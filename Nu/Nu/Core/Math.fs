@@ -814,6 +814,49 @@ type Box2iConverter () =
         | :? Box2 -> source
         | _ -> failconv "Invalid Box2iConverter conversion from source." None
 
+/// Converts Matrix4x4 types.
+type Matrix4x4Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Matrix4x4>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v4 = source :?> Matrix4x4
+            Symbols
+                ([Number (string v4.M11, ValueNone); Number (string v4.M12, ValueNone); Number (string v4.M13, ValueNone); Number (string v4.M14, ValueNone)
+                  Number (string v4.M21, ValueNone); Number (string v4.M22, ValueNone); Number (string v4.M23, ValueNone); Number (string v4.M24, ValueNone)
+                  Number (string v4.M31, ValueNone); Number (string v4.M32, ValueNone); Number (string v4.M33, ValueNone); Number (string v4.M34, ValueNone)
+                  Number (string v4.M41, ValueNone); Number (string v4.M42, ValueNone); Number (string v4.M43, ValueNone); Number (string v4.M44, ValueNone)],
+                 ValueNone) :> obj
+        elif destType = typeof<Matrix4x4> then source
+        else failconv "Invalid Matrix4x4Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Matrix4x4>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols
+                ([Number (m11, _); Number (m12, _); Number (m13, _); Number (m14, _)
+                  Number (m21, _); Number (m22, _); Number (m23, _); Number (m24, _)
+                  Number (m31, _); Number (m32, _); Number (m33, _); Number (m34, _)
+                  Number (m41, _); Number (m42, _); Number (m43, _); Number (m44, _)],
+                 _) ->
+                Matrix4x4
+                    (Single.Parse m11, Single.Parse m12, Single.Parse m13, Single.Parse m14,
+                     Single.Parse m21, Single.Parse m22, Single.Parse m23, Single.Parse m24,
+                     Single.Parse m31, Single.Parse m32, Single.Parse m33, Single.Parse m34,
+                     Single.Parse m41, Single.Parse m42, Single.Parse m43, Single.Parse m44) :> obj
+            | _ -> failconv "Invalid Matrix4x4Converter conversion from source." (Some symbol)
+        | :? Matrix4x4 -> source
+        | _ -> failconv "Invalid Matrix4x4Converter conversion from source." None
+
 [<AutoOpen>]
 module Matrix4x4 =
 
@@ -1084,6 +1127,7 @@ module Math =
             assignTypeConverter<Box2, Box2Converter> ()
             assignTypeConverter<Box3, Box3Converter> ()
             assignTypeConverter<Box2i, Box2iConverter> ()
+            assignTypeConverter<Matrix4x4, Matrix4x4Converter> ()
             assignTypeConverter<Color, ColorConverter> ()
             Initialized <- true
 

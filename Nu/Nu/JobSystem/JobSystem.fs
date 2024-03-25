@@ -72,12 +72,12 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                 let mutable job = Unchecked.defaultof<_>
                 if jobQueue.TryDequeue &job then
                     let work =
-                        async {
+                        vsync {
                             let result =
                                 try JobCompletion (job.IssueTime, DateTimeOffset.Now, job.Work ())
                                 with exn -> JobException (job.IssueTime, DateTimeOffset.Now, exn)
                             jobResults.AddOrUpdate (job.JobId, result, fun _ existing -> if result.IssueTime >= existing.IssueTime then result else existing) |> ignore<JobResult> }
-                    Async.Start work
+                    Vsync.Start work
                 else
                     let now = DateTimeOffset.Now
                     for entry in jobResults.ToArray () do
@@ -86,7 +86,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                             | (true, jobResult) when now <= jobResult.ResultTime + resultExpirationTime ->
                                 jobResults.AddOrUpdate (job.JobId, jobResult, fun _ existing -> if jobResult.IssueTime >= existing.IssueTime then jobResult else existing) |> ignore<JobResult>
                             | (_, _) -> ()
-                    Async.Sleep 1 |> Async.RunSynchronously } |>
+                    1 |> Async.Sleep |> Async.RunSynchronously } |>
             Async.StartAsTask
 
     interface JobSystem with

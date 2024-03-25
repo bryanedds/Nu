@@ -106,8 +106,8 @@ type MetricsPlugin () =
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        Nu.init ()
         Directory.SetCurrentDirectory AppContext.BaseDirectory
+        Nu.init ()
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
         let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
 #if FUNCTIONAL

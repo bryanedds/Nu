@@ -1209,7 +1209,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Right None -> Right None
         | Left () -> Left ()
 
-    let private selectNuPlugin gaiaPlugin =
+    let selectNuPlugin gaiaPlugin =
         let gaiaState =
             try if File.Exists Constants.Gaia.StateFilePath
                 then scvalue (File.ReadAllText Constants.Gaia.StateFilePath)
@@ -4074,10 +4074,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     (* Public API *)
 
     /// Run Gaia.
-    let run gaiaPlugin =
-
-        // discover the desired nu plugin for editing
-        let (gaiaState, targetDir, plugin) = selectNuPlugin gaiaPlugin
+    let run gaiaState targetDir plugin =
 
         // ensure imgui ini file exists and was created by Gaia before initialising imgui
         let imguiIniFilePath = targetDir + "/imgui.ini"

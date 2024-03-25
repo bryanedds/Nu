@@ -13,8 +13,9 @@ type Nu () =
 
     static let mutable Initialized = false
 
-    /// Initialize the Nu game engine.
-    static member init () =
+    /// Initialize the Nu game engine, allowing for additional user-defined initialization after setting up logging
+    /// and function / lens references but before performing initialization involving values stored in constants.
+    static member initPlus userInit =
 
         // init only if needed
         if not Initialized then
@@ -25,22 +26,11 @@ type Nu () =
             // init logging
             Log.init (Some "Log.txt")
 
-            // init reflection module
-            Reflection.init ()
-
             // init math module
             Math.Init ()
 
-            // init vsync
-            Vsync.Init Constants.Engine.RunSynchronously
-
-            // init OpenGL assert mechanism
-            OpenGL.Hl.InitAssert
-#if DEBUG
-                Constants.OpenGL.HlAssert
-#else
-                false
-#endif
+            // init reflection module
+            Reflection.init ()
 
             // init simulant modules
             WorldModuleGame.init ()
@@ -81,8 +71,32 @@ type Nu () =
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
 
+            // init user-defined initialization process
+            let result = userInit ()
+
+            // init vsync
+            Vsync.Init Constants.Engine.RunSynchronously
+
+            // init OpenGL assert mechanism
+            OpenGL.Hl.InitAssert
+#if DEBUG
+                Constants.OpenGL.HlAssert
+#else
+                false
+#endif
+
             // mark init flag
             Initialized <- true
+
+            // fin
+            result
+
+        // already init'd
+        else userInit ()
+
+    /// Initialize the Nu game engine.
+    static member init () =
+        Nu.initPlus (fun () -> ())
 
 [<AutoOpen>]
 module WorldModule3 =

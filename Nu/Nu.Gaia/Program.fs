@@ -9,6 +9,6 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        Nu.init ()
         Directory.SetCurrentDirectory AppContext.BaseDirectory
-        Gaia.run (GaiaPlugin ())
+        let (gaiaState, targetDir, plugin) = Nu.initPlus (fun () -> Gaia.selectNuPlugin (GaiaPlugin ()))
+        Gaia.run gaiaState targetDir plugin

@@ -37,6 +37,7 @@ module Override =
                 match key with
                 | nameof GameTime.DesiredFrameRate -> GameTime.DesiredFrameRate <- scvalue value
                 | nameof OpenGL.HlAssert -> OpenGL.HlAssert <- scvalue value
+                | nameof Engine.RunSynchronously -> Engine.RunSynchronously <- scvalue value
                 | nameof Engine.EntityPerimeterCentered2dDefault -> Engine.EntityPerimeterCentered2dDefault <- scvalue value
                 | nameof Engine.EntityPerimeterCenteredGuiDefault -> Engine.EntityPerimeterCenteredGuiDefault <- scvalue value
                 | nameof Engine.QuadnodeSize -> Engine.QuadnodeSize <- scvalue value

@@ -9,8 +9,8 @@ open Nu
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =
-        Nu.init ()
         Directory.SetCurrentDirectory AppContext.BaseDirectory
+        Nu.init ()
         let sdlWindowConfig =
             { SdlWindowConfig.defaultConfig with
                 WindowTitle = "OmniBlade"
