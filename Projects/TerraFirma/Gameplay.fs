@@ -152,13 +152,14 @@ type Gameplay =
                         let player = gameplay.Player
                         let player = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
                         { gameplay with Player = player }
-                    else
+                    elif entity.Is<CharacterDispatcher> world then
                         let enemyId = scvalueMemo entity.Name
                         match gameplay.Enemies.TryGetValue enemyId with
                         | (true, enemy) ->
                             let enemy = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
                             { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
                         | (false, _) -> gameplay
+                    else gameplay
                 | _ -> gameplay
             | _ -> gameplay)
             gameplay integrationData.IntegrationMessages
