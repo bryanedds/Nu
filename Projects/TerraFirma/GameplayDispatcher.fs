@@ -93,7 +93,8 @@ module GameplayDispatcher =
                         [Content.entity<WeaponDispatcher> Simulants.GameplayPlayerWeapon.Name
                             [Entity.Position := gameplay.Player.WeaponHand.Translation
                              Entity.Rotation := gameplay.Player.WeaponHand.Rotation
-                             Entity.Scale := v3 1.0f 0.1f 0.1f]]
+                             Entity.Scale := v3 1.0f 0.1f 0.1f
+                             Entity.MountOpt == None]]
 
                      // enemies
                      for (enemyId, enemy) in gameplay.Enemies.Pairs do
@@ -102,6 +103,8 @@ module GameplayDispatcher =
                             [Content.entity<WeaponDispatcher> (Simulants.GameplayEnemyWeapon enemyId).Name
                                 [Entity.Position := enemy.WeaponHand.Translation
                                  Entity.Rotation := enemy.WeaponHand.Rotation
-                                 Entity.Scale := v3 1.0f 0.1f 0.1f]]]
+                                 Entity.Scale := v3 1.0f 0.1f 0.1f
+                                 Entity.MountOpt == None]]]
 
+             // no scene group
              | Quit -> ()]
