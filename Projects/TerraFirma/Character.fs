@@ -33,6 +33,7 @@ type Character =
       Jump : JumpState
       AttackOpt : AttackState option
       FollowTargetOpt : Entity option
+      WeaponHand : Matrix4x4
       BodyShape : BodyShape
       CharacterProperties : CharacterProperties
       AnimatedModel : AnimatedModel AssetTag }
@@ -77,6 +78,7 @@ type Character =
           Jump = JumpState.initial
           AttackOpt = None
           FollowTargetOpt = None
+          WeaponHand = m4Identity
           BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
           CharacterProperties = CharacterProperties.defaultProperties
           AnimatedModel = Assets.Gameplay.JoanModel }

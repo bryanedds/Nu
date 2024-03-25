@@ -2626,6 +2626,9 @@ module AnimatedModelFacetModule =
         member this.GetAnimatedModelAffineMatrixOverride world : Matrix4x4 option = this.Get (nameof this.AnimatedModelAffineMatrixOverride) world
         member this.SetAnimatedModelAffineMatrixOverride (value : Matrix4x4 option) world = this.Set (nameof this.AnimatedModelAffineMatrixOverride) value world
         member this.AnimatedModelAffineMatrixOverride = lens (nameof this.AnimatedModelAffineMatrixOverride) this this.GetAnimatedModelAffineMatrixOverride this.SetAnimatedModelAffineMatrixOverride
+        member this.GetBoneOffsetsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneOffsetsOpt) world
+        member this.SetBoneOffsetsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneOffsetsOpt) value world
+        member this.BoneOffsetsOpt = lens (nameof this.BoneOffsetsOpt) this this.GetBoneOffsetsOpt this.SetBoneOffsetsOpt
         member this.GetBoneTransformsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneTransformsOpt) world
         member this.SetBoneTransformsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneTransformsOpt) value world
         member this.BoneTransformsOpt = lens (nameof this.BoneTransformsOpt) this this.GetBoneTransformsOpt this.SetBoneTransformsOpt
@@ -2634,11 +2637,11 @@ module AnimatedModelFacetModule =
     type AnimatedModelFacet () =
         inherit Facet (false)
 
-        static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
+        static let tryComputeBoneOffsetsAndTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
-                let boneTransforms = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
-                Some boneTransforms
+                let (boneOffsets, boneTransforms) = scene.ComputeBoneOffsetsAndTransforms (time, animations, scene.Meshes.[0])
+                Some (boneOffsets, boneTransforms)
             | Some _ | None -> None
 
         static let tryAnimateBones (entity : Entity) (world : World) =
@@ -2646,8 +2649,15 @@ module AnimatedModelFacetModule =
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-            let boneTransformsOpt = tryComputeBoneTransforms time animations sceneOpt
-            entity.SetBoneTransformsOpt boneTransformsOpt world
+            match tryComputeBoneOffsetsAndTransforms time animations sceneOpt with
+            | Some (boneOffsets, boneTransforms) ->
+                let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
+                let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
+                world
+            | None ->
+                let world = entity.SetBoneOffsetsOpt None world
+                let world = entity.SetBoneTransformsOpt None world
+                world
 
         static member Properties =
             [define Entity.StartTime GameTime.zero
@@ -2656,6 +2666,7 @@ module AnimatedModelFacetModule =
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel
              nonPersistent Entity.AnimatedModelAffineMatrixOverride None
+             nonPersistent Entity.BoneOffsetsOpt None
              nonPersistent Entity.BoneTransformsOpt None]
 
         override this.Register (entity, world) =
@@ -2671,15 +2682,21 @@ module AnimatedModelFacetModule =
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-            let boneTransformsOpt =
+            let boneOffsetsAndTransformsOpt =
                 match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-                | Some (JobCompletion (_, _, (:? (Matrix4x4 array option) as boneTransformsOpt))) -> boneTransformsOpt
+                | Some (JobCompletion (_, _, (:? ((Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
                 | _ -> None
             let world =
-                if boneTransformsOpt.IsSome
-                then entity.SetBoneTransformsOpt boneTransformsOpt world
-                else world
-            let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneTransforms time animations sceneOpt)
+                match boneOffsetsAndTransformsOpt with
+                | Some (boneOffsets, boneTransforms) ->
+                    let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
+                    let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
+                    world
+                | None ->
+                    let world = entity.SetBoneOffsetsOpt None world
+                    let world = entity.SetBoneTransformsOpt None world
+                    world
+            let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneOffsetsAndTransforms time animations sceneOpt)
             World.enqueueJob 1.0f job world
             world
 
@@ -2732,6 +2749,23 @@ module AnimatedModelFacetModule =
                         animatedModelMetadata.Surfaces
                 Array.concat intersectionses
             | None -> [||]
+
+        override this.Edit (op, entity, world) =
+            match op with
+            | OverlayViewport _ ->
+                match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
+                | (Some offsets, Some transforms) ->
+                    let affineMatrix =
+                        match entity.GetAnimatedModelAffineMatrixOverride world with
+                        | Some affineMatrix -> affineMatrix
+                        | None -> entity.GetAffineMatrix world
+                    for i in 0 .. dec offsets.Length do
+                        let offset = offsets.[i]
+                        let transform = transforms.[i]
+                        World.imGuiCircle3d false (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
+                    world
+                | (_, _) -> world
+            | _ -> world
 
 [<AutoOpen>]
 module TerrainFacetModule =

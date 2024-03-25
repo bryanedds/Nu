@@ -41,16 +41,25 @@ type Gameplay =
         let linearVelocity = World.getBodyLinearVelocity bodyId world
         let angularVelocity = World.getBodyAngularVelocity bodyId world
         let grounded = World.getBodyGrounded bodyId world
-        { character with
-            Position = bodyCenter
-            Rotation = bodyRotation
-            LinearVelocity = linearVelocity
-            AngularVelocity = angularVelocity
-            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
-            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
-            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
-            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity
-            Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
+        let character =
+            { character with
+                Position = bodyCenter
+                Rotation = bodyRotation
+                LinearVelocity = linearVelocity
+                AngularVelocity = angularVelocity
+                PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+                RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+                LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+                AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity
+                Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
+        let weaponHand =
+            match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
+            | (Some offsets, Some transforms) ->
+                let offset = offsets.[34]
+                let transform = transforms.[34]
+                offset.Inverted * transform
+            | (_, _) -> m4Identity
+        { character with WeaponHand = weaponHand }
 
     static member private computeCharacterTraversalAnimations (character : Character) =
         let linearVelocityInterp = character.LinearVelocityInterp
@@ -196,8 +205,8 @@ type Gameplay =
 
     static member initial =
         let enemies =
-            [for i in 0 .. dec 5 do
-                for j in 0 .. dec 5 do
+            [for i in 0 .. dec 7 do
+                for j in 0 .. dec 7 do
                     let enemy =
                         { Character.initialEnemy with
                             Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)

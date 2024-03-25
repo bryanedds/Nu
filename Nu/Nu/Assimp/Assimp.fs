@@ -157,12 +157,12 @@ module AssimpExtensions =
         Assimp.Node ()
 
     type [<Struct>] private BoneInfo =
-        { BoneTransformOffset : Assimp.Matrix4x4
-          mutable BoneTransformFinal : Assimp.Matrix4x4 }
+        { BoneOffset : Assimp.Matrix4x4
+          mutable BoneTransform : Assimp.Matrix4x4 }
 
         static member make offset =
-            { BoneTransformOffset = offset
-              BoneTransformFinal = Unchecked.defaultof<_> }
+            { BoneOffset = offset
+              BoneTransform = Unchecked.defaultof<_> }
 
     type [<NoEquality; NoComparison; Struct>] private AnimationChannel =
         { TranslationKeys : Assimp.VectorKey array
@@ -428,8 +428,8 @@ module AssimpExtensions =
             let accumulatedTransform = nodeTransform * parentTransform
             match boneIds.TryGetValue node.Name with
             | (true, boneId) ->
-                let boneTransformOffset = boneInfos.[boneId].BoneTransformOffset
-                boneInfos.[boneId].BoneTransformFinal <- boneTransformOffset * accumulatedTransform
+                let boneOffset = boneInfos.[boneId].BoneOffset
+                boneInfos.[boneId].BoneTransform <- boneOffset * accumulatedTransform
                 boneWrites.Value <- inc boneWrites.Value
             | (false, _) -> ()
 
@@ -439,9 +439,9 @@ module AssimpExtensions =
                     let child = node.Children.[i]
                     Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
-        /// Compute the animated transforms of the meshes bones in the given scene.
+        /// Compute the bone offsets and animated bone transforms of the mesh's bones in the given scene.
         /// Thread-safe.
-        member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh) =
+        member this.ComputeBoneOffsetsAndTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh) =
 
             // pre-compute animation channels
             let animationChannels =
@@ -475,4 +475,6 @@ module AssimpExtensions =
             Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
 
             // convert bone info transforms to Nu's m4 representation
-            Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransformFinal) boneInfos
+            let boneOffsets = Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneOffset) boneInfos
+            let boneTransforms = Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransform) boneInfos
+            (boneOffsets, boneTransforms)
