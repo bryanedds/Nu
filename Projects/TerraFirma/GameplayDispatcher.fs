@@ -21,6 +21,7 @@ module GameplayDispatcher =
             [Game.IntegrationEvent =|> fun evt -> UpdatePhysics evt.Data
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
              Screen.UpdateEvent => Update
+             Screen.PostUpdateEvent => PostUpdate
              Screen.PostUpdateEvent => TransformEye
              Screen.TimeUpdateEvent => TimeUpdate
              Screen.DeselectingEvent => FinishQuitting]
@@ -39,6 +40,10 @@ module GameplayDispatcher =
 
             | Update ->
                 let gameplay = Gameplay.update gameplay world
+                just gameplay
+
+            | PostUpdate ->
+                let gameplay = Gameplay.postUpdate gameplay world
                 just gameplay
 
             | TimeUpdate ->

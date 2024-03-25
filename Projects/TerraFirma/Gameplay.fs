@@ -9,6 +9,7 @@ type GameplayMessage =
     | UpdatePhysics of IntegrationData
     | UpdatePlayerInputKey of KeyboardKeyData
     | Update
+    | PostUpdate
     | TimeUpdate
     | StartQuitting
     | FinishQuitting
@@ -41,26 +42,16 @@ type Gameplay =
         let linearVelocity = World.getBodyLinearVelocity bodyId world
         let angularVelocity = World.getBodyAngularVelocity bodyId world
         let grounded = World.getBodyGrounded bodyId world
-        let character =
-            { character with
-                Position = bodyCenter
-                Rotation = bodyRotation
-                LinearVelocity = linearVelocity
-                AngularVelocity = angularVelocity
-                PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
-                RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
-                LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
-                AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity
-                Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
-        let weaponHand =
-            match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
-            | (Some offsets, Some transforms) ->
-                let offset = offsets.[34]
-                let transform = transforms.[34]
-                let affineMatrix = character.AnimatedModelAffineMatrix
-                offset.Inverted * transform * affineMatrix
-            | (_, _) -> m4Identity
-        { character with WeaponHand = weaponHand }
+        { character with
+            Position = bodyCenter
+            Rotation = bodyRotation
+            LinearVelocity = linearVelocity
+            AngularVelocity = angularVelocity
+            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity
+            Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
 
     static member private computeCharacterTraversalAnimations (character : Character) =
         let linearVelocityInterp = character.LinearVelocityInterp
@@ -151,6 +142,17 @@ type Gameplay =
 
         else player
 
+    static member private postUpdateCharacterWeaponHand (character : Character) (entity : Entity) world =
+        let weaponHand =
+            match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
+            | (Some offsets, Some transforms) ->
+                let offset = offsets.[34]
+                let transform = transforms.[34]
+                let affineMatrix = character.AnimatedModelAffineMatrix
+                offset.Inverted * transform * affineMatrix
+            | (_, _) -> m4Identity
+        { character with WeaponHand = weaponHand }
+
     static member updatePhysics (integrationData : IntegrationData) gameplay world =
         SArray.fold (fun gameplay integrationMessage ->
             match integrationMessage with
@@ -202,6 +204,11 @@ type Gameplay =
         let gameplay = { gameplay with Player = Gameplay.updateCharacter gameplay.GameplayTime gameplay.Player world }
         let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> Gameplay.updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
         let gameplay = { gameplay with Player = Gameplay.updatePlayerInputScan gameplay.Player world }
+        gameplay
+
+    static member postUpdate gameplay world =
+        let gameplay = { gameplay with Player = Gameplay.postUpdateCharacterWeaponHand gameplay.Player Simulants.GameplayPlayer world }
+        let gameplay = { gameplay with Enemies = HMap.map (fun enemyId enemy -> Gameplay.postUpdateCharacterWeaponHand enemy (Simulants.GameplayEnemy enemyId) world) gameplay.Enemies }
         gameplay
 
     static member initial =
