@@ -2688,7 +2688,7 @@ module AnimatedModelFacetModule =
             let absolute = transform.Absolute
             let affineMatrix =
                 match entity.GetAnimatedModelAffineMatrixOverride world with
-                | Some transform -> transform
+                | Some affineMatrix -> affineMatrix
                 | None -> transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
@@ -2709,7 +2709,7 @@ module AnimatedModelFacetModule =
         override this.RayCast (ray, entity, world) =
             let affineMatrix =
                 match entity.GetAnimatedModelAffineMatrixOverride world with
-                | Some transform -> transform
+                | Some affineMatrix -> affineMatrix
                 | None -> entity.GetAffineMatrix world
             let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
             let rayEntity = ray.Transform inverseMatrix

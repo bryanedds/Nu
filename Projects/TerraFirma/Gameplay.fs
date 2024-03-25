@@ -36,7 +36,7 @@ type Gameplay =
       Player : Character
       Enemies : HMap<Guid, Character> }
 
-    static member private updateCharacterPhysics time bodyCenter bodyRotation character (entity : Entity) world =
+    static member private updateCharacterPhysics time bodyCenter bodyRotation (character : Character) (entity : Entity) world =
         let bodyId = entity.GetBodyId world
         let linearVelocity = World.getBodyLinearVelocity bodyId world
         let angularVelocity = World.getBodyAngularVelocity bodyId world
@@ -45,33 +45,35 @@ type Gameplay =
             Position = bodyCenter
             Rotation = bodyRotation
             LinearVelocity = linearVelocity
-            LinearVelocityPrevious = character.LinearVelocity
             AngularVelocity = angularVelocity
-            AngularVelocityPrevious = character.AngularVelocity
+            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity
             Jump.LastTimeOnGround = if grounded then time else character.Jump.LastTimeOnGround }
 
     static member private computeCharacterTraversalAnimations (character : Character) =
-        let linearVelocityAvg = (character.LinearVelocity + character.LinearVelocityPrevious) * 0.5f
-        let angularVelocityAvg = (character.AngularVelocity + character.AngularVelocityPrevious) * 0.5f
-        let forwardness = (Vector3.Dot (linearVelocityAvg * 32.0f, character.Rotation.Forward))
-        let backness = (Vector3.Dot (linearVelocityAvg * 32.0f, -character.Rotation.Forward))
-        let rightness = (Vector3.Dot (linearVelocityAvg * 32.0f, character.Rotation.Right))
-        let leftness = (Vector3.Dot (linearVelocityAvg * 32.0f, -character.Rotation.Right))
-        let turnRightness = (angularVelocityAvg * v3Up).Length () * 48.0f
+        let linearVelocityInterp = character.LinearVelocityInterp
+        let angularVelocityInterp = character.AngularVelocityInterp
+        let forwardness = (Vector3.Dot (linearVelocityInterp * 16.0f, character.Rotation.Forward))
+        let backness = (Vector3.Dot (linearVelocityInterp * 16.0f, -character.Rotation.Forward))
+        let rightness = (Vector3.Dot (linearVelocityInterp * 16.0f, character.Rotation.Right))
+        let leftness = (Vector3.Dot (linearVelocityInterp * 16.0f, -character.Rotation.Right))
+        let turnRightness = (angularVelocityInterp * v3Up).Length () * 32.0f
         let turnLeftness = -turnRightness
         let animations =
             [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
         let animations =
-            if forwardness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f forwardness; BoneFilterOpt = None } :: animations
-            elif backness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f backness; BoneFilterOpt = None } :: animations
+            if forwardness >= 0.5f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = forwardness; BoneFilterOpt = None } :: animations
+            elif backness >= 0.5f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Loop; Rate = 1.0f; Weight = backness; BoneFilterOpt = None } :: animations
             else animations
         let animations =
-            if rightness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRight"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f rightness; BoneFilterOpt = None } :: animations
-            elif leftness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f leftness; BoneFilterOpt = None } :: animations
+            if rightness >= 0.5f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRight"; Playback = Loop; Rate = 1.0f; Weight = rightness; BoneFilterOpt = None } :: animations
+            elif leftness >= 0.5f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = leftness; BoneFilterOpt = None } :: animations
             else animations
         let animations =
-            if turnRightness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f turnRightness; BoneFilterOpt = None } :: animations
-            elif turnLeftness >= 0.01f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = max 0.025f turnLeftness; BoneFilterOpt = None } :: animations
+            if turnRightness >= 0.5f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
+            elif turnLeftness >= 0.5f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
             else animations
         animations
 

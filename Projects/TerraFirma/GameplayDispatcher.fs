@@ -63,8 +63,10 @@ module GameplayDispatcher =
                 just world
 
             | TransformEye ->
-                let world = World.setEye3dCenter (gameplay.Player.Position + v3Up * 1.5f - gameplay.Player.Rotation.Forward * 3.0f) world
-                let world = World.setEye3dRotation gameplay.Player.Rotation world
+                let positionInterp = gameplay.Player.PositionInterp
+                let rotationInterp = gameplay.Player.RotationInterp
+                let world = World.setEye3dCenter (positionInterp + v3Up * 1.5f - rotationInterp.Forward * 3.0f) world
+                let world = World.setEye3dRotation rotationInterp world
                 just world
 
         // here we describe the content of the game including the hud, the scene, and the player
