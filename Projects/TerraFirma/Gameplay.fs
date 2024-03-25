@@ -198,13 +198,13 @@ type Gameplay =
             [for i in 0 .. dec 5 do
                 for j in 0 .. dec 5 do
                     let enemy =
-                        { Character.initial with
+                        { Character.initialEnemy with
                             Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)
                             FollowTargetOpt = Some Simulants.GameplayPlayer }
                     (makeGuid (), enemy)]
         { GameplayTime = 0L
           GameplayState = Quit
-          Player = { Character.initial with Position = v3 0.0f 2.0f 0.0f }
+          Player = { Character.initialPlayer with Position = v3 0.0f 2.0f 0.0f }
           Enemies = HMap.ofList enemies }
 
     static member start =

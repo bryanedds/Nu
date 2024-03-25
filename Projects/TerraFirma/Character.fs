@@ -33,6 +33,8 @@ type Character =
       Jump : JumpState
       AttackOpt : AttackState option
       FollowTargetOpt : Entity option
+      BodyShape : BodyShape
+      CharacterProperties : CharacterProperties
       AnimatedModel : AnimatedModel AssetTag }
 
     member this.PositionInterp =
@@ -75,7 +77,18 @@ type Character =
           Jump = JumpState.initial
           AttackOpt = None
           FollowTargetOpt = None
+          BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
+          CharacterProperties = CharacterProperties.defaultProperties
           AnimatedModel = Assets.Gameplay.JoanModel }
+
+    static member initialPlayer =
+        Character.initial
+
+    static member initialEnemy =
+        let enemy = Character.initial
+        { enemy with
+            BodyShape = CapsuleShape { Height = 1.3f; Radius = 0.2f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
+            Character.CharacterProperties.PenetrationDepthMax = 0.1f } // deeper penetration needed to make enemies able to climb stairs
 
 [<AutoOpen>]
 module CharacterDispatcher =
@@ -86,7 +99,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit Entity3dDispatcher<Character, Message, Command> (true, Character.initial)
+        inherit Entity3dDispatcher<Character, Message, Command> (true, Character.initialPlayer)
 
         static member Facets =
             [typeof<AnimatedModelFacet>
@@ -105,12 +118,12 @@ module CharacterDispatcher =
              Entity.AnimatedModelAffineMatrixOverride := Some character.AnimatedModelAffineMatrix
              Entity.BodyType == KinematicCharacter
              Entity.SleepingAllowed == true
-             Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
+             Entity.CharacterProperties := character.CharacterProperties
+             Entity.BodyShape := character.BodyShape
              Entity.ModelDriven == true
              Entity.FollowTargetOpt := character.FollowTargetOpt
-             Entity.FollowDistanceMinOpt == Some 1.5f
-             Entity.FollowDistanceMaxOpt == Some 10.0f
-             Entity.CharacterProperties == { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f }]
+             Entity.FollowDistanceMinOpt == Some 1.25f
+             Entity.FollowDistanceMaxOpt == Some 10.0f]
 
         override this.Register (entity, world) =
             let world = base.Register (entity, world)
