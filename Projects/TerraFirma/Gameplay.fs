@@ -213,8 +213,8 @@ type [<ReferenceEquality>] Gameplay =
         gameplay
 
     static member postUpdate gameplay world =
-        let gameplay = { gameplay with Player = Gameplay.postUpdateCharacterWeaponHand gameplay.Player Simulants.GameplayPlayer world }
-        let gameplay = { gameplay with Enemies = HMap.map (fun enemyId enemy -> Gameplay.postUpdateCharacterWeaponHand enemy (Simulants.GameplayEnemy enemyId) world) gameplay.Enemies }
+        let gameplay = { gameplay with Player = Gameplay.postUpdateCharacterWeaponHand gameplay.Player Simulants.GameplayPlayerAnimatedModel world }
+        let gameplay = { gameplay with Enemies = HMap.map (fun enemyId enemy -> Gameplay.postUpdateCharacterWeaponHand enemy (Simulants.GameplayEnemyAnimatedModel enemyId) world) gameplay.Enemies }
         gameplay
 
     static member timeUpdate gameplay =

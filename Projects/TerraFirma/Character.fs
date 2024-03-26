@@ -105,8 +105,7 @@ module CharacterDispatcher =
         inherit Entity3dDispatcher<Character, Message, Command> (true, Character.initialPlayer v3Zero quatIdentity)
 
         static member Facets =
-            [typeof<AnimatedModelFacet>
-             typeof<RigidBodyFacet>]
+            [typeof<RigidBodyFacet>]
 
         override this.Initialize (character, _) =
             [Entity.Position := character.Position
@@ -114,16 +113,24 @@ module CharacterDispatcher =
              Entity.LinearVelocity := character.LinearVelocity
              Entity.AngularVelocity := character.AngularVelocity
              Entity.Persistent == false
-             Entity.MaterialProperties == MaterialProperties.defaultProperties
-             Entity.Animations := character.Animations
-             Entity.AnimatedModel := character.AnimatedModel
-             Entity.AnimatedModelAffineMatrixOverride := Some character.AnimatedModelAffineMatrix
              Entity.BodyType == KinematicCharacter
              Entity.SleepingAllowed == true
              Entity.CharacterProperties := character.CharacterProperties
              Entity.BodyShape := character.BodyShape
              Entity.ModelDriven == true]
 
-        override this.Register (entity, world) =
-            let world = base.Register (entity, world)
-            entity.AutoBounds world
+        override this.Content (character, _) =
+            [Content.entity<AnimatedModelDispatcher> "AnimatedModel"
+                [Entity.Position := character.PositionInterp
+                 Entity.Rotation := character.RotationInterp
+                 Entity.Size == v3Dup 2.0f
+                 Entity.Offset == v3 0.0f 1.0f 0.0f
+                 Entity.MaterialProperties == MaterialProperties.defaultProperties
+                 Entity.Animations := character.Animations
+                 Entity.AnimatedModel := character.AnimatedModel
+                 Entity.MountOpt == None]
+             Content.entity<WeaponDispatcher> "Weapon"
+                [Entity.Position := character.WeaponHand.Translation
+                 Entity.Rotation := character.WeaponHand.Rotation
+                 Entity.Scale := v3 1.0f 0.1f 0.1f
+                 Entity.MountOpt == None]]

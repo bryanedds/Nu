@@ -3,14 +3,9 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
 open ImGuiNET
 open TiledSharp
-open DotRecast.Core.Numerics
-open DotRecast.Detour
-open DotRecast.Recast.Toolset.Builder
-open DotRecast.Recast.Toolset.Tools
 open Prime
 open Nu
 open Nu.Particles
@@ -2653,9 +2648,6 @@ module AnimatedModelFacetModule =
         member this.GetAnimatedModel world : AnimatedModel AssetTag = this.Get (nameof this.AnimatedModel) world
         member this.SetAnimatedModel (value : AnimatedModel AssetTag) world = this.Set (nameof this.AnimatedModel) value world
         member this.AnimatedModel = lens (nameof this.AnimatedModel) this this.GetAnimatedModel this.SetAnimatedModel
-        member this.GetAnimatedModelAffineMatrixOverride world : Matrix4x4 option = this.Get (nameof this.AnimatedModelAffineMatrixOverride) world
-        member this.SetAnimatedModelAffineMatrixOverride (value : Matrix4x4 option) world = this.Set (nameof this.AnimatedModelAffineMatrixOverride) value world
-        member this.AnimatedModelAffineMatrixOverride = lens (nameof this.AnimatedModelAffineMatrixOverride) this this.GetAnimatedModelAffineMatrixOverride this.SetAnimatedModelAffineMatrixOverride
         member this.GetBoneOffsetsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneOffsetsOpt) world
         member this.SetBoneOffsetsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneOffsetsOpt) value world
         member this.BoneOffsetsOpt = lens (nameof this.BoneOffsetsOpt) this this.GetBoneOffsetsOpt this.SetBoneOffsetsOpt
@@ -2692,7 +2684,6 @@ module AnimatedModelFacetModule =
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel
-             nonPersistent Entity.AnimatedModelAffineMatrixOverride None
              nonPersistent Entity.BoneOffsetsOpt None
              nonPersistent Entity.BoneTransformsOpt None]
 
@@ -2731,10 +2722,7 @@ module AnimatedModelFacetModule =
         override this.Render (renderPass, entity, world) =
             let mutable transform = entity.GetTransform world
             let absolute = transform.Absolute
-            let affineMatrix =
-                match entity.GetAnimatedModelAffineMatrixOverride world with
-                | Some affineMatrix -> affineMatrix
-                | None -> transform.AffineMatrix
+            let affineMatrix = transform.AffineMatrix
             let presence = transform.Presence
             let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
             let properties = entity.GetMaterialProperties world
@@ -2752,10 +2740,7 @@ module AnimatedModelFacetModule =
             | None -> base.GetAttributesInferred (entity, world)
 
         override this.RayCast (ray, entity, world) =
-            let affineMatrix =
-                match entity.GetAnimatedModelAffineMatrixOverride world with
-                | Some affineMatrix -> affineMatrix
-                | None -> entity.GetAffineMatrix world
+            let affineMatrix = entity.GetAffineMatrix world
             let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
             let rayEntity = ray.Transform inverseMatrix
             match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
@@ -2783,10 +2768,7 @@ module AnimatedModelFacetModule =
             | OverlayViewport _ ->
                 match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
                 | (Some offsets, Some transforms) ->
-                    let affineMatrix =
-                        match entity.GetAnimatedModelAffineMatrixOverride world with
-                        | Some affineMatrix -> affineMatrix
-                        | None -> entity.GetAffineMatrix world
+                    let affineMatrix = entity.GetAffineMatrix world
                     for i in 0 .. dec offsets.Length do
                         let offset = offsets.[i]
                         let transform = transforms.[i]

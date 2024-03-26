@@ -93,23 +93,13 @@ module GameplayDispatcher =
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// player
-                     Content.composite<CharacterDispatcher> Simulants.GameplayPlayer.Name
+                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Character := gameplay.Player]
-                        [Content.entity<WeaponDispatcher> Simulants.GameplayPlayerWeapon.Name
-                            [Entity.Position := gameplay.Player.WeaponHand.Translation
-                             Entity.Rotation := gameplay.Player.WeaponHand.Rotation
-                             Entity.Scale := v3 1.0f 0.1f 0.1f
-                             Entity.MountOpt == None]]
 
                      // enemies
                      for (enemyId, enemy) in gameplay.Enemies.Pairs do
-                        Content.composite<CharacterDispatcher> (string enemyId)
-                            [Entity.Character := enemy]
-                            [Content.entity<WeaponDispatcher> (Simulants.GameplayEnemyWeapon enemyId).Name
-                                [Entity.Position := enemy.WeaponHand.Translation
-                                 Entity.Rotation := enemy.WeaponHand.Rotation
-                                 Entity.Scale := v3 1.0f 0.1f 0.1f
-                                 Entity.MountOpt == None]]]
+                        Content.entity<CharacterDispatcher> (string enemyId)
+                            [Entity.Character := enemy]]
 
              // no scene group
              | Quit -> ()]
