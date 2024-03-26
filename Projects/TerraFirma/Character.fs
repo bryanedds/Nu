@@ -22,12 +22,12 @@ type AttackState =
 
 type [<ReferenceEquality>] Character =
     { Position : Vector3
-      PositionPrevious : Vector3 Queue
       Rotation : Quaternion
-      RotationPrevious : Quaternion Queue
       LinearVelocity : Vector3
-      LinearVelocityPrevious : Vector3 Queue
       AngularVelocity : Vector3
+      PositionPrevious : Vector3 Queue
+      RotationPrevious : Quaternion Queue
+      LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
       Animations : Animation array
       Jump : JumpState
