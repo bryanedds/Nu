@@ -26,7 +26,7 @@ module GameplayDispatcher =
              Screen.TimeUpdateEvent => TimeUpdate
              Screen.DeselectingEvent => FinishQuitting]
 
-        // here we handle the above messages
+        // here we handle the gameplay messages
         override this.Message (gameplay, message, _, world) =
 
             match message with
@@ -47,7 +47,7 @@ module GameplayDispatcher =
                 just gameplay
 
             | TimeUpdate ->
-                let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
+                let gameplay = Gameplay.timeUpdate gameplay
                 just gameplay
 
             | StartQuitting ->
@@ -58,7 +58,7 @@ module GameplayDispatcher =
                 let gameplay = { gameplay with GameplayState = Quit }
                 just gameplay
 
-        // here we handle the above commands
+        // here we handle the gameplay commands
         override this.Command (gameplay, command, _, world) =
 
             match command with
@@ -74,7 +74,7 @@ module GameplayDispatcher =
                 let world = World.setEye3dRotation rotationInterp world
                 just world
 
-        // here we describe the content of the game including the hud, the scene, and the player
+        // here we describe the content of the game including the hud group and the scene group
         override this.Content (gameplay, _) =
 
             [// the gui group

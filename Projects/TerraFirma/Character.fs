@@ -20,7 +20,7 @@ type AttackState =
         { AttackTime = time
           FollowUpBuffered = false }
 
-type Character =
+type [<ReferenceEquality>] Character =
     { Position : Vector3
       PositionPrevious : Vector3 Queue
       Rotation : Quaternion

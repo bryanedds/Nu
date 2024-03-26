@@ -31,7 +31,7 @@ type GameplayState =
 // this model representation uses update time, that is, time based on number of engine updates.
 // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
 // you could use `GameplayTime : single` instead.
-type Gameplay =
+type [<ReferenceEquality>] Gameplay =
     { GameplayTime : int64
       GameplayState : GameplayState
       Player : Character
@@ -215,6 +215,10 @@ type Gameplay =
     static member postUpdate gameplay world =
         let gameplay = { gameplay with Player = Gameplay.postUpdateCharacterWeaponHand gameplay.Player Simulants.GameplayPlayer world }
         let gameplay = { gameplay with Enemies = HMap.map (fun enemyId enemy -> Gameplay.postUpdateCharacterWeaponHand enemy (Simulants.GameplayEnemy enemyId) world) gameplay.Enemies }
+        gameplay
+
+    static member timeUpdate gameplay =
+        let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
         gameplay
 
     static member initial =
