@@ -66,7 +66,7 @@ type [<ReferenceEquality>] Gameplay =
         let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Forward))
         let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Right))
         let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Right))
-        let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
+        let turnRightness = (angularVelocityInterp * v3Up).Length () * 32.0f
         let turnLeftness = -turnRightness
         let animations =
             [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
@@ -79,8 +79,8 @@ type [<ReferenceEquality>] Gameplay =
             elif leftness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = leftness; BoneFilterOpt = None } :: animations
             else animations
         let animations =
-            if turnRightness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
-            elif turnLeftness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
+            if turnRightness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
+            elif turnLeftness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
             else animations
         animations
 
@@ -174,7 +174,7 @@ type [<ReferenceEquality>] Gameplay =
                         let enemyId = scvalueMemo entity.Name
                         match gameplay.Enemies.TryGetValue enemyId with
                         | (true, enemy) ->
-                            let followOutput = World.tryNav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.05f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
+                            let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.05f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
                             let enemy = Gameplay.transformCharacter followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
                             { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
                         | (false, _) -> gameplay

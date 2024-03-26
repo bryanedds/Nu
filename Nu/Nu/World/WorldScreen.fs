@@ -582,7 +582,23 @@ module WorldScreenModule =
                 else None
             else None
 
-        static member tryNav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
+        /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
+        static member nav3dRotate turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
+            let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
+            let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
+            let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+            let navRotation =
+                if navAngularVelocityY > turnSpeed then
+                    let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
+                    rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
+                else navRotation
+            let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
+            let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+            let navAngularVelocity = v3Up * navAngularVelocityY
+            (navRotation, navAngularVelocity)
+
+        /// Compute navigation information that results in following the given destination.
+        static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
@@ -592,31 +608,14 @@ module WorldScreenModule =
                     // ground. Additionally, consider removing the CellHeight offset in the above query so
                     // that we don't need to do an offset here at all.
                     let navLinearVelocity = navPosition - position
-                    let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navLinearVelocity.X navLinearVelocity.Z + MathF.PI)
-                    let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-                    let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-                    let navRotation =
-                        if navAngularVelocityY > turnSpeed then
-                            let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
-                            rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
-                        else navRotation
-                    let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-                    let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-                    let navAngularVelocity = v3Up * navAngularVelocityY
+                    let (navRotation, navAngularVelocity) = World.nav3dRotate turnSpeed rotation navLinearVelocity
                     { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
-                | _ -> { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }
+                | _ ->
+                    let navDirection = destination - position
+                    let (navRotation, navAngularVelocity) = World.nav3dRotate turnSpeed rotation navDirection
+                    { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
                 let navDirection = destination - position
-                let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-                let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-                let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-                let navRotation =
-                    if navAngularVelocityY > turnSpeed then
-                        let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
-                        rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
-                    else navRotation
-                let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-                let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-                let navAngularVelocity = v3Up * navAngularVelocityY
+                let (navRotation, navAngularVelocity) = World.nav3dRotate turnSpeed rotation navDirection
                 { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }

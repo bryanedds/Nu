@@ -3212,7 +3212,7 @@ module FollowerFacetModule =
                             // TODO: consider doing an offset physics ray cast to align nav position with near
                             // ground. Additionally, consider removing the CellHeight offset in the above query so
                             // that we don't need to do an offset here at all.
-                            let followOutput = World.tryNav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
+                            let followOutput = World.nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
                             let world = entity.SetPosition followOutput.NavPosition world
                             let world = entity.SetRotation followOutput.NavRotation world
                             let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
