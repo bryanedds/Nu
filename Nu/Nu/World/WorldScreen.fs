@@ -583,7 +583,7 @@ module WorldScreenModule =
             else None
 
         /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
-        static member nav3dRotate turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
+        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
             let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
             let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
             let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
@@ -608,14 +608,14 @@ module WorldScreenModule =
                     // ground. Additionally, consider removing the CellHeight offset in the above query so
                     // that we don't need to do an offset here at all.
                     let navLinearVelocity = navPosition - position
-                    let (navRotation, navAngularVelocity) = World.nav3dRotate turnSpeed rotation navLinearVelocity
+                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
                     { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->
                     let navDirection = destination - position
-                    let (navRotation, navAngularVelocity) = World.nav3dRotate turnSpeed rotation navDirection
+                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
                     { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
                 let navDirection = destination - position
-                let (navRotation, navAngularVelocity) = World.nav3dRotate turnSpeed rotation navDirection
+                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
                 { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }
