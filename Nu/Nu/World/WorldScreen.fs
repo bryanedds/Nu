@@ -605,4 +605,18 @@ module WorldScreenModule =
                     let navAngularVelocity = v3Up * navAngularVelocityY
                     { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ -> { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }
+            elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
+                let navDirection = destination - position
+                let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
+                let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
+                let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+                let navRotation =
+                    if navAngularVelocityY > turnSpeed then
+                        let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
+                        rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
+                    else navRotation
+                let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
+                let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+                let navAngularVelocity = v3Up * navAngularVelocityY
+                { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }
