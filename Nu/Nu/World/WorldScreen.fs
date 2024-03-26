@@ -587,20 +587,14 @@ module WorldScreenModule =
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
                 match World.tryQueryNav3d (World.tryNav3dFollowQuery followSpeed position destination) screen world with
-                | Some (Some step) ->
-                    // TODO: consider doing an offset physics ray cast to align stepPosition with near
+                | Some (Some navPosition) ->
+                    // TODO: consider doing an offset physics ray cast to align navPosition with near
                     // ground. Additionally, consider removing the CellHeight offset in the above query so
                     // that we don't need to do an offset here at all.
-                    let linearVelocity = step - position
-                    let rotationStep = Quaternion.CreateFromAxisAngle (v3Up, atan2 linearVelocity.X linearVelocity.Z + MathF.PI)
-                    let rotationDelta = rotationStep * rotation.Inverted
-                    let (angularVelocityAxis, angularVelocityAngle) = rotationDelta.AxisAngle
-                    let angularVelocity = angularVelocityAxis * angularVelocityAngle
-                    let followResult =
-                        { NavPosition = step
-                          NavRotation = rotationStep
-                          NavLinearVelocity = linearVelocity
-                          NavAngularVelocity = angularVelocity }
-                    Some followResult
+                    let navLinearVelocity = navPosition - position
+                    let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navLinearVelocity.X navLinearVelocity.Z + MathF.PI)
+                    let navAngularVelocity = v3 0.0f (rotation.Forward.AngleBetween navRotation.Forward) 0.0f
+                    let navResult = { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
+                    Some navResult
                 | _ -> None
             else None
