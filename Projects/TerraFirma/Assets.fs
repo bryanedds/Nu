@@ -12,4 +12,6 @@ module Assets =
     module Gameplay =
 
         let PackageName = "Gameplay"
+        let SlashSound = asset<Sound> PackageName "Slash"
+        let Slash2Sound = asset<Sound> PackageName "Slash2"
         let JoanModel = asset<AnimatedModel> PackageName "Joan"

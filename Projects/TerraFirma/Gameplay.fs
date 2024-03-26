@@ -90,8 +90,8 @@ type [<ReferenceEquality>] Gameplay =
             let localTime = time - attack.AttackTime
             let world =
                 match localTime with
-                | 0L -> World.playSound 1.0f Assets.Default.Sound world
-                | 55L -> if attack.FollowUpBuffered then World.playSound 1.0f Assets.Default.Sound world else world
+                | 7L -> World.playSound 1.0f Assets.Gameplay.SlashSound world
+                | 65L -> if attack.FollowUpBuffered then World.playSound 1.0f Assets.Gameplay.Slash2Sound world else world
                 | _ -> world
             let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
