@@ -20,4 +20,5 @@ module WeaponDispatcher =
             [Entity.StaticModel := template.StaticModel
              Entity.BodyType == Static
              Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.25f 0.0f)); PropertiesOpt = None }
-             Entity.Sensor == true]
+             Entity.Sensor == true
+             Entity.ModelDriven == true]

@@ -531,6 +531,17 @@ module Quaternion =
         member this.RollPitchYaw =
             Math.RollPitchYaw &this
 
+        /// Derive an axis angle from the quaternion.
+        member this.AxisAngle =
+            let w = this.W
+            let angle = 2.0f * acos w
+            let magnitude = sqrt (1.0f - w * w)
+            let axis =
+                if magnitude >= 0.0001f
+                then v3 (this.X / magnitude) (this.Y / magnitude) (this.Z / magnitude)
+                else v3Up // any unit vector can be chosen
+            (axis, angle)
+
         /// Normalize the quaternion.
         member this.Normalized =
             Quaternion.Normalize this

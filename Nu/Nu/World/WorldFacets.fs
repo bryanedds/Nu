@@ -1384,6 +1384,38 @@ module RigidBodyFacetModule =
             then World.localizeBodyShape scalar bodyShape
             else bodyShape
 
+        static let propagatePhysicsPosition (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+            if entity.GetModelDriven world && (entity.GetBodyType world).Statical then
+                let bodyId = entity.GetBodyId world
+                let position = evt.Data.Value :?> Vector3
+                (Cascade, World.setBodyCenter position bodyId world)
+            else (Cascade, entity.PropagatePhysics world)
+
+        static let propagatePhysicsRotation (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+            if entity.GetModelDriven world && (entity.GetBodyType world).Statical then
+                let bodyId = entity.GetBodyId world
+                let rotation = evt.Data.Value :?> Quaternion
+                (Cascade, World.setBodyRotation rotation bodyId world)
+            else (Cascade, entity.PropagatePhysics world)
+
+        static let propagatePhysicsLinearVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+            if entity.GetModelDriven world && (entity.GetBodyType world).Statical then
+                let bodyId = entity.GetBodyId world
+                let linearVelocity = evt.Data.Value :?> Vector3
+                (Cascade, World.setBodyLinearVelocity linearVelocity bodyId world)
+            else (Cascade, entity.PropagatePhysics world)
+
+        static let propagatePhysicsAngularVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+            if entity.GetModelDriven world && (entity.GetBodyType world).Statical then
+                let bodyId = entity.GetBodyId world
+                let angularVelocity = evt.Data.Value :?> Vector3
+                (Cascade, World.setBodyAngularVelocity angularVelocity bodyId world)
+            else (Cascade, entity.PropagatePhysics world)
+
+        static let propagatePhysics (entity : Entity) (_ : Event<ChangeData, Entity>) world =
+            let world = if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world
+            (Cascade, world)
+
         static member Properties =
             [define Entity.BodyEnabled true
              define Entity.BodyType Static
@@ -1411,32 +1443,30 @@ module RigidBodyFacetModule =
             // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
             // OPTIMIZATION: share lambdas to reduce live object count.
             let subIds = Array.init 25 (fun _ -> makeGuid ())
-            let propagatePhysicsConditionally = fun (_ : Event<ChangeData, Entity>) world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)
-            let propagatePhysics = fun (_ : Event<ChangeData, Entity>) world -> (Cascade, if not (entity.GetModelDriven world) then entity.PropagatePhysics world else world)
-            let world = World.subscribePlus subIds.[0] propagatePhysicsConditionally (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
-            let world = World.subscribePlus subIds.[1] propagatePhysicsConditionally (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
-            let world = World.subscribePlus subIds.[2] propagatePhysicsConditionally (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
-            let world = World.subscribePlus subIds.[3] propagatePhysicsConditionally (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd
-            let world = World.subscribePlus subIds.[4] propagatePhysics (entity.ChangeEvent (nameof entity.Scale)) entity world |> snd
-            let world = World.subscribePlus subIds.[5] propagatePhysics (entity.ChangeEvent (nameof entity.Offset)) entity world |> snd
-            let world = World.subscribePlus subIds.[6] propagatePhysics (entity.ChangeEvent (nameof entity.Size)) entity world |> snd
-            let world = World.subscribePlus subIds.[7] propagatePhysics (entity.ChangeEvent (nameof entity.PerimeterCentered)) entity world |> snd
-            let world = World.subscribePlus subIds.[8] propagatePhysics (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
-            let world = World.subscribePlus subIds.[9] propagatePhysics (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
-            let world = World.subscribePlus subIds.[10] propagatePhysics (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
-            let world = World.subscribePlus subIds.[11] propagatePhysics (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
-            let world = World.subscribePlus subIds.[12] propagatePhysics (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
-            let world = World.subscribePlus subIds.[13] propagatePhysics (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
-            let world = World.subscribePlus subIds.[14] propagatePhysics (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
-            let world = World.subscribePlus subIds.[15] propagatePhysics (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
-            let world = World.subscribePlus subIds.[16] propagatePhysics (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
-            let world = World.subscribePlus subIds.[17] propagatePhysics (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
-            let world = World.subscribePlus subIds.[18] propagatePhysics (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
-            let world = World.subscribePlus subIds.[19] propagatePhysics (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
-            let world = World.subscribePlus subIds.[10] propagatePhysics (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
-            let world = World.subscribePlus subIds.[21] propagatePhysics (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
-            let world = World.subscribePlus subIds.[23] propagatePhysics (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
-            let world = World.subscribePlus subIds.[24] propagatePhysics (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
+            let world = World.subscribePlus subIds.[0] (propagatePhysicsPosition entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
+            let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
+            let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
+            let world = World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd
+            let world = World.subscribePlus subIds.[4] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Scale)) entity world |> snd
+            let world = World.subscribePlus subIds.[5] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Offset)) entity world |> snd
+            let world = World.subscribePlus subIds.[6] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Size)) entity world |> snd
+            let world = World.subscribePlus subIds.[7] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.PerimeterCentered)) entity world |> snd
+            let world = World.subscribePlus subIds.[8] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
+            let world = World.subscribePlus subIds.[9] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
+            let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
+            let world = World.subscribePlus subIds.[11] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
+            let world = World.subscribePlus subIds.[12] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
+            let world = World.subscribePlus subIds.[13] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
+            let world = World.subscribePlus subIds.[14] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
+            let world = World.subscribePlus subIds.[15] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
+            let world = World.subscribePlus subIds.[16] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
+            let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
+            let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
+            let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
+            let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
+            let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
+            let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
+            let world = World.subscribePlus subIds.[24] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
             let unsubscribe = fun world ->
                 Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
             let callback = fun evt world ->
@@ -2654,10 +2684,7 @@ module AnimatedModelFacetModule =
                 let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
                 let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                 world
-            | None ->
-                let world = entity.SetBoneOffsetsOpt None world
-                let world = entity.SetBoneTransformsOpt None world
-                world
+            | None -> world
 
         static member Properties =
             [define Entity.StartTime GameTime.zero
@@ -2692,10 +2719,7 @@ module AnimatedModelFacetModule =
                     let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
                     let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                     world
-                | None ->
-                    let world = entity.SetBoneOffsetsOpt None world
-                    let world = entity.SetBoneTransformsOpt None world
-                    world
+                | None -> world
             let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneOffsetsAndTransforms time animations sceneOpt)
             World.enqueueJob 1.0f job world
             world
@@ -3151,53 +3175,6 @@ module FollowerFacetModule =
     type FollowerFacet () =
         inherit Facet (false)
 
-        static let tryFollow followSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
-
-            // attempt to compute start position information
-            let mutable startRef = 0L
-            let mutable startPosition = RcVec3f (startPosition.X, startPosition.Y, startPosition.Z)
-            let mutable startIsOverPoly = false
-            let mutable startStatus = DtStatus.DT_IN_PROGRESS
-            let filter = DtQueryDefaultFilter (int SampleAreaModifications.SAMPLE_POLYFLAGS_ALL, int SampleAreaModifications.SAMPLE_POLYFLAGS_DISABLED, [||])
-            while startStatus = DtStatus.DT_IN_PROGRESS do
-                startStatus <- query.FindNearestPoly (startPosition, RcVec3f (2f, 4f, 2f), filter, &startRef, &startPosition, &startIsOverPoly)
-
-            // attempt to compute end position information
-            let mutable endRef = 0L
-            let mutable endPosition = RcVec3f (endPosition.X, endPosition.Y, endPosition.Z)
-            let mutable endIsOverPoly = false
-            let mutable endStatus = DtStatus.DT_IN_PROGRESS
-            while endStatus = DtStatus.DT_IN_PROGRESS do
-                endStatus <- query.FindNearestPoly (endPosition, RcVec3f (2f, 4f, 2f), filter, &endRef, &endPosition, &endIsOverPoly)
-
-            // attempt to compute path
-            if startStatus = DtStatus.DT_SUCCESS && endStatus = DtStatus.DT_SUCCESS then
-                let navMeshTool = RcTestNavMeshTool ()
-                let mutable polys = List ()
-                let mutable path = List ()
-                let mutable pathStatus = DtStatus.DT_IN_PROGRESS
-                while pathStatus = DtStatus.DT_IN_PROGRESS do
-                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, &path)
-                if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
-                    let mutable pathIndex = 0
-                    let mutable travel = 0.0f
-                    let mutable step = RcVec3f.Zero
-                    while pathIndex < path.Count && travel < followSpeed do
-                        let substep = path.[pathIndex] - startPosition
-                        let substepTrunc =
-                            if travel + substep.Length () > followSpeed then
-                                let travelOver = travel + substep.Length () - followSpeed
-                                let travelDelta = substep.Length () - travelOver + 0.0001f
-                                RcVec3f.Normalize substep * travelDelta
-                            else substep
-                        travel <- travel + substepTrunc.Length ()
-                        step <- step + substepTrunc
-                        pathIndex <- inc pathIndex
-                    let stepPosition = startPosition + step
-                    Some (v3 stepPosition.X (stepPosition.Y - navConfig.CellHeight) stepPosition.Z)
-                else None
-            else None
-
         static member Properties =
             [define Entity.Following true
              define Entity.FollowSpeed 2.5f
@@ -3211,26 +3188,27 @@ module FollowerFacetModule =
                 let followTargetOpt = entity.GetFollowTargetOpt world
                 match followTargetOpt with
                 | Some followTarget when followTarget.Exists world ->
-                    let startPosition = entity.GetPosition world
-                    let endPosition = followTarget.GetPosition world
-                    let distance = (endPosition - startPosition).Magnitude
                     let followSpeed = entity.GetFollowSpeed world * (let gd = world.GameDelta in gd.Seconds)
-                    let followDistanceMinOpt = entity.GetFollowDistanceMinOpt world
-                    let followDistanceMaxOpt = entity.GetFollowDistanceMaxOpt world
-                    if  (followDistanceMinOpt.IsNone || distance > followDistanceMinOpt.Value) &&
-                        (followDistanceMaxOpt.IsNone || distance <= followDistanceMaxOpt.Value) then
+                    let distanceMinOpt = entity.GetFollowDistanceMinOpt world
+                    let distanceMaxOpt = entity.GetFollowDistanceMaxOpt world
+                    let position = entity.GetPosition world
+                    let destination = followTarget.GetPosition world
+                    let distance = (destination - position).Magnitude
+                    let rotation = entity.GetRotation world
+                    if  (distanceMinOpt.IsNone || distance > distanceMinOpt.Value) &&
+                        (distanceMaxOpt.IsNone || distance <= distanceMaxOpt.Value) then
                         if entity.GetIs2d world
                         then world // TODO: implement for 2d navigation when it's available.
                         else
-                            match World.tryQueryNav3d (tryFollow followSpeed startPosition endPosition) entity.Screen world with
-                            | Some (Some stepPosition) ->
+                            match World.tryNav3dFollow distanceMinOpt distanceMaxOpt followSpeed position rotation destination entity.Screen world with
+                            | Some followResult ->
                                 // TODO: consider doing an offset physics ray cast to align stepPosition with near
                                 // ground. Additionally, consider removing the CellHeight offset in the above query so
                                 // that we don't need to do an offset here at all.
-                                let velocity = stepPosition - startPosition
-                                let world = entity.SetPosition stepPosition world
-                                let world = entity.SetLinearVelocity velocity world
-                                let world = entity.SetRotation (Quaternion.CreateFromAxisAngle (v3Up, atan2 velocity.X velocity.Z + MathF.PI)) world
+                                let world = entity.SetPosition followResult.NavPosition world
+                                let world = entity.SetRotation followResult.NavRotation world
+                                let world = entity.SetLinearVelocity followResult.NavLinearVelocity world
+                                let world = entity.SetAngularVelocity followResult.NavAngularVelocity world
                                 world
                             | _ -> world
                     else world

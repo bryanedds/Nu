@@ -369,6 +369,14 @@ type BodyType =
     | Dynamic
     | DynamicCharacter
 
+    member this.Dynamical =
+        match this with
+        | Dynamic | DynamicCharacter -> true
+        | Static | Kinematic | KinematicCharacter -> false
+
+    member this.Statical =
+        not this.Dynamical
+
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
     { StepHeight : single

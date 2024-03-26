@@ -32,7 +32,6 @@ type Character =
       Animations : Animation array
       Jump : JumpState
       AttackOpt : AttackState option
-      FollowTargetOpt : Entity option
       WeaponHand : Matrix4x4
       BodyShape : BodyShape
       CharacterProperties : CharacterProperties
@@ -77,7 +76,6 @@ type Character =
           Animations = [||]
           Jump = JumpState.initial
           AttackOpt = None
-          FollowTargetOpt = None
           WeaponHand = m4Identity
           BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
           CharacterProperties = CharacterProperties.defaultProperties
@@ -105,15 +103,14 @@ module CharacterDispatcher =
 
         static member Facets =
             [typeof<AnimatedModelFacet>
-             typeof<RigidBodyFacet>
-             typeof<FollowerFacet>]
+             typeof<RigidBodyFacet>]
 
         override this.Initialize (character, _) =
             [Entity.Position := character.Position
              Entity.Rotation := character.Rotation
-             Entity.Persistent == false
              Entity.LinearVelocity := character.LinearVelocity
              Entity.AngularVelocity := character.AngularVelocity
+             Entity.Persistent == false
              Entity.MaterialProperties == MaterialProperties.defaultProperties
              Entity.Animations := character.Animations
              Entity.AnimatedModel := character.AnimatedModel
@@ -122,24 +119,8 @@ module CharacterDispatcher =
              Entity.SleepingAllowed == true
              Entity.CharacterProperties := character.CharacterProperties
              Entity.BodyShape := character.BodyShape
-             Entity.ModelDriven == true
-             Entity.FollowTargetOpt := character.FollowTargetOpt
-             Entity.FollowDistanceMinOpt == Some 1.25f
-             Entity.FollowDistanceMaxOpt == Some 10.0f]
+             Entity.ModelDriven == true]
 
         override this.Register (entity, world) =
             let world = base.Register (entity, world)
             entity.AutoBounds world
-
-        override this.Update (entity, world) =
-            let world = base.Update (entity, world)
-            let position = entity.GetPosition world
-            let rotation = entity.GetRotation world
-            let linearVelocity = entity.GetLinearVelocity world
-            let angularVelocity = entity.GetAngularVelocity world
-            let bodyId = entity.GetBodyId world
-            let world = World.setBodyCenter position bodyId world
-            let world = World.setBodyRotation rotation bodyId world
-            let world = World.setBodyLinearVelocity linearVelocity bodyId world
-            let world = World.setBodyAngularVelocity angularVelocity bodyId world
-            world

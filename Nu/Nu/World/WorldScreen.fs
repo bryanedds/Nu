@@ -3,12 +3,15 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.IO
 open System.Numerics
+open DotRecast.Core.Numerics
 open DotRecast.Detour
 open DotRecast.Recast
 open DotRecast.Recast.Geom
 open DotRecast.Recast.Toolset.Builder
+open DotRecast.Recast.Toolset.Tools
 open Prime
 
 [<AutoOpen>]
@@ -531,3 +534,73 @@ module WorldScreenModule =
             match nav3d.Nav3dMeshOpt with
             | Some (_, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
             | None -> None
+
+        static member internal tryNav3dFollowQuery followSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
+
+            // attempt to compute start position information
+            let mutable startRef = 0L
+            let mutable startPosition = RcVec3f (startPosition.X, startPosition.Y, startPosition.Z)
+            let mutable startIsOverPoly = false
+            let mutable startStatus = DtStatus.DT_IN_PROGRESS
+            let filter = DtQueryDefaultFilter (int SampleAreaModifications.SAMPLE_POLYFLAGS_ALL, int SampleAreaModifications.SAMPLE_POLYFLAGS_DISABLED, [||])
+            while startStatus = DtStatus.DT_IN_PROGRESS do
+                startStatus <- query.FindNearestPoly (startPosition, RcVec3f (2f, 4f, 2f), filter, &startRef, &startPosition, &startIsOverPoly)
+
+            // attempt to compute end position information
+            let mutable endRef = 0L
+            let mutable endPosition = RcVec3f (endPosition.X, endPosition.Y, endPosition.Z)
+            let mutable endIsOverPoly = false
+            let mutable endStatus = DtStatus.DT_IN_PROGRESS
+            while endStatus = DtStatus.DT_IN_PROGRESS do
+                endStatus <- query.FindNearestPoly (endPosition, RcVec3f (2f, 4f, 2f), filter, &endRef, &endPosition, &endIsOverPoly)
+
+            // attempt to compute path
+            if startStatus = DtStatus.DT_SUCCESS && endStatus = DtStatus.DT_SUCCESS then
+                let navMeshTool = RcTestNavMeshTool ()
+                let mutable polys = List ()
+                let mutable path = List ()
+                let mutable pathStatus = DtStatus.DT_IN_PROGRESS
+                while pathStatus = DtStatus.DT_IN_PROGRESS do
+                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, &path)
+                if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
+                    let mutable pathIndex = 0
+                    let mutable travel = 0.0f
+                    let mutable step = RcVec3f.Zero
+                    while pathIndex < path.Count && travel < followSpeed do
+                        let substep = path.[pathIndex] - startPosition
+                        let substepTrunc =
+                            if travel + substep.Length () > followSpeed then
+                                let travelOver = travel + substep.Length () - followSpeed
+                                let travelDelta = substep.Length () - travelOver + 0.0001f
+                                RcVec3f.Normalize substep * travelDelta
+                            else substep
+                        travel <- travel + substepTrunc.Length ()
+                        step <- step + substepTrunc
+                        pathIndex <- inc pathIndex
+                    let stepPosition = startPosition + step
+                    Some (v3 stepPosition.X (stepPosition.Y - navConfig.CellHeight) stepPosition.Z)
+                else None
+            else None
+
+        static member tryNav3dFollow distanceMinOpt distanceMaxOpt followSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
+            let distance = (destination - position).Magnitude
+            if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
+                (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
+                match World.tryQueryNav3d (World.tryNav3dFollowQuery followSpeed position destination) screen world with
+                | Some (Some step) ->
+                    // TODO: consider doing an offset physics ray cast to align stepPosition with near
+                    // ground. Additionally, consider removing the CellHeight offset in the above query so
+                    // that we don't need to do an offset here at all.
+                    let linearVelocity = step - position
+                    let rotationStep = Quaternion.CreateFromAxisAngle (v3Up, atan2 linearVelocity.X linearVelocity.Z + MathF.PI)
+                    let rotationDelta = rotationStep * rotation.Inverted
+                    let (angularVelocityAxis, angularVelocityAngle) = rotationDelta.AxisAngle
+                    let angularVelocity = angularVelocityAxis * angularVelocityAngle
+                    let followResult =
+                        { NavPosition = step
+                          NavRotation = rotationStep
+                          NavLinearVelocity = linearVelocity
+                          NavAngularVelocity = angularVelocity }
+                    Some followResult
+                | _ -> None
+            else None

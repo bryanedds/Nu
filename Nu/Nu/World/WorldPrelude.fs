@@ -121,6 +121,13 @@ type Nav3dInputGeomProvider (vertices, indices, bounds : Box3) =
         member this.RemoveOffMeshConnections filter = offMeshConnections.RemoveAll filter |> ignore<int>
         end
 
+/// The result of a navigation computation.
+type NavOutput =
+    { NavPosition : Vector3
+      NavRotation : Quaternion
+      NavLinearVelocity : Vector3
+      NavAngularVelocity : Vector3 }
+
 /// The manner in which a gui entity may be docked by a parent entity.
 type DockType =
     | DockCenter
