@@ -535,7 +535,7 @@ module WorldScreenModule =
             | Some (_, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
             | None -> None
 
-        static member internal tryNav3dFollowQuery followSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
+        static member internal tryNav3dFollowQuery moveSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
 
             // attempt to compute start position information
             let mutable startRef = 0L
@@ -566,11 +566,11 @@ module WorldScreenModule =
                     let mutable pathIndex = 0
                     let mutable travel = 0.0f
                     let mutable step = RcVec3f.Zero
-                    while pathIndex < path.Count && travel < followSpeed do
+                    while pathIndex < path.Count && travel < moveSpeed do
                         let substep = path.[pathIndex] - startPosition
                         let substepTrunc =
-                            if travel + substep.Length () > followSpeed then
-                                let travelOver = travel + substep.Length () - followSpeed
+                            if travel + substep.Length () > moveSpeed then
+                                let travelOver = travel + substep.Length () - moveSpeed
                                 let travelDelta = substep.Length () - travelOver + 0.0001f
                                 RcVec3f.Normalize substep * travelDelta
                             else substep
@@ -582,17 +582,24 @@ module WorldScreenModule =
                 else None
             else None
 
-        static member tryNav3dFollow distanceMinOpt distanceMaxOpt followSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
+        static member tryNav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
-                match World.tryQueryNav3d (World.tryNav3dFollowQuery followSpeed position destination) screen world with
+                match World.tryQueryNav3d (World.tryNav3dFollowQuery moveSpeed position destination) screen world with
                 | Some (Some navPosition) ->
                     // TODO: consider doing an offset physics ray cast to align navPosition with near
                     // ground. Additionally, consider removing the CellHeight offset in the above query so
                     // that we don't need to do an offset here at all.
                     let navLinearVelocity = navPosition - position
                     let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navLinearVelocity.X navLinearVelocity.Z + MathF.PI)
+                    let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
+                    let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+                    let navRotation =
+                        if navAngularVelocityY > turnSpeed then
+                            let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
+                            rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
+                        else navRotation
                     let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
                     let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
                     let navAngularVelocity = v3Up * navAngularVelocityY

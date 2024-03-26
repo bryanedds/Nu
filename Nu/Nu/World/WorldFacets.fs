@@ -3163,9 +3163,12 @@ module FollowerFacetModule =
         member this.GetFollowing world : bool = this.Get (nameof this.Following) world
         member this.SetFollowing (value : bool) world = this.Set (nameof this.Following) value world
         member this.Following = lens (nameof this.Following) this this.GetFollowing this.SetFollowing
-        member this.GetFollowSpeed world : single = this.Get (nameof this.FollowSpeed) world
-        member this.SetFollowSpeed (value : single) world = this.Set (nameof this.FollowSpeed) value world
-        member this.FollowSpeed = lens (nameof this.FollowSpeed) this this.GetFollowSpeed this.SetFollowSpeed
+        member this.GetFollowMoveSpeed world : single = this.Get (nameof this.FollowMoveSpeed) world
+        member this.SetFollowMoveSpeed (value : single) world = this.Set (nameof this.FollowMoveSpeed) value world
+        member this.FollowMoveSpeed = lens (nameof this.FollowMoveSpeed) this this.GetFollowMoveSpeed this.SetFollowMoveSpeed
+        member this.GetFollowTurnSpeed world : single = this.Get (nameof this.FollowTurnSpeed) world
+        member this.SetFollowTurnSpeed (value : single) world = this.Set (nameof this.FollowTurnSpeed) value world
+        member this.FollowTurnSpeed = lens (nameof this.FollowTurnSpeed) this this.GetFollowTurnSpeed this.SetFollowTurnSpeed
         member this.GetFollowDistanceMinOpt world : single option = this.Get (nameof this.FollowDistanceMinOpt) world
         member this.SetFollowDistanceMinOpt (value : single option) world = this.Set (nameof this.FollowDistanceMinOpt) value world
         member this.FollowDistanceMinOpt = lens (nameof this.FollowDistanceMinOpt) this this.GetFollowDistanceMinOpt this.SetFollowDistanceMinOpt
@@ -3181,7 +3184,8 @@ module FollowerFacetModule =
 
         static member Properties =
             [define Entity.Following true
-             define Entity.FollowSpeed 2.5f
+             define Entity.FollowMoveSpeed 2.0f
+             define Entity.FollowTurnSpeed 3.0f
              define Entity.FollowDistanceMinOpt None
              define Entity.FollowDistanceMaxOpt None
              define Entity.FollowTargetOpt None]
@@ -3189,14 +3193,15 @@ module FollowerFacetModule =
         override this.Update (entity, world) =
             let following = entity.GetFollowing world
             if following then
-                let followTargetOpt = entity.GetFollowTargetOpt world
-                match followTargetOpt with
-                | Some followTarget when followTarget.Exists world ->
-                    let followSpeed = entity.GetFollowSpeed world * (let gd = world.GameDelta in gd.Seconds)
+                let targetOpt = entity.GetFollowTargetOpt world
+                match targetOpt with
+                | Some target when target.Exists world ->
+                    let moveSpeed = entity.GetFollowMoveSpeed world * (let gd = world.GameDelta in gd.Seconds)
+                    let turnSpeed = entity.GetFollowTurnSpeed world * (let gd = world.GameDelta in gd.Seconds)
                     let distanceMinOpt = entity.GetFollowDistanceMinOpt world
                     let distanceMaxOpt = entity.GetFollowDistanceMaxOpt world
                     let position = entity.GetPosition world
-                    let destination = followTarget.GetPosition world
+                    let destination = target.GetPosition world
                     let distance = (destination - position).Magnitude
                     let rotation = entity.GetRotation world
                     if  (distanceMinOpt.IsNone || distance > distanceMinOpt.Value) &&
@@ -3207,7 +3212,7 @@ module FollowerFacetModule =
                             // TODO: consider doing an offset physics ray cast to align nav position with near
                             // ground. Additionally, consider removing the CellHeight offset in the above query so
                             // that we don't need to do an offset here at all.
-                            let followOutput = World.tryNav3dFollow distanceMinOpt distanceMaxOpt followSpeed position rotation destination entity.Screen world
+                            let followOutput = World.tryNav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
                             let world = entity.SetPosition followOutput.NavPosition world
                             let world = entity.SetRotation followOutput.NavRotation world
                             let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world

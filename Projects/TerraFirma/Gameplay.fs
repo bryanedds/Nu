@@ -174,7 +174,7 @@ type [<ReferenceEquality>] Gameplay =
                         let enemyId = scvalueMemo entity.Name
                         match gameplay.Enemies.TryGetValue enemyId with
                         | (true, enemy) ->
-                            let followOutput = World.tryNav3dFollow (Some 1.25f) (Some 10.0f) 0.025f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
+                            let followOutput = World.tryNav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.05f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
                             let enemy = Gameplay.transformCharacter followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
                             { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
                         | (false, _) -> gameplay
