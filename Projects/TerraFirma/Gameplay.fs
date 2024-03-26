@@ -151,10 +151,11 @@ type [<ReferenceEquality>] Gameplay =
     static member private postUpdateCharacterWeaponHand (character : Character) (entity : Entity) world =
         match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
         | (Some offsets, Some transforms) ->
-            let offset = offsets.[34]
-            let transform = transforms.[34]
+            let offset = offsets.[39]
+            let transform = transforms.[39]
             let affineMatrix = character.AnimatedModelAffineMatrix
-            let weaponHand = offset.Inverted * transform * affineMatrix
+            let weaponTransform = Matrix4x4.CreateFromTrs (v3 0.4f 0.0f 0.02f, quatIdentity, v3One)
+            let weaponHand = weaponTransform * offset.Inverted * transform * affineMatrix
             { character with WeaponHand = weaponHand }
         | (_, _) -> character
 

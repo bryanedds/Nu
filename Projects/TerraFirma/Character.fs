@@ -132,7 +132,7 @@ module CharacterDispatcher =
              Content.entity<RigidModelDispatcher> "Weapon"
                 [Entity.Position := character.WeaponHand.Translation
                  Entity.Rotation := character.WeaponHand.Rotation
-                 Entity.Scale := v3 1.0f 0.1f 0.1f
+                 Entity.Scale := v3 1.0f 0.1f 0.01f
                  Entity.MountOpt == None
                  Entity.BodyType == Static
                  Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.25f 0.0f)); PropertiesOpt = None }
