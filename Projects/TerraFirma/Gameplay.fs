@@ -37,6 +37,17 @@ type Gameplay =
       Player : Character
       Enemies : HMap<Guid, Character> }
 
+    static member private warpCharacter position rotation character =
+        { character with
+            Position = position
+            Rotation = rotation
+            LinearVelocity = v3Zero
+            AngularVelocity = v3Zero
+            PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
+            RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
+            LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq }
+
     static member private transformCharacter position rotation linearVelocity angularVelocity character =
         { character with
             Position = position
@@ -210,11 +221,11 @@ type Gameplay =
         let enemies =
             [for i in 0 .. dec 7 do
                 for j in 0 .. dec 7 do
-                    let enemy = { Character.initialEnemy with Position = v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f) }
+                    let enemy = Character.initialEnemy (v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)) quatIdentity
                     (makeGuid (), enemy)]
         { GameplayTime = 0L
           GameplayState = Quit
-          Player = { Character.initialPlayer with Position = v3 0.0f 2.0f 0.0f }
+          Player = Character.initialPlayer (v3 0.0f 2.0f 0.0f) quatIdentity
           Enemies = HMap.ofList enemies }
 
     static member start =

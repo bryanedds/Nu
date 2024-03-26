@@ -67,15 +67,15 @@ type Character =
     member this.AnimatedModelAffineMatrix =
         Matrix4x4.CreateFromTrs (this.PositionInterp, this.RotationInterp, v3One)
 
-    static member initial =
-        { Position = v3Zero
-          PositionPrevious = Queue.empty
-          Rotation = quatIdentity
-          RotationPrevious = Queue.empty
+    static member initial position rotation =
+        { Position = position
+          Rotation = rotation
           LinearVelocity = v3Zero
-          LinearVelocityPrevious = Queue.empty
           AngularVelocity = v3Zero
-          AngularVelocityPrevious = Queue.empty
+          PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
+          RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
+          LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
+          AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
           Animations = [||]
           Jump = JumpState.initial
           AttackOpt = None
@@ -84,11 +84,11 @@ type Character =
           CharacterProperties = CharacterProperties.defaultProperties
           AnimatedModel = Assets.Gameplay.JoanModel }
 
-    static member initialPlayer =
-        Character.initial
+    static member initialPlayer position rotation =
+        Character.initial position rotation
 
-    static member initialEnemy =
-        let enemy = Character.initial
+    static member initialEnemy position rotation =
+        let enemy = Character.initial position rotation
         { enemy with
             BodyShape = CapsuleShape { Height = 1.3f; Radius = 0.2f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
             Character.CharacterProperties.PenetrationDepthMax = 0.1f } // deeper penetration needed to make enemies able to climb stairs
@@ -102,7 +102,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit Entity3dDispatcher<Character, Message, Command> (true, Character.initialPlayer)
+        inherit Entity3dDispatcher<Character, Message, Command> (true, Character.initialPlayer v3Zero quatIdentity)
 
         static member Facets =
             [typeof<AnimatedModelFacet>

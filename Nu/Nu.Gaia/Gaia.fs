@@ -598,6 +598,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         for lightProbe in lightProbes do
             world <- lightProbe.SetProbeStale true world
 
+    let private synchronizeNav () =
+        snapshot ()
+        // TODO: sync nav 2d when it's available.
+        world <- World.synchronizeNav3d selectedScreen world
+
     let private getSnaps () =
         if snaps2dSelected
         then snaps2d
@@ -1468,9 +1473,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntityStructure () |> ignore<bool>
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy ()
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then showOpenProjectDialog <- true
-            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then
-                // TODO: sync nav 2d when it's available.
-                world <- World.synchronizeNav3d selectedScreen world
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav ()
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities ()
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps ()
@@ -1923,9 +1926,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                   FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans
                   PartitionType = scvalue partitionTypeStr }
             setPropertyValue nc propertyDescriptor simulant
-        if ImGui.Button "Synchronize Navigation" then
-            // TODO: sync nav 2d when it's available.
-            world <- World.synchronizeNav3d selectedScreen world
+        if ImGui.Button "Synchronize Navigation" then synchronizeNav ()
 
     let private imGuiEditMaterialProperty m propertyDescriptor simulant =
 
@@ -2874,9 +2875,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
                                 if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
                                 if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+L") then rerenderLightMaps ()
-                                if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then
-                                    // TODO: sync nav 2d when it's available.
-                                    world <- World.synchronizeNav3d selectedScreen world
+                                if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then synchronizeNav ()
                                 ImGui.EndMenu ()
                             if ImGui.BeginMenu "Group" then
                                 if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
