@@ -8,7 +8,6 @@ type GameplayMessage =
     | UpdatePhysics of IntegrationData
     | UpdatePlayerInputKey of KeyboardKeyData
     | Update
-    | PostUpdate
     | TimeUpdate
     | StartQuitting
     | FinishQuitting
@@ -71,11 +70,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         let gameplay = { gameplay with Player = Character.update gameplay.GameplayTime gameplay.Player world }
         let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> Character.update gameplay.GameplayTime enemy world) gameplay.Enemies }
         let gameplay = { gameplay with Player = Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world }
-        gameplay
-
-    static member postUpdate gameplay world =
-        let gameplay = { gameplay with Player = Character.postUpdate gameplay.Player Simulants.GameplayPlayerAnimatedModel world }
-        let gameplay = { gameplay with Enemies = HMap.map (fun enemyId enemy -> Character.postUpdate enemy (Simulants.GameplayEnemyAnimatedModel enemyId) world) gameplay.Enemies }
         gameplay
 
     static member timeUpdate gameplay =

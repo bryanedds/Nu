@@ -4,6 +4,10 @@ open System.Numerics
 open Prime
 open Nu
 
+type CharacterCommand =
+    | PostUpdate
+    interface Command
+
 type JumpState =
     { LastTime : int64
       LastTimeOnGround : int64 }
@@ -35,8 +39,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       JumpSpeed : single
       Animations : Animation array
       Jump : JumpState
-      WeaponHandBoneIndex : int
-      WeaponHand : Matrix4x4
       BodyShape : BodyShape
       CharacterProperties : CharacterProperties
       AnimatedModel : AnimatedModel AssetTag }
@@ -70,9 +72,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
     member this.AnimatedModelAffineMatrix =
         Matrix4x4.CreateFromTrs (this.PositionInterp, this.RotationInterp, v3One)
-
-    member this.WeaponTransform =
-        Matrix4x4.CreateFromTrs (v3 0.4f 0.0f 0.02f, quatIdentity, v3One)
 
     static member private computeTraversalAnimations (character : Character) =
         let linearVelocityInterp = character.LinearVelocityInterp
@@ -204,17 +203,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         // fin
         character
 
-    static member postUpdate (character : Character) (animatedModelEntity : Entity) world =
-        match (animatedModelEntity.GetBoneOffsetsOpt world, animatedModelEntity.GetBoneTransformsOpt world) with
-        | (Some offsets, Some transforms) ->
-            let weaponHand =
-                character.WeaponTransform *
-                offsets.[character.WeaponHandBoneIndex].Inverted *
-                transforms.[character.WeaponHandBoneIndex] *
-                character.AnimatedModelAffineMatrix
-            { character with WeaponHand = weaponHand }
-        | (_, _) -> character
-
     static member initial position rotation =
         { Position = position
           Rotation = rotation
@@ -230,8 +218,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           JumpSpeed = 5.0f
           Animations = [||]
           Jump = JumpState.initial
-          WeaponHandBoneIndex = 39
-          WeaponHand = Matrix4x4.CreateFromTrs (position, rotation, v3Zero)
           BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
           CharacterProperties = CharacterProperties.defaultProperties
           AnimatedModel = Assets.Gameplay.JoanModel }
