@@ -1,5 +1,6 @@
 ﻿namespace TerraFirma
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -57,9 +58,9 @@ module CharacterDispatcher =
                 match (animatedModel.GetBoneOffsetsOpt world, animatedModel.GetBoneTransformsOpt world) with
                 | (Some offsets, Some transforms) ->
                     let weaponHand =
-                        Matrix4x4.CreateFromTrs (v3 0.4f 0.0f 0.02f, quatIdentity, v3One) *
-                        offsets.[39].Inverted *
-                        transforms.[39] *
+                        Matrix4x4.CreateTranslation (v3 0.4f 0.0f 0.02f) *
+                        offsets.[Constants.Gameplay.CharacterWeaponHandBondIndex].Inverted *
+                        transforms.[Constants.Gameplay.CharacterWeaponHandBondIndex] *
                         animatedModel.GetAffineMatrix world
                     let world = weapon.SetPosition weaponHand.Translation world
                     let world = weapon.SetRotation weaponHand.Rotation world

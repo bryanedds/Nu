@@ -34,11 +34,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
       AttackOpt : AttackState option
+      Jump : JumpState
       WalkSpeed : single
       TurnSpeed : single
       JumpSpeed : single
       Animations : Animation array
-      Jump : JumpState
       BodyShape : BodyShape
       CharacterProperties : CharacterProperties
       AnimatedModel : AnimatedModel AssetTag }
@@ -119,10 +119,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Rotation = rotation
             LinearVelocity = v3Zero
             AngularVelocity = v3Zero
-            PositionPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> position) |> Queue.ofSeq
-            RotationPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
-            LinearVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
-            AngularVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq }
+            PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
+            RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
+            LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq }
 
     static member transform position rotation linearVelocity angularVelocity character =
         { character with
@@ -130,10 +130,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Rotation = rotation
             LinearVelocity = linearVelocity
             AngularVelocity = angularVelocity
-            PositionPrevious = (if character.PositionPrevious.Length = Constants.Gameplay.InterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
-            RotationPrevious = (if character.RotationPrevious.Length = Constants.Gameplay.InterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
-            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length = Constants.Gameplay.InterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
-            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length = Constants.Gameplay.InterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
+            PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+            RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
 
     static member updateInputKey time keyboardKeyData character =
         let sinceJump = time - character.Jump.LastTime
@@ -208,16 +208,16 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           Rotation = rotation
           LinearVelocity = v3Zero
           AngularVelocity = v3Zero
-          PositionPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> position) |> Queue.ofSeq
-          RotationPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
-          LinearVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
-          AngularVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+          PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
+          RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
+          LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+          AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
           AttackOpt = None
+          Jump = JumpState.initial
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
           JumpSpeed = 5.0f
           Animations = [||]
-          Jump = JumpState.initial
           BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
           CharacterProperties = CharacterProperties.defaultProperties
           AnimatedModel = Assets.Gameplay.JoanModel }
