@@ -74,28 +74,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     member this.WeaponTransform =
         Matrix4x4.CreateFromTrs (v3 0.4f 0.0f 0.02f, quatIdentity, v3One)
 
-    static member warp position rotation character =
-        { character with
-            Position = position
-            Rotation = rotation
-            LinearVelocity = v3Zero
-            AngularVelocity = v3Zero
-            PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
-            RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
-            LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
-            AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq }
-
-    static member transform position rotation linearVelocity angularVelocity character =
-        { character with
-            Position = position
-            Rotation = rotation
-            LinearVelocity = linearVelocity
-            AngularVelocity = angularVelocity
-            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
-            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
-            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
-            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
-
     static member private computeTraversalAnimations (character : Character) =
         let linearVelocityInterp = character.LinearVelocityInterp
         let angularVelocityInterp = character.AngularVelocityInterp
@@ -136,22 +114,27 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Some animation
         | None -> None
 
-    static member private updateAttack time character =
-        let attackOpt =
-            match character.AttackOpt with
-            | Some attack ->
-                let localTime = time - attack.AttackTime
-                if localTime < 55 || localTime < 110 && attack.FollowUpBuffered
-                then Some attack
-                else None
-            | None -> None
-        { character with AttackOpt = attackOpt }
+    static member warp position rotation character =
+        { character with
+            Position = position
+            Rotation = rotation
+            LinearVelocity = v3Zero
+            AngularVelocity = v3Zero
+            PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
+            RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
+            LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq }
 
-    static member private updateAnimation time character world =
-        let traversalAnimations = Character.computeTraversalAnimations character
-        let actionAnimationOpt = Character.tryComputeActionAnimation time character.AttackOpt world
-        let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
-        { character with Animations = animations }
+    static member transform position rotation linearVelocity angularVelocity character =
+        { character with
+            Position = position
+            Rotation = rotation
+            LinearVelocity = linearVelocity
+            AngularVelocity = angularVelocity
+            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
 
     static member updateInputKey time keyboardKeyData character =
         let sinceJump = time - character.Jump.LastTime
@@ -200,8 +183,25 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         else character
 
     static member update time character world =
-        let character = Character.updateAttack time character
-        let character = Character.updateAnimation time character world
+
+        // update attack
+        let attackOpt =
+            match character.AttackOpt with
+            | Some attack ->
+                let localTime = time - attack.AttackTime
+                if localTime < 55 || localTime < 110 && attack.FollowUpBuffered
+                then Some attack
+                else None
+            | None -> None
+        let character = { character with AttackOpt = attackOpt }
+        
+        // update animation
+        let traversalAnimations = Character.computeTraversalAnimations character
+        let actionAnimationOpt = Character.tryComputeActionAnimation time character.AttackOpt world
+        let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
+        let character = { character with Animations = animations }
+
+        // fin
         character
 
     static member postUpdate (character : Character) (animatedModelEntity : Entity) world =
