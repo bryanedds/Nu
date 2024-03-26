@@ -38,6 +38,7 @@
 		<Compile Include="Constants.fs" />
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Character.fs" />
+		<Compile Include="CharacterDispatcher.fs" />
 		<Compile Include="Gameplay.fs" />
 		<Compile Include="GameplayDispatcher.fs" />
 		<Compile Include="TerraFirma.fs" />
