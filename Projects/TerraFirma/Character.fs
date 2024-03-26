@@ -120,10 +120,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Rotation = rotation
             LinearVelocity = v3Zero
             AngularVelocity = v3Zero
-            PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
-            RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
-            LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
-            AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq }
+            PositionPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> position) |> Queue.ofSeq
+            RotationPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
+            LinearVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq }
 
     static member transform position rotation linearVelocity angularVelocity character =
         { character with
@@ -131,10 +131,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Rotation = rotation
             LinearVelocity = linearVelocity
             AngularVelocity = angularVelocity
-            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
-            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
-            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
-            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
+            PositionPrevious = (if character.PositionPrevious.Length = Constants.Gameplay.InterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+            RotationPrevious = (if character.RotationPrevious.Length = Constants.Gameplay.InterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length = Constants.Gameplay.InterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length = Constants.Gameplay.InterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
 
     static member updateInputKey time keyboardKeyData character =
         let sinceJump = time - character.Jump.LastTime
@@ -220,10 +220,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           Rotation = rotation
           LinearVelocity = v3Zero
           AngularVelocity = v3Zero
-          PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
-          RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
-          LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
-          AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
+          PositionPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> position) |> Queue.ofSeq
+          RotationPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
+          LinearVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+          AngularVelocityPrevious = Array.init (dec Constants.Gameplay.InterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
           AttackOpt = None
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
