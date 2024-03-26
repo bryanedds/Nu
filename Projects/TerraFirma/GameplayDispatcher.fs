@@ -64,7 +64,7 @@ module GameplayDispatcher =
             match command with
             | JumpPlayer ->
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                let world = World.jumpBody true Constants.Gameplay.PlayerJumpSpeed bodyId world
+                let world = World.jumpBody true gameplay.Player.JumpSpeed bodyId world
                 just world
 
             | TransformEye ->

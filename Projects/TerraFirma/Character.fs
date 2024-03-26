@@ -20,7 +20,7 @@ type AttackState =
         { AttackTime = time
           FollowUpBuffered = false }
 
-type [<ReferenceEquality>] Character =
+type [<ReferenceEquality; SymbolicExpansion>] Character =
     { Position : Vector3
       Rotation : Quaternion
       LinearVelocity : Vector3
@@ -29,9 +29,12 @@ type [<ReferenceEquality>] Character =
       RotationPrevious : Quaternion Queue
       LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
+      AttackOpt : AttackState option
+      WalkSpeed : single
+      TurnSpeed : single
+      JumpSpeed : single
       Animations : Animation array
       Jump : JumpState
-      AttackOpt : AttackState option
       WeaponHandBoneIndex : int
       WeaponHand : Matrix4x4
       BodyShape : BodyShape
@@ -71,6 +74,147 @@ type [<ReferenceEquality>] Character =
     member this.WeaponTransform =
         Matrix4x4.CreateFromTrs (v3 0.4f 0.0f 0.02f, quatIdentity, v3One)
 
+    static member warp position rotation character =
+        { character with
+            Position = position
+            Rotation = rotation
+            LinearVelocity = v3Zero
+            AngularVelocity = v3Zero
+            PositionPrevious = Array.init 3 (fun _ -> position) |> Queue.ofSeq
+            RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
+            LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq }
+
+    static member transform position rotation linearVelocity angularVelocity character =
+        { character with
+            Position = position
+            Rotation = rotation
+            LinearVelocity = linearVelocity
+            AngularVelocity = angularVelocity
+            PositionPrevious = (if character.PositionPrevious.Length > 3 then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
+            RotationPrevious = (if character.RotationPrevious.Length > 3 then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
+
+    static member private computeTraversalAnimations (character : Character) =
+        let linearVelocityInterp = character.LinearVelocityInterp
+        let angularVelocityInterp = character.AngularVelocityInterp
+        let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Forward))
+        let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Forward))
+        let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Right))
+        let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Right))
+        let turnRightness = (angularVelocityInterp * v3Up).Length () * 32.0f
+        let turnLeftness = -turnRightness
+        let animations =
+            [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
+        let animations =
+            if forwardness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = forwardness; BoneFilterOpt = None } :: animations
+            elif backness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Loop; Rate = 1.0f; Weight = backness; BoneFilterOpt = None } :: animations
+            else animations
+        let animations =
+            if rightness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRight"; Playback = Loop; Rate = 1.0f; Weight = rightness; BoneFilterOpt = None } :: animations
+            elif leftness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = leftness; BoneFilterOpt = None } :: animations
+            else animations
+        let animations =
+            if turnRightness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
+            elif turnLeftness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
+            else animations
+        animations
+
+    static member private tryComputeActionAnimation time attackOpt world =
+        match attackOpt with
+        | Some attack ->
+            let localTime = time - attack.AttackTime
+            let world =
+                match localTime with
+                | 7L -> World.playSound 1.0f Assets.Gameplay.SlashSound world
+                | 67L -> if attack.FollowUpBuffered then World.playSound 1.0f Assets.Gameplay.Slash2Sound world else world
+                | _ -> world
+            let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
+            let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
+            let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = animationName; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
+            Some animation
+        | None -> None
+
+    static member private updateAttack time character =
+        let attackOpt =
+            match character.AttackOpt with
+            | Some attack ->
+                let localTime = time - attack.AttackTime
+                if localTime < 55 || localTime < 110 && attack.FollowUpBuffered
+                then Some attack
+                else None
+            | None -> None
+        { character with AttackOpt = attackOpt }
+
+    static member private updateAnimation time character world =
+        let traversalAnimations = Character.computeTraversalAnimations character
+        let actionAnimationOpt = Character.tryComputeActionAnimation time character.AttackOpt world
+        let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
+        { character with Animations = animations }
+
+    static member updateInputKey time keyboardKeyData character =
+        let sinceJump = time - character.Jump.LastTime
+        let sinceOnGround = time - character.Jump.LastTimeOnGround
+        if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
+            let character = { character with Jump.LastTime = time }
+            (true, character)
+        elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+            let character =
+                match character.AttackOpt with
+                | Some attack ->
+                    let localTime = time - attack.AttackTime
+                    if localTime > 15L && not attack.FollowUpBuffered
+                    then { character with AttackOpt = Some { attack with FollowUpBuffered = true }}
+                    else character
+                | None ->
+                    { character with AttackOpt = Some (AttackState.make time) }
+            (false, character)
+        else (false, character)
+
+    static member updateInputScan character (entity : Entity) world =
+        let bodyId = entity.GetBodyId world
+        let grounded = World.getBodyGrounded bodyId world
+        if character.AttackOpt.IsNone || not grounded then
+
+            // update position
+            let forward = character.Rotation.Forward
+            let right = character.Rotation.Right
+            let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
+            let walkVelocity =
+                (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
+            let position = if walkVelocity <> v3Zero then character.Position + walkVelocity else character.Position
+            let character = { character with Position = position }
+
+            // update rotation
+            let turnSpeed = character.TurnSpeed * if grounded then 1.0f else 0.75f
+            let turnVelocity =
+                (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
+            let rotation = if turnVelocity <> 0.0f then character.Rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else character.Rotation
+            { character with Rotation = rotation }
+
+        else character
+
+    static member update time character world =
+        let character = Character.updateAttack time character
+        let character = Character.updateAnimation time character world
+        character
+
+    static member postUpdate (character : Character) (animatedModelEntity : Entity) world =
+        match (animatedModelEntity.GetBoneOffsetsOpt world, animatedModelEntity.GetBoneTransformsOpt world) with
+        | (Some offsets, Some transforms) ->
+            let weaponHand =
+                character.WeaponTransform *
+                offsets.[character.WeaponHandBoneIndex].Inverted *
+                transforms.[character.WeaponHandBoneIndex] *
+                character.AnimatedModelAffineMatrix
+            { character with WeaponHand = weaponHand }
+        | (_, _) -> character
+
     static member initial position rotation =
         { Position = position
           Rotation = rotation
@@ -80,9 +224,12 @@ type [<ReferenceEquality>] Character =
           RotationPrevious = Array.init 3 (fun _ -> rotation) |> Queue.ofSeq
           LinearVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
           AngularVelocityPrevious = Array.init 3 (fun _ -> v3Zero) |> Queue.ofSeq
+          AttackOpt = None
+          WalkSpeed = 0.05f
+          TurnSpeed = 0.05f
+          JumpSpeed = 5.0f
           Animations = [||]
           Jump = JumpState.initial
-          AttackOpt = None
           WeaponHandBoneIndex = 39
           WeaponHand = Matrix4x4.CreateFromTrs (position, rotation, v3Zero)
           BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
@@ -90,7 +237,11 @@ type [<ReferenceEquality>] Character =
           AnimatedModel = Assets.Gameplay.JoanModel }
 
     static member initialPlayer position rotation =
-        Character.initial position rotation
+        let player = Character.initial position rotation
+        { player with
+            WalkSpeed = Constants.Gameplay.PlayerWalkSpeed
+            TurnSpeed = Constants.Gameplay.PlayerTurnSpeed
+            JumpSpeed = Constants.Gameplay.PlayerJumpSpeed }
 
     static member initialEnemy position rotation =
         let enemy = Character.initial position rotation
