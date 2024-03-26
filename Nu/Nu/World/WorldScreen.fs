@@ -596,7 +596,6 @@ module WorldScreenModule =
                     let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
                     let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
                     let navAngularVelocity = v3Up * navAngularVelocityY
-                    let navResult = { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
-                    Some navResult
-                | _ -> None
-            else None
+                    { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
+                | _ -> { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }
+            else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }

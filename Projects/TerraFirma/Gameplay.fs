@@ -48,12 +48,6 @@ type Gameplay =
             LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length > 3 then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
             AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length > 3 then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
 
-    static member private updateCharacterPhysics time bodyCenter bodyRotation (character : Character) (entity : Entity) world =
-        let bodyId = entity.GetBodyId world
-        let character = Gameplay.transformCharacter bodyCenter bodyRotation (World.getBodyLinearVelocity bodyId world) (World.getBodyAngularVelocity bodyId world) character 
-        let character = { character with Jump.LastTimeOnGround = if World.getBodyGrounded bodyId world then time else character.Jump.LastTimeOnGround }
-        character
-
     static member private computeCharacterTraversalAnimations (character : Character) =
         let linearVelocityInterp = character.LinearVelocityInterp
         let angularVelocityInterp = character.AngularVelocityInterp
@@ -143,11 +137,6 @@ type Gameplay =
 
         else player
 
-    static member private updateEnemyInputNav (player : Character) (enemy : Character) (entity : Entity) world =
-        match World.tryNav3dFollow (Some 1.25f) (Some 10.0f) 0.025f enemy.Position enemy.Rotation player.Position entity.Screen world with
-        | Some followOutput -> Gameplay.transformCharacter followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
-        | None -> enemy
-
     static member private postUpdateCharacterWeaponHand (character : Character) (entity : Entity) world =
         match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
         | (Some offsets, Some transforms) ->
@@ -167,13 +156,15 @@ type Gameplay =
                 | :? Entity as entity when entity.Is<CharacterDispatcher> world ->
                     if entity.Name = Simulants.GameplayPlayer.Name then
                         let player = gameplay.Player
-                        let player = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation player entity world
+                        let player = Gameplay.transformCharacter bodyTransformMessage.Center bodyTransformMessage.Rotation (World.getBodyLinearVelocity bodyId world) (World.getBodyAngularVelocity bodyId world) player
+                        let player = { player with Jump.LastTimeOnGround = if World.getBodyGrounded bodyId world then gameplay.GameplayTime else player.Jump.LastTimeOnGround }
                         { gameplay with Player = player }
                     else
                         let enemyId = scvalueMemo entity.Name
                         match gameplay.Enemies.TryGetValue enemyId with
                         | (true, enemy) ->
-                            let enemy = Gameplay.updateCharacterPhysics gameplay.GameplayTime bodyTransformMessage.Center bodyTransformMessage.Rotation enemy entity world
+                            let followOutput = World.tryNav3dFollow (Some 1.25f) (Some 10.0f) 0.025f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
+                            let enemy = Gameplay.transformCharacter followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
                             { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
                         | (false, _) -> gameplay
                 | _ -> gameplay
@@ -208,7 +199,6 @@ type Gameplay =
         let gameplay = { gameplay with Player = Gameplay.updateCharacter gameplay.GameplayTime gameplay.Player world }
         let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> Gameplay.updateCharacter gameplay.GameplayTime enemy world) gameplay.Enemies }
         let gameplay = { gameplay with Player = Gameplay.updatePlayerInputScan gameplay.Player world }
-        let gameplay = { gameplay with Enemies = HMap.map (fun enemyId enemy -> Gameplay.updateEnemyInputNav gameplay.Player enemy (Simulants.GameplayEnemy enemyId) world) gameplay.Enemies }
         gameplay
 
     static member postUpdate gameplay world =

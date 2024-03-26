@@ -3200,17 +3200,15 @@ module FollowerFacetModule =
                         if entity.GetIs2d world
                         then world // TODO: implement for 2d navigation when it's available.
                         else
-                            match World.tryNav3dFollow distanceMinOpt distanceMaxOpt followSpeed position rotation destination entity.Screen world with
-                            | Some followResult ->
-                                // TODO: consider doing an offset physics ray cast to align stepPosition with near
-                                // ground. Additionally, consider removing the CellHeight offset in the above query so
-                                // that we don't need to do an offset here at all.
-                                let world = entity.SetPosition followResult.NavPosition world
-                                let world = entity.SetRotation followResult.NavRotation world
-                                let world = entity.SetLinearVelocity followResult.NavLinearVelocity world
-                                let world = entity.SetAngularVelocity followResult.NavAngularVelocity world
-                                world
-                            | _ -> world
+                            // TODO: consider doing an offset physics ray cast to align nav position with near
+                            // ground. Additionally, consider removing the CellHeight offset in the above query so
+                            // that we don't need to do an offset here at all.
+                            let followOutput = World.tryNav3dFollow distanceMinOpt distanceMaxOpt followSpeed position rotation destination entity.Screen world
+                            let world = entity.SetPosition followOutput.NavPosition world
+                            let world = entity.SetRotation followOutput.NavRotation world
+                            let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
+                            let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
+                            world
                     else world
                 | _ -> world
             else world
