@@ -121,7 +121,9 @@ module WorldModuleScreen =
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
             | modelObj ->
-                try modelObj |> valueToSymbol |> symbolToValue
+                try let model = modelObj |> valueToSymbol |> symbolToValue
+                    screenState.Model.DesignerValue <- model
+                    model
                 with _ ->
                     Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                     match screenState.Dispatcher.TryGetInitialModel<'a> world with

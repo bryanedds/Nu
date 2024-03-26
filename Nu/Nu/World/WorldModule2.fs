@@ -1796,7 +1796,9 @@ module EntityDispatcherModule2 =
                 | :? 'model as model -> model
                 | null -> null :> obj :?> 'model
                 | modelObj ->
-                    try modelObj |> valueToSymbol |> symbolToValue
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerValue <- model
+                        model
                     with _ ->
                         Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                         makeInitial world
@@ -2097,7 +2099,9 @@ module GroupDispatcherModule =
                 | :? 'model as model -> model
                 | null -> null :> obj :?> 'model
                 | modelObj ->
-                    try modelObj |> valueToSymbol |> symbolToValue
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerValue <- model
+                        model
                     with _ ->
                         Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                         makeInitial world
@@ -2266,7 +2270,9 @@ module ScreenDispatcherModule =
                 | :? 'model as model -> model
                 | null -> null :> obj :?> 'model
                 | modelObj ->
-                    try modelObj |> valueToSymbol |> symbolToValue
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerValue <- model
+                        model
                     with _ ->
                         Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                         makeInitial world
@@ -2442,7 +2448,9 @@ module GameDispatcherModule =
                 | :? 'model as model -> model
                 | null -> null :> obj :?> 'model
                 | modelObj ->
-                    try modelObj |> valueToSymbol |> symbolToValue
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerValue <- model
+                        model
                     with _ ->
                         Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                         makeInitial world

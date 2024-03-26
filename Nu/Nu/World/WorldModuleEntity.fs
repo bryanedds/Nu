@@ -212,9 +212,9 @@ module WorldModuleEntity =
                         else world
                 let world =
                     if rotationChanged then
-                        let world = World.publishEntityChange (nameof transformNew.Rotation) () () publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof transformNew.Angles) () () publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof transformNew.Degrees) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof transformNew.Rotation) transformOld.Rotation transformNew.Rotation publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof transformNew.Angles) () () publishChangeEvents entity world // TODO: see if it would be expensive to pass Angles values here.
+                        let world = World.publishEntityChange (nameof transformNew.Degrees) () () publishChangeEvents entity world // TODO: see if it would be expensive to pass Degrees values here.
                         world
                     else world
                 let world =
@@ -282,7 +282,9 @@ module WorldModuleEntity =
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
             | modelObj ->
-                try modelObj |> valueToSymbol |> symbolToValue
+                try let model = modelObj |> valueToSymbol |> symbolToValue
+                    entityState.Model.DesignerValue <- model
+                    model
                 with _ ->
                     Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
                     match entityState.Dispatcher.TryGetInitialModel<'a> world with
