@@ -46,7 +46,10 @@ type Character =
     member this.RotationInterp =
         if not (Queue.isEmpty this.RotationPrevious) then
             let rotations = Queue.conj this.Rotation this.RotationPrevious
-            Seq.reduce (fun a b -> Quaternion.Slerp (a, b, 0.5f)) rotations
+            if rotations.Length > 1 then
+                let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f)
+                unnormalized.Normalized
+            else this.Rotation
         else this.Rotation
 
     member this.LinearVelocityInterp =

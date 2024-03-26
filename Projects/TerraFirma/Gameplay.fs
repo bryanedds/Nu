@@ -37,7 +37,7 @@ type Gameplay =
       Player : Character
       Enemies : HMap<Guid, Character> }
 
-    static member private transformCharacter position rotation linearVelocity angularVelocity character =        
+    static member private transformCharacter position rotation linearVelocity angularVelocity character =
         { character with
             Position = position
             Rotation = rotation

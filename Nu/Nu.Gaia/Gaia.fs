@@ -2589,7 +2589,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             | _ -> ()
                             if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
                         elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                            let mutable clickToEditModel = "*click to edit*"
+                            let mutable clickToEditModel = "*click to view*"
                             ImGui.InputText ("Model", &clickToEditModel, uint clickToEditModel.Length, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                             if ImGui.IsItemFocused () then
                                 focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
@@ -3206,7 +3206,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.End ()
 
                     // edit property window
-                    if propertyEditorFocusRequested then ImGui.SetNextWindowFocus ()
+                    if propertyEditorFocusRequested then
+                        ImGui.SetNextWindowFocus ()
+                        propertyEditorFocusRequested <- false
                     if ImGui.Begin ("Edit Property", ImGuiWindowFlags.NoNav) then
                         match focusedPropertyDescriptorOpt with
                         | Some (propertyDescriptor, simulant) when
@@ -3233,9 +3235,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if  isPropertyAssetTag then
                                 ImGui.SameLine ()
                                 if ImGui.Button "Pick" then searchAssetViewer ()
-                            if  propertyEditorFocusRequested then
-                                ImGui.SetKeyboardFocusHere ()
-                                propertyEditorFocusRequested <- false
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
                                 propertyDescriptor.PropertyType = typeof<string Set> then
                                 ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>

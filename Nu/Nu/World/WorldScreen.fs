@@ -593,7 +593,9 @@ module WorldScreenModule =
                     // that we don't need to do an offset here at all.
                     let navLinearVelocity = navPosition - position
                     let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navLinearVelocity.X navLinearVelocity.Z + MathF.PI)
-                    let navAngularVelocity = v3 0.0f (rotation.Forward.AngleBetween navRotation.Forward) 0.0f
+                    let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
+                    let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+                    let navAngularVelocity = v3Up * navAngularVelocityY
                     let navResult = { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                     Some navResult
                 | _ -> None
