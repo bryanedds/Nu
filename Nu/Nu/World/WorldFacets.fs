@@ -2700,6 +2700,10 @@ module AnimatedModelFacetModule =
             let world = tryAnimateBones entity world
             let world =
                 World.sense
+                    (fun evt world -> (Cascade, if world.Halted then tryAnimateBones evt.Subscriber world else world))
+                    (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
+            let world =
+                World.sense
                     (fun evt world -> (Cascade, tryAnimateBones evt.Subscriber world))
                     (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
             world
