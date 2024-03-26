@@ -81,7 +81,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Forward))
         let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Right))
         let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Right))
-        let turnRightness = (angularVelocityInterp * v3Up).Length () * 32.0f
+        let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
         let turnLeftness = -turnRightness
         let animations =
             [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
