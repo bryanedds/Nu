@@ -535,7 +535,8 @@ module WorldScreenModule =
             | Some (_, dtNavMesh, dtQuery) -> Some (query nav3d.Nav3dConfig dtNavMesh dtQuery)
             | None -> None
 
-        static member internal tryNav3dFollowQuery moveSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
+        /// A nav3d query that attempts to compute navigation information that results in following the given destination.
+        static member tryNav3dFollowQuery moveSpeed (startPosition : Vector3) (endPosition : Vector3) navConfig (navMesh : DtNavMesh) (query : DtNavMeshQuery) =
 
             // attempt to compute start position information
             let mutable startRef = 0L
