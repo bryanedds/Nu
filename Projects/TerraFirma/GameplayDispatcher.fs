@@ -39,8 +39,10 @@ module GameplayDispatcher =
                 withSignals signals gameplay
 
             | Update ->
-                let gameplay = Gameplay.update gameplay world
-                just gameplay
+                let (attackedCharacters, gameplay) = Gameplay.update gameplay world
+                if Array.notEmpty attackedCharacters
+                then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)) gameplay
+                else just gameplay
 
             | TimeUpdate ->
                 let gameplay = Gameplay.timeUpdate gameplay
@@ -73,6 +75,10 @@ module GameplayDispatcher =
                 let rotationInterp = gameplay.Player.RotationInterp
                 let world = World.setEye3dCenter (positionInterp + v3Up * 1.5f - rotationInterp.Forward * 3.0f) world
                 let world = World.setEye3dRotation rotationInterp world
+                just world
+
+            | GameplayCommand.PlaySound (delay, volume, sound) ->
+                let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
         // here we describe the content of the game including the hud group and the scene group

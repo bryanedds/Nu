@@ -18,6 +18,7 @@ type GameplayCommand =
     | SynchronizeNav3d
     | JumpPlayer
     | TransformEye
+    | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
 // this represents that state of gameplay simulation.
@@ -114,6 +115,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         if signalJump then withSignal JumpPlayer gameplay else just gameplay
 
     static member update gameplay world =
+
+        // process attacks
         let (attackedCharactersList, characters) =
             Map.fold (fun (attackedCharactersList, characters) characterId character ->
                 let (attackedCharacters, character) = Character.update gameplay.GameplayTime character world
@@ -121,9 +124,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                 (attackedCharacters :: attackedCharactersList, characters))
                 ([], gameplay.Characters)
                 gameplay.Characters
-        let attackedCharacters = Seq.concat attackedCharactersList
+        let attackedCharacters = attackedCharactersList |> Seq.concat |> Seq.toArray
+
+        // update attacked character tracking
         let characters =
-            Seq.fold (fun (characters : Map<_, _>) attackedCharacter ->
+            Array.fold (fun (characters : Map<_, _>) attackedCharacter ->
                 match characters.TryGetValue attackedCharacter with
                 | (true, character) ->
                     let character = { character with ActionState = InjuryState { InjuryTime = gameplay.GameplayTime }}
@@ -131,8 +136,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                 | (false, _) -> characters)
                 characters attackedCharacters
         let gameplay = { gameplay with Characters = characters }
+
+        // update player scanned input
         let gameplay = gameplay.WithPlayer (Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world)
-        gameplay
+
+        // fin
+        (attackedCharacters, gameplay)
 
     static member timeUpdate gameplay =
         let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }

@@ -218,8 +218,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let (attackingCharacters, character) =
             match character.ActionState with
             | AttackState attack ->
+                let localTime = time - attack.AttackTime
+                let attack = match localTime with 55L -> { attack with AttackedCharacters = Set.empty } | _ -> attack
                 let attackingCharacters = Set.difference character.WeaponCollisions attack.AttackedCharacters
-                (attackingCharacters, { character with WeaponCollisions = Set.union attack.AttackedCharacters character.WeaponCollisions })
+                let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters character.WeaponCollisions }
+                (attackingCharacters, { character with ActionState = AttackState attack })
             | _ -> (Set.empty, character)
 
         // update state life times
