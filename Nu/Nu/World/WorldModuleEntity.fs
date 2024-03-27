@@ -213,8 +213,8 @@ module WorldModuleEntity =
                 let world =
                     if rotationChanged then
                         let world = World.publishEntityChange (nameof transformNew.Rotation) transformOld.Rotation transformNew.Rotation publishChangeEvents entity world
-                        let world = World.publishEntityChange (nameof transformNew.Angles) () () publishChangeEvents entity world // TODO: see if it would be expensive to pass Angles values here.
-                        let world = World.publishEntityChange (nameof transformNew.Degrees) () () publishChangeEvents entity world // TODO: see if it would be expensive to pass Degrees values here.
+                        let world = World.publishEntityChange (nameof transformNew.Angles) () () publishChangeEvents entity world
+                        let world = World.publishEntityChange (nameof transformNew.Degrees) () () publishChangeEvents entity world
                         world
                     else world
                 let world =
