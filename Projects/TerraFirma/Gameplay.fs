@@ -33,11 +33,16 @@ type GameplayState =
 type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
     { GameplayTime : int64
       GameplayState : GameplayState
-      Player : Character
-      Enemies : HMap<Guid, Character> }
+      Characters : HMap<CharacterId, Character> }
+
+    member this.Player = this.Characters.[Gameplay.PlayerId]
+
+    member this.WithPlayer player = { this with Characters = HMap.add Gameplay.PlayerId player this.Characters }
+
+    static member PlayerId = PlayerId Constants.Gameplay.PlayerGuids.[0]
 
     static member updatePhysics (integrationData : IntegrationData) gameplay world =
-        SArray.fold (fun gameplay integrationMessage ->
+        SArray.fold (fun (gameplay : Gameplay) integrationMessage ->
             match integrationMessage with
             | BodyTransformMessage bodyTransformMessage ->
                 let bodyId = bodyTransformMessage.BodyId
@@ -47,14 +52,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                         let player = gameplay.Player
                         let player = Character.transform bodyTransformMessage.Center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity player
                         let player = { player with Jump.LastTimeOnGround = if World.getBodyGrounded bodyId world then gameplay.GameplayTime else player.Jump.LastTimeOnGround }
-                        { gameplay with Player = player }
+                        gameplay.WithPlayer player
                     else
-                        let enemyId = scvalueMemo entity.Name
-                        match gameplay.Enemies.TryGetValue enemyId with
+                        let enemyId = EnemyId (scvalueMemo entity.Name)
+                        match gameplay.Characters.TryGetValue enemyId with
                         | (true, enemy) ->
                             let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.05f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
                             let enemy = Character.transform followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
-                            { gameplay with Enemies = HMap.add enemyId enemy gameplay.Enemies}
+                            { gameplay with Characters = HMap.add enemyId enemy gameplay.Characters}
                         | (false, _) -> gameplay
                 | _ -> gameplay
             | _ -> gameplay)
@@ -64,13 +69,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         let time = gameplay.GameplayTime
         let player = gameplay.Player
         let (signalJump, player) = Character.updateInputKey time keyboardKeyData player
-        let gameplay = { gameplay with Player = player }
+        let gameplay = gameplay.WithPlayer player
         if signalJump then withSignal JumpPlayer gameplay else just gameplay
 
     static member update gameplay world =
-        let gameplay = { gameplay with Player = Character.update gameplay.GameplayTime gameplay.Player world }
-        let gameplay = { gameplay with Enemies = HMap.map (fun _ enemy -> Character.update gameplay.GameplayTime enemy world) gameplay.Enemies }
-        let gameplay = { gameplay with Player = Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world }
+        let gameplay = { gameplay with Characters = HMap.map (fun _ character -> Character.update gameplay.GameplayTime character world) gameplay.Characters }
+        let gameplay = gameplay.WithPlayer (Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world)
         gameplay
 
     static member timeUpdate gameplay =
@@ -78,15 +82,16 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         gameplay
 
     static member initial =
+        let player = Character.initialPlayer (v3 0.0f 2.0f 0.0f) quatIdentity
         let enemies =
-            [for i in 0 .. dec 7 do
-                for j in 0 .. dec 7 do
+            [for i in 0 .. dec 5 do
+                for j in 0 .. dec 5 do
                     let enemy = Character.initialEnemy (v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)) quatIdentity
-                    (makeGuid (), enemy)]
+                    (EnemyId (makeGuid ()), enemy)]
+        let characters = HMap.ofList ((Gameplay.PlayerId, player) :: enemies)
         { GameplayTime = 0L
           GameplayState = Quit
-          Player = Character.initialPlayer (v3 0.0f 2.0f 0.0f) quatIdentity
-          Enemies = HMap.ofList enemies }
+          Characters = characters }
 
     static member start =
         let initial = Gameplay.initial

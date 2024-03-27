@@ -17,3 +17,8 @@ module Constants =
         let [<Literal>] PlayerWalkSpeed = 0.06f
         let [<Literal>] PlayerTurnSpeed = 0.035f
         let [<Literal>] PlayerJumpSpeed = 6.0f
+        let [<Uniform>] PlayerGuids =
+            [|Guid "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+              Guid "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+              Guid "cccccccc-cccc-cccc-cccc-cccccccccccc"
+              Guid "dddddddd-dddd-dddd-dddd-dddddddddddd"|]

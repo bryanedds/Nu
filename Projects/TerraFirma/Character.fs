@@ -8,6 +8,14 @@ type CharacterCommand =
     | PostUpdate
     interface Command
 
+type CharacterId =
+    | PlayerId of Guid
+    | EnemyId of Guid
+    member this.SubId =
+        match this with
+        | PlayerId subId -> subId
+        | EnemyId subId -> subId
+
 type JumpState =
     { LastTime : int64
       LastTimeOnGround : int64 }

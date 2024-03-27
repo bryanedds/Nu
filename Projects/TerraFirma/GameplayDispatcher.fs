@@ -93,14 +93,10 @@ module GameplayDispatcher =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
-                    [// player
-                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
-                        [Entity.Character := gameplay.Player]
-
-                     // enemies
-                     for (enemyId, enemy) in gameplay.Enemies.Pairs do
-                        Content.entity<CharacterDispatcher> (string enemyId)
-                            [Entity.Character := enemy]]
+                    [// characters
+                     for (characterId, character) in gameplay.Characters.Pairs do
+                        Content.entity<CharacterDispatcher> (string characterId.SubId)
+                            [Entity.Character := character]]
 
              // no scene group
              | Quit -> ()]
