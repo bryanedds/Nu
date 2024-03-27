@@ -138,7 +138,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member updateInputKey time keyboardKeyData character =
         let sinceJump = time - character.Jump.LastTime
         let sinceOnGround = time - character.Jump.LastTimeOnGround
-        if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated && sinceJump >= 12L && sinceOnGround < 10L then
+        if  keyboardKeyData.KeyboardKey = KeyboardKey.Space &&
+            not keyboardKeyData.Repeated &&
+            sinceJump >= 12L &&
+            sinceOnGround < 10L &&
+            character.AttackOpt.IsNone then
             let character = { character with Jump.LastTime = time }
             (true, character)
         elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then

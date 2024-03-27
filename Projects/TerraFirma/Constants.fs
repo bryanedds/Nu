@@ -13,7 +13,7 @@ module Constants =
     module Gameplay =
 
         let [<Literal>] CharacterInterpolationSteps = 4
-        let [<Literal>] CharacterWeaponHandBondIndex = 39
+        let [<Literal>] CharacterWeaponHandBoneIndex = 39
         let [<Literal>] PlayerWalkSpeed = 0.06f
         let [<Literal>] PlayerTurnSpeed = 0.035f
         let [<Literal>] PlayerJumpSpeed = 6.0f

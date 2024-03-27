@@ -43,9 +43,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                 let bodyId = bodyTransformMessage.BodyId
                 match bodyId.BodySource with
                 | :? Entity as entity when entity.Is<CharacterDispatcher> world ->
-                    if entity.Name = Simulants.GameplayPlayer.Name then
+                    if entity = Simulants.GameplayPlayer then
                         let player = gameplay.Player
-                        let player = Character.transform bodyTransformMessage.Center bodyTransformMessage.Rotation (World.getBodyLinearVelocity bodyId world) (World.getBodyAngularVelocity bodyId world) player
+                        let player = Character.transform bodyTransformMessage.Center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity player
                         let player = { player with Jump.LastTimeOnGround = if World.getBodyGrounded bodyId world then gameplay.GameplayTime else player.Jump.LastTimeOnGround }
                         { gameplay with Player = player }
                     else

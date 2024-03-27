@@ -13,7 +13,7 @@ module CharacterDispatcher =
         member this.Character = this.ModelGeneric<Character> ()
 
     type CharacterDispatcher () =
-        inherit Entity3dDispatcher<Character, Message, CharacterCommand> (true, Character.initialPlayer v3Zero quatIdentity)
+        inherit Entity3dDispatcher<Character, Message, CharacterCommand> (true, Character.initial v3Zero quatIdentity)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -59,8 +59,8 @@ module CharacterDispatcher =
                 | (Some offsets, Some transforms) ->
                     let weaponHand =
                         Matrix4x4.CreateTranslation (v3 0.4f 0.0f 0.02f) *
-                        offsets.[Constants.Gameplay.CharacterWeaponHandBondIndex].Inverted *
-                        transforms.[Constants.Gameplay.CharacterWeaponHandBondIndex] *
+                        offsets.[Constants.Gameplay.CharacterWeaponHandBoneIndex].Inverted *
+                        transforms.[Constants.Gameplay.CharacterWeaponHandBoneIndex] *
                         animatedModel.GetAffineMatrix world
                     let world = weapon.SetPosition weaponHand.Translation world
                     let world = weapon.SetRotation weaponHand.Rotation world
