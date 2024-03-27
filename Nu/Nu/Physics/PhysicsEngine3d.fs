@@ -66,7 +66,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           Objects : Dictionary<BodyId, CollisionObject>
           Ghosts : Dictionary<BodyId, GhostObject>
           KinematicCharacters : Dictionary<BodyId, KinematicCharacter3d>
-          CollisionsFiltered : Dictionary<BodyId * BodyId, Vector3>
+          mutable CollisionsFiltered : SDictionary<BodyId * BodyId, Vector3> // TODO: consider using a double buffer dict instead of an sdict.
           CollisionsGround : Dictionary<BodyId, Vector3 List>
           CollisionConfiguration : CollisionConfiguration
           CollisionDispatcher : Dispatcher
@@ -390,7 +390,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let (_, mass, inertia, disposer) =
             // TODO: make this more accurate by making each c weighted proportionately to its respective m.
             List.fold (fun (c, m, i, d) (c', m', i', d') -> (c + c', m + m', i + i', fun () -> d (); d' ())) (v3Zero, 0.0f, v3Zero, id) centerMassInertiaDisposes
-        let userIndex = if bodyId.BodyIndex = Constants.Physics.InternalIndex then -1 else 1
+        let shapeSensorOpt = match bodyProperties.BodyShape.PropertiesOpt with Some properties -> properties.SensorOpt | None -> None
+        let userIndex = if Option.defaultValue false shapeSensorOpt ||  bodyProperties.Sensor || bodyProperties.Observable then 1 else -1
         if bodyProperties.Sensor then
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape
@@ -407,7 +408,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match shape with
             | :? ConvexShape as convexShape ->
                 let shapeTransform =
-                    match BodyShape.getTransformOpt bodyProperties.BodyShape with
+                    match bodyProperties.BodyShape.TransformOpt with
                     | Some transform -> transform
                     | None -> Affine.Identity
                 if shapeTransform.Rotation <> quatIdentity || shapeTransform.Scale <> v3One then
@@ -639,17 +640,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 character.CharacterController.Jump ()
         | (false, _) -> ()
 
-    static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
-        | (true, body) -> body.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
-        | (false, _) ->
-            match physicsEngine.Ghosts.TryGetValue setBodyObservableMessage.BodyId with
-            | (true, ghost) -> ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
-            | (false, _) ->
-                match physicsEngine.KinematicCharacters.TryGetValue setBodyObservableMessage.BodyId with
-                | (true, character) -> character.Ghost.UserIndex <- if setBodyObservableMessage.Observable then 1 else -1
-                | (false, _) -> ()
-
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> PhysicsEngine3d.createBody createBodyMessage physicsEngine
@@ -670,7 +660,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
-        | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine3d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity ->
 
             // set gravity of all gravitating bodies
@@ -756,7 +745,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         // create collision entries
         let collisionsOld = physicsEngine.CollisionsFiltered
-        physicsEngine.CollisionsFiltered.Clear ()
+        physicsEngine.CollisionsFiltered <- SDictionary.make HashIdentity.Structural
         physicsEngine.CollisionsGround.Clear ()
         let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
         for i in 0 .. dec numManifolds do
@@ -875,7 +864,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               Objects = Dictionary HashIdentity.Structural
               Ghosts = Dictionary HashIdentity.Structural
               KinematicCharacters = Dictionary HashIdentity.Structural
-              CollisionsFiltered = dictPlus HashIdentity.Structural []
+              CollisionsFiltered = SDictionary.make HashIdentity.Structural
               CollisionsGround = dictPlus HashIdentity.Structural []
               CollisionConfiguration = collisionConfiguration
               CollisionDispatcher = collisionDispatcher

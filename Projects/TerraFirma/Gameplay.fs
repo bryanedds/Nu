@@ -62,7 +62,34 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                             { gameplay with Characters = HMap.add enemyId enemy gameplay.Characters}
                         | (false, _) -> gameplay
                 | _ -> gameplay
-            | _ -> gameplay)
+            | BodyCollisionMessage bodyCollisionMessage ->
+                match (bodyCollisionMessage.BodyShapeSource.BodyId.BodySource, bodyCollisionMessage.BodyShapeSource2.BodyId.BodySource) with
+                | ((:? Entity as child), (:? Entity as entity2)) when entity2.Is<CharacterDispatcher> world ->
+                    match child.Parent with
+                    | :? Entity as entity when entity.Is<CharacterDispatcher> world ->
+                        let playerId = PlayerId entity.Name
+                        let enemyId = EnemyId entity2.Name
+                        match (gameplay.Characters.TryGetValue playerId, gameplay.Characters.TryGetValue enemyId) with
+                        | ((true, player), (true, _)) ->
+                            let player = { player with WeaponCollisions = Set.add enemyId player.WeaponCollisions }
+                            gameplay.WithPlayer player
+                        | _ -> gameplay
+                    | _ -> gameplay
+                | _ -> gameplay
+            | BodySeparationMessage bodySeparationMessage ->
+                match (bodySeparationMessage.BodyShapeSource.BodyId.BodySource, bodySeparationMessage.BodyShapeSource2.BodyId.BodySource) with
+                | ((:? Entity as child), (:? Entity as entity2)) when entity2.Is<CharacterDispatcher> world ->
+                    match child.Parent with
+                    | :? Entity as entity when entity.Is<CharacterDispatcher> world ->
+                        let playerId = PlayerId entity.Name
+                        let enemyId = EnemyId entity2.Name
+                        match (gameplay.Characters.TryGetValue playerId, gameplay.Characters.TryGetValue enemyId) with
+                        | ((true, player), (true, _)) ->
+                            let player = { player with WeaponCollisions = Set.remove enemyId player.WeaponCollisions }
+                            gameplay.WithPlayer player
+                        | _ -> gameplay
+                    | _ -> gameplay
+                | _ -> gameplay)
             gameplay integrationData.IntegrationMessages
 
     static member updatePlayerInputKey keyboardKeyData gameplay =
@@ -73,7 +100,23 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         if signalJump then withSignal JumpPlayer gameplay else just gameplay
 
     static member update gameplay world =
-        let gameplay = { gameplay with Characters = HMap.map (fun _ character -> Character.update gameplay.GameplayTime character world) gameplay.Characters }
+        let (attackedCharactersList, characters) =
+            HMap.fold (fun (attackedCharactersList, characters) characterId character ->
+                let (attackedCharacters, character) = Character.update gameplay.GameplayTime character world
+                let characters = HMap.add characterId character characters
+                (attackedCharacters :: attackedCharactersList, characters))
+                ([], gameplay.Characters)
+                gameplay.Characters
+        let attackedCharacters = Seq.concat attackedCharactersList
+        let characters =
+            Seq.fold (fun characters attackedCharacter ->
+                match HMap.tryFind attackedCharacter characters with
+                | Some character ->
+                    let character = { character with AttackOpt = None; InjuryOpt = Some { InjuryTime = gameplay.GameplayTime }}
+                    HMap.add attackedCharacter character characters
+                | None -> characters)
+                characters attackedCharacters
+        let gameplay = { gameplay with Characters = characters }
         let gameplay = gameplay.WithPlayer (Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world)
         gameplay
 
@@ -84,8 +127,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
     static member initial =
         let player = Character.initialPlayer (v3 0.0f 2.0f 0.0f) quatIdentity
         let enemies =
-            [for i in 0 .. dec 5 do
-                for j in 0 .. dec 5 do
+            [for i in 0 .. dec 1 do
+                for j in 0 .. dec 1 do
                     let enemy = Character.initialEnemy (v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)) quatIdentity
                     (makeGuid () |> string |> EnemyId, enemy)]
         let characters = HMap.ofList ((Gameplay.PlayerId, player) :: enemies)

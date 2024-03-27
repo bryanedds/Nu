@@ -29,6 +29,7 @@ module BulletDispatcher =
              Entity.GravityOverride == Some v3Zero
              Entity.BodyType == Dynamic
              Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
+             Entity.Observable == true
              Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
              Entity.UpdateEvent => Update
              Entity.BodyCollisionEvent => Collision]

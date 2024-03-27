@@ -22,3 +22,4 @@ module Assets =
         let SlashSound = asset<Sound> PackageName "Slash"
         let Slash2Sound = asset<Sound> PackageName "Slash2"
         let JoanModel = asset<AnimatedModel> PackageName "Joan"
+        let GreatSwordModel = asset<StaticModel> PackageName "GreatSword"

@@ -293,7 +293,7 @@ module TmxMap =
         Seq.concat |>
         Seq.toList
 
-    let getBodyProperties enabled friction restitution collisionCategories collisionMask bodyIndex tileMapDescriptor =
+    let getBodyProperties enabled friction restitution collisionCategories collisionMask observable bodyIndex tileMapDescriptor =
         let bodyProperties =
             { BodyIndex = bodyIndex
               Center = v3Zero
@@ -316,7 +316,8 @@ module TmxMap =
               CollisionDetection = Discontinuous
               CollisionCategories = Physics.categorizeCollisionMask collisionCategories
               CollisionMask = Physics.categorizeCollisionMask collisionMask
-              Sensor = false }
+              Sensor = false
+              Observable = observable }
         bodyProperties
 
     let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapEmission tileLayerClearance tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =

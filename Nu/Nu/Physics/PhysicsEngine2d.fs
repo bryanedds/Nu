@@ -63,6 +63,12 @@ type [<ReferenceEquality>] PhysicsEngine2d =
               Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyCollisionMessage bodyCollisionMessage
         integrationMessages.Add integrationMessage
+        let bodyCollisionMessage2 =
+            { BodyShapeSource = bodyCollisionMessage.BodyShapeSource2
+              BodyShapeSource2 = bodyCollisionMessage.BodyShapeSource
+              Normal = -bodyCollisionMessage.Normal }
+        let integrationMessage = BodyCollisionMessage bodyCollisionMessage2
+        integrationMessages.Add integrationMessage
         true
 
     static member private handleSeparation
@@ -290,8 +296,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         try PhysicsEngine2d.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape body |> ignore
         with :? ArgumentOutOfRangeException -> ()
 
-        // always listen for collisions if not internal body
-        if bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+        // listen for collisions when observable
+        if bodyProperties.ShouldObserve then
             body.add_OnCollision physicsEngine.CollisionHandler
             body.add_OnSeparation physicsEngine.SeparationHandler
 
@@ -427,16 +433,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private jumpBody (_ : JumpBodyMessage) (_ : PhysicsEngine) =
         () // character body type not yet supported
 
-    static member private setBodyObservable (setBodyObservableMessage : SetBodyObservableMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyObservableMessage.BodyId with
-        | (true, (_, body)) ->
-            body.remove_OnCollision physicsEngine.CollisionHandler
-            body.remove_OnSeparation physicsEngine.SeparationHandler
-            if setBodyObservableMessage.Observable then
-                body.add_OnCollision physicsEngine.CollisionHandler
-                body.add_OnSeparation physicsEngine.SeparationHandler
-        | (false, _) -> ()
-
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> PhysicsEngine2d.createBody createBodyMessage physicsEngine
@@ -457,7 +453,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine2d.applyBodyForce applyBodyForceMessage physicsEngine
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
-        | SetBodyObservableMessage setBodyObservableMessage -> PhysicsEngine2d.setBodyObservable setBodyObservableMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
         | ClearPhysicsMessageInternal ->
             physicsEngine.PhysicsContext.Clear ()

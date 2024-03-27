@@ -295,32 +295,3 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage3d jumpBodyMessage world
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
-
-        static member private setBodyObservableInternal allowInternalIndexing observable (bodyId : BodyId) world =
-            if allowInternalIndexing || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
-                let setBodyObservableMessage = SetBodyObservableMessage { BodyId = bodyId; Observable = observable }
-                let world = World.handlePhysicsMessage3d setBodyObservableMessage world
-                let world = World.handlePhysicsMessage2d setBodyObservableMessage world
-                world
-            else
-                Log.debug "Set the observability of an internally indexed body from outside the engine is prohibited."
-                world
-
-        /// Send a physics message to set the observability of a body.
-        /// Disabling observability where it's not needed can significantly increase performance.
-        static member setBodyObservable observable bodyId world =
-            World.setBodyObservableInternal false observable bodyId world
-
-        static member internal updateBodyObservable subscribing (bodySource : Entity) world =
-            let observable =
-                subscribing ||
-                let collisionEventAddress = atooa bodySource.BodyCollisionEvent
-                match (World.getSubscriptions world).TryGetValue collisionEventAddress with
-                | (true, subscriptions) -> OMap.notEmpty subscriptions
-                | (false, _) ->
-                    let separationEventAddress = atooa bodySource.BodySeparationExplicitEvent
-                    match (World.getSubscriptions world).TryGetValue separationEventAddress with
-                    | (true, subscriptions) -> OMap.notEmpty subscriptions
-                    | (false, _) -> false
-            let bodyId = { BodySource = bodySource; BodyIndex = Constants.Physics.InternalIndex }
-            World.setBodyObservableInternal true observable bodyId world

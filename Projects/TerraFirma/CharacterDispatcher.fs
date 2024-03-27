@@ -43,10 +43,11 @@ module CharacterDispatcher =
                  Entity.Animations := character.Animations
                  Entity.AnimatedModel := character.AnimatedModel]
              Content.entity<RigidModelDispatcher> "Weapon"
-                [Entity.Scale == v3 1.0f 0.1f 0.01f
+                [Entity.Scale == v3 1.0f 1.0f 1.0f
                  Entity.MountOpt == None
+                 Entity.StaticModel == Assets.Gameplay.GreatSwordModel
                  Entity.BodyType == Static
-                 Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.25f 0.0f)); PropertiesOpt = None }
+                 Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor == true
                  Entity.ModelDriven == true]]
 
@@ -58,7 +59,8 @@ module CharacterDispatcher =
                 match (animatedModel.GetBoneOffsetsOpt world, animatedModel.GetBoneTransformsOpt world) with
                 | (Some offsets, Some transforms) ->
                     let weaponHand =
-                        Matrix4x4.CreateTranslation (v3 0.4f 0.0f 0.02f) *
+                        Matrix4x4.CreateTranslation (v3 0.0f 0.0f 0.02f) *
+                        Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
                         offsets.[Constants.Gameplay.CharacterWeaponHandBoneIndex].Inverted *
                         transforms.[Constants.Gameplay.CharacterWeaponHandBoneIndex] *
                         animatedModel.GetAffineMatrix world

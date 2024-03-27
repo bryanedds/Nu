@@ -664,9 +664,6 @@ module WorldModule2 =
 #endif
                         let entity = Nu.Entity (Array.skip 2 eventNames)
                         World.updateEntityPublishUpdateFlag entity world |> snd'
-                    | "BodyCollision" | "BodySeparationExplicit" ->
-                        let entity = Nu.Entity (Array.skip 2 eventNames)
-                        World.updateBodyObservable subscribing entity world
                     | _ -> world
                 else world
             let world =

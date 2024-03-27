@@ -24,13 +24,19 @@ type JumpState =
         { LastTime = 0L
           LastTimeOnGround = 0L }
 
+// TODO: P1: combine this into union with InjuryState.
 type AttackState =
     { AttackTime : int64
+      AttackedCharacters : CharacterId Set
       FollowUpBuffered : bool }
 
     static member make time =
         { AttackTime = time
+          AttackedCharacters = Set.empty
           FollowUpBuffered = false }
+
+type InjuryState =
+    { InjuryTime : int64 }
 
 type [<ReferenceEquality; SymbolicExpansion>] Character =
     { Position : Vector3
@@ -42,7 +48,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
       AttackOpt : AttackState option
+      InjuryOpt : InjuryState option
       Jump : JumpState
+      WeaponCollisions : CharacterId Set
       WalkSpeed : single
       TurnSpeed : single
       JumpSpeed : single
@@ -106,7 +114,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else animations
         animations
 
-    static member private tryComputeActionAnimation time attackOpt world =
+    static member private tryComputeActionAnimation time attackOpt injuryOpt world =
         match attackOpt with
         | Some attack ->
             let localTime = time - attack.AttackTime
@@ -119,7 +127,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = animationName; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
             Some animation
-        | None -> None
+        | None ->
+            match injuryOpt with
+            | Some injury ->
+                let localTime = time - injury.InjuryTime
+                let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
+                let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
+                Some animation
+            | None -> None
 
     static member warp position rotation character =
         { character with
@@ -150,7 +165,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             not keyboardKeyData.Repeated &&
             sinceJump >= 12L &&
             sinceOnGround < 10L &&
-            character.AttackOpt.IsNone then
+            character.AttackOpt.IsNone &&
+            character.InjuryOpt.IsNone then
             let character = { character with Jump.LastTime = time }
             (true, character)
         elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
@@ -195,7 +211,15 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
     static member update time character world =
 
-        // update attack
+        // update attacked characters
+        let (attackingCharacters, character) =
+            match character.AttackOpt with
+            | Some attack ->
+                let attackingCharacters = Set.difference character.WeaponCollisions attack.AttackedCharacters
+                (attackingCharacters, { character with WeaponCollisions = Set.union attack.AttackedCharacters character.WeaponCollisions })
+            | None -> (Set.empty, character)
+
+        // update attack life time
         let attackOpt =
             match character.AttackOpt with
             | Some attack ->
@@ -205,15 +229,26 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 else None
             | None -> None
         let character = { character with AttackOpt = attackOpt }
-        
+
+        // update injury life time
+        let injuryOpt =
+            match character.InjuryOpt with
+            | Some injury ->
+                let localTime = time - injury.InjuryTime
+                if localTime < 55
+                then Some injury
+                else None
+            | None -> None
+        let character = { character with InjuryOpt = injuryOpt }
+
         // update animation
         let traversalAnimations = Character.computeTraversalAnimations character
-        let actionAnimationOpt = Character.tryComputeActionAnimation time character.AttackOpt world
+        let actionAnimationOpt = Character.tryComputeActionAnimation time character.AttackOpt character.InjuryOpt world
         let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
         let character = { character with Animations = animations }
 
         // fin
-        character
+        (attackingCharacters, character)
 
     static member initial position rotation =
         { Position = position
@@ -225,7 +260,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
           AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
           AttackOpt = None
+          InjuryOpt = None
           Jump = JumpState.initial
+          WeaponCollisions = Set.empty
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
           JumpSpeed = 5.0f

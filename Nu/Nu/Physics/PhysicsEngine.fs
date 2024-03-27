@@ -328,8 +328,8 @@ type BodyShape =
     | BodyShapes of BodyShape list
 
     /// Get the shape's transform if it exists.
-    static member getTransformOpt shape =
-        match shape with
+    member this.TransformOpt =
+        match this with
         | EmptyShape -> None
         | BoxShape box -> box.TransformOpt
         | SphereShape sphere -> sphere.TransformOpt
@@ -343,8 +343,8 @@ type BodyShape =
         | BodyShapes _ -> None
 
     /// Get the shape's properties if they exist.
-    static member getPropertiesOpt shape =
-        match shape with
+    member this.PropertiesOpt =
+        match this with
         | EmptyShape -> None
         | BoxShape box -> box.PropertiesOpt
         | SphereShape sphere -> sphere.PropertiesOpt
@@ -356,6 +356,21 @@ type BodyShape =
         | StaticModelSurfaceShape staticModelSurface -> staticModelSurface.PropertiesOpt
         | TerrainShape terrain -> terrain.PropertiesOpt
         | BodyShapes _ -> None
+
+    /// Check that a shape or any of its child shapes are sensors.
+    member this.HasSensors =
+        let isSensor =
+            match this.PropertiesOpt with
+            | Some properties ->
+                match properties.SensorOpt with
+                | Some sensor -> sensor
+                | None -> false
+            | None -> false
+        if not isSensor then
+            match this with
+            | BodyShapes bodyShapes -> List.exists (fun (bodyShape : BodyShape) -> bodyShape.HasSensors) bodyShapes
+            | _ -> false
+        else true
 
 /// The type of a physics body.
 [<Syntax
@@ -412,7 +427,14 @@ type BodyProperties =
       CollisionDetection : CollisionDetection
       CollisionCategories : int
       CollisionMask : int
-      Sensor : bool }
+      Sensor : bool // sensor is always inherently observable
+      Observable : bool }
+
+    member this.HasSensors =
+        this.Sensor || this.BodyShape.HasSensors
+
+    member this.ShouldObserve =
+        this.HasSensors || this.Observable
 
 /// Identifies a joint in a physics engine.
 type BodyJointId =
@@ -604,11 +626,6 @@ type JumpBodyMessage =
       CanJumpInAir : bool
       JumpSpeed : single }
 
-/// An internally used message to the physics system to set the observed state of a body.
-type SetBodyObservableMessage =
-    { BodyId : BodyId
-      Observable : bool }
-
 /// A message from the physics system describing a body collision that took place.
 type BodyCollisionMessage =
     { BodyShapeSource : BodyShapeIndex
@@ -654,7 +671,6 @@ type PhysicsMessage =
     | ApplyBodyForceMessage of ApplyBodyForceMessage
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | JumpBodyMessage of JumpBodyMessage
-    | SetBodyObservableMessage of SetBodyObservableMessage
     | SetGravityMessage of Vector3
     | ClearPhysicsMessageInternal
 
