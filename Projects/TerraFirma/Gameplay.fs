@@ -51,7 +51,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                     if entity = Simulants.GameplayPlayer then
                         let player = gameplay.Player
                         let player = Character.transform bodyTransformMessage.Center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity player
-                        let player = { player with Jump.LastTimeOnGround = if World.getBodyGrounded bodyId world then gameplay.GameplayTime else player.Jump.LastTimeOnGround }
+                        let player = { player with Character.JumpState.LastTimeOnGround = if World.getBodyGrounded bodyId world then gameplay.GameplayTime else player.JumpState.LastTimeOnGround }
                         gameplay.WithPlayer player
                     else
                         let enemyId = EnemyId (scvalueMemo entity.Name)
@@ -112,7 +112,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
             Seq.fold (fun characters attackedCharacter ->
                 match HMap.tryFind attackedCharacter characters with
                 | Some character ->
-                    let character = { character with AttackOpt = None; InjuryOpt = Some { InjuryTime = gameplay.GameplayTime }}
+                    let character = { character with ActionState = InjuryState { InjuryTime = gameplay.GameplayTime }}
                     HMap.add attackedCharacter character characters
                 | None -> characters)
                 characters attackedCharacters

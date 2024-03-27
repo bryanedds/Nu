@@ -38,6 +38,11 @@ type AttackState =
 type InjuryState =
     { InjuryTime : int64 }
 
+type ActionState =
+    | NormalState
+    | AttackState of AttackState
+    | InjuryState of InjuryState
+
 type [<ReferenceEquality; SymbolicExpansion>] Character =
     { Position : Vector3
       Rotation : Quaternion
@@ -47,9 +52,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       RotationPrevious : Quaternion Queue
       LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
-      AttackOpt : AttackState option
-      InjuryOpt : InjuryState option
-      Jump : JumpState
+      ActionState : ActionState
+      JumpState : JumpState
       WeaponCollisions : CharacterId Set
       WalkSpeed : single
       TurnSpeed : single
@@ -114,9 +118,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else animations
         animations
 
-    static member private tryComputeActionAnimation time attackOpt injuryOpt world =
-        match attackOpt with
-        | Some attack ->
+    static member private tryComputeActionAnimation time character world =
+        match character.ActionState with
+        | AttackState attack ->
             let localTime = time - attack.AttackTime
             let world =
                 match localTime with
@@ -127,14 +131,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = animationName; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
             Some animation
-        | None ->
-            match injuryOpt with
-            | Some injury ->
-                let localTime = time - injury.InjuryTime
-                let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
-                let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
-                Some animation
-            | None -> None
+        | InjuryState injury ->
+            let localTime = time - injury.InjuryTime
+            let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
+            let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
+            Some animation
+        | NormalState -> None
 
     static member warp position rotation character =
         { character with
@@ -159,33 +161,34 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
 
     static member updateInputKey time keyboardKeyData character =
-        let sinceJump = time - character.Jump.LastTime
-        let sinceOnGround = time - character.Jump.LastTimeOnGround
+        let sinceJump = time - character.JumpState.LastTime
+        let sinceOnGround = time - character.JumpState.LastTimeOnGround
         if  keyboardKeyData.KeyboardKey = KeyboardKey.Space &&
             not keyboardKeyData.Repeated &&
             sinceJump >= 12L &&
             sinceOnGround < 10L &&
-            character.AttackOpt.IsNone &&
-            character.InjuryOpt.IsNone then
-            let character = { character with Jump.LastTime = time }
+            character.ActionState = NormalState then
+            let character = { character with Character.JumpState.LastTime = time }
             (true, character)
         elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
             let character =
-                match character.AttackOpt with
-                | Some attack ->
+                match character.ActionState with
+                | NormalState ->
+                    { character with ActionState = AttackState (AttackState.make time) }
+                | AttackState attack ->
                     let localTime = time - attack.AttackTime
                     if localTime > 15L && not attack.FollowUpBuffered
-                    then { character with AttackOpt = Some { attack with FollowUpBuffered = true }}
+                    then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
                     else character
-                | None ->
-                    { character with AttackOpt = Some (AttackState.make time) }
+                | InjuryState _ ->
+                    character
             (false, character)
         else (false, character)
 
     static member updateInputScan character (entity : Entity) world =
         let bodyId = entity.GetBodyId world
         let grounded = World.getBodyGrounded bodyId world
-        if character.AttackOpt.IsNone || not grounded then
+        if character.ActionState = NormalState || not grounded then
 
             // update position
             let forward = character.Rotation.Forward
@@ -213,37 +216,31 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
         // update attacked characters
         let (attackingCharacters, character) =
-            match character.AttackOpt with
-            | Some attack ->
+            match character.ActionState with
+            | AttackState attack ->
                 let attackingCharacters = Set.difference character.WeaponCollisions attack.AttackedCharacters
                 (attackingCharacters, { character with WeaponCollisions = Set.union attack.AttackedCharacters character.WeaponCollisions })
-            | None -> (Set.empty, character)
+            | _ -> (Set.empty, character)
 
-        // update attack life time
-        let attackOpt =
-            match character.AttackOpt with
-            | Some attack ->
+        // update state life times
+        let ActionState =
+            match character.ActionState with
+            | AttackState attack ->
                 let localTime = time - attack.AttackTime
                 if localTime < 55 || localTime < 110 && attack.FollowUpBuffered
-                then Some attack
-                else None
-            | None -> None
-        let character = { character with AttackOpt = attackOpt }
-
-        // update injury life time
-        let injuryOpt =
-            match character.InjuryOpt with
-            | Some injury ->
+                then AttackState attack
+                else NormalState
+            | InjuryState injury ->
                 let localTime = time - injury.InjuryTime
                 if localTime < 55
-                then Some injury
-                else None
-            | None -> None
-        let character = { character with InjuryOpt = injuryOpt }
+                then InjuryState injury
+                else NormalState
+            | NormalState -> NormalState
+        let character = { character with ActionState = ActionState }
 
         // update animation
         let traversalAnimations = Character.computeTraversalAnimations character
-        let actionAnimationOpt = Character.tryComputeActionAnimation time character.AttackOpt character.InjuryOpt world
+        let actionAnimationOpt = Character.tryComputeActionAnimation time character world
         let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
         let character = { character with Animations = animations }
 
@@ -259,9 +256,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
           LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
           AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
-          AttackOpt = None
-          InjuryOpt = None
-          Jump = JumpState.initial
+          ActionState = NormalState
+          JumpState = JumpState.initial
           WeaponCollisions = Set.empty
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
