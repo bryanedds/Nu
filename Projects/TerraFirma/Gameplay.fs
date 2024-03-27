@@ -15,6 +15,7 @@ type GameplayMessage =
 
 // this is our MMCC command type.
 type GameplayCommand =
+    | SynchronizeNav3d
     | JumpPlayer
     | TransformEye
     interface Command

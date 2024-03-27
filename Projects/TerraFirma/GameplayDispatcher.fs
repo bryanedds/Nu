@@ -23,6 +23,7 @@ module GameplayDispatcher =
              Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => TransformEye
              Screen.TimeUpdateEvent => TimeUpdate
+             Screen.SelectEvent => SynchronizeNav3d
              Screen.DeselectingEvent => FinishQuitting]
 
         // here we handle the gameplay messages
@@ -54,9 +55,14 @@ module GameplayDispatcher =
                 just gameplay
 
         // here we handle the gameplay commands
-        override this.Command (gameplay, command, _, world) =
+        override this.Command (gameplay, command, screen, world) =
 
             match command with
+            | SynchronizeNav3d ->
+                if world.Unaccompanied // only synchronize if outside editor
+                then just (World.synchronizeNav3d screen world)
+                else just world
+
             | JumpPlayer ->
                 let bodyId = Simulants.GameplayPlayer.GetBodyId world
                 let world = World.jumpBody true gameplay.Player.JumpSpeed bodyId world
