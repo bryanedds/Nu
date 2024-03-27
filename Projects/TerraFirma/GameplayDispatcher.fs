@@ -95,7 +95,7 @@ module GameplayDispatcher =
 
                     [// characters
                      for (characterId, character) in gameplay.Characters.Pairs do
-                        Content.entity<CharacterDispatcher> (string characterId.SubId)
+                        Content.entity<CharacterDispatcher> (string characterId.CharacterName)
                             [Entity.Character := character]]
 
              // no scene group

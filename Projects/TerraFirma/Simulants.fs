@@ -30,5 +30,5 @@ module Simulants =
     let GameplayTime = GameplayGui / "Time"
     let GameplayQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
-    let GameplayPlayer = GameplayScene / string Constants.Gameplay.PlayerGuids.[0]
-    let GameplayEnemy (enemyId : Guid) = GameplayScene / string enemyId
+    let GameplayPlayer = GameplayScene / "Player"
+    let GameplayEnemy name = GameplayScene / name

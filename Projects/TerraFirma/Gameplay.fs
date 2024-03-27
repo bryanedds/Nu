@@ -39,7 +39,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
 
     member this.WithPlayer player = { this with Characters = HMap.add Gameplay.PlayerId player this.Characters }
 
-    static member PlayerId = PlayerId Constants.Gameplay.PlayerGuids.[0]
+    static member PlayerId = PlayerId "Player" // additional player would be called "Player2"
 
     static member updatePhysics (integrationData : IntegrationData) gameplay world =
         SArray.fold (fun (gameplay : Gameplay) integrationMessage ->
@@ -87,7 +87,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
             [for i in 0 .. dec 5 do
                 for j in 0 .. dec 5 do
                     let enemy = Character.initialEnemy (v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)) quatIdentity
-                    (EnemyId (makeGuid ()), enemy)]
+                    (makeGuid () |> string |> EnemyId, enemy)]
         let characters = HMap.ofList ((Gameplay.PlayerId, player) :: enemies)
         { GameplayTime = 0L
           GameplayState = Quit

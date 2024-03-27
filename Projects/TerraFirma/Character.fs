@@ -9,12 +9,12 @@ type CharacterCommand =
     interface Command
 
 type CharacterId =
-    | PlayerId of Guid
-    | EnemyId of Guid
-    member this.SubId =
+    | PlayerId of string
+    | EnemyId of string
+    member this.CharacterName =
         match this with
-        | PlayerId subId -> subId
-        | EnemyId subId -> subId
+        | PlayerId name -> name
+        | EnemyId name -> name
 
 type JumpState =
     { LastTime : int64
