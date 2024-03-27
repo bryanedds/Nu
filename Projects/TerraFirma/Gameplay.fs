@@ -33,11 +33,11 @@ type GameplayState =
 type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
     { GameplayTime : int64
       GameplayState : GameplayState
-      Characters : HMap<CharacterId, Character> }
+      Characters : Map<CharacterId, Character> }
 
     member this.Player = this.Characters.[Gameplay.PlayerId]
 
-    member this.WithPlayer player = { this with Characters = HMap.add Gameplay.PlayerId player this.Characters }
+    member this.WithPlayer player = { this with Characters = Map.add Gameplay.PlayerId player this.Characters }
 
     static member PlayerId = PlayerId "Player" // additional player would be called "Player2"
 
@@ -59,7 +59,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                         | (true, enemy) ->
                             let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.05f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
                             let enemy = Character.transform followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
-                            { gameplay with Characters = HMap.add enemyId enemy gameplay.Characters}
+                            { gameplay with Characters = Map.add enemyId enemy gameplay.Characters}
                         | (false, _) -> gameplay
                 | _ -> gameplay
             | BodyCollisionMessage bodyCollisionMessage ->
@@ -73,7 +73,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                         | ((true, player), (true, _)) ->
                             let player = { player with WeaponCollisions = Set.add enemyId player.WeaponCollisions }
                             gameplay.WithPlayer player
-                        | _ -> gameplay
+                        | _ ->
+                            let enemyId = EnemyId entity.Name
+                            let playerId = PlayerId entity2.Name
+                            match (gameplay.Characters.TryGetValue enemyId, gameplay.Characters.TryGetValue playerId) with
+                            | ((true, enemy), (true, _)) ->
+                                let enemy = { enemy with WeaponCollisions = Set.add enemyId enemy.WeaponCollisions }
+                                { gameplay with Characters = Map.add enemyId enemy gameplay.Characters }
+                            | _ -> gameplay
                     | _ -> gameplay
                 | _ -> gameplay
             | BodySeparationMessage bodySeparationMessage ->
@@ -87,7 +94,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                         | ((true, player), (true, _)) ->
                             let player = { player with WeaponCollisions = Set.remove enemyId player.WeaponCollisions }
                             gameplay.WithPlayer player
-                        | _ -> gameplay
+                        | _ ->
+                            let enemyId = EnemyId entity.Name
+                            let playerId = PlayerId entity2.Name
+                            match (gameplay.Characters.TryGetValue enemyId, gameplay.Characters.TryGetValue playerId) with
+                            | ((true, enemy), (true, _)) ->
+                                let enemy = { enemy with WeaponCollisions = Set.remove enemyId enemy.WeaponCollisions }
+                                { gameplay with Characters = Map.add enemyId enemy gameplay.Characters }
+                            | _ -> gameplay
                     | _ -> gameplay
                 | _ -> gameplay)
             gameplay integrationData.IntegrationMessages
@@ -101,20 +115,20 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
 
     static member update gameplay world =
         let (attackedCharactersList, characters) =
-            HMap.fold (fun (attackedCharactersList, characters) characterId character ->
+            Map.fold (fun (attackedCharactersList, characters) characterId character ->
                 let (attackedCharacters, character) = Character.update gameplay.GameplayTime character world
-                let characters = HMap.add characterId character characters
+                let characters = Map.add characterId character characters
                 (attackedCharacters :: attackedCharactersList, characters))
                 ([], gameplay.Characters)
                 gameplay.Characters
         let attackedCharacters = Seq.concat attackedCharactersList
         let characters =
-            Seq.fold (fun characters attackedCharacter ->
-                match HMap.tryFind attackedCharacter characters with
-                | Some character ->
+            Seq.fold (fun (characters : Map<_, _>) attackedCharacter ->
+                match characters.TryGetValue attackedCharacter with
+                | (true, character) ->
                     let character = { character with ActionState = InjuryState { InjuryTime = gameplay.GameplayTime }}
-                    HMap.add attackedCharacter character characters
-                | None -> characters)
+                    Map.add attackedCharacter character characters
+                | (false, _) -> characters)
                 characters attackedCharacters
         let gameplay = { gameplay with Characters = characters }
         let gameplay = gameplay.WithPlayer (Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world)
@@ -127,11 +141,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
     static member initial =
         let player = Character.initialPlayer (v3 0.0f 2.0f 0.0f) quatIdentity
         let enemies =
-            [for i in 0 .. dec 1 do
-                for j in 0 .. dec 1 do
+            [for i in 0 .. dec 5 do
+                for j in 0 .. dec 5 do
                     let enemy = Character.initialEnemy (v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)) quatIdentity
                     (makeGuid () |> string |> EnemyId, enemy)]
-        let characters = HMap.ofList ((Gameplay.PlayerId, player) :: enemies)
+        let characters = Map.ofList ((Gameplay.PlayerId, player) :: enemies)
         { GameplayTime = 0L
           GameplayState = Quit
           Characters = characters }
