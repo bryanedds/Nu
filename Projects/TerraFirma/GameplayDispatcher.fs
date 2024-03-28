@@ -63,10 +63,13 @@ module GameplayDispatcher =
                 withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)) world
 
             | TransformEye ->
+                let player = Simulants.GameplayPlayer.GetCharacter world
                 let position = Simulants.GameplayPlayer.GetPosition world
                 let rotation = Simulants.GameplayPlayer.GetRotation world
-                let world = World.setEye3dCenter (position + v3Up * 1.75f - rotation.Forward * 3.0f) world
-                let world = World.setEye3dRotation rotation world
+                let positionInterp = player.PositionInterp position
+                let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
+                let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
+                let world = World.setEye3dRotation rotationInterp world
                 just world
 
             | GameplayCommand.PlaySound (delay, volume, sound) ->
