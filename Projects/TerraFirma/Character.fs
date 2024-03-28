@@ -233,7 +233,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 else NormalState
             | InjuryState injury ->
                 let localTime = time - injury.InjuryTime
-                if localTime < 35
+                let injuryTime = if character.Player then 20 else 40
+                if localTime < injuryTime
                 then InjuryState injury
                 else NormalState
             | NormalState -> NormalState
@@ -276,9 +277,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        let player = Character.initial
-        { player with Player = true; HitPoints = 7 }
+        { Character.initial with Player = true; HitPoints = 7; WalkSpeed = 0.6f }
 
     static member initialEnemy =
-        let enemy = Character.initial
-        enemy
+        Character.initial
