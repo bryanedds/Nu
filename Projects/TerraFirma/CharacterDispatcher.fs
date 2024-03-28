@@ -61,12 +61,10 @@ module CharacterDispatcher =
                 let position = transform.Position
                 let rotation = transform.Rotation
                 let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion world.UpdateTime position rotation character entity world
-                let world = entity.SetPosition position world
-                let world = entity.SetRotation rotation world
                 let character = Character.updateActionState world.UpdateTime position rotation character world
                 let (animations, character) = Character.updateAnimations world.UpdateTime position rotation linearVelocity angularVelocity character world
                 let (attackedCharacters, character) = Character.updateAttackedCharacters world.UpdateTime character
-                let signals = [UpdateAnimatedModel (position, rotation, animations) :> Signal]
+                let signals = [UpdateTransform (position, rotation) :> Signal; UpdateAnimatedModel (position, rotation, animations)]
                 let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
                 let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
                 withSignals signals character
@@ -99,6 +97,11 @@ module CharacterDispatcher =
         override this.Command (character, command, entity, world) =
 
             match command with
+            | UpdateTransform (position, rotation) ->
+                let world = entity.SetPosition position world
+                let world = entity.SetRotation rotation world
+                just world
+
             | UpdateAnimatedModel (position, rotation, animations) ->
                 let animatedModel = entity / "AnimatedModel"
                 let world = animatedModel.SetPosition position world

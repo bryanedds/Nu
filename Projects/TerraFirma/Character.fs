@@ -13,6 +13,7 @@ type CharacterMessage =
     interface Message
 
 type CharacterCommand =
+    | UpdateTransform of Vector3 * Quaternion
     | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
     | PublishCharactersAttacked of Entity Set
     | SyncWeaponTransform
