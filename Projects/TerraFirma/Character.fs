@@ -24,7 +24,6 @@ type JumpState =
         { LastTime = 0L
           LastTimeOnGround = 0L }
 
-// TODO: P1: combine this into union with InjuryState.
 type AttackState =
     { AttackTime : int64
       AttackedCharacters : CharacterId Set
@@ -42,6 +41,7 @@ type ActionState =
     | NormalState
     | AttackState of AttackState
     | InjuryState of InjuryState
+    | WoundedState
 
 type [<ReferenceEquality; SymbolicExpansion>] Character =
     { Position : Vector3
@@ -52,6 +52,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       RotationPrevious : Quaternion Queue
       LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
+      HitPoints : int
       ActionState : ActionState
       JumpState : JumpState
       WeaponCollisions : CharacterId Set
@@ -94,29 +95,31 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         Matrix4x4.CreateFromTrs (this.PositionInterp, this.RotationInterp, v3One)
 
     static member private computeTraversalAnimations (character : Character) =
-        let linearVelocityInterp = character.LinearVelocityInterp
-        let angularVelocityInterp = character.AngularVelocityInterp
-        let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Forward))
-        let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Forward))
-        let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Right))
-        let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Right))
-        let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
-        let turnLeftness = -turnRightness
-        let animations =
-            [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
-        let animations =
-            if forwardness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = forwardness; BoneFilterOpt = None } :: animations
-            elif backness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Loop; Rate = 1.0f; Weight = backness; BoneFilterOpt = None } :: animations
-            else animations
-        let animations =
-            if rightness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRight"; Playback = Loop; Rate = 1.0f; Weight = rightness; BoneFilterOpt = None } :: animations
-            elif leftness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = leftness; BoneFilterOpt = None } :: animations
-            else animations
-        let animations =
-            if turnRightness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
-            elif turnLeftness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
-            else animations
-        animations
+        if character.ActionState <> WoundedState then
+            let linearVelocityInterp = character.LinearVelocityInterp
+            let angularVelocityInterp = character.AngularVelocityInterp
+            let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Forward))
+            let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Forward))
+            let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Right))
+            let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Right))
+            let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
+            let turnLeftness = -turnRightness
+            let animations =
+                [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
+            let animations =
+                if forwardness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = forwardness; BoneFilterOpt = None } :: animations
+                elif backness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Loop; Rate = 1.0f; Weight = backness; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if rightness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRight"; Playback = Loop; Rate = 1.0f; Weight = rightness; BoneFilterOpt = None } :: animations
+                elif leftness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = leftness; BoneFilterOpt = None } :: animations
+                else animations
+            let animations =
+                if turnRightness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
+                elif turnLeftness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
+                else animations
+            animations
+        else []
 
     static member private tryComputeActionAnimation time character world =
         match character.ActionState with
@@ -136,7 +139,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
             Some animation
-        | NormalState -> None
+        | NormalState | WoundedState -> None
 
     static member warp position rotation character =
         { character with
@@ -180,8 +183,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     if localTime > 10L && not attack.FollowUpBuffered
                     then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
                     else character
-                | InjuryState _ ->
-                    character
+                | InjuryState _ | WoundedState -> character
             (false, character)
         else (false, character)
 
@@ -230,7 +232,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 else (Set.empty, { character with ActionState = AttackState attack })
             | _ -> (Set.empty, character)
 
-        // update state life times
+        // update action state
         let ActionState =
             match character.ActionState with
             | AttackState attack ->
@@ -240,10 +242,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 else NormalState
             | InjuryState injury ->
                 let localTime = time - injury.InjuryTime
-                if localTime < 55
+                if localTime < 35
                 then InjuryState injury
                 else NormalState
             | NormalState -> NormalState
+            | WoundedState -> WoundedState
         let character = { character with ActionState = ActionState }
 
         // update animation
@@ -264,6 +267,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
           LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
           AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+          HitPoints = 3
           ActionState = NormalState
           JumpState = JumpState.initial
           WeaponCollisions = Set.empty
@@ -278,6 +282,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member initialPlayer position rotation =
         let player = Character.initial position rotation
         { player with
+            HitPoints = 5
             WalkSpeed = Constants.Gameplay.PlayerWalkSpeed
             TurnSpeed = Constants.Gameplay.PlayerTurnSpeed
             JumpSpeed = Constants.Gameplay.PlayerJumpSpeed }

@@ -1,5 +1,6 @@
 ﻿namespace TerraFirma
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -58,9 +59,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                         let enemyId = EnemyId (scvalueMemo entity.Name)
                         match gameplay.Characters.TryGetValue enemyId with
                         | (true, enemy) ->
-                            let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.05f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
-                            let enemy = Character.transform followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
-                            { gameplay with Characters = Map.add enemyId enemy gameplay.Characters}
+                            if enemy.ActionState = NormalState then
+                                let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.1f bodyTransformMessage.Center bodyTransformMessage.Rotation gameplay.Player.Position entity.Screen world
+                                let enemy = Character.transform followOutput.NavPosition followOutput.NavRotation followOutput.NavLinearVelocity followOutput.NavAngularVelocity enemy
+                                { gameplay with Characters = Map.add enemyId enemy gameplay.Characters}
+                            else gameplay
                         | (false, _) -> gameplay
                 | _ -> gameplay
             | BodyCollisionMessage bodyCollisionMessage ->
@@ -79,7 +82,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                             let playerId = PlayerId entity2.Name
                             match (gameplay.Characters.TryGetValue enemyId, gameplay.Characters.TryGetValue playerId) with
                             | ((true, enemy), (true, _)) ->
-                                let enemy = { enemy with WeaponCollisions = Set.add enemyId enemy.WeaponCollisions }
+                                let enemy = { enemy with WeaponCollisions = Set.add playerId enemy.WeaponCollisions }
                                 { gameplay with Characters = Map.add enemyId enemy gameplay.Characters }
                             | _ -> gameplay
                     | _ -> gameplay
@@ -100,7 +103,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                             let playerId = PlayerId entity2.Name
                             match (gameplay.Characters.TryGetValue enemyId, gameplay.Characters.TryGetValue playerId) with
                             | ((true, enemy), (true, _)) ->
-                                let enemy = { enemy with WeaponCollisions = Set.remove enemyId enemy.WeaponCollisions }
+                                let enemy = { enemy with WeaponCollisions = Set.remove playerId enemy.WeaponCollisions }
                                 { gameplay with Characters = Map.add enemyId enemy gameplay.Characters }
                             | _ -> gameplay
                     | _ -> gameplay
@@ -114,7 +117,25 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         let gameplay = gameplay.WithPlayer player
         if signalJump then withSignal JumpPlayer gameplay else just gameplay
 
-    static member update gameplay world =
+    static member update (gameplay : Gameplay) world =
+
+        // update enemy actions
+        let characters =
+            Map.map (fun characterId (character : Character) ->
+                match characterId with
+                | EnemyId _ ->
+                    let player = gameplay.Player
+                    let enemy = character
+                    match enemy.ActionState with
+                    | NormalState ->
+                        if  Vector3.Distance (enemy.Position, player.Position) < 1.5f &&
+                            enemy.Rotation.Forward.AngleBetween (player.Position - enemy.Position) < 0.5f then
+                            let enemy = { enemy with ActionState = AttackState (AttackState.make gameplay.GameplayTime) }
+                            enemy
+                        else enemy
+                    | _ -> enemy
+                | _ -> character)
+                gameplay.Characters
 
         // process attacks
         let (attackedCharactersList, characters) =
@@ -122,8 +143,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
                 let (attackedCharacters, character) = Character.update gameplay.GameplayTime character world
                 let characters = Map.add characterId character characters
                 (attackedCharacters :: attackedCharactersList, characters))
-                ([], gameplay.Characters)
-                gameplay.Characters
+                ([], characters)
+                characters
         let attackedCharacters = attackedCharactersList |> Seq.concat |> Seq.toArray
 
         // update attacked character tracking
@@ -131,7 +152,15 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
             Array.fold (fun (characters : Map<_, _>) attackedCharacter ->
                 match characters.TryGetValue attackedCharacter with
                 | (true, character) ->
-                    let character = { character with ActionState = InjuryState { InjuryTime = gameplay.GameplayTime }}
+                    let character =
+                        let hitPoints = max (dec character.HitPoints) 0
+                        let actionState =
+                            if hitPoints > 0 then
+                                match character.ActionState with
+                                | InjuryState _ as injuryState -> injuryState
+                                | _ -> InjuryState { InjuryTime = gameplay.GameplayTime }
+                            else WoundedState
+                        { character with HitPoints = hitPoints; ActionState = actionState }
                     Map.add attackedCharacter character characters
                 | (false, _) -> characters)
                 characters attackedCharacters
@@ -141,7 +170,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
         let gameplay = gameplay.WithPlayer (Character.updateInputScan gameplay.Player Simulants.GameplayPlayer world)
 
         // fin
-        (attackedCharacters, gameplay)
+        (gameplay.Player.ActionState = WoundedState, attackedCharacters, gameplay)
 
     static member timeUpdate gameplay =
         let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
@@ -150,9 +179,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
     static member initial =
         let player = Character.initialPlayer (v3 0.0f 2.0f 0.0f) quatIdentity
         let enemies =
-            [for i in 0 .. dec 5 do
-                for j in 0 .. dec 5 do
-                    let enemy = Character.initialEnemy (v3 (single i * 8.0f - 8.0f) 2.0f (single j * 8.0f - 8.0f)) quatIdentity
+            [for i in 0 .. dec 4 do
+                for j in 0 .. dec 4 do
+                    let enemy = Character.initialEnemy (v3 (single i * 10.0f + 5.0f) 2.0f (single j * 10.0f + 5.0f)) quatIdentity
                     (makeGuid () |> string |> EnemyId, enemy)]
         let characters = Map.ofList ((Gameplay.PlayerId, player) :: enemies)
         { GameplayTime = 0L

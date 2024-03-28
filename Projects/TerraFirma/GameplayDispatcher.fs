@@ -1,5 +1,6 @@
 ﻿namespace TerraFirma
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -39,10 +40,10 @@ module GameplayDispatcher =
                 withSignals signals gameplay
 
             | Update ->
-                let (attackedCharacters, gameplay) = Gameplay.update gameplay world
-                if Array.notEmpty attackedCharacters
-                then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)) gameplay
-                else just gameplay
+                let (playerWounded, attackedCharacters, gameplay) = Gameplay.update gameplay world
+                let signals = if playerWounded then [StartQuitting :> Signal] else []
+                let signals = if Array.notEmpty attackedCharacters then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound) :> Signal :: signals else signals
+                withSignals signals gameplay
 
             | TimeUpdate ->
                 let gameplay = Gameplay.timeUpdate gameplay
@@ -72,8 +73,8 @@ module GameplayDispatcher =
 
             | TransformEye ->
                 let positionInterp = gameplay.Player.PositionInterp
-                let rotationInterp = gameplay.Player.RotationInterp
-                let world = World.setEye3dCenter (positionInterp + v3Up * 1.5f - rotationInterp.Forward * 3.0f) world
+                let rotationInterp = gameplay.Player.RotationInterp * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
+                let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
                 let world = World.setEye3dRotation rotationInterp world
                 just world
 
