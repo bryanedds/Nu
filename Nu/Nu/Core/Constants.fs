@@ -53,6 +53,7 @@ module Engine =
     let [<Literal>] BoundsPropertyName = "Bounds"
     let [<Literal>] XtensionPropertyName = "Xtension"
     let [<Literal>] BodyTypePropertyName = "BodyType"
+    let [<Literal>] BodyMotionPropertyName = "BodyMotion"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "Refinement"
     let [<Uniform>] Entity2dSizeDefault = Vector3 (Meter2d, Meter2d, 0.0f)

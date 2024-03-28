@@ -17,8 +17,6 @@ type CharacterCommand =
     | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
     | PublishCharactersAttacked of Entity Set
     | SyncWeaponTransform
-    | SyncChildTransformsWhileHalted
-    | SyncTransformWhileHalted
     | Jump
     | Die
     | PlaySound of int64 * single * Sound AssetTag
@@ -50,21 +48,17 @@ module CharacterDispatcher =
              Entity.FollowTargetOpt := if not character.Player then Some Simulants.GameplayPlayer else None
              Game.KeyboardKeyChangeEvent =|> fun evt -> UpdateInputKey evt.Data
              Entity.UpdateEvent => UpdateMessage
-             Game.PostUpdateEvent => SyncWeaponTransform
-             Entity.Transform.ChangeEvent => SyncChildTransformsWhileHalted]
+             Game.PostUpdateEvent => SyncWeaponTransform]
 
         override this.Content (character, _) =
             [Content.entity<AnimatedModelDispatcher> "AnimatedModel"
                 [Entity.Size == v3Dup 2.0f
                  Entity.Offset == v3 0.0f 1.0f 0.0f
-                 Entity.MountOpt == None
                  Entity.BodyMotion == ManualMotion
                  Entity.MaterialProperties == MaterialProperties.defaultProperties
-                 Entity.AnimatedModel == Assets.Gameplay.JoanModel
-                 Entity.Transform.ChangeEvent => SyncTransformWhileHalted]
+                 Entity.AnimatedModel == Assets.Gameplay.JoanModel]
              Content.entity<RigidModelDispatcher> "Weapon"
                 [Entity.Scale == v3 1.0f 1.0f 1.0f
-                 Entity.MountOpt == None
                  Entity.StaticModel == character.WeaponModel
                  Entity.BodyType == Static
                  Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
@@ -143,7 +137,7 @@ module CharacterDispatcher =
                 let animatedModel = entity / "AnimatedModel"
                 let weapon = entity / "Weapon"
                 match (animatedModel.GetBoneOffsetsOpt world, animatedModel.GetBoneTransformsOpt world) with
-                | (Some offsets, Some transforms) ->
+                | (Some offsets, Some transforms) when weapon.Exists world ->
                     let weaponTransform =
                         Matrix4x4.CreateTranslation (v3 0.0f 0.0f 0.02f) *
                         Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
@@ -158,24 +152,6 @@ module CharacterDispatcher =
             | PublishCharactersAttacked attackedCharacters ->
                 let world = World.publish attackedCharacters (Events.CharactersAttacked --> entity) entity world
                 just world
-
-            | SyncChildTransformsWhileHalted ->
-                if world.Halted then
-                    let animatedModel = entity / "AnimatedModel"
-                    let mutable transform = entity.GetTransform world
-                    let world = animatedModel.SetPosition transform.Position world
-                    let world = animatedModel.SetRotation transform.Rotation world
-                    withSignals [SyncWeaponTransform] world
-                else just world
-
-            | SyncTransformWhileHalted ->
-                if world.Halted then
-                    let animatedModel = entity / "AnimatedModel"
-                    let mutable transform = animatedModel.GetTransform world
-                    let world = entity.SetPosition transform.Position world
-                    let world = entity.SetRotation transform.Rotation world
-                    just world
-                else just world
 
             | Jump ->
                 let bodyId = entity.GetBodyId world

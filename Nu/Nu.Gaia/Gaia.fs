@@ -974,10 +974,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else World.tryGetNextEntity entity world
                 match peerOpt with
                 | Some peer ->
-                    if not (entity.GetProtected world) && not (peer.GetProtected world) then
-                        snapshot ()
-                        world <- World.swapEntityOrders entity peer world
-                    else messageBoxOpt <- Some "Cannot reorder a protected simulant (such as an entity created by the MMCC API)."
+                    snapshot ()
+                    world <- World.swapEntityOrders entity peer world
                 | None -> ()
             | Some _ | None -> ()
 
