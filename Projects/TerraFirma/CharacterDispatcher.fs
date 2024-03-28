@@ -144,14 +144,14 @@ module CharacterDispatcher =
                 let weapon = entity / "Weapon"
                 match (animatedModel.GetBoneOffsetsOpt world, animatedModel.GetBoneTransformsOpt world) with
                 | (Some offsets, Some transforms) ->
-                    let weaponHand =
+                    let weaponTransform =
                         Matrix4x4.CreateTranslation (v3 0.0f 0.0f 0.02f) *
                         Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
                         offsets.[Constants.Gameplay.CharacterWeaponHandBoneIndex].Inverted *
                         transforms.[Constants.Gameplay.CharacterWeaponHandBoneIndex] *
                         animatedModel.GetAffineMatrix world
-                    let world = weapon.SetPosition weaponHand.Translation world
-                    let world = weapon.SetRotation weaponHand.Rotation world
+                    let world = weapon.SetPosition weaponTransform.Translation world
+                    let world = weapon.SetRotation weaponTransform.Rotation world
                     just world
                 | (_, _) -> just world
 
