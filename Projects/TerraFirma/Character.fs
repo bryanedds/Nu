@@ -143,13 +143,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         if character.Player then
             let sinceJump = time - character.JumpState.LastTime
             let sinceOnGround = time - character.JumpState.LastTimeOnGround
-            if  keyboardKeyData.KeyboardKey = KeyboardKey.Space &&
-                not keyboardKeyData.Repeated &&
-                sinceJump >= 12L &&
-                sinceOnGround < 10L &&
-                character.ActionState = NormalState then
-                let character = { character with Character.JumpState.LastTime = time }
-                (true, character)
+            if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated then
+                if sinceJump >= 12L && sinceOnGround < 10L && character.ActionState = NormalState then
+                    let character = { character with Character.JumpState.LastTime = time }
+                    (true, character)
+                else (false, character)
             elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
                 let character =
                     match character.ActionState with
