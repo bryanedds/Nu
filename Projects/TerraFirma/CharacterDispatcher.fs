@@ -21,15 +21,16 @@ module CharacterDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initialize (character, entity) =
+        override this.Initialize (character, _) =
             [Entity.BodyType == KinematicCharacter
              Entity.SleepingAllowed == true
              Entity.CharacterProperties == if not character.Player then { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f } else CharacterProperties.defaultProperties
              Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
+             Entity.BodyMotion == MixedMotion
              Entity.FollowTargetOpt := if not character.Player then Some Simulants.GameplayPlayer else None
              Game.KeyboardKeyChangeEvent =|> fun evt -> UpdateInputKey evt.Data
              Entity.UpdateEvent => UpdateMessage
-             entity.Group.PostUpdateEvent => SyncWeaponTransform
+             Game.PostUpdateEvent => SyncWeaponTransform
              Entity.Transform.ChangeEvent => SyncChildTransformsWhileHalted]
 
         override this.Content (character, _) =
@@ -37,6 +38,7 @@ module CharacterDispatcher =
                 [Entity.Size == v3Dup 2.0f
                  Entity.Offset == v3 0.0f 1.0f 0.0f
                  Entity.MountOpt == None
+                 Entity.BodyMotion == ManualMotion
                  Entity.MaterialProperties == MaterialProperties.defaultProperties
                  Entity.AnimatedModel == Assets.Gameplay.JoanModel
                  Entity.Transform.ChangeEvent => SyncTransformWhileHalted]
@@ -47,6 +49,7 @@ module CharacterDispatcher =
                  Entity.BodyType == Static
                  Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor == true
+                 Entity.BodyMotion == ManualMotion
                  Entity.NavShape == EmptyNavShape
                  Entity.Pickable == false
                  Entity.BodyCollisionEvent =|> fun evt -> WeaponCollide evt.Data

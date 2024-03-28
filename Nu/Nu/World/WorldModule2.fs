@@ -1074,7 +1074,8 @@ module WorldModule2 =
                                 let rotation = bodyTransformMessage.Rotation
                                 let linearVelocity = bodyTransformMessage.LinearVelocity
                                 let angularVelocity = bodyTransformMessage.AngularVelocity
-                                if entity.GetModelDriven world || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+                                let bodyMotion = entity.GetBodyMotion world
+                                if bodyMotion = ManualMotion || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
                                         { BodyCenter = center
                                           BodyRotation = rotation

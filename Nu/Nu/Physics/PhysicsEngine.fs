@@ -384,13 +384,20 @@ type BodyType =
     | Dynamic
     | DynamicCharacter
 
-    member this.Dynamical =
-        match this with
-        | Dynamic | DynamicCharacter -> true
-        | Static | Kinematic | KinematicCharacter -> false
+/// The way in which an entity's motion is driven by a corresponding body.
+type BodyMotion =
 
-    member this.Statical =
-        not this.Dynamical
+    /// Entity motion is intended to be driven solely by the physics system.
+    /// Setting the position or rotation of the entity will result in a recreated physics body.
+    | PhysicsMotion
+
+    /// Entity motion is intended to be driven by the user manually.
+    /// Any information received from the physcs system can be utililized by handling a body transform event.
+    | ManualMotion
+
+    /// Entity motion motion is intended to be driven by the physics system.
+    /// Setting the position or rotation of the entity will not result in a recreated physics body.
+    | MixedMotion
 
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
