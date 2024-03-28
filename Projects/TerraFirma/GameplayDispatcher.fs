@@ -22,7 +22,7 @@ module GameplayDispatcher =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => TransformEye
              Screen.TimeUpdateEvent => TimeUpdate
-             //Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data
+             Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data
              Screen.SelectEvent => SynchronizeNav3d
              Screen.DeselectingEvent => FinishQuitting]
 
@@ -106,7 +106,8 @@ module GameplayDispatcher =
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// the player that's always present
-                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name []]
+                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
+                        [Entity.Persistent == false]]
 
              // no scene group
              | Quit -> ()]
