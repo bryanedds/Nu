@@ -106,8 +106,9 @@ module GameplayDispatcher =
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// the player that's always present
-                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name
-                        [Entity.Persistent == false]]
+                     Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
+                        [Entity.Persistent == false
+                         Events.DieEvent --> Simulants.GameplayPlayer => StartQuitting]]
 
              // no scene group
              | Quit -> ()]

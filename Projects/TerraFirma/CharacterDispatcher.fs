@@ -12,8 +12,11 @@ module CharacterDispatcher =
         member this.SetCharacter value world = this.SetModelGeneric<Character> value world
         member this.Character = this.ModelGeneric<Character> ()
 
-    type CharacterDispatcher () =
-        inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, Character.initial v3Zero quatIdentity)
+    type CharacterDispatcher (character : Character) =
+        inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, character)
+
+        new () =
+            CharacterDispatcher (Character.initial v3Zero quatIdentity)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -55,9 +58,11 @@ module CharacterDispatcher =
                 let position = transform.Position
                 let rotation = transform.Rotation
                 let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion world.UpdateTime position rotation character entity world
-                let character = Character.updateActionState world.UpdateTime position rotation linearVelocity angularVelocity character world
+                let world = entity.SetPosition position world
+                let world = entity.SetRotation rotation world
+                let character = Character.updateActionState world.UpdateTime position rotation character world
                 let (animations, character) = Character.updateAnimations world.UpdateTime position rotation linearVelocity angularVelocity character world
-                let (attackedCharacters, character) = Character.updateAttackedCharacters world.UpdateTime rotation linearVelocity angularVelocity character world
+                let (attackedCharacters, character) = Character.updateAttackedCharacters world.UpdateTime character
                 let signals = [UpdateAnimatedModel (position, rotation, animations) :> Signal]
                 let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
                 let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
@@ -123,3 +128,9 @@ module CharacterDispatcher =
             | Die ->
                 let world = World.publish () (Events.DieEvent --> entity) entity world
                 just world
+
+    type EnemyDispatcher () =
+        inherit CharacterDispatcher (Character.initialEnemy v3Zero quatIdentity)
+
+    type PlayerDispatcher () =
+        inherit CharacterDispatcher (Character.initialPlayer v3Zero quatIdentity)

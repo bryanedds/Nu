@@ -225,7 +225,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         // update interps
         Character.updateInterps position rotation linearVelocity angularVelocity character
 
-    static member updateAttackedCharacters time rotation linearVelocity angularVelocity character world =
+    static member updateAttackedCharacters time character =
         match character.ActionState with
         | AttackState attack ->
             let localTime = time - attack.AttackTime
@@ -240,7 +240,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else (Set.empty, { character with ActionState = AttackState attack })
         | _ -> (Set.empty, character)
 
-    static member updateActionState time position (rotation : Quaternion) linearVelocity angularVelocity character world =
+    static member updateActionState time position (rotation : Quaternion) character world =
         let actionState =
             match character.ActionState with
             | AttackState attack ->
@@ -289,3 +289,13 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           TurnSpeed = 0.05f
           JumpSpeed = 5.0f
           WeaponModel = Assets.Gameplay.GreatSwordModel }
+
+    static member initialPlayer position rotation =
+        let player = Character.initial position rotation
+        { player with
+            Player = true
+            HitPoints = 7 }
+
+    static member initialEnemy position rotation =
+        let enemy = Character.initial position rotation
+        enemy
