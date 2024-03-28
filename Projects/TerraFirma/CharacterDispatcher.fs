@@ -48,7 +48,10 @@ module CharacterDispatcher =
                  Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor == true
                  Entity.NavShape == EmptyNavShape
-                 Entity.Pickable == false]]
+                 Entity.Pickable == false
+                 Entity.BodyCollisionEvent =|> fun evt -> WeaponCollide evt.Data
+                 Entity.BodySeparationExplicitEvent =|> fun evt -> WeaponSeparateExplicit evt.Data
+                 Entity.BodySeparationImplicitEvent =|> fun evt -> WeaponSeparateImplicit evt.Data]]
 
         override this.Message (character, message, entity, world) =
 
@@ -71,6 +74,27 @@ module CharacterDispatcher =
             | UpdateInputKey keyboardKeyData ->
                 let (jump, character) = Character.updateInputKey world.UpdateTime keyboardKeyData character
                 withSignals (if jump then [Jump] else []) character
+
+            | WeaponCollide collisionData ->
+                match collisionData.BodyShapeCollidee.BodyId.BodySource with
+                | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
+                    let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
+                    just character
+                | _ -> just character
+
+            | WeaponSeparateExplicit separationData ->
+                match separationData.BodyShapeSeparatee.BodyId.BodySource with
+                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                    let character = { character with WeaponCollisions = Set.remove separatee character.WeaponCollisions }
+                    just character
+                | _ -> just character
+
+            | WeaponSeparateImplicit separationData ->
+                match separationData.BodyId.BodySource with
+                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world ->
+                    let character = { character with WeaponCollisions = Set.remove separatee character.WeaponCollisions }
+                    just character
+                | _ -> just character
 
         override this.Command (character, command, entity, world) =
 

@@ -15,8 +15,8 @@ type FieldMessage =
     | UpdateAvatarBodyTracking
     | AvatarBodyTransform of BodyTransformData
     | AvatarBodyCollision of BodyCollisionData
-    | AvatarBodySeparationImplicit of BodySeparationImplicitData
     | AvatarBodySeparationExplicit of BodySeparationExplicitData
+    | AvatarBodySeparationImplicit of BodySeparationImplicitData
     | ScreenTransitioning of bool
     | MenuTeamOpen
     | MenuTeamAlly of int

@@ -19,26 +19,15 @@ module GameplayDispatcher =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.UpdateEvent => Update
-             Screen.PostUpdateEvent => TransformEye
-             Screen.TimeUpdateEvent => TimeUpdate
-             Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data
+            [Screen.PostUpdateEvent => TransformEye
              Screen.SelectEvent => SynchronizeNav3d
-             Screen.DeselectingEvent => FinishQuitting]
+             Screen.DeselectingEvent => FinishQuitting
+             Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data]
 
         // here we handle the gameplay messages
-        override this.Message (gameplay, message, _, world) =
+        override this.Message (gameplay, message, _, _) =
 
             match message with
-            | Update ->
-                let player = Simulants.GameplayPlayer.GetCharacter world
-                let signals = if player.ActionState = WoundedState then [StartQuitting :> Signal] else []
-                withSignals signals gameplay
-
-            | TimeUpdate ->
-                let gameplay = Gameplay.timeUpdate gameplay
-                just gameplay
-
             | StartQuitting ->
                 let gameplay = { gameplay with GameplayState = Quitting }
                 just gameplay
@@ -48,7 +37,7 @@ module GameplayDispatcher =
                 just gameplay
 
         // here we handle the gameplay commands
-        override this.Command (gameplay, command, screen, world) =
+        override this.Command (_, command, screen, world) =
 
             match command with
             | SynchronizeNav3d ->
@@ -66,7 +55,7 @@ module GameplayDispatcher =
                                 if hitPoints > 0 then
                                     match character.ActionState with
                                     | InjuryState _ as injuryState -> injuryState
-                                    | _ -> InjuryState { InjuryTime = gameplay.GameplayTime }
+                                    | _ -> InjuryState { InjuryTime = world.UpdateTime }
                                 else WoundedState
                             { character with HitPoints = hitPoints; ActionState = actionState }
                         attackedCharacter.SetCharacter character world)

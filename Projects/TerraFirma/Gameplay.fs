@@ -5,8 +5,6 @@ open Nu
 
 // this is our MMCC message type.
 type GameplayMessage =
-    | Update
-    | TimeUpdate
     | StartQuitting
     | FinishQuitting
     interface Message
@@ -30,17 +28,10 @@ type GameplayState =
 // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
 // you could use `GameplayTime : single` instead.
 type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
-    { GameplayTime : int64
-      GameplayState : GameplayState }
-
-    static member timeUpdate gameplay =
-        let gameplay = { gameplay with GameplayTime = inc gameplay.GameplayTime }
-        gameplay
+    { GameplayState : GameplayState }
 
     static member initial =
-        { GameplayTime = 0L
-          GameplayState = Quit }
+        { GameplayState = Quit }
 
     static member start =
-        let initial = Gameplay.initial
-        { initial with GameplayState = Playing }
+        { GameplayState = Playing }

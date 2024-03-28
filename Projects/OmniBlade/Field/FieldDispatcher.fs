@@ -57,8 +57,8 @@ module FieldDispatcher =
              Screen.OutgoingFinishEvent => ScreenTransitioning false
              Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
              Simulants.FieldAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
-             Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal
-             Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal]
+             Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
+             Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal]
 
         override this.Message (field, message, _, world) =
 
@@ -165,6 +165,17 @@ module FieldDispatcher =
                     else field
                 just field
 
+            | AvatarBodySeparationExplicit separation ->
+
+                // add separated body shape
+                let field =
+                    if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee world then
+                        let field = Field.updateAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                        let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
+                        field
+                    else field
+                just field
+
             | AvatarBodySeparationImplicit separation ->
 
                 // add separated body shape
@@ -176,17 +187,6 @@ module FieldDispatcher =
                     let field = Field.updateAvatarSeparatedPropIds ((@) separatedPropIds) field
                     just field
                 | _ -> just field
-
-            | AvatarBodySeparationExplicit separation ->
-
-                // add separated body shape
-                let field =
-                    if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee world then
-                        let field = Field.updateAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                        let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
-                        field
-                    else field
-                just field
 
             | ScreenTransitioning transitioning ->
                 let field = Field.updateScreenTransitioning (constant transitioning) field

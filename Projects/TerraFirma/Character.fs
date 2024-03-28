@@ -7,6 +7,9 @@ open Nu
 type CharacterMessage =
     | UpdateMessage
     | UpdateInputKey of KeyboardKeyData
+    | WeaponCollide of BodyCollisionData
+    | WeaponSeparateExplicit of BodySeparationExplicitData
+    | WeaponSeparateImplicit of BodySeparationImplicitData
     interface Message
 
 type CharacterCommand =
@@ -159,27 +162,29 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
 
     static member updateInputKey time keyboardKeyData character =
-        let sinceJump = time - character.JumpState.LastTime
-        let sinceOnGround = time - character.JumpState.LastTimeOnGround
-        if  keyboardKeyData.KeyboardKey = KeyboardKey.Space &&
-            not keyboardKeyData.Repeated &&
-            sinceJump >= 12L &&
-            sinceOnGround < 10L &&
-            character.ActionState = NormalState then
-            let character = { character with Character.JumpState.LastTime = time }
-            (true, character)
-        elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
-            let character =
-                match character.ActionState with
-                | NormalState ->
-                    { character with ActionState = AttackState (AttackState.make time) }
-                | AttackState attack ->
-                    let localTime = time - attack.AttackTime
-                    if localTime > 10L && not attack.FollowUpBuffered
-                    then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
-                    else character
-                | InjuryState _ | WoundedState -> character
-            (false, character)
+        if character.Player then
+            let sinceJump = time - character.JumpState.LastTime
+            let sinceOnGround = time - character.JumpState.LastTimeOnGround
+            if  keyboardKeyData.KeyboardKey = KeyboardKey.Space &&
+                not keyboardKeyData.Repeated &&
+                sinceJump >= 12L &&
+                sinceOnGround < 10L &&
+                character.ActionState = NormalState then
+                let character = { character with Character.JumpState.LastTime = time }
+                (true, character)
+            elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+                let character =
+                    match character.ActionState with
+                    | NormalState ->
+                        { character with ActionState = AttackState (AttackState.make time) }
+                    | AttackState attack ->
+                        let localTime = time - attack.AttackTime
+                        if localTime > 10L && not attack.FollowUpBuffered
+                        then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
+                        else character
+                    | InjuryState _ | WoundedState -> character
+                (false, character)
+            else (false, character)
         else (false, character)
 
     static member updateMotion time position (rotation : Quaternion) character (entity : Entity) world =
