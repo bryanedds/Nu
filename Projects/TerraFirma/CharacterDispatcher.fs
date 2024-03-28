@@ -16,8 +16,7 @@ module CharacterDispatcher =
         inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, Character.initial v3Zero quatIdentity)
 
         static member Facets =
-            [typeof<RigidBodyFacet>
-             typeof<FollowerFacet>]
+            [typeof<RigidBodyFacet>]
 
         override this.Initialize (character, entity) =
             [Entity.BodyType == KinematicCharacter
@@ -45,6 +44,7 @@ module CharacterDispatcher =
                  Entity.BodyType == Static
                  Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor == true
+                 Entity.NavShape == EmptyNavShape
                  Entity.Pickable == false]]
 
         override this.Message (character, message, entity, world) =
@@ -54,24 +54,14 @@ module CharacterDispatcher =
                 let mutable transform = entity.GetTransform world
                 let position = transform.Position
                 let rotation = transform.Rotation
-                let linearVelocity = entity.GetLinearVelocity world
-                let angularVelocity = entity.GetAngularVelocity world
-                let bodyId = entity.GetBodyId world
-                let grounded = World.getBodyGrounded bodyId world
-                let character = Character.updateInterps position rotation (entity.GetLinearVelocity world) (entity.GetAngularVelocity world) character
-                let character = Character.updateJumpState world.UpdateTime grounded character
-                let (attackedCharacters, animations, character) = Character.update world.UpdateTime rotation linearVelocity angularVelocity character world
-                let (position, rotation) = Character.updateInputScan position rotation character Simulants.GameplayPlayer world
-                let character =
-                    match character.ActionState with
-                    | NormalState when not character.Player ->
-                        let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                        if  Vector3.Distance (position, playerPosition) < 1.5f &&
-                            rotation.Forward.AngleBetween (playerPosition - position) < 0.5f then
-                            { character with ActionState = AttackState (AttackState.make world.UpdateTime) }
-                        else character
-                    | _ -> character
-                withSignals [UpdateAnimatedModel (position, rotation, animations); PublishCharactersAttacked attackedCharacters] character
+                let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion world.UpdateTime position rotation character entity world
+                let character = Character.updateActionState world.UpdateTime position rotation linearVelocity angularVelocity character world
+                let (animations, character) = Character.updateAnimations world.UpdateTime position rotation linearVelocity angularVelocity character world
+                let (attackedCharacters, character) = Character.updateAttackedCharacters world.UpdateTime rotation linearVelocity angularVelocity character world
+                let signals = [UpdateAnimatedModel (position, rotation, animations) :> Signal]
+                let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
+                let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
+                withSignals signals character
 
             | UpdateInputKey keyboardKeyData ->
                 let (jump, character) = Character.updateInputKey world.UpdateTime keyboardKeyData character
@@ -128,4 +118,8 @@ module CharacterDispatcher =
             | Jump ->
                 let bodyId = entity.GetBodyId world
                 let world = World.jumpBody true character.JumpSpeed bodyId world
+                just world
+
+            | Die ->
+                let world = World.publish () (Events.DieEvent --> entity) entity world
                 just world
