@@ -36,7 +36,7 @@ module CharacterDispatcher =
         inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, character)
 
         new () =
-            CharacterDispatcher (Character.initial v3Zero quatIdentity)
+            CharacterDispatcher (Character.initial)
 
         static member Facets =
             [typeof<RigidBodyFacet>]
@@ -191,7 +191,7 @@ module CharacterDispatcher =
                 just world
 
     type EnemyDispatcher () =
-        inherit CharacterDispatcher (Character.initialEnemy v3Zero quatIdentity)
+        inherit CharacterDispatcher (Character.initialEnemy)
 
     type PlayerDispatcher () =
-        inherit CharacterDispatcher (Character.initialPlayer v3Zero quatIdentity)
+        inherit CharacterDispatcher (Character.initialPlayer)

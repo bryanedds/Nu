@@ -118,7 +118,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let localTime = time - injury.InjuryTime
             let soundOpt =
                 match localTime with
-                | 2L -> Some Assets.Gameplay.InjureSound
+                | 1L -> Some Assets.Gameplay.InjureSound
                 | _ -> None
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
@@ -260,12 +260,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             | None -> (None, traversalAnimations)
         (soundOpt, animations)
 
-    static member initial position rotation =
+    static member initial =
         { Player = false
-          PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
-          RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
-          LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
-          AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
+          PositionPrevious = Queue.empty
+          RotationPrevious = Queue.empty
+          LinearVelocityPrevious = Queue.empty
+          AngularVelocityPrevious = Queue.empty
           HitPoints = 3
           ActionState = NormalState
           JumpState = JumpState.initial
@@ -275,12 +275,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           JumpSpeed = 5.0f
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
-    static member initialPlayer position rotation =
-        let player = Character.initial position rotation
-        { player with
-            Player = true
-            HitPoints = 7 }
+    static member initialPlayer =
+        let player = Character.initial
+        { player with Player = true; HitPoints = 7 }
 
-    static member initialEnemy position rotation =
-        let enemy = Character.initial position rotation
+    static member initialEnemy =
+        let enemy = Character.initial
         enemy
