@@ -63,6 +63,9 @@ module CharacterDispatcher =
                 let mutable transform = entity.GetTransform world
                 let position = transform.Position
                 let rotation = transform.Rotation
+                let linearVelocity = entity.GetLinearVelocity world
+                let angularVelocity = entity.GetAngularVelocity world
+                let character = Character.updateInterps position rotation linearVelocity angularVelocity character
                 let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion world.UpdateTime position rotation character entity world
                 let character = Character.updateActionState world.UpdateTime position rotation character world
                 let (animations, character) = Character.updateAnimations world.UpdateTime position rotation linearVelocity angularVelocity character world
@@ -107,8 +110,8 @@ module CharacterDispatcher =
 
             | UpdateAnimatedModel (position, rotation, animations) ->
                 let animatedModel = entity / "AnimatedModel"
-                let world = animatedModel.SetPosition position world
-                let world = animatedModel.SetRotation rotation world
+                let world = animatedModel.SetPosition (character.PositionInterp position) world
+                let world = animatedModel.SetRotation (character.RotationInterp rotation) world
                 let world = animatedModel.SetAnimations animations world
                 just world
 

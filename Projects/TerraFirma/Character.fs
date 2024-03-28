@@ -92,11 +92,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Seq.sum angularVelocities / single angularVelocities.Length
         else angularVelocity
 
-    member this.AnimatedModelAffineMatrix position rotation =
-        Matrix4x4.CreateFromTrs (this.PositionInterp position, this.RotationInterp rotation, v3One)
-
-    static member private computeTraversalAnimations (rotation : Quaternion) linearVelocity angularVelocity (character : Character) =
+    static member private computeTraversalAnimations (rotation : Quaternion) (linearVelocity : Vector3) (angularVelocity : Vector3) (character : Character) =
         if character.ActionState <> WoundedState then
+            let rotationInterp = character.RotationInterp rotation
             let linearVelocityInterp = character.LinearVelocityInterp linearVelocity
             let angularVelocityInterp = character.AngularVelocityInterp angularVelocity
             let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotation.Forward))
@@ -143,24 +141,18 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | NormalState | WoundedState -> None
 
     static member updateInterps position rotation linearVelocity angularVelocity character =
-        let character =
-            { character with
-                PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
-                RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
-                LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> linearVelocity) |> Queue.ofSeq
-                AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> angularVelocity) |> Queue.ofSeq }
-        (character.PositionInterp position,
-         character.RotationInterp rotation,
-         character.LinearVelocityInterp linearVelocity,
-         character.AngularVelocityInterp angularVelocity,
-         character)
-
-    static member overwriteInterps position rotation linearVelocity angularVelocity character =
         { character with
             PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj position
             RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj rotation
             LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj linearVelocity
             AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
+
+    static member overwriteInterps position rotation linearVelocity angularVelocity character =
+        { character with
+            PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
+            RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
+            LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> linearVelocity) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> angularVelocity) |> Queue.ofSeq }
 
     static member updateInputKey time keyboardKeyData character =
         if character.Player then
@@ -228,8 +220,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
                 else (position, rotation, v3Zero, v3Zero, character)
 
-        // update interps
-        Character.updateInterps position rotation linearVelocity angularVelocity character
+        // fin
+        (position, rotation, linearVelocity, angularVelocity, character)
 
     static member updateAttackedCharacters time character =
         match character.ActionState with
