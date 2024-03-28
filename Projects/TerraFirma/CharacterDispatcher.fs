@@ -4,28 +4,28 @@ open System.Numerics
 open Prime
 open Nu
 
+type CharacterMessage =
+    | UpdateMessage
+    | UpdateInputKey of KeyboardKeyData
+    | WeaponCollide of BodyCollisionData
+    | WeaponSeparateExplicit of BodySeparationExplicitData
+    | WeaponSeparateImplicit of BodySeparationImplicitData
+    interface Message
+
+type CharacterCommand =
+    | UpdateTransform of Vector3 * Quaternion
+    | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
+    | PublishCharactersAttacked of Entity Set
+    | SyncWeaponTransform
+    | SyncChildTransformsWhileHalted
+    | SyncTransformWhileHalted
+    | Jump
+    | Die
+    | PlaySound of int64 * single * Sound AssetTag
+    interface Command
+
 [<AutoOpen>]
 module CharacterDispatcher =
-
-    type CharacterMessage =
-        | UpdateMessage
-        | UpdateInputKey of KeyboardKeyData
-        | WeaponCollide of BodyCollisionData
-        | WeaponSeparateExplicit of BodySeparationExplicitData
-        | WeaponSeparateImplicit of BodySeparationImplicitData
-        interface Message
-
-    type CharacterCommand =
-        | UpdateTransform of Vector3 * Quaternion
-        | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
-        | PublishCharactersAttacked of Entity Set
-        | SyncWeaponTransform
-        | SyncChildTransformsWhileHalted
-        | SyncTransformWhileHalted
-        | Jump
-        | Die
-        | PlaySound of int64 * single * Sound AssetTag
-        interface Command
 
     type Entity with
         member this.GetCharacter world = this.GetModelGeneric<Character> world
@@ -183,7 +183,7 @@ module CharacterDispatcher =
                 just world
 
             | Die ->
-                let world = World.publish () (Events.DieEvent --> entity) entity world
+                let world = World.publish () (Events.CharacterDieEvent --> entity) entity world
                 just world
 
             | CharacterCommand.PlaySound (delay, volume, sound) ->

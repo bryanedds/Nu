@@ -3,19 +3,6 @@ open System
 open Prime
 open Nu
 
-// this is our MMCC message type.
-type GameplayMessage =
-    | StartQuitting
-    | FinishQuitting
-    interface Message
-
-// this is our MMCC command type.
-type GameplayCommand =
-    | SynchronizeNav3d
-    | CharactersAttacked of Entity Set
-    | TransformEye
-    interface Command
-
 // this represents that state of gameplay simulation.
 type GameplayState =
     | Playing

@@ -4,6 +4,19 @@ open System.Numerics
 open Prime
 open Nu
 
+// this is our MMCC message type.
+type GameplayMessage =
+    | StartQuitting
+    | FinishQuitting
+    interface Message
+
+// this is our MMCC command type.
+type GameplayCommand =
+    | SynchronizeNav3d
+    | CharactersAttacked of Entity Set
+    | TransformEye
+    interface Command
+
 [<AutoOpen>]
 module GameplayDispatcher =
 
@@ -37,6 +50,8 @@ module GameplayDispatcher =
                 just gameplay
 
         // here we handle the gameplay commands
+        // notice how in here we handle events from characters to implement intra-character interactions rather than
+        // the more complex approach of having characters talk to each other or handle each other's events.
         override this.Command (_, command, screen, world) =
 
             match command with
@@ -93,7 +108,7 @@ module GameplayDispatcher =
                     [// the player that's always present
                      Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Persistent == false
-                         Events.DieEvent --> Simulants.GameplayPlayer => StartQuitting]]
+                         Events.CharacterDieEvent --> Simulants.GameplayPlayer => StartQuitting]]
 
              // no scene group
              | Quit -> ()]

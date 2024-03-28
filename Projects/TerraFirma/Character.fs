@@ -277,7 +277,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial with Player = true; HitPoints = 7; WalkSpeed = 0.6f }
+        { Character.initial with Player = true; HitPoints = 7; WalkSpeed = 0.06f }
 
     static member initialEnemy =
         Character.initial

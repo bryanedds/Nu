@@ -10,4 +10,4 @@ open Nu
 module Events =
 
     let CharactersAttacked = stoa<Entity Set> "CharactersAttacked/Event"
-    let DieEvent = stoa<unit> "Die/Event"
+    let CharacterDieEvent = stoa<unit> "CharacterDie/Event"
