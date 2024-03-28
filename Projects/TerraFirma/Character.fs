@@ -4,17 +4,19 @@ open System.Numerics
 open Prime
 open Nu
 
-type CharacterCommand =
-    | PostUpdate
-    interface Command
+type CharacterMessage =
+    | UpdateMessage
+    | UpdateInputKey of KeyboardKeyData
+    interface Message
 
-type CharacterId =
-    | PlayerId of string
-    | EnemyId of string
-    member this.CharacterName =
-        match this with
-        | PlayerId name -> name
-        | EnemyId name -> name
+type CharacterCommand =
+    | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
+    | PublishCharactersAttacked of Entity Set
+    | SyncWeaponTransform
+    | SyncChildTransformsWhileHalted
+    | SyncTransformWhileHalted
+    | Jump
+    interface Command
 
 type JumpState =
     { LastTime : int64
@@ -26,7 +28,7 @@ type JumpState =
 
 type AttackState =
     { AttackTime : int64
-      AttackedCharacters : CharacterId Set
+      AttackedCharacters : Entity Set
       FollowUpBuffered : bool }
 
     static member make time =
@@ -44,10 +46,7 @@ type ActionState =
     | WoundedState
 
 type [<ReferenceEquality; SymbolicExpansion>] Character =
-    { Position : Vector3
-      Rotation : Quaternion
-      LinearVelocity : Vector3
-      AngularVelocity : Vector3
+    { Player : bool
       PositionPrevious : Vector3 Queue
       RotationPrevious : Quaternion Queue
       LinearVelocityPrevious : Vector3 Queue
@@ -55,53 +54,50 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       HitPoints : int
       ActionState : ActionState
       JumpState : JumpState
-      WeaponCollisions : CharacterId Set
+      WeaponCollisions : Entity Set
       WalkSpeed : single
       TurnSpeed : single
       JumpSpeed : single
-      Animations : Animation array
-      BodyShape : BodyShape
-      CharacterProperties : CharacterProperties
-      AnimatedModel : AnimatedModel AssetTag }
+      WeaponModel : StaticModel AssetTag }
 
-    member this.PositionInterp =
+    member this.PositionInterp position =
         if not (Queue.isEmpty this.PositionPrevious) then
-            let positions = Queue.conj this.Position this.PositionPrevious
+            let positions = Queue.conj position this.PositionPrevious
             Seq.sum positions / single positions.Length
-        else this.Position
+        else position
 
-    member this.RotationInterp =
+    member this.RotationInterp rotation =
         if not (Queue.isEmpty this.RotationPrevious) then
-            let rotations = Queue.conj this.Rotation this.RotationPrevious
+            let rotations = Queue.conj rotation this.RotationPrevious
             if rotations.Length > 1 then
                 let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f)
                 unnormalized.Normalized
-            else this.Rotation
-        else this.Rotation
+            else rotation
+        else rotation
 
-    member this.LinearVelocityInterp =
+    member this.LinearVelocityInterp linearVelocity =
         if not (Queue.isEmpty this.LinearVelocityPrevious) then
-            let linearVelocities = Queue.conj this.LinearVelocity this.LinearVelocityPrevious
+            let linearVelocities = Queue.conj linearVelocity this.LinearVelocityPrevious
             Seq.sum linearVelocities / single linearVelocities.Length
-        else this.LinearVelocity
+        else linearVelocity
 
-    member this.AngularVelocityInterp =
+    member this.AngularVelocityInterp angularVelocity =
         if not (Queue.isEmpty this.AngularVelocityPrevious) then
-            let angularVelocities = Queue.conj this.AngularVelocity this.AngularVelocityPrevious
+            let angularVelocities = Queue.conj angularVelocity this.AngularVelocityPrevious
             Seq.sum angularVelocities / single angularVelocities.Length
-        else this.AngularVelocity
+        else angularVelocity
 
-    member this.AnimatedModelAffineMatrix =
-        Matrix4x4.CreateFromTrs (this.PositionInterp, this.RotationInterp, v3One)
+    member this.AnimatedModelAffineMatrix position rotation =
+        Matrix4x4.CreateFromTrs (this.PositionInterp position, this.RotationInterp rotation, v3One)
 
-    static member private computeTraversalAnimations (character : Character) =
+    static member private computeTraversalAnimations (rotation : Quaternion) linearVelocity angularVelocity (character : Character) =
         if character.ActionState <> WoundedState then
-            let linearVelocityInterp = character.LinearVelocityInterp
-            let angularVelocityInterp = character.AngularVelocityInterp
-            let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Forward))
-            let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Forward))
-            let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, character.Rotation.Right))
-            let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -character.Rotation.Right))
+            let linearVelocityInterp = character.LinearVelocityInterp linearVelocity
+            let angularVelocityInterp = character.AngularVelocityInterp angularVelocity
+            let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotation.Forward))
+            let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotation.Forward))
+            let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotation.Right))
+            let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotation.Right))
             let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
             let turnLeftness = -turnRightness
             let animations =
@@ -141,27 +137,22 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Some animation
         | NormalState | WoundedState -> None
 
-    static member warp position rotation character =
+    static member updateInterps position rotation linearVelocity angularVelocity character =
         { character with
-            Position = position
-            Rotation = rotation
-            LinearVelocity = v3Zero
-            AngularVelocity = v3Zero
             PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
             RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
-            LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
-            AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq }
+            LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> linearVelocity) |> Queue.ofSeq
+            AngularVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> angularVelocity) |> Queue.ofSeq }
 
-    static member transform position rotation linearVelocity angularVelocity character =
+    static member overwriteInterps position rotation linearVelocity angularVelocity character =
         { character with
-            Position = position
-            Rotation = rotation
-            LinearVelocity = linearVelocity
-            AngularVelocity = angularVelocity
-            PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj character.Position
-            RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj character.Rotation
-            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj character.LinearVelocity
-            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj character.AngularVelocity }
+            PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj position
+            RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj rotation
+            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj linearVelocity
+            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
+
+    static member updateJumpState time grounded character =
+        { character with Character.JumpState.LastTimeOnGround = if grounded then time else character.JumpState.LastTimeOnGround }
 
     static member updateInputKey time keyboardKeyData character =
         let sinceJump = time - character.JumpState.LastTime
@@ -187,34 +178,33 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             (false, character)
         else (false, character)
 
-    static member updateInputScan character (entity : Entity) world =
+    static member updateInputScan position (rotation : Quaternion) character (entity : Entity) world =
         let bodyId = entity.GetBodyId world
         let grounded = World.getBodyGrounded bodyId world
         if character.ActionState = NormalState || not grounded then
 
-            // update position
-            let forward = character.Rotation.Forward
-            let right = character.Rotation.Right
+            // compute new position
+            let forward = rotation.Forward
+            let right = rotation.Right
             let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
             let walkVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
-            let position = if walkVelocity <> v3Zero then character.Position + walkVelocity else character.Position
-            let character = { character with Position = position }
+            let position = if walkVelocity <> v3Zero then position + walkVelocity else position
 
-            // update rotation
+            // compute new rotation
             let turnSpeed = character.TurnSpeed * if grounded then 1.0f else 0.75f
             let turnVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-            let rotation = if turnVelocity <> 0.0f then character.Rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else character.Rotation
-            { character with Rotation = rotation }
+            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
+            (position, rotation)
 
-        else character
+        else (position, rotation)
 
-    static member update time character world =
+    static member update time rotation linearVelocity angularVelocity character world =
 
         // update attacked characters
         let (attackingCharacters, character) =
@@ -250,19 +240,13 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = { character with ActionState = ActionState }
 
         // update animation
-        let traversalAnimations = Character.computeTraversalAnimations character
+        let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
         let actionAnimationOpt = Character.tryComputeActionAnimation time character world
         let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
-        let character = { character with Animations = animations }
-
-        // fin
-        (attackingCharacters, character)
+        (attackingCharacters, animations, character)
 
     static member initial position rotation =
-        { Position = position
-          Rotation = rotation
-          LinearVelocity = v3Zero
-          AngularVelocity = v3Zero
+        { Player = false
           PositionPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> position) |> Queue.ofSeq
           RotationPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> rotation) |> Queue.ofSeq
           LinearVelocityPrevious = Array.init (dec Constants.Gameplay.CharacterInterpolationSteps) (fun _ -> v3Zero) |> Queue.ofSeq
@@ -274,21 +258,4 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
           JumpSpeed = 5.0f
-          Animations = [||]
-          BodyShape = CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
-          CharacterProperties = CharacterProperties.defaultProperties
-          AnimatedModel = Assets.Gameplay.JoanModel }
-
-    static member initialPlayer position rotation =
-        let player = Character.initial position rotation
-        { player with
-            HitPoints = 5
-            WalkSpeed = Constants.Gameplay.PlayerWalkSpeed
-            TurnSpeed = Constants.Gameplay.PlayerTurnSpeed
-            JumpSpeed = Constants.Gameplay.PlayerJumpSpeed }
-
-    static member initialEnemy position rotation =
-        let enemy = Character.initial position rotation
-        { enemy with
-            BodyShape = CapsuleShape { Height = 1.3f; Radius = 0.2f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
-            Character.CharacterProperties.PenetrationDepthMax = 0.1f } // deeper penetration needed to make enemies able to climb stairs
+          WeaponModel = Assets.Gameplay.GreatSwordModel }

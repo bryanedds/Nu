@@ -19,11 +19,10 @@ module GameplayDispatcher =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Game.IntegrationEvent =|> fun evt -> UpdatePhysics evt.Data
-             Game.KeyboardKeyDownEvent =|> fun evt -> UpdatePlayerInputKey evt.Data
-             Screen.UpdateEvent => Update
+            [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => TransformEye
              Screen.TimeUpdateEvent => TimeUpdate
+             //Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data
              Screen.SelectEvent => SynchronizeNav3d
              Screen.DeselectingEvent => FinishQuitting]
 
@@ -31,18 +30,9 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | UpdatePhysics integrationData ->
-                let gameplay = Gameplay.updatePhysics integrationData gameplay world
-                just gameplay
-
-            | UpdatePlayerInputKey keyboardKeyData ->
-                let (signals, gameplay) = Gameplay.updatePlayerInputKey keyboardKeyData gameplay
-                withSignals signals gameplay
-
             | Update ->
-                let (playerWounded, attackedCharacters, gameplay) = Gameplay.update gameplay world
-                let signals = if playerWounded then [StartQuitting :> Signal] else []
-                let signals = if Array.notEmpty attackedCharacters then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound) :> Signal :: signals else signals
+                let player = Simulants.GameplayPlayer.GetCharacter world
+                let signals = if player.ActionState = WoundedState then [StartQuitting :> Signal] else []
                 withSignals signals gameplay
 
             | TimeUpdate ->
@@ -66,14 +56,29 @@ module GameplayDispatcher =
                 then just (World.synchronizeNav3d screen world)
                 else just world
 
-            | JumpPlayer ->
-                let bodyId = Simulants.GameplayPlayer.GetBodyId world
-                let world = World.jumpBody true gameplay.Player.JumpSpeed bodyId world
-                just world
+            | CharactersAttacked attackedCharacters ->
+                let world =
+                    Seq.fold (fun world (attackedCharacter : Entity) ->
+                        let character = attackedCharacter.GetCharacter world
+                        let character =
+                            let hitPoints = max (dec character.HitPoints) 0
+                            let actionState =
+                                if hitPoints > 0 then
+                                    match character.ActionState with
+                                    | InjuryState _ as injuryState -> injuryState
+                                    | _ -> InjuryState { InjuryTime = gameplay.GameplayTime }
+                                else WoundedState
+                            { character with HitPoints = hitPoints; ActionState = actionState }
+                        attackedCharacter.SetCharacter character world)
+                        world attackedCharacters
+                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)) world
 
             | TransformEye ->
-                let positionInterp = gameplay.Player.PositionInterp
-                let rotationInterp = gameplay.Player.RotationInterp * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
+                let player = Simulants.GameplayPlayer.GetCharacter world
+                let position = Simulants.GameplayPlayer.GetPosition world
+                let rotation = Simulants.GameplayPlayer.GetRotation world
+                let positionInterp = player.PositionInterp position
+                let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
                 let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
                 let world = World.setEye3dRotation rotationInterp world
                 just world
@@ -100,10 +105,8 @@ module GameplayDispatcher =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
-                    [// characters
-                     for (characterId, character) in gameplay.Characters.Pairs do
-                        Content.entity<CharacterDispatcher> (string characterId.CharacterName)
-                            [Entity.Character := character]]
+                    [// the player that's always present
+                     Content.entity<CharacterDispatcher> Simulants.GameplayPlayer.Name []]
 
              // no scene group
              | Quit -> ()]

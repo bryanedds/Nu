@@ -37,6 +37,7 @@
 		<Compile Include="Assets.fs" />
 		<Compile Include="Constants.fs" />
 		<Compile Include="Simulants.fs" />
+		<Compile Include="Events.fs" />
 		<Compile Include="Character.fs" />
 		<Compile Include="CharacterDispatcher.fs" />
 		<Compile Include="Gameplay.fs" />
