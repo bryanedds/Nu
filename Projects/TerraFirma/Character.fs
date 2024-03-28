@@ -4,25 +4,6 @@ open System.Numerics
 open Prime
 open Nu
 
-type CharacterMessage =
-    | UpdateMessage
-    | UpdateInputKey of KeyboardKeyData
-    | WeaponCollide of BodyCollisionData
-    | WeaponSeparateExplicit of BodySeparationExplicitData
-    | WeaponSeparateImplicit of BodySeparationImplicitData
-    interface Message
-
-type CharacterCommand =
-    | UpdateTransform of Vector3 * Quaternion
-    | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
-    | PublishCharactersAttacked of Entity Set
-    | SyncWeaponTransform
-    | SyncChildTransformsWhileHalted
-    | SyncTransformWhileHalted
-    | Jump
-    | Die
-    interface Command
-
 type JumpState =
     { LastTime : int64
       LastTimeOnGround : int64 }
@@ -97,10 +78,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let rotationInterp = character.RotationInterp rotation
             let linearVelocityInterp = character.LinearVelocityInterp linearVelocity
             let angularVelocityInterp = character.AngularVelocityInterp angularVelocity
-            let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotation.Forward))
-            let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotation.Forward))
-            let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotation.Right))
-            let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotation.Right))
+            let forwardness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotationInterp.Forward))
+            let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotationInterp.Forward))
+            let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotationInterp.Right))
+            let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotationInterp.Right))
             let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
             let turnLeftness = -turnRightness
             let animations =
@@ -120,24 +101,28 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             animations
         else []
 
-    static member private tryComputeActionAnimation time character world =
+    static member private tryComputeActionAnimation time character =
         match character.ActionState with
         | AttackState attack ->
             let localTime = time - attack.AttackTime
-            let world =
+            let soundOpt =
                 match localTime with
-                | 7L -> World.playSound 1.0f Assets.Gameplay.SlashSound world
-                | 67L -> if attack.FollowUpBuffered then World.playSound 1.0f Assets.Gameplay.Slash2Sound world else world
-                | _ -> world
-            let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
+                | 7L -> Some Assets.Gameplay.SlashSound
+                | 67L -> Some Assets.Gameplay.Slash2Sound
+                | _ -> None
+            let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = animationName; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
-            Some animation
+            Some (soundOpt, animation)
         | InjuryState injury ->
             let localTime = time - injury.InjuryTime
-            let animationStartTime = GameTime.ofUpdates (world.UpdateTime - localTime % 55L)
+            let soundOpt =
+                match localTime with
+                | 2L -> Some Assets.Gameplay.InjureSound
+                | _ -> None
+            let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
-            Some animation
+            (Some (soundOpt, animation))
         | NormalState | WoundedState -> None
 
     static member updateInterps position rotation linearVelocity angularVelocity character =
@@ -266,12 +251,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else actionState
         { character with ActionState = actionState }
 
-    static member updateAnimations time position rotation linearVelocity angularVelocity character world =
+    static member computeAnimations time position rotation linearVelocity angularVelocity character =
         ignore<Vector3> position
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
-        let actionAnimationOpt = Character.tryComputeActionAnimation time character world
-        let animations = Array.append (Option.toArray actionAnimationOpt) (Array.ofList traversalAnimations)
-        (animations, character)
+        let (soundOpt, animations) =
+            match Character.tryComputeActionAnimation time character with
+            | Some (soundOpt, animation) -> (soundOpt, animation :: traversalAnimations)
+            | None -> (None, traversalAnimations)
+        (soundOpt, animations)
 
     static member initial position rotation =
         { Player = false

@@ -14,7 +14,6 @@ type GameplayCommand =
     | SynchronizeNav3d
     | CharactersAttacked of Entity Set
     | TransformEye
-    | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
 // this represents that state of gameplay simulation.

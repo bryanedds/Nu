@@ -60,7 +60,7 @@ module GameplayDispatcher =
                             { character with HitPoints = hitPoints; ActionState = actionState }
                         attackedCharacter.SetCharacter character world)
                         world attackedCharacters
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)) world
+                just world
 
             | TransformEye ->
                 let player = Simulants.GameplayPlayer.GetCharacter world
@@ -70,10 +70,6 @@ module GameplayDispatcher =
                 let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
                 let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
                 let world = World.setEye3dRotation rotationInterp world
-                just world
-
-            | GameplayCommand.PlaySound (delay, volume, sound) ->
-                let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
         // here we describe the content of the game including the hud group and the scene group

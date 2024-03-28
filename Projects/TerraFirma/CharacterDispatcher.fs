@@ -7,6 +7,26 @@ open Nu
 [<AutoOpen>]
 module CharacterDispatcher =
 
+    type CharacterMessage =
+        | UpdateMessage
+        | UpdateInputKey of KeyboardKeyData
+        | WeaponCollide of BodyCollisionData
+        | WeaponSeparateExplicit of BodySeparationExplicitData
+        | WeaponSeparateImplicit of BodySeparationImplicitData
+        interface Message
+
+    type CharacterCommand =
+        | UpdateTransform of Vector3 * Quaternion
+        | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
+        | PublishCharactersAttacked of Entity Set
+        | SyncWeaponTransform
+        | SyncChildTransformsWhileHalted
+        | SyncTransformWhileHalted
+        | Jump
+        | Die
+        | PlaySound of int64 * single * Sound AssetTag
+        interface Command
+
     type Entity with
         member this.GetCharacter world = this.GetModelGeneric<Character> world
         member this.SetCharacter value world = this.SetModelGeneric<Character> value world
@@ -68,9 +88,10 @@ module CharacterDispatcher =
                 let character = Character.updateInterps position rotation linearVelocity angularVelocity character
                 let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion world.UpdateTime position rotation character entity world
                 let character = Character.updateActionState world.UpdateTime position rotation character world
-                let (animations, character) = Character.updateAnimations world.UpdateTime position rotation linearVelocity angularVelocity character world
+                let (soundOpt, animations) = Character.computeAnimations world.UpdateTime position rotation linearVelocity angularVelocity character
                 let (attackedCharacters, character) = Character.updateAttackedCharacters world.UpdateTime character
-                let signals = [UpdateTransform (position, rotation) :> Signal; UpdateAnimatedModel (position, rotation, animations)]
+                let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
+                let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimatedModel (position, rotation, Array.ofList animations) :: signals
                 let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
                 let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
                 withSignals signals character
@@ -82,8 +103,11 @@ module CharacterDispatcher =
             | WeaponCollide collisionData ->
                 match collisionData.BodyShapeCollidee.BodyId.BodySource with
                 | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
-                    let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
-                    just character
+                    let collideeCharacter = collidee.GetCharacter world
+                    if character.Player <> collideeCharacter.Player then
+                        let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
+                        just character
+                    else just character
                 | _ -> just character
 
             | WeaponSeparateExplicit separationData ->
@@ -160,6 +184,10 @@ module CharacterDispatcher =
 
             | Die ->
                 let world = World.publish () (Events.DieEvent --> entity) entity world
+                just world
+
+            | CharacterCommand.PlaySound (delay, volume, sound) ->
+                let world = World.schedule delay (World.playSound volume sound) entity world
                 just world
 
     type EnemyDispatcher () =
