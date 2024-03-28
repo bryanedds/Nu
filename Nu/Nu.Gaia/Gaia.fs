@@ -997,8 +997,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private tryCopySelectedEntity () =
         match selectedEntityOpt with
         | Some entity when entity.Exists world ->
-            World.copyEntityToClipboard entity world
-            true
+            if not (entity.GetProtected world) then
+                World.copyEntityToClipboard entity world
+                true
+            else
+                messageBoxOpt <- Some "Cannot copy a protected simulant (such as an entity created by the MMCC API)."
+                false
         | Some _ | None -> false
 
     let private tryPaste tryForwardPropagationSource atMouse parentOpt =
