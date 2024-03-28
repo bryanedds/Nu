@@ -177,7 +177,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     { character with ActionState = AttackState (AttackState.make time) }
                 | AttackState attack ->
                     let localTime = time - attack.AttackTime
-                    if localTime > 15L && not attack.FollowUpBuffered
+                    if localTime > 10L && not attack.FollowUpBuffered
                     then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
                     else character
                 | InjuryState _ ->
@@ -219,10 +219,15 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             match character.ActionState with
             | AttackState attack ->
                 let localTime = time - attack.AttackTime
-                let attack = match localTime with 55L -> { attack with AttackedCharacters = Set.empty } | _ -> attack
-                let attackingCharacters = Set.difference character.WeaponCollisions attack.AttackedCharacters
-                let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters character.WeaponCollisions }
-                (attackingCharacters, { character with ActionState = AttackState attack })
+                let attack =
+                    match localTime with
+                    | 55L -> { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
+                    | _ -> attack
+                if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
+                    let attackingCharacters = Set.difference character.WeaponCollisions attack.AttackedCharacters
+                    let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters character.WeaponCollisions }
+                    (attackingCharacters, { character with ActionState = AttackState attack })
+                else (Set.empty, { character with ActionState = AttackState attack })
             | _ -> (Set.empty, character)
 
         // update state life times
