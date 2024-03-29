@@ -269,7 +269,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           RotationPrevious = Queue.empty
           LinearVelocityPrevious = Queue.empty
           AngularVelocityPrevious = Queue.empty
-          HitPoints = 3
+          HitPoints = 5
           ActionState = NormalState
           JumpState = JumpState.initial
           WeaponCollisions = Set.empty
@@ -279,7 +279,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial with Player = true; HitPoints = 5; WalkSpeed = 0.06f }
+        { Character.initial with HitPoints = 7; WalkSpeed = 0.06f; Player = true }
 
     static member initialEnemy =
-        Character.initial
+        { Character.initial with HitPoints = 3 }
