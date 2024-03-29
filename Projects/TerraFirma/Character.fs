@@ -199,7 +199,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else
                 if character.ActionState = NormalState then
                     let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                    let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.0333f 0.1f position rotation playerPosition entity.Screen world
+                    let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.04f 0.1f position rotation playerPosition entity.Screen world
                     (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
                 else (position, rotation, v3Zero, v3Zero, character)
 
@@ -221,7 +221,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else (Set.empty, { character with ActionState = AttackState attack })
         | _ -> (Set.empty, character)
 
-    static member updateActionState time position (rotation : Quaternion) character world =
+    static member updateActionState time (position : Vector3) (rotation : Quaternion) character world =
         let actionState =
             match character.ActionState with
             | AttackState attack ->
@@ -241,9 +241,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             if not character.Player then
                 match actionState with
                 | NormalState when not character.Player ->
+                    let positionFlat = position.WithY 0.0f
                     let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                    if  Vector3.Distance (position, playerPosition) < 1.5f &&
-                        rotation.Forward.AngleBetween (playerPosition - position) < 0.5f then
+                    let playerPositionFlat = playerPosition.WithY 0.0f
+                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
+                        rotation.Forward.AngleBetween (playerPositionFlat - positionFlat) < 0.25f && 
+                        abs (playerPosition.Y - position.Y) < 1.5f then
                         AttackState (AttackState.make world.UpdateTime)
                     else actionState
                 | _ -> actionState
@@ -275,7 +278,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial with Player = true; HitPoints = 7; WalkSpeed = 0.06f }
+        { Character.initial with Player = true; HitPoints = 5; WalkSpeed = 0.06f }
 
     static member initialEnemy =
         Character.initial
