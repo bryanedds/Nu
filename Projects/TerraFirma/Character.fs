@@ -132,30 +132,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj linearVelocity
             AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
 
-    static member updateInputKey time keyboardKeyData character =
-        if character.Player then
-            let sinceJump = time - character.JumpState.LastTime
-            let sinceOnGround = time - character.JumpState.LastTimeOnGround
-            if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated then
-                if sinceJump >= 12L && sinceOnGround < 10L && character.ActionState = NormalState then
-                    let character = { character with Character.JumpState.LastTime = time }
-                    (true, character)
-                else (false, character)
-            elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
-                let character =
-                    match character.ActionState with
-                    | NormalState ->
-                        { character with ActionState = AttackState (AttackState.make time) }
-                    | AttackState attack ->
-                        let localTime = time - attack.AttackTime
-                        if localTime > 10L && not attack.FollowUpBuffered
-                        then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
-                        else character
-                    | InjuryState _ | WoundedState -> character
-                (false, character)
-            else (false, character)
-        else (false, character)
-
     static member private updateMotion isKeyboardKeyDown nav3dFollow time position (rotation : Quaternion) grounded playerPosition character =
 
         // update jump state
@@ -254,6 +230,30 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 (attackingCharacters, { character with ActionState = AttackState attack })
             else (Set.empty, { character with ActionState = AttackState attack })
         | _ -> (Set.empty, character)
+
+    static member updateInputKey time keyboardKeyData character =
+        if character.Player then
+            let sinceJump = time - character.JumpState.LastTime
+            let sinceOnGround = time - character.JumpState.LastTimeOnGround
+            if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated then
+                if sinceJump >= 12L && sinceOnGround < 10L && character.ActionState = NormalState then
+                    let character = { character with Character.JumpState.LastTime = time }
+                    (true, character)
+                else (false, character)
+            elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+                let character =
+                    match character.ActionState with
+                    | NormalState ->
+                        { character with ActionState = AttackState (AttackState.make time) }
+                    | AttackState attack ->
+                        let localTime = time - attack.AttackTime
+                        if localTime > 10L && not attack.FollowUpBuffered
+                        then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
+                        else character
+                    | InjuryState _ | WoundedState -> character
+                (false, character)
+            else (false, character)
+        else (false, character)
 
     static member update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character =
         let character = Character.updateInterps position rotation linearVelocity angularVelocity character

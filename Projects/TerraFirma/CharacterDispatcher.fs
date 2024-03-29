@@ -78,16 +78,16 @@ module CharacterDispatcher =
                 // update character
                 let isKeyboardKeyDown keyboardKey = World.isKeyboardKeyDown keyboardKey world
                 let nav3dFollow a b c d e f g = World.nav3dFollow a b c d e f g entity.Screen world
-                let mutable transform = entity.GetTransform world
-                let position = transform.Position
-                let rotation = transform.Rotation
+                let time = world.UpdateTime
+                let position = entity.GetPosition world
+                let rotation = entity.GetRotation world
                 let linearVelocity = entity.GetLinearVelocity world
                 let angularVelocity = entity.GetAngularVelocity world
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let playerPosition = Simulants.GameplayPlayer.GetPosition world
                 let (soundOpt, animations, attackedCharacters, character) =
-                    Character.update isKeyboardKeyDown nav3dFollow world.UpdateTime position rotation linearVelocity angularVelocity grounded playerPosition character
+                    Character.update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character
 
                 // deploy signals from update
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
