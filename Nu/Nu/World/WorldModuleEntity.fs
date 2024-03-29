@@ -552,13 +552,10 @@ module WorldModuleEntity =
         /// Check that an entity should be allowed to mount another entity.
         static member getEntityAllowedToMount entity world =
             let mutable bodyTypeProperty = Unchecked.defaultof<Property>
-            let mutable bodyMotionProperty = Unchecked.defaultof<Property>
-            if  World.tryGetEntityProperty (Constants.Engine.BodyTypePropertyName, entity, world, &bodyTypeProperty) && bodyTypeProperty.PropertyType = typeof<BodyType> &&
-                World.tryGetEntityProperty (Constants.Engine.BodyMotionPropertyName, entity, world, &bodyMotionProperty) && bodyMotionProperty.PropertyType = typeof<BodyMotion> then
+            if  World.tryGetEntityProperty (Constants.Engine.BodyTypePropertyName, entity, world, &bodyTypeProperty) &&
+                bodyTypeProperty.PropertyType = typeof<BodyType> then
                 let bodyType = bodyTypeProperty.PropertyValue :?> BodyType
-                let bodyMotion = bodyMotionProperty.PropertyValue :?> BodyMotion
-                (bodyType = Static || bodyType = Kinematic || bodyType = KinematicCharacter) &&
-                (bodyMotion = ManualMotion || bodyMotion = MixedMotion)
+                bodyType = Static || bodyType = Kinematic || bodyType = KinematicCharacter
             else true
 
         /// Check that an entity has any other entities mounted on it.
