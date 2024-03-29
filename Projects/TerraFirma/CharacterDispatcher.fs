@@ -5,8 +5,8 @@ open Prime
 open Nu
 
 type CharacterMessage =
-    | UpdateMessage
     | UpdateInputKey of KeyboardKeyData
+    | Update
     | WeaponCollide of BodyCollisionData
     | WeaponSeparateExplicit of BodySeparationExplicitData
     | WeaponSeparateImplicit of BodySeparationImplicitData
@@ -47,7 +47,7 @@ module CharacterDispatcher =
              Entity.BodyMotion == MixedMotion
              Entity.FollowTargetOpt := if not character.Player then Some Simulants.GameplayPlayer else None
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
-             Entity.UpdateEvent => UpdateMessage
+             Entity.UpdateEvent => Update
              Game.PostUpdateEvent => SyncWeaponTransform]
 
         override this.Content (character, _) =
@@ -73,7 +73,11 @@ module CharacterDispatcher =
         override this.Message (character, message, entity, world) =
 
             match message with
-            | UpdateMessage ->
+            | UpdateInputKey keyboardKeyData ->
+                let (jump, character) = Character.updateInputKey world.UpdateTime keyboardKeyData character
+                withSignals (if jump then [Jump] else []) character
+
+            | Update ->
 
                 // update character
                 let isKeyboardKeyDown keyboardKey = World.isKeyboardKeyDown keyboardKey world
@@ -95,10 +99,6 @@ module CharacterDispatcher =
                 let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
                 let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
                 withSignals signals character
-
-            | UpdateInputKey keyboardKeyData ->
-                let (jump, character) = Character.updateInputKey world.UpdateTime keyboardKeyData character
-                withSignals (if jump then [Jump] else []) character
 
             | WeaponCollide collisionData ->
                 match collisionData.BodyShapeCollidee.BodyId.BodySource with
