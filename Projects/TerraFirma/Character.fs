@@ -50,7 +50,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         if not (Queue.isEmpty this.PositionPrevious) then
             let positions = Queue.conj position this.PositionPrevious
             Seq.sum positions / single positions.Length
-        else position
+            else position
 
     member this.RotationInterp rotation =
         if not (Queue.isEmpty this.RotationPrevious) then
@@ -126,11 +126,24 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | NormalState | WoundedState -> None
 
     static member private updateInterps position rotation linearVelocity angularVelocity character =
-        { character with
-            PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj position
-            RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj rotation
-            LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj linearVelocity
-            AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
+
+        // update interps
+        let character =
+            { character with
+                PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj position
+                RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj rotation
+                LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj linearVelocity
+                AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
+
+        // ensure previous positions interp aren't stale (such as when an entity is moved in the editor with existing previous position state)
+        let character =
+            let positionInterp = character.PositionInterp position
+            if Vector3.Distance (positionInterp, position) > Constants.Gameplay.CharacterPositionInterpDistanceMax
+            then { character with PositionPrevious = List.init Constants.Gameplay.CharacterInterpolationSteps (fun _ -> position) |> Queue.ofList }
+            else character
+
+        // fin
+        character
 
     static member private updateMotion isKeyboardKeyDown nav3dFollow time position (rotation : Quaternion) grounded playerPosition character =
 

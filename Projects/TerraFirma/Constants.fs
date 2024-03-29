@@ -14,6 +14,7 @@ module Constants =
 
         let [<Literal>] CharacterInterpolationSteps = 4
         let [<Literal>] CharacterWeaponHandBoneIndex = 39
+        let [<Literal>] CharacterPositionInterpDistanceMax = 1.0f
         let [<Literal>] CharacterAnimatedModelName = "AnimatedModel"
         let [<Literal>] CharacterWeaponName = "Weapon"
         let [<Literal>] PlayerWalkSpeed = 0.1f

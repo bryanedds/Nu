@@ -5,20 +5,20 @@ open Prime
 open Nu
 
 type CharacterMessage =
-    | UpdateInputKey of KeyboardKeyData
-    | Update
     | WeaponCollide of BodyCollisionData
     | WeaponSeparateExplicit of BodySeparationExplicitData
     | WeaponSeparateImplicit of BodySeparationImplicitData
+    | UpdateInputKey of KeyboardKeyData
+    | Update
     interface Message
 
 type CharacterCommand =
     | UpdateTransform of Vector3 * Quaternion
     | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
-    | PublishCharactersAttacked of Entity Set
-    | SyncWeaponTransform
     | Jump
     | Die
+    | PublishCharactersAttacked of Entity Set
+    | SyncWeaponTransform
     | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
