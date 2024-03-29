@@ -1075,7 +1075,8 @@ module WorldModule2 =
                                 let linearVelocity = bodyTransformMessage.LinearVelocity
                                 let angularVelocity = bodyTransformMessage.AngularVelocity
                                 let bodyMotion = entity.GetBodyMotion world
-                                if bodyMotion = ManualMotion || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+                                if  (match bodyMotion with MixedMotion | ManualMotion -> true | _ -> false) ||
+                                    bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
                                         { BodyCenter = center
                                           BodyRotation = rotation

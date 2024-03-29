@@ -37,8 +37,8 @@ module AvatarDispatcher =
              Entity.AngularFactor == v3Zero
              Entity.GravityOverride == Some v3Zero
              Entity.BodyType == Dynamic
-             Entity.BodyShape := bodyShape
-             Entity.BodyMotion == ManualMotion]
+             Entity.BodyMotion == ManualMotion
+             Entity.BodyShape := bodyShape]
 
         override this.Render (avatar, _, entity, world) =
             if entity.GetVisible world then

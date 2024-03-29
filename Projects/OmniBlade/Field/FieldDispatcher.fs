@@ -138,21 +138,19 @@ module FieldDispatcher =
             | AvatarBodyTransform transform ->
 
                 // update avatar from transform if warped
-                if field.AvatarWarped then
-                    let time = world.UpdateTime
-                    let avatar = field.Avatar
-                    let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
-                    let avatar =
-                        let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
-                        let speed = transform.BodyLinearVelocity.Magnitude
-                        if speed > Constants.Field.AvatarIdleSpeedMax then
-                            if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
-                                let avatar = Avatar.updateDirection (constant direction) avatar
-                                Avatar.animate time WalkAnimation avatar
-                            else avatar
-                        else Avatar.animate time IdleAnimation avatar
-                    just (Field.updateAvatar (constant avatar) field)
-                else just field
+                let time = world.UpdateTime
+                let avatar = field.Avatar
+                let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
+                let avatar =
+                    let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
+                    let speed = transform.BodyLinearVelocity.Magnitude
+                    if speed > Constants.Field.AvatarIdleSpeedMax then
+                        if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
+                            let avatar = Avatar.updateDirection (constant direction) avatar
+                            Avatar.animate time WalkAnimation avatar
+                        else avatar
+                    else Avatar.animate time IdleAnimation avatar
+                just (Field.updateAvatar (constant avatar) field)
 
             | AvatarBodyCollision collision ->
 
@@ -531,7 +529,6 @@ module FieldDispatcher =
             | WarpAvatar bottom ->
                 let bodyBottomOffset = v3Up * Constants.Gameplay.CharacterSize.Y * 0.5f
                 let world = World.setBodyCenter (bottom + bodyBottomOffset) (Simulants.FieldAvatar.GetBodyId world) world
-                let world = Simulants.Field.Field.Update (Field.updateAvatarWarped tautology) world
                 just world
 
             | MoveAvatar force ->

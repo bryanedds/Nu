@@ -44,26 +44,27 @@ module CharacterDispatcher =
              Entity.SleepingAllowed == true
              Entity.CharacterProperties == if not character.Player then { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f } else CharacterProperties.defaultProperties
              Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
-             Entity.BodyMotion == MixedMotion
              Entity.FollowTargetOpt := if not character.Player then Some Simulants.GameplayPlayer else None
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
              Entity.UpdateEvent => Update
              Game.PostUpdateEvent => SyncWeaponTransform]
 
         override this.Content (character, _) =
-            [Content.entity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
+
+            [// animated model
+             Content.entity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
                 [Entity.Size == v3Dup 2.0f
                  Entity.Offset == v3 0.0f 1.0f 0.0f
-                 Entity.BodyMotion == ManualMotion
                  Entity.MaterialProperties == MaterialProperties.defaultProperties
                  Entity.AnimatedModel == Assets.Gameplay.JoanModel]
+
+             // weapon
              Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
                 [Entity.Scale == v3 1.0f 1.0f 1.0f
                  Entity.StaticModel == character.WeaponModel
                  Entity.BodyType == Static
                  Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor == true
-                 Entity.BodyMotion == ManualMotion
                  Entity.NavShape == EmptyNavShape
                  Entity.Pickable == false
                  Entity.BodyCollisionEvent =|> fun evt -> WeaponCollide evt.Data

@@ -1383,44 +1383,39 @@ module RigidBodyFacetModule =
             else bodyShape
 
         static let propagatePhysicsPosition (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-            let bodyType = entity.GetBodyType world
-            let bodyMotion = entity.GetBodyMotion world
-            if (bodyType = Static || bodyType = Kinematic || bodyType = KinematicCharacter) && (bodyMotion = ManualMotion || bodyMotion = MixedMotion) then
+            match entity.GetBodyMotion world with
+            | OneWayMotion | ManualMotion -> (Cascade, world)
+            | _ ->
                 let bodyId = entity.GetBodyId world
                 let position = evt.Data.Value :?> Vector3
                 (Cascade, World.setBodyCenter position bodyId world)
-            else (Cascade, entity.PropagatePhysics world)
 
         static let propagatePhysicsRotation (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-            let bodyType = entity.GetBodyType world
-            let bodyMotion = entity.GetBodyMotion world
-            if (bodyType = Static || bodyType = Kinematic || bodyType = KinematicCharacter) && (bodyMotion = ManualMotion || bodyMotion = MixedMotion) then
+            match entity.GetBodyMotion world with
+            | OneWayMotion | ManualMotion -> (Cascade, world)
+            | _ ->
                 let bodyId = entity.GetBodyId world
                 let rotation = evt.Data.Value :?> Quaternion
                 (Cascade, World.setBodyRotation rotation bodyId world)
-            else (Cascade, entity.PropagatePhysics world)
 
         static let propagatePhysicsLinearVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-            let bodyType = entity.GetBodyType world
-            let bodyMotion = entity.GetBodyMotion world
-            if (bodyType = Static || bodyType = Kinematic || bodyType = KinematicCharacter) && (bodyMotion = ManualMotion || bodyMotion = MixedMotion) then
+            match entity.GetBodyMotion world with
+            | OneWayMotion | ManualMotion -> (Cascade, world)
+            | _ ->
                 let bodyId = entity.GetBodyId world
                 let linearVelocity = evt.Data.Value :?> Vector3
                 (Cascade, World.setBodyLinearVelocity linearVelocity bodyId world)
-            else (Cascade, entity.PropagatePhysics world)
 
         static let propagatePhysicsAngularVelocity (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-            let bodyType = entity.GetBodyType world
-            let bodyMotion = entity.GetBodyMotion world
-            if (bodyType = Static || bodyType = Kinematic || bodyType = KinematicCharacter) && (bodyMotion = ManualMotion || bodyMotion = MixedMotion) then
+            match entity.GetBodyMotion world with
+            | OneWayMotion | ManualMotion -> (Cascade, world)
+            | _ ->
                 let bodyId = entity.GetBodyId world
                 let angularVelocity = evt.Data.Value :?> Vector3
                 (Cascade, World.setBodyAngularVelocity angularVelocity bodyId world)
-            else (Cascade, entity.PropagatePhysics world)
 
         static let propagatePhysics (entity : Entity) (_ : Event<ChangeData, Entity>) world =
-            let bodyMotion = entity.GetBodyMotion world
-            let world = if bodyMotion = PhysicsMotion then entity.PropagatePhysics world else world
+            let world = entity.PropagatePhysics world
             (Cascade, world)
 
         static member Properties =
