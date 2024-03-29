@@ -715,6 +715,7 @@ module Character3dDispatcherModule =
              define Entity.BodyType KinematicCharacter
              define Entity.SleepingAllowed false
              define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
+             define Entity.BodyMotion MixedMotion
              define Entity.LinearVelocityPrevious v3Zero
              define Entity.AngularVelocityPrevious v3Zero]
              
