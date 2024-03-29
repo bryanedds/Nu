@@ -188,6 +188,3 @@ module CharacterDispatcher =
 
     type PlayerDispatcher () =
         inherit CharacterDispatcher (Character.initialPlayer)
-
-        static member Properties =
-            [define Entity.Position (v3 0.0f 2.0f 0.0f)]

@@ -12,9 +12,9 @@ type GameplayMessage =
 
 // this is our MMCC command type.
 type GameplayCommand =
-    | SynchronizeNav3d
+    | SetupScene
     | CharactersAttacked of Entity Set
-    | TransformEye
+    | UpdateEye
     interface Command
 
 [<AutoOpen>]
@@ -32,8 +32,8 @@ module GameplayDispatcher =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.PostUpdateEvent => TransformEye
-             Screen.SelectEvent => SynchronizeNav3d
+            [Screen.PostUpdateEvent => UpdateEye
+             Screen.SelectEvent => SetupScene
              Screen.DeselectingEvent => FinishQuitting
              Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data]
 
@@ -55,7 +55,8 @@ module GameplayDispatcher =
         override this.Command (_, command, screen, world) =
 
             match command with
-            | SynchronizeNav3d ->
+            | SetupScene ->
+                let world = Simulants.GameplayPlayer.SetPosition (v3 0.0f 2.0f 0.0f) world
                 let world = (World.synchronizeNav3d screen world)
                 just world
 
@@ -76,7 +77,7 @@ module GameplayDispatcher =
                         world attackedCharacters
                 just world
 
-            | TransformEye ->
+            | UpdateEye ->
                 let player = Simulants.GameplayPlayer.GetCharacter world
                 let position = Simulants.GameplayPlayer.GetPosition world
                 let rotation = Simulants.GameplayPlayer.GetRotation world
@@ -104,7 +105,7 @@ module GameplayDispatcher =
              | Playing | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
-                    [// the player that's always present
+                    [// the player that's always present in the scene
                      Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Persistent == false
                          Events.CharacterDieEvent --> Simulants.GameplayPlayer => StartQuitting]]
