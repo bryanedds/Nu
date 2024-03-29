@@ -74,16 +74,22 @@ module CharacterDispatcher =
 
             match message with
             | UpdateMessage ->
+
+                // update character
+                let isKeyboardKeyDown keyboardKey = World.isKeyboardKeyDown keyboardKey world
+                let nav3dFollow a b c d e f g = World.nav3dFollow a b c d e f g entity.Screen world
                 let mutable transform = entity.GetTransform world
                 let position = transform.Position
                 let rotation = transform.Rotation
                 let linearVelocity = entity.GetLinearVelocity world
                 let angularVelocity = entity.GetAngularVelocity world
-                let character = Character.updateInterps position rotation linearVelocity angularVelocity character
-                let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion world.UpdateTime position rotation character entity world
-                let character = Character.updateActionState world.UpdateTime position rotation character world
-                let (soundOpt, animations) = Character.computeAnimations world.UpdateTime position rotation linearVelocity angularVelocity character
-                let (attackedCharacters, character) = Character.updateAttackedCharacters world.UpdateTime character
+                let bodyId = entity.GetBodyId world
+                let grounded = World.getBodyGrounded bodyId world
+                let playerPosition = Simulants.GameplayPlayer.GetPosition world
+                let (soundOpt, animations, attackedCharacters, character) =
+                    Character.update isKeyboardKeyDown nav3dFollow world.UpdateTime position rotation linearVelocity angularVelocity grounded playerPosition character
+
+                // deploy signals from update
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
                 let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimatedModel (position, rotation, Array.ofList animations) :: signals
                 let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
