@@ -56,9 +56,8 @@ module GameplayDispatcher =
 
             match command with
             | SynchronizeNav3d ->
-                if world.Unaccompanied // only synchronize if outside editor
-                then just (World.synchronizeNav3d screen world)
-                else just world
+                let world = (World.synchronizeNav3d screen world)
+                just world
 
             | CharactersAttacked attackedCharacters ->
                 let world =
