@@ -90,7 +90,7 @@ module CharacterDispatcher =
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                let (soundOpt, animations, attackedCharacters, character) =
+                let (soundOpt, animations, attackedCharacters, position, rotation, character) =
                     Character.update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character
 
                 // deploy signals from update

@@ -152,41 +152,37 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = { character with Character.JumpState.LastTimeOnGround = lastTimeOnGround }
 
         // update traversal
-        let (position, rotation, linearVelocity, angularVelocity, character) =
-            if character.Player then
+        if character.Player then
 
-                // player traversal
-                if character.ActionState = NormalState || not grounded then
+            // player traversal
+            if character.ActionState = NormalState || not grounded then
 
-                    // compute new position
-                    let forward = rotation.Forward
-                    let right = rotation.Right
-                    let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
-                    let walkVelocity =
-                        (if isKeyboardKeyDown KeyboardKey.W || isKeyboardKeyDown KeyboardKey.Up then forward * walkSpeed else v3Zero) +
-                        (if isKeyboardKeyDown KeyboardKey.S || isKeyboardKeyDown KeyboardKey.Down then -forward * walkSpeed else v3Zero) +
-                        (if isKeyboardKeyDown KeyboardKey.A then -right * walkSpeed else v3Zero) +
-                        (if isKeyboardKeyDown KeyboardKey.D then right * walkSpeed else v3Zero)
-                    let position = if walkVelocity <> v3Zero then position + walkVelocity else position
+                // compute new position
+                let forward = rotation.Forward
+                let right = rotation.Right
+                let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
+                let walkVelocity =
+                    (if isKeyboardKeyDown KeyboardKey.W || isKeyboardKeyDown KeyboardKey.Up then forward * walkSpeed else v3Zero) +
+                    (if isKeyboardKeyDown KeyboardKey.S || isKeyboardKeyDown KeyboardKey.Down then -forward * walkSpeed else v3Zero) +
+                    (if isKeyboardKeyDown KeyboardKey.A then -right * walkSpeed else v3Zero) +
+                    (if isKeyboardKeyDown KeyboardKey.D then right * walkSpeed else v3Zero)
+                let position = if walkVelocity <> v3Zero then position + walkVelocity else position
 
-                    // compute new rotation
-                    let turnSpeed = character.TurnSpeed * if grounded then 1.0f else 0.75f
-                    let turnVelocity =
-                        (if isKeyboardKeyDown KeyboardKey.Right then -turnSpeed else 0.0f) +
-                        (if isKeyboardKeyDown KeyboardKey.Left then turnSpeed else 0.0f)
-                    let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
-                    (position, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
+                // compute new rotation
+                let turnSpeed = character.TurnSpeed * if grounded then 1.0f else 0.75f
+                let turnVelocity =
+                    (if isKeyboardKeyDown KeyboardKey.Right then -turnSpeed else 0.0f) +
+                    (if isKeyboardKeyDown KeyboardKey.Left then turnSpeed else 0.0f)
+                let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
+                (position, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
 
-                else (position, rotation, v3Zero, v3Zero, character)
+            else (position, rotation, v3Zero, v3Zero, character)
 
-            else // enemy traversal
-                if character.ActionState = NormalState then
-                    let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation playerPosition
-                    (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
-                else (position, rotation, v3Zero, v3Zero, character)
-
-        // fin
-        (position, rotation, linearVelocity, angularVelocity, character)
+        else // enemy traversal
+            if character.ActionState = NormalState then
+                let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation playerPosition
+                (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
+            else (position, rotation, v3Zero, v3Zero, character)
 
     static member private updateActionState time (position : Vector3) (rotation : Quaternion) (playerPosition : Vector3) character =
         let actionState =
@@ -274,7 +270,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = Character.updateActionState time position rotation playerPosition character
         let (soundOpt, animations) = Character.computeAnimations time position rotation linearVelocity angularVelocity character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        (soundOpt, animations, attackedCharacters, character)
+        (soundOpt, animations, attackedCharacters, position, rotation, character)
 
     static member initial =
         { Player = false
