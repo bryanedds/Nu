@@ -385,23 +385,15 @@ type BodyType =
     | DynamicCharacter
 
 /// The way in which an entity's motion is driven by a corresponding body.
-type BodyMotion =
+type PhysicsMotion =
 
     /// When body transform message comes in, entity's transform will be set by the game engine.
     /// When entity's transform is set by the user, body transform message will be sent to physics engine.
-    | PhysicsMotion
+    | SynchronizedMotion
 
     /// When body transform message comes in, entity's transform will not be set by the game engine; instead an event will be published.
     /// When entity's transform is set by the user, nothing will be sent to the physics engine.
     | ManualMotion
-
-    /// When body transform message comes in, entity's transform will be set by the game engine.
-    /// When entity's transform is set by the user, nothing will be sent to the physics engine.
-    | OneWayMotion
-
-    /// When body transform message comes in, entity's transform will not be set by the game engine; instead an event will be published.
-    /// When entity's transform is set by the user, body transform message will be sent to physics engine.
-    | MixedMotion
 
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
