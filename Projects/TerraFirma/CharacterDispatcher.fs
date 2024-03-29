@@ -40,7 +40,9 @@ module CharacterDispatcher =
             [typeof<RigidBodyFacet>]
 
         override this.Initialize (character, _) =
-            [Entity.BodyType == KinematicCharacter
+            [Entity.Size == v3Dup 2.0f
+             Entity.Offset == v3 0.0f 1.0f 0.0f
+             Entity.BodyType == KinematicCharacter
              Entity.SleepingAllowed == true
              Entity.CharacterProperties == if not character.Player then { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f } else CharacterProperties.defaultProperties
              Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
@@ -60,7 +62,7 @@ module CharacterDispatcher =
 
              // weapon
              Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
-                [Entity.Scale == v3 1.0f 1.0f 1.0f
+                [Entity.Offset == v3 0.0f 0.5f 0.0f
                  Entity.StaticModel == character.WeaponModel
                  Entity.BodyType == Static
                  Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
@@ -172,6 +174,14 @@ module CharacterDispatcher =
             | CharacterCommand.PlaySound (delay, volume, sound) ->
                 let world = World.schedule delay (World.playSound volume sound) entity world
                 just world
+
+        override this.RayCast (ray, entity, world) =
+            let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+            match animatedModel.RayCast ray world with
+            | [||] ->
+                let weapon = entity / Constants.Gameplay.CharacterWeaponName
+                weapon.RayCast ray world
+            | intersections -> intersections
 
     type EnemyDispatcher () =
         inherit CharacterDispatcher (Character.initialEnemy)

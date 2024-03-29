@@ -1943,6 +1943,13 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
+        override this.RayCast (ray, entity, world) =
+            if Array.isEmpty (entity.GetFacets world) then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else base.RayCast (ray, entity, world)
+
     /// A vui dispatcher (gui in 3d).
     and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, makeInitial)
