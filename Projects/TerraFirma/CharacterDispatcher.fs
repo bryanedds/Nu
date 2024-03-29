@@ -51,13 +51,13 @@ module CharacterDispatcher =
              Game.PostUpdateEvent => SyncWeaponTransform]
 
         override this.Content (character, _) =
-            [Content.entity<AnimatedModelDispatcher> "AnimatedModel"
+            [Content.entity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
                 [Entity.Size == v3Dup 2.0f
                  Entity.Offset == v3 0.0f 1.0f 0.0f
                  Entity.BodyMotion == ManualMotion
                  Entity.MaterialProperties == MaterialProperties.defaultProperties
                  Entity.AnimatedModel == Assets.Gameplay.JoanModel]
-             Content.entity<RigidModelDispatcher> "Weapon"
+             Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
                 [Entity.Scale == v3 1.0f 1.0f 1.0f
                  Entity.StaticModel == character.WeaponModel
                  Entity.BodyType == Static
@@ -133,15 +133,15 @@ module CharacterDispatcher =
                 just world
 
             | UpdateAnimatedModel (position, rotation, animations) ->
-                let animatedModel = entity / "AnimatedModel"
+                let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
                 let world = animatedModel.SetPosition (character.PositionInterp position) world
                 let world = animatedModel.SetRotation (character.RotationInterp rotation) world
                 let world = animatedModel.SetAnimations animations world
                 just world
 
             | SyncWeaponTransform ->
-                let animatedModel = entity / "AnimatedModel"
-                let weapon = entity / "Weapon"
+                let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+                let weapon = entity / Constants.Gameplay.CharacterWeaponName
                 match (animatedModel.GetBoneOffsetsOpt world, animatedModel.GetBoneTransformsOpt world) with
                 | (Some offsets, Some transforms) when weapon.Exists world ->
                     let weaponTransform =
