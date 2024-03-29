@@ -199,7 +199,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else
                 if character.ActionState = NormalState then
                     let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                    let followOutput = World.nav3dFollow (Some 1.25f) (Some 10.0f) 0.04f 0.1f position rotation playerPosition entity.Screen world
+                    let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation playerPosition entity.Screen world
                     (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
                 else (position, rotation, v3Zero, v3Zero, character)
 
@@ -244,9 +244,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     let positionFlat = position.WithY 0.0f
                     let playerPosition = Simulants.GameplayPlayer.GetPosition world
                     let playerPositionFlat = playerPosition.WithY 0.0f
-                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
-                        rotation.Forward.AngleBetween (playerPositionFlat - positionFlat) < 0.25f && 
-                        abs (playerPosition.Y - position.Y) < 1.5f then
+                    if  Vector3.Distance (playerPosition, position) < 1.5f &&
+                        rotation.Forward.AngleBetween (playerPositionFlat - positionFlat) < 0.2f && 
+                        playerPosition.Y - position.Y < 1.3f &&
+                        position.Y - playerPosition.Y < 0.8f then
                         AttackState (AttackState.make world.UpdateTime)
                     else actionState
                 | _ -> actionState
