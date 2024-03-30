@@ -17,13 +17,7 @@ type Nu () =
     // NOTE: extracted from Nu.initPlus to shorten stack trace.
     [<DebuggerHidden>]
     static member private worldModuleSignal (signalObj : obj) (simulant : Simulant) world =
-        let signal = signalObj :?> Signal
-        match simulant with
-        | :? Entity as entity -> (entity.GetDispatcher world).Signal (signal, entity, world)
-        | :? Group as group -> (group.GetDispatcher world).Signal (signal, group, world)
-        | :? Screen as screen -> (screen.GetDispatcher world).Signal (signal, screen, world)
-        | :? Game as game -> (game.GetDispatcher world).Signal (signal, game, world)
-        | _ -> failwithumf ()
+        World.signal (signalObj :?> Signal) simulant world
 
     /// Initialize the Nu game engine, allowing for additional user-defined initialization after setting up logging
     /// and function / lens references but before performing initialization involving values stored in constants.

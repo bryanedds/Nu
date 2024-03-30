@@ -15,6 +15,18 @@ module Content =
     /// via code reloading.
     let mutable internal UpdateLateBindingsCount = 0
 
+    // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
+    let [<DebuggerHidden>] private signalHandler signalObj origin =
+        fun (_ : Event) world ->
+            let world = WorldModule.signal signalObj origin world
+            (Cascade, world)
+
+    // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
+    let [<DebuggerHidden>] private signalHandlerHandler handler origin =
+        fun event world ->
+            let world = WorldModule.signal (handler event) origin world
+            (Cascade, world)
+
     let
 #if !DEBUG
         inline
@@ -45,11 +57,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
-                        let (unsubscribe, world) =
-                            World.subscribePlus subscriptionId (fun (_ : Event) world ->
-                                let world = WorldModule.signal signalObj origin world
-                                (Cascade, world))
-                                eventAddress origin world
+                        let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
@@ -68,12 +76,6 @@ module Content =
                 world
             else world
         else world
-
-    // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
-    let [<DebuggerHidden>] private handleSignal handler origin =
-        fun event world ->
-            let world = WorldModule.signal (handler event) origin world
-            (Cascade, world)
 
     let
 #if !DEBUG
@@ -105,7 +107,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
                         let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
-                        let (unsubscribe, world) = World.subscribePlus subscriptionId (handleSignal handler origin) eventAddress origin world
+                        let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))

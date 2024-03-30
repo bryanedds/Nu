@@ -773,14 +773,6 @@ module WorldModule2 =
                 World.unregisterEntityPhysics entity world)
                 world entities
 
-        static member internal signalFn (signalObj : obj) (simulant : Simulant) world =
-            match simulant with
-            | :? Entity as entity -> (entity.GetDispatcher world).Signal (signalObj, entity, world)
-            | :? Group as group -> (group.GetDispatcher world).Signal (signalObj, group, world)
-            | :? Screen as screen -> (screen.GetDispatcher world).Signal (signalObj, screen, world)
-            | :? Game as game -> (game.GetDispatcher world).Signal (signalObj, game, world)
-            | _ -> failwithumf ()
-
         /// Try to reload the overlayer currently in use by the world.
         static member tryReloadOverlayer inputDirectory outputDirectory world =
             
@@ -2631,7 +2623,7 @@ module WorldModule2' =
     type World with
 
         /// Send a signal to a simulant.
-        static member signal (signal : Signal) (simulant : Simulant) world =
+        static member inline signal (signal : Signal) (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> (entity.GetDispatcher world).Signal (signal, entity, world)
             | :? Group as group -> (group.GetDispatcher world).Signal (signal, group, world)
@@ -2640,7 +2632,7 @@ module WorldModule2' =
             | _ -> failwithumf ()
 
         /// Send a signal to a simulant, explicitly specifing MMCC types.
-        static member signalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (simulant : Simulant) world =
+        static member inline signalPlus<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (simulant : Simulant) world =
             match simulant with
             | :? Entity as entity -> World.signalEntity<'model, 'message, 'command> signal entity world
             | :? Group as group -> World.signalGroup<'model, 'message, 'command> signal group world
