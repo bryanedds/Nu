@@ -39,6 +39,7 @@ module BattleDispatcher =
         override this.Initialize (_, _) =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateEye
+             Screen.TimeUpdateEvent => TimeUpdate
              Simulants.BattleRide.EffectTagTokens.ChangeEvent =|> fun evt -> UpdateRideTokens (evt.Data.Value :?> Map<string, Effects.Slice>)]
 
         override this.Message (battle, message, _, _) =
@@ -57,6 +58,9 @@ module BattleDispatcher =
                         just battle
                     | None -> just battle
                 | None -> just battle
+
+            | TimeUpdate ->
+                Battle.advanceUpdateTime battle
 
             | InteractDialog ->
                 match battle.DialogOpt with

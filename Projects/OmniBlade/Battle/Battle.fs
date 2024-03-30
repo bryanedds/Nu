@@ -11,6 +11,7 @@ open BattleInteractionSystem
 type BattleMessage =
     | Update
     | UpdateRideTokens of Map<string, Effects.Slice>
+    | TimeUpdate
     | InteractDialog
     | RegularItemSelect of CharacterIndex * string
     | RegularItemCancel of CharacterIndex
@@ -1011,9 +1012,6 @@ module Battle =
 
     (* High-Level Operations (signal-producing) *)
 
-    let private advanceUpdateTime field =
-        { field with UpdateTime_ = inc field.UpdateTime_ }
-
     let private advanceAttack sourceIndex (targetIndexOpt : CharacterIndex option) localTime battle =
         if getCharacterHealthy sourceIndex battle then
             match targetIndexOpt with
@@ -1056,7 +1054,7 @@ module Battle =
                             let battle = evalConsequences consequences battle
                             just battle
                         else
-                            let woundCommand = CurrentCommand.make (inc battle.UpdateTime_) (ActionCommand.make Wound sourceIndex (Some targetIndex) None)
+                            let woundCommand = CurrentCommand.make battle.UpdateTime_ (ActionCommand.make Wound sourceIndex (Some targetIndex) None)
                             let battle = animationCharacterPoise sourceIndex battle
                             let battle = finishCharacterInteraction sourceIndex battle
                             let battle = updateCurrentCommandOpt (constant (Some woundCommand)) battle
@@ -1466,7 +1464,7 @@ module Battle =
                 (false, battle)
             else
                 let actionCommand = { Action = Consequence consequence; SourceIndex = sourceIndex; TargetIndexOpt = targetIndexOpt; ObserverIndexOpt = observerIndexOpt }
-                let currentCommand = { StartTime = inc battle.UpdateTime_; ActionCommand = actionCommand }
+                let currentCommand = { StartTime = battle.UpdateTime_; ActionCommand = actionCommand }
                 let battle = updateCurrentCommandOpt (constant (Some currentCommand)) battle
                 (false, battle)
         | None -> (true, battle)
@@ -1745,13 +1743,13 @@ module Battle =
                     if List.forall (fun (character : Character) -> character.Wounded) allies then
                         // lost battle
                         let battle = animateCharactersCelebrate false battle
-                        let battle = updateBattleState (constant (BattleQuitting (inc battle.UpdateTime_, false, Set.empty))) battle
+                        let battle = updateBattleState (constant (BattleQuitting (battle.UpdateTime_, false, Set.empty))) battle
                         let (sigs2, battle) = advance battle
                         (sigs @ sigs2, battle)
                     elif List.isEmpty enemies then
                         // won battle
                         let battle = animateCharactersCelebrate true battle
-                        let battle = updateBattleState (constant (BattleResult (inc battle.UpdateTime_, true))) battle
+                        let battle = updateBattleState (constant (BattleResult (battle.UpdateTime_, true))) battle
                         let (sigs2, battle) = advance battle
                         (sigs @ sigs2, battle)
                     else (sigs, battle)
@@ -1793,7 +1791,7 @@ module Battle =
         | Wound -> advanceWound targetIndexOpt battle
 
     and private advanceNextCommand nextCommand futureCommands battle =
-        let command = CurrentCommand.make (inc battle.UpdateTime_) nextCommand
+        let command = CurrentCommand.make battle.UpdateTime_ nextCommand
         let sourceIndex = command.ActionCommand.SourceIndex
         let targetIndexOpt = command.ActionCommand.TargetIndexOpt
         let observerIndexOpt = command.ActionCommand.ObserverIndexOpt
@@ -1997,7 +1995,7 @@ module Battle =
             (signal (FadeOutSong 360L) :: sigs, battle)
         else
             match battle.DialogOpt_ with
-            | None -> just (updateBattleState (constant (BattleQuitting (inc battle.UpdateTime_, outcome, battle.PrizePool_.Consequents))) battle)
+            | None -> just (updateBattleState (constant (BattleQuitting (battle.UpdateTime_, outcome, battle.PrizePool_.Consequents))) battle)
             | Some _ -> just battle
 
     and private advanceCease startTime (battle : Battle) =
@@ -2005,10 +2003,6 @@ module Battle =
         just battle
 
     and advance (battle : Battle) : Signal list * Battle =
-
-        // advance field time
-        let battle =
-            advanceUpdateTime battle
 
         // advance message
         let battle =
@@ -2035,6 +2029,10 @@ module Battle =
 
         // fin
         (signals, battle)
+
+    let advanceUpdateTime field =
+        let field = { field with UpdateTime_ = inc field.UpdateTime_ }
+        just field
 
     let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies

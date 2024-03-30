@@ -50,6 +50,7 @@ module FieldDispatcher =
              Screen.PostUpdateEvent => UpdateFieldTransition
              Screen.PostUpdateEvent => UpdateEye
              Screen.PostUpdateEvent => UpdateAvatarBodyTracking
+             Screen.TimeUpdateEvent => TimeUpdate
              Screen.SelectEvent => PlayFieldSong
              Screen.IncomingStartEvent => ScreenTransitioning true
              Screen.IncomingFinishEvent => ScreenTransitioning false
@@ -67,6 +68,11 @@ module FieldDispatcher =
 
                 // advance field
                 Field.advance field
+
+            | TimeUpdate ->
+
+                // advance field time
+                Field.advanceUpdateTime field
 
             | UpdateFieldTransition ->
 
