@@ -2357,15 +2357,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable ssaoDistanceMax = lightingConfig.SsaoDistanceMax
             let mutable ssaoSampleCount = lightingConfig.SsaoSampleCount
             lightingChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lightingChanged
+            focusProperty ()
             lightingChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || lightingChanged
+            focusProperty ()
             if lightingChanged then
                 lightingConfig <-
                     { LightCutoffMargin = lightCutoffMargin
@@ -2378,7 +2388,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                       SsaoRadius = ssaoRadius
                       SsaoDistanceMax = ssaoDistanceMax
                       SsaoSampleCount = ssaoSampleCount }
-            setProperty lightingConfig propertyDescriptor simulant
+                setProperty lightingConfig propertyDescriptor simulant
         | _ ->
             let mutable combo = false
             if FSharpType.IsUnion ty then

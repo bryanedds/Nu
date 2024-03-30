@@ -433,7 +433,7 @@ type [<ReferenceEquality>] RenderTerrain =
       RenderPass : RenderPass }
 
 /// Configures lighting and ssao.
-type [<ReferenceEquality>] LightingConfig =
+type [<ReferenceEquality; SymbolicExpansion>] LightingConfig =
     { LightCutoffMargin : single
       LightShadowBiasAcne : single
       LightShadowBiasBleed : single

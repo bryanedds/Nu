@@ -5,7 +5,8 @@
   [Visible True]]
  [[Entity3dDispatcher
    [[FacetNames [LightingConfigFacet Nav3dConfigFacet]]
-    [LightingConfig [0.333 2E-07 0.5 True True 1.35 0.025 0.4 0.2 16]]
+    [LightingConfig
+     [[LightCutoffMargin 0.333] [LightShadowBiasAcne 2E-07] [LightShadowBiasBleed 0.5] [LightMappingEnabled True] [SsaoEnabled True] [SsaoIntensity 1.35] [SsaoBias 0.025] [SsaoRadius 0.35] [SsaoDistanceMax 0.175] [SsaoSampleCount 16]]]
     [Name Environment]
     [Presence Omnipresent]]
    [[Light3dDispatcher
