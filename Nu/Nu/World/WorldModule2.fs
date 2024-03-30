@@ -1806,7 +1806,7 @@ module EntityDispatcherModule2 =
             let model = this.GetModel entity world
             let (signals, model) = this.Physics (center, rotation, linearVelocity, angularVelocity, model, entity, world)
             let world = this.SetModel model entity world
-            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model entity) signal entity world) world signals
 
         override this.Render (renderPass, entity, world) =
             this.Render (this.GetModel entity world, renderPass, entity, world)
@@ -1815,7 +1815,7 @@ module EntityDispatcherModule2 =
             let model = entity.GetModelGeneric<'model> world
             let (signals, model) = this.Edit (model, operation, entity, world)
             let world = this.SetModel model entity world
-            Signal.processSignals this.Message this.Command (this.Model entity) signals entity world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model entity) signal entity world) world signals
 
         override this.Signal (signalObj : obj, entity, world) =
             match signalObj with

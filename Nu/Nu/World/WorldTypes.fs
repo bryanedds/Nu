@@ -1968,20 +1968,15 @@ module Signal =
             let (signals, model) = processMessage (model, message, simulant, world)
             let world = Lens.set model modelLens world
             match signals with
-            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
+            | _ :: _ -> List.fold (fun world signal -> processSignal processMessage processCommand modelLens signal simulant world) world signals
             | [] -> world
         | :? 'command as command ->
             let model = Lens.get modelLens world
             let (signals, world) = processCommand (model, command, simulant, world)
             match signals with
-            | _ :: _ -> processSignals processMessage processCommand modelLens signals simulant world
+            | _ :: _ -> List.fold (fun world signal -> processSignal processMessage processCommand modelLens signal simulant world) world signals
             | [] -> world
         | _ -> failwithumf ()
-
-    and processSignals processMessage processCommand modelLens signals simulant world =
-        List.fold
-            (fun world signal -> processSignal processMessage processCommand modelLens signal simulant world)
-            world signals
 
 [<AutoOpen>]
 module SignalOperators =
