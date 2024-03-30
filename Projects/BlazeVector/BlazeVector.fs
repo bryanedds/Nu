@@ -60,7 +60,7 @@ module BlazeVector =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay { GameplayTime = 0L; GameplayState = Playing; Score = 0 })
+            | ShowGameplay -> just (Gameplay { GameplayState = Playing; Score = 0 })
             | Update ->
                 match model with
                 | Gameplay gameplay ->

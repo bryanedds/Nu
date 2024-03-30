@@ -12,12 +12,10 @@ module Gameplay =
         | Quit
 
     type [<SymbolicExpansion>] Gameplay =
-        { GameplayTime : int64
-          GameplayState : GameplayState
+        { GameplayState : GameplayState
           Score : int }
 
     type GameplayMessage =
-        | TimeUpdate
         | Score of int
         | StartQuitting
         | FinishQuitting
@@ -35,13 +33,12 @@ module Gameplay =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayTime = 0L; GameplayState = Quit; Score = 0 })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
 
         static let [<Literal>] SectionCount = 12
 
         override this.Initialize (_, _) =
-            [Screen.TimeUpdateEvent => TimeUpdate
-             Screen.SelectEvent => CreateSections
+            [Screen.SelectEvent => CreateSections
              Screen.DeselectingEvent => DestroySections
              Screen.PostUpdateEvent => UpdateEye
              Simulants.GameplayQuit.ClickEvent => StartQuitting
@@ -50,7 +47,6 @@ module Gameplay =
 
         override this.Message (gameplay, message, _, _) =
             match message with
-            | TimeUpdate -> just { gameplay with GameplayTime = inc gameplay.GameplayTime }
             | Score score -> just { gameplay with Score = gameplay.Score + score }
             | StartQuitting -> just { gameplay with GameplayState = Quitting }
             | FinishQuitting -> just { gameplay with GameplayState = Quit }
