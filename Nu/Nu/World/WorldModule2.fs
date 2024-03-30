@@ -1809,6 +1809,7 @@ module EntityDispatcherModule2 =
             let world = this.SetModel model entity world
             List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model entity) signal entity world) world signals
 
+        [<DebuggerHidden>]
         override this.Signal (signalObj : obj, entity, world) =
             match signalObj with
             | :? 'message as message -> World.signalEntity<'model, 'message, 'command> message entity world
@@ -2107,6 +2108,7 @@ module GroupDispatcherModule =
         override this.Render (renderPass, group, world) =
             this.Render (this.GetModel group world, renderPass, group, world)
 
+        [<DebuggerHidden>]
         override this.Signal (signalObj : obj, group, world) =
             match signalObj with
             | :? 'message as message -> World.signalGroup<'model, 'message, 'command> message group world
@@ -2278,6 +2280,7 @@ module ScreenDispatcherModule =
         override this.Render (renderPass, screen, world) =
             this.Render (this.GetModel screen world, renderPass, screen, world)
 
+        [<DebuggerHidden>]
         override this.Signal (signalObj : obj, screen, world) =
             match signalObj with
             | :? 'message as message -> World.signalScreen<'model, 'message, 'command> message screen world
@@ -2456,6 +2459,7 @@ module GameDispatcherModule =
         override this.Render (renderPass, game, world) =
             this.Render (this.GetModel game world, renderPass, game, world)
 
+        [<DebuggerHidden>]
         override this.Signal (signalObj : obj, game, world) =
             match signalObj with
             | :? 'message as message -> World.signalGame<'model, 'message, 'command> message game world
