@@ -5,7 +5,7 @@
   [Visible True]]
  [[Entity3dDispatcher
    [[FacetNames [LightingConfigFacet Nav3dConfigFacet]]
-    [LightingConfig [0.333 2E-07 0.5 True True 1.35 0.025 0.5 0.25 16]]
+    [LightingConfig [0.333 2E-07 0.5 True True 1.35 0.025 0.4 0.2 16]]
     [Name Environment]
     [Presence Omnipresent]]
    [[Light3dDispatcher
