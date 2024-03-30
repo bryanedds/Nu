@@ -41,7 +41,6 @@
 		<Compile Include="Character.fs" />
 		<Compile Include="CharacterDispatcher.fs" />
 		<Compile Include="Gameplay.fs" />
-		<Compile Include="GameplayDispatcher.fs" />
 		<Compile Include="TerraFirma.fs" />
 		<Compile Include="TerraFirmaPlugin.fs" />
 		<Compile Include="Program.fs" />

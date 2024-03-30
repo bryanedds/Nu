@@ -50,7 +50,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         if not (Queue.isEmpty this.PositionPrevious) then
             let positions = Queue.conj position this.PositionPrevious
             Seq.sum positions / single positions.Length
-            else position
+        else position
 
     member this.RotationInterp rotation =
         if not (Queue.isEmpty this.RotationPrevious) then
