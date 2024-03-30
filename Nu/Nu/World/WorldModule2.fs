@@ -2290,7 +2290,7 @@ module ScreenDispatcherModule =
             match signalObj with
             | :? 'message as message -> World.signalScreen<'model, 'message, 'command> message screen world
             | :? 'command as command -> World.signalScreen<'model, 'message, 'command> command screen world
-            | command ->
+            | _ ->
                 try let message = signalObj |> valueToSymbol |> symbolToValue : 'message
                     World.signalScreen<'model, 'message, 'command> message screen world
                 with _ ->
