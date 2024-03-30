@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Reflection
 open Prime
-open System.Diagnostics
 
 [<AutoOpen>]
 module WorldModuleOperators =

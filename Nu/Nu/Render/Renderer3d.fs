@@ -432,21 +432,30 @@ type [<ReferenceEquality>] RenderTerrain =
       TerrainDescriptor : TerrainDescriptor
       RenderPass : RenderPass }
 
-/// Configures lighting.
+/// Configures lighting and ssao.
 type [<ReferenceEquality>] LightingConfig =
     { LightCutoffMargin : single
       LightShadowBiasAcne : single
       LightShadowBiasBleed : single
-      LightMappingEnabled : bool }
-
-/// Configures SSAO.
-type [<ReferenceEquality>] SsaoConfig =
-    { SsaoEnabled : bool
+      LightMappingEnabled : bool
+      SsaoEnabled : bool
       SsaoIntensity : single
       SsaoBias : single
       SsaoRadius : single
       SsaoDistanceMax : single
       SsaoSampleCount : int }
+
+    static member defaultConfig =
+        { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
+          LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
+          LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
+          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+          SsaoEnabled = Constants.Render.SsaoEnabledDefault
+          SsaoIntensity = Constants.Render.SsaoIntensityDefault
+          SsaoBias = Constants.Render.SsaoBiasDefault
+          SsaoRadius = Constants.Render.SsaoRadiusDefault
+          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
+          SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
 /// A message to the 3d renderer.
 type [<ReferenceEquality>] RenderMessage3d =
@@ -469,7 +478,6 @@ type [<ReferenceEquality>] RenderMessage3d =
     | RenderCachedAnimatedModel of CachedAnimatedModelMessage
     | RenderTerrain of RenderTerrain
     | ConfigureLighting of LightingConfig
-    | ConfigureSsao of SsaoConfig
     | LoadRenderPackage3d of string
     | UnloadRenderPackage3d of string
     | ReloadRenderAssets3d
@@ -750,7 +758,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
           mutable LightingConfig : LightingConfig
-          mutable SsaoConfig : SsaoConfig
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
@@ -2464,7 +2471,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssaoTextureFiltered =
 
             // but only if needed
-            if renderer.SsaoConfig.SsaoEnabled then
+            if renderer.LightingConfig.SsaoEnabled then
 
                 // setup unfiltered ssao buffer and viewport
                 let (ssaoTextureUnfiltered, ssaoRenderbuffer, ssaoFramebuffer) = renderer.SsaoBuffersUnfiltered
@@ -2480,7 +2487,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     (viewRelativeArray, rasterProjectionArray,
                      positionTexture, normalPlusTexture,
                      [|Constants.Render.SsaoResolution.X; Constants.Render.SsaoResolution.Y|],
-                     renderer.SsaoConfig.SsaoIntensity, renderer.SsaoConfig.SsaoBias, renderer.SsaoConfig.SsaoRadius, renderer.SsaoConfig.SsaoDistanceMax, renderer.SsaoConfig.SsaoSampleCount,
+                     renderer.LightingConfig.SsaoIntensity, renderer.LightingConfig.SsaoBias, renderer.LightingConfig.SsaoRadius, renderer.LightingConfig.SsaoDistanceMax, renderer.LightingConfig.SsaoSampleCount,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredSsaoShader)
                 OpenGL.Hl.Assert ()
 
@@ -2688,8 +2695,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeTerrain (rt.Absolute, rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
             | ConfigureLighting lc ->
                 renderer.LightingConfig <- lc
-            | ConfigureSsao sc ->
-                renderer.SsaoConfig <- sc
             | LoadRenderPackage3d packageName ->
                 GlRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
@@ -2982,22 +2987,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialHeight.dds") |> Either.getRight |> snd
               TwoSided = false }
 
-        // make light mapping config
-        let lightingConfig =
-            { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
-              LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
-              LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
-              LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
-
-        // make ssao config
-        let ssaoConfig =
-            { SsaoEnabled = Constants.Render.SsaoEnabledDefault
-              SsaoIntensity = Constants.Render.SsaoIntensityDefault
-              SsaoBias = Constants.Render.SsaoBiasDefault
-              SsaoRadius = Constants.Render.SsaoRadiusDefault
-              SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
-              SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
-
         // create forward surfaces comparer
         let forwardSurfacesComparer =
             { new IComparer<struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)> with
@@ -3060,8 +3049,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               LightMaps = dictPlus HashIdentity.Structural []
-              LightingConfig = lightingConfig
-              SsaoConfig = ssaoConfig
+              LightingConfig = LightingConfig.defaultConfig
               InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]
               LightsDesiringShadows = dictPlus HashIdentity.Structural []

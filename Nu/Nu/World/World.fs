@@ -184,6 +184,7 @@ module WorldModule3 =
                  LayoutFacet ()
                  LightProbe3dFacet ()
                  Light3dFacet ()
+                 LightingConfigFacet ()
                  SkyBoxFacet ()
                  StaticBillboardFacet ()
                  StaticModelSurfaceFacet ()

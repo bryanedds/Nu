@@ -100,18 +100,6 @@ module Gaia =
     let mutable private entityHierarchySearchStr = ""
     let mutable private entityHierarchyFilterPropagationSources = false
     let mutable private assetViewerSearchStr = ""
-    let mutable private lightingConfig =
-        { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
-          LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
-          LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
-          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault }
-    let mutable private ssaoConfig =
-        { SsaoEnabled = Constants.Render.SsaoEnabledDefault
-          SsaoIntensity = Constants.Render.SsaoIntensityDefault
-          SsaoBias = Constants.Render.SsaoBiasDefault
-          SsaoRadius = Constants.Render.SsaoRadiusDefault
-          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
-          SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
     (* Project States *)
 
@@ -214,21 +202,15 @@ DockId=0x00000001,0
 Pos=963,869
 Size=650,211
 Collapsed=0
-DockId=0x00000009,6
+DockId=0x00000009,5
 
 [Window][Interactive]
 Pos=963,869
 Size=650,211
 Collapsed=0
-DockId=0x00000009,5
-
-[Window][Event Tracing]
-Pos=963,869
-Size=650,211
-Collapsed=0
 DockId=0x00000009,4
 
-[Window][Renderer]
+[Window][Event Tracing]
 Pos=963,869
 Size=650,211
 Collapsed=0
@@ -2361,6 +2343,42 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if changed then
                 let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
                 setProperty substance propertyDescriptor simulant
+        | :? LightingConfig as lightingConfig ->
+            let mutable lightingConfig = lightingConfig
+            let mutable lightingChanged = false
+            let mutable lightCutoffMargin = lightingConfig.LightCutoffMargin
+            let mutable lightShadowBiasAcneStr = lightingConfig.LightShadowBiasAcne.ToString "0.00000000"
+            let mutable lightShadowBiasBleed = lightingConfig.LightShadowBiasBleed
+            let mutable lightMappingEnabled = lightingConfig.LightMappingEnabled
+            let mutable ssaoEnabled = lightingConfig.SsaoEnabled
+            let mutable ssaoIntensity = lightingConfig.SsaoIntensity
+            let mutable ssaoBias = lightingConfig.SsaoBias
+            let mutable ssaoRadius = lightingConfig.SsaoRadius
+            let mutable ssaoDistanceMax = lightingConfig.SsaoDistanceMax
+            let mutable ssaoSampleCount = lightingConfig.SsaoSampleCount
+            lightingChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lightingChanged
+            lightingChanged <- ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) || lightingChanged
+            lightingChanged <- ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) || lightingChanged
+            lightingChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || lightingChanged
+            lightingChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lightingChanged
+            lightingChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lightingChanged
+            lightingChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lightingChanged
+            lightingChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lightingChanged
+            lightingChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lightingChanged
+            lightingChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || lightingChanged
+            if lightingChanged then
+                lightingConfig <-
+                    { LightCutoffMargin = lightCutoffMargin
+                      LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
+                      LightShadowBiasBleed = lightShadowBiasBleed
+                      LightMappingEnabled = lightMappingEnabled
+                      SsaoEnabled = ssaoEnabled
+                      SsaoIntensity = ssaoIntensity
+                      SsaoBias = ssaoBias
+                      SsaoRadius = ssaoRadius
+                      SsaoDistanceMax = ssaoDistanceMax
+                      SsaoSampleCount = ssaoSampleCount }
+            setProperty lightingConfig propertyDescriptor simulant
         | _ ->
             let mutable combo = false
             if FSharpType.IsUnion ty then
@@ -3400,57 +3418,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             try let eventFilter = scvalue<EventFilter> eventFilterStr
                                 world <- World.setEventFilter eventFilter world
                             with _ -> ()
-                        ImGui.End ()
-
-                    // renderer window
-                    if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
-
-                        // configure lighting
-                        ImGui.Text "Lighting"
-                        let mutable lightingChanged = false
-                        let mutable lightCutoffMargin = lightingConfig.LightCutoffMargin
-                        let mutable lightShadowBiasAcneStr = lightingConfig.LightShadowBiasAcne.ToString "0.00000000"
-                        let mutable lightShadowBiasBleed = lightingConfig.LightShadowBiasBleed
-                        let mutable lightMappingEnabled = lightingConfig.LightMappingEnabled
-                        lightingChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lightingChanged
-                        lightingChanged <- ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) || lightingChanged
-                        lightingChanged <- ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) || lightingChanged
-                        lightingChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || lightingChanged
-                        if lightingChanged then
-                            lightingConfig <-
-                                { LightCutoffMargin = lightCutoffMargin
-                                  LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
-                                  LightShadowBiasBleed = lightShadowBiasBleed
-                                  LightMappingEnabled = lightMappingEnabled }
-                            World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
-
-                        // configure ssao
-                        ImGui.Text "Ssao (screen-space ambient occlusion)"
-                        let mutable ssaoChanged = false
-                        let mutable ssaoEnabled = ssaoConfig.SsaoEnabled
-                        let mutable ssaoIntensity = ssaoConfig.SsaoIntensity
-                        let mutable ssaoBias = ssaoConfig.SsaoBias
-                        let mutable ssaoRadius = ssaoConfig.SsaoRadius
-                        let mutable ssaoDistanceMax = ssaoConfig.SsaoDistanceMax
-                        let mutable ssaoSampleCount = ssaoConfig.SsaoSampleCount
-                        ssaoChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || ssaoChanged
-                        if ssaoEnabled then
-                            ssaoChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || ssaoChanged
-                            ssaoChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || ssaoChanged
-                            ssaoChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || ssaoChanged
-                            ssaoChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || ssaoChanged
-                            ssaoChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || ssaoChanged
-                        if ssaoChanged then
-                            ssaoConfig <-
-                                { SsaoEnabled = ssaoEnabled
-                                  SsaoIntensity = ssaoIntensity
-                                  SsaoBias = ssaoBias
-                                  SsaoRadius = ssaoRadius
-                                  SsaoDistanceMax = ssaoDistanceMax
-                                  SsaoSampleCount = ssaoSampleCount }
-                            World.enqueueRenderMessage3d (ConfigureSsao ssaoConfig) world
-
-                        // fin
                         ImGui.End ()
 
                     // audio player window
