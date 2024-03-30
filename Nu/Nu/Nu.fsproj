@@ -29,6 +29,7 @@
 		<Compile Include="Core\Gen.fs" />
 		<Compile Include="Core\Math.fs" />
 		<Compile Include="Core\Branchless.fs" />
+		<Compile Include="Core\StructPair.fs" />
 		<Compile Include="Core\PathF.fs" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Address.fs" />
@@ -36,7 +37,6 @@
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
 		<Compile Include="Core\Constants.fs" />
-		<Compile Include="Collections\StructPair.fs" />
 		<Compile Include="Collections\ListTree.fs" />
 		<Compile Include="Collections\KeyedArray.fs" />
 		<Compile Include="Collections\ForgetfulDictionary.fs" />
