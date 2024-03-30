@@ -501,7 +501,6 @@ module WorldModule =
             World.updateEventGraph (EventGraph.setEventFilter filter) world
 
         /// Publish an event.
-        //[<DebuggerHidden>]
         static member publishPlus<'a, 'p when 'p :> Simulant>
             (eventData : 'a)
             (eventAddress : 'a Address)
