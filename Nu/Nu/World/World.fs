@@ -64,12 +64,22 @@ type Nu () =
             WorldModule.evictScreenElements <- fun screen world -> World.evictScreenElements screen world
             WorldModule.registerScreenPhysics <- fun screen world -> World.registerScreenPhysics screen world
             WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
-            WorldModule.signal <- fun signalObj simulant world -> World.signal (signalObj :?> Signal) simulant world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
+
+            // init WorldModule.signal F# reach-around with inlining to thin out stack trace.
+            // it would be better if this didn't have to be a reach-around at all.
+            WorldModule.signal <- fun signalObj simulant world ->
+                let signal = signalObj :?> Signal
+                match simulant with
+                | :? Entity as entity -> (entity.GetDispatcher world).Signal (signal, entity, world)
+                | :? Group as group -> (group.GetDispatcher world).Signal (signal, group, world)
+                | :? Screen as screen -> (screen.GetDispatcher world).Signal (signal, screen, world)
+                | :? Game as game -> (game.GetDispatcher world).Signal (signal, game, world)
+                | _ -> failwithumf ()
 
             // init user-defined initialization process
             let result = userInit ()
