@@ -95,16 +95,16 @@ module WorldModule =
         static member internal getSimulants world =
             world.Simulants
 
-    type World with // JobSystem
+    type World with // JobGraph
 
         /// Enqueue a job for threaded execution.
         static member enqueueJob priority job world =
-            world.JobSystem.Enqueue (priority, job)
+            world.JobGraph.Enqueue (priority, job)
 
         /// Await a job from threaded execution.
         /// Order of jobs with the same key is not guaranteed.
         static member tryAwaitJob deadline (jobId : obj) world =
-            world.JobSystem.TryAwait (deadline, jobId)
+            world.JobGraph.TryAwait (deadline, jobId)
 
     type World with // Destruction
 

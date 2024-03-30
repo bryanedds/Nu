@@ -48,7 +48,7 @@
 		<Compile Include="Transform\Transform.fs" />
 		<Compile Include="Behaviors\Behavior.fs" />
 		<Compile Include="Behaviors\Modifier.fs" />
-		<Compile Include="JobSystem\JobSystem.fs" />
+		<Compile Include="JobGraph\JobGraph.fs" />
 		<Compile Include="Assimp\Assimp.fs" />
 		<Compile Include="OpenGL\OpenGL.Hl.fs" />
 		<Compile Include="OpenGL\OpenGL.Shader.fs" />

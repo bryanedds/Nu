@@ -29,8 +29,7 @@ type JobResult =
         | JobException (_, resultTime, _) -> resultTime
 
 /// Processes jobs based on priority.
-/// TODO: rename this to JobGraph.
-type JobSystem =
+type JobGraph =
 
     /// Add a job for processing with the given priority (low number is higher priority).
     abstract Enqueue : single * Job -> unit
@@ -40,11 +39,11 @@ type JobSystem =
     abstract TryAwait : DateTimeOffset * obj -> JobResult option
 
 /// Processes jobs based on priority inline.
-type JobSystemInline () =
+type JobGraphInline () =
 
     let jobResults = ConcurrentDictionary<obj, JobResult> ()
 
-    interface JobSystem with
+    interface JobGraph with
 
         /// Add a job for processing with the given priority (low number is higher priority).
         member this.Enqueue (_, job) =
@@ -61,7 +60,7 @@ type JobSystemInline () =
             | (false, _) -> None
 
 /// Processes jobs based on priority in parallel.
-type JobSystemParallel (resultExpirationTime : TimeSpan) =
+type JobGraphParallel (resultExpirationTime : TimeSpan) =
 
     let executingRef = ref true
     let jobQueue = ConcurrentPriorityQueue<single, Job> ()
@@ -89,7 +88,7 @@ type JobSystemParallel (resultExpirationTime : TimeSpan) =
                     1 |> Async.Sleep |> Async.RunSynchronously } |>
             Async.StartAsTask
 
-    interface JobSystem with
+    interface JobGraph with
 
         /// Add a job for processing with the given priority (low number is higher priority).
         member this.Enqueue (priority, job) =

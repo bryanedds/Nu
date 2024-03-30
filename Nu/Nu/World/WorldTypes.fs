@@ -1699,7 +1699,7 @@ and [<ReferenceEquality>] World =
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.
-          JobSystem : JobSystem
+          JobGraph : JobGraph
           WorldExtension : WorldExtension }
 
     /// Check that the world is executing with imperative semantics where applicable.

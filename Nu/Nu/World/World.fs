@@ -259,7 +259,7 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make plugin eventGraph jobSystem dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make plugin eventGraph jobGraph dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
@@ -286,7 +286,7 @@ module WorldModule3 =
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
-                  JobSystem = jobSystem
+                  JobGraph = jobGraph
                   WorldExtension = worldExtension }
             let world = { world with GameState = Reflection.attachProperties GameState.copy gameState.Dispatcher gameState world }
             World.choose world
@@ -306,8 +306,8 @@ module WorldModule3 =
             // make the default game dispatcher
             let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
-            // make the default job system
-            let jobSystem = JobSystemInline ()
+            // make the default job graph
+            let jobGraph = JobGraphInline ()
 
             // make the world's dispatchers
             let dispatchers =
@@ -333,7 +333,7 @@ module WorldModule3 =
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
 
             // make the world
-            let world = World.make plugin eventGraph jobSystem dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make plugin eventGraph jobGraph dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame Game world
@@ -370,11 +370,11 @@ module WorldModule3 =
                 // make the default game dispatcher
                 let defaultGameDispatcher = World.makeDefaultGameDispatcher ()
 
-                // make the job system
-                let jobSystem =
+                // make the job graph
+                let jobGraph =
                     if Constants.Engine.RunSynchronously
-                    then JobSystemInline () :> JobSystem
-                    else JobSystemParallel (TimeSpan.FromSeconds 0.5) :> JobSystem
+                    then JobGraphInline () :> JobGraph
+                    else JobGraphParallel (TimeSpan.FromSeconds 0.5) :> JobGraph
 
                 // make the world's dispatchers
                 let dispatchers =
@@ -419,7 +419,7 @@ module WorldModule3 =
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
 
                     // make the world
-                    let world = World.make plugin eventGraph jobSystem dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make plugin eventGraph jobGraph dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
