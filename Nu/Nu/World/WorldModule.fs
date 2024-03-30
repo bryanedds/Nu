@@ -453,14 +453,9 @@ module WorldModule =
         static member internal updateEventGraph updater world =
             World.setEventGraph (updater world.EventGraph) world
 
-        static member internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
+        static member inline internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
             let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
-                let evt =
-                    { Data = evt.Data :?> 'a
-                      Subscriber = evt.Subscriber :?> 's
-                      Publisher = evt.Publisher
-                      Address = Address.specialize<'a> evt.Address
-                      Trace = evt.Trace }
+                let evt = { Data = evt.Data :?> 'a; Subscriber = evt.Subscriber :?> 's; Publisher = evt.Publisher; Address = Address.specialize<'a> evt.Address; Trace = evt.Trace }
                 callback evt world
             boxableCallback
 
@@ -570,12 +565,12 @@ module WorldModule =
             else world
 
         /// Publish an event with no subscription sorting or wildcard utilization.
-        static member publishUnsorted<'a, 'p when 'p :> Simulant>
+        static member inline publishUnsorted<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) (world : World) =
             World.publishPlus<'a, 'p> eventData eventAddress [] publisher false false world
 
         /// Publish an event with subscription sorting and wildcard utilization.
-        static member publish<'a, 'p when 'p :> Simulant>
+        static member inline publish<'a, 'p when 'p :> Simulant>
             (eventData : 'a) (eventAddress : 'a Address) (publisher : 'p) (world : World) =
             World.publishPlus<'a, 'p> eventData eventAddress [] publisher true false world
 

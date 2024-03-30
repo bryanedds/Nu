@@ -239,14 +239,9 @@ module EventGraph =
             subscriptionEntries
 
     /// Publish an event.
-    let publishEvent<'a, 'p, 's, 'w when 'p :> Simulant and 's :> Simulant>
+    let inline publishEvent<'a, 'p, 's, 'w when 'p :> Simulant and 's :> Simulant>
         (subscriber : Simulant) (publisher : 'p) (eventData : obj) (eventAddress : 'a Address) eventTrace (subscription : obj) (world : 'w) =
-        let evt =
-            { Data = eventData
-              Subscriber = subscriber
-              Publisher = publisher :> Simulant
-              Address = atooa eventAddress
-              Trace = eventTrace }
+        let evt = { Data = eventData; Subscriber = subscriber; Publisher = publisher :> Simulant; Address = atooa eventAddress; Trace = eventTrace }
         let callableSubscription = subscription :?> 'w BoxableSubscription
         callableSubscription evt world
 

@@ -1953,7 +1953,7 @@ module LensOperators =
 [<RequireQualifiedAccess; CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
 module Signal =
 
-    let rec
+    let rec [<DebuggerHidden>]
         processSignal<'model, 'message, 'command, 's when 'message :> Message and 'command :> Command and 's :> Simulant>
         (processMessage : 'model * 'message * 's * World -> Signal list * 'model)
         (processCommand : 'model * 'command * 's * World -> Signal list * World)
@@ -1968,13 +1968,19 @@ module Signal =
             let (signals, model) = processMessage (model, message, simulant, world)
             let world = Lens.set model modelLens world
             match signals with
-            | _ :: _ -> List.fold (fun world signal -> processSignal processMessage processCommand modelLens signal simulant world) world signals
+            | _ :: _ ->
+                let mutable world = world
+                for signal in signals do world <- processSignal processMessage processCommand modelLens signal simulant world
+                world
             | [] -> world
         | :? 'command as command ->
             let model = Lens.get modelLens world
             let (signals, world) = processCommand (model, command, simulant, world)
             match signals with
-            | _ :: _ -> List.fold (fun world signal -> processSignal processMessage processCommand modelLens signal simulant world) world signals
+            | _ :: _ ->
+                let mutable world = world
+                for signal in signals do world <- processSignal processMessage processCommand modelLens signal simulant world
+                world
             | [] -> world
         | _ -> failwithumf ()
 

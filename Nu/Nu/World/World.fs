@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Diagnostics
 open System.Reflection
 open System.Threading
 open SDL2
@@ -12,6 +13,17 @@ open Prime
 type Nu () =
 
     static let mutable Initialized = false
+
+    /// WorldModule.signal F# reach-around with inlining to thin out stack trace.
+    [<DebuggerHidden>]
+    static member private worldModuleSignal (signalObj : obj) (simulant : Simulant) world =
+        let signal = signalObj :?> Signal
+        match simulant with
+        | :? Entity as entity -> (entity.GetDispatcher world).Signal (signal, entity, world)
+        | :? Group as group -> (group.GetDispatcher world).Signal (signal, group, world)
+        | :? Screen as screen -> (screen.GetDispatcher world).Signal (signal, screen, world)
+        | :? Game as game -> (game.GetDispatcher world).Signal (signal, game, world)
+        | _ -> failwithumf ()
 
     /// Initialize the Nu game engine, allowing for additional user-defined initialization after setting up logging
     /// and function / lens references but before performing initialization involving values stored in constants.
@@ -66,20 +78,10 @@ type Nu () =
             WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
+            WorldModule.signal <- Nu.worldModuleSignal
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
             WorldModule.getEmptyEffect <- fun () -> Effect.empty :> obj
-
-            // init WorldModule.signal F# reach-around with inlining to thin out stack trace.
-            // it would be better if this didn't have to be a reach-around at all.
-            WorldModule.signal <- fun signalObj simulant world ->
-                let signal = signalObj :?> Signal
-                match simulant with
-                | :? Entity as entity -> (entity.GetDispatcher world).Signal (signal, entity, world)
-                | :? Group as group -> (group.GetDispatcher world).Signal (signal, group, world)
-                | :? Screen as screen -> (screen.GetDispatcher world).Signal (signal, screen, world)
-                | :? Game as game -> (game.GetDispatcher world).Signal (signal, game, world)
-                | _ -> failwithumf ()
 
             // init user-defined initialization process
             let result = userInit ()
