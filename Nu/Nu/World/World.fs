@@ -14,7 +14,7 @@ type Nu () =
 
     static let mutable Initialized = false
 
-    /// WorldModule.signal F# reach-around with inlining to thin out stack trace.
+    // NOTE: extracted from Nu.initPlus to shorten stack trace.
     [<DebuggerHidden>]
     static member private worldModuleSignal (signalObj : obj) (simulant : Simulant) world =
         let signal = signalObj :?> Signal

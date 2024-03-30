@@ -69,7 +69,7 @@ module Content =
             else world
         else world
 
-    // NOTE: extracted from Content.synchronizeEventHandlers to thin out stack trace.
+    // NOTE: extracted from Content.synchronizeEventHandlers to shorten stack trace.
     let [<DebuggerHidden>] private handleSignal handler origin =
         fun event world ->
             let world = WorldModule.signal (handler event) origin world
