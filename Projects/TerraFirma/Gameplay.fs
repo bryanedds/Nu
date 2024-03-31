@@ -106,7 +106,7 @@ module Gameplay =
 
                 // update sun to shine over player
                 let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
-                let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 8.0f) world
+                let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
                 just world
 
         // here we describe the content of the game including the hud group and the scene group
