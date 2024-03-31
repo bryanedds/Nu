@@ -58,14 +58,17 @@ module Viewport =
         /// TODO: P1: test this code!
         member this.Position2dToPosition3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
-            let viewProjectionInverse = (Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up) * this.Projection3d).Inverted
-            let rotationInverse = Quaternion.Inverse eyeRotation
+            let eyeRotationInverse = Quaternion.Inverse eyeRotation
+            let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+            let projection = this.Projection3d
+            let viewProjectionInverse = (view * projection).Inverted
             let positionNdc = v3 (position.X / single (resolutionX * 2)) (position.Y / single (resolutionY * 2)) 0.0f
             let positionViewProjection = Vector4.Transform (positionNdc, viewProjectionInverse)
             let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
-            let position3d = (Vector4.Transform (positionView, Matrix4x4.CreateFromQuaternion rotationInverse)).V3
+            let position3d = (Vector4.Transform (positionView, Matrix4x4.CreateFromQuaternion eyeRotationInverse)).V3
             let rayDirection = Vector3.Normalize (position3d - eyeCenter)
-            Ray3 (eyeCenter, rayDirection)
+            let ray = Ray3 (eyeCenter, rayDirection)
+            ray
 
         /// Transform the given mouse position to 2d screen space.
         member this.MouseTo2dScreen (mousePosition : Vector2, _ : Vector2, eyeSize : Vector2) =
