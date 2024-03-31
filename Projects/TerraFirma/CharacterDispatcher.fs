@@ -93,25 +93,21 @@ module CharacterDispatcher =
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                let wasWounded = character.ActionState = WoundedState
                 let (soundOpt, animations, attackedCharacters, position, rotation, character) =
                     Character.update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character
 
                 // deploy signals from update
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
                 let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimatedModel (position, rotation, Array.ofList animations) :: signals
-                let signals = if not wasWounded && character.ActionState = WoundedState then PublishDie :> Signal :: signals else signals
+                let signals = if character.ActionState = WoundedState then PublishDie :> Signal :: signals else signals
                 let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
                 withSignals signals character
 
             | WeaponCollide collisionData ->
                 match collisionData.BodyShapeCollidee.BodyId.BodySource with
                 | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
-                    let collideeCharacter = collidee.GetCharacter world
-                    if character.Player <> collideeCharacter.Player then
-                        let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
-                        just character
-                    else just character
+                    let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
+                    just character
                 | _ -> just character
 
             | WeaponSeparateExplicit separationData ->
