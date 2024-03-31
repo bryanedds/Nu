@@ -43,6 +43,7 @@ module Viewport =
             let projection = this.Projection2d
             view * projection
 
+        /// Compute the absolute 2d position from the given relative 3d position.
         member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
@@ -56,6 +57,25 @@ module Viewport =
                     (positionNdc.Y * single (resolutionY / 2))
                     positionNdc.Z
             position2d
+
+        /// Compute the relative 3d ray from the given absolute 2d position.
+        /// TODO: P1: test this code!
+        member this.Position2dToPosition3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
+            let positionNdc =
+                v3
+                    (position.X / single (resolutionX * 2))
+                    (position.Y / single (resolutionY * 2))
+                    0.0f
+            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            let viewInverse = (Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)).Inverted
+            let projectionInverse = this.Projection3d.Inverted
+            let viewProjectionInverse = viewInverse * projectionInverse
+            let positionHom = Vector4.Transform (positionNdc, viewProjectionInverse)
+            let positionView = Vector4 (positionHom.X, positionHom.Y, -1.0f, 0.0f)
+            let rotationView = Quaternion.Inverse eyeRotation
+            let position3d = Vector4.Transform(positionView, Matrix4x4.CreateFromQuaternion rotationView)
+            let rayDirection = Vector3.Normalize (position3d.V3 - eyeCenter)
+            Ray3 (eyeCenter, rayDirection)
 
         /// Transform the given mouse position to 2d screen space.
         member this.MouseTo2dScreen (mousePosition : Vector2, _ : Vector2, eyeSize : Vector2) =
