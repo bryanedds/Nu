@@ -8,7 +8,8 @@ module Gameplay =
 
     // this represents that state of gameplay simulation.
     type GameplayState =
-        | Playing
+        | Commencing
+        | Commence
         | Quitting
         | Quit
 
@@ -16,17 +17,18 @@ module Gameplay =
     // this model representation uses update time, that is, time based on number of engine updates.
     // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
     // you could use `GameplayTime : single` instead. If you're going to use Split MMCC instead of Pure MMCC, you won't
-    // need this field at all and should remove it, using world.UpdateTime or world.ClockTime instead
-    // (https://github.com/bryanedds/Nu/wiki/Pure-MMCC-vs.-Split-MMCC)
+    // need this field at all and should remove it, using world.UpdateTime or world.ClockTime instead (see
+    // https://github.com/bryanedds/Nu/wiki/Pure-MMCC-vs.-Split-MMCC)
     type Gameplay =
         { GameplayTime : int64
           GameplayState : GameplayState }
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | TimeUpdate
+        | FinishCommencing
         | StartQuitting
         | FinishQuitting
+        | TimeUpdate
         interface Message
 
     // this extends the Screen API to expose the above Gameplay model.
@@ -42,18 +44,21 @@ module Gameplay =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.TimeUpdateEvent => TimeUpdate
-             Screen.DeselectingEvent => FinishQuitting]
+            [Screen.SelectEvent => FinishCommencing
+             Screen.DeselectingEvent => FinishQuitting
+             Screen.TimeUpdateEvent => TimeUpdate]
 
         // here we handle the above messages
         override this.Message (gameplay, message, _, world) =
             match message with
-            | TimeUpdate ->
-                just { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
+            | FinishCommencing ->
+                just { gameplay with GameplayState = Commence }
             | StartQuitting ->
                 just { gameplay with GameplayState = Quitting }
             | FinishQuitting ->
                 just { gameplay with GameplayState = Quit }
+            | TimeUpdate ->
+                just { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
 
         // here we describe the content of the game including the hud, the scene, and the player
         override this.Content (gameplay, _) =
@@ -75,8 +80,10 @@ module Gameplay =
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]
 
-             // the scene group while playing or quitting
+             // the scene group while gameplay commences or quitting
              match gameplay.GameplayState with
-             | Playing | Quitting ->
+             | Commence | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
-             | Quit -> ()]
+
+             // no scene group otherwise
+             | Commencing | Quit -> ()]

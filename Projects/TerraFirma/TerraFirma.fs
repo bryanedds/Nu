@@ -48,7 +48,7 @@ module TerraFirma =
                 | Credits -> Desire Simulants.Credits
                 | Gameplay gameplay ->
                     match gameplay.GameplayState with
-                    | Playing -> Desire Simulants.Gameplay
+                    | Commencing | Commence -> Desire Simulants.Gameplay
                     | Quitting | Quit -> Desire Simulants.Title
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
              Game.UpdateEvent => Update
@@ -63,7 +63,7 @@ module TerraFirma =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay { GameplayState = Playing })
+            | ShowGameplay -> just (Gameplay { GameplayState = Commencing })
             | Update ->
                 match model with
                 | Gameplay gameplay ->

@@ -21,8 +21,8 @@ type Tile =
           Value = value }
 
 type GameplayState =
-    | Playing
-    | GameOver
+    | Commencing
+    | Commence of bool
     | Quitting
     | Quit
 
@@ -151,4 +151,4 @@ type Gameplay =
         let position = v2i (Gen.random1 gameplay.BoardSize.X) (Gen.random1 gameplay.BoardSize.Y)
         let value = if Gen.random1 10 = 0 then 4 else 2
         let tile = Tile.make position value
-        { gameplay with GameplayState = Playing; Tiles = [tile] }
+        { gameplay with GameplayState = Commencing; Tiles = [tile] }

@@ -61,7 +61,7 @@ module OmniBlade =
                     | Intro _ -> Desire Simulants.Intro
                 | Field field ->
                     match field.FieldState with
-                    | Playing ->
+                    | Play ->
                         match field.BattleOpt with
                         | Some battle ->
                             match battle.BattleState with

@@ -6,7 +6,8 @@ open Nu
 
 // this represents that state of gameplay simulation.
 type GameplayState =
-    | Playing
+    | Commencing
+    | Commence
     | Quitting
     | Quit
 
@@ -16,6 +17,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
 
 // this is our MMCC message type.
 type GameplayMessage =
+    | FinishCommencing
     | StartQuitting
     | FinishQuitting
     interface Message
@@ -42,15 +44,19 @@ module GameplayDispatcher =
 
         // here we define the screen's properties and event handling
         override this.Initialize (_, _) =
-            [Screen.PostUpdateEvent => UpdateEye
-             Screen.SelectEvent => SetupScene
+            [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
+             Screen.PostUpdateEvent => UpdateEye
              Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data]
 
         // here we handle the gameplay messages
         override this.Message (gameplay, message, _, _) =
 
             match message with
+            | FinishCommencing ->
+                let gameplay = { gameplay with GameplayState = Commence }
+                withSignal SetupScene gameplay
+
             | StartQuitting ->
                 let gameplay = { gameplay with GameplayState = Quitting }
                 just gameplay
@@ -110,9 +116,9 @@ module GameplayDispatcher =
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]
 
-             // the scene group while playing or quitting
+             // the scene group while gameplay commences or quitting
              match gameplay.GameplayState with
-             | Playing | Quitting ->
+             | Commence | Quitting ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// the player that's always present in the scene
@@ -120,5 +126,5 @@ module GameplayDispatcher =
                         [Entity.Persistent == false
                          Events.CharacterDieEvent --> Simulants.GameplayPlayer => StartQuitting]]
 
-             // no scene group
-             | Quit -> ()]
+             // no scene group otherwise
+             | Commencing | Quit -> ()]

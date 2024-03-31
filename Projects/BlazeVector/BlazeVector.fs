@@ -46,7 +46,10 @@ module BlazeVector =
                 | Splash -> Desire Simulants.Splash
                 | Title -> Desire Simulants.Title
                 | Credits -> Desire Simulants.Credits
-                | Gameplay gameplay -> match gameplay.GameplayState with Playing -> Desire Simulants.Gameplay | Quitting | Quit -> Desire Simulants.Title
+                | Gameplay gameplay ->
+                    match gameplay.GameplayState with
+                    | Commencing | Commence -> Desire Simulants.Gameplay
+                    | Quitting | Quit -> Desire Simulants.Title
              match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
              Game.UpdateEvent => Update
              Simulants.Splash.DeselectingEvent => ShowTitle
@@ -60,7 +63,7 @@ module BlazeVector =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay { GameplayState = Playing; Score = 0 })
+            | ShowGameplay -> just (Gameplay { GameplayState = Commencing; Score = 0 })
             | Update ->
                 match model with
                 | Gameplay gameplay ->

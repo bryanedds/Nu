@@ -82,7 +82,7 @@ type [<SymbolicExpansion>] Options =
     { BattleSpeed : BattleSpeed }
 
 type FieldState =
-    | Playing
+    | Play
     | Quitting
     | Quit
 
@@ -1293,7 +1293,7 @@ module Field =
           DialogOpt_ = None
           BattleOpt_ = None
           FieldSongTimeOpt_ = None
-          FieldState_ = Playing }
+          FieldState_ = Play }
 
     let empty viewBounds2dAbsolute =
         { UpdateTime_ = 0L
