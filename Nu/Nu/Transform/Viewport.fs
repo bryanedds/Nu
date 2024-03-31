@@ -101,7 +101,7 @@ module Viewport =
             Frustum viewProjection
 
         /// Transform the given mouse position to 3d screen space (normalized device coordinates).
-        member this.MouseTo3dScreen (mousePosition : Vector2) =
+        member this.MouseToScreen3d (mousePosition : Vector2) =
             v2
                 (mousePosition.X / single Constants.Render.ResolutionX)
                 (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness

@@ -58,7 +58,7 @@ module WorldInputModule =
         /// Get the 3d screen position of the mouse.
         static member getMousePosition3dScreen world =
             let viewport = World.getViewport world
-            viewport.MouseTo3dScreen (World.getMousePosition world)
+            viewport.MouseToScreen3d (World.getMousePosition world)
 
         /// Get the 3d world ray of the mouse.
         static member getMouseRay3dWorld absolute world =
