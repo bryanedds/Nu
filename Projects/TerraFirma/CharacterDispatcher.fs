@@ -15,10 +15,10 @@ type CharacterMessage =
 type CharacterCommand =
     | UpdateTransform of Vector3 * Quaternion
     | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
-    | Jump
-    | Die
-    | PublishCharactersAttacked of Entity Set
     | SyncWeaponTransform
+    | PublishCharactersAttacked of Entity Set
+    | PublishDie
+    | Jump
     | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
@@ -93,13 +93,14 @@ module CharacterDispatcher =
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let playerPosition = Simulants.GameplayPlayer.GetPosition world
+                let wasWounded = character.ActionState = WoundedState
                 let (soundOpt, animations, attackedCharacters, position, rotation, character) =
                     Character.update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character
 
                 // deploy signals from update
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
                 let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimatedModel (position, rotation, Array.ofList animations) :: signals
-                let signals = if character.ActionState = WoundedState then Die :> Signal :: signals else signals
+                let signals = if not wasWounded && character.ActionState = WoundedState then PublishDie :> Signal :: signals else signals
                 let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
                 withSignals signals character
 
@@ -162,13 +163,13 @@ module CharacterDispatcher =
                 let world = World.publish attackedCharacters (Events.CharactersAttacked --> entity) entity world
                 just world
 
+            | PublishDie ->
+                let world = World.publish () (Events.CharacterDieEvent --> entity) entity world
+                just world
+
             | Jump ->
                 let bodyId = entity.GetBodyId world
                 let world = World.jumpBody true character.JumpSpeed bodyId world
-                just world
-
-            | Die ->
-                let world = World.publish () (Events.CharacterDieEvent --> entity) entity world
                 just world
 
             | CharacterCommand.PlaySound (delay, volume, sound) ->

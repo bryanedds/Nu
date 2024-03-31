@@ -187,7 +187,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member private updateAction time (position : Vector3) (rotation : Quaternion) (playerPosition : Vector3) character =
         if not character.Player then
             match character.ActionState with
-            | NormalState when not character.Player ->
+            | NormalState ->
                 let positionFlat = position.WithY 0.0f
                 let playerPositionFlat = playerPosition.WithY 0.0f
                 if  Vector3.Distance (playerPosition, position) < 1.5f &&

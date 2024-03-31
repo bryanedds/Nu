@@ -67,7 +67,7 @@ module GameplayDispatcher =
             match command with
             | SetupScene ->
                 let world = Simulants.GameplayPlayer.SetPosition (v3 0.0f 2.0f 0.0f) world
-                let world = (World.synchronizeNav3d screen world)
+                let world = World.synchronizeNav3d screen world
                 just world
 
             | CharactersAttacked attackedCharacters ->
