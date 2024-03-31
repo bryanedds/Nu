@@ -410,6 +410,15 @@ module WorldModuleGame =
         static member getEye3dFrustumView world =
             World.getGameEye3dFrustumView Game.Handle world
 
+        /// Convert the given relative 3d position to the absolute 2d position.
+        /// Useful for gui entities that track 3d entities.
+        /// Where Z > 1.0f, position is behind view.
+        static member position3dToPosition2d position world =
+            let eyeCenter = World.getEye3dCenter world
+            let eyeRotation = World.getEye3dRotation world
+            let viewport = Constants.Render.Viewport
+            viewport.Position3dToPosition2d (position, eyeCenter, eyeRotation)
+
         /// Get the current 3d light box.
         static member getLight3dBox world =
             let lightBoxSize = Constants.Render.Light3dBoxSize

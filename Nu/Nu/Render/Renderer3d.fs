@@ -2764,7 +2764,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewAbsolute = viewport.View3d (true, eyeCenter, eyeRotation)
         let viewRelative = viewport.View3d (false, eyeCenter, eyeRotation)
         let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
-        let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
+        let projection = viewport.Projection3d (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent)
 
         // top-level geometry pass
         let renderPass = NormalPass skipCulling

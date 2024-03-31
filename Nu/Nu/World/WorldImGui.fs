@@ -23,7 +23,7 @@ module WorldImGui =
             let eyeFrustum = World.getEye3dFrustumView world
             let viewport = Constants.Render.Viewport
             let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
-            let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
+            let projection = viewport.Projection3d (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent)
             let viewProjection = view * projection
             for position in positions do
                 if eyeFrustum.Contains position = ContainmentType.Contains then
@@ -49,7 +49,7 @@ module WorldImGui =
             let eyeFrustum = World.getEye3dFrustumView world
             let viewport = Constants.Render.Viewport
             let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
-            let projection = viewport.Projection3d Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent
+            let projection = viewport.Projection3d (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent)
             let viewProjection = view * projection
             for segment in segments do
                 match Math.tryUnionSegmentAndFrustum (fst' segment) (snd' segment) eyeFrustum with

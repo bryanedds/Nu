@@ -2693,7 +2693,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // user-defined viewport manipulation
                     let viewport = Constants.Render.Viewport
-                    let projectionMatrix = viewport.Projection3d Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceOmnipresent
+                    let projectionMatrix = viewport.Projection3d (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceOmnipresent)
                     let projection = projectionMatrix.ToArray ()
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.GetIs3d world ->

@@ -43,6 +43,20 @@ module Viewport =
             let projection = this.Projection2d
             view * projection
 
+        member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion) =
+            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+            let projection = this.Projection3d (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent)
+            let viewProjection : Matrix4x4 = view * projection
+            let positionViewProjection = Vector4.Transform (Vector4 (position, 1.0f), viewProjection)
+            let positionNdc = positionViewProjection.V3 / positionViewProjection.W
+            let position2d =
+                v3
+                    (positionNdc.X * single (Constants.Render.VirtualResolutionX / 2))
+                    (positionNdc.Y * single (Constants.Render.VirtualResolutionY / 2))
+                    positionNdc.Z
+            position2d
+
         /// Transform the given mouse position to 2d screen space.
         member this.MouseTo2dScreen (mousePosition : Vector2, _ : Vector2, eyeSize : Vector2) =
             v2
@@ -79,7 +93,7 @@ module Viewport =
             else this.ViewRelative3d (eyeCenter, eyeRotation)
 
         /// Compute the 3d projection matrix.
-        member this.Projection3d nearPlaneDistance farPlaneDistance =
+        member this.Projection3d (nearPlaneDistance, farPlaneDistance) =
             Matrix4x4.CreatePerspectiveFieldOfView
                 (Constants.Render.FieldOfView,
                  this.AspectRatio,
@@ -87,16 +101,16 @@ module Viewport =
                  farPlaneDistance)
 
         /// Compute a 3d view projection matrix.
-        member this.ViewProjection3d (absolute, nearPlaneDistance, farPlaneDistance, eyeCenter, eyeSize) =
-            let view = this.View3d (absolute, eyeCenter, eyeSize)
-            let projection = this.Projection3d nearPlaneDistance farPlaneDistance
+        member this.ViewProjection3d (absolute, nearPlaneDistance, farPlaneDistance, eyeCenter, eyeRotation) =
+            let view = this.View3d (absolute, eyeCenter, eyeRotation)
+            let projection = this.Projection3d (nearPlaneDistance, farPlaneDistance)
             view * projection
 
         /// Compute a 3d view frustum.
         member this.Frustum (nearPlaneDistance, farPlaneDistance, eyeCenter, eyeRotation : Quaternion) =
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
-            let projection = this.Projection3d nearPlaneDistance farPlaneDistance
+            let projection = this.Projection3d (nearPlaneDistance, farPlaneDistance)
             let viewProjection = view * projection
             Frustum viewProjection
 
