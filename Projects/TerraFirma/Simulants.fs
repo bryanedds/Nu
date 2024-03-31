@@ -31,3 +31,4 @@ module Simulants =
     let GameplayQuit = GameplayGui / "Quit"
     let GameplayScene = Gameplay / "Scene"
     let GameplayPlayer = GameplayScene / "Player"
+    let GameplaySun = GameplayScene / "Environment" / "Sun"

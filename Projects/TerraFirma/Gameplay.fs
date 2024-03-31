@@ -29,7 +29,7 @@ module Gameplay =
     type GameplayCommand =
         | SetupScene
         | CharactersAttacked of Entity Set
-        | UpdateEye
+        | TrackPlayer
         interface Command
 
     // this extends the Screen API to expose the Gameplay model.
@@ -46,7 +46,7 @@ module Gameplay =
         override this.Initialize (_, _) =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
-             Screen.PostUpdateEvent => UpdateEye
+             Screen.PostUpdateEvent => TrackPlayer
              Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data]
 
         // here we handle the gameplay messages
@@ -93,7 +93,9 @@ module Gameplay =
                         world attackedCharacters
                 just world
 
-            | UpdateEye ->
+            | TrackPlayer ->
+                
+                // update eye to look at player
                 let player = Simulants.GameplayPlayer.GetCharacter world
                 let position = Simulants.GameplayPlayer.GetPosition world
                 let rotation = Simulants.GameplayPlayer.GetRotation world
@@ -101,6 +103,10 @@ module Gameplay =
                 let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
                 let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
                 let world = World.setEye3dRotation rotationInterp world
+
+                // update sun to shine over player
+                let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
+                let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 8.0f) world
                 just world
 
         // here we describe the content of the game including the hud group and the scene group
