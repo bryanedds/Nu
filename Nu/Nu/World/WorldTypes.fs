@@ -804,7 +804,9 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     static member make (dispatcher : GameDispatcher) =
         let eye3dCenter = Constants.Engine.Eye3dCenterDefault
         let eye3dRotation = quatIdentity
-        let viewport = Constants.Render.Viewport
+        let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
+        let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
+        let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -817,9 +819,9 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Eye2dSize = v2 (single Constants.Render.VirtualResolutionX) (single Constants.Render.VirtualResolutionY)
           Eye3dCenter = eye3dCenter
           Eye3dRotation = eye3dRotation
-          Eye3dFrustumInterior = viewport.Frustum (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, eye3dCenter, eye3dRotation)
-          Eye3dFrustumExterior = viewport.Frustum (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, eye3dCenter, eye3dRotation)
-          Eye3dFrustumImposter = viewport.Frustum (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, eye3dCenter, eye3dRotation)
+          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation)
+          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation)
+          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation)
           Order = Core.getTimeStampUnique ()
           Id = Gen.id }
 

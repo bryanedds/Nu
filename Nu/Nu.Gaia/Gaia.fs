@@ -2692,8 +2692,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
 
                     // user-defined viewport manipulation
-                    let viewport = Constants.Render.Viewport
-                    let projectionMatrix = viewport.Projection3d (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceOmnipresent)
+                    let viewport = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
+                    let projectionMatrix = viewport.Projection3d
                     let projection = projectionMatrix.ToArray ()
                     match selectedEntityOpt with
                     | Some entity when entity.Exists world && entity.GetIs3d world ->

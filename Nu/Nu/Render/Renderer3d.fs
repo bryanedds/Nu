@@ -2163,8 +2163,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         (renderbuffer : uint)
         (framebuffer : uint) =
 
+        // constrain geometry viewport to exterior (TODO: try to remember why I did this...)
+        let geometryViewport = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, geometryViewport.Bounds)
+
         // compute geometry frustum
-        let geometryFrustum = geometryViewport.Frustum (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceExterior, eyeCenter, eyeRotation)
+        let geometryFrustum = geometryViewport.Frustum (eyeCenter, eyeRotation)
 
         // compute matrix arrays
         let viewAbsoluteArray = viewAbsolute.ToArray ()
@@ -2764,7 +2767,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let viewAbsolute = viewport.View3d (true, eyeCenter, eyeRotation)
         let viewRelative = viewport.View3d (false, eyeCenter, eyeRotation)
         let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
-        let projection = viewport.Projection3d (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent)
+        let projection = viewport.Projection3d
 
         // top-level geometry pass
         let renderPass = NormalPass skipCulling

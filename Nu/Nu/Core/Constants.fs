@@ -108,7 +108,7 @@ module Render =
     let [<Uniform>] FieldOfView = single (Math.PI / 3.0) // 60 degrees
     let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
     let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
-    let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, Resolution))
+    let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
     let [<Uniform>] ShadowResolutionX = 512 * VirtualScalar
     let [<Uniform>] ShadowResolutionY = 512 * VirtualScalar
     let [<Uniform>] ShadowResolutionF = Vector2 (single ShadowResolutionX, single ShadowResolutionY)
