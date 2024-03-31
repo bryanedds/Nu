@@ -51,30 +51,20 @@ module Viewport =
             let viewProjection : Matrix4x4 = view * projection
             let positionViewProjection = Vector4.Transform (Vector4 (position, 1.0f), viewProjection)
             let positionNdc = positionViewProjection.V3 / positionViewProjection.W
-            let position2d =
-                v3
-                    (positionNdc.X * single (resolutionX / 2))
-                    (positionNdc.Y * single (resolutionY / 2))
-                    positionNdc.Z
+            let position2d = v3 (positionNdc.X * single (resolutionX / 2)) (positionNdc.Y * single (resolutionY / 2)) positionNdc.Z
             position2d
 
         /// Compute the relative 3d ray from the given absolute 2d position.
         /// TODO: P1: test this code!
         member this.Position2dToPosition3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
-            let positionNdc =
-                v3
-                    (position.X / single (resolutionX * 2))
-                    (position.Y / single (resolutionY * 2))
-                    0.0f
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
-            let viewInverse = (Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)).Inverted
-            let projectionInverse = this.Projection3d.Inverted
-            let viewProjectionInverse = viewInverse * projectionInverse
-            let positionHom = Vector4.Transform (positionNdc, viewProjectionInverse)
-            let positionView = Vector4 (positionHom.X, positionHom.Y, -1.0f, 0.0f)
-            let rotationView = Quaternion.Inverse eyeRotation
-            let position3d = Vector4.Transform(positionView, Matrix4x4.CreateFromQuaternion rotationView)
-            let rayDirection = Vector3.Normalize (position3d.V3 - eyeCenter)
+            let viewProjectionInverse = (Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up) * this.Projection3d).Inverted
+            let rotationInverse = Quaternion.Inverse eyeRotation
+            let positionNdc = v3 (position.X / single (resolutionX * 2)) (position.Y / single (resolutionY * 2)) 0.0f
+            let positionViewProjection = Vector4.Transform (positionNdc, viewProjectionInverse)
+            let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
+            let position3d = (Vector4.Transform (positionView, Matrix4x4.CreateFromQuaternion rotationInverse)).V3
+            let rayDirection = Vector3.Normalize (position3d - eyeCenter)
             Ray3 (eyeCenter, rayDirection)
 
         /// Transform the given mouse position to 2d screen space.
