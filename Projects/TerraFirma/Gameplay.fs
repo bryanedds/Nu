@@ -4,33 +4,33 @@ open System.Numerics
 open Prime
 open Nu
 
-// this represents that state of gameplay simulation.
-type GameplayState =
-    | Commencing
-    | Commence
-    | Quitting
-    | Quit
-
-// this is our MMCC model type representing gameplay.
-type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
-    { GameplayState : GameplayState }
-
-// this is our MMCC message type.
-type GameplayMessage =
-    | FinishCommencing
-    | StartQuitting
-    | FinishQuitting
-    interface Message
-
-// this is our MMCC command type.
-type GameplayCommand =
-    | SetupScene
-    | CharactersAttacked of Entity Set
-    | UpdateEye
-    interface Command
-
 [<AutoOpen>]
-module GameplayDispatcher =
+module Gameplay =
+
+    // this represents that state of gameplay simulation.
+    type GameplayState =
+        | Commencing
+        | Commence
+        | Quitting
+        | Quit
+
+    // this is our MMCC model type representing gameplay.
+    type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
+        { GameplayState : GameplayState }
+
+    // this is our MMCC message type.
+    type GameplayMessage =
+        | FinishCommencing
+        | StartQuitting
+        | FinishQuitting
+        interface Message
+
+    // this is our MMCC command type.
+    type GameplayCommand =
+        | SetupScene
+        | CharactersAttacked of Entity Set
+        | UpdateEye
+        interface Command
 
     // this extends the Screen API to expose the Gameplay model.
     type Screen with
