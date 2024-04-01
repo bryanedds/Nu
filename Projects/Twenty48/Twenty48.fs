@@ -63,7 +63,7 @@ module Twenty48 =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay Gameplay.start)
+            | ShowGameplay -> just (Gameplay (Gameplay.initial Commencing))
             | Update ->
                 match model with
                 | Gameplay gameplay ->
