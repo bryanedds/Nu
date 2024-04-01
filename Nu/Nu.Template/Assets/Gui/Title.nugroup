@@ -8,8 +8,8 @@
      [Some [Default Label]]]
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Name Title]
-    [Position [0 120 0]]
-    [Size [512 96 0]]
+    [Position [0 80 0]]
+    [Size [342 64 0]]
     [Text MyGame]]
    []]
   [ButtonDispatcher
@@ -17,11 +17,11 @@
    []]
   [ButtonDispatcher
    [[Name Credits]
-    [Position [0 -72 0]]
+    [Position [0 -48 0]]
     [Text Credits]]
    []]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [0 -144 0]]
+    [Position [0 -96 0]]
     [Text Exit]]
    []]]]
