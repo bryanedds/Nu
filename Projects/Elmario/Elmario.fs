@@ -37,21 +37,21 @@ type ElmarioDispatcher () =
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 let world =
                     if World.getBodyGrounded bodyId world
-                    then World.applyBodyForce (v3 -1300.0f 0.0f 0.0f) v3Zero bodyId world
-                    else World.applyBodyForce (v3 -300.0f 0.0f 0.0f) v3Zero bodyId world
+                    then World.applyBodyForce (v3 -800.0f 0.0f 0.0f) v3Zero bodyId world
+                    else World.applyBodyForce (v3 -200.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
             elif World.isKeyboardKeyDown KeyboardKey.Right world then
                 let world =
                     if World.getBodyGrounded bodyId world
-                    then World.applyBodyForce (v3 1300.0f 0.0f 0.0f) v3Zero bodyId world
-                    else World.applyBodyForce (v3 300.0f 0.0f 0.0f) v3Zero bodyId world
+                    then World.applyBodyForce (v3 800.0f 0.0f 0.0f) v3Zero bodyId world
+                    else World.applyBodyForce (v3 200.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
             else just world
         | Jump ->
             let bodyId = Simulants.Elmario.GetBodyId world
             if world.Advancing && World.getBodyGrounded bodyId world then
                 let world = World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
-                let world = World.applyBodyLinearImpulse (v3 0.0f 1300.0f 0.0f) v3Zero bodyId world
+                let world = World.applyBodyLinearImpulse (v3 0.0f 800.0f 0.0f) v3Zero bodyId world
                 just world
             else just world
         | Nop -> just world
@@ -61,13 +61,13 @@ type ElmarioDispatcher () =
         [Content.screen Simulants.Screen.Name Vanilla []
             [Content.group Simulants.Group.Name []
                 [Content.character2d Simulants.Elmario.Name
-                    [Entity.Position == v3 0.0f 54.0f 0.0f
-                     Entity.Size == v3 108.0f 108.0f 0.0f]
+                    [Entity.Position == v3 0.0f 32.0f 0.0f
+                     Entity.Size == v3 56.0f 56.0f 0.0f]
                  Content.block2d "Ground"
-                    [Entity.Position == v3 0.0f -224.0f 0.0f
-                     Entity.Size == v3 768.0f 64.0f 0.0f
+                    [Entity.Position == v3 0.0f -128.0f 0.0f
+                     Entity.Size == v3 384.0f 32.0f 0.0f
                      Entity.StaticImage == asset "Gameplay" "TreeTop"]
                  Content.block2d "Rock"
-                    [Entity.Position == v3 352.0f -160.0f 0.0f
-                     Entity.Size == v3 64.0f 64.0f 0.0f
+                    [Entity.Position == v3 176.0f -96.0f 0.0f
+                     Entity.Size == v3 32.0f 32.0f 0.0f
                      Entity.StaticImage == asset "Gameplay" "Rock"]]]]
