@@ -1,21 +1,24 @@
 [GroupDispatcher
- [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
   [Name Layer]
   [Persistent True]
   [Visible True]]
  [[TileMapDispatcher
    [[Elevation -8]
-    [Size [2048 576 0]]
-    [TileMap [Gameplay BackgroundA]]]
+    [Size [1024 288 0]]
+    [TileMap [Gameplay BackgroundA]]
+    [TileSizeDivisor 2]]
    []]
   [TileMapDispatcher
    [[Elevation -4]
-    [Size [2048 576 0]]
-    [TileMap [Gameplay BackgroundB]]]
+    [Size [1024 288 0]]
+    [TileMap [Gameplay BackgroundB]]
+    [TileSizeDivisor 2]]
    []]
   [TileMapDispatcher
-   [[Size [2048 576 0]]
-    [TileMap [Gameplay Section1TileMap]]]
+   [[Size [1024 288 0]]
+    [TileMap [Gameplay Section1TileMap]]
+    [TileSizeDivisor 2]]
    []]
   [EnemyDispatcher
    [[AngularFactor [0 0 0]]
@@ -23,6 +26,7 @@
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
      [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -33,8 +37,8 @@
     [Model
      ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
-    [Position [-684 -113.2164 0]]
-    [Size [48 96 0]]]
+    [Position [-408 -48 0]]
+    [Size [24 48 0]]]
    []]
   [EnemyDispatcher
    [[AngularFactor [0 0 0]]
@@ -42,6 +46,7 @@
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
      [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -52,8 +57,8 @@
     [Model
      ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
-    [Position [-408 -12 0]]
-    [Size [48 96 0]]]
+    [Position [-240 -12 0]]
+    [Size [24 48 0]]]
    []]
   [EnemyDispatcher
    [[AngularFactor [0 0 0]]
@@ -61,6 +66,7 @@
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
      [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -71,8 +77,8 @@
     [Model
      ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
-    [Position [717.8842 -113.2457 0]]
-    [Size [48 96 0]]]
+    [Position [744 -36 0]]
+    [Size [24 48 0]]]
    []]
   [EnemyDispatcher
    [[AngularFactor [0 0 0]]
@@ -80,6 +86,7 @@
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
      [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -90,8 +97,8 @@
     [Model
      ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
-    [Position [84 -12 0]]
-    [Size [48 96 0]]]
+    [Position [48 0 0]]
+    [Size [24 48 0]]]
    []]
   [EnemyDispatcher
    [[AngularFactor [0 0 0]]
@@ -99,6 +106,7 @@
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
      [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -109,8 +117,8 @@
     [Model
      ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
-    [Position [897.8842 -113.2457 0]]
-    [Size [48 96 0]]]
+    [Position [936 0 0]]
+    [Size [24 48 0]]]
    []]
   [EnemyDispatcher
    [[AngularFactor [0 0 0]]
@@ -118,6 +126,7 @@
     [AnimationSheet [Gameplay Enemy]]
     [BodyShape
      [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
     [CelCount 6]
     [CelSize [48 96]]
     [Elevation 1]
@@ -128,6 +137,6 @@
     [Model
      ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
-    [Position [537.8842 -144.556 0]]
-    [Size [48 96 0]]]
+    [Position [480 -48 0]]
+    [Size [24 48 0]]]
    []]]]

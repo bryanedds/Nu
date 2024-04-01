@@ -27,14 +27,14 @@ module EnemyDispatcher =
     type EnemyDispatcher () =
         inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, { Health = 7 })
 
-        static let WalkForce = v3 -750.0f -4000.0f 0.0f
+        static let WalkForce = v3 -500.0f -1500.0f 0.0f
 
         static member Facets =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
         override this.Initialize (_, _) =
-            [Entity.Size == v3 48.0f 96.0f 0.0f
+            [Entity.Size == v3 24.0f 48.0f 0.0f
              Entity.Friction == 0.0f
              Entity.AngularFactor == v3Zero
              Entity.LinearDamping == 3.0f

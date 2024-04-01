@@ -1550,6 +1550,9 @@ module TileMapFacetModule =
         member this.GetTileLayerClearance world : single = this.Get (nameof this.TileLayerClearance) world
         member this.SetTileLayerClearance (value : single) world = this.Set (nameof this.TileLayerClearance) value world
         member this.TileLayerClearance = lens (nameof this.TileLayerClearance) this this.GetTileLayerClearance this.SetTileLayerClearance
+        member this.GetTileSizeDivisor world : int = this.Get (nameof this.TileSizeDivisor) world
+        member this.SetTileSizeDivisor (value : int) world = this.Set (nameof this.TileSizeDivisor) value world
+        member this.TileSizeDivisor = lens (nameof this.TileSizeDivisor) this this.GetTileSizeDivisor this.SetTileSizeDivisor
         member this.GetTileIndexOffset world : int = this.Get (nameof this.TileIndexOffset) world
         member this.SetTileIndexOffset (value : int) world = this.Set (nameof this.TileIndexOffset) value world
         member this.TileIndexOffset = lens (nameof this.TileIndexOffset) this this.GetTileIndexOffset this.SetTileIndexOffset
@@ -1576,6 +1579,7 @@ module TileMapFacetModule =
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
+             define Entity.TileSizeDivisor 3
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap
@@ -1590,6 +1594,7 @@ module TileMapFacetModule =
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TileMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TileMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Observable)) entity (nameof TileMapFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TileMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileMap)) entity (nameof TileMapFacet) world
             let world =
                 World.sense (fun _ world ->
@@ -1611,7 +1616,8 @@ module TileMapFacetModule =
                 let mutable transform = entity.GetTransform world
                 let perimeterUnscaled = transform.PerimeterUnscaled // tile map currently ignores rotation and scale
                 let tileMapPosition = perimeterUnscaled.Min.V2
-                let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileMap
+                let tileSizeDivisor = entity.GetTileSizeDivisor world
+                let tileMapDescriptor = TmxMap.getDescriptor tileMapPosition tileSizeDivisor tileMap
                 let bodyProperties =
                     TmxMap.getBodyProperties
                         transform.Enabled
@@ -1645,6 +1651,7 @@ module TileMapFacetModule =
                         (entity.GetColor world)
                         (entity.GetEmission world)
                         (entity.GetTileLayerClearance world)
+                        (entity.GetTileSizeDivisor world)
                         (entity.GetTileIndexOffset world)
                         (entity.GetTileIndexOffsetRange world)
                         tileMapAsset.PackageName
@@ -1654,7 +1661,7 @@ module TileMapFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) with
-            | Some tileMap -> TmxMap.getAttributesInferred tileMap
+            | Some tileMap -> TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tileMap
             | None -> AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
 
 [<AutoOpen>]
@@ -1681,6 +1688,7 @@ module TmxMapFacetModule =
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
+             define Entity.TileSizeDivisor 3
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())
@@ -1695,6 +1703,7 @@ module TmxMapFacetModule =
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TmxMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TmxMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Observable)) entity (nameof TmxMapFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TileSizeDivisor)) entity (nameof TmxMapFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.TmxMap)) entity (nameof TmxMapFacet) world
             let world =
                 World.sense (fun _ world ->
@@ -1713,9 +1722,10 @@ module TmxMapFacetModule =
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
             let perimeterUnscaled = transform.PerimeterUnscaled // tmx map currently ignores rotation and scale
+            let tileSizeDivisor = entity.GetTileSizeDivisor world
             let tmxMap = entity.GetTmxMap world
             let tmxMapPosition = perimeterUnscaled.Min.V2
-            let tmxMapDescriptor = TmxMap.getDescriptor tmxMapPosition tmxMap
+            let tmxMapDescriptor = TmxMap.getDescriptor tmxMapPosition tileSizeDivisor tmxMap
             let bodyProperties =
                 TmxMap.getBodyProperties
                     transform.Enabled
@@ -1747,6 +1757,7 @@ module TmxMapFacetModule =
                     (entity.GetColor world)
                     (entity.GetEmission world)
                     (entity.GetTileLayerClearance world)
+                    (entity.GetTileSizeDivisor world)
                     (entity.GetTileIndexOffset world)
                     (entity.GetTileIndexOffsetRange world)
                     tmxPackage
@@ -1755,7 +1766,7 @@ module TmxMapFacetModule =
 
         override this.GetAttributesInferred (entity, world) =
             let tmxMap = entity.GetTmxMap world
-            TmxMap.getAttributesInferred tmxMap
+            TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
 
 [<AutoOpen>]
 module LayoutFacetModule =

@@ -9,8 +9,8 @@
     [Justification [Justified JustifyCenter JustifyMiddle]]
     [Model ["System.String, System.Private.CoreLib, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" BlazeVector]]
     [Name Title]
-    [Position [0 120 0]]
-    [Size [512 96 0]]
+    [Position [0 80 0]]
+    [Size [342 64 0]]
     [Text BlazeVector]]
    []]
   [ButtonDispatcher
@@ -18,11 +18,11 @@
    []]
   [ButtonDispatcher
    [[Name Credits]
-    [Position [0 -72 0]]
+    [Position [0 -48 0]]
     [Text Credits]]
    []]
   [ButtonDispatcher
    [[Name Exit]
-    [Position [0 -144 0]]
+    [Position [0 -96 0]]
     [Text Exit]]
    []]]]

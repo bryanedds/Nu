@@ -33,10 +33,10 @@ module PlayerDispatcher =
     type PlayerDispatcher () =
         inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
-        static let [<Literal>] WalkForce = 1200.0f
-        static let [<Literal>] FallForce = -4000.0f
-        static let [<Literal>] ClimbForce = 1800.0f
-        static let [<Literal>] JumpForce = 2100.0f
+        static let [<Literal>] WalkForce = 700.0f
+        static let [<Literal>] FallForce = -2500.0f
+        static let [<Literal>] ClimbForce = 1500.0f
+        static let [<Literal>] JumpForce = 1200.0f
         static let [<Literal>] BulletForce = 25.0f
 
         static member Facets =
@@ -44,7 +44,7 @@ module PlayerDispatcher =
              typeof<AnimatedSpriteFacet>]
 
         override this.Initialize (_, _) =
-            [Entity.Size == v3 48.0f 96.0f 0.0f
+            [Entity.Size == v3 24.0f 48.0f 0.0f
              Entity.Presence == Omnipresent
              Entity.AngularFactor == v3Zero
              Entity.Friction == 0.0f
@@ -121,7 +121,7 @@ module PlayerDispatcher =
 
             | Shoot ->
                 let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
-                let world = bullet.SetPosition (entity.GetPosition world + v3 32.0f 0.0f 0.0f) world
+                let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 0.0f 0.0f) world
                 let world = bullet.SetElevation (entity.GetElevation world) world
                 let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetBodyId world) world
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world

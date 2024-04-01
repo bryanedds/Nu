@@ -79,7 +79,7 @@ module Gameplay =
                     let world = World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> snd
 
                     // shift all entities in the loaded section so that they go after the previously loaded section
-                    let sectionXShift = 2048.0f * single sectionIndex
+                    let sectionXShift = 1024.0f * single sectionIndex
                     let sectionEntities = World.getEntities section world
                     Seq.fold (fun world (sectionEntity : Entity) ->
                         sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
@@ -114,11 +114,11 @@ module Gameplay =
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
                  [Content.text Simulants.GameplayScore.Name
-                    [Entity.Position == v3 392.0f 232.0f 0.0f
+                    [Entity.Position == v3 260.0f 155.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text := "Score: " + string gameplay.Score]
                   Content.button Simulants.GameplayQuit.Name
-                    [Entity.Position == v3 336.0f -216.0f 0.0f
+                    [Entity.Position == v3 224.0f -144.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]
@@ -128,7 +128,7 @@ module Gameplay =
              | Commence | Quitting ->
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                        [Entity.Position == v3 -876.0f -127.6805f 0.0f
+                        [Entity.Position == v3 -500.0f -50.0f 0.0f
                          Entity.Elevation == 1.0f
                          Entity.DieEvent => StartQuitting]]
 
