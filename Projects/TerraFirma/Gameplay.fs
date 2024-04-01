@@ -28,8 +28,9 @@ module Gameplay =
     // this is our MMCC command type.
     type GameplayCommand =
         | SetupScene
-        | CharactersAttacked of Entity Set
+        | CharacterAttacked of Entity
         | TrackPlayer
+        | PlaySound of int64 * single * Sound AssetTag
         interface Command
 
     // this extends the Screen API to expose the Gameplay model.
@@ -47,7 +48,7 @@ module Gameplay =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer
-             Events.CharactersAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharactersAttacked evt.Data]
+             Events.CharacterAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharacterAttacked evt.Data]
 
         // here we handle the gameplay messages
         override this.Message (gameplay, message, _, _) =
@@ -76,22 +77,23 @@ module Gameplay =
                 let world = World.synchronizeNav3d screen world
                 just world
 
-            | CharactersAttacked attackedCharacters ->
-                let world =
-                    Seq.fold (fun world (attackedCharacter : Entity) ->
-                        let character = attackedCharacter.GetCharacter world
-                        let character =
-                            let hitPoints = max (dec character.HitPoints) 0
-                            let actionState =
-                                if hitPoints > 0 then
-                                    match character.ActionState with
-                                    | InjuryState _ as injuryState -> injuryState
-                                    | _ -> InjuryState { InjuryTime = world.UpdateTime }
-                                else WoundedState
-                            { character with HitPoints = hitPoints; ActionState = actionState }
-                        attackedCharacter.SetCharacter character world)
-                        world attackedCharacters
-                just world
+            | CharacterAttacked attackedCharacter ->
+                let character = attackedCharacter.GetCharacter world
+                let character = { character with HitPoints = max (dec character.HitPoints) 0 }
+                let (signals, character) =
+                    if character.HitPoints > 0 then
+                        match character.ActionState with
+                        | InjuryState _ -> just character
+                        | _ ->
+                            let character = { character with ActionState = InjuryState { InjuryTime = world.UpdateTime }}
+                            let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
+                            withSignal playSound character
+                    else
+                        let character = { character with ActionState = WoundedState }
+                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
+                        withSignal playSound character
+                let world = attackedCharacter.SetCharacter character world
+                withSignals signals world
 
             | TrackPlayer ->
                 
@@ -107,6 +109,10 @@ module Gameplay =
                 // update sun to shine over player
                 let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
                 let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
+                just world
+
+            | GameplayCommand.PlaySound (delay, volume, sound) ->
+                let world = World.schedule delay (World.playSound volume sound) screen world
                 just world
 
         // here we describe the content of the game including the hud group and the scene group

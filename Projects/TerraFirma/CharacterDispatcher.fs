@@ -156,7 +156,10 @@ module CharacterDispatcher =
                 | (_, _) -> just world
 
             | PublishCharactersAttacked attackedCharacters ->
-                let world = World.publish attackedCharacters (Events.CharactersAttacked --> entity) entity world
+                let world =
+                    Set.fold (fun world attackedCharacter ->
+                        World.publish attackedCharacter (Events.CharacterAttacked --> entity) entity world)
+                        world attackedCharacters
                 just world
 
             | PublishDie ->

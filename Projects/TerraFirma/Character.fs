@@ -116,13 +116,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             Some (soundOpt, animation)
         | InjuryState injury ->
             let localTime = time - injury.InjuryTime
-            let soundOpt =
-                match localTime with
-                | 1L -> Some Assets.Gameplay.InjureSound
-                | _ -> None
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = { StartTime = animationStartTime; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Once; Rate = 1.0f; Weight = 32.0f; BoneFilterOpt = None }
-            (Some (soundOpt, animation))
+            (Some (None, animation))
         | NormalState | WoundedState -> None
 
     static member private updateInterps position rotation linearVelocity angularVelocity character =
