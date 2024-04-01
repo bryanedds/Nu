@@ -106,8 +106,11 @@ module CharacterDispatcher =
             | WeaponCollide collisionData ->
                 match collisionData.BodyShapeCollidee.BodyId.BodySource with
                 | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
-                    let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
-                    just character
+                    let collideeCharacter = collidee.GetCharacter world
+                    if character.Player <> collideeCharacter.Player then
+                        let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
+                        just character
+                    else just character
                 | _ -> just character
 
             | WeaponSeparateExplicit separationData ->
