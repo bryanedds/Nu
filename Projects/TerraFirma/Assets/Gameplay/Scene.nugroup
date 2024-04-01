@@ -6717,42 +6717,7 @@
     [Position [9.5 4.7 -11.4]]
     [Rotation [-0 1 -0 -4.371139E-08]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [9.5 4.7 -11.4]]
-      [Rotation [0 1 0 -4.371139E-08]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [9.5 4.7 -11.4]]
-      [Rotation [0 1 0 -4.371139E-08]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -6785,44 +6750,7 @@
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 -0.70710677 0 0.70710677]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [2.9 4.7 -6]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [2.9 4.7 -6]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -6855,44 +6783,7 @@
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 -0.70710677 0 0.70710677]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [-10.8 1.7 6.8]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [-10.8 1.7 6.8]]
-      [Rotation [0 -0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -6924,40 +6815,7 @@
     [Position [6.9 1.6 17]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [6.9 1.6 17]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [6.9 1.6 17]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -6987,45 +6845,9 @@
     [Name Enemy-0005]
     [Offset [0 1 0]]
     [Position [-16.1 1.3 16.1]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [-0 1 -0 -4.371139E-08]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [-16.1 1.3 16.1]]
-      [Rotation [0 1 0 -4.371139E-08]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [-16.1 1.3 16.1]]
-      [Rotation [0 1 0 -4.371139E-08]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7055,45 +6877,9 @@
     [Name Enemy-0006]
     [Offset [0 1 0]]
     [Position [-12.4 4 19.9]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [-0 1 -0 -4.371139E-08]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [-12.4 4 19.9]]
-      [Rotation [0 1 0 -4.371139E-08]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [-12.4 4 19.9]]
-      [Rotation [0 1 0 -4.371139E-08]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7123,42 +6909,8 @@
     [Name Enemy-0007]
     [Offset [0 1 0]]
     [Position [9.7 4.3 36.8]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [9.7 4.3 36.8]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [9.7 4.3 36.8]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7188,45 +6940,9 @@
     [Name Enemy-0008]
     [Offset [0 1 0]]
     [Position [24.4 2.1 33.6]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [24.4 2.1 33.6]]
-      [Rotation [0 0.38268346 0 0.9238795]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [24.4 2.1 33.6]]
-      [Rotation [0 0.38268346 0 0.9238795]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7256,47 +6972,9 @@
     [Name Enemy-0009]
     [Offset [0 1 0]]
     [Position [29.1 2.1 15.3]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.9238795 0 0.38268343]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [29.1 2.1 15.3]]
-      [Rotation [0 0.92387956 0 0.38268346]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [29.1 2.1 15.3]]
-      [Rotation [0 0.92387956 0 0.38268346]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7326,45 +7004,9 @@
     [Name Enemy-0010]
     [Offset [0 1 0]]
     [Position [25.4 2.2 -6.9]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [25.4 2.2 -6.9]]
-      [Rotation [0 0.38268346 0 0.9238795]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [25.4 2.2 -6.9]]
-      [Rotation [0 0.38268346 0 0.9238795]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7394,47 +7036,9 @@
     [Name Enemy-0011]
     [Offset [0 1 0]]
     [Position [33 2.2 -5.1]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.70710677 0 0.70710677]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [33 2.2 -5.1]]
-      [Rotation [0 0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [33 2.2 -5.1]]
-      [Rotation [0 0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7464,47 +7068,9 @@
     [Name Enemy-0012]
     [Offset [0 1 0]]
     [Position [28.7 2.2 -12.9]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.70710677 0 0.70710677]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [28.7 2.2 -12.9]]
-      [Rotation [0 0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [28.7 2.2 -12.9]]
-      [Rotation [0 0.7071067 0 0.7071068]]
-      [Scale [0.99999994 1 0.99999994]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]
+   []]
   [EnemyDispatcher
    [[BodyShape
      [CapsuleShape
@@ -7534,42 +7100,6 @@
     [Name Enemy-0013]
     [Offset [0 1 0]]
     [Position [28.8 5.2 29.4]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]
     [Size [2 2 2]]]
-   [[AnimatedModelDispatcher
-     [[AnimatedModel [Gameplay Joan]]
-      [MaterialProperties
-       [[AlbedoOpt
-         [Some [1 1 1 1]]]
-        [RoughnessOpt [Some 1]]
-        [MetallicOpt [Some 1]]
-        [AmbientOcclusionOpt [Some 1]]
-        [EmissionOpt [Some 1]]
-        [HeightOpt [Some 1]]
-        [IgnoreLightMapsOpt [Some False]]
-        [OpaqueDistanceOpt [Some 100000]]]]
-      [MountOpt [Some ^]]
-      [Name AnimatedModel]
-      [Offset [0 1 0]]
-      [Position [28.8 5.2 29.4]]
-      [Rotation [0 0.38268346 0 0.9238795]]
-      [Size [2 2 2]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [BoxShape
-        [[0.3 1.2 0.3]
-         [Some
-          [[0 0.6 0] [0 0 0 1] [1 1 1]]]
-         None]]]
-      [MountOpt [Some ^]]
-      [Name Weapon]
-      [NavShape EmptyNavShape]
-      [Offset [0 0.5 0]]
-      [Pickable False]
-      [Position [28.8 5.2 29.4]]
-      [Rotation [0 0.38268346 0 0.9238795]]
-      [Sensor True]
-      [StaticModel [Gameplay GreatSword]]]
-     []]]]]]
+   []]]]

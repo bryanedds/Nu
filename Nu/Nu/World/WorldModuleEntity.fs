@@ -2460,7 +2460,7 @@ module WorldModuleEntity =
         static member writeEntities writePropagationHistory entities world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world) |>
-            Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world) |>
+            Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world)) |>
             Seq.fold (fun entityDescriptors entity -> World.writeEntity writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) [] |>
             Seq.rev |>
             Seq.toList
@@ -2554,16 +2554,12 @@ module WorldModuleEntity =
             let entity = Entity entityAddress
 
             // add entity's state to world, destroying any existing entity if appropriate
-            let exists = World.getEntityExists entity world
-            let destroying = exists && World.getEntityDestroying entity world
-            let protected_ = exists && World.getEntityProtected entity world
             let world =
-                if exists then
-                    if destroying then World.destroyEntityImmediateInternal true entity world
-                    elif protected_ then World.destroyEntityImmediateInternal false entity world
+                if World.getEntityExists entity world then
+                    if World.getEntityDestroying entity world
+                    then World.destroyEntityImmediateInternal true entity world
                     else failwith ("Entity '" + scstring entity + "' already exists and cannot be created."); world
                 else world
-            if protected_ then entityState.Protected <- true
             let world = World.addEntity entityState entity world
 
             // update publish update flag
