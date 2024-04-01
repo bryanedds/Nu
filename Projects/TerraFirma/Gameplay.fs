@@ -48,7 +48,7 @@ module Gameplay =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer
-             Events.CharacterAttacked --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharacterAttacked evt.Data]
+             Events.CharacterAttackedEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharacterAttacked evt.Data]
 
         // here we handle the gameplay messages
         override this.Message (gameplay, message, _, _) =

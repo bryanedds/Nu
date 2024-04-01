@@ -9,5 +9,5 @@ open Nu
 [<RequireQualifiedAccess>]
 module Events =
 
-    let CharacterAttacked = stoa<Entity> "CharacterAttacked/Event"
+    let CharacterAttackedEvent = stoa<Entity> "CharacterAttacked/Event"
     let CharacterDieEvent = stoa<unit> "CharacterDie/Event"
