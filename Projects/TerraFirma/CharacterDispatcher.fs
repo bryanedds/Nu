@@ -41,9 +41,9 @@ module CharacterDispatcher =
              Entity.Offset == v3 0.0f 1.0f 0.0f
              Entity.BodyType == KinematicCharacter
              Entity.SleepingAllowed == true
-             Entity.CharacterProperties == if not character.Player then { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f } else CharacterProperties.defaultProperties
+             Entity.CharacterProperties == character.CharacterProperties
              Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
-             Entity.FollowTargetOpt := if not character.Player then Some Simulants.GameplayPlayer else None
+             Entity.FollowTargetOpt := match character.CharacterType with Enemy -> Some Simulants.GameplayPlayer | Player -> None
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
              Entity.UpdateEvent => Update
              Game.PostUpdateEvent => SyncWeaponTransform]
@@ -104,7 +104,7 @@ module CharacterDispatcher =
                 match collisionData.BodyShapeCollidee.BodyId.BodySource with
                 | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
                     let collideeCharacter = collidee.GetCharacter world
-                    if character.Player <> collideeCharacter.Player then
+                    if character.CharacterType <> collideeCharacter.CharacterType then
                         let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
                         just character
                     else just character

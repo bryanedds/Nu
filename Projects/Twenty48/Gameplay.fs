@@ -146,7 +146,7 @@ type Gameplay =
           Tiles = []
           Score = 0 }
 
-    static member initial =
+    static member start =
         let gameplay = Gameplay.empty
         let position = v2i (Gen.random1 gameplay.BoardSize.X) (Gen.random1 gameplay.BoardSize.Y)
         let value = if Gen.random1 10 = 0 then 4 else 2

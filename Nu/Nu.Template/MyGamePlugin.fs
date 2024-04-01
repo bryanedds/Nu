@@ -13,4 +13,4 @@ type MyGamePlugin () =
             [("Splash", fun world -> Game.SetModel Splash world)
              ("Title", fun world -> Game.SetModel Title world)
              ("Credits", fun world -> Game.SetModel Credits world)
-             ("Gameplay", fun world -> Game.SetModel (Gameplay { GameplayTime = 0L; GameplayState = Commencing }) world)]
+             ("Gameplay", fun world -> Game.SetModel (Gameplay { GameplayTime = 0L; GameplayState = Commence }) world)]

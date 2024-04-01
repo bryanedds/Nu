@@ -6695,15 +6695,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6727,15 +6725,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6760,15 +6756,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6793,15 +6787,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6825,15 +6817,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6857,15 +6847,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6889,15 +6877,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6920,15 +6906,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6952,15 +6936,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -6984,15 +6966,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -7016,15 +6996,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -7048,15 +7026,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
@@ -7080,15 +7056,13 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
-    [CharacterProperties
-     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Player False]
-       [PositionPrevious []]
+      [[PositionPrevious []]
        [RotationPrevious []]
        [LinearVelocityPrevious []]
        [AngularVelocityPrevious []]
+       [CharacterType Enemy]
        [HitPoints 3]
        [ActionState NormalState]
        [JumpState [0 0]]
