@@ -285,7 +285,7 @@ module WorldScreenModule =
         static member writeScreens writePropagationHistory screens world =
             screens |>
             Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
-            Seq.filter (fun (screen : Screen) -> screen.GetPersistent world) |>
+            Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && not (screen.GetProtected world)) |>
             Seq.fold (fun screenDescriptors screen -> World.writeScreen writePropagationHistory ScreenDescriptor.empty screen world :: screenDescriptors) [] |>
             Seq.rev |>
             Seq.toList

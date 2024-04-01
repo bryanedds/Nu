@@ -274,7 +274,7 @@ module WorldGroupModule =
         static member writeGroups writePropagationHistory groups world =
             groups |>
             Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
-            Seq.filter (fun (group : Group) -> group.GetPersistent world) |>
+            Seq.filter (fun (group : Group) -> group.GetPersistent world && not (group.GetProtected world)) |>
             Seq.fold (fun groupDescriptors group -> World.writeGroup writePropagationHistory GroupDescriptor.empty group world :: groupDescriptors) [] |>
             Seq.rev |>
             Seq.toList
