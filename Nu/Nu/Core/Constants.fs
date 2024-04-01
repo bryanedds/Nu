@@ -27,9 +27,9 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Engine =
 
+    let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | size -> scvalue size
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
-    let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | size -> scvalue size
     let [<Literal>] Meter2d = 48.0f
     let [<Literal>] Meter3d = 1.0f
     let [<Literal>] GameSortPriority = Single.MaxValue
@@ -83,42 +83,42 @@ module Render =
     let [<Literal>] TwoSidedName = "TwoSided"
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue vsync
-    let [<Literal>] VirtualResolutionX = 960
-    let [<Literal>] VirtualResolutionY = 540
-    let [<Uniform>] VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
-    let [<Uniform>] VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
-    let [<Uniform>] VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 2 | scalar -> scvalue scalar
-    let [<Uniform>] VirtualScalarF = single VirtualScalar
-    let [<Uniform>] VirtualScalar2i = Vector2i VirtualScalar
-    let [<Uniform>] VirtualScalar2 = Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
+    let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceInterior"] with null -> 0.0625f | distance -> scvalue distance
+    let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceInterior"] with null -> 16.0f (* NOTE: remember to update OPAQUING_DISTANCE in shader when changing this!*) | scalar -> scvalue scalar
+    let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceExterior"] with null -> FarPlaneDistanceInterior | distance -> scvalue distance
+    let [<Uniform>] mutable FarPlaneDistanceExterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceExterior"] with null -> 128.0f | distance -> scvalue distance
+    let [<Uniform>] mutable NearPlaneDistanceImposter = match ConfigurationManager.AppSettings.["NearPlaneDistanceImposter"] with null -> FarPlaneDistanceExterior | distance -> scvalue distance
+    let [<Uniform>] mutable FarPlaneDistanceImposter = match ConfigurationManager.AppSettings.["FarPlaneDistanceImposter"] with null -> 4096.0f | distance -> scvalue distance
+    let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
+    let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
+    let [<Uniform>] mutable VirtualResolutionX = match ConfigurationManager.AppSettings.["VirtualResolutionX"] with null -> 960 | vrx -> scvalue vrx
+    let [<Uniform>] mutable VirtualResolutionY = match ConfigurationManager.AppSettings.["VirtualResolutionY"] with null -> 540 | vry -> scvalue vry
+    let [<Uniform>] mutable VirtualResolution = Vector2i (VirtualResolutionX, VirtualResolutionY)
+    let [<Uniform>] mutable VirtualResolutionF = Vector2 (single VirtualResolutionX, single VirtualResolutionY)
+    let [<Uniform>] mutable VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 2 | scalar -> scvalue scalar
+    let [<Uniform>] mutable VirtualScalarF = single VirtualScalar
+    let [<Uniform>] mutable VirtualScalar2i = Vector2i VirtualScalar
+    let [<Uniform>] mutable VirtualScalar2 = Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
+    let [<Uniform>] mutable ResolutionX = VirtualResolutionX * VirtualScalar
+    let [<Uniform>] mutable ResolutionY = VirtualResolutionY * VirtualScalar
+    let [<Uniform>] mutable ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
+    let [<Uniform>] mutable Resolution = Vector2i (ResolutionX, ResolutionY)
+    let [<Uniform>] mutable ShadowResolutionX = 512 * VirtualScalar
+    let [<Uniform>] mutable ShadowResolutionY = 512 * VirtualScalar
+    let [<Uniform>] mutable ShadowResolutionF = Vector2 (single ShadowResolutionX, single ShadowResolutionY)
+    let [<Uniform>] mutable ShadowResolution = Vector2i (ShadowResolutionX, ShadowResolutionY)
+    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings.["SsaoResolutionDivisor"] with null -> 1 | divisor -> scvalue divisor
+    let [<Uniform>] mutable SsaoResolutionX = ResolutionX / SsaoResolutionDivisor
+    let [<Uniform>] mutable SsaoResolutionY = ResolutionY / SsaoResolutionDivisor
+    let [<Uniform>] mutable SsaoResolutionF = Vector2 (single SsaoResolutionX, single SsaoResolutionY)
+    let [<Uniform>] mutable SsaoResolution = Vector2i (SsaoResolutionX, SsaoResolutionY)
+    let [<Uniform>] mutable SsaoViewport = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, SsaoResolution))
+    let [<Uniform>] mutable FieldOfView = match ConfigurationManager.AppSettings.["FieldOfView"] with null -> single (Math.PI / 3.0) | fov -> scvalue fov
+    let [<Uniform>] mutable Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
+    let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
+    let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
     let [<Uniform>] Play3dBoxSize = Vector3 64.0f
     let [<Uniform>] Light3dBoxSize = Vector3 64.0f
-    let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceInterior"] with null -> 0.0625f | scalar -> scvalue scalar
-    let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceInterior"] with null -> 16.0f (* NOTE: remember to update OPAQUING_DISTANCE in shader when changing this!*) | scalar -> scvalue scalar
-    let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceExterior"] with null -> FarPlaneDistanceInterior | scalar -> scvalue scalar
-    let [<Uniform>] mutable FarPlaneDistanceExterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceExterior"] with null -> 128.0f | scalar -> scvalue scalar
-    let [<Uniform>] mutable NearPlaneDistanceImposter = match ConfigurationManager.AppSettings.["NearPlaneDistanceImposter"] with null -> FarPlaneDistanceExterior | scalar -> scvalue scalar
-    let [<Uniform>] mutable FarPlaneDistanceImposter = match ConfigurationManager.AppSettings.["FarPlaneDistanceImposter"] with null -> 4096.0f | scalar -> scvalue scalar
-    let [<Uniform>] NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
-    let [<Uniform>] FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
-    let [<Uniform>] ResolutionX = VirtualResolutionX * VirtualScalar
-    let [<Uniform>] ResolutionY = VirtualResolutionY * VirtualScalar
-    let [<Uniform>] ResolutionF = Vector2 (single ResolutionX, single ResolutionY)
-    let [<Uniform>] Resolution = Vector2i (ResolutionX, ResolutionY)
-    let [<Uniform>] FieldOfView = single (Math.PI / 3.0) // 60 degrees
-    let [<Uniform>] ViewportMargin (windowSize : Vector2i) = let size = Vector2i (ResolutionX, ResolutionY) in Vector2i ((windowSize.X - size.X) / 2, (windowSize.Y - size.Y) / 2)
-    let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
-    let [<Uniform>] Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
-    let [<Uniform>] ShadowResolutionX = 512 * VirtualScalar
-    let [<Uniform>] ShadowResolutionY = 512 * VirtualScalar
-    let [<Uniform>] ShadowResolutionF = Vector2 (single ShadowResolutionX, single ShadowResolutionY)
-    let [<Uniform>] ShadowResolution = Vector2i (ShadowResolutionX, ShadowResolutionY)
-    let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings.["SsaoResolutionDivisor"] with null -> 1 | ssaoResolutionDivisor -> scvalue ssaoResolutionDivisor
-    let [<Uniform>] SsaoResolutionX = ResolutionX / SsaoResolutionDivisor
-    let [<Uniform>] SsaoResolutionY = ResolutionY / SsaoResolutionDivisor
-    let [<Uniform>] SsaoResolutionF = Vector2 (single SsaoResolutionX, single SsaoResolutionY)
-    let [<Uniform>] SsaoResolution = Vector2i (SsaoResolutionX, SsaoResolutionY)
-    let [<Uniform>] SsaoViewport = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, SsaoResolution))
     let [<Uniform>] WindowClearColor = Color.Zero
     let [<Uniform>] ViewportClearColor = Color.White // NOTE: do not change this color as the deferred lighting shader checks if normal color is equal to [1;1;1] to discard fragment.
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
@@ -139,11 +139,11 @@ module Render =
     let [<Literal>] LightMapsMaxForward = 2
     let [<Literal>] LightsMaxDeferred = 64
     let [<Literal>] LightsMaxForward = 8
-    let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | scalar -> scvalue scalar
-    let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 2 | scalar -> scvalue scalar
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ShadowsMaxShader = 16 // NOTE: remember to update SHADOWS_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowsMax = match ConfigurationManager.AppSettings.["ShadowsMax"] with null -> 8 | shadowsMax -> min (scvalue shadowsMax) ShadowsMaxShader
+    let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | scalar -> scvalue scalar
+    let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 2 | scalar -> scvalue scalar
     let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 512
@@ -174,6 +174,30 @@ module Render =
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
     let [<Literal>] FontSizeDefault = 24
+
+    /// Call this if any resolution or plane distance uniforms are changed.
+    let Recompute () =
+        NearPlaneDistanceOmnipresent <- NearPlaneDistanceInterior
+        FarPlaneDistanceOmnipresent <- FarPlaneDistanceImposter
+        VirtualResolution <- Vector2i (VirtualResolutionX, VirtualResolutionY)
+        VirtualResolutionF <- Vector2 (single VirtualResolutionX, single VirtualResolutionY)
+        VirtualScalarF <- single VirtualScalar
+        VirtualScalar2i <- Vector2i VirtualScalar
+        VirtualScalar2 <- Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
+        ResolutionX <- VirtualResolutionX * VirtualScalar
+        ResolutionY <- VirtualResolutionY * VirtualScalar
+        ResolutionF <- Vector2 (single ResolutionX, single ResolutionY)
+        Resolution <- Vector2i (ResolutionX, ResolutionY)
+        ShadowResolutionX <- 512 * VirtualScalar
+        ShadowResolutionY <- 512 * VirtualScalar
+        ShadowResolutionF <- Vector2 (single ShadowResolutionX, single ShadowResolutionY)
+        ShadowResolution <- Vector2i (ShadowResolutionX, ShadowResolutionY)
+        SsaoResolutionX <- ResolutionX / SsaoResolutionDivisor
+        SsaoResolutionY <- ResolutionY / SsaoResolutionDivisor
+        SsaoResolutionF <- Vector2 (single SsaoResolutionX, single SsaoResolutionY)
+        SsaoResolution <- Vector2i (SsaoResolutionX, SsaoResolutionY)
+        SsaoViewport <- Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, SsaoResolution))
+        Viewport <- Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
 
 [<RequireQualifiedAccess>]
 module Audio =

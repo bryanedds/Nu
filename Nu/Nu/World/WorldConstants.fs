@@ -53,11 +53,16 @@ module Override =
                 | nameof Render.FarPlaneDistanceExterior -> Render.FarPlaneDistanceExterior <- scvalue value
                 | nameof Render.NearPlaneDistanceImposter -> Render.NearPlaneDistanceImposter <- scvalue value
                 | nameof Render.FarPlaneDistanceImposter -> Render.FarPlaneDistanceImposter <- scvalue value
+                | nameof Render.VirtualResolutionX -> Render.VirtualResolutionX <- scvalue value
+                | nameof Render.VirtualResolutionY -> Render.VirtualResolutionY <- scvalue value
+                | nameof Render.VirtualScalar -> Render.VirtualScalar <- scvalue value
                 | nameof Render.SsaoResolutionDivisor -> Render.SsaoResolutionDivisor <- scvalue value
+                | nameof Render.FieldOfView -> Render.FieldOfView <- scvalue value
                 | nameof Render.ShadowDetailedCount -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
                 | _ -> ()
+            Constants.Render.Recompute ()
         with
         | :? ConfigurationErrorsException ->
             Log.info ("Configuration value override failed due to: Could not find App.config file for " + exeFilePath + ".")
