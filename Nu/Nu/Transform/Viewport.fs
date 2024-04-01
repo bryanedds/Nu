@@ -14,12 +14,12 @@ module Viewport =
 
         /// Compute the 2d absolute view matrix.
         member this.View2dAbsolute (_ : Vector2, eyeSize : Vector2) =
-            let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2
+            let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2F
             Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
         /// Compute the 2d relative view matrix.
         member this.ViewRelative2d (eyeCenter : Vector2, eyeSize : Vector2) =
-            let translation = -eyeCenter * Constants.Render.VirtualScalar2 + eyeSize * 0.5f * Constants.Render.VirtualScalar2
+            let translation = -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
             Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
 
         /// Compute a 2d view matrix.
@@ -44,26 +44,26 @@ module Viewport =
             view * projection
 
         /// Compute the absolute 2d position from the given relative 3d position.
-        member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
+        member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion, resolution : Vector2i) =
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let projection = this.Projection3d
             let viewProjection : Matrix4x4 = view * projection
             let positionViewProjection = Vector4.Transform (Vector4 (position, 1.0f), viewProjection)
             let positionNdc = positionViewProjection.V3 / positionViewProjection.W
-            let position2d = v3 (positionNdc.X * single (resolutionX / 2)) (positionNdc.Y * single (resolutionY / 2)) positionNdc.Z
+            let position2d = v3 (positionNdc.X * single (resolution.X / 2)) (positionNdc.Y * single (resolution.Y / 2)) positionNdc.Z
             position2d
 
         /// Compute the relative 3d ray from the given absolute 2d position.
         /// TODO: P1: test this code properly!
         /// TODO: also implement Position2dToPosition3d.
-        member this.Position2dToRay3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
+        member this.Position2dToRay3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolution : Vector2i) =
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
             let eyeRotationInverse = Quaternion.Inverse eyeRotation
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let projection = this.Projection3d
             let viewProjectionInverse = (view * projection).Inverted
-            let positionNdc = v3 (position.X / single (resolutionX * 2)) (position.Y / single (resolutionY * 2)) 0.0f
+            let positionNdc = v3 (position.X / single (resolution.X * 2)) (position.Y / single (resolution.Y * 2)) 0.0f
             let positionViewProjection = Vector4.Transform (positionNdc, viewProjectionInverse)
             let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
             let position3d = (Vector4.Transform (positionView, Matrix4x4.CreateFromQuaternion eyeRotationInverse)).V3
@@ -131,8 +131,8 @@ module Viewport =
         /// Transform the given mouse position to 3d screen space (normalized device coordinates).
         member this.MouseToScreen3d (mousePosition : Vector2) =
             v2
-                (mousePosition.X / single Constants.Render.ResolutionX)
-                (1.0f - (mousePosition.Y / single Constants.Render.ResolutionY)) // inversion for right-handedness
+                (mousePosition.X / single Constants.Render.Resolution.X)
+                (1.0f - (mousePosition.Y / single Constants.Render.Resolution.Y)) // inversion for right-handedness
 
         /// Transform the given mouse position to 3d world space.
         member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyeCenter, eyeRotation) =

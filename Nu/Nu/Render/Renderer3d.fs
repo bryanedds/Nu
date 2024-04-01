@@ -2916,7 +2916,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create filter buffers
         let filterBuffers =
-            match OpenGL.Framebuffer.TryCreateFilterBuffers (Constants.Render.ResolutionX, Constants.Render.ResolutionY) with
+            match OpenGL.Framebuffer.TryCreateFilterBuffers (Constants.Render.Resolution.X, Constants.Render.Resolution.Y) with
             | Right filterBuffers -> filterBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()

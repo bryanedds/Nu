@@ -42,7 +42,7 @@ module ImGuizmo =
             | Some (a, b) ->
                 let aWindow = ImGui.PositionToWindow (viewProjection, a)
                 let bWindow = ImGui.PositionToWindow (viewProjection, b)
-                let xWindow = box2 v2Zero Constants.Render.ResolutionF
+                let xWindow = box2 v2Zero Constants.Render.Resolution.V2
                 if  xWindow.Contains aWindow <> ContainmentType.Disjoint &&
                     xWindow.Contains bWindow <> ContainmentType.Disjoint then
                     drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)

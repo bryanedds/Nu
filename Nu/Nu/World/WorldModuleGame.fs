@@ -418,7 +418,7 @@ module WorldModuleGame =
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let viewport = Constants.Render.Viewport
-            viewport.Position3dToPosition2d (position, eyeCenter, eyeRotation, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            viewport.Position3dToPosition2d (position, eyeCenter, eyeRotation, Constants.Render.Resolution)
 
         /// Convert the given absolute 2d position to the relative 3d ray.
         /// TODO: also implement position2dToPosition3d.
@@ -426,7 +426,7 @@ module WorldModuleGame =
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let viewport = Constants.Render.Viewport
-            viewport.Position2dToRay3d (position, eyeCenter, eyeRotation, Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            viewport.Position2dToRay3d (position, eyeCenter, eyeRotation, Constants.Render.Resolution)
 
         /// Get the current 3d light box.
         static member getLight3dBox world =

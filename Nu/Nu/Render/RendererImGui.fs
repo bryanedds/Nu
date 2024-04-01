@@ -258,6 +258,6 @@ module GlRendererImGui =
 
     /// Make a gl-based imgui renderer.
     let make fonts =
-        let rendererImGui = GlRendererImGui (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+        let rendererImGui = GlRendererImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui

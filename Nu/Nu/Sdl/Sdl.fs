@@ -53,8 +53,8 @@ type [<ReferenceEquality>] SdlConfig =
     /// A default SdlConfig.
     static member defaultConfig =
         { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
-          ViewW = Constants.Render.ResolutionX
-          ViewH = Constants.Render.ResolutionY
+          ViewW = Constants.Render.Resolution.X
+          ViewH = Constants.Render.Resolution.Y
           AudioChunkSize = Constants.Audio.BufferSizeDefault }
 
 [<AutoOpen>]
