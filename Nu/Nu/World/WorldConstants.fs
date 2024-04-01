@@ -4,6 +4,7 @@
 namespace Nu.Constants
 open System
 open System.Configuration
+open System.Numerics
 open Prime
 open Nu
 
@@ -62,7 +63,27 @@ module Override =
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
                 | _ -> ()
-            Constants.Render.Recompute ()
+            Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior
+            Constants.Render.FarPlaneDistanceOmnipresent <- Constants.Render.FarPlaneDistanceImposter
+            Constants.Render.VirtualResolution <- Vector2i (Constants.Render.VirtualResolutionX, Constants.Render.VirtualResolutionY)
+            Constants.Render.VirtualResolutionF <- Vector2 (single Constants.Render.VirtualResolutionX, single Constants.Render.VirtualResolutionY)
+            Constants.Render.VirtualScalarF <- single Constants.Render.VirtualScalar
+            Constants.Render.VirtualScalar2i <- Vector2i Constants.Render.VirtualScalar
+            Constants.Render.VirtualScalar2 <- Vector2 (single Constants.Render.VirtualScalar2i.X, single Constants.Render.VirtualScalar2i.Y)
+            Constants.Render.ResolutionX <- Constants.Render.VirtualResolutionX * Constants.Render.VirtualScalar
+            Constants.Render.ResolutionY <- Constants.Render.VirtualResolutionY * Constants.Render.VirtualScalar
+            Constants.Render.ResolutionF <- Vector2 (single Constants.Render.ResolutionX, single Constants.Render.ResolutionY)
+            Constants.Render.Resolution <- Vector2i (Constants.Render.ResolutionX, Constants.Render.ResolutionY)
+            Constants.Render.ShadowResolutionX <- 512 * Constants.Render.VirtualScalar
+            Constants.Render.ShadowResolutionY <- 512 * Constants.Render.VirtualScalar
+            Constants.Render.ShadowResolutionF <- Vector2 (single Constants.Render.ShadowResolutionX, single Constants.Render.ShadowResolutionY)
+            Constants.Render.ShadowResolution <- Vector2i (Constants.Render.ShadowResolutionX, Constants.Render.ShadowResolutionY)
+            Constants.Render.SsaoResolutionX <- Constants.Render.ResolutionX / Constants.Render.SsaoResolutionDivisor
+            Constants.Render.SsaoResolutionY <- Constants.Render.ResolutionY / Constants.Render.SsaoResolutionDivisor
+            Constants.Render.SsaoResolutionF <- Vector2 (single Constants.Render.SsaoResolutionX, single Constants.Render.SsaoResolutionY)
+            Constants.Render.SsaoResolution <- Vector2i (Constants.Render.SsaoResolutionX, Constants.Render.SsaoResolutionY)
+            Constants.Render.SsaoViewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, Box2i (v2iZero, Constants.Render.SsaoResolution))
+            Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
         with
         | :? ConfigurationErrorsException ->
             Log.info ("Configuration value override failed due to: Could not find App.config file for " + exeFilePath + ".")

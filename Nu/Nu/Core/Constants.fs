@@ -84,10 +84,10 @@ module Render =
     let [<Literal>] NavShapeName = "NavShape"
     let [<Uniform>] mutable Vsync = match ConfigurationManager.AppSettings.["Vsync"] with null -> true | vsync -> scvalue vsync
     let [<Uniform>] mutable NearPlaneDistanceInterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceInterior"] with null -> 0.0625f | distance -> scvalue distance
-    let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceInterior"] with null -> 16.0f (* NOTE: remember to update OPAQUING_DISTANCE in shader when changing this!*) | scalar -> scvalue scalar
-    let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceExterior"] with null -> FarPlaneDistanceInterior | distance -> scvalue distance
+    let [<Uniform>] mutable FarPlaneDistanceInterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceInterior"] with null -> 16.0f | scalar -> scvalue scalar
+    let [<Uniform>] mutable NearPlaneDistanceExterior = match ConfigurationManager.AppSettings.["NearPlaneDistanceExterior"] with null -> 16.0f | distance -> scvalue distance
     let [<Uniform>] mutable FarPlaneDistanceExterior = match ConfigurationManager.AppSettings.["FarPlaneDistanceExterior"] with null -> 128.0f | distance -> scvalue distance
-    let [<Uniform>] mutable NearPlaneDistanceImposter = match ConfigurationManager.AppSettings.["NearPlaneDistanceImposter"] with null -> FarPlaneDistanceExterior | distance -> scvalue distance
+    let [<Uniform>] mutable NearPlaneDistanceImposter = match ConfigurationManager.AppSettings.["NearPlaneDistanceImposter"] with null -> 128.0f | distance -> scvalue distance
     let [<Uniform>] mutable FarPlaneDistanceImposter = match ConfigurationManager.AppSettings.["FarPlaneDistanceImposter"] with null -> 4096.0f | distance -> scvalue distance
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
@@ -174,30 +174,6 @@ module Render =
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
     let [<Literal>] FontSizeDefault = 24
-
-    /// Call this if any resolution or plane distance uniforms are changed.
-    let Recompute () =
-        NearPlaneDistanceOmnipresent <- NearPlaneDistanceInterior
-        FarPlaneDistanceOmnipresent <- FarPlaneDistanceImposter
-        VirtualResolution <- Vector2i (VirtualResolutionX, VirtualResolutionY)
-        VirtualResolutionF <- Vector2 (single VirtualResolutionX, single VirtualResolutionY)
-        VirtualScalarF <- single VirtualScalar
-        VirtualScalar2i <- Vector2i VirtualScalar
-        VirtualScalar2 <- Vector2 (single VirtualScalar2i.X, single VirtualScalar2i.Y)
-        ResolutionX <- VirtualResolutionX * VirtualScalar
-        ResolutionY <- VirtualResolutionY * VirtualScalar
-        ResolutionF <- Vector2 (single ResolutionX, single ResolutionY)
-        Resolution <- Vector2i (ResolutionX, ResolutionY)
-        ShadowResolutionX <- 512 * VirtualScalar
-        ShadowResolutionY <- 512 * VirtualScalar
-        ShadowResolutionF <- Vector2 (single ShadowResolutionX, single ShadowResolutionY)
-        ShadowResolution <- Vector2i (ShadowResolutionX, ShadowResolutionY)
-        SsaoResolutionX <- ResolutionX / SsaoResolutionDivisor
-        SsaoResolutionY <- ResolutionY / SsaoResolutionDivisor
-        SsaoResolutionF <- Vector2 (single SsaoResolutionX, single SsaoResolutionY)
-        SsaoResolution <- Vector2i (SsaoResolutionX, SsaoResolutionY)
-        SsaoViewport <- Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, SsaoResolution))
-        Viewport <- Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
 
 [<RequireQualifiedAccess>]
 module Audio =
