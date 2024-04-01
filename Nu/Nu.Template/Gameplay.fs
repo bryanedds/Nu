@@ -50,15 +50,23 @@ module Gameplay =
 
         // here we handle the above messages
         override this.Message (gameplay, message, _, world) =
+
             match message with
             | FinishCommencing ->
-                just { gameplay with GameplayState = Commence }
+                let gameplay = { gameplay with GameplayState = Commence }
+                just gameplay
+
             | StartQuitting ->
-                just { gameplay with GameplayState = Quitting }
+                let gameplay = { gameplay with GameplayState = Quitting }
+                just gameplay
+
             | FinishQuitting ->
-                just { gameplay with GameplayState = Quit }
+                let gameplay = { gameplay with GameplayState = Quit }
+                just gameplay
+
             | TimeUpdate ->
-                just { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
+                let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
+                just gameplay
 
         // here we describe the content of the game including the hud, the scene, and the player
         override this.Content (gameplay, _) =
