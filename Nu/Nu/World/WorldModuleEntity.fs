@@ -2463,7 +2463,7 @@ module WorldModuleEntity =
         static member writeEntities writePropagationHistory entities world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world) |>
-            Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world)) |>
+            Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world) |>
             Seq.fold (fun entityDescriptors entity -> World.writeEntity writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) [] |>
             Seq.rev |>
             Seq.toList
@@ -2556,10 +2556,10 @@ module WorldModuleEntity =
             // make entity reference
             let entity = Entity entityAddress
 
-            // add entity's state to world
+            // add entity's state to world, destroying any existing entity if appropriate
             let world =
                 if World.getEntityExists entity world then
-                    if World.getEntityDestroying entity world
+                    if World.getEntityDestroying entity world || World.getEntityProtected entity world
                     then World.destroyEntityImmediate entity world
                     else failwith ("Entity '" + scstring entity + "' already exists and cannot be created."); world
                 else world
