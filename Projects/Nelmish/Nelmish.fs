@@ -29,11 +29,11 @@ type NelmishDispatcher () =
         [Content.screen "Screen" Vanilla []
             [Content.group "Group" []
                 [Content.button "Decrement"
-                    [Entity.Position == v3 -128.0f 96.0f 0.0f
+                    [Entity.Position == v3 -88.0f 64.0f 0.0f
                      Entity.Text == "-"
                      Entity.ClickEvent => Decrement]
                  Content.button "Increment"
-                    [Entity.Position == v3 128.0f 96.0f 0.0f
+                    [Entity.Position == v3 88.0f 64.0f 0.0f
                      Entity.Text == "+"
                      Entity.ClickEvent => Increment]
                  Content.text "Counter"
@@ -42,6 +42,6 @@ type NelmishDispatcher () =
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)]
                  if model <> 0 then
                     Content.button "Reset"
-                       [Entity.Position == v3 0.0f -96.0f 0.0f
+                       [Entity.Position == v3 0.0f -64.0f 0.0f
                         Entity.Text == "Reset"
                         Entity.ClickEvent => Reset]]]]

@@ -38,7 +38,7 @@ type MyGameDispatcher () =
         let (group, world) = World.createGroup (Some "Default") screen world
         let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
-        let world = fps.SetPosition (v3 200.0f -250.0f 0.0f) world
+        let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
         let positions = // 50,000 entities (goal: 60FPS, current 47FPS)
             [|for i in 0 .. dec 50 do
                 for j in 0 .. dec 50 do
@@ -96,7 +96,7 @@ type MmccGameDispatcher () =
                              Entity.Presence == Omnipresent]|]
               Content.group "Other" []
                 [Content.skyBox "SkyBox" []
-                 Content.fps "Fps" [Entity.Position := v3 200.0f -250.0f 0.0f]]|]]
+                 Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]|]]
 #endif
 
 type MetricsPlugin () =
