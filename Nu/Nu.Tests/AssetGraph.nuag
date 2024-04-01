@@ -1,5 +1,5 @@
 [[Default
-  [[Asset Font "Assets/Default/FreeMonoBold.024.ttf" [Render2d] []]
+  [[Asset Font "Assets/Default/FreeMonoBold.016.ttf" [Render2d] []]
    [Assets Assets/Default [bmp png psd] [Render2d Render3d] [PsdToPng]]
    [Assets Assets/Default [jpg jpeg tga tif tiff dds] [Render3d] []]
    [Assets Assets/Default [cbm fbx dae obj mtl glsl raw] [Render3d] []]

@@ -497,7 +497,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? AnglesLocal Vector3.Zero
          Define? Degrees Vector3.Zero
          Define? DegreesLocal Vector3.Zero
-         Define? Size Constants.Engine.Entity3dSizeDefault
+         Define? Size Vector3.One
          Define? Elevation 0.0f
          Define? ElevationLocal 0.0f
          Define? Overflow 1.0f
@@ -560,8 +560,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (_, _) =
         if this.Is2d
-        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
-        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
+        then AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
+        else AttributesInferred.important v3One v3Zero
 
     /// Attempt to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array
@@ -626,8 +626,8 @@ and Facet (physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (entity, world) =
         if WorldTypes.getEntityIs2d entity world
-        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
-        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
+        then AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
+        else AttributesInferred.important v3One v3Zero
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World

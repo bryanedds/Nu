@@ -27,11 +27,10 @@ module Assimp =
 [<RequireQualifiedAccess>]
 module Engine =
 
-    let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | size -> scvalue size
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
-    let [<Literal>] Meter2d = 48.0f
-    let [<Literal>] Meter3d = 1.0f
+    let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | size -> scvalue size
+    let [<Uniform>] mutable Meter2d = match ConfigurationManager.AppSettings.["Meter2d"] with null -> 32.0f | centered -> scvalue centered
     let [<Literal>] GameSortPriority = Single.MaxValue
     let [<Uniform>] ScreenSortPriority = GameSortPriority - 1.0f
     let [<Uniform>] GroupSortPriority = ScreenSortPriority - 1.0f
@@ -56,14 +55,8 @@ module Engine =
     let [<Literal>] PhysicsMotionPropertyName = "PhysicsMotion"
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "Refinement"
-    let [<Uniform>] Entity2dSizeDefault = Vector3 (Meter2d, Meter2d, 0.0f)
-    let [<Uniform>] EntityGuiSizeDefault = Vector3 (Meter2d * 4.0f, Meter2d, 0.0f)
-    let [<Uniform>] Entity3dSizeDefault = Vector3 1.0f
-    let [<Uniform>] EntityVuiSizeDefault = Vector3 1.0f
     let [<Uniform>] mutable EntityPerimeterCentered2dDefault = match ConfigurationManager.AppSettings.["EntityPerimeterCentered2dDefault"] with null -> true | centered -> scvalue centered
     let [<Uniform>] mutable EntityPerimeterCenteredGuiDefault = match ConfigurationManager.AppSettings.["EntityPerimeterCenteredGuiDefault"] with null -> true | centered -> scvalue centered
-    let [<Uniform>] Particle2dSizeDefault = Vector3 (12.0f, 12.0f, 0.0f)
-    let [<Uniform>] Particle3dSizeDefault = Vector3 (0.1f, 0.1f, 0.1f)
     let [<Uniform>] Eye3dCenterDefault = Vector3 (0.0f, 1.0f, 4.0f)
     let [<Uniform>] mutable QuadnodeSize = match ConfigurationManager.AppSettings.["QuadnodeSize"] with null -> 512.0f | size -> scvalue size
     let [<Uniform>] mutable QuadtreeDepth = match ConfigurationManager.AppSettings.["QuadtreeDepth"] with null -> 7 | depth -> scvalue depth
@@ -91,8 +84,8 @@ module Render =
     let [<Uniform>] mutable FarPlaneDistanceImposter = match ConfigurationManager.AppSettings.["FarPlaneDistanceImposter"] with null -> 4096.0f | distance -> scvalue distance
     let [<Uniform>] mutable NearPlaneDistanceOmnipresent = NearPlaneDistanceInterior
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
-    let [<Uniform>] mutable VirtualResolution = match ConfigurationManager.AppSettings.["VirtualResolution"] with null -> v2i 960 540 | resolution -> scvalue resolution
-    let [<Uniform>] mutable VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 2 | scalar -> scvalue scalar
+    let [<Uniform>] mutable VirtualResolution = match ConfigurationManager.AppSettings.["VirtualResolution"] with null -> v2i 640 360 | resolution -> scvalue resolution
+    let [<Uniform>] mutable VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 3 | scalar -> scvalue scalar
     let [<Uniform>] mutable VirtualScalar2 = Vector2i VirtualScalar
     let [<Uniform>] mutable VirtualScalar2F = VirtualScalar2.V2
     let [<Uniform>] mutable Resolution = VirtualResolution * VirtualScalar
@@ -160,7 +153,7 @@ module Render =
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
-    let [<Literal>] FontSizeDefault = 24
+    let [<Literal>] FontSizeDefault = 16
 
 [<RequireQualifiedAccess>]
 module Audio =
@@ -176,16 +169,13 @@ module Audio =
 [<RequireQualifiedAccess>]
 module Physics =
 
-    let [<Uniform>] Gravity2dDefault = Vector3 (0.0f, -9.80665f, 0.0f) * Engine.Entity2dSizeDefault.Y
-    let [<Uniform>] Gravity3dDefault = Vector3 (0.0f, -9.80665f, 0.0f)
+    let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Literal>] SleepingThresholdLinear = 1.0f // NOTE: in the example or bullet source code (can't remember), this defaulted to 0.8f...
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionWildcard = "*"
     let [<Literal>] Collision3dMargin = 0.01f
     let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: seems to also change the smoothness at which character slide.
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
-    let [<Literal>] PhysicsToPixelRatio = Engine.Meter2d // 48 pixels = 1 meter
-    let [<Uniform>] PixelToPhysicsRatio = 1.0f / Engine.Meter2d
     let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
 

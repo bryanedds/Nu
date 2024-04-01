@@ -24,10 +24,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
           SeparationHandler : OnSeparationEventHandler }
 
     static member private toPixel value =
-        value * Constants.Physics.PhysicsToPixelRatio
+        value * Constants.Engine.Meter2d
 
     static member private toPhysics value =
-        value * Constants.Physics.PixelToPhysicsRatio
+        value / Constants.Engine.Meter2d
 
     static member private toPixelV3 (v2 : Common.Vector2) =
         Vector3 (PhysicsEngine2d.toPixel v2.X, PhysicsEngine2d.toPixel v2.Y, 0.0f)

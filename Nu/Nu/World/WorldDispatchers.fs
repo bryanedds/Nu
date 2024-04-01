@@ -18,7 +18,7 @@ module EntityDispatcherModule =
             Entity2dDispatcher (Constants.Engine.EntityPerimeterCentered2dDefault, physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.Entity2dSizeDefault
+            [define Entity.Size (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f)
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
 
     /// A gui entity dispatcher.
@@ -29,7 +29,7 @@ module EntityDispatcherModule =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
+            [define Entity.Size (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f)
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -49,7 +49,7 @@ module EntityDispatcherModule =
             Entity3dDispatcher (physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
+            [define Entity.Size v3One]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
@@ -63,7 +63,7 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (false, true, false)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
+            [define Entity.Size (v3 4.0f 1.0f 1.0f)]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -121,8 +121,8 @@ module TextDispatcherModule =
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
                 | Some size -> AttributesInferred.important size.V3 v3Zero
-                | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
-            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+                | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
 
 [<AutoOpen>]
 module LabelDispatcherModule =
@@ -329,7 +329,7 @@ module Character2dDispatcherModule =
              define Entity.BodyType Dynamic
              define Entity.SleepingAllowed false
              define Entity.AngularFactor v3Zero
-             define Entity.GravityOverride (Some (Constants.Physics.Gravity2dDefault * 3.0f))
+             define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
              define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.Character2dIdleImage Assets.Default.Character2dIdleImage
              define Entity.Character2dJumpImage Assets.Default.Character2dJumpImage

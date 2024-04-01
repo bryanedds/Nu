@@ -387,8 +387,8 @@ module WorldModule3 =
 
                 // make the world's subsystems
                 let imGui = ImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
-                let physicsEngine2d = PhysicsEngine2d.make Constants.Physics.Gravity2dDefault
-                let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.Gravity3dDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
+                let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
+                let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
                 let rendererProcess =
                     if Constants.Engine.RunSynchronously
                     then RendererInline () :> RendererProcess
