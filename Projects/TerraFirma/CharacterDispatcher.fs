@@ -33,9 +33,6 @@ module CharacterDispatcher =
     type CharacterDispatcher (character : Character) =
         inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, character)
 
-        new () =
-            CharacterDispatcher (Character.initial)
-
         static member Facets =
             [typeof<RigidBodyFacet>]
 
