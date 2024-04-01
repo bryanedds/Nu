@@ -51,7 +51,7 @@ module GameplayDispatcher =
 
             | StartQuitting ->
                 match gameplay.GameplayState with
-                | Commence false -> just { gameplay with GameplayState = Quitting }
+                | Commence _ -> just { gameplay with GameplayState = Quitting }
                 | _ -> just gameplay
 
             | FinishQuitting ->
