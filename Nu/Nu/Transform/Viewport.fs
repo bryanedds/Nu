@@ -55,8 +55,9 @@ module Viewport =
             position2d
 
         /// Compute the relative 3d ray from the given absolute 2d position.
-        /// TODO: P1: test this code!
-        member this.Position2dToPosition3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
+        /// TODO: P1: test this code properly!
+        /// TODO: also implement Position2dToPosition3d.
+        member this.Position2dToRay3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolutionX : int, resolutionY : int) =
             let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
             let eyeRotationInverse = Quaternion.Inverse eyeRotation
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
