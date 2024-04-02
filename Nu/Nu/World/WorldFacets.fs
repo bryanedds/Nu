@@ -1579,7 +1579,7 @@ module TileMapFacetModule =
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
-             define Entity.TileSizeDivisor 3
+             define Entity.TileSizeDivisor 1
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              define Entity.TileMap Assets.Default.TileMap
@@ -1688,7 +1688,7 @@ module TmxMapFacetModule =
              define Entity.Color Color.One
              define Entity.Emission Color.Zero
              define Entity.TileLayerClearance 2.0f
-             define Entity.TileSizeDivisor 3
+             define Entity.TileSizeDivisor 1
              define Entity.TileIndexOffset 0
              define Entity.TileIndexOffsetRange (0, 0)
              nonPersistent Entity.TmxMap (TmxMap.makeDefault ())

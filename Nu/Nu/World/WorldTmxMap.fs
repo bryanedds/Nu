@@ -125,6 +125,7 @@ module TmxMap =
             BodyShapes (List.map (fun shape -> importShape shape center tileSize tileOffset) shapes)
 
     let getDescriptor tileMapPosition tileSizeDivisor (tileMap : TmxMap) =
+        let tileSizeDivisor = max 1 tileSizeDivisor
         let tileSizeI = v2i (tileMap.TileWidth / tileSizeDivisor) (tileMap.TileHeight / tileSizeDivisor)
         let tileSizeF = v2 (single tileSizeI.X) (single tileSizeI.Y)
         let tileMapSizeM = v2i tileMap.Width tileMap.Height
@@ -323,6 +324,7 @@ module TmxMap =
     let getLayeredMessages2d time absolute (viewBounds : Box2) (tileMapPosition : Vector2) tileMapElevation tileMapColor tileMapEmission tileLayerClearance tileSizeDivisor tileIndexOffset tileIndexOffsetRange tileMapPackage (tileMap : TmxMap) =
         let layers = List.ofSeq tileMap.TileLayers
         let tileSourceSize = v2i tileMap.TileWidth tileMap.TileHeight
+        let tileSizeDivisor = max 1 tileSizeDivisor
         let tileSize = v2 (single (tileMap.TileWidth / tileSizeDivisor)) (single (tileMap.TileHeight / tileSizeDivisor))
         let tileAssets = tileMap.GetImageAssets tileMapPackage
         let tileGidCount = Array.fold (fun count struct (tileSet : TmxTileset, _) -> let count2 = tileSet.TileCount in count + count2.GetValueOrDefault 0) 0 tileAssets // TODO: make this a public function!
@@ -435,6 +437,7 @@ module TmxMap =
         List.concat descriptorLists
 
     let getAttributesInferred tileSizeDivisor (tileMap : TmxMap) =
+        let tileSizeDivisor = max 1 tileSizeDivisor
         AttributesInferred.important
             (v3
                 (single (tileMap.Width * tileMap.TileWidth / tileSizeDivisor))
