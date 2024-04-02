@@ -136,7 +136,7 @@ module Content =
             let simulant = if notNull (contentOld.SimulantCachedOpt :> obj) then contentOld.SimulantCachedOpt else simulant
             content.SimulantCachedOpt <- simulant
             List.foldGeneric (fun world propertyContent ->
-                if not propertyContent.PropertyInitializer || initializing then
+                if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
                     let simulant = match lens.This :> obj with null -> simulant | _ -> lens.This
                     World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
@@ -156,7 +156,7 @@ module Content =
             let propertyContents = content.PropertyContentsOpt
             for i in 0 .. dec propertyContents.Count do
                 let propertyContent = propertyContents.[i]
-                if not propertyContent.PropertyInitializer || initializing then
+                if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
                     if strEq lens.Name "MountOpt" then mountOptFound <- true
                     let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
@@ -355,14 +355,14 @@ module Content =
             | None -> (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
         else (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
 
-    /// Describe an entity with the given dispatcher type and initializers as well as its contained entities.
-    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt initializers entities =
+    /// Describe an entity with the given dispatcher type and initialization as well as its contained entities.
+    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt initializations entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let mutable entityContentsOpt = null
-        for property in initializers do
-            match property with
+        for initialization in initializations do
+            match initialization with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
@@ -373,123 +373,123 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
 
-    /// Describe an entity with the given dispatcher type and initializers as well as its contained entities.
-    let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers entities =
-        composite4<'entityDispatcher> entityName None initializers entities
+    /// Describe an entity with the given dispatcher type and initialization as well as its contained entities.
+    let composite<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializations entities =
+        composite4<'entityDispatcher> entityName None initializations entities
 
-    /// Describe an entity with the given dispatcher type and initializers as well as its contained entities.
-    let compositeFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath initializers entities =
-        composite4<'entityDispatcher> entityName (Some filePath) initializers entities
+    /// Describe an entity with the given dispatcher type and initializations as well as its contained entities.
+    let compositeFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath initializations entities =
+        composite4<'entityDispatcher> entityName (Some filePath) initializations entities
 
-    /// Describe an entity with the given dispatcher type and initializers.
-    let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializers =
-        composite<'entityDispatcher> entityName initializers []
+    /// Describe an entity with the given dispatcher type and initializations.
+    let entity<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName initializations =
+        composite<'entityDispatcher> entityName initializations []
 
-    /// Describe an entity with the given dispatcher type and initializers.
-    let entityFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath initializers =
-        compositeFromFile<'entityDispatcher> entityName filePath initializers []
+    /// Describe an entity with the given dispatcher type and initializations.
+    let entityFromFile<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName filePath initializations =
+        compositeFromFile<'entityDispatcher> entityName filePath initializations []
 
-    /// Describe a 2d effect with the given initializers.
-    let effect2d entityName initializers = entity<Effect2dDispatcher> entityName initializers
+    /// Describe a 2d effect with the given initializations.
+    let effect2d entityName initializations = entity<Effect2dDispatcher> entityName initializations
 
-    /// Describe a static sprite with the given initializers.
-    let staticSprite entityName initializers = entity<StaticSpriteDispatcher> entityName initializers
+    /// Describe a static sprite with the given initializations.
+    let staticSprite entityName initializations = entity<StaticSpriteDispatcher> entityName initializations
 
-    /// Describe an animated sprite with the given initializers.
-    let animatedSprite entityName initializers = entity<AnimatedSpriteDispatcher> entityName initializers
+    /// Describe an animated sprite with the given initializations.
+    let animatedSprite entityName initializations = entity<AnimatedSpriteDispatcher> entityName initializations
 
-    /// Describe a basic static sprite emitter with the given initializers.
-    let basicStaticSpriteEmitter entityName initializers = entity<BasicStaticSpriteEmitterDispatcher> entityName initializers
+    /// Describe a basic static sprite emitter with the given initializations.
+    let basicStaticSpriteEmitter entityName initializations = entity<BasicStaticSpriteEmitterDispatcher> entityName initializations
 
-    /// Describe an association of gui entities with the given initializers and content.
-    let association entityName initializers content = composite<GuiDispatcher> entityName initializers content
+    /// Describe an association of gui entities with the given initializations and content.
+    let association entityName initializations content = composite<GuiDispatcher> entityName initializations content
 
-    /// Describe a panel with the given initializers and content.
-    let panel entityName initializers content = composite<LabelDispatcher> entityName initializers content
+    /// Describe a panel with the given initializations and content.
+    let panel entityName initializations content = composite<LabelDispatcher> entityName initializations content
 
-    /// Describe a text with the given initializers.
-    let text entityName initializers = entity<TextDispatcher> entityName initializers
+    /// Describe a text with the given initializations.
+    let text entityName initializations = entity<TextDispatcher> entityName initializations
 
-    /// Describe a label with the given initializers.
-    let label entityName initializers = entity<LabelDispatcher> entityName initializers
+    /// Describe a label with the given initializations.
+    let label entityName initializations = entity<LabelDispatcher> entityName initializations
 
-    /// Describe a button with the given initializers.
-    let button entityName initializers = entity<ButtonDispatcher> entityName initializers
+    /// Describe a button with the given initializations.
+    let button entityName initializations = entity<ButtonDispatcher> entityName initializations
 
-    /// Describe a toggle button with the given initializers.
-    let toggleButton entityName initializers = entity<ToggleButtonDispatcher> entityName initializers
+    /// Describe a toggle button with the given initializations.
+    let toggleButton entityName initializations = entity<ToggleButtonDispatcher> entityName initializations
 
-    /// Describe a radio button with the given initializers.
-    let radioButton entityName initializers = entity<RadioButtonDispatcher> entityName initializers
+    /// Describe a radio button with the given initializations.
+    let radioButton entityName initializations = entity<RadioButtonDispatcher> entityName initializations
 
-    /// Describe a fill bar with the given initializers.
-    let fillBar entityName initializers = entity<FillBarDispatcher> entityName initializers
+    /// Describe a fill bar with the given initializations.
+    let fillBar entityName initializations = entity<FillBarDispatcher> entityName initializations
 
-    /// Describe a feeler with the given initializers.
-    let feeler entityName initializers = entity<FeelerDispatcher> entityName initializers
+    /// Describe a feeler with the given initializations.
+    let feeler entityName initializations = entity<FeelerDispatcher> entityName initializations
 
-    /// Describe an fps gui with the given initializers.
-    let fps entityName initializers = entity<FpsDispatcher> entityName initializers
+    /// Describe an fps gui with the given initializations.
+    let fps entityName initializations = entity<FpsDispatcher> entityName initializations
 
-    /// Describe a 2d block with the given initializers.
-    let block2d entityName initializers = entity<Block2dDispatcher> entityName initializers
+    /// Describe a 2d block with the given initializations.
+    let block2d entityName initializations = entity<Block2dDispatcher> entityName initializations
 
-    /// Describe a 2d box with the given initializers.
-    let box2d entityName initializers = entity<Box2dDispatcher> entityName initializers
+    /// Describe a 2d box with the given initializations.
+    let box2d entityName initializations = entity<Box2dDispatcher> entityName initializations
 
-    /// Describe a 2d character with the given initializers.
-    let character2d entityName initializers = entity<Character2dDispatcher> entityName initializers
+    /// Describe a 2d character with the given initializations.
+    let character2d entityName initializations = entity<Character2dDispatcher> entityName initializations
 
-    /// Describe a tile map with the given initializers.
-    let tileMap entityName initializers = entity<TileMapDispatcher> entityName initializers
+    /// Describe a tile map with the given initializations.
+    let tileMap entityName initializations = entity<TileMapDispatcher> entityName initializations
 
-    /// Describe a tmx map with the given initializers.
-    let tmxMap entityName initializers = entity<TmxMapDispatcher> entityName initializers
+    /// Describe a tmx map with the given initializations.
+    let tmxMap entityName initializations = entity<TmxMapDispatcher> entityName initializations
 
-    /// Describe a 3d light probe with the given initializers.
-    let lightProbe3d entityName initializers = entity<LightProbe3dDispatcher> entityName initializers
+    /// Describe a 3d light probe with the given initializations.
+    let lightProbe3d entityName initializations = entity<LightProbe3dDispatcher> entityName initializations
 
-    /// Describe a 3d light with the given initializers.
-    let light3d entityName initializers = entity<Light3dDispatcher> entityName initializers
+    /// Describe a 3d light with the given initializations.
+    let light3d entityName initializations = entity<Light3dDispatcher> entityName initializations
 
-    /// Describe a sky box with the given initializers.
-    let skyBox entityName initializers = entity<SkyBoxDispatcher> entityName initializers
+    /// Describe a sky box with the given initializations.
+    let skyBox entityName initializations = entity<SkyBoxDispatcher> entityName initializations
 
-    /// Describe a static billboard with the given initializers.
-    let staticBillboard entityName initializers = entity<StaticBillboardDispatcher> entityName initializers
+    /// Describe a static billboard with the given initializations.
+    let staticBillboard entityName initializations = entity<StaticBillboardDispatcher> entityName initializations
 
-    /// Describe a basic static billboard emitter with the given initializers.
-    let basicStaticBillboardEmitter entityName initializers = entity<BasicStaticSpriteEmitterDispatcher> entityName initializers
+    /// Describe a basic static billboard emitter with the given initializations.
+    let basicStaticBillboardEmitter entityName initializations = entity<BasicStaticSpriteEmitterDispatcher> entityName initializations
 
-    /// Describe a static model with the given initializers.
-    let staticModel entityName initializers = entity<StaticModelDispatcher> entityName initializers
+    /// Describe a static model with the given initializations.
+    let staticModel entityName initializations = entity<StaticModelDispatcher> entityName initializations
 
-    /// Describe a static model surface with the given initializers.
-    let staticModelSurface entityName initializers = entity<StaticModelSurfaceDispatcher> entityName initializers
+    /// Describe a static model surface with the given initializations.
+    let staticModelSurface entityName initializations = entity<StaticModelSurfaceDispatcher> entityName initializations
 
-    /// Describe an animated model with the given initializers.
-    let animatedModel entityName initializers = entity<AnimatedModelDispatcher> entityName initializers
+    /// Describe an animated model with the given initializations.
+    let animatedModel entityName initializations = entity<AnimatedModelDispatcher> entityName initializations
 
-    /// Describe a 3d character with the given initializers.
-    let character3d entityName initializers = entity<Character3dDispatcher> entityName initializers
+    /// Describe a 3d character with the given initializations.
+    let character3d entityName initializations = entity<Character3dDispatcher> entityName initializations
 
-    /// Describe a terrain with the given initializers.
-    let terrain entityName initializers = entity<TerrainDispatcher> entityName initializers
+    /// Describe a terrain with the given initializations.
+    let terrain entityName initializations = entity<TerrainDispatcher> entityName initializations
 
-    /// Describe a static model expanded into an entity hierarchy with the given initializers.
-    let staticModelHierarchy entityName initializers = entity<StaticModelHierarchyDispatcher> entityName initializers
+    /// Describe a static model expanded into an entity hierarchy with the given initializations.
+    let staticModelHierarchy entityName initializations = entity<StaticModelHierarchyDispatcher> entityName initializations
 
-    /// Describe a rigid model expanded into an entity hierarchy with the given initializers.
-    let rigidModelHierarchy entityName initializers = entity<RigidModelHierarchyDispatcher> entityName initializers
+    /// Describe a rigid model expanded into an entity hierarchy with the given initializations.
+    let rigidModelHierarchy entityName initializations = entity<RigidModelHierarchyDispatcher> entityName initializations
 
-    /// Describe a group with the given dispatcher type and initializers as well as its contained entities.
-    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializers entities =
+    /// Describe a group with the given dispatcher type and initializations as well as its contained entities.
+    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt initializations entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let mutable entityContentsOpt = null
-        for initializer in initializers do
-            match initializer with
+        for initialization in initializations do
+            match initialization with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
@@ -500,22 +500,22 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
 
-    /// Describe a group with the given dispatcher type and initializers as well as its contained entities.
-    let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializers entities =
-        group4<'groupDispatcher> groupName None initializers entities
+    /// Describe a group with the given dispatcher type and initializations as well as its contained entities.
+    let group<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName initializations entities =
+        group4<'groupDispatcher> groupName None initializations entities
 
-    /// Describe a group and its contained entities loaded from the given file with the given initializers.
-    let groupFromFile<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName filePath initializers entities =
-        group4<'groupDispatcher> groupName (Some filePath) initializers entities
+    /// Describe a group and its contained entities loaded from the given file with the given initializations.
+    let groupFromFile<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName filePath initializations entities =
+        group4<'groupDispatcher> groupName (Some filePath) initializations entities
 
-    /// Describe a screen with the given dispatcher type and initializers as well as its contained simulants.
-    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializers groups =
+    /// Describe a screen with the given dispatcher type and initializations as well as its contained simulants.
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt initializations groups =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let groupContents = OrderedDictionary StringComparer.Ordinal
-        for initializer in initializers do
-            match initializer with
+        for initialization in initializations do
+            match initialization with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
@@ -525,24 +525,24 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           GroupContents = groupContents }
 
-    /// Describe a screen with the given dispatcher type and initializers as well as its contained simulants.
-    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializers groups =
-        screen5<'screenDispatcher> screenName screenBehavior None initializers groups
+    /// Describe a screen with the given dispatcher type and initializations as well as its contained simulants.
+    let screen<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior initializations groups =
+        screen5<'screenDispatcher> screenName screenBehavior None initializations groups
 
-    /// Describe a screen with the given type and initializers with a group loaded from the given file.
-    let screenWithGroupFromFile<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePath initializers groups =
-        screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) initializers groups
+    /// Describe a screen with the given type and initializations with a group loaded from the given file.
+    let screenWithGroupFromFile<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePath initializations groups =
+        screen5<'screenDispatcher> screenName screenBehavior (Some groupFilePath) initializations groups
 
-    /// Describe a game with the given initializers as well as its contained simulants.
-    let game gameName initializers screens =
+    /// Describe a game with the given initializations as well as its contained simulants.
+    let game gameName initializations screens =
         ignore<string> gameName
         let initialScreenNameOpt = match Seq.tryHead screens with Some screen -> Some screen.ScreenName | None -> None
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
         let screenContents = OrderedDictionary StringComparer.Ordinal
-        for initializer in initializers do
-            match initializer with
+        for initialization in initializations do
+            match initialization with
             | EventSignalContent (addr, value) -> (if isNull eventSignalContentsOpt then eventSignalContentsOpt <- OrderedDictionary HashIdentity.Structural); eventSignalContentsOpt.Add ((addr, value), makeGuid ())
             | EventHandlerContent ehf -> (if isNull eventHandlerContentsOpt then eventHandlerContentsOpt <- OrderedDictionary HashIdentity.Structural); eventHandlerContentsOpt.Add ((UpdateLateBindingsCount, ehf.Equatable), (makeGuid (), ehf.Nonequatable))
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
@@ -555,20 +555,20 @@ module Content =
 [<AutoOpen>]
 module ContentOperators =
 
-    /// Define a property initializer.
+    /// Define a static property equality.
     let
 #if !DEBUG
         inline
 #endif
-        (==) (lens : Lens<'a, 's>) (value : 'a) : InitializerContent =
+        (==) (lens : Lens<'a, 's>) (value : 'a) : InitializationContent =
         PropertyContent (PropertyContent.make true lens value)
 
-    /// Define a property synchronizer.
+    /// Define a dynamic property equality.
     let
 #if !DEBUG
         inline
 #endif
-        (:=) (lens : Lens<'a, 's>) (value : 'a) : InitializerContent =
+        (:=) (lens : Lens<'a, 's>) (value : 'a) : InitializationContent =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define an event signal.
@@ -576,7 +576,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=>) (eventAddress : 'a Address) (signal : Signal) : InitializerContent =
+        (=>) (eventAddress : 'a Address) (signal : Signal) : InitializationContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define an event handler.
@@ -584,5 +584,5 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : InitializerContent =
+        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : InitializationContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
