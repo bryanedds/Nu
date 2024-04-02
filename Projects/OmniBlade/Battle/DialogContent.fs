@@ -36,12 +36,12 @@ module DialogContent =
                         | DialogNarration -> Justified (JustifyCenter, JustifyMiddle)
                      Entity.TextMargin == v2 30.0f 30.0f]
                     [Content.button "Left"
-                        [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f
+                        [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
                          Entity.VisibleLocal := Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
                          Entity.Text := match dialog.DialogPromptOpt with Some ((promptText, _), _) -> promptText | None -> ""
                          Entity.ClickEvent => promptLeft]
                      Content.button "Right"
-                        [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.ElevationLocal == 2.0f
+                        [Entity.PositionLocal == v3 486.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
                          Entity.VisibleLocal := Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
                          Entity.Text := match dialog.DialogPromptOpt with Some (_, (promptText, _)) -> promptText | None -> ""
                          Entity.ClickEvent => promptRight]]

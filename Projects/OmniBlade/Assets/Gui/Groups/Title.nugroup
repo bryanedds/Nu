@@ -16,15 +16,18 @@
   [ButtonDispatcher
    [[Name Play]
     [Position [-96 -48 0]]
+    [Size [192 48 0]]
     [Text Play]]
    []]
   [ButtonDispatcher
    [[Name Credits]
     [Position [-96 -114 0]]
+    [Size [192 48 0]]
     [Text Credits]]
    []]
   [ButtonDispatcher
    [[Name Exit]
     [Position [-96 -180 0]]
+    [Size [192 48 0]]
     [Text Exit]]
    []]]]

@@ -6,6 +6,7 @@
  [[ButtonDispatcher
    [[Name Back]
     [Position [-96 -240 0]]
+    [Size [192 48 0]]
     [Text Back]]
    []]
   [TextDispatcher
