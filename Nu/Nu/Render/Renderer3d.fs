@@ -2163,9 +2163,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         (renderbuffer : uint)
         (framebuffer : uint) =
 
-        // constrain geometry viewport to exterior (TODO: try to remember why I did this...)
-        let geometryViewport = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, geometryViewport.Bounds)
-
         // compute geometry frustum
         let geometryFrustum = geometryViewport.Frustum (eyeCenter, eyeRotation)
 
