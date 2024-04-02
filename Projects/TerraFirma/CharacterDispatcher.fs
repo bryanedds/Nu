@@ -36,7 +36,7 @@ module CharacterDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initialize (character, _) =
+        override this.Definitions (character, _) =
             [Entity.Size == v3Dup 2.0f
              Entity.Offset == v3 0.0f 1.0f 0.0f
              Entity.BodyType == KinematicCharacter

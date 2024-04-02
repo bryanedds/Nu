@@ -43,8 +43,8 @@ module Gameplay =
     type GameplayDispatcher () =
         inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit })
 
-        // here we define the screen's properties and event handling
-        override this.Initialize (_, _) =
+        // here we define the screen's property values and event handling
+        override this.Definitions (_, _) =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer

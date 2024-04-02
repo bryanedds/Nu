@@ -40,7 +40,7 @@ module MyGame =
         inherit GameDispatcher<Model, Message, Command> (Splash)
 
         // here we define the game's properties and event handling
-        override this.Initialize (model, _) =
+        override this.Definitions (model, _) =
             [Game.DesiredScreen :=
                 match model with
                 | Splash -> Desire Simulants.Splash

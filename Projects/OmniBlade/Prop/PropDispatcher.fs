@@ -21,7 +21,7 @@ module PropDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initialize (propPlus, entity) =
+        override this.Definitions (propPlus, entity) =
             [entity.Perimeter := propPlus.Prop.Perimeter
              entity.BodyType == Static
              entity.Friction == 0.0f

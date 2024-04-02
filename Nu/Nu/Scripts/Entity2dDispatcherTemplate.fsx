@@ -44,7 +44,7 @@ module Template2dDispatcher =
         static member Facets =
             [typeof<StaticSpriteFacet>]
 
-        override this.Initialize (template, entity) =
+        override this.Definitions (template, entity) =
             [Entity.StaticImage := template.StaticImage
              Entity.UpdateEvent => Update
              Entity.UnregisteringEvent => Unregistering]

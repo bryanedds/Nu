@@ -36,7 +36,7 @@ module BattleDispatcher =
                 world)
                 screen world
 
-        override this.Initialize (_, _) =
+        override this.Definitions (_, _) =
             [Screen.UpdateEvent => Update
              Screen.PostUpdateEvent => UpdateEye
              Screen.TimeUpdateEvent => TimeUpdate

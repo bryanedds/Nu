@@ -20,7 +20,7 @@ module BulletDispatcher =
             [typeof<RigidBodyFacet>
              typeof<StaticSpriteFacet>]
 
-        override this.Initialize (_, _) =
+        override this.Definitions (_, _) =
             [Entity.Size == v3 16.0f 16.0f 0.0f
              Entity.Presence == Omnipresent
              Entity.Substance == Density 0.1f

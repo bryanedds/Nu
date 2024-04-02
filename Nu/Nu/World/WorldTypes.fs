@@ -648,8 +648,8 @@ and [<ReferenceEquality>] PropertyContent =
           PropertyLens = lens
           PropertyValue = value }
 
-/// Describes initialization to the MMCC content system.
-and [<ReferenceEquality>] InitializationContent =
+/// Describes definition content to the MMCC content system.
+and [<ReferenceEquality>] DefinitionContent =
     | PropertyContent of PropertyContent
     | EventSignalContent of obj Address * obj
     | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>

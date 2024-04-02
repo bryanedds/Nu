@@ -60,7 +60,7 @@ module CharacterDispatcher =
                 | None -> None
             else None
 
-        override this.Initialize (characterPlus, _) =
+        override this.Definitions (characterPlus, _) =
             let character = characterPlus.Character
             [Entity.Presence == Omnipresent
              Entity.Perimeter := character.Perimeter

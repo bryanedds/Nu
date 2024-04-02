@@ -43,7 +43,7 @@ module PlayerDispatcher =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
-        override this.Initialize (_, _) =
+        override this.Definitions (_, _) =
             [Entity.Size == v3 24.0f 48.0f 0.0f
              Entity.Presence == Omnipresent
              Entity.AngularFactor == v3Zero

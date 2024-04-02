@@ -44,7 +44,7 @@ module FieldDispatcher =
                 true
             else false
 
-        override this.Initialize (_, _) =
+        override this.Definitions (_, _) =
             [Screen.UpdateEvent => Update
              Screen.UpdateEvent => ProcessKeyInput
              Screen.PostUpdateEvent => UpdateFieldTransition

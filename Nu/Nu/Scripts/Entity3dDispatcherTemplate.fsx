@@ -44,7 +44,7 @@ module Template3dDispatcher =
         static member Facets =
             [typeof<StaticModelFacet>]
 
-        override this.Initialize (template, entity) =
+        override this.Definitions (template, entity) =
             [Entity.StaticModel := template.StaticModel
              Entity.UpdateEvent => Update
              Entity.UnregisteringEvent => Unregistering]

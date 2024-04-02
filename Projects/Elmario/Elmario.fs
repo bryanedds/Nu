@@ -22,7 +22,7 @@ type ElmarioDispatcher () =
     inherit GameDispatcher<unit, Message, Command> (())
 
     // here we define the game's properties and event handling
-    override this.Initialize (_, _) =
+    override this.Definitions (_, _) =
         [Game.UpdateEvent => Update
          Game.KeyboardKeyDownEvent =|> fun evt ->
             if evt.Data.KeyboardKey = KeyboardKey.Up && not evt.Data.Repeated

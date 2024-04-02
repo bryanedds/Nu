@@ -39,7 +39,7 @@ module Gameplay =
 
         static let [<Literal>] SectionCount = 12
 
-        override this.Initialize (_, _) =
+        override this.Definitions (_, _) =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => UpdateEye

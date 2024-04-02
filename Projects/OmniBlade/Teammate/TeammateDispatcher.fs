@@ -75,7 +75,7 @@ module TeammateDispatcher =
             [typeof<TextFacet>
              typeof<ButtonFacet>]
 
-        override this.Initialize (teammate, _) =
+        override this.Definitions (teammate, _) =
             [Entity.Text := teammate.Name
              Entity.TextColor == Color.White
              Entity.TextDisabledColor == color8Dup (byte 192) // TODO: make constant?

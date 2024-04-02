@@ -1832,9 +1832,9 @@ module EntityDispatcherModule2 =
         override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
             let model = this.GetModel entity world
-            let initializations = this.Initialize (model, entity)
+            let definitions = this.Definitions (model, entity)
             let entities = this.Content (model, entity)
-            let content = Content.composite entity.Name initializations entities
+            let content = Content.composite entity.Name definitions entities
             let world = Content.synchronizeEntity initializing contentOld content entity entity world
             World.setEntityContent content entity world
 
@@ -1850,9 +1850,9 @@ module EntityDispatcherModule2 =
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
 
-        /// Initialize the game's own equalities.
-        abstract Initialize : 'model * Entity -> InitializationContent list
-        default this.Initialize (_, _) = []
+        /// The entity's own MMCC definitions.
+        abstract Definitions : 'model * Entity -> DefinitionContent list
+        default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
         abstract Message : 'model * 'message * Entity * World -> Signal list * 'model
@@ -2131,9 +2131,9 @@ module GroupDispatcherModule =
         override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
             let model = this.GetModel group world
-            let initializations = this.Initialize (model, group)
+            let definitions = this.Definitions (model, group)
             let entities = this.Content (model, group)
-            let content = Content.group group.Name initializations entities
+            let content = Content.group group.Name definitions entities
             let world = Content.synchronizeGroup initializing contentOld content group group world
             World.setGroupContent content group world
 
@@ -2149,9 +2149,9 @@ module GroupDispatcherModule =
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
 
-        /// Initialize the group's own properties.
-        abstract Initialize : 'model * Group -> InitializationContent list
-        default this.Initialize (_, _) = []
+        /// The group's own MMCC definitions.
+        abstract Definitions : 'model * Group -> DefinitionContent list
+        default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
         abstract Message : 'model * 'message * Group * World -> Signal list * 'model
@@ -2303,9 +2303,9 @@ module ScreenDispatcherModule =
         override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
             let model = this.GetModel screen world
-            let initializations = this.Initialize (model, screen)
+            let definitions = this.Definitions (model, screen)
             let group = this.Content (model, screen)
-            let content = Content.screen screen.Name Vanilla initializations group
+            let content = Content.screen screen.Name Vanilla definitions group
             let world = Content.synchronizeScreen initializing contentOld content screen screen world
             World.setScreenContent content screen world
 
@@ -2321,9 +2321,9 @@ module ScreenDispatcherModule =
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
 
-        /// Initialize the screen's own equalities.
-        abstract Initialize : 'model * Screen -> InitializationContent list
-        default this.Initialize (_, _) = []
+        /// The screen's own MMCC definitions.
+        abstract Definitions : 'model * Screen -> DefinitionContent list
+        default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
         abstract Message : 'model * 'message * Screen * World -> Signal list * 'model
@@ -2419,9 +2419,9 @@ module GameDispatcherModule =
         static let synchronize initializing game world (this : GameDispatcher<'model, 'message, 'command>) =
             let contentOld = World.getGameContent game world
             let model = this.GetModel game world
-            let initializations = this.Initialize (model, game)
+            let definitions = this.Definitions (model, game)
             let screens = this.Content (model, game)
-            let content = Content.game game.Name initializations screens
+            let content = Content.game game.Name definitions screens
             let (initialScreenOpt, world) = Content.synchronizeGame World.setScreenSlide initializing contentOld content game game world
             (initialScreenOpt, World.setGameContent content game world)
 
@@ -2494,9 +2494,9 @@ module GameDispatcherModule =
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
 
-        /// Initialize the game's own equalities.
-        abstract Initialize : 'model * Game -> InitializationContent list
-        default this.Initialize (_, _) = []
+        /// The game own MMCC definitions.
+        abstract Definitions : 'model * Game -> DefinitionContent list
+        default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
         abstract Message : 'model * 'message * Game * World -> Signal list * 'model

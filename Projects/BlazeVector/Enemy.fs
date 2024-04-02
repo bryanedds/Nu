@@ -33,7 +33,7 @@ module EnemyDispatcher =
             [typeof<RigidBodyFacet>
              typeof<AnimatedSpriteFacet>]
 
-        override this.Initialize (_, _) =
+        override this.Definitions (_, _) =
             [Entity.Size == v3 24.0f 48.0f 0.0f
              Entity.Friction == 0.0f
              Entity.AngularFactor == v3Zero

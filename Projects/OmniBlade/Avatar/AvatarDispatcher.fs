@@ -26,7 +26,7 @@ module AvatarDispatcher =
         static member Facets =
             [typeof<RigidBodyFacet>]
 
-        override this.Initialize (avatar, _) =
+        override this.Definitions (avatar, _) =
             let bodyShape =
                 BodyShapes
                     [SphereShape { Radius = 0.172f; TransformOpt = Some (Affine.makeTranslation (v3 -0.013f -0.355f 0.0f)); PropertiesOpt = Some { BodyShapeProperties.empty with BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex }}
