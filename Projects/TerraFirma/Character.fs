@@ -199,7 +199,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             | NormalState ->
                 let positionFlat = position.WithY 0.0f
                 let playerPositionFlat = playerPosition.WithY 0.0f
-                if  Vector3.Distance (playerPosition, position) < 1.5f &&
+                if  Vector3.Distance (playerPosition, position) < 1.75f &&
                     rotation.Forward.AngleBetween (playerPositionFlat - positionFlat) < 0.2f && 
                     playerPosition.Y - position.Y < 1.3f &&
                     position.Y - playerPosition.Y < 0.8f then

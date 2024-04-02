@@ -609,8 +609,13 @@ module WorldScreenModule =
                     // ground. Additionally, consider removing the CellHeight offset in the above query so
                     // that we don't need to do an offset here at all.
                     let navLinearVelocity = navPosition - position
-                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
-                    { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
+                    if navLinearVelocity.WithY(0.0f).Magnitude < 0.0001f then
+                        let navDirection = destination - position
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                        { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                    else
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
+                        { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->
                     let navDirection = destination - position
                     let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
