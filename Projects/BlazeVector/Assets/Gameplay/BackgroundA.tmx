@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-down" width="32" height="9" tilewidth="64" tileheight="64" infinite="0" nextlayerid="3" nextobjectid="1">
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="32" height="13" tilewidth="64" tileheight="64" infinite="0" nextlayerid="3" nextobjectid="1">
  <tileset firstgid="1" name="SkylineTileSet" tilewidth="64" tileheight="64" tilecount="256" columns="16">
   <properties>
    <property name="Image" value="[Gameplay SkylineTileSet]"/>
   </properties>
   <image source="SkylineTileSet.bmp" width="1024" height="1024"/>
  </tileset>
- <layer id="1" name="Scenery" width="32" height="9" parallaxx="0.25">
+ <layer id="1" name="Scenery" width="32" height="13" parallaxx="0.25">
   <data encoding="base64" compression="zlib">
-   eJyty9cilgEAANDfI8ueJRlFmzIjyWwKmUWZKRVCNgkZieyMzjv4Ls7lCQ+FQheIIJIoookhljjiSSCRJJK5yCXCz/lTuEwqV0gjnQwyuco1ssjmOje4ya0A/m3ucJcccrnHffLIp4BCiijmASWUBvAfUsYjynlMBZVUUU0NtTzhKc94zosA/kvqeEU9DTTymiaaaaGVNtp5w1s6AvidvOM9XXTTQy999POBAT7yiUE+8yWA/5UhhhnhG6OMMc53JphkimlmmGUugD/PAj9Y5CdLLLPCL1ZZY50NfrPJnwD+Ftv8ZYdd9tjngEOO+McxJ5xyRijs/P8/GC7Nkw==
+   eJzty9c60AEcANBfb+aVpFKkoWWUQoV2iCjtIpRZ2pukqBClIiNC5LyD//d14+JcntSIlPWksYGNbCKdzWwhg0y2ksU2trOD1NX/8MMPP/zwww8//PDDDz/88MMPP1b7d5LNLnazh73sI4dc8shnPwco4CCHEviFFFHMYY5wlBJKKeMYxznBSU5xmjMJ/LOUU0El56iimvPUUMsFLlLHJS5zJYF/lWtc5wY3uUU9DdymkSaaucNdWmhN4LfRTged3OM+XTzgIY94zBOe8oznvEjgv+QVr3lDNz28pZd39PGeD/QzwEc+JfA/M8gQw3xhhFG+8o0xvvODn4wzwa8E/iRTTDPDb2aZ4w/zLLDIX5ZY5h+xLpm/5v9ZAT/1PxI=
   </data>
  </layer>
- <layer id="2" name="Buildings" width="32" height="9" parallaxx="0.5">
+ <layer id="2" name="Buildings" width="32" height="13" parallaxx="0.5">
   <data encoding="base64" compression="zlib">
-   eJztjV0KgCAQhO0PCgpKvUDmBVLvf7ZWWGESHyToqT4YdmdnXYW405F6UUdDaivfpN0n/7zNRpLca9JYmCcfcwUeGbhK2ME7Kss1+51kuLekuTBPPuYHeGTiamAH7xxZbtmfJMd9IK2FefIx9+CRhauDHbzjszyIn69zAcXmBzA=
+   eJztjV0KgCAQhO0PCgpKu0DqBVLvf7ZWWGEQHyToKT8YdmdnXYVoIANprNztSH3lm7T75p+vOUiS+5M0F+bJx1yBRyauEnbwjsryk/1F0txb0lqYJx9zAx5ZuGrYwTsmyy37m+S4D6S9ME8+5h48snF1sIN3fJYH0Wj8mwf3Twcw
   </data>
  </layer>
 </map>

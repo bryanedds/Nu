@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" width="32" height="9" tilewidth="64" tileheight="64">
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="32" height="13" tilewidth="64" tileheight="64" infinite="0" nextlayerid="5" nextobjectid="1">
  <tileset firstgid="1" source="RoadTileSet.tsx"/>
- <layer name="Road" width="32" height="9">
+ <layer id="1" name="Road" width="32" height="13">
   <properties>
    <property name="C" value=""/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2DkAkMoNqKxPcZIdiFjRyh2orH9zkh2IeNAJExLEIgDAwBDZAbi
+   eJxjYBgFo2AUjFRgCMVGNLbHGMkuZOwIxU40tt8ZyS5kHIiEaQkCicAj0X4As/sMlA==
   </data>
  </layer>
- <layer name="Grass" width="32" height="9">
+ <layer id="2" name="Grass" width="32" height="13">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFo2AUDBQohOISGttTimQXMm6E4hYaugFkdyuSXcgYAPipCXo=
+   eJxjYBgFo2AUjIKBAYVQXEJje0qR7ELGjVDcQkM3gOxuRbILF6aFG4i1mxZuIMZuAN25F3I=
   </data>
  </layer>
- <layer name="Chains" width="32" height="9">
+ <layer id="3" name="Chains" width="32" height="13">
   <data encoding="base64" compression="zlib">
-   eJxjYEAAZijNgkSzIInjU8eAxEbGyOqZ0dShg8FoP7q+oWA/uhi6flLtJ0UdIb0woIJHjpBeYtQRa8YoGFgAAHKhARg=
+   eJxjYEAAZijNgkSzIInjU8eAxEbGyOqZ0dShg1H7B5/96PqGgv3oYuj6SbWfFHWE9MKACh45QnqJUUesGaNgFAwkAAAfJQGG
   </data>
  </layer>
- <layer name="Platforms" width="32" height="9">
+ <layer id="4" name="Platforms" width="32" height="13">
   <data encoding="base64" compression="zlib">
-   eJxjYBgFtACSSGxRIBYDYnESzYDpI0WvJGElBO0jZBcnmnpy/EaJO0fB8AEADNABiQ==
+   eJxjYBgFo4D6QBKJLQrEYkAsTqIZMH2k6JUkrISgfYTs4kRTT47fKHHnKBgFwwUAAJbfAYk=
   </data>
  </layer>
 </map>

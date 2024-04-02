@@ -5,18 +5,18 @@
   [Visible True]]
  [[TileMapDispatcher
    [[Elevation -8]
-    [Size [1024 288 0]]
+    [Size [1024 416 0]]
     [TileMap [Gameplay BackgroundA]]
     [TileSizeDivisor 2]]
    []]
   [TileMapDispatcher
    [[Elevation -4]
-    [Size [1024 288 0]]
+    [Size [1024 416 0]]
     [TileMap [Gameplay BackgroundB]]
     [TileSizeDivisor 2]]
    []]
   [TileMapDispatcher
-   [[Size [1024 288 0]]
+   [[Size [1024 416 0]]
     [TileMap [Gameplay Section1TileMap]]
     [TileSizeDivisor 2]]
    []]
