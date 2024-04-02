@@ -36,11 +36,11 @@ type ActionState =
     | WoundedState
 
 type [<ReferenceEquality; SymbolicExpansion>] Character =
-    { PositionPrevious : Vector3 Queue
+    { CharacterType : CharacterType
+      PositionPrevious : Vector3 Queue
       RotationPrevious : Quaternion Queue
       LinearVelocityPrevious : Vector3 Queue
       AngularVelocityPrevious : Vector3 Queue
-      CharacterType : CharacterType
       HitPoints : int
       ActionState : ActionState
       JumpState : JumpState
@@ -199,12 +199,13 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | Enemy ->
             match character.ActionState with
             | NormalState ->
+                let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
                 let positionFlat = position.WithY 0.0f
                 let playerPositionFlat = playerPosition.WithY 0.0f
                 if  Vector3.Distance (playerPosition, position) < 1.75f &&
-                    rotation.Forward.AngleBetween (playerPositionFlat - positionFlat) < 0.2f && 
+                    rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.2f && 
                     playerPosition.Y - position.Y < 1.3f &&
-                    position.Y - playerPosition.Y < 0.8f then
+                    position.Y - playerPosition.Y < 1.3f then
                     { character with ActionState = AttackState (AttackState.make time) }
                 else character
             | _ -> character
@@ -294,11 +295,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         (soundOpt, animations, attackedCharacters, position, rotation, character)
 
     static member initial characterType =
-        { PositionPrevious = Queue.empty
+        { CharacterType = characterType
+          PositionPrevious = Queue.empty
           RotationPrevious = Queue.empty
           LinearVelocityPrevious = Queue.empty
           AngularVelocityPrevious = Queue.empty
-          CharacterType = characterType
           HitPoints = 5
           ActionState = NormalState
           JumpState = JumpState.initial

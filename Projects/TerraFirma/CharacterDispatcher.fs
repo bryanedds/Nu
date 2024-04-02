@@ -142,18 +142,16 @@ module CharacterDispatcher =
             | SyncWeaponTransform ->
                 let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
                 let weapon = entity / Constants.Gameplay.CharacterWeaponName
-                match (animatedModel.GetBoneOffsetsOpt world, animatedModel.GetBoneTransformsOpt world) with
-                | (Some offsets, Some transforms) when weapon.Exists world ->
+                match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
+                | Some weaponHandBoneTransform ->
                     let weaponTransform =
-                        Matrix4x4.CreateTranslation (v3 0.0f 0.0f 0.02f) *
+                        Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
                         Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
-                        offsets.[Constants.Gameplay.CharacterWeaponHandBoneIndex].Inverted *
-                        transforms.[Constants.Gameplay.CharacterWeaponHandBoneIndex] *
-                        animatedModel.GetAffineMatrix world
+                        weaponHandBoneTransform
                     let world = weapon.SetPosition weaponTransform.Translation world
                     let world = weapon.SetRotation weaponTransform.Rotation world
                     just world
-                | (_, _) -> just world
+                | None -> just world
 
             | PublishCharactersAttacked attackedCharacters ->
                 let world =

@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Numerics
 open ImGuiNET
 open TiledSharp
@@ -2692,6 +2693,9 @@ module AnimatedModelFacetModule =
         member this.GetAnimatedModel world : AnimatedModel AssetTag = this.Get (nameof this.AnimatedModel) world
         member this.SetAnimatedModel (value : AnimatedModel AssetTag) world = this.Set (nameof this.AnimatedModel) value world
         member this.AnimatedModel = lens (nameof this.AnimatedModel) this this.GetAnimatedModel this.SetAnimatedModel
+        member this.GetBoneIdsOpt world : Dictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
+        member this.SetBoneIdsOpt (value : Dictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
+        member this.BoneIdsOpt = lens (nameof this.BoneIdsOpt) this this.GetBoneIdsOpt this.SetBoneIdsOpt
         member this.GetBoneOffsetsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneOffsetsOpt) world
         member this.SetBoneOffsetsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneOffsetsOpt) value world
         member this.BoneOffsetsOpt = lens (nameof this.BoneOffsetsOpt) this this.GetBoneOffsetsOpt this.SetBoneOffsetsOpt
@@ -2699,15 +2703,35 @@ module AnimatedModelFacetModule =
         member this.SetBoneTransformsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneTransformsOpt) value world
         member this.BoneTransformsOpt = lens (nameof this.BoneTransformsOpt) this this.GetBoneTransformsOpt this.SetBoneTransformsOpt
 
+        /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
+        member this.TryGetBoneTransformByName boneName world =
+            match this.GetBoneIdsOpt world with
+            | Some ids ->
+                match ids.TryGetValue boneName with
+                | (true, boneIndex) -> this.TryGetBoneTransformByIndex boneIndex world
+                | (false, _) -> None
+            | None -> None
+
+        /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
+        member this.TryGetBoneTransformByIndex boneIndex world =
+            match (this.GetBoneOffsetsOpt world, this.GetBoneTransformsOpt world) with
+            | (Some offsets, Some transforms) ->
+                let transform =
+                    offsets.[boneIndex].Inverted *
+                    transforms.[boneIndex] *
+                    this.GetAffineMatrix world
+                Some transform
+            | (_, _) -> None
+
     /// Augments an entity with an animated model.
     type AnimatedModelFacet () =
         inherit Facet (false)
 
-        static let tryComputeBoneOffsetsAndTransforms time animations (sceneOpt : Assimp.Scene option) =
+        static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
-                let (boneOffsets, boneTransforms) = scene.ComputeBoneOffsetsAndTransforms (time, animations, scene.Meshes.[0])
-                Some (boneOffsets, boneTransforms)
+                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
+                Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
         static let tryAnimateBones (entity : Entity) (world : World) =
@@ -2715,8 +2739,9 @@ module AnimatedModelFacetModule =
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-            match tryComputeBoneOffsetsAndTransforms time animations sceneOpt with
-            | Some (boneOffsets, boneTransforms) ->
+            match tryComputeBoneTransforms time animations sceneOpt with
+            | Some (boneIds, boneOffsets, boneTransforms) ->
+                let world = entity.SetBoneIdsOpt (Some boneIds) world
                 let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
                 let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                 world
@@ -2728,6 +2753,7 @@ module AnimatedModelFacetModule =
              define Entity.MaterialProperties MaterialProperties.empty
              define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
              define Entity.AnimatedModel Assets.Default.AnimatedModel
+             nonPersistent Entity.BoneIdsOpt None
              nonPersistent Entity.BoneOffsetsOpt None
              nonPersistent Entity.BoneTransformsOpt None]
 
@@ -2748,18 +2774,19 @@ module AnimatedModelFacetModule =
             let animations = entity.GetAnimations world
             let animatedModel = entity.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-            let boneOffsetsAndTransformsOpt =
+            let resultOpt =
                 match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-                | Some (JobCompletion (_, _, (:? ((Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+                | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
                 | _ -> None
             let world =
-                match boneOffsetsAndTransformsOpt with
-                | Some (boneOffsets, boneTransforms) ->
+                match resultOpt with
+                | Some (boneIds, boneOffsets, boneTransforms) ->
+                    let world = entity.SetBoneIdsOpt (Some boneIds) world
                     let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
                     let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                     world
                 | None -> world
-            let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneOffsetsAndTransforms time animations sceneOpt)
+            let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneTransforms time animations sceneOpt)
             World.enqueueJob 1.0f job world
             world
 
