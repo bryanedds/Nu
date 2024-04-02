@@ -1900,7 +1900,7 @@ module EntityDispatcherModule2 =
             Entity2dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f)
+            [define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
 
     /// A gui entity dispatcher.
@@ -1914,7 +1914,7 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f)
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
@@ -1934,7 +1934,7 @@ module EntityDispatcherModule2 =
             Entity3dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size v3One]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
@@ -1948,7 +1948,7 @@ module EntityDispatcherModule2 =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, makeInitial)
 
         static member Properties =
-            [define Entity.Size (v3 4.0f 1.0f 1.0f)]
+            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =

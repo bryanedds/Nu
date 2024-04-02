@@ -18,7 +18,7 @@ module EntityDispatcherModule =
             Entity2dDispatcher (Constants.Engine.EntityPerimeterCentered2dDefault, physical)
 
         static member Properties =
-            [define Entity.Size (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f)
+            [define Entity.Size Constants.Engine.EntitySize2dDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
 
     /// A gui entity dispatcher.
@@ -29,7 +29,7 @@ module EntityDispatcherModule =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f)
+            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Absolute true
              define Entity.AlwaysUpdate true
@@ -49,7 +49,7 @@ module EntityDispatcherModule =
             Entity3dDispatcher (physical)
 
         static member Properties =
-            [define Entity.Size v3One]
+            [define Entity.Size Constants.Engine.EntitySize3dDefault]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
@@ -63,7 +63,7 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (false, true, false)
 
         static member Properties =
-            [define Entity.Size (v3 4.0f 1.0f 1.0f)]
+            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -93,7 +93,7 @@ module AnimatedSpriteDispatcherModule =
             [typeof<AnimatedSpriteFacet>]
 
         static member Properties =
-            [define Entity.CelSize (Vector2 Constants.Engine.Meter2d)
+            [define Entity.CelSize (Vector2 (32.0f, 32.0f))
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
@@ -121,8 +121,8 @@ module TextDispatcherModule =
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
                 | Some size -> AttributesInferred.important size.V3 v3Zero
-                | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
-            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+                | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module LabelDispatcherModule =

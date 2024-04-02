@@ -74,7 +74,7 @@ module StaticSpriteFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
             | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module AnimatedSpriteFacetModule =
@@ -124,7 +124,7 @@ module AnimatedSpriteFacetModule =
 
         static member Properties =
             [define Entity.StartTime GameTime.zero
-             define Entity.CelSize (Vector2 Constants.Engine.Meter2d)
+             define Entity.CelSize (Vector2 (32.0f, 32.0f))
              define Entity.CelCount 16
              define Entity.CelRun 4
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
@@ -337,7 +337,7 @@ module BasicStaticSpriteEmitterFacetModule =
              define Entity.ParticleLifeTimeMaxOpt (GameTime.ofSeconds 1.0f)
              define Entity.ParticleRate (match Constants.GameTime.DesiredFrameRate with StaticFrameRate _ -> 1.0f | DynamicFrameRate _ -> 60.0f)
              define Entity.ParticleMax 60
-             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f * 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
+             define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = Constants.Engine.ParticleSize2dDefault; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
              define Entity.EmitterConstraint Particles.Constraint.empty
              define Entity.EmitterStyle "BasicStaticSpriteEmitter"
              nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -477,7 +477,7 @@ module TextFacetModule =
                     world
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module BackdroppableFacetModule =
@@ -524,8 +524,8 @@ module BackdroppableFacetModule =
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
                 | Some size -> AttributesInferred.important size.V3 v3Zero
-                | None -> AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
-            | None -> AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
+                | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module LabelFacetModule =
@@ -565,7 +565,7 @@ module LabelFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
             | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module ButtonFacetModule =
@@ -674,7 +674,7 @@ module ButtonFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
             | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module ToggleButtonFacetModule =
@@ -801,7 +801,7 @@ module ToggleButtonFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
             | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module RadioButtonFacetModule =
@@ -923,7 +923,7 @@ module RadioButtonFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
             | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module FillBarFacetModule =
@@ -1024,7 +1024,7 @@ module FillBarFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
             | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important (v3 (4.0f * Constants.Engine.Meter2d) Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module FeelerFacetModule =
@@ -1108,7 +1108,7 @@ module FeelerFacetModule =
             else world
 
         override this.GetAttributesInferred (_, _) =
-            AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
+            AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
 
 [<AutoOpen>]
 module EffectFacetModule =
@@ -1662,7 +1662,7 @@ module TileMapFacetModule =
         override this.GetAttributesInferred (entity, world) =
             match TmxMap.tryGetTileMap (entity.GetTileMap world) with
             | Some tileMap -> TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tileMap
-            | None -> AttributesInferred.important (v3 Constants.Engine.Meter2d Constants.Engine.Meter2d 0.0f) v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntitySize2dDefault v3Zero
 
 [<AutoOpen>]
 module TmxMapFacetModule =
