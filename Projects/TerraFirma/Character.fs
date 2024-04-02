@@ -188,7 +188,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         
             // enemy traversal
             if character.ActionState = NormalState then
-                let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation playerPosition
+                let sphere = Sphere (playerPosition, 0.75f)
+                let nearest = sphere.Nearest position
+                let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation nearest
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
             else (position, rotation, v3Zero, v3Zero, character)
 

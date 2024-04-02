@@ -506,6 +506,25 @@ namespace Nu
             ray.Intersects(in this, out result);
         }
 
+        // Attempt to find the nearest point on a sphere, return position if already inside.
+        public Vector3 Nearest(Vector3 position)
+        {
+            // Calculate the vector from the sphere's center to the point P
+            Vector3 centerToPosition = position - Center;
+
+            // Calculate the distance from the sphere's center to point P
+            float distanceToP = centerToPosition.Length();
+
+            if (distanceToP > Radius)
+            {
+                // project the point P onto the surface of the sphere
+                return Center + centerToPosition / distanceToP * Radius;
+            }
+
+            // already on or inside
+            return position;
+        }
+
         /// <summary>
         /// Returns a <see cref="String"/> representation of this <see cref="Sphere"/> in the format:
         /// {Center:[<see cref="Center"/>] Radius:[<see cref="Radius"/>]}
