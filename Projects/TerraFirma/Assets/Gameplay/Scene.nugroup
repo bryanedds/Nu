@@ -6695,6 +6695,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6725,6 +6727,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6756,6 +6760,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6787,6 +6793,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6817,6 +6825,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6835,6 +6845,7 @@
     [Name Enemy-0005]
     [Offset [0 1 0]]
     [Position [-16.1 1.3 16.1]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [-0 1 -0 -4.371139E-08]]
     [Size [2 2 2]]]
    []]
@@ -6847,6 +6858,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6865,6 +6878,7 @@
     [Name Enemy-0006]
     [Offset [0 1 0]]
     [Position [-12.4 4 19.9]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [-0 1 -0 -4.371139E-08]]
     [Size [2 2 2]]]
    []]
@@ -6877,6 +6891,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6895,6 +6911,7 @@
     [Name Enemy-0007]
     [Offset [0 1 0]]
     [Position [9.7 4.3 36.8]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Size [2 2 2]]]
    []]
   [EnemyDispatcher
@@ -6906,6 +6923,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6924,6 +6943,7 @@
     [Name Enemy-0008]
     [Offset [0 1 0]]
     [Position [24.4 2.1 33.6]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]
     [Size [2 2 2]]]
    []]
@@ -6936,6 +6956,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6954,6 +6976,7 @@
     [Name Enemy-0009]
     [Offset [0 1 0]]
     [Position [29.1 2.1 15.3]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.9238795 0 0.38268343]]
     [Size [2 2 2]]]
    []]
@@ -6966,6 +6989,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -6984,6 +7009,7 @@
     [Name Enemy-0010]
     [Offset [0 1 0]]
     [Position [25.4 2.2 -6.9]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]
     [Size [2 2 2]]]
    []]
@@ -6996,6 +7022,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -7014,6 +7042,7 @@
     [Name Enemy-0011]
     [Offset [0 1 0]]
     [Position [33 2.2 -5.1]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.70710677 0 0.70710677]]
     [Size [2 2 2]]]
    []]
@@ -7026,6 +7055,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -7044,6 +7075,7 @@
     [Name Enemy-0012]
     [Offset [0 1 0]]
     [Position [28.7 2.2 -12.9]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.70710677 0 0.70710677]]
     [Size [2 2 2]]]
    []]
@@ -7056,6 +7088,8 @@
         [[0 0.85 0] [0 0 0 1] [1 1 1]]]
        None]]]
     [BodyType KinematicCharacter]
+    [CharacterProperties
+     [[StepHeight 0.3] [SlopeMax 0.7853982] [PenetrationDepthMax 0.1]]]
     [Model
      ["TerraFirma.Character, TerraFirma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[PositionPrevious []]
@@ -7074,6 +7108,7 @@
     [Name Enemy-0013]
     [Offset [0 1 0]]
     [Position [28.8 5.2 29.4]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
     [Rotation [0 0.38268346 0 0.9238795]]
     [Size [2 2 2]]]
    []]]]
