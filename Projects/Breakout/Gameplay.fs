@@ -26,6 +26,17 @@ module Gameplay =
         member this.Perimeter =
             box3 (this.Position - this.Size * 0.5f) this.Size
 
+    // the state of our breakout ball
+    type Ball =
+        { Position : Vector3
+          Size : Vector3
+          Velocity : Vector3 }
+
+        static member initial =
+            { Position = v3 0.0f 48.0f 0.0f
+              Size = v3 8.0f 8.0f 0.0f
+              Velocity = (v3 Gen.randomf -2.0f 0.0f).Normalized * 4.0f }
+
     // the state of a breakout block
     type Block =
         { Position : Vector3
@@ -40,17 +51,6 @@ module Gameplay =
               Size = v3 64f 16.0f 0.0f
               Color = Color (Gen.randomf1 0.5f + 0.5f, Gen.randomf1 0.5f + 0.5f, Gen.randomf1 0.5f + 0.5f, 1.0f) }
 
-    // the state of our breakout ball
-    type Ball =
-        { Position : Vector3
-          Size : Vector3
-          Velocity : Vector3 }
-
-        static member initial =
-            { Position = v3 0.0f 48.0f 0.0f
-              Size = v3 8.0f 8.0f 0.0f
-              Velocity = (v3 Gen.randomf -2.0f 0.0f).Normalized * 4.0f }
-
     // this is our MMCC model type representing gameplay.
     type Gameplay =
         { GameplayTime : int64
@@ -60,32 +60,28 @@ module Gameplay =
           Ball : Ball
           Lives : int }
 
-        static member empty =
+        static member quit =
             { GameplayTime = 0L
               GameplayState = Quit
               Paddle = Paddle.initial
-              Blocks = Map.empty
               Ball = Ball.initial
+              Blocks = Map.empty
               Lives = 0 }
 
-        static member private initial state =
+        static member commencing =
             let blocks =
                 Map.ofSeq
                     [|for i in 0 .. dec 5 do
                         for j in 0 .. dec 6 do
                             (Gen.name, Block.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
-            { GameplayTime = 0L
-              GameplayState = state
-              Paddle = Paddle.initial
-              Blocks = blocks
-              Ball = Ball.initial
-              Lives = 3 }
-
-        static member commencing =
-            Gameplay.initial Commencing
+            { Gameplay.quit with
+                GameplayState = Commencing
+                Blocks = blocks
+                Lives = 3 }
 
         static member commence =
-            Gameplay.initial Commence
+            { Gameplay.commencing with
+                GameplayState = Commence }
 
     // this is our MMCC message type.
     type GameplayMessage =
@@ -105,7 +101,7 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.empty)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.quit)
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
@@ -161,6 +157,16 @@ module Gameplay =
                             else ball
                         { gameplay with Ball = ball }
 
+                    // update ball motion against paddle
+                    let gameplay =
+                        let paddle = gameplay.Paddle
+                        let ball = gameplay.Ball
+                        let ball =
+                            if paddle.Perimeter.Intersects ball.Position
+                            then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
+                            else ball
+                        { gameplay with Ball = ball }
+
                     // update ball motion against blocks
                     let gameplay =
                         let ball = gameplay.Ball
@@ -172,16 +178,6 @@ module Gameplay =
                             else ball
                         let blocks = Map.removeMany blocks.Keys gameplay.Blocks
                         { gameplay with Ball = ball; Blocks = blocks }
-
-                    // update ball motion against paddle
-                    let gameplay =
-                        let paddle = gameplay.Paddle
-                        let ball = gameplay.Ball
-                        let ball =
-                            if paddle.Perimeter.Intersects ball.Position
-                            then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
-                            else ball
-                        { gameplay with Ball = ball }
 
                     // update ball death
                     let gameplay =
@@ -242,6 +238,11 @@ module Gameplay =
                         [Entity.Position == v3 0.0f 176.0f 0.0f
                          Entity.Size == v3 320.0f 8.0f 0.0f]
 
+                     // ball
+                     Content.staticSprite "Ball"
+                        [Entity.Position := gameplay.Ball.Position
+                         Entity.Size == gameplay.Ball.Size]
+
                      // blocks
                      for (blockId, block) in gameplay.Blocks.Pairs do
                         Content.staticSprite blockId
@@ -259,13 +260,8 @@ module Gameplay =
                             [Entity.Position == v3 -200.0f (single (inc i) * -16.0f) 0.0f
                              Entity.Size == v3 16.0f 8.0f 0.0f]
 
-                     // ball
-                     Content.staticSprite "Ball"
-                        [Entity.Position := gameplay.Ball.Position
-                         Entity.Size == gameplay.Ball.Size]
-
-                     // ending message
-                     Content.text "EndMessage"
+                     // message
+                     Content.text "Message"
                         [Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Blocks.Count = 0 then "You win!" else ""]]
 
