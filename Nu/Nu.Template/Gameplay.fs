@@ -24,15 +24,15 @@ module Gameplay =
         { GameplayTime : int64
           GameplayState : GameplayState }
 
-        static member quit =
+        static member empty =
             { GameplayTime = 0L
               GameplayState = Quit }
 
         static member commencing =
-            { Gameplay.quit with GameplayState = Commencing }
+            { Gameplay.empty with GameplayState = Commencing }
 
         static member commence =
-            { Gameplay.quit with GameplayState = Commence }
+            { Gameplay.commencing with GameplayState = Commence }
 
     // this is our MMCC message type.
     type GameplayMessage =
@@ -51,7 +51,7 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.quit)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.empty)
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
