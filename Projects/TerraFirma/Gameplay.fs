@@ -28,7 +28,7 @@ module Gameplay =
     // this is our MMCC command type.
     type GameplayCommand =
         | SetupScene
-        | CharacterAttacked of Entity
+        | Attack of Entity
         | TrackPlayer
         | PlaySound of int64 * single * Sound AssetTag
         interface Command
@@ -48,7 +48,7 @@ module Gameplay =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer
-             Events.CharacterAttackedEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> CharacterAttacked evt.Data]
+             Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Attack evt.Data]
 
         // here we handle the gameplay messages
         override this.Message (gameplay, message, _, _) =
@@ -77,7 +77,7 @@ module Gameplay =
                 let world = World.synchronizeNav3d screen world
                 just world
 
-            | CharacterAttacked attackedCharacter ->
+            | Attack attackedCharacter ->
                 let character = attackedCharacter.GetCharacter world
                 let character = { character with HitPoints = max (dec character.HitPoints) 0 }
                 let (signals, character) =
@@ -136,7 +136,7 @@ module Gameplay =
                     [// the player that's always present in the scene
                      Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Persistent == false
-                         Events.CharacterDieEvent --> Simulants.GameplayPlayer => StartQuitting]]
+                         Entity.DieEvent => StartQuitting]]
 
              // no scene group otherwise
              | Commencing | Quit -> ()]

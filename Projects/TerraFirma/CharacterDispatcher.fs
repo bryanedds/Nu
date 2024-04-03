@@ -16,7 +16,7 @@ type CharacterCommand =
     | UpdateTransform of Vector3 * Quaternion
     | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
     | SyncWeaponTransform
-    | PublishCharactersAttacked of Entity Set
+    | PublishAttacks of Entity Set
     | PublishDie
     | Jump
     | PlaySound of int64 * single * Sound AssetTag
@@ -29,6 +29,8 @@ module CharacterDispatcher =
         member this.GetCharacter world = this.GetModelGeneric<Character> world
         member this.SetCharacter value world = this.SetModelGeneric<Character> value world
         member this.Character = this.ModelGeneric<Character> ()
+        member this.AttackEvent = Events.AttackEvent --> this
+        member this.DieEvent = Events.DieEvent --> this
 
     type CharacterDispatcher (character : Character) =
         inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, character)
@@ -97,7 +99,7 @@ module CharacterDispatcher =
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
                 let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimatedModel (position, rotation, Array.ofList animations) :: signals
                 let signals = if character.ActionState = WoundedState then PublishDie :> Signal :: signals else signals
-                let signals = if attackedCharacters.Count > 0 then PublishCharactersAttacked attackedCharacters :> Signal :: signals else signals
+                let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
                 withSignals signals character
 
             | WeaponCollide collisionData ->
@@ -153,15 +155,15 @@ module CharacterDispatcher =
                     just world
                 | None -> just world
 
-            | PublishCharactersAttacked attackedCharacters ->
+            | PublishAttacks attackedCharacters ->
                 let world =
                     Set.fold (fun world attackedCharacter ->
-                        World.publish attackedCharacter (Events.CharacterAttackedEvent --> entity) entity world)
+                        World.publish attackedCharacter entity.AttackEvent entity world)
                         world attackedCharacters
                 just world
 
             | PublishDie ->
-                let world = World.publish () (Events.CharacterDieEvent --> entity) entity world
+                let world = World.publish () entity.DieEvent entity world
                 just world
 
             | Jump ->
