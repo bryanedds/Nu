@@ -167,14 +167,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
-            match bodyProperties.BodyType with
-            | Dynamic | DynamicCharacter  ->
-                match bodyProperties.Substance with
-                | Density density ->
-                    let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
-                    volume * density
-                | Mass mass -> mass
-            | Static | Kinematic | KinematicCharacter -> 0.0f
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
+                volume * density
+            | Mass mass -> mass
         let inertia = box.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, box)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -191,14 +188,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
-            match bodyProperties.BodyType with
-            | Dynamic | DynamicCharacter  ->
-                match bodyProperties.Substance with
-                | Density density ->
-                    let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
-                    volume * density
-                | Mass mass -> mass
-            | Static | Kinematic | KinematicCharacter -> 0.0f
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
+                volume * density
+            | Mass mass -> mass
         let inertia = sphere.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, sphere)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -215,14 +209,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
-            match bodyProperties.BodyType with
-            | Dynamic | DynamicCharacter  ->
-                match bodyProperties.Substance with
-                | Density density ->
-                    let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
-                    volume * density
-                | Mass mass -> mass
-            | Static | Kinematic | KinematicCharacter -> 0.0f
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
+                volume * density
+            | Mass mass -> mass
         let inertia = capsule.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, capsule)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -262,14 +253,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | None -> v3Zero
         let box = box3 min max
         let mass =
-            match bodyProperties.BodyType with
-            | Dynamic | DynamicCharacter  ->
-                match bodyProperties.Substance with
-                | Density density ->
-                    let volume = box.Width * box.Height * box.Depth
-                    volume * density
-                | Mass mass -> mass
-            | Static | Kinematic | KinematicCharacter -> 0.0f
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
         let inertia = hull.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -294,14 +282,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | None -> v3Zero
         let box = box3 min max
         let mass =
-            match bodyProperties.BodyType with
-            | Dynamic | DynamicCharacter  ->
-                match bodyProperties.Substance with
-                | Density density ->
-                    let volume = box.Width * box.Height * box.Depth
-                    volume * density
-                | Mass mass -> mass
-            | Static | Kinematic | KinematicCharacter -> 0.0f
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
         let inertia = shape.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, shape)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
