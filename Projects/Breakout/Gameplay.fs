@@ -128,6 +128,7 @@ module Gameplay =
 
             | Update ->
 
+                // update scene only during commencement
                 match gameplay.GameplayState with
                 | Commence ->
 
@@ -199,6 +200,7 @@ module Gameplay =
                         else gameplay
                     just gameplay
 
+                // nothing to do
                 | _ -> just gameplay
 
             | TimeUpdate ->
@@ -211,7 +213,17 @@ module Gameplay =
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
 
-                [// quit
+                [// lives
+                 Content.text "Lives"
+                    [Entity.Position == v3 -200.0f 0.0f 0.0f
+                     Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                     Entity.Text == "Lives"]
+                 for i in 0 .. dec gameplay.Lives do
+                    Content.animatedSprite ("Life" + string i)
+                        [Entity.Position == v3 -200.0f (single (inc i) * -16.0f) 0.0f
+                         Entity.Size == v3 16.0f 8.0f 0.0f]
+
+                 // quit
                  Content.button Simulants.GameplayQuit.Name
                     [Entity.Position == v3 232.0f -144.0f 0.0f
                      Entity.Elevation == 10.0f
@@ -254,16 +266,6 @@ module Gameplay =
                             [Entity.Position == block.Position
                              Entity.Size == block.Size
                              Entity.Color == block.Color]
-
-                     // lives
-                     Content.text "Lives"
-                        [Entity.Position == v3 -200.0f 0.0f 0.0f
-                         Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text == "Lives"]
-                     for i in 0 .. dec gameplay.Lives do
-                        Content.animatedSprite ("Life" + string i)
-                            [Entity.Position == v3 -200.0f (single (inc i) * -16.0f) 0.0f
-                             Entity.Size == v3 16.0f 8.0f 0.0f]
 
                      // message
                      Content.text "Message"
