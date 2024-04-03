@@ -60,7 +60,7 @@ module Gameplay =
           Ball : Ball
           Lives : int }
 
-        static member quit =
+        static member empty =
             { GameplayTime = 0L
               GameplayState = Quit
               Paddle = Paddle.initial
@@ -74,7 +74,7 @@ module Gameplay =
                     [|for i in 0 .. dec 5 do
                         for j in 0 .. dec 6 do
                             (Gen.name, Block.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
-            { Gameplay.quit with
+            { Gameplay.empty with
                 GameplayState = Commencing
                 Blocks = blocks
                 Lives = 3 }
@@ -101,7 +101,7 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.quit)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.empty)
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
@@ -162,7 +162,8 @@ module Gameplay =
                         let paddle = gameplay.Paddle
                         let ball = gameplay.Ball
                         let ball =
-                            if paddle.Perimeter.Intersects ball.Position
+                            let perimeter = paddle.Perimeter
+                            if perimeter.Intersects ball.Position
                             then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
                             else ball
                         { gameplay with Ball = ball }
@@ -170,7 +171,11 @@ module Gameplay =
                     // update ball motion against blocks
                     let gameplay =
                         let ball = gameplay.Ball
-                        let blocks = Map.filter (fun _ (block : Block) -> block.Perimeter.Intersects ball.Position) gameplay.Blocks
+                        let blocks =
+                            Map.filter (fun _ (block : Block) ->
+                                let perimeter = block.Perimeter
+                                perimeter.Intersects ball.Position)
+                                gameplay.Blocks
                         let ball =
                             if Map.notEmpty blocks then
                                 let block = Seq.head blocks.Values
