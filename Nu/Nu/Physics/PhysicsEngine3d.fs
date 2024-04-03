@@ -72,7 +72,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CollisionDispatcher : Dispatcher
           BroadPhaseInterface : BroadphaseInterface
           GhostPairCallback : GhostPairCallback
-          ConstraintSolverPool : ConstraintSolverPoolMultiThreaded
           ConstraintSolver : ConstraintSolver
           TryGetAssetFilePath : AssetTag -> string option
           TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
@@ -863,20 +862,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
     static member make gravity tryGetAssetFilePath tryGetStaticModelMetadata =
-        let taskScheduler = Threads.GetSequentialTaskScheduler () // NOTE: we're just using the non-threaded schedular since none of the others are available (perhaps because I didn't enable them when I previously built bullet).
-        taskScheduler.NumThreads <- taskScheduler.MaxNumThreads
-        Threads.TaskScheduler <- taskScheduler
-        use collisionConfigurationInfo = new DefaultCollisionConstructionInfo (DefaultMaxPersistentManifoldPoolSize = 80000, DefaultMaxCollisionAlgorithmPoolSize = 80000)
+        use collisionConfigurationInfo = new DefaultCollisionConstructionInfo ()
         let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
-        let collisionDispatcher = new CollisionDispatcherMultiThreaded (collisionConfiguration)
+        let collisionDispatcher = new CollisionDispatcher (collisionConfiguration)
         let broadPhaseInterface = new DbvtBroadphase ()
+        let constraintSolver = new SequentialImpulseConstraintSolver ()
+        let world = new DiscreteDynamicsWorld (collisionDispatcher, broadPhaseInterface, constraintSolver, collisionConfiguration)
         let ghostPairCallback = new GhostPairCallback ()
-        let constraintSolverPool = new ConstraintSolverPoolMultiThreaded (Constants.Physics.ThreadCount)
-        let constraintSolver = new SequentialImpulseConstraintSolverMultiThreaded ()
-        let world = new DiscreteDynamicsWorldMultiThreaded (collisionDispatcher, broadPhaseInterface, constraintSolverPool, constraintSolver, collisionConfiguration)
         world.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
         world.DispatchInfo.AllowedCcdPenetration <- Constants.Physics.AllowedCcdPenetration3d
         world.Gravity <- gravity
+
         let physicsEngine =
             { PhysicsContext = world
               Constraints = Dictionary HashIdentity.Structural
@@ -890,9 +886,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               CollisionConfiguration = collisionConfiguration
               CollisionDispatcher = collisionDispatcher
               BroadPhaseInterface = broadPhaseInterface
-              GhostPairCallback = ghostPairCallback
-              ConstraintSolverPool = constraintSolverPool
               ConstraintSolver = constraintSolver
+              GhostPairCallback = ghostPairCallback
               TryGetAssetFilePath = tryGetAssetFilePath
               TryGetStaticModelMetadata = tryGetStaticModelMetadata
               UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
@@ -901,8 +896,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member cleanUp physicsEngine =
         physicsEngine.PhysicsContext.Dispose ()
-        physicsEngine.ConstraintSolver.Dispose ()
-        physicsEngine.ConstraintSolverPool.Dispose ()
         physicsEngine.GhostPairCallback.Dispose ()
         physicsEngine.BroadPhaseInterface.Dispose ()
         physicsEngine.CollisionDispatcher.Dispose ()
