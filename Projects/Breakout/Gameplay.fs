@@ -215,12 +215,12 @@ module Gameplay =
 
                 [// lives
                  Content.text "Lives"
-                    [Entity.Position == v3 -200.0f 0.0f 0.0f
+                    [Entity.Position == v3 -240.0f 0.0f 0.0f
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                      Entity.Text == "Lives"]
                  for i in 0 .. dec gameplay.Lives do
-                    Content.staticSprite ("Life" + string i)
-                        [Entity.Position == v3 -200.0f (single (inc i) * -16.0f) 0.0f
+                    Content.staticSprite ("Life+" + string i)
+                        [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
                          Entity.Size == v3 32.0f 8.0f 0.0f
                          Entity.StaticImage == Assets.Default.Brick]
 
