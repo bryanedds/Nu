@@ -223,6 +223,11 @@ module Gameplay =
                         [Entity.Position == v3 -200.0f (single (inc i) * -16.0f) 0.0f
                          Entity.Size == v3 16.0f 8.0f 0.0f]
 
+                 // message
+                 Content.text "Message"
+                    [Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                     Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Blocks.Count = 0 then "You win!" else ""]
+
                  // quit
                  Content.button Simulants.GameplayQuit.Name
                     [Entity.Position == v3 232.0f -144.0f 0.0f
@@ -265,12 +270,7 @@ module Gameplay =
                         Content.staticSprite blockId
                             [Entity.Position == block.Position
                              Entity.Size == block.Size
-                             Entity.Color == block.Color]
-
-                     // message
-                     Content.text "Message"
-                        [Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Blocks.Count = 0 then "You win!" else ""]]
+                             Entity.Color == block.Color]]
 
              // no scene group otherwise
              | Commencing | Quit -> ()]
