@@ -120,14 +120,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
             object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         | Kinematic ->
-            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
             object.ActivationState <- object.ActivationState ||| ActivationState.DisableDeactivation
         | KinematicCharacter ->
-            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.CharacterObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.CharacterObject
             object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         | Dynamic ->
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
@@ -135,7 +135,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
             object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         | DynamicCharacter ->
-            Log.infoOnce "DynamicCharacter not supported by PhysicsEngine3d. Using Dynamic configuration instead."
+            Log.infoOnce "DynamicCharacter not yet supported by PhysicsEngine3d. Using Dynamic configuration instead."
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
