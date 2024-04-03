@@ -118,7 +118,7 @@ module Gameplay =
                      Entity.Elevation == 10.0f
                      Entity.Text := "Score: " + string gameplay.Score]
                   Content.button Simulants.GameplayQuit.Name
-                    [Entity.Position == v3 224.0f -144.0f 0.0f
+                    [Entity.Position == v3 232.0f -144.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]

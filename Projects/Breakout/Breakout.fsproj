@@ -1,0 +1,89 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net7.0</TargetFramework>
+		<ProjectGuid>{B35856FD-43F9-4695-88F2-AC4CA2502C6D}</ProjectGuid>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<ServerGarbageCollection>True</ServerGarbageCollection>
+		<TieredPGO>True</TieredPGO>
+		<DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
+		<PostBuildEvent>dotnet "$(MSBuildProjectDirectory)/../../Nu/Nu.Pipe/bin/$(Configuration)/net7.0/Nu.Pipe.dll" "$(MSBuildProjectDirectory)/" "$(MSBuildProjectDirectory)/bin/$(Configuration)/net7.0/" "$(MSBuildProjectDirectory)/refinement/" "False"</PostBuildEvent>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
+		<WarnOn>FS1182</WarnOn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
+		<WarningLevel>5</WarningLevel>
+		<DefineConstants>TRACE</DefineConstants>
+		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
+		<WarnOn>FS1182</WarnOn>
+		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
+		<Tailcalls>False</Tailcalls>
+		<WarningLevel>5</WarningLevel>
+		<DefineConstants>TRACE</DefineConstants>
+		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+	</PropertyGroup>
+
+	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
+		<RemoveDir Directories="refinement" />
+		<RemoveDir Directories="$(OutDir)/Assets" />
+	</Target>
+
+	<ItemGroup>
+		<Compile Include="Simulants.fs" />
+		<Compile Include="Gameplay.fs" />
+		<Compile Include="MyGame.fs" />
+		<Compile Include="MyGamePlugin.fs" />
+		<Compile Include="Program.fs" />
+		<None Include="App.config" />
+		<Content Include="AssetGraph.nuag">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Overlayer.nuol">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="AssimpNet">
+			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard1.3\AssimpNet.dll</HintPath>
+		</Reference>
+        <Reference Include="BulletSharpPInvoke">
+            <HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>
+        </Reference>
+		<Reference Include="OpenGL.Net">
+			<HintPath>..\..\Nu\Nu.Dependencies\OpenGL.NET\lib\netcoreapp2.2\OpenGL.Net.dll</HintPath>
+		</Reference>
+		<Reference Include="SDL2-CS">
+			<HintPath>..\..\Nu\Nu.Dependencies\SDL2-CS\netstandard2.0\SDL2-CS.dll</HintPath>
+		</Reference>
+		<Reference Include="TiledSharp">
+			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
+		</Reference>
+		<PackageReference Include="Csv" Version="2.0.93" />
+		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.1.3" />
+		<PackageReference Include="FParsec" Version="1.1.1" />
+		<PackageReference Include="Aether.Physics2D" Version="2.0.0" />
+		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.5.0" />
+		<PackageReference Include="Pfim" Version="0.11.2" />
+		<PackageReference Include="Prime" Version="9.20.2" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
+		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="FSharp.Core" Version="8.0.100" />
+	</ItemGroup>
+
+</Project>
