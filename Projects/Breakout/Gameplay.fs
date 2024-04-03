@@ -70,7 +70,7 @@ module Gameplay =
               Ball = Ball.initial
               Lives = 0 }
 
-        static member initial state =
+        static member private initial state =
             let blocks =
                 Map.ofSeq
                     [|for i in 0 .. dec 5 do
@@ -82,6 +82,12 @@ module Gameplay =
               Blocks = blocks
               Ball = Ball.initial
               Lives = 3 }
+
+        static member commencing =
+            Gameplay.initial Commencing
+
+        static member commence =
+            Gameplay.initial Commence
 
     // this is our MMCC message type.
     type GameplayMessage =

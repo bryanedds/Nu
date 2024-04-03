@@ -1,5 +1,6 @@
 ﻿namespace MyGame
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -23,6 +24,16 @@ module Gameplay =
         { GameplayTime : int64
           GameplayState : GameplayState }
 
+        static member quit =
+            { GameplayTime = 0L
+              GameplayState = Quit }
+
+        static member commencing =
+            { Gameplay.quit with GameplayState = Commencing }
+
+        static member commence =
+            { Gameplay.quit with GameplayState = Commence }
+
     // this is our MMCC message type.
     type GameplayMessage =
         | FinishCommencing
@@ -40,7 +51,7 @@ module Gameplay =
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> ({ GameplayTime = 0; GameplayState = Quit })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.quit)
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =

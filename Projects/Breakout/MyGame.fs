@@ -63,7 +63,7 @@ module MyGame =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay (Gameplay.initial Commencing))
+            | ShowGameplay -> just (Gameplay Gameplay.commencing)
             | Update ->
                 match model with
                 | Gameplay gameplay ->

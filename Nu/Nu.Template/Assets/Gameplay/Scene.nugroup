@@ -12,7 +12,4 @@
     [Name Light3d]
     [Position [0 2.5 0]]
     [Presence Omnipresent]]
-   []]
-  [StaticModelDispatcher
-   [[Name StaticModel]]
    []]]]
