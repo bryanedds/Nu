@@ -219,7 +219,7 @@ module Gameplay =
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// paddle
-                     Content.animatedSprite Simulants.GameplayPaddle.Name
+                     Content.animatedSprite "Paddle"
                         [Entity.Position := gameplay.Paddle.Position
                          Entity.Size == gameplay.Paddle.Size]
 
