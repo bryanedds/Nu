@@ -10,7 +10,7 @@
     [Name Title]
     [Position [0 80 0]]
     [Size [342 64 0]]
-    [Text MyGame]]
+    [Text Breakout]]
    []]
   [ButtonDispatcher
    [[Name Play] [Text Play]]

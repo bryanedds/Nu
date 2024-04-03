@@ -35,7 +35,7 @@ module Gameplay =
         static member initial =
             { Position = v3 0.0f 48.0f 0.0f
               Size = v3 8.0f 8.0f 0.0f
-              Velocity = (v3 Gen.randomf -2.0f 0.0f).Normalized * 4.0f }
+              Velocity = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * 4.0f }
 
     // the state of a breakout block
     type Block =
