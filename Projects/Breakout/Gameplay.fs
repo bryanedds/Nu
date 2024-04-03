@@ -14,6 +14,7 @@ module Gameplay =
         | Quitting
         | Quit
 
+    // the state of our breakout paddle
     type Paddle =
         { Position : Vector3
           Size : Vector3 }
@@ -25,6 +26,7 @@ module Gameplay =
         member this.Perimeter =
             box3 (this.Position - this.Size * 0.5f) this.Size
 
+    // the state of a breakout block
     type Block =
         { Position : Vector3
           Size : Vector3
@@ -38,6 +40,7 @@ module Gameplay =
               Size = v3 64f 16.0f 0.0f
               Color = Color (Gen.randomf1 0.5f + 0.5f, Gen.randomf1 0.5f + 0.5f, Gen.randomf1 0.5f + 0.5f, 1.0f) }
 
+    // the state of our breakout ball
     type Ball =
         { Position : Vector3
           Size : Vector3
@@ -49,11 +52,6 @@ module Gameplay =
               Velocity = (v3 Gen.randomf -2.0f 0.0f).Normalized * 4.0f }
 
     // this is our MMCC model type representing gameplay.
-    // this model representation uses update time, that is, time based on number of engine updates.
-    // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
-    // you could use `GameplayTime : single` instead. If you're going to use Split MMCC instead of Pure MMCC, you won't
-    // need this field at all and should remove it, using world.UpdateTime or world.ClockTime instead (see
-    // https://github.com/bryanedds/Nu/wiki/Pure-MMCC-vs.-Split-MMCC)
     type Gameplay =
         { GameplayTime : int64
           GameplayState : GameplayState
@@ -75,7 +73,7 @@ module Gameplay =
                 Map.ofSeq
                     [|for i in 0 .. dec 5 do
                         for j in 0 .. dec 6 do
-                            (string Gen.id, Block.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
+                            (Gen.name, Block.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
             { GameplayTime = 0L
               GameplayState = state
               Paddle = Paddle.initial
@@ -228,17 +226,17 @@ module Gameplay =
                      Content.animatedSprite Simulants.GameplayPaddle.Name
                         [Entity.Position := gameplay.Paddle.Position
                          Entity.Size == gameplay.Paddle.Size]
-                         
+
                      // left wall
                      Content.staticSprite "LeftWall"
                         [Entity.Position == v3 -164.0f 0.0f 0.0f
                          Entity.Size == v3 8.0f 360.0f 0.0f]
-                         
+
                      // right wall
                      Content.staticSprite "RightWall"
                         [Entity.Position == v3 164.0f 0.0f 0.0f
                          Entity.Size == v3 8.0f 360.0f 0.0f]
-                         
+
                      // top wall
                      Content.staticSprite "TopWall"
                         [Entity.Position == v3 0.0f 176.0f 0.0f
@@ -266,8 +264,8 @@ module Gameplay =
                         [Entity.Position := gameplay.Ball.Position
                          Entity.Size == gameplay.Ball.Size]
 
-                     // end gameplay message
-                     Content.text "Fin"
+                     // ending message
+                     Content.text "EndMessage"
                         [Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Blocks.Count = 0 then "You win!" else ""]]
 
