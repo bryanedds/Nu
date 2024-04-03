@@ -98,9 +98,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         shape.Margin <- Constants.Physics.Collision3dMargin
 
     static member private configureCollisionObjectProperties (bodyProperties : BodyProperties) (object : CollisionObject) =
-        match bodyProperties.Enabled with
-        | true -> object.ActivationState <- ActivationState.ActiveTag
-        | false -> object.ActivationState <- ActivationState.DisableSimulation
+        if bodyProperties.Enabled then
+            object.ActivationState <- object.ActivationState ||| ActivationState.ActiveTag
+            object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+        else
+            object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
+            object.ActivationState <- object.ActivationState &&& ~~~ActivationState.ActiveTag
         object.Friction <- bodyProperties.Friction
         object.Restitution <- bodyProperties.Restitution
         match bodyProperties.CollisionDetection with
@@ -115,27 +118,33 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
+            object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         | Kinematic ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
+            object.ActivationState <- object.ActivationState ||| ActivationState.DisableDeactivation
         | KinematicCharacter ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.CharacterObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
+            object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         | Dynamic ->
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
+            object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
         | DynamicCharacter ->
             Log.infoOnce "DynamicCharacter not supported by PhysicsEngine3d. Using Dynamic configuration instead."
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.KinematicObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
+            object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableDeactivation
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         PhysicsEngine3d.configureCollisionObjectProperties bodyProperties body
         body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
+        body.MotionState.WorldTransform <- body.WorldTransform
         if bodyProperties.SleepingAllowed // TODO: see if we can find a more reliable way to disable sleeping.
         then body.SetSleepingThresholds (Constants.Physics.SleepingThresholdLinear, Constants.Physics.SleepingThresholdAngular)
         else body.SetSleepingThresholds (0.0f, 0.0f)
@@ -158,11 +167,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
-            match bodyProperties.Substance with
-            | Density density ->
-                let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
-                volume * density
-            | Mass mass -> mass
+            match bodyProperties.BodyType with
+            | Dynamic | DynamicCharacter  ->
+                match bodyProperties.Substance with
+                | Density density ->
+                    let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
+                    volume * density
+                | Mass mass -> mass
+            | Static | Kinematic | KinematicCharacter -> 0.0f
         let inertia = box.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, box)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -179,11 +191,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
-            match bodyProperties.Substance with
-            | Density density ->
-                let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
-                volume * density
-            | Mass mass -> mass
+            match bodyProperties.BodyType with
+            | Dynamic | DynamicCharacter  ->
+                match bodyProperties.Substance with
+                | Density density ->
+                    let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
+                    volume * density
+                | Mass mass -> mass
+            | Static | Kinematic | KinematicCharacter -> 0.0f
         let inertia = sphere.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, sphere)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -200,11 +215,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Some transform -> transform.Translation
             | None -> v3Zero
         let mass =
-            match bodyProperties.Substance with
-            | Density density ->
-                let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
-                volume * density
-            | Mass mass -> mass
+            match bodyProperties.BodyType with
+            | Dynamic | DynamicCharacter  ->
+                match bodyProperties.Substance with
+                | Density density ->
+                    let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
+                    volume * density
+                | Mass mass -> mass
+            | Static | Kinematic | KinematicCharacter -> 0.0f
         let inertia = capsule.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, capsule)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -244,11 +262,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | None -> v3Zero
         let box = box3 min max
         let mass =
-            match bodyProperties.Substance with
-            | Density density ->
-                let volume = box.Width * box.Height * box.Depth
-                volume * density
-            | Mass mass -> mass
+            match bodyProperties.BodyType with
+            | Dynamic | DynamicCharacter  ->
+                match bodyProperties.Substance with
+                | Density density ->
+                    let volume = box.Width * box.Height * box.Depth
+                    volume * density
+                | Mass mass -> mass
+            | Static | Kinematic | KinematicCharacter -> 0.0f
         let inertia = hull.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -273,11 +294,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | None -> v3Zero
         let box = box3 min max
         let mass =
-            match bodyProperties.Substance with
-            | Density density ->
-                let volume = box.Width * box.Height * box.Depth
-                volume * density
-            | Mass mass -> mass
+            match bodyProperties.BodyType with
+            | Dynamic | DynamicCharacter  ->
+                match bodyProperties.Substance with
+                | Density density ->
+                    let volume = box.Width * box.Height * box.Depth
+                    volume * density
+                | Mass mass -> mass
+            | Static | Kinematic | KinematicCharacter -> 0.0f
         let inertia = shape.CalculateLocalInertia mass
         compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, shape)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -445,12 +469,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
             body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+            body.MotionState.WorldTransform <- body.WorldTransform
             body.UserObject <- { BodyId = bodyId; Dispose = disposer }
             body.UserIndex <- userIndex
             PhysicsEngine3d.configureBodyProperties bodyProperties body physicsEngine.PhysicsContext.Gravity
             physicsEngine.PhysicsContext.AddRigidBody (body, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
             if physicsEngine.Bodies.TryAdd (bodyId, body) then
-                if not body.IsStaticObject then physicsEngine.BodiesGravitating.Add (bodyId, (bodyProperties.GravityOverride, body))
+                match bodyProperties.BodyType with 
+                | KinematicCharacter | Dynamic | DynamicCharacter ->
+                    physicsEngine.BodiesGravitating.Add (bodyId, (bodyProperties.GravityOverride, body))
+                | Static | Kinematic -> ()
                 physicsEngine.Objects.Add (bodyId, body)
             else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
@@ -543,10 +571,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Objects.TryGetValue setBodyEnabledMessage.BodyId with
         | (true, object) ->
-            object.ActivationState <-
-                if setBodyEnabledMessage.Enabled
-                then ActivationState.ActiveTag
-                else ActivationState.DisableSimulation
+                if setBodyEnabledMessage.Enabled then
+                    object.ActivationState <- object.ActivationState ||| ActivationState.ActiveTag
+                    object.ActivationState <- object.ActivationState &&& ~~~ActivationState.DisableSimulation
+                else
+                    object.ActivationState <- object.ActivationState ||| ActivationState.DisableSimulation
+                    object.ActivationState <- object.ActivationState &&& ~~~ActivationState.ActiveTag
         | (false, _) -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
@@ -560,6 +590,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let mutable transform = object.WorldTransform
                 transform.Translation <- translation
                 object.WorldTransform <- transform
+                match object with
+                | :? RigidBody as body -> body.MotionState.WorldTransform <- object.WorldTransform
+                | _ -> ()
                 object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
 
@@ -569,6 +602,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let transform = object.WorldTransform.SetRotation setBodyRotationMessage.Rotation
             if object.WorldTransform <> transform then
                 object.WorldTransform <- object.WorldTransform.SetRotation setBodyRotationMessage.Rotation
+                match object with
+                | :? RigidBody as body -> body.MotionState.WorldTransform <- object.WorldTransform
+                | _ -> ()
                 object.Activate true // force activation so that a transform message will be produced
         | (false, _) -> ()
 
