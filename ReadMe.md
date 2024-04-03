@@ -13,6 +13,7 @@ So... just what is the **Nu Game Engine**?
 
 This repository hosts several projects, including -
 
+- the sample 2D demo game ['Breakout'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout).
 - the sample 2D puzzle game ['Twenty48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty48).
 - the sample 2D action game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
 - the sample 3D project ['TerraFirma'](https://github.com/bryanedds/Nu/tree/master/Projects/TerraFirma).
