@@ -37,8 +37,8 @@ module Gameplay =
               Size = v3 8.0f 8.0f 0.0f
               Velocity = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * 4.0f }
 
-    // the state of a breakout block
-    type Block =
+    // the state of a breakout brick
+    type Brick =
         { Position : Vector3
           Size : Vector3
           Color : Color }
@@ -56,7 +56,7 @@ module Gameplay =
         { GameplayTime : int64
           GameplayState : GameplayState
           Paddle : Paddle
-          Blocks : Map<string, Block>
+          Bricks : Map<string, Brick>
           Ball : Ball
           Lives : int }
 
@@ -65,18 +65,18 @@ module Gameplay =
               GameplayState = Quit
               Paddle = Paddle.initial
               Ball = Ball.initial
-              Blocks = Map.empty
+              Bricks = Map.empty
               Lives = 0 }
 
         static member commencing =
-            let blocks =
+            let bricks =
                 Map.ofSeq
                     [|for i in 0 .. dec 5 do
                         for j in 0 .. dec 6 do
-                            (Gen.name, Block.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
+                            (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
             { Gameplay.empty with
                 GameplayState = Commencing
-                Blocks = blocks
+                Bricks = bricks
                 Lives = 3 }
 
         static member commence =
@@ -169,21 +169,21 @@ module Gameplay =
                             else ball
                         { gameplay with Ball = ball }
 
-                    // update ball motion against blocks
+                    // update ball motion against bricks
                     let gameplay =
                         let ball = gameplay.Ball
-                        let blocks =
-                            Map.filter (fun _ (block : Block) ->
-                                let perimeter = block.Perimeter
+                        let bricks =
+                            Map.filter (fun _ (brick : Brick) ->
+                                let perimeter = brick.Perimeter
                                 perimeter.Intersects ball.Position)
-                                gameplay.Blocks
+                                gameplay.Bricks
                         let ball =
-                            if Map.notEmpty blocks then
-                                let block = Seq.head blocks.Values
-                                { ball with Velocity = (ball.Position - block.Position).Normalized * 4.0f }
+                            if Map.notEmpty bricks then
+                                let brick = Seq.head bricks.Values
+                                { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
                             else ball
-                        let blocks = Map.removeMany blocks.Keys gameplay.Blocks
-                        { gameplay with Ball = ball; Blocks = blocks }
+                        let bricks = Map.removeMany bricks.Keys gameplay.Bricks
+                        { gameplay with Ball = ball; Bricks = bricks }
 
                     // update ball death
                     let gameplay =
@@ -195,7 +195,7 @@ module Gameplay =
 
                     // check game ending
                     let gameplay =
-                        if gameplay.Blocks.Count = 0 || gameplay.Lives = 0
+                        if gameplay.Bricks.Count = 0 || gameplay.Lives = 0
                         then { gameplay with GameplayState = Quitting }
                         else gameplay
                     just gameplay
@@ -219,14 +219,15 @@ module Gameplay =
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                      Entity.Text == "Lives"]
                  for i in 0 .. dec gameplay.Lives do
-                    Content.animatedSprite ("Life" + string i)
+                    Content.staticSprite ("Life" + string i)
                         [Entity.Position == v3 -200.0f (single (inc i) * -16.0f) 0.0f
-                         Entity.Size == v3 16.0f 8.0f 0.0f]
+                         Entity.Size == v3 32.0f 8.0f 0.0f
+                         Entity.StaticImage == Assets.Default.Brick]
 
                  // message
                  Content.text "Message"
                     [Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                     Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Blocks.Count = 0 then "You win!" else ""]
+                     Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
 
                  // quit
                  Content.button Simulants.GameplayQuit.Name
@@ -241,36 +242,42 @@ module Gameplay =
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// paddle
-                     Content.animatedSprite "Paddle"
+                     Content.staticSprite "Paddle"
                         [Entity.Position := gameplay.Paddle.Position
-                         Entity.Size == gameplay.Paddle.Size]
+                         Entity.Size == gameplay.Paddle.Size
+                         Entity.StaticImage == Assets.Default.Brick]
 
                      // left wall
                      Content.staticSprite "LeftWall"
                         [Entity.Position == v3 -164.0f 0.0f 0.0f
-                         Entity.Size == v3 8.0f 360.0f 0.0f]
+                         Entity.Size == v3 8.0f 360.0f 0.0f
+                         Entity.StaticImage == Assets.Default.Black]
 
                      // right wall
                      Content.staticSprite "RightWall"
                         [Entity.Position == v3 164.0f 0.0f 0.0f
-                         Entity.Size == v3 8.0f 360.0f 0.0f]
+                         Entity.Size == v3 8.0f 360.0f 0.0f
+                         Entity.StaticImage == Assets.Default.Black]
 
                      // top wall
                      Content.staticSprite "TopWall"
                         [Entity.Position == v3 0.0f 176.0f 0.0f
-                         Entity.Size == v3 320.0f 8.0f 0.0f]
+                         Entity.Size == v3 320.0f 8.0f 0.0f
+                         Entity.StaticImage == Assets.Default.Black]
 
                      // ball
                      Content.staticSprite "Ball"
                         [Entity.Position := gameplay.Ball.Position
-                         Entity.Size == gameplay.Ball.Size]
+                         Entity.Size == gameplay.Ball.Size
+                         Entity.StaticImage == Assets.Default.Ball]
 
-                     // blocks
-                     for (blockId, block) in gameplay.Blocks.Pairs do
-                        Content.staticSprite blockId
-                            [Entity.Position == block.Position
-                             Entity.Size == block.Size
-                             Entity.Color == block.Color]]
+                     // bricks
+                     for (brickId, brick) in gameplay.Bricks.Pairs do
+                        Content.staticSprite brickId
+                            [Entity.Position == brick.Position
+                             Entity.Size == brick.Size
+                             Entity.Color == brick.Color
+                             Entity.StaticImage == Assets.Default.Brick]]
 
              // no scene group otherwise
              | Commencing | Quit -> ()]

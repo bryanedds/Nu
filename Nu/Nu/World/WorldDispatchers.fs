@@ -331,9 +331,9 @@ module Character2dDispatcherModule =
              define Entity.AngularFactor v3Zero
              define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
              define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
-             define Entity.Character2dIdleImage Assets.Default.Character2dIdleImage
-             define Entity.Character2dJumpImage Assets.Default.Character2dJumpImage
-             define Entity.Character2dWalkSheet Assets.Default.Character2dWalkImage
+             define Entity.Character2dIdleImage Assets.Default.Character2dIdle
+             define Entity.Character2dJumpImage Assets.Default.Character2dJump
+             define Entity.Character2dWalkSheet Assets.Default.Character2dWalk
              define Entity.Character2dFacingLeft false]
 
         override this.Update (entity, world) =

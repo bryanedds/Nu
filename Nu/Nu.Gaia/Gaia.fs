@@ -710,7 +710,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let bounds = entity.GetBounds world
                 let elevation = Single.MaxValue
                 let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
-                let image = Assets.Default.HighlightImage
+                let image = Assets.Default.HighlightSprite
                 World.enqueueRenderMessage2d
                     (LayeredOperation2d
                         { Elevation = elevation
