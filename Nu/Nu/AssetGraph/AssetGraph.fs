@@ -131,8 +131,11 @@ module AssetGraph =
                 use image = imageCollection.Flatten MagickColors.Transparent
                 use stream = File.OpenWrite refinementFilePath
                 image.Write (stream, MagickFormat.Png32)
-            elif not (File.Exists refinementFilePath) then
-                File.Copy (intermediateFilePath, refinementFilePath)
+            else
+                if not (File.Exists refinementFilePath) then
+                    File.Copy (intermediateFilePath, refinementFilePath)
+                elif File.GetLastWriteTime intermediateFilePath > File.GetLastWriteTime refinementFilePath then
+                    File.Copy (intermediateFilePath, refinementFilePath, true)
         | ConvertToDds ->
             use image = new MagickImage (intermediateFilePath)
             use stream = File.OpenWrite refinementFilePath
