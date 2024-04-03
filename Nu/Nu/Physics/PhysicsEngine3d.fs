@@ -117,7 +117,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
         | Kinematic ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.KinematicObject
-            object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.StaticObject
+            object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.StaticObject
             object.CollisionFlags <- object.CollisionFlags &&& ~~~CollisionFlags.CharacterObject
         | KinematicCharacter ->
             object.CollisionFlags <- object.CollisionFlags ||| CollisionFlags.CharacterObject

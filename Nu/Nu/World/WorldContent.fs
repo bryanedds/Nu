@@ -455,6 +455,12 @@ module Content =
     /// Describe a sky box with the given definitions.
     let skyBox entityName definitions = entity<SkyBoxDispatcher> entityName definitions
 
+    /// Describe a 3d block with the given definitions.
+    let block3d entityName definitions = entity<Block3dDispatcher> entityName definitions
+
+    /// Describe a 3d box with the given definitions.
+    let box3d entityName definitions = entity<Box3dDispatcher> entityName definitions
+
     /// Describe a static billboard with the given definitions.
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
 
@@ -466,6 +472,12 @@ module Content =
 
     /// Describe a static model surface with the given definitions.
     let staticModelSurface entityName definitions = entity<StaticModelSurfaceDispatcher> entityName definitions
+
+    /// Describe a rigid model with the given definitions.
+    let rigidModel entityName definitions = entity<RigidModelDispatcher> entityName definitions
+
+    /// Describe a rigid model surface with the given definitions.
+    let rigidModelSurface entityName definitions = entity<RigidModelSurfaceDispatcher> entityName definitions
 
     /// Describe an animated model with the given definitions.
     let animatedModel entityName definitions = entity<AnimatedModelDispatcher> entityName definitions
