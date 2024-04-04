@@ -930,6 +930,12 @@ module Matrix4x4 =
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
 
+        member inline this.IsZero =
+            this.M11 = 0.0f && this.M12 = 0.0f && this.M13 = 0.0f && this.M13 = 0.0f &&
+            this.M21 = 0.0f && this.M22 = 0.0f && this.M23 = 0.0f && this.M23 = 0.0f &&
+            this.M31 = 0.0f && this.M32 = 0.0f && this.M33 = 0.0f && this.M33 = 0.0f &&
+            this.M41 = 0.0f && this.M42 = 0.0f && this.M43 = 0.0f && this.M43 = 0.0f
+
         /// Create a matrix from an array of 16 single values.
         static member CreateFromArray (arr : single array) =
             Matrix4x4

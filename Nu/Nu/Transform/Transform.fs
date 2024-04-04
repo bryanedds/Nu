@@ -46,7 +46,7 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private Rotation_ : Quaternion
         val mutable private Scale_ : Vector3
         val mutable private Offset_ : Vector3
-        val mutable private RotationMatrixOpt_ : Matrix4x4 ref
+        val mutable private RotationMatrixOpt_ : Matrix4x4
         val mutable private Angles_ : Vector3
         val mutable private Size_ : Vector3
         val mutable private Elevation_ : single
@@ -127,7 +127,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.RotationMatrix =
         this.CleanRotationMatrix ()
-        this.RotationMatrixOpt_.Value
+        this.RotationMatrixOpt_
 
     member this.AffineMatrix =
         let scale = this.Scale_
@@ -308,8 +308,8 @@ type [<NoEquality; NoComparison>] Transform =
             this.AnglesDirty <- false
 
     member this.CleanRotationMatrix () =
-        if isNull (this.RotationMatrixOpt_ :> obj) || this.RotationMatrixDirty then
-            this.RotationMatrixOpt_ <- ref (Matrix4x4.CreateFromQuaternion this.Rotation_)
+        if this.RotationMatrixDirty || this.RotationMatrixOpt_.IsZero then
+            this.RotationMatrixOpt_ <- Matrix4x4.CreateFromQuaternion this.Rotation_
             this.RotationMatrixDirty <- false
 
     member this.SnapPosition positionSnap =
@@ -340,7 +340,7 @@ type [<NoEquality; NoComparison>] Transform =
         target.Rotation_ <- source.Rotation_
         target.Scale_ <- source.Scale_
         target.Offset_ <- source.Offset_
-        if source.Flags_ &&& RotationMatrixDirtyMask = 0u then target.RotationMatrixOpt_ <- ref source.RotationMatrixOpt_.Value; target.RotationMatrixDirty <- false
+        if source.Flags_ &&& RotationMatrixDirtyMask = 0u then target.RotationMatrixOpt_ <- source.RotationMatrixOpt_; target.RotationMatrixDirty <- false
         target.Angles_ <- source.Angles_
         target.Size_ <- source.Size_
         target.Elevation_ <- source.Elevation_
