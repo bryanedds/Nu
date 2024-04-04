@@ -321,11 +321,11 @@ type [<NoEquality; NoComparison>] Transform =
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
         left.Flags_ = right.Flags_ &&
-        left.Position_.Equals right.Position_ &&
-        left.Rotation_.Equals right.Rotation_ &&
-        left.Scale_.Equals right.Scale_ &&
+        v3EqApprox left.Position_ right.Position_ &&
+        quatEqApprox left.Rotation_ right.Rotation_ &&
+        v3EqApprox left.Scale_ right.Scale_ &&
         left.Offset_.Equals right.Offset_ &&
-        left.Size_.Equals right.Size_ &&
+        x left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
         left.Overflow_ = right.Overflow_
 
