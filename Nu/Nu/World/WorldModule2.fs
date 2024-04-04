@@ -1085,7 +1085,6 @@ module WorldModule2 =
         static member private getElements2dBy (getElementsFromQuadree : Entity Quadtree -> unit) world =
             let quadtree = World.getQuadtree world
             getElementsFromQuadree quadtree
-            world
 
         static member private getElements2dInView set world =
             let viewBounds = World.getViewBounds2dRelative world
@@ -1142,15 +1141,13 @@ module WorldModule2 =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsInPlay playBox playFrustum set octree
-                world
-            | None -> world
+            | None -> ()
 
         static member private getElements3dInViewFrustum interior exterior frustum set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsInViewFrustum interior exterior frustum set octree
-                world
-            | None -> world
+            | None -> ()
 
         static member private getElements3dInView set world =
             let interior = World.getEye3dFrustumInterior world
@@ -1160,33 +1157,29 @@ module WorldModule2 =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsInView interior exterior imposter lightBox set octree
-                world
-            | None -> world
+            | None -> ()
 
         static member private getElements3d set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElements set octree
-                world
-            | None -> world
+            | None -> ()
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsInBounds bounds set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d entities at the given point, including all uncullable entities.
         static member getEntities3dAtPoint point set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsAtPoint point set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
         static member getEntities3dInPlay set world =
@@ -1194,9 +1187,8 @@ module WorldModule2 =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsInPlay playBox playFrustum set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set world =
@@ -1207,54 +1199,48 @@ module WorldModule2 =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElementsInView interior exterior imposter lightBox set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
         static member getLightProbes3dInFrustum frustum set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getLightProbesInFrustum frustum set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
         static member getLightProbes3dInBox box set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getLightProbesInBox box set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLights3dInFrustum frustum set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getLightsInFrustum frustum set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLights3dInBox box set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getLightsInBox box set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         /// Get all 3d entities in the current selected screen, including all uncullable entities.
         static member getEntities3d set world =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getElements set octree
-                let entities = Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-                (entities, world)
-            | None -> (Seq.empty, world)
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
 
         static member private preUpdateSimulants (world : World) =
 
@@ -1299,8 +1285,8 @@ module WorldModule2 =
                 let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
                 let screens = List.rev screens
                 let groups = Seq.concat (List.map (flip World.getGroups world) screens)
-                let world = World.getElements3dInPlay CachedHashSet3dNormal world
-                let world = World.getElements2dInPlay CachedHashSet2dNormal world
+                World.getElements3dInPlay CachedHashSet3dNormal world
+                World.getElements2dInPlay CachedHashSet2dNormal world
                 UpdateGatherTimer.Stop ()
 
                 // update game
@@ -1431,22 +1417,20 @@ module WorldModule2 =
                     if world.Accompanied
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                     else hashSetPlus HashIdentity.Structural []
-                let world =
-                    match renderPass with
-                    | NormalPass skipCulling ->
-                        if skipCulling
-                        then World.getElements3d CachedHashSet3dNormal world
-                        else World.getElements3dInView CachedHashSet3dNormal world
-                    | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
-                    | ReflectionPass _ -> world
-                let world =
-                    match renderPass with
-                    | NormalPass skipCulling ->
-                        if skipCulling
-                        then World.getElements2d CachedHashSet2dNormal world
-                        else World.getElements2dInView CachedHashSet2dNormal world
-                    | ShadowPass _ -> world
-                    | ReflectionPass _ -> world
+                match renderPass with
+                | NormalPass skipCulling ->
+                    if skipCulling
+                    then World.getElements3d CachedHashSet3dNormal world
+                    else World.getElements3dInView CachedHashSet3dNormal world
+                | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
+                | ReflectionPass _ -> ()
+                match renderPass with
+                | NormalPass skipCulling ->
+                    if skipCulling
+                    then World.getElements2d CachedHashSet2dNormal world
+                    else World.getElements2dInView CachedHashSet2dNormal world
+                | ShadowPass _ -> ()
+                | ReflectionPass _ -> ()
                 RenderGatherTimer.Stop ()
 
                 // render simulants breadth-first
@@ -1493,7 +1477,7 @@ module WorldModule2 =
 
                 // create shadow pass descriptors
                 let lightBox = World.getLight3dBox world
-                let (lights, world) = World.getLights3dInBox lightBox CachedHashSet3dShadow world // NOTE: this may not be the optimal way to query.
+                let lights = World.getLights3dInBox lightBox CachedHashSet3dShadow world // NOTE: this may not be the optimal way to query.
                 let eyeCenter = World.getEye3dCenter world
                 let sortableShadowPassDescriptors =
                     [|for light in lights do

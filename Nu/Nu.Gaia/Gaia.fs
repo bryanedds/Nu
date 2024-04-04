@@ -591,12 +591,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else snaps3d
 
     let private getPickCandidates2d () =
-        let (entities, wtemp) = World.getEntities2dInView (HashSet ()) world in world <- wtemp
+        let entities = World.getEntities2dInView (HashSet (QuadelementEqualityComparer ())) world
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
 
     let private getPickCandidates3d () =
-        let (entities, wtemp) = World.getEntities3dInView (HashSet ()) world in world <- wtemp
+        let entities = World.getEntities3dInView (HashSet (OctelementEqualityComparer ())) world
         let entitiesInGroup = entities |> Seq.filter (fun entity -> entity.Group = selectedGroup && entity.GetVisible world) |> Seq.toArray
         entitiesInGroup
 
@@ -669,7 +669,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         world <- wtemp
         let lightBox = World.getLight3dBox world
         let viewFrustum = World.getEye3dFrustumView world
-        let (entities, wtemp) = World.getLightProbes3dInBox lightBox (HashSet ()) world in world <- wtemp
+        let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
         let lightProbeModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
@@ -686,7 +686,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world
 
         // render lights of the selected group in play
-        let (entities, wtemp) = World.getLights3dInBox lightBox (HashSet ()) world in world <- wtemp
+        let entities = World.getLights3dInBox lightBox (HashSet ()) world
         let lightModels =
             entities |>
             Seq.filter (fun entity -> entity.Group = selectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
