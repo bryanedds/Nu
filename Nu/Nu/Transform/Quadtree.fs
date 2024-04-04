@@ -224,59 +224,6 @@ type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
 [<RequireQualifiedAccess>]
 module Quadtree =
 
-    /// Provides an enumerator interface to the quadtree queries.
-    type internal QuadtreeEnumerator<'e when 'e : equality> (uncullable : 'e Quadelement seq, cullable : 'e Quadelement seq) =
-
-        let uncullableArray = SArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
-        let cullableArray = SArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
-        let mutable cullableEnrValid = false
-        let mutable uncullableEnrValid = false
-        let mutable cullableEnr = Unchecked.defaultof<_>
-        let mutable uncullableEnr = Unchecked.defaultof<_>
-
-        interface 'e Quadelement IEnumerator with
-            member this.MoveNext () =
-                if not cullableEnrValid then
-                    cullableEnr <- cullableArray.GetEnumerator ()
-                    cullableEnrValid <- true
-                    if not (cullableEnr.MoveNext ()) then
-                        uncullableEnr <- uncullableArray.GetEnumerator ()
-                        uncullableEnrValid <- true
-                        uncullableEnr.MoveNext ()
-                    else true
-                else
-                    if not (cullableEnr.MoveNext ()) then
-                        if not uncullableEnrValid then
-                            uncullableEnr <- uncullableArray.GetEnumerator ()
-                            uncullableEnrValid <- true
-                            uncullableEnr.MoveNext ()
-                        else uncullableEnr.MoveNext ()
-                    else true
-
-            member this.Current =
-                if uncullableEnrValid then uncullableEnr.Current
-                elif cullableEnrValid then cullableEnr.Current
-                else failwithumf ()
-
-            member this.Current =
-                (this :> 'e Quadelement IEnumerator).Current :> obj
-
-            member this.Reset () =
-                cullableEnrValid <- false
-                uncullableEnrValid <- false
-                cullableEnr <- Unchecked.defaultof<_>
-                uncullableEnr <- Unchecked.defaultof<_>
-
-            member this.Dispose () =
-                cullableEnr <- Unchecked.defaultof<_>
-                uncullableEnr <- Unchecked.defaultof<_>
-            
-    /// Provides an enumerable interface to the quadtree queries.
-    type internal QuadtreeEnumerable<'e when 'e : equality> (enr : 'e QuadtreeEnumerator) =
-        interface IEnumerable<'e Quadelement> with
-            member this.GetEnumerator () = enr :> 'e Quadelement IEnumerator
-            member this.GetEnumerator () = enr :> IEnumerator
-
     /// A spatial structure that organizes elements on a 2d plane.
     type [<ReferenceEquality>] Quadtree<'e when 'e : equality> =
         private
@@ -355,27 +302,32 @@ module Quadtree =
     /// Get all of the elements in a tree that are in a node intersected by the given point.
     let getElementsAtPoint point set tree =
         Quadnode.getElementsAtPoint point set tree.Node
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
+        for omnipresent in tree.Ubiquitous do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInBounds bounds set tree =
         Quadnode.getElementsInBounds bounds set tree.Node
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
+        for omnipresent in tree.Ubiquitous do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInView bounds set tree =
         Quadnode.getElementsInView bounds set tree.Node
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
+        for omnipresent in tree.Ubiquitous do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInPlay bounds set tree =
         Quadnode.getElementsInPlay bounds set tree.Node
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
+        for omnipresent in tree.Ubiquitous do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree.
     let getElements (set : _ HashSet) tree =
         Quadnode.getElements set tree.Node
-        new QuadtreeEnumerable<'e> (new QuadtreeEnumerator<'e> (tree.Ubiquitous, set)) :> 'e Quadelement IEnumerable
+        for omnipresent in tree.Ubiquitous do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get the size of the tree's leaves.
     let getLeafSize tree =

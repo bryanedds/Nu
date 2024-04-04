@@ -383,60 +383,6 @@ type internal Octnode<'e when 'e : equality> = Octnode.Octnode<'e>
 [<RequireQualifiedAccess>]
 module Octree =
 
-    /// Provides an enumerator interface to the octree queries.
-    /// TODO: P1: see if we can make this enumerator work when its results are evaluated multiple times in the debugger.
-    type internal OctreeEnumerator<'e when 'e : equality> (uncullable : 'e Octelement seq, cullable : 'e Octelement seq) =
-
-        let uncullableArray = SArray.ofSeq uncullable // eagerly convert to segmented array to keep iteration valid
-        let cullableArray = SArray.ofSeq cullable // eagerly convert to segmented array to keep iteration valid
-        let mutable cullableEnrValid = false
-        let mutable uncullableEnrValid = false
-        let mutable cullableEnr = Unchecked.defaultof<_>
-        let mutable uncullableEnr = Unchecked.defaultof<_>
-
-        interface Octelement<'e> IEnumerator with
-            member this.MoveNext () =
-                if not cullableEnrValid then
-                    cullableEnr <- cullableArray.GetEnumerator ()
-                    cullableEnrValid <- true
-                    if not (cullableEnr.MoveNext ()) then
-                        uncullableEnr <- uncullableArray.GetEnumerator ()
-                        uncullableEnrValid <- true
-                        uncullableEnr.MoveNext ()
-                    else true
-                else
-                    if not (cullableEnr.MoveNext ()) then
-                        if not uncullableEnrValid then
-                            uncullableEnr <- uncullableArray.GetEnumerator ()
-                            uncullableEnrValid <- true
-                            uncullableEnr.MoveNext ()
-                        else uncullableEnr.MoveNext ()
-                    else true
-
-            member this.Current =
-                if uncullableEnrValid then uncullableEnr.Current
-                elif cullableEnrValid then cullableEnr.Current
-                else failwithumf ()
-
-            member this.Current =
-                (this :> 'e Octelement IEnumerator).Current :> obj
-
-            member this.Reset () =
-                cullableEnrValid <- false
-                uncullableEnrValid <- false
-                cullableEnr <- Unchecked.defaultof<_>
-                uncullableEnr <- Unchecked.defaultof<_>
-
-            member this.Dispose () =
-                cullableEnr <- Unchecked.defaultof<_>
-                uncullableEnr <- Unchecked.defaultof<_>
-
-    /// Provides an enumerable interface to the octree queries.
-    type internal OctreeEnumerable<'e when 'e : equality> (enr : 'e OctreeEnumerator) =
-        interface IEnumerable<'e Octelement> with
-            member this.GetEnumerator () = enr :> 'e Octelement IEnumerator
-            member this.GetEnumerator () = enr :> IEnumerator
-
     /// A spatial structure that organizes elements in a 3d grid.
     type [<ReferenceEquality>] Octree<'e when 'e : equality> =
         private
@@ -525,7 +471,8 @@ module Octree =
         for imposter in tree.Imposter do
             if (let ib = imposter.Bounds in ib.Intersects point) then
                 set.Add imposter |> ignore<bool>
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given bounds.
     let getElementsInBounds bounds (set : _ HashSet) tree =
@@ -533,7 +480,8 @@ module Octree =
         for imposter in tree.Imposter do
             if bounds.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by the given frustum.
     let getElementsInFrustum frustum (set : _ HashSet) tree =
@@ -541,7 +489,8 @@ module Octree =
         for imposter in tree.Imposter do
             if frustum.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that satisfy the given query parameters.
     let getElementsInViewFrustum interior exterior frustum (set : _ HashSet) tree =
@@ -549,7 +498,8 @@ module Octree =
         for imposter in tree.Imposter do
             if frustum.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by one of the given frustums or light box depending on its attributes.
     let getElementsInView frustumInterior frustumExterior (frustumImposter : Frustum) lightBox (set : _ HashSet) tree =
@@ -557,41 +507,48 @@ module Octree =
         for imposter in tree.Imposter do
             if frustumImposter.Intersects imposter.Bounds then
                 set.Add imposter |> ignore<bool>
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree that are in a node intersected by one of the given box or frustum depending on its attributes.
     let getElementsInPlay playBox playFrustum (set : _ HashSet) tree =
         Octnode.getElementsInPlay playBox playFrustum set tree.Node
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the elements in a tree.
     let getElements (set : _ HashSet) tree =
         Octnode.getElements set tree.Node
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (tree.Omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light probe elements in the given frustum.
     let getLightProbesInFrustum frustum (set : _ HashSet) tree =
         Octnode.getLightProbesInViewFrustum frustum set tree.Node
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            if omnipresent.LightProbe then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light probe elements in the given box.
     let getLightProbesInBox box (set : _ HashSet) tree =
         Octnode.getLightProbesInViewBox box set tree.Node
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.LightProbe)
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            if omnipresent.LightProbe then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light elements in the given frustum.
     let getLightsInFrustum frustum (set : _ HashSet) tree =
         Octnode.getLightsInViewFrustum frustum set tree.Node
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            if omnipresent.Light then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light elements in the given box.
     let getLightsInBox box (set : _ HashSet) tree =
         Octnode.getLightsInViewBox box set tree.Node
-        let omnipresent = tree.Omnipresent |> Seq.filter (fun element -> element.Light)
-        new OctreeEnumerable<'e> (new OctreeEnumerator<'e> (omnipresent, set)) :> 'e Octelement IEnumerable
+        for omnipresent in tree.Omnipresent do
+            if omnipresent.Light then
+                set.Add omnipresent |> ignore<bool>
 
     /// Get the size of the tree's leaves.
     let getLeafSize tree =
