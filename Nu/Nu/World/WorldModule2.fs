@@ -1632,6 +1632,9 @@ module WorldModule2 =
                                                                     else world
                                                                 AudioTimer.Stop ()
 
+                                                                // printing out some variance metrics
+                                                                //printfn "F:%A\tGC:%A" FrameTimer.ElapsedMilliseconds (GC.GetTotalPauseDuration ()).TotalMilliseconds
+
                                                                 // process rendering (1/2)
                                                                 let rendererProcess = World.getRendererProcess world
                                                                 if not firstFrame then rendererProcess.Swap ()
