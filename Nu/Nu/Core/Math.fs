@@ -45,6 +45,10 @@ module Vector2 =
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
     let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
+    let v2EqApprox (v : Vector2) (v2 : Vector2) =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f)
+    let inline v2NeqApprox v v2 = not (v2EqApprox v v2)
     let inline v2Dup (a : single) = v2 a a
     let v2One = Vector2.One
     let v2Zero = Vector2.Zero
@@ -158,6 +162,11 @@ module Vector3 =
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
     let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
+    let v3EqApprox (v : Vector3) (v2 : Vector3) =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, 0.0001f)
+    let inline v3NeqApprox v v2 = not (v3EqApprox v v2)
     let inline v3Dup (a : single) = v3 a a a
     let v3UncenteredOffset = v3Dup 0.5f
     let v3One = Vector3.One
@@ -243,6 +252,12 @@ module Vector4 =
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
     let inline v4Neq (v : Vector4) (v2 : Vector4) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
+    let v4EqApprox (v : Vector4) (v2 : Vector4) =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.W, v2.W, 0.0001f)
+    let inline v3NeqApprox v v2 = not (v3EqApprox v v2)
     let inline v4Dup (a : single) = v4 a a a a
     let v4One = Vector4.One
     let v4Zero = Vector4.Zero
@@ -554,6 +569,12 @@ module Quaternion =
     let inline quat x y z w = Quaternion (x, y, z, w)
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
+    let quatEqApprox (v : Quaternion) (v2 : Quaternion) =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, 0.0001f) &&
+        Math.ApproximatelyEqualEpsilon (v.W, v2.W, 0.0001f)
+    let inline quatNeqApprox v v2 = not (quatEqApprox v v2)
 
     /// Create a look-at rotation quaternion.
     /// NOTE: this might be less efficient since it uses Matrix4x4's look-at function then converts to quaternion.
