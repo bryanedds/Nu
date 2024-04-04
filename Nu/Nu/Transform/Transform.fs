@@ -325,7 +325,7 @@ type [<NoEquality; NoComparison>] Transform =
         quatEqApprox left.Rotation_ right.Rotation_ &&
         v3EqApprox left.Scale_ right.Scale_ &&
         left.Offset_.Equals right.Offset_ &&
-        x left.Size_.Equals right.Size_ &&
+        left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
         left.Overflow_ = right.Overflow_
 
