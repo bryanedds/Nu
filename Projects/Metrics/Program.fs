@@ -52,8 +52,7 @@ type MyGameDispatcher () =
                 let world = entity.SetScale (v3Dup 0.1f) world
                 world)
                 world positions
-        let world = World.selectScreen (IdlingState world.GameTime) screen world
-        world
+        World.selectScreen (IdlingState world.GameTime) screen world
 #else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }

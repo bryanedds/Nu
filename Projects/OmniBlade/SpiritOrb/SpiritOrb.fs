@@ -13,7 +13,6 @@ type SpiritOrbInhabitant =
     | NarrativeInhabitant of Narrative
     | SpiritInhabitant of Spirit
 
-// TODO: consider making this an abstract data type.
 type [<ReferenceEquality>] SpiritOrb =
     { AvatarLowerCenter : Vector3
       ShowUnopenedChests : bool
