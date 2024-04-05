@@ -51,19 +51,22 @@ type [<Struct>] RenderType =
 /// Desribes the render pass at play.
 /// OPTIMIZATION: uses partial hashing for speed.
 type [<CustomEquality; NoComparison>] RenderPass =
-    | NormalPass of SkipCulling : bool
+    | NormalPass
+    | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
     | ShadowPass of LightId : uint64 * ShadowDirectional : bool * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
     static member hash renderPass =
         match renderPass with
-        | NormalPass _ -> 0
+        | NormalPass -> 0
+        | LightMapPass (lightProbeId, _) -> hash lightProbeId
         | ShadowPass (lightId, _, _) -> hash lightId
         | ReflectionPass (reflectorId, _) -> hash reflectorId
 
     static member equals left right =
         match struct (left, right) with
-        | struct (NormalPass _, NormalPass _) -> true
+        | struct (NormalPass, NormalPass) -> true
+        | struct (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
         | struct (ShadowPass (lightId, _, _), ShadowPass (lightId2, _, _)) -> lightId = lightId2
         | struct (ReflectionPass (lightId, _), ReflectionPass (lightId2, _)) -> lightId = lightId2
         | struct (_, _) -> false

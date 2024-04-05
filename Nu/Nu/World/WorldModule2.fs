@@ -1149,6 +1149,12 @@ module WorldModule2 =
                 Octree.getElementsInViewFrustum interior exterior frustum set octree
             | None -> ()
 
+        static member private getElements3dInViewBox box set world =
+            match World.getOctreeOpt world with
+            | Some octree ->
+                Octree.getElementsInViewBox box set octree
+            | None -> ()
+
         static member private getElements3dInView set world =
             let interior = World.getEye3dFrustumInterior world
             let exterior = World.getEye3dFrustumExterior world
@@ -1215,6 +1221,14 @@ module WorldModule2 =
             match World.getOctreeOpt world with
             | Some octree ->
                 Octree.getLightProbesInBox box set octree
+                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+            | None -> Seq.empty
+
+        /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
+        static member getLightProbes3d set world =
+            match World.getOctreeOpt world with
+            | Some octree ->
+                Octree.getLightProbes set octree
                 Seq.map (fun (element : Entity Octelement) -> element.Entry) set
             | None -> Seq.empty
 
@@ -1418,19 +1432,20 @@ module WorldModule2 =
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
-                | NormalPass skipCulling ->
-                    if skipCulling
-                    then World.getElements3d CachedHashSet3dNormal world
-                    else World.getElements3dInView CachedHashSet3dNormal world
+                | NormalPass -> World.getElements3dInView CachedHashSet3dNormal world
+                | LightMapPass (_, lightMapBounds) ->
+                    let hashSet = HashSet ()
+                    World.getElements3dInViewBox lightMapBounds hashSet world
+                    for element in hashSet do
+                        if element.Static then
+                            CachedHashSet3dNormal.Add element |> ignore<bool>
                 | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
-                | ReflectionPass _ -> ()
+                | ReflectionPass (_, _) -> ()
                 match renderPass with
-                | NormalPass skipCulling ->
-                    if skipCulling
-                    then World.getElements2d CachedHashSet2dNormal world
-                    else World.getElements2dInView CachedHashSet2dNormal world
-                | ShadowPass _ -> ()
-                | ReflectionPass _ -> ()
+                | NormalPass -> World.getElements2dInView CachedHashSet2dNormal world
+                | LightMapPass (_, _) -> ()
+                | ShadowPass (_, _, _) -> ()
+                | ReflectionPass (_, _) -> ()
                 RenderGatherTimer.Stop ()
 
                 // render simulants breadth-first
@@ -1470,10 +1485,26 @@ module WorldModule2 =
                 CachedHashSet3dNormal.Clear ()
                 CachedHashSet2dNormal.Clear ()
 
-        static member private renderSimulants skipCulling world =
+        static member private renderSimulants lightMapRenderRequested world =
 
             // use a finally block to free cached values
             try
+
+                // render light maps
+                let world =
+                    if lightMapRenderRequested then
+                        let lightProbes = World.getLightProbes3d (HashSet HashIdentity.Structural) world // NOTE: this may not be the optimal way to query.
+                        let lightProbesStale = Seq.filter (fun (lightProbe : Entity) -> lightProbe.GetProbeStale world) lightProbes
+                        Seq.fold (fun world (lightProbe : Entity) ->
+                            let id = lightProbe.GetId world
+                            let bounds = lightProbe.GetProbeBounds world
+                            let boundsPlus = box3 (bounds.Min - bounds.Size) (bounds.Max + bounds.Size) // TODO: allow user to specify bounds scalar?
+                            let renderPass = LightMapPass (id, boundsPlus)
+                            let world = World.renderSimulantsInternal renderPass world
+                            World.enqueueRenderMessage3d (RenderLightMap3d { LightProbeId = id; RenderPass = renderPass }) world
+                            lightProbe.SetProbeStale false world)
+                            world lightProbesStale
+                    else world
 
                 // create shadow pass descriptors
                 let lightBox = World.getLight3dBox world
@@ -1531,10 +1562,11 @@ module WorldModule2 =
                         world
 
                 // render simulants normally, remember to clear 3d shadow cache
-                World.renderSimulantsInternal (NormalPass skipCulling) world
+                World.renderSimulantsInternal NormalPass world
 
             // free cached values
-            finally CachedHashSet3dShadow.Clear ()
+            finally
+                CachedHashSet3dShadow.Clear ()
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
@@ -1667,9 +1699,9 @@ module WorldModule2 =
 
                                                             // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
                                                             RenderTimer.Start ()
-                                                            let skipCulling = World.getUnculledRenderRequested world
-                                                            let world = World.acknowledgeUnculledRenderRequest world
-                                                            let world = World.renderSimulants skipCulling world
+                                                            let lightMapRenderRequested = World.getLightMapRenderRequested world
+                                                            let world = World.acknowledgeLightMapRenderRequest world
+                                                            let world = World.renderSimulants lightMapRenderRequested world
                                                             RenderTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
@@ -1731,7 +1763,6 @@ module WorldModule2 =
 
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
-                                                                    skipCulling
                                                                     (World.getEye3dFrustumInterior world)
                                                                     (World.getEye3dFrustumExterior world)
                                                                     (World.getEye3dFrustumImposter world)
@@ -1974,7 +2005,6 @@ module EntityDispatcherModule2 =
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
-             define Entity.AlwaysUpdate true
              define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero

@@ -268,7 +268,7 @@ module AmbientState =
               // cache line 3
               Symbolics : Symbolics
               Overlayer : Overlayer
-              UnculledRenderRequested : bool }
+              LightMapRenderRequested : bool }
 
         member this.Imperative = this.Flags &&& ImperativeMask <> 0u
         member this.Accompanied = this.Flags &&& AccompaniedMask <> 0u
@@ -464,17 +464,17 @@ module AmbientState =
     let setOverlayer overlayer state =
         { state with Overlayer = overlayer }
 
-    /// Acknowledge an unculled render request.
-    let acknowledgeUnculledRenderRequest state =
-        { state with UnculledRenderRequested = false }
+    /// Acknowledge a light map render request.
+    let acknowledgeLightMapRenderRequest state =
+        { state with LightMapRenderRequested = false }
 
-    /// Get whether an unculled render was requested.
-    let getUnculledRenderRequested state =
-        state.UnculledRenderRequested
+    /// Get whether a light map render was requested.
+    let getLightMapRenderRequested state =
+        state.LightMapRenderRequested
 
-    /// Request an unculled render for the current frame.
-    let requestUnculledRender state =
-        { state with UnculledRenderRequested = true }
+    /// Request a light map render for the current frame.
+    let requestLightMapRender state =
+        { state with LightMapRenderRequested = true }
 
     /// Make an ambient state value.
     let make imperative accompanied advancing framePacing symbolics overlayer sdlDepsOpt =
@@ -498,7 +498,7 @@ module AmbientState =
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics
           Overlayer = overlayer
-          UnculledRenderRequested = false }
+          LightMapRenderRequested = false }
 
 /// The ambient state of the world.
 type 'w AmbientState = 'w AmbientState.AmbientState

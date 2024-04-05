@@ -139,7 +139,7 @@ module WorldEntityHierarchy =
                         let enabled = entity.GetEnabled world
                         let position = entity.GetPosition world
                         let bounds = entity.GetProbeBounds world
-                        let stale = entity.GetProbeStalePrevious world
+                        let stale = entity.GetProbeStale world
                         Choice1Of3 { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale }
                         let probeBounds = entity.GetProbeBounds world
                         boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine probeBounds) | None -> Some probeBounds
@@ -285,17 +285,22 @@ module FreezerFacetModule =
                 let lightBoxOpt = Some (World.getLight3dBox world)
                 fun probe light presence bounds ->
                     match renderPass with
-                    | NormalPass skipCulling -> skipCulling || Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
+                    | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
+                    | LightMapPass _ -> false
                     | ShadowPass (_, _, frustum) -> not probe && not light && frustum.Intersects bounds
-                    | ReflectionPass _ -> false
+                    | ReflectionPass (_, _) -> false
 
             // render all probes, clearing staleness when appropriate
             let probes = entity.GetFrozenRenderLightProbes3d world
-            for i in 0 .. dec probes.Length do
-                let probe = &probes.[i]
-                let renderProbe = { LightProbeId = probe.LightProbeId; Enabled = probe.Enabled; Origin = probe.Origin; Bounds = probe.Bounds; Stale = probe.Stale; RenderPass = renderPass }
-                World.enqueueRenderMessage3d (RenderLightProbe3d renderProbe) world
-                probe.Stale <- false
+            let world =
+                List.fold (fun world i ->
+                    let probe = &probes.[i]
+                    let renderProbe = { LightProbeId = probe.LightProbeId; Enabled = probe.Enabled; Origin = probe.Origin; Bounds = probe.Bounds; RenderPass = renderPass }
+                    World.enqueueRenderMessage3d (RenderLightProbe3d renderProbe) world
+                    let world = if probe.Stale then World.requestLightMapRender world else world
+                    probe.Stale <- false
+                    world)
+                    world [0 .. dec probes.Length]
 
             // render unculled lights
             let bounds = entity.GetBounds world

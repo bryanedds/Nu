@@ -2030,6 +2030,7 @@ module SkyBoxFacetModule =
         static member Properties =
             [define Entity.Absolute true
              define Entity.Presence Omnipresent
+             define Entity.Static true
              define Entity.AmbientColor Color.White
              define Entity.AmbientBrightness 1.0f
              define Entity.Color Color.White
@@ -2054,9 +2055,6 @@ module LightProbe3dFacetModule =
         member this.GetProbeBounds world : Box3 = this.Get (nameof this.ProbeBounds) world
         member this.SetProbeBounds (value : Box3) world = this.Set (nameof this.ProbeBounds) value world
         member this.ProbeBounds = lens (nameof this.ProbeBounds) this this.GetProbeBounds this.SetProbeBounds
-        member this.GetProbeStalePrevious world : bool = this.Get (nameof this.ProbeStalePrevious) world
-        member this.SetProbeStalePrevious (value : bool) world = this.Set (nameof this.ProbeStalePrevious) value world
-        member this.ProbeStalePrevious = lens (nameof this.ProbeStalePrevious) this this.GetProbeStalePrevious this.SetProbeStalePrevious
         member this.GetProbeStale world : bool = this.Get (nameof this.ProbeStale) world
         member this.SetProbeStale (value : bool) world = this.Set (nameof this.ProbeStale) value world
         member this.ProbeStale = lens (nameof this.ProbeStale) this this.GetProbeStale this.SetProbeStale
@@ -2081,38 +2079,28 @@ module LightProbe3dFacetModule =
         static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
             let world =
                 if evt.Data.Value :?> bool
-                then World.requestUnculledRender world
+                then World.requestLightMapRender world
                 else world
             (Cascade, world)
 
         static member Properties =
             [define Entity.Size (v3Dup 0.25f)
-             define Entity.AlwaysUpdate true
              define Entity.LightProbe true
              define Entity.Presence Omnipresent
+             define Entity.Static true
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
-             nonPersistent Entity.ProbeStalePrevious false
              nonPersistent Entity.ProbeStale false]
 
         override this.Register (entity, world) =
             let world = World.sense handleProbeStaleChange (entity.GetChangeEvent (nameof entity.ProbeStale)) entity (nameof LightProbe3dFacet) world
             entity.SetProbeStale true world
 
-        override this.Update (entity, world) =
-            if entity.GetProbeStale world then
-                let world = entity.SetProbeStale false world
-                entity.SetProbeStalePrevious true world
-            elif entity.GetProbeStalePrevious world then
-                entity.SetProbeStalePrevious false world
-            else world
-            
         override this.Render (renderPass, entity, world) =
             let id = entity.GetId world
             let enabled = entity.GetEnabled world
             let position = entity.GetPosition world
             let bounds = entity.GetProbeBounds world
-            let stale = entity.GetProbeStalePrevious world
-            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; Stale = stale; RenderPass = renderPass }) world
+            World.enqueueRenderMessage3d (RenderLightProbe3d { LightProbeId = id; Enabled = enabled; Origin = position; Bounds = bounds; RenderPass = renderPass }) world
 
         override this.RayCast (ray, entity, world) =
             let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -2895,6 +2883,7 @@ module TerrainFacetModule =
         static member Properties =
             [define Entity.Size (v3 512.0f 128.0f 512.0f)
              define Entity.Presence Omnipresent
+             define Entity.Static true
              define Entity.AlwaysRender true
              define Entity.BodyEnabled true
              define Entity.Friction 0.5f

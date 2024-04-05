@@ -32,7 +32,6 @@ module EntityDispatcherModule =
             [define Entity.Size Constants.Engine.EntitySizeGuiDefault
              define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
              define Entity.Absolute true
-             define Entity.AlwaysUpdate true
              define Entity.Presence Omnipresent
              define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Layout Manual
@@ -439,6 +438,7 @@ module SkyBoxDispatcherModule =
         static member Properties =
             [define Entity.Absolute true
              define Entity.Presence Omnipresent
+             define Entity.Static true
              define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]
@@ -453,9 +453,9 @@ module LightProbe3dDispatcherModule =
 
         static member Properties =
             [define Entity.Size (v3Dup 0.25f)
-             define Entity.AlwaysUpdate true
              define Entity.LightProbe true
              define Entity.Presence Omnipresent
+             define Entity.Static true
              define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
              define Entity.ProbeStale false]
 
@@ -764,4 +764,5 @@ module TerrainDispatcherModule =
         static member Properties =
             [define Entity.Size (v3 512.0f 128.0f 512.0f)
              define Entity.Presence Omnipresent
+             define Entity.Static true
              define Entity.AlwaysRender true]

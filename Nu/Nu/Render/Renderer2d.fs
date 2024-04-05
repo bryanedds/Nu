@@ -108,27 +108,8 @@ type [<ReferenceEquality>] RenderMessage2d =
     | UnloadRenderPackage2d of string
     | ReloadRenderAssets2d
 
-/// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
-type Renderer2d =
-    /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
-    /// Handle render clean up by freeing all loaded render assets.
-    abstract CleanUp : unit -> unit
-
-/// The stub implementation of Renderer2d.
-type [<ReferenceEquality>] StubRenderer2d =
-    private
-        { StubRenderer2d : unit }
-
-    interface Renderer2d with
-        member renderer.Render _ _ _ _ = ()
-        member renderer.CleanUp () = ()
-
-    static member make () =
-        { StubRenderer2d = () }
-
 /// Compares layered 2d operations.
-type LayeredOperation2dComparer () =
+type private LayeredOperation2dComparer () =
     interface IComparer<LayeredOperation2d> with
         member this.Compare (left, right) =
             if left.Elevation < right.Elevation then -1
@@ -156,6 +137,25 @@ type [<NoEquality; NoComparison>] private RenderPackageCached =
 type [<NoEquality; NoComparison>] private RenderAssetCached =
     { mutable CachedAssetTagOpt : AssetTag
       mutable CachedRenderAsset : RenderAsset }
+
+/// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
+type Renderer2d =
+    /// Render a frame of the game.
+    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
+    /// Handle render clean up by freeing all loaded render assets.
+    abstract CleanUp : unit -> unit
+
+/// The stub implementation of Renderer2d.
+type [<ReferenceEquality>] StubRenderer2d =
+    private
+        { StubRenderer2d : unit }
+
+    interface Renderer2d with
+        member renderer.Render _ _ _ _ = ()
+        member renderer.CleanUp () = ()
+
+    static member make () =
+        { StubRenderer2d = () }
 
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =

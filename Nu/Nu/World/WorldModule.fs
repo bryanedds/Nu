@@ -393,17 +393,16 @@ module WorldModule =
         static member tryGetRoutedOverlayNameOpt dispatcherName world =
             World.getOverlayerBy (Overlayer.tryGetOverlayNameOpt dispatcherName) world
 
-        static member internal acknowledgeUnculledRenderRequest world =
-            World.updateAmbientState AmbientState.acknowledgeUnculledRenderRequest world
+        static member internal acknowledgeLightMapRenderRequest world =
+            World.updateAmbientState AmbientState.acknowledgeLightMapRenderRequest world
 
-        /// Get whether an unculled render was requested.
-        static member getUnculledRenderRequested world =
-            World.getAmbientStateBy AmbientState.getUnculledRenderRequested world
+        /// Get whether a light map render was requested.
+        static member getLightMapRenderRequested world =
+            World.getAmbientStateBy AmbientState.getLightMapRenderRequested world
 
-        /// Request an unculled render for the current frame, such as when a light probe needs to be rendered when its
-        /// relevant entities are in culling range.
-        static member requestUnculledRender world =
-            World.updateAmbientState AmbientState.requestUnculledRender world
+        /// Request a light map render for the current frame, such as when a light probe needs to be rendered.
+        static member requestLightMapRender world =
+            World.updateAmbientState AmbientState.requestLightMapRender world
 
     type World with // Quadtree
 
