@@ -1,7 +1,4 @@
-﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
-
-namespace TerraFirma
+﻿namespace TerraFirma
 open System
 open Prime
 open Nu
