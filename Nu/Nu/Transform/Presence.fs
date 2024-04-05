@@ -6,7 +6,7 @@ open System
 open Prime
 
 /// Describes the form of an element's presence.
-type [<Struct>] Presence =
+type Presence =
     /// An interior element so you have to be closer to see them.
     | Interior
     /// An exterior element so you can see them from a distance.
