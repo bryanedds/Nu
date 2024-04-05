@@ -651,7 +651,9 @@ type [<ReferenceEquality>] RenderTasks =
       RenderForwardStaticAbsolute : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
       RenderForwardStaticRelative : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
       RenderForwardStaticAbsoluteSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
-      RenderForwardStaticRelativeSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List }
+      RenderForwardStaticRelativeSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
+      RenderDeferredStaticRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
+      RenderDeferredAnimatedRemovals : AnimatedModelSurfaceKey List }
 
     static member make () =
         { RenderSkyBoxes = List ()
@@ -667,17 +669,48 @@ type [<ReferenceEquality>] RenderTasks =
           RenderForwardStaticAbsolute = List ()
           RenderForwardStaticRelative = List ()
           RenderForwardStaticAbsoluteSorted = List ()
-          RenderForwardStaticRelativeSorted = List () }
+          RenderForwardStaticRelativeSorted = List ()
+          RenderDeferredStaticRemovals = List ()
+          RenderDeferredAnimatedRemovals = List () }
 
     static member clear renderTasks =
         renderTasks.RenderSkyBoxes.Clear ()
         renderTasks.RenderLightProbes.Clear ()
         renderTasks.RenderLightMaps.Clear ()
         renderTasks.RenderLights.Clear ()
-        for entry in renderTasks.RenderDeferredStaticAbsolute do entry.Value.Clear () // TODO: P1: consider removing entries with 0 elements?
-        for entry in renderTasks.RenderDeferredStaticRelative do entry.Value.Clear ()
-        for entry in renderTasks.RenderDeferredAnimatedAbsolute do entry.Value.Clear ()
-        for entry in renderTasks.RenderDeferredAnimatedRelative do entry.Value.Clear ()
+
+        for entry in renderTasks.RenderDeferredStaticAbsolute do
+            if entry.Value.Count = 0
+            then renderTasks.RenderDeferredStaticRemovals.Add entry.Key
+            else entry.Value.Clear ()
+        for removal in renderTasks.RenderDeferredStaticRemovals do
+            renderTasks.RenderDeferredStaticAbsolute.Remove removal |> ignore<bool>
+        renderTasks.RenderDeferredStaticRemovals.Clear ()
+
+        for entry in renderTasks.RenderDeferredStaticRelative do
+            if entry.Value.Count = 0
+            then renderTasks.RenderDeferredStaticRemovals.Add entry.Key
+            else entry.Value.Clear ()
+        for removal in renderTasks.RenderDeferredStaticRemovals do
+            renderTasks.RenderDeferredStaticRelative.Remove removal |> ignore<bool>
+        renderTasks.RenderDeferredStaticRemovals.Clear ()
+
+        for entry in renderTasks.RenderDeferredAnimatedAbsolute do
+            if entry.Value.Count = 0
+            then renderTasks.RenderDeferredAnimatedRemovals.Add entry.Key
+            else entry.Value.Clear ()
+        for removal in renderTasks.RenderDeferredAnimatedRemovals do
+            renderTasks.RenderDeferredAnimatedAbsolute.Remove removal |> ignore<bool>
+        renderTasks.RenderDeferredAnimatedRemovals.Clear ()
+
+        for entry in renderTasks.RenderDeferredAnimatedRelative do
+            if entry.Value.Count = 0
+            then renderTasks.RenderDeferredAnimatedRemovals.Add entry.Key
+            else entry.Value.Clear ()
+        for removal in renderTasks.RenderDeferredAnimatedRemovals do
+            renderTasks.RenderDeferredAnimatedRelative.Remove removal |> ignore<bool>
+        renderTasks.RenderDeferredAnimatedRemovals.Clear ()
+
         renderTasks.RenderForwardStaticAbsoluteSorted.Clear ()
         renderTasks.RenderForwardStaticRelativeSorted.Clear ()
         renderTasks.RenderDeferredTerrainsAbsolute.Clear ()
