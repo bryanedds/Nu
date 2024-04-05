@@ -561,8 +561,6 @@ namespace Nu
         /// <summary>
         /// Convert euler angles in [roll, pitch, yaw] to a quaternion.
         /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-        /// NOTE: because this use double-precision calculation, it might be slower than it needs be.
-        /// TODO: consider using MathF instead if we upgrade to netstandard2.1 or higher.
         /// </summary>
         public static Quaternion RollPitchYaw(in this Vector3 angles)
 		{
@@ -571,18 +569,18 @@ namespace Nu
             var yaw = angles.Z;
 
             // Abbreviations for the various angular functions
-            double cy = System.Math.Cos(yaw * 0.5);
-            double sy = System.Math.Sin(yaw * 0.5);
-            double cp = System.Math.Cos(pitch * 0.5);
-            double sp = System.Math.Sin(pitch * 0.5);
-            double cr = System.Math.Cos(roll * 0.5);
-            double sr = System.Math.Sin(roll * 0.5);
+            var cy = System.MathF.Cos(yaw * 0.5f);
+            var sy = System.MathF.Sin(yaw * 0.5f);
+            var cp = System.MathF.Cos(pitch * 0.5f);
+            var sp = System.MathF.Sin(pitch * 0.5f);
+            var cr = System.MathF.Cos(roll * 0.5f);
+            var sr = System.MathF.Sin(roll * 0.5f);
 
             Quaternion q;
-            q.W = (float)(cr * cp * cy + sr * sp * sy);
-            q.X = (float)(sr * cp * cy - cr * sp * sy);
-            q.Y = (float)(cr * sp * cy + sr * cp * sy);
-            q.Z = (float)(cr * cp * sy - sr * sp * cy);
+            q.W = cr * cp * cy + sr * sp * sy;
+            q.X = sr * cp * cy - cr * sp * sy;
+            q.Y = cr * sp * cy + sr * cp * sy;
+            q.Z = cr * cp * sy - sr * sp * cy;
 
             return q;
         }
