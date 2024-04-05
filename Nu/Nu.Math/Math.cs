@@ -562,7 +562,7 @@ namespace Nu
         /// Convert euler angles in [roll, pitch, yaw] to a quaternion.
         /// Sourced from - https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
         /// NOTE: because this use double-precision calculation, it might be slower than it needs be.
-        /// TODO: consider using MathF instead once we upgrade to .NET 5.
+        /// TODO: consider using MathF instead if we upgrade to netstandard2.1 or higher.
         /// </summary>
         public static Quaternion RollPitchYaw(in this Vector3 angles)
 		{
