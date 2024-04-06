@@ -1092,9 +1092,6 @@ module WorldModule2 =
             let playBounds = World.getPlayBounds2dRelative world
             World.getElements2dBy (Quadtree.getElementsInPlay playBounds set) world
 
-        static member private getElements2d set world =
-            World.getElements2dBy (Quadtree.getElements set) world
-
         /// Get all 2d entities in the given bounds, including all uncullable entities.
         static member getEntities2dInBounds bounds set world =
             let quadtree = World.getQuadtree world
@@ -1126,11 +1123,6 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             Quadtree.getElements set quadtree
             Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
-
-        static member private getElements3dBy (getElementsFromOctree : Entity Octree -> Entity Octelement seq) world =
-            let octree = World.getOctree world
-            let elements = getElementsFromOctree octree
-            (elements, world)
 
         static member private getElements3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
@@ -1221,6 +1213,18 @@ module WorldModule2 =
             let octree = World.getOctree world
             Octree.getElements set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
+
+        /// Sweep the quadtree clean of all empty nodes.
+        /// It can make sense to call this after loading a new level.
+        static member sweepQuadtree world =
+            let quadtree = World.getQuadtree world
+            Quadtree.sweep quadtree
+
+        /// Sweep the octree clean of all empty nodes.
+        /// It can make sense to call this after loading a new level.
+        static member sweepOctree world =
+            let octree = World.getOctree world
+            Octree.sweep octree
 
         static member private preUpdateSimulants (world : World) =
 

@@ -248,6 +248,19 @@ module internal Quadnode =
         | ElementChildren children ->
             set.UnionWith children
 
+    let rec internal sweep (node : 'e Quadnode) =
+        if node.ElementsCount_ = 0 then
+            match node.Children_ with
+            | NoChildren ->
+                ()
+            | NodeChildren nodes ->
+                for i in 0 .. dec nodes.Length do
+                    let node = &nodes.[i]
+                    sweep node
+            | ElementChildren _ ->
+                node.Leaves_.Remove node.Bounds_.Min |> ignore<bool>
+            node.Children_ <- NoChildren
+
     let internal make<'e when 'e : equality> comparer depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) : 'e Quadnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
         let node =
@@ -381,6 +394,10 @@ module Quadtree =
     /// Get the bounds of the tree.
     let getBounds tree =
         tree.Bounds
+
+    /// Remove all unused non-root nodes in the tree.
+    let sweep tree =
+        Quadnode.sweep tree.Node
 
     /// Create a Quadtree with the given depth and overall size.
     /// Size dimensions must be a power of two.
