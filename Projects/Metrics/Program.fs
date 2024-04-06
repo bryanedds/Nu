@@ -42,12 +42,12 @@ type MyGameDispatcher () =
         let positions = // 40,000 entities (goal: 60FPS, current 60FPS)
             [|for i in 0 .. dec 50 do
                 for j in 0 .. dec 50 do
-                    for k in 0 .. dec 16 do
+                    for k in 0 .. dec 6 do
                         yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
         let world =
             Array.fold (fun world position ->
                 let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
-                let world = entity.SetPresence Omnipresent world
+                //let world = entity.SetPresence Omnipresent world
                 let world = entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
                 let world = entity.SetScale (v3Dup 0.1f) world
                 world)
