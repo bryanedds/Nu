@@ -1372,47 +1372,50 @@ module WorldModule2 =
             // fin
             world
 
-        static member private renderScreenTransition5 transitionTime (_ : Vector2) (eyeSize : Vector2) (_ : Screen) transition (world : World) =
-            match transition.DissolveImageOpt with
-            | Some dissolveImage ->
-                let progress =
-                    match (transitionTime , transition.TransitionLifeTime) with
-                    | (UpdateTime time, UpdateTime lifeTime) ->
-                        let localTime = world.UpdateTime - time
-                        single localTime / (single lifeTime + 1.0f)
-                    | (ClockTime time, ClockTime lifeTime) ->
-                        let localTime = world.ClockTime - time
-                        single localTime / (lifeTime + world.ClockDelta)
-                    | (_, _) -> failwithumf ()
-                let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
-                let color = Color.One.WithA alpha
-                let position = -eyeSize.V3 * 0.5f
-                let size = eyeSize.V3
-                let mutable transform = Transform.makeDefault false
-                transform.Position <- position
-                transform.Size <- size
-                transform.Elevation <- Single.MaxValue
-                transform.Absolute <- true
-                World.enqueueLayeredOperation2d
-                    { Elevation = transform.Elevation
-                      Horizon = transform.Horizon
-                      AssetTag = dissolveImage
-                      RenderOperation2d =
-                        RenderSprite
-                            { Transform = transform
-                              InsetOpt = ValueNone
-                              Image = dissolveImage
-                              Color = color
-                              Blend = Transparent
-                              Emission = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            | None -> ()
+        static member private renderScreenTransition5 transitionTime (eyeSize : Vector2) renderPass transition (world : World) =
+            match renderPass with
+            | NormalPass ->
+                match transition.DissolveImageOpt with
+                | Some dissolveImage ->
+                    let progress =
+                        match (transitionTime , transition.TransitionLifeTime) with
+                        | (UpdateTime time, UpdateTime lifeTime) ->
+                            let localTime = world.UpdateTime - time
+                            single localTime / (single lifeTime + 1.0f)
+                        | (ClockTime time, ClockTime lifeTime) ->
+                            let localTime = world.ClockTime - time
+                            single localTime / (lifeTime + world.ClockDelta)
+                        | (_, _) -> failwithumf ()
+                    let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
+                    let color = Color.One.WithA alpha
+                    let position = -eyeSize.V3 * 0.5f
+                    let size = eyeSize.V3
+                    let mutable transform = Transform.makeDefault false
+                    transform.Position <- position
+                    transform.Size <- size
+                    transform.Elevation <- Single.MaxValue
+                    transform.Absolute <- true
+                    World.enqueueLayeredOperation2d
+                        { Elevation = transform.Elevation
+                          Horizon = transform.Horizon
+                          AssetTag = dissolveImage
+                          RenderOperation2d =
+                            RenderSprite
+                                { Transform = transform
+                                  InsetOpt = ValueNone
+                                  Image = dissolveImage
+                                  Color = color
+                                  Blend = Transparent
+                                  Emission = Color.Zero
+                                  Flip = FlipNone }}
+                        world
+                | None -> ()
+            | _ -> ()
 
-        static member private renderScreenTransition (screen : Screen) world =
+        static member private renderScreenTransition renderPass (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dCenter world) (World.getEye2dSize world) screen (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal renderPass world =
@@ -1448,11 +1451,19 @@ module WorldModule2 =
                 | ReflectionPass (_, _) -> ()
                 RenderGatherTimer.Stop ()
 
-                // render simulants breadth-first
+                // render game
                 World.renderGame renderPass game world
+
+                // render screens
                 for screen in screens do
                     World.renderScreen renderPass screen world
-                match World.getSelectedScreenOpt world with Some selectedScreen -> World.renderScreenTransition selectedScreen world | None -> ()
+
+                // render screen transition
+                match World.getSelectedScreenOpt world with
+                | Some selectedScreen -> World.renderScreenTransition renderPass selectedScreen world
+                | None -> ()
+
+                // render groups
                 for group in groups do
                     if not (groupsInvisible.Contains group) then
                         World.renderGroup renderPass group world
@@ -1877,7 +1888,7 @@ module EntityDispatcherModule2 =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        Log.debugOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
             World.setEntityModel<'model> true model entity world |> snd'
 
@@ -2187,7 +2198,7 @@ module GroupDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        Log.debugOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGroupModel<'model> true model group world |> snd'
 
@@ -2359,7 +2370,7 @@ module ScreenDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        Log.debugOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
             World.setScreenModel<'model> true model screen world |> snd'
 
@@ -2538,7 +2549,7 @@ module GameDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing model to new type. Falling back on initial model value."
+                        Log.debugOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGameModel<'model> true model game world |> snd'
 
