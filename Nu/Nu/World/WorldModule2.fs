@@ -90,30 +90,28 @@ module WorldModule2 =
             world
 
         static member internal rebuildOctree world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.clear octree
-                let omniEntities =
-                    match World.getOmniScreenOpt world with
-                    | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                    | None -> Seq.empty
-                let selectedEntities =
-                    match World.getSelectedScreenOpt world with
-                    | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                    | None -> Seq.empty
-                let entities =
-                    Seq.append omniEntities selectedEntities
-                for entity in entities do
-                    let bounds = entity.GetBounds world
-                    let visible = entity.GetVisible world || entity.GetAlwaysRender world
-                    let static_ = entity.GetStatic world
-                    let lightProbe = entity.GetLightProbe world
-                    let light = entity.GetLight world
-                    let presence = entity.GetPresence world
-                    if entity.GetIs3d world then
-                        let element = Octelement.make visible static_ lightProbe light presence bounds entity
-                        Octree.addElement presence bounds element octree
-            | None -> ()
+            let octree = World.getOctree world
+            Octree.clear octree
+            let omniEntities =
+                match World.getOmniScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | None -> Seq.empty
+            let selectedEntities =
+                match World.getSelectedScreenOpt world with
+                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
+                | None -> Seq.empty
+            let entities =
+                Seq.append omniEntities selectedEntities
+            for entity in entities do
+                let bounds = entity.GetBounds world
+                let visible = entity.GetVisible world || entity.GetAlwaysRender world
+                let static_ = entity.GetStatic world
+                let lightProbe = entity.GetLightProbe world
+                let light = entity.GetLight world
+                let presence = entity.GetPresence world
+                if entity.GetIs3d world then
+                    let element = Octelement.make visible static_ lightProbe light presence bounds entity
+                    Octree.addElement presence bounds element octree
             world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
@@ -730,7 +728,7 @@ module WorldModule2 =
                 let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                 Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
-                let octree = World.getOrCreateOctree world
+                let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
@@ -746,7 +744,7 @@ module WorldModule2 =
                 let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                 Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
-                let octree = World.getOrCreateOctree world
+                let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
                     let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
@@ -1130,71 +1128,53 @@ module WorldModule2 =
             Seq.map (fun (element : Entity Quadelement) -> element.Entry) set
 
         static member private getElements3dBy (getElementsFromOctree : Entity Octree -> Entity Octelement seq) world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                let elements = getElementsFromOctree octree
-                (elements, world)
-            | None -> (Seq.empty, world)
+            let octree = World.getOctree world
+            let elements = getElementsFromOctree octree
+            (elements, world)
 
         static member private getElements3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInPlay playBox playFrustum set octree
-            | None -> ()
+            let octree = World.getOctree world
+            Octree.getElementsInPlay playBox playFrustum set octree
 
         static member private getElements3dInViewFrustum interior exterior frustum set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInViewFrustum interior exterior frustum set octree
-            | None -> ()
+            let octree = World.getOctree world
+            Octree.getElementsInViewFrustum interior exterior frustum set octree
 
         static member private getElements3dInViewBox box set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInViewBox box set octree
-            | None -> ()
+            let octree = World.getOctree world
+            Octree.getElementsInViewBox box set octree
 
         static member private getElements3dInView set world =
             let interior = World.getEye3dFrustumInterior world
             let exterior = World.getEye3dFrustumExterior world
             let imposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInView interior exterior imposter lightBox set octree
-            | None -> ()
+            let octree = World.getOctree world
+            Octree.getElementsInView interior exterior imposter lightBox set octree
 
         static member private getElements3d set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElements set octree
-            | None -> ()
+            let octree = World.getOctree world
+            Octree.getElements set octree
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInBounds bounds set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getElementsInBounds bounds set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities at the given point, including all uncullable entities.
         static member getEntities3dAtPoint point set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsAtPoint point set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getElementsAtPoint point set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current 3d play zone, including all uncullable entities.
         static member getEntities3dInPlay set world =
             let struct (playBox, playFrustum) = World.getPlayBounds3d world
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInPlay playBox playFrustum set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getElementsInPlay playBox playFrustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set world =
@@ -1202,59 +1182,45 @@ module WorldModule2 =
             let exterior = World.getEye3dFrustumExterior world
             let imposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElementsInView interior exterior imposter lightBox set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getElementsInView interior exterior imposter lightBox set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
         static member getLightProbes3dInFrustum frustum set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getLightProbesInFrustum frustum set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getLightProbesInFrustum frustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
         static member getLightProbes3dInBox box set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getLightProbesInBox box set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getLightProbesInBox box set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable lights.
         static member getLightProbes3d set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getLightProbes set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getLightProbes set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLights3dInFrustum frustum set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getLightsInFrustum frustum set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getLightsInFrustum frustum set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light entities in the current 3d light box, including all uncullable lights.
         static member getLights3dInBox box set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getLightsInBox box set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getLightsInBox box set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d entities in the current selected screen, including all uncullable entities.
         static member getEntities3d set world =
-            match World.getOctreeOpt world with
-            | Some octree ->
-                Octree.getElements set octree
-                Seq.map (fun (element : Entity Octelement) -> element.Entry) set
-            | None -> Seq.empty
+            let octree = World.getOctree world
+            Octree.getElements set octree
+            Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         static member private preUpdateSimulants (world : World) =
 

@@ -254,7 +254,7 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make plugin eventGraph jobGraph dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make plugin eventGraph jobGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
@@ -277,7 +277,7 @@ module WorldModule3 =
                   GameState = gameState
                   EntityMounts = UMap.makeEmpty HashIdentity.Structural config
                   Quadtree = quadtree
-                  OctreeOpt = None
+                  Octree = octree
                   AmbientState = ambientState
                   Subsystems = subsystems
                   Simulants = simulants
@@ -324,11 +324,12 @@ module WorldModule3 =
             let symbolics = Symbolics.makeEmpty ()
             let ambientState = AmbientState.make config.Imperative config.Accompanied true false symbolics Overlayer.empty None
 
-            // make the world's quadtree
+            // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
+            let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.make plugin eventGraph jobGraph dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make plugin eventGraph jobGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame Game world
@@ -409,12 +410,13 @@ module WorldModule3 =
                     // make the world's ambient state
                     let symbolics = Symbolics.makeEmpty ()
                     let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer (Some sdlDeps)
-
-                    // make the world's quadtree
+                    
+                    // make the world's spatial trees
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
+                    let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
                     // make the world
-                    let world = World.make plugin eventGraph jobGraph dispatchers quadtree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make plugin eventGraph jobGraph dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world

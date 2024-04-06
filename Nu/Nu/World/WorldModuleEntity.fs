@@ -2187,7 +2187,7 @@ module WorldModuleEntity =
                         let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                         Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
                     else
-                        let octree = World.getOrCreateOctree world
+                        let octree = World.getOctree world
                         let entityState = World.getEntityState entity world
                         let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                         Octree.addElement entityState.Presence entityState.Bounds element octree
@@ -2229,7 +2229,7 @@ module WorldModuleEntity =
                         let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
                         Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
                     else
-                        let octree = World.getOrCreateOctree world
+                        let octree = World.getOctree world
                         let entityState = World.getEntityState entity world
                         let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                         Octree.removeElement entityState.Presence entityState.Bounds element octree
@@ -2689,7 +2689,7 @@ module WorldModuleEntity =
                         let element = Quadelement.make visibleNew staticNew entity
                         Quadtree.updateElement presenceOld boundsOld.Box2 presenceNew boundsNew.Box2 element quadree
                     else
-                        let octree = World.getOrCreateOctree world
+                        let octree = World.getOctree world
                         let element = Octelement.make visibleNew staticNew lightProbeNew lightNew presenceNew boundsNew entity
                         Octree.updateElement presenceOld boundsOld presenceNew boundsNew element octree
 

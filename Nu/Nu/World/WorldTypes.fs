@@ -1697,7 +1697,7 @@ and [<ReferenceEquality>] World =
           // cache line 2
           EntityMounts : UMap<Entity, Entity USet>
           Quadtree : Entity Quadtree
-          mutable OctreeOpt : Entity Octree option // OPTIMIZATION: allow for None for games that don't use 3D.
+          Octree : Entity Octree
           AmbientState : World AmbientState
           Subsystems : Subsystems
           Simulants : UMap<Simulant, Simulant USet option> // OPTIMIZATION: using None instead of empty USet to descrease number of USet instances.

@@ -1507,7 +1507,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let eyeRotation = World.getEye3dRotation world
                     let eyeCenterOffset = Vector3.Transform (v3Back * newEntityDistance, eyeRotation)
                     desiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
-        let popupContextItemTitle = "##popupContextItem" + scstring entity
+        let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         let mutable openPopupContextItemWhenUnselected = false
         if ImGui.BeginPopupContextItem popupContextItemTitle then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then openPopupContextItemWhenUnselected <- true
@@ -1547,7 +1547,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
         if ImGui.BeginDragDropSource () then
-            let entityAddressStr = entity.EntityAddress |> scstring |> Symbol.distill
+            let entityAddressStr = entity.EntityAddress |> scstringMemo  |> Symbol.distill
             dragDropPayloadOpt <- Some entityAddressStr
             ImGui.Text (entity.Name + if ImGui.IsCtrlDown () then " (Copy)" else "")
             ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
@@ -1584,7 +1584,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let next = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let previousOpt = World.tryGetPreviousEntity next world
                             let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                            if not ((scstring parentOpt).Contains (scstring sourceEntity)) then
+                            if not ((scstringMemo  parentOpt).Contains (scstringMemo sourceEntity)) then
                                 let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
                                 let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> selectedGroup / sourceEntity.Name
                                 if sourceEntity'.Exists world then
@@ -1605,7 +1605,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else
                             let parent = Nu.Entity (selectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                             let sourceEntity' = parent / sourceEntity.Name
-                            if not ((scstring parent).Contains (scstring sourceEntity)) then
+                            if not ((scstringMemo parent).Contains (scstringMemo sourceEntity)) then
                                 if not (sourceEntity'.Exists world) then
                                     snapshot ()
                                     world <- World.renameEntityImmediate sourceEntity sourceEntity' world
@@ -1629,7 +1629,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SameLine ()
                 separatorInserted <- true
             ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
-            ImGui.PushID ("##frozen" + scstring entity)
+            ImGui.PushID ("##frozen" + scstringMemo entity)
             if ImGui.SmallButton text then
                 snapshot ()
                 world <- entity.SetFrozen (not frozen) world

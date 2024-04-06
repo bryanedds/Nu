@@ -52,15 +52,45 @@ type QuadelementEqualityComparer<'e when 'e : equality> () =
 [<RequireQualifiedAccess>]
 module internal Quadnode =
 
-    type internal Quadnode<'e when 'e : equality> =
+    type [<Struct>] internal Quadchildren<'e when 'e : equality> =
+        | NoChildren
+        | NodeChildren of NodeChildren : 'e Quadnode array
+        | ElementChildren of ElementChildren : 'e Quadelement HashSet
+
+    and internal Quadnode<'e when 'e : equality> =
         private
             { mutable ElementsCount_ : int // OPTIMIZATION: keeps track of total contained elements in order to get an early-out on queries.
               Id_ : uint64
               Depth_ : int
               Bounds_ : Box2
-              Children_ : ValueEither<'e Quadnode array, 'e Quadelement HashSet> }
+              mutable Children_ : 'e Quadchildren
+              Comparer_ : 'e QuadelementEqualityComparer
+              Leaves_ : Dictionary<Vector2, 'e Quadnode> }
 
         member this.Id = this.Id_
+
+    let internal makeChildren<'e when 'e : equality> node =
+        let childSize = node.Bounds_.Size * 0.5f
+        let childDepth = dec node.Depth_
+        if childDepth > 0 then
+            let (nodeChildren : 'e Quadnode array) =
+                [|for i in 0 .. dec 4 do
+                    let childPosition = v2 node.Bounds_.Min.X node.Bounds_.Min.Y + v2 (childSize.X * single (i % 2)) (childSize.Y * single (i / 2))
+                    let childBounds = box2 childPosition childSize
+                    let child =
+                        { ElementsCount_ = 0
+                          Id_ = Gen.idForInternal
+                          Depth_ = childDepth
+                          Bounds_ = childBounds
+                          Children_ = NoChildren
+                          Comparer_ = node.Comparer_
+                          Leaves_ = node.Leaves_ }
+                    if childDepth = 1 then node.Leaves_.Add (childBounds.Min, child)
+                    child|]
+            NodeChildren nodeChildren
+        else
+            let children = HashSet<'e Quadelement> node.Comparer_
+            ElementChildren children
 
     let internal atPoint (point : Vector2) (node : 'e Quadnode) =
         node.Bounds_.Intersects point
@@ -75,13 +105,16 @@ module internal Quadnode =
         let delta =
             if isIntersectingBounds bounds node then
                 match node.Children_ with
-                | ValueLeft nodes ->
+                | NoChildren ->
+                    node.Children_ <- makeChildren node
+                    addElement bounds &element node
+                | NodeChildren nodes ->
                     let mutable delta = 0
                     for i in 0 .. dec nodes.Length do
                         let node = nodes.[i]
                         delta <- delta + addElement bounds &element node
                     delta
-                | ValueRight elements ->
+                | ElementChildren elements ->
                     let removed = elements.Remove element
                     let added = elements.Add element
                     if removed
@@ -95,13 +128,15 @@ module internal Quadnode =
         let delta =
             if isIntersectingBounds bounds node then
                 match node.Children_ with
-                | ValueLeft nodes ->
+                | NoChildren ->
+                    0
+                | NodeChildren nodes ->
                     let mutable delta = 0
                     for i in 0 .. dec nodes.Length do
                         let node = nodes.[i]
                         delta <- delta + removeElement bounds &element node
                     delta
-                | ValueRight elements ->
+                | ElementChildren elements ->
                     if elements.Remove element then -1 else 0
             else 0
         node.ElementsCount_ <- node.ElementsCount_ + delta
@@ -110,14 +145,19 @@ module internal Quadnode =
     let rec internal updateElement boundsOld boundsNew (element : 'e Quadelement inref) (node : 'e Quadnode) =
         let delta =
             match node.Children_ with
-            | ValueLeft nodes ->
+            | NoChildren ->
+                if isIntersectingBounds boundsOld node || isIntersectingBounds boundsNew node then
+                    node.Children_ <- makeChildren node
+                    updateElement boundsOld boundsNew &element node
+                else 0
+            | NodeChildren nodes ->
                 let mutable delta = 0
                 for i in 0 .. dec nodes.Length do
                     let node = nodes.[i]
                     if isIntersectingBounds boundsOld node || isIntersectingBounds boundsNew node then
                         delta <- delta + updateElement boundsOld boundsNew &element node
                 delta
-            | ValueRight elements ->
+            | ElementChildren elements ->
                 if isIntersectingBounds boundsNew node then
                     let removed = elements.Remove element
                     let added = elements.Add element
@@ -133,90 +173,91 @@ module internal Quadnode =
     let rec internal clearElements node =
         node.ElementsCount_ <- 0
         match node.Children_ with
-        | ValueLeft nodes ->
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 clearElements node
-        | ValueRight children ->
+        | ElementChildren children ->
             children.Clear ()
 
     let rec internal getElementsAtPoint point (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
-        | ValueLeft nodes ->
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 && atPoint point node then
                     getElementsAtPoint point set node
-        | ValueRight elements ->
+        | ElementChildren elements ->
             for element in elements do
                 set.Add element |> ignore
 
     let rec internal getElementsInBounds bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
-        | ValueLeft nodes ->
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
                     getElementsInBounds bounds set node
-        | ValueRight elements ->
+        | ElementChildren elements ->
             for element in elements do
                 set.Add element |> ignore
 
     let rec internal getElementsInView bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
-        | ValueLeft nodes ->
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
                     getElementsInView bounds set node
-        | ValueRight elements ->
+        | ElementChildren elements ->
             for element in elements do
                 if element.Visible then
                     set.Add element |> ignore
 
     let rec internal getElementsInPlay bounds (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
-        | ValueLeft nodes ->
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 && isIntersectingBounds bounds node then
                     getElementsInView bounds set node
-        | ValueRight elements ->
+        | ElementChildren elements ->
             for element in elements do
                 if not element.Static then
                     set.Add element |> ignore
 
     let rec internal getElements (set : 'e Quadelement HashSet) (node : 'e Quadnode) =
         match node.Children_ with
-        | ValueLeft nodes ->
+        | NoChildren ->
+            ()
+        | NodeChildren nodes ->
             for i in 0 .. dec nodes.Length do
                 let node = &nodes.[i]
                 if node.ElementsCount_ > 0 then
                     getElements set node
-        | ValueRight children ->
+        | ElementChildren children ->
             set.UnionWith children
 
-    let rec internal make<'e when 'e : equality> comparer depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) =
-        if depth < 1 then failwith "Invalid depth for Quadnode. Expected value of at least 1."
-        let granularity = 2
-        let childDepth = depth - 1
-        let childSize = v2 bounds.Size.X bounds.Size.Y / single granularity
-        let children =
-            if depth > 1 then
-                let (nodes : 'e Quadnode array) =
-                    [|for i in 0 .. dec (granularity * granularity) do
-                        let childPosition = v2 bounds.Min.X bounds.Min.Y + v2 (childSize.X * single (i % granularity)) (childSize.Y * single (i / granularity))
-                        let childBounds = box2 childPosition childSize
-                        yield make comparer childDepth childBounds leaves|]
-                ValueLeft nodes
-            else ValueRight (HashSet<'e Quadelement> (comparer : 'e QuadelementEqualityComparer))
+    let internal make<'e when 'e : equality> comparer depth (bounds : Box2) (leaves : Dictionary<Vector2, 'e Quadnode>) : 'e Quadnode =
+        if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
         let node =
             { ElementsCount_ = 0
               Id_ = Gen.idForInternal
               Depth_ = depth
               Bounds_ = bounds
-              Children_ = children }
-        if depth = 1 then leaves.Add (bounds.Min, node)
+              Children_ = NoChildren
+              Comparer_ = comparer
+              Leaves_ = leaves }
         node
 
 type internal Quadnode<'e when 'e : equality> = Quadnode.Quadnode<'e>
