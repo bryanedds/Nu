@@ -17,7 +17,7 @@ module Program =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Twenty48" }
         
         // this specifies the configuration of the game engine's use of SDL
-        let sdlConfig = { SdlConfig.defaultConfig with ViewConfig = NewWindow sdlWindowConfig }
+        let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
 
         // this specifies the world config using the above SDL config
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }

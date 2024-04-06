@@ -9,20 +9,10 @@ open Prime
 /// A window for rendering in SDL OpenGL.
 type [<ReferenceEquality>] SglWindow =
     { SglWindow : nativeint }
-    
-/// An interface for specifying a Windows Forms control that uses OpenGL.
-type WfglWindow =
-    interface
-        abstract CreateSdlWindowFrom : unit -> unit
-        abstract CreateWfglContext : unit -> unit
-        abstract Swap : unit -> unit
-        abstract CleanUp : unit -> unit
-        end
 
 /// A window for rendering.
 type [<ReferenceEquality>] Window =
     | SglWindow of SglWindow
-    | WfglWindow of WfglWindow
 
 /// Describes the initial configuration of a window created via SDL.
 type SdlWindowConfig =
@@ -38,21 +28,16 @@ type SdlWindowConfig =
           WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
           WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
-/// Describes the view that SDL will use to render.
-type [<ReferenceEquality>] SdlViewConfig =
-    | NewWindow of SdlWindowConfig
-    | ExistingWindow of WfglWindow
-
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
-    { ViewConfig : SdlViewConfig
+    { WindowConfig : SdlWindowConfig
       ViewW : int
       ViewH : int
       AudioChunkSize : int }
 
     /// A default SdlConfig.
     static member defaultConfig =
-        { ViewConfig = NewWindow SdlWindowConfig.defaultConfig
+        { WindowConfig = SdlWindowConfig.defaultConfig
           ViewW = Constants.Render.Resolution.X
           ViewH = Constants.Render.Resolution.Y
           AudioChunkSize = Constants.Audio.BufferSizeDefault }
@@ -106,16 +91,6 @@ module SdlDeps =
         else Left error
 
     /// Attempt to initalize an SDL resource.
-    let internal tryMakeSdlResourcePlus create destroy =
-        let resourceEir = create ()
-        match resourceEir with
-        | Right resource ->
-            if resource <> IntPtr.Zero
-            then Right (resourceEir, destroy)
-            else Left ("SDL2# resource creation failed due to '" + SDL.SDL_GetError () + "'.")
-        | Left _ -> Right (resourceEir, destroy)
-
-    /// Attempt to initalize an SDL resource.
     let internal tryMakeSdlResource create destroy =
         let resource = create ()
         if resource <> IntPtr.Zero
@@ -150,29 +125,20 @@ module SdlDeps =
             (fun () -> SDL.SDL_Quit ()) with
         | Left error -> Left error
         | Right ((), destroy) ->
-            match tryMakeSdlResourcePlus
+            match tryMakeSdlResource
                 (fun () ->
-                    match sdlConfig.ViewConfig with
-                    | NewWindow windowConfig ->
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGL.VersionMinor) |> ignore<int>
+                    let windowConfig = sdlConfig.WindowConfig
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_ACCELERATED_VISUAL, 1) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, Constants.OpenGL.VersionMajor) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, Constants.OpenGL.VersionMinor) |> ignore<int>
 #if DEBUG
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_CONTEXT_FLAGS, int SDL.SDL_GLcontext.SDL_GL_CONTEXT_DEBUG_FLAG) |> ignore<int>
 #endif
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
-                        SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
-                        let window = SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags)
-                        Right window
-                    | ExistingWindow window ->
-                        window.CreateSdlWindowFrom ()
-                        Left window)
-                (fun windowOpt ->
-                    match windowOpt with
-                    | Right window -> SDL.SDL_DestroyWindow window
-                    | Left (window : WfglWindow) -> window.CleanUp ()
-                    destroy ()) with
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
+                    SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
+                    SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags))
+                (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->
                 match tryMakeSdlGlobalResource
@@ -191,13 +157,7 @@ module SdlDeps =
                         | Left error -> Left error
                         | Right ((), destroy) ->
                             GamepadState.init ()
-                            let context =
-                                match window with
-                                | Right window ->
-                                    SDL.SDL_RaiseWindow window
-                                    SglWindow { SglWindow = window }
-                                | Left wfglWindow ->
-                                    WfglWindow wfglWindow
+                            let context = SglWindow { SglWindow = window }
                             Right { WindowOpt = Some context; Config = sdlConfig; Destroy = destroy }
 
 type SdlDeps = SdlDeps.SdlDeps

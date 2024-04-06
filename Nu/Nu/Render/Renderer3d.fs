@@ -3107,7 +3107,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.Swap () =
             match renderer.Window with
             | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-            | WfglWindow window -> window.Swap ()
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader

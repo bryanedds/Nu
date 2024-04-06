@@ -77,9 +77,6 @@ type RendererInline () =
                     | SglWindow window ->
                         OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
                         OpenGL.Hl.Assert ()
-                    | WfglWindow window ->
-                        window.CreateWfglContext ()
-                        OpenGL.Hl.Assert ()
 
                     // initialize gl context
                     OpenGL.Hl.InitContext ()
@@ -181,7 +178,6 @@ type RendererInline () =
             | Some window ->
                 match window with
                 | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-                | WfglWindow window -> window.Swap ()
             | None -> ()
 
         member this.Terminate () =
@@ -331,9 +327,6 @@ type RendererThread () =
                 | SglWindow window ->
                     OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
                     OpenGL.Hl.Assert ()
-                | WfglWindow window ->
-                    window.CreateWfglContext ()
-                    OpenGL.Hl.Assert ()
 
                 // initialize gl context
                 OpenGL.Hl.InitContext ()
@@ -411,7 +404,6 @@ type RendererThread () =
                     | Some window ->
                         match window with
                         | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-                        | WfglWindow window -> window.Swap ()
                     | None -> ()
 
                     // complete swap request
