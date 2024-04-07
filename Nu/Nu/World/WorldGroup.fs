@@ -78,12 +78,9 @@ module WorldGroupModule =
         /// Check that a group is selected.
         member this.Selected world =
             let gameState = World.getGameState Game.Handle world
-            match gameState.OmniScreenOpt with
-            | Some omniScreen when this.Screen.Name = omniScreen.Name -> true
-            | _ ->
-                match gameState.SelectedScreenOpt with
-                | Some screen when this.Screen.Name = screen.Name -> true
-                | _ -> false
+            match gameState.SelectedScreenOpt with
+            | Some screen when this.Screen.Name = screen.Name -> true
+            | _ -> false
 
         /// Check that a group exists in the world.
         member this.Exists world = World.getGroupExists this world
