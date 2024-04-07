@@ -99,48 +99,10 @@ module WorldModuleGame =
             let gameState = { gameState with Content = value}
             World.setGameState gameState game world
 
-        static member internal getGameOmniScreenOpt game world =
-            (World.getGameState game world).OmniScreenOpt
-
-        static member internal setGameOmniScreenOpt value game world =
-            if Option.isSome value && World.getGameSelectedScreenOpt game world = value then failwith "Cannot set OmniScreenOpt to [Some SelectedScreen]."
-            let gameState = World.getGameState game world
-            let previous = gameState.OmniScreenOpt
-            if value <> previous
-            then struct (true, world |> World.setGameState { gameState with OmniScreenOpt = value } game |> World.publishGameChange (nameof gameState.OmniScreenOpt) previous value game)
-            else struct (false, world)
-
-        /// Get the omni-screen, if any.
-        static member getOmniScreenOpt world =
-            World.getGameOmniScreenOpt Game.Handle world
-
-        /// Set the omni-screen or None.
-        static member setOmniScreenOpt value world =
-            World.setGameOmniScreenOpt value Game.Handle world |> snd'
-
-        static member internal getGameOmniScreen game world =
-            (World.getGameOmniScreenOpt game world).Value
-
-        static member internal setGameOmniScreen value game world =
-            World.setGameOmniScreenOpt (Some value) game world
-
-        /// Get the omni-screen.
-        static member getOmniScreen world =
-            World.getGameOmniScreen Game.Handle world
-
-        /// Set the omni-screen.
-        static member setOmniScreen value world =
-            World.setGameOmniScreen value Game.Handle world |> snd'
-
         static member internal getGameSelectedScreenOpt game world =
             (World.getGameState game world).SelectedScreenOpt
 
         static member internal setGameSelectedScreenOpt value game world =
-
-            // disallow omni-screen selection
-            if  Option.isSome value &&
-                World.getGameOmniScreenOpt game world = value then
-                failwith "Cannot set SelectedScreen to OmniScreen."
 
             // update game state if changed
             let gameState = World.getGameState game world
@@ -580,7 +542,6 @@ module WorldModuleGame =
     let private initGetters () =
         GameGetters.Add ("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
         GameGetters.Add ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        GameGetters.Add ("OmniScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameOmniScreenOpt game world })
         GameGetters.Add ("SelectedScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameSelectedScreenOpt game world })
         GameGetters.Add ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
         GameGetters.Add ("ScreenTransitionDestinationOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameScreenTransitionDestinationOpt game world })
@@ -594,7 +555,6 @@ module WorldModuleGame =
     /// Initialize property setters.
     let private initSetters () =
         GameSetters.Add ("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
-        GameSetters.Add ("OmniScreenOpt", fun property game world -> World.setGameOmniScreenOpt (property.PropertyValue :?> Screen option) game world)
         GameSetters.Add ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
         GameSetters.Add ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
         GameSetters.Add ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)

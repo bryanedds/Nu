@@ -109,12 +109,9 @@ module WorldScreenModule =
         /// Check that a screen is selected.
         member this.Selected world =
             let gameState = World.getGameState Game.Handle world
-            match gameState.OmniScreenOpt with
-            | Some omniScreen when this.Name = omniScreen.Name -> true
-            | _ ->
-                match gameState.SelectedScreenOpt with
-                | Some screen when this.Name = screen.Name -> true
-                | _ -> false
+            match gameState.SelectedScreenOpt with
+            | Some screen when this.Name = screen.Name -> true
+            | _ -> false
 
         /// Check that a screen exists in the world.
         member this.Exists world = World.getScreenExists this world
@@ -359,8 +356,6 @@ module WorldScreenModule =
             | Slide (dissolveDescriptor, slideDescriptor, songOpt, destination) ->
                 let world = World.setScreenDissolve dissolveDescriptor songOpt screen world
                 setScreenSlide slideDescriptor destination screen world
-            | OmniScreen ->
-                World.setOmniScreen screen world
 
         static member internal getNav3dDescriptors contents =
             [for (bounds, affineMatrix, staticModel, surfaceIndex, content) in contents do

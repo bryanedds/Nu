@@ -1,0 +1,35 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.1/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.1": {},
+    ".NETStandard,Version=v2.1/": {
+      "AssimpNet/5.0.0-beta1": {
+        "dependencies": {
+          "MemoryInterop.ILPatcher": "2.2.0"
+        },
+        "runtime": {
+          "AssimpNet.dll": {}
+        }
+      },
+      "MemoryInterop.ILPatcher/2.2.0": {}
+    }
+  },
+  "libraries": {
+    "AssimpNet/5.0.0-beta1": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MemoryInterop.ILPatcher/2.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-a7ORCxvN5BrQnmTa+2+CO8NhtSMheMMkB+gWOrNJoXoHWnSnfZwX/8x64ucZJxY51vaBoDl3DgPFjI/YYyN44w==",
+      "path": "memoryinterop.ilpatcher/2.2.0",
+      "hashPath": "memoryinterop.ilpatcher.2.2.0.nupkg.sha512"
+    }
+  }
+}

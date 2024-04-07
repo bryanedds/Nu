@@ -49,7 +49,7 @@
 
 	<ItemGroup>
 		<Reference Include="AssimpNet">
-			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard1.3\AssimpNet.dll</HintPath>
+			<HintPath>..\..\Nu\Nu.Dependencies\AssimpNet\netstandard2.1\AssimpNet.dll</HintPath>
 		</Reference>
         <Reference Include="BulletSharpPInvoke">
             <HintPath>..\..\Nu\Nu.Dependencies\BulletSharpPInvoke\netstandard2.1\BulletSharp.dll</HintPath>

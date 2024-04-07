@@ -225,7 +225,7 @@ module WorldSimulantModule =
                 | 3 -> UMap.containsKey (simulant :?> Group) world.GroupStates
                 | _  -> failwithumf ()
 
-        /// Determine if a simulant is contained by, or is the same as, the currently selected screen or the omni-screen.
+        /// Determine if a simulant is contained by, or is the same as, any currently selected screen.
         /// Game is always considered 'selected' as well.
         static member getSelected (simulant : Simulant) world =
             match Address.getNames simulant.SimulantAddress with
@@ -233,12 +233,9 @@ module WorldSimulantModule =
             | [|_|] -> true
             | names ->
                 let screenName = names.[1]
-                match World.getOmniScreenOpt world with
-                | Some omniScreen when omniScreen.Name = screenName -> true
-                | _ ->
-                    match World.getSelectedScreenOpt world with
-                    | Some screen when screen.Name = screenName -> true
-                    | _ -> false
+                match World.getSelectedScreenOpt world with
+                | Some screen when screen.Name = screenName -> true
+                | _ -> false
 
         /// Convert an address to a concrete simulant reference.
         static member derive address =

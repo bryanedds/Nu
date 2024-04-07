@@ -290,7 +290,6 @@ and ScreenBehavior =
     | Vanilla
     | Dissolve of DissolveDescriptor * SongDescriptor option
     | Slide of DissolveDescriptor * SlideDescriptor * SongDescriptor option * Screen
-    | OmniScreen
 
 /// The data required to execute slide screen presentation.
 and Slide =
@@ -786,7 +785,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Xtension : Xtension
       Model : DesignerProperty
       Content : GameContent
-      OmniScreenOpt : Screen option
       SelectedScreenOpt : Screen option
       DesiredScreen : DesiredScreen
       ScreenTransitionDestinationOpt : Screen option
@@ -811,7 +809,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
           Content = WorldTypes.EmptyGameContent :?> GameContent
-          OmniScreenOpt = None
           SelectedScreenOpt = None
           DesiredScreen = DesireIgnore
           ScreenTransitionDestinationOpt = None

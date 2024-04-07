@@ -70,16 +70,11 @@ module WorldModule2 =
         static member internal rebuildQuadtree world =
             let quadtree = World.getQuadtree world
             Quadtree.clear quadtree
-            let omniEntities =
-                match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
-            let entities = Seq.append omniEntities selectedEntities
-            for entity in entities do
+            for entity in selectedEntities do
                 let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
                 let static_ = entity.GetStatic world
@@ -92,17 +87,11 @@ module WorldModule2 =
         static member internal rebuildOctree world =
             let octree = World.getOctree world
             Octree.clear octree
-            let omniEntities =
-                match World.getOmniScreenOpt world with
-                | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
-                | None -> Seq.empty
             let selectedEntities =
                 match World.getSelectedScreenOpt world with
                 | Some screen -> World.getGroups screen world |> Seq.map (flip World.getEntities world) |> Seq.concat
                 | None -> Seq.empty
-            let entities =
-                Seq.append omniEntities selectedEntities
-            for entity in entities do
+            for entity in selectedEntities do
                 let bounds = entity.GetBounds world
                 let visible = entity.GetVisible world || entity.GetAlwaysRender world
                 let static_ = entity.GetStatic world
@@ -1232,10 +1221,8 @@ module WorldModule2 =
             PreUpdateGatherTimer.Start ()
             let game = Nu.Game.Handle
             let advancing = world.Advancing
-            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
-            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
-            let screens = List.rev screens
-            let groups = Seq.concat (List.map (flip World.getGroups world) screens)
+            let screenOpt = World.getSelectedScreenOpt world
+            let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
             PreUpdateGatherTimer.Stop ()
 
             // pre-update game
@@ -1243,9 +1230,9 @@ module WorldModule2 =
             let world = if advancing then World.preUpdateGame game world else world
             PreUpdateGameTimer.Stop ()
 
-            // pre-update screens
+            // pre-update screen if any
             PreUpdateScreensTimer.Start ()
-            let world = List.fold (fun world screen -> if advancing then World.preUpdateScreen screen world else world) world screens
+            let world = Option.fold (fun world screen -> if advancing then World.preUpdateScreen screen world else world) world screenOpt
             PreUpdateScreensTimer.Stop ()
 
             // pre-update groups
@@ -1265,10 +1252,8 @@ module WorldModule2 =
                 UpdateGatherTimer.Start ()
                 let game = Nu.Game.Handle
                 let advancing = world.Advancing
-                let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
-                let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
-                let screens = List.rev screens
-                let groups = Seq.concat (List.map (flip World.getGroups world) screens)
+                let screenOpt = World.getSelectedScreenOpt world
+                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 World.getElements3dInPlay CachedHashSet3dNormal world
                 World.getElements2dInPlay CachedHashSet2dNormal world
                 UpdateGatherTimer.Stop ()
@@ -1278,9 +1263,9 @@ module WorldModule2 =
                 let world = if advancing then World.updateGame game world else world
                 UpdateGameTimer.Stop ()
             
-                // update screens
+                // update screen if any
                 UpdateScreensTimer.Start ()
-                let world = List.fold (fun world screen -> if advancing then World.updateScreen screen world else world) world screens
+                let world = Option.fold (fun world screen -> if advancing then World.updateScreen screen world else world) world screenOpt
                 UpdateScreensTimer.Stop ()
 
                 // update groups
@@ -1318,10 +1303,8 @@ module WorldModule2 =
             PostUpdateGatherTimer.Start ()
             let game = Nu.Game.Handle
             let advancing = world.Advancing
-            let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
-            let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
-            let screens = List.rev screens
-            let groups = Seq.concat (List.map (flip World.getGroups world) screens)
+            let screenOpt = World.getSelectedScreenOpt world
+            let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> []
             PostUpdateGatherTimer.Stop ()
 
             // post-update game
@@ -1329,9 +1312,9 @@ module WorldModule2 =
             let world = if advancing then World.postUpdateGame game world else world
             PostUpdateGameTimer.Stop ()
 
-            // post-update screens
+            // post-update screen if any
             PostUpdateScreensTimer.Start ()
-            let world = List.fold (fun world screen -> if advancing then World.postUpdateScreen screen world else world) world screens
+            let world = Option.fold (fun world screen -> if advancing then World.postUpdateScreen screen world else world) world screenOpt
             PostUpdateScreensTimer.Stop ()
 
             // post-update groups
@@ -1396,10 +1379,8 @@ module WorldModule2 =
                 // gather simulants
                 RenderGatherTimer.Start ()
                 let game = Nu.Game.Handle
-                let screens = match World.getOmniScreenOpt world with Some omniScreen -> [omniScreen] | None -> []
-                let screens = match World.getSelectedScreenOpt world with Some selectedScreen -> selectedScreen :: screens | None -> screens
-                let screens = List.rev screens
-                let groups = Seq.concat (List.map (flip World.getGroups world) screens)
+                let screenOpt = World.getSelectedScreenOpt world
+                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 let groupsInvisible =
                     if world.Accompanied
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
@@ -1425,8 +1406,9 @@ module WorldModule2 =
                 World.renderGame renderPass game world
 
                 // render screens
-                for screen in screens do
-                    World.renderScreen renderPass screen world
+                match screenOpt with
+                | Some screen -> World.renderScreen renderPass screen world
+                | None -> ()
 
                 // render screen transition
                 match World.getSelectedScreenOpt world with
@@ -2033,7 +2015,13 @@ module EntityPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
-        if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "PropagationSourceOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
+        if  propertyName = "Name" ||
+            propertyName = "Surnames" ||
+            propertyName = "Model" ||
+            propertyName = "MountOpt" ||
+            propertyName = "PropagationSourceOpt" ||
+            propertyName = "OverlayNameOpt" then
+            "Ambient Properties"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
              propertyName = "Offset" || propertyName = "Overflow" ||
@@ -2605,7 +2593,7 @@ module GamePropertyDescriptor =
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
-        elif propertyName = "DesiredScreen" || propertyName = "OmniScreenOpt" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
+        elif propertyName = "DesiredScreen" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
              propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" then
              "Built-In Properties"
         else "Xtension Properties"
