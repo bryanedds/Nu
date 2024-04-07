@@ -5,38 +5,43 @@ namespace Nu
 open System
 open System.Diagnostics
 open Prime
+open System.Collections.Concurrent
 
 [<RequireQualifiedAccess>]
 module Log =
 
     let mutable private Initialized = false
 #if DEBUG
-    let mutable private InfoOnceMessages = hashSetPlus StringComparer.Ordinal []
-    let mutable private DebugOnceMessages = hashSetPlus StringComparer.Ordinal []
+    let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
+    let mutable private DebugOnceMessages = ConcurrentDictionary StringComparer.Ordinal
 #endif
-    let mutable private TraceOnceMessages = hashSetPlus StringComparer.Ordinal []
+    let mutable private TraceOnceMessages = ConcurrentDictionary StringComparer.Ordinal
 
     let private getDateTimeNowStr () =
         let now = DateTimeOffset.Now
         now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
 
     /// Log a remark with a custom header with Trace.WriteLine.
+    /// Thread-safe.
     let remark header message =
         Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
 
     /// Log a purely informational message with Trace.WriteLine.
+    /// Thread-safe.
     let info message =
         remark "Info" message
 
     /// Log a purely informational message once with Trace.WriteLine.
+    /// Thread-safe.
     let infoOnce (message : string) =
 #if DEBUG
-        if InfoOnceMessages.Add message then info message
+        if InfoOnceMessages.TryAdd (message, 0) then info message
 #else
         ignore message
 #endif
 
     /// Log a debug message with Debug.Fail and call to info.
+    /// Thread-safe.
     let debug (message : string) =
 #if DEBUG
         Debug.Fail (getDateTimeNowStr () + "|Debug|" + message)
@@ -45,14 +50,16 @@ module Log =
 #endif
 
     /// Log a debug message once with Debug.Fail and call to info.
+    /// Thread-safe.
     let debugOnce (message : string) =
 #if DEBUG
-        if DebugOnceMessages.Add message then debug message
+        if DebugOnceMessages.TryAdd (message, 0) then debug message
 #else
         ignore message
 #endif
 
     /// Conditional debug message call where condition is lazily evaluated.
+    /// Thread-safe.
     let debugIf (predicate : unit -> bool) (message : string) =
 #if DEBUG
         if predicate () then debug message
@@ -61,14 +68,17 @@ module Log =
 #endif
 
     /// Log a trace message using Trace.Fail and call to info.
+    /// Thread-safe.
     let trace message =
         Trace.Fail (getDateTimeNowStr () + "|Trace|" + message)
 
     /// Log a trace message once with Trace.Fail and call to info.
+    /// Thread-safe.
     let traceOnce (message : string) =
-        if TraceOnceMessages.Add message then trace message
+        if TraceOnceMessages.TryAdd (message, 0) then trace message
 
     /// Conditional trace message call where condition is eagerly evaluted.
+    /// Thread-safe.
     let traceIf bl message =
         if bl then trace message
 
