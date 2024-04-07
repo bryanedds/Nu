@@ -2015,7 +2015,13 @@ module EntityPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         let baseProperties = Reflection.getPropertyDefinitions typeof<EntityDispatcher>
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
-        if propertyName = "Name" || propertyName = "Surnames" || propertyName = "Model" || propertyName = "MountOpt" || propertyName = "PropagationSourceOpt" || propertyName = "OverlayNameOpt" then "Ambient Properties"
+        if  propertyName = "Name" ||
+            propertyName = "Surnames" ||
+            propertyName = "Model" ||
+            propertyName = "MountOpt" ||
+            propertyName = "PropagationSourceOpt" ||
+            propertyName = "OverlayNameOpt" then
+            "Ambient Properties"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
              propertyName = "Offset" || propertyName = "Overflow" ||
