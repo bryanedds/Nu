@@ -18,27 +18,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
-    type [<Struct>] EagerTexture =
-        { TextureId : uint
-          TextureHandle : uint64 }
-
-    type LazyTexture (minimalTextureId, minimalTextureHandle) =
-        let mutable fullTextureId = 0u
-        let mutable fullTextureHandle = 0UL
-        let [<VolatileField>] mutable fullTextureLoaded = false
-        let [<VolatileField>] mutable destroyingByClient = false
-        member this.MinimalTextureId = minimalTextureId
-        member this.MinimalTextureHandle = minimalTextureHandle
-        member this.FullTextureLoaded = fullTextureLoaded
-        member this.FullTextureId = (if not fullTextureLoaded then failwithumf ()); fullTextureId
-        member this.FullTextureHandle = (if not fullTextureLoaded then failwithumf ()); fullTextureHandle
-        member this.DestroyingByClient = destroyingByClient
-        member this.MarkDestroyingByClient () = destroyingByClient <- true
-
-    type Texture' =
-        | EagerTexture of EagerTexture
-        | LazyTexture of LazyTexture
-
     /// An OpenGL texture.
     type [<Struct>] Texture =
         { TextureId : uint
