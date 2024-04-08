@@ -342,33 +342,49 @@ module Texture =
         { TextureMetadata : TextureMetadata
           TextureId : uint
           TextureHandle : uint64 }
+        member this.Destroy () =
+            Gl.MakeTextureHandleNonResidentARB this.TextureHandle
+            Gl.DeleteTextures [|this.TextureId|]
+            Hl.Assert ()
 
     /// A texture that can be loaded from another thread.
     type LazyTexture (filePath : string, minimalTextureMetadata : TextureMetadata, minimalTextureId : uint, minimalTextureHandle : uint64, fullTextureMinFilter : TextureMinFilter, fullTextureMagFilter : TextureMagFilter, fullTextureMipmaps) =
-        let [<VolatileField>] mutable fullTextureMetadataOpt = ValueNone
-        let [<VolatileField>] mutable fullTextureIdOpt = ValueNone
-        let [<VolatileField>] mutable fullTextureHandleOpt = ValueNone
-        let [<VolatileField>] mutable destroyingByClient = false
+
         let [<VolatileField>] mutable fullTextureServeAttempted = false
-        member this.FilePath = filePath
-        member this.MinimalTextureMetadata = minimalTextureMetadata
-        member this.MinimalTextureId = minimalTextureId
-        member this.MinimalTextureHandle = minimalTextureHandle
-        member this.FullTextureServeAttempted = fullTextureServeAttempted
+        let [<VolatileField>] mutable fullTextureMetadataAndIdOpt = ValueNone
+        let [<VolatileField>] mutable fullTextureHandleOpt = ValueNone
+        let [<VolatileField>] mutable destroyed = false
+        let destructionLock = obj ()
 
-        member this.FullTextureMetadataOpt =
-            if not fullTextureServeAttempted then failwithumf ()
-            fullTextureMetadataOpt
+        (* Client API - only the client may call this! *)
 
-        member this.FullTextureIdOpt =
-            if not fullTextureServeAttempted then failwithumf ()
-            fullTextureIdOpt
+        member this.FilePath =
+            if destroyed then failwith "Accessing field of destroyed texture."
+            filePath
 
-        member this.FullTextureHandleOpt =
+        member this.TextureMetadata =
+            if destroyed then failwith "Accessing field of destroyed texture."
             if fullTextureServeAttempted then
-                if fullTextureHandleOpt.IsNone then
-                    match this.FullTextureIdOpt with
-                    | ValueSome textureId ->
+                match fullTextureMetadataAndIdOpt with
+                | ValueSome (metadata, _) -> metadata
+                | ValueNone -> minimalTextureMetadata
+            else minimalTextureMetadata
+
+        member this.TextureId =
+            if destroyed then failwith "Accessing field of destroyed texture."
+            if fullTextureServeAttempted then
+                match fullTextureMetadataAndIdOpt with
+                | ValueSome (_, textureId) -> textureId
+                | ValueNone -> minimalTextureId
+            else minimalTextureId
+
+        member this.TextureHandle =
+            if destroyed then failwith "Accessing field of destroyed texture."
+            if fullTextureServeAttempted then
+                match fullTextureHandleOpt with
+                | ValueNone ->
+                    match fullTextureMetadataAndIdOpt with
+                    | ValueSome (_, textureId) ->
                         Gl.BindTexture (TextureTarget.Texture2d, textureId)
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int fullTextureMinFilter)
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int fullTextureMagFilter)
@@ -380,46 +396,41 @@ module Texture =
                         let fullTextureHandle = CreateTextureHandle textureId
                         Hl.Assert ()
                         fullTextureHandleOpt <- ValueSome fullTextureHandle
-                        fullTextureHandleOpt
-                    | ValueNone -> ValueNone
-                else fullTextureHandleOpt
-            else ValueNone
+                        fullTextureHandle
+                    | ValueNone -> minimalTextureHandle
+                | ValueSome fullTextureHandle -> fullTextureHandle
+            else minimalTextureHandle
 
-        member this.TextureMetadata =
-            if fullTextureServeAttempted then
-                match this.FullTextureMetadataOpt with
-                | ValueSome textureMetadata -> textureMetadata
-                | ValueNone -> this.MinimalTextureMetadata
-            else this.MinimalTextureMetadata
+        member this.Destroy () =
+            lock destructionLock $ fun () ->
+                if not destroyed then
+                    Gl.MakeTextureHandleNonResidentARB minimalTextureHandle
+                    Gl.DeleteTextures [|minimalTextureId|]
+                    if fullTextureServeAttempted then
+                        match fullTextureMetadataAndIdOpt with
+                        | ValueSome (_, fullTextureId) ->
+                            match fullTextureHandleOpt with
+                            | ValueSome fullTextureHandle ->
+                                Gl.MakeTextureHandleNonResidentARB fullTextureHandle
+                                fullTextureHandleOpt <- ValueNone
+                            | ValueNone -> ()
+                            Gl.DeleteTextures [|fullTextureId|]
+                            fullTextureMetadataAndIdOpt <- ValueNone
+                        | ValueNone -> ()
+                        fullTextureServeAttempted <- false
+                    destroyed <- true
 
-        member this.TextureId =
-            if fullTextureServeAttempted then
-                match this.FullTextureIdOpt with
-                | ValueSome textureId -> textureId
-                | ValueNone -> this.MinimalTextureId
-            else this.MinimalTextureId
+        (* Server API - only the client may call this! *)
 
-        member this.TextureHandle =
-            if fullTextureServeAttempted then
-                match this.FullTextureHandleOpt with
-                | ValueSome textureHandle -> textureHandle
-                | ValueNone -> this.MinimalTextureHandle
-            else this.MinimalTextureHandle
-
-        member this.DestroyingByClient =
-            destroyingByClient
-
-        member this.MarkDestroyingByClient () =
-            destroyingByClient <- true
-
-        member this.TryServeFullTexture () =
-            match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, BlockCompressable filePath, filePath) with
-            | Right (metadata, textureId) ->
-                Gl.Finish ()
-                fullTextureMetadataOpt <- ValueSome metadata
-                fullTextureIdOpt <- ValueSome textureId
-            | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
-            fullTextureServeAttempted <- true
+        member internal this.TryServeFullTexture () =
+            lock destructionLock $ fun () ->
+                if not destroyed && not fullTextureServeAttempted then
+                    match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, BlockCompressable filePath, filePath) with
+                    | Right (metadata, textureId) ->
+                        Gl.Finish ()
+                        fullTextureMetadataAndIdOpt <- ValueSome (metadata, textureId)
+                    | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
+                    fullTextureServeAttempted <- true
 
     /// A 2d texture.
     type Texture =
@@ -443,23 +454,9 @@ module Texture =
             | LazyTexture lazyTexture -> lazyTexture.TextureHandle
         member this.Destroy () =
             match this with
-            | EmptyTexture ->
-                ()
-            | EagerTexture eagerTexture ->
-                Gl.MakeTextureHandleNonResidentARB eagerTexture.TextureHandle
-                Gl.DeleteTextures [|eagerTexture.TextureId|]
-            | LazyTexture lazyTexture ->
-                lazyTexture.MarkDestroyingByClient ()
-                Gl.MakeTextureHandleNonResidentARB lazyTexture.MinimalTextureHandle
-                Gl.DeleteTextures [|lazyTexture.MinimalTextureId|]
-                if lazyTexture.FullTextureServeAttempted then
-                    match lazyTexture.FullTextureIdOpt with
-                    | ValueSome fullTextureId ->
-                        match lazyTexture.FullTextureHandleOpt with // NOTE: this might create full texture handle only to destroy it immediately.
-                        | ValueSome fullTextureHandle -> Gl.MakeTextureHandleNonResidentARB fullTextureHandle
-                        | ValueNone -> ()
-                        Gl.DeleteTextures [|fullTextureId|]
-                    | ValueNone -> ()
+            | EmptyTexture -> ()
+            | EagerTexture eagerTexture -> eagerTexture.Destroy ()
+            | LazyTexture lazyTexture -> lazyTexture.Destroy ()
 
     /// Memoizes texture loads.
     type [<ReferenceEquality>] TextureMemo =
