@@ -54,11 +54,11 @@ module AssetMemo =
                 let texture =
                     if is2d then
                         let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, textureData)
-                        let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                        let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                         OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                     else
                         let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, OpenGL.Texture.BlockCompressable filePath, textureData)
-                        let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                        let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                         let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, textureHandle, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
                         textureMemo.LazyTextures.Enqueue lazyTexture
                         OpenGL.Texture.LazyTexture lazyTexture

@@ -74,7 +74,7 @@ module CubeMap =
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-            let cubeMapHandle = Texture.CreateTextureHandleFromId cubeMapId
+            let cubeMapHandle = Texture.CreateTextureHandle cubeMapId
             let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId; TextureHandle = cubeMapHandle }
             Right cubeMap
         | Some error ->

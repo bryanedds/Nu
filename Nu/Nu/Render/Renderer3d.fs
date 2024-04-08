@@ -883,22 +883,13 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private freeRenderAsset renderAsset renderer =
         GlRenderer3d.invalidateCaches renderer
         match renderAsset with
-        | RawAsset ->
-            () // nothing to do
-        | TextureAsset texture ->
-            OpenGL.Texture.DestroyTexture texture
-            OpenGL.Hl.Assert ()
-        | FontAsset (_, font) ->
-            SDL_ttf.TTF_CloseFont font
-        | CubeMapAsset (_, cubeMap, _) ->
-            OpenGL.Texture.DestroyTexture cubeMap
-            OpenGL.Hl.Assert ()
-        | StaticModelAsset (_, model) ->
-            OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
-            OpenGL.Hl.Assert ()
-        | AnimatedModelAsset model ->
-            OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
-            OpenGL.Hl.Assert ()
+        | RawAsset -> () // nothing to do
+        | TextureAsset texture -> texture.Destroy ()
+        | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
+        | CubeMapAsset (_, cubeMap, _) -> cubeMap.Destroy ()
+        | StaticModelAsset (_, model) -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
+        | AnimatedModelAsset model -> OpenGL.PhysicallyBased.DestroyPhysicallyBasedModel model
+        OpenGL.Hl.Assert ()
 
     static member private tryLoadRenderPackage packageName renderer =
 
@@ -2737,7 +2728,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                  OpenGL.CubeMap.CubeMapSurface.make reflectionMap renderer.CubeMapGeometry)
 
                         // destroy reflection map
-                        OpenGL.Texture.DestroyTexture reflectionMap
+                        reflectionMap.Destroy ()
 
                         // create light map
                         let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds irradianceMap environmentFilterMap
@@ -2994,7 +2985,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let whiteTexture =
             match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, false, "Assets/Default/White.bmp") with
             | Right (metadata, textureId) ->
-                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                 OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
             | Left error -> failwith ("Could not load white texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -3003,7 +2994,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let blackTexture =
             match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, false, "Assets/Default/Black.bmp") with
             | Right (metadata, textureId) ->
-                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                 OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -3012,7 +3003,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let brdfTexture =
             match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, "Assets/Default/Brdf.bmp") with
             | Right (metadata, textureId) ->
-                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                 OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
             | Left error -> failwith ("Could not load brdf texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -3029,7 +3020,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let albedoTexture =
             match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialAlbedo.dds") with
             | Right (metadata, textureId) ->
-                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                 OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
             | Left error -> failwith ("Could not load albedo material texture due to: " + error)
         OpenGL.Hl.Assert ()
@@ -3039,37 +3030,37 @@ type [<ReferenceEquality>] GlRenderer3d =
             let roughnessTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialRoughness.dds") with
                 | Right (metadata, textureId) ->
-                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                     OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                 | Left error -> failwith ("Could not load material roughness texture due to: " + error)
             let metallicTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialMetallic.dds") with
                 | Right (metadata, textureId) ->
-                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                     OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                 | Left error -> failwith ("Could not load material metallic texture due to: " + error)
             let ambientOcclusionTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialAmbientOcclusion.dds") with
                 | Right (metadata, textureId) ->
-                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                     OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                 | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
             let emissionTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialEmission.dds") with
                 | Right (metadata, textureId) ->
-                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                     OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                 | Left error -> failwith ("Could not load material emission texture due to: " + error)
             let normalTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, false, "Assets/Default/MaterialNormal.dds") with
                 | Right (metadata, textureId) ->
-                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                     OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                 | Left error -> failwith ("Could not load material normal texture due to: " + error)
             let heightTexture =
                 match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialHeight.dds") with
                 | Right (metadata, textureId) ->
-                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                     OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                 | Left error -> failwith ("Could not load material height texture due to: " + error)
             { AlbedoTexture = albedoTexture
@@ -3191,17 +3182,17 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.CubeMap.DestroyCubeMapGeometry renderer.CubeMapGeometry
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.BillboardGeometry
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedGeometry renderer.PhysicallyBasedQuad
-            OpenGL.Texture.DestroyTexture renderer.CubeMap
-            OpenGL.Texture.DestroyTexture renderer.BrdfTexture
-            OpenGL.Texture.DestroyTexture renderer.IrradianceMap
-            OpenGL.Texture.DestroyTexture renderer.EnvironmentFilterMap
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.AlbedoTexture
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.RoughnessTexture
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.MetallicTexture
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.EmissionTexture
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.NormalTexture
-            OpenGL.Texture.DestroyTexture renderer.PhysicallyBasedMaterial.HeightTexture
+            renderer.CubeMap.Destroy ()
+            renderer.BrdfTexture.Destroy ()
+            renderer.IrradianceMap.Destroy ()
+            renderer.EnvironmentFilterMap.Destroy ()
+            renderer.PhysicallyBasedMaterial.AlbedoTexture.Destroy ()
+            renderer.PhysicallyBasedMaterial.RoughnessTexture.Destroy ()
+            renderer.PhysicallyBasedMaterial.MetallicTexture.Destroy ()
+            renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture.Destroy ()
+            renderer.PhysicallyBasedMaterial.EmissionTexture.Destroy ()
+            renderer.PhysicallyBasedMaterial.NormalTexture.Destroy ()
+            renderer.PhysicallyBasedMaterial.HeightTexture.Destroy ()
             for lightMap in renderer.LightMaps.Values do OpenGL.LightMap.DestroyLightMap lightMap
             renderer.LightMaps.Clear ()
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
