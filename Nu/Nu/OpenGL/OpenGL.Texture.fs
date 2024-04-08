@@ -514,7 +514,7 @@ module Texture =
         let [<VolatileField>] mutable started = false
         let [<VolatileField>] mutable terminated = false
 
-        member this.Run () =
+        member private this.Run () =
             OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
             started <- true
             while not terminated do
