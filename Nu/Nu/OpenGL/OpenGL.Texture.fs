@@ -526,7 +526,6 @@ module Texture =
                             | Right (metadata, textureId) ->
                                 Gl.Finish ()
                                 try lazyTexture.ServeFullTextureMetadataAndIdOpt (ValueSome (metadata, textureId))
-                                    Log.info ("Streamed in " + lazyTexture.FilePath)
                                     if lazyTexture.DestroyingByClient then
                                         OpenGL.Gl.DeleteTextures [|textureId|]
                                 with exn ->
