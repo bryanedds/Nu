@@ -59,8 +59,7 @@ module Metadata =
                 use image = Drawing.Image.FromStream (fileStream, false, false)
                 Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make image.Width image.Height))
             else
-                // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow
-                // path here.
+                Log.infoOnce "Slow path used to load texture metadata."
                 match OpenGL.Texture.TryCreateTextureData (true, asset.FilePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
