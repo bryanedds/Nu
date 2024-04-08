@@ -191,7 +191,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff"| ".dds" ->
-            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (false, asset.FilePath, packageState.TextureMemo) with
+            match packageState.TextureMemo.TryCreateTextureUnfiltered (false, asset.FilePath) with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->
@@ -227,7 +227,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make None; CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo None; CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage

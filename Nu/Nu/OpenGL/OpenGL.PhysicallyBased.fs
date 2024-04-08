@@ -372,7 +372,7 @@ module PhysicallyBased =
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
     /// Thread-safe if renderable = false.
-    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo, material : Assimp.Material) =
+    let CreatePhysicallyBasedMaterial (renderable, dirPath, defaultMaterial, textureMemo : Texture.TextureMemo, material : Assimp.Material) =
 
         // compute the directory string to prefix to a local asset file path
         let dirPrefix = if dirPath <> "" then dirPath + "/" else ""
@@ -408,7 +408,7 @@ module PhysicallyBased =
                 else i <- inc i
         let albedoTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + albedoTextureSlotFilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + albedoTextureSlotFilePath) with
                 | Right texture -> texture
                 | Left _ -> defaultMaterial.AlbedoTexture
             else defaultMaterial.AlbedoTexture
@@ -449,28 +449,28 @@ module PhysicallyBased =
         roughnessTextureSlot.FilePath <- roughnessTextureSlot.FilePath // trim
         let roughnessTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + roughnessTextureSlot.FilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + roughnessTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + gTextureFilePath, textureMemo) with
+                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + gTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + sTextureFilePath, textureMemo) with
+                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + sTextureFilePath) with
                         | Right texture -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + g_mTextureFilePath, textureMemo) with
+                            match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + g_mTextureFilePath) with
                             | Right texture -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + g_m_aoTextureFilePath, textureMemo) with
+                                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + g_m_aoTextureFilePath) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + roughnessTextureFilePath, textureMemo) with
+                                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + roughnessTextureFilePath) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + rmTextureFilePath, textureMemo) with
+                                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + rmTextureFilePath) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + rmaTextureFilePath, textureMemo) with
+                                            match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + rmaTextureFilePath) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.RoughnessTexture
             else defaultMaterial.RoughnessTexture
@@ -483,28 +483,28 @@ module PhysicallyBased =
         else metallicTextureSlot.FilePath <- PathF.Normalize metallicTextureSlot.FilePath
         let metallicTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + metallicTextureSlot.FilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + metallicTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + mTextureFilePath, textureMemo) with
+                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + mTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + g_mTextureFilePath, textureMemo) with
+                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + g_mTextureFilePath) with
                         | Right texture -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + g_m_aoTextureFilePath, textureMemo) with
+                            match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + g_m_aoTextureFilePath) with
                             | Right texture -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + metallicTextureFilePath, textureMemo) with
+                                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + metallicTextureFilePath) with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + metalnessTextureFilePath, textureMemo) with
+                                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + metalnessTextureFilePath) with
                                     | Right texture -> texture
                                     | Left _ ->
-                                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + rmTextureFilePath, textureMemo) with
+                                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + rmTextureFilePath) with
                                         | Right texture -> texture
                                         | Left _ ->
-                                            match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + rmaTextureFilePath, textureMemo) with
+                                            match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + rmaTextureFilePath) with
                                             | Right texture -> texture
                                             | Left _ -> defaultMaterial.MetallicTexture
             else defaultMaterial.MetallicTexture
@@ -520,22 +520,22 @@ module PhysicallyBased =
             else ambientOcclusionTextureSlotA.FilePath
         let ambientOcclusionTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + ambientOcclusionTextureSlotFilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + ambientOcclusionTextureSlotFilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + aoTextureFilePath, textureMemo) with
+                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + aoTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + g_m_aoTextureFilePath, textureMemo) with
+                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + g_m_aoTextureFilePath) with
                         | Right texture -> texture
                         | Left _ ->
-                            match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + ambientOcclusionTextureFilePath, textureMemo) with
+                            match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + ambientOcclusionTextureFilePath) with
                             | Right texture -> texture
                             | Left _ ->
-                                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + aoTextureFilePath', textureMemo) with
+                                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + aoTextureFilePath') with
                                 | Right texture -> texture
                                 | Left _ ->
-                                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + rmaTextureFilePath, textureMemo) with
+                                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + rmaTextureFilePath) with
                                     | Right texture -> texture
                                     | Left _ -> defaultMaterial.AmbientOcclusionTexture
             else defaultMaterial.AmbientOcclusionTexture
@@ -548,13 +548,13 @@ module PhysicallyBased =
         else emissionTextureSlot.FilePath <- PathF.Normalize emissionTextureSlot.FilePath
         let emissionTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + emissionTextureSlot.FilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + emissionTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + eTextureFilePath, textureMemo) with
+                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + eTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + emissionTextureFilePath, textureMemo) with
+                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + emissionTextureFilePath) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.EmissionTexture
             else defaultMaterial.EmissionTexture
@@ -566,13 +566,13 @@ module PhysicallyBased =
         else normalTextureSlot.FilePath <- PathF.Normalize normalTextureSlot.FilePath
         let normalTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, false, dirPrefix + normalTextureSlot.FilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, false, dirPrefix + normalTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (true, false, dirPrefix + nTextureFilePath, textureMemo) with
+                    match textureMemo.TryCreateTextureFiltered (true, false, dirPrefix + nTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (true, false, dirPrefix + normalTextureFilePath, textureMemo) with
+                        match textureMemo.TryCreateTextureFiltered (true, false, dirPrefix + normalTextureFilePath) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.NormalTexture
             else defaultMaterial.NormalTexture
@@ -585,13 +585,13 @@ module PhysicallyBased =
         else heightTextureSlot.FilePath <- PathF.Normalize heightTextureSlot.FilePath
         let heightTexture =
             if renderable then
-                match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + heightTextureSlot.FilePath, textureMemo) with
+                match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + heightTextureSlot.FilePath) with
                 | Right texture -> texture
                 | Left _ ->
-                    match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + hTextureFilePath, textureMemo) with
+                    match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + hTextureFilePath) with
                     | Right texture -> texture
                     | Left _ ->
-                        match Texture.TryCreateTextureFilteredMemoized (true, true, dirPrefix + heightTextureFilePath, textureMemo) with
+                        match textureMemo.TryCreateTextureFiltered (true, true, dirPrefix + heightTextureFilePath) with
                         | Right texture -> texture
                         | Left _ -> defaultMaterial.HeightTexture
             else defaultMaterial.HeightTexture

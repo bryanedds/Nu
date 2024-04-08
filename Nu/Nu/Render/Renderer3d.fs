@@ -820,7 +820,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match OpenGL.Texture.TryCreateTextureFilteredMemoized (true, OpenGL.Texture.BlockCompressable asset.FilePath, asset.FilePath, packageState.TextureMemo) with
+        match packageState.TextureMemo.TryCreateTextureFiltered (true, OpenGL.Texture.BlockCompressable asset.FilePath, asset.FilePath) with
         | Right texture ->
             Some texture
         | Left error ->
@@ -904,7 +904,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (Some renderer.LazyTextureQueues); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo (Some renderer.LazyTextureQueues); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -1190,7 +1190,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (true, package) ->
                 package.Assets.[assetTag.AssetName] <- (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model))
             | (false, _) ->
-                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (Some renderer.LazyTextureQueues); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
+                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo (Some renderer.LazyTextureQueues); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                 let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model)); PackageState = packageState }
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 
@@ -1359,7 +1359,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         | Some package ->
             for (_, _, asset) in package.Assets.Values do GlRenderer3d.freeRenderAsset asset renderer
             let mutable unused = Unchecked.defaultof<_>
-            renderer.LazyTextureQueues.Remove (package.PackageState.TextureMemo.LazyTextures, &unused) |> ignore<bool>
+            renderer.LazyTextureQueues.Remove (package.PackageState.TextureMemo.LazyTextureQueue, &unused) |> ignore<bool>
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 

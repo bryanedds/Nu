@@ -458,51 +458,53 @@ module Texture =
             | EagerTexture eagerTexture -> eagerTexture.Destroy ()
             | LazyTexture lazyTexture -> lazyTexture.Destroy ()
 
-    /// Memoizes texture loads.
-    type [<ReferenceEquality>] TextureMemo =
-        { Textures : Dictionary<string, Texture>
-          LazyTextures : LazyTexture ConcurrentQueue }
-
-        /// Make a texture memoizer.
-        static member make (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
-            let lazyTextures = ConcurrentQueue ()
-            match lazyTextureQueuesOpt with
-            | Some lazyTextureBags -> lazyTextureBags.TryAdd (lazyTextures, lazyTextures) |> ignore<bool>
+    /// Memoizes and optionally threads texture loads.
+    type TextureMemo (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
+        let textures = Dictionary<string, Texture> HashIdentity.Structural
+        let lazyTextureQueue = ConcurrentQueue ()
+        do  match lazyTextureQueuesOpt with
+            | Some lazyTextureQueues -> lazyTextureQueues.TryAdd (lazyTextureQueue, lazyTextureQueue) |> ignore<bool>
             | None -> ()
-            { Textures = Dictionary HashIdentity.Structural
-              LazyTextures = lazyTextures }
 
-    /// Attempt to create a memoized texture from a file.
-    let TryCreateTextureMemoized (isLazy, minFilter, magFilter, mipmaps, blockCompress, filePath : string, textureMemo) =
+        /// Memoized textures.
+        /// TODO: P1: see if we can encapsulated this by providing a more intentful API.
+        member this.Textures = textures
 
-        // memoize texture
-        match textureMemo.Textures.TryGetValue filePath with
-        | (false, _) ->
+        /// Lazy texture queue.
+        /// TODO: P1: see if we can encapsulated this by providing a more intentful API.
+        member this.LazyTextureQueue = lazyTextureQueue
 
-            // attempt to create texture
-            match TryCreateTextureGl (isLazy, minFilter, magFilter, mipmaps, blockCompress, filePath) with
-            | Right (metadata, textureId) ->
-                let textureHandle = CreateTextureHandle textureId
-                let texture =
-                    if isLazy then
-                        let lazyTexture = new LazyTexture (filePath, metadata, textureId, textureHandle, minFilter, magFilter, mipmaps)
-                        textureMemo.LazyTextures.Enqueue lazyTexture
-                        LazyTexture lazyTexture
-                    else EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
-                textureMemo.Textures.Add (filePath, texture)
-                Right texture
-            | Left error -> Left error
+        /// Attempt to create a memoized texture from a file.
+        member this.TryCreateTexture (isLazy, minFilter, magFilter, mipmaps, blockCompress, filePath : string) =
 
-        // already exists
-        | (true, texture) -> Right texture
+            // memoize texture
+            match textures.TryGetValue filePath with
+            | (false, _) ->
 
-    /// Attempt to create a filtered memoized texture from a file.
-    let TryCreateTextureFilteredMemoized (isLazy, blockCompress, filePath, textureMemo) =
-        TryCreateTextureMemoized (isLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, blockCompress, filePath, textureMemo)
+                // attempt to create texture
+                match TryCreateTextureGl (isLazy, minFilter, magFilter, mipmaps, blockCompress, filePath) with
+                | Right (metadata, textureId) ->
+                    let textureHandle = CreateTextureHandle textureId
+                    let texture =
+                        if isLazy then
+                            let lazyTexture = new LazyTexture (filePath, metadata, textureId, textureHandle, minFilter, magFilter, mipmaps)
+                            lazyTextureQueue.Enqueue lazyTexture
+                            LazyTexture lazyTexture
+                        else EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                    textures.Add (filePath, texture)
+                    Right texture
+                | Left error -> Left error
 
-    /// Attempt to create an unfiltered memoized texture from a file.
-    let TryCreateTextureUnfilteredMemoized (isLazy, filePath, textureMemo) =
-        TryCreateTextureMemoized (isLazy, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, false, filePath, textureMemo)
+            // already exists
+            | (true, texture) -> Right texture
+
+        /// Attempt to create a filtered memoized texture from a file.
+        member this.TryCreateTextureFiltered (isLazy, blockCompress, filePath) =
+            this.TryCreateTexture (isLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, blockCompress, filePath)
+
+        /// Attempt to create an unfiltered memoized texture from a file.
+        member this.TryCreateTextureUnfiltered (isLazy, filePath) =
+            this.TryCreateTexture (isLazy, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, false, filePath)
 
     /// Populated the texture ids and handles of lazy textures in a threaded manner.
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.

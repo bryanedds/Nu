@@ -60,7 +60,7 @@ module AssetMemo =
                         let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, OpenGL.Texture.BlockCompressable filePath, textureData)
                         let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                         let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, textureHandle, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
-                        textureMemo.LazyTextures.Enqueue lazyTexture
+                        textureMemo.LazyTextureQueue.Enqueue lazyTexture
                         OpenGL.Texture.LazyTexture lazyTexture
                 textureMemo.Textures.[filePath] <- texture
             | Left error -> Log.info error
