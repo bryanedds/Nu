@@ -1367,8 +1367,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
             for (_, _, asset) in package.Assets.Values do GlRenderer3d.freeRenderAsset asset renderer
-            let mutable unused = Unchecked.defaultof<_>
-            renderer.LazyTextureQueues.Remove (package.PackageState.TextureMemo.LazyTextures, &unused) |> ignore<bool>
+            renderer.LazyTextureQueues.Remove (package.PackageState.TextureMemo.LazyTextures) |> ignore<bool * _>
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 

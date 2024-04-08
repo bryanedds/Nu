@@ -60,6 +60,8 @@ module Texture =
         let [<VolatileField>] mutable fullTextureHandleOpt = ValueNone
         let [<VolatileField>] mutable destroyingByClient = false
         let [<VolatileField>] mutable fullTextureLoadAttempted = false
+        let [<VolatileField>] mutable lastAccessed = 0L
+        member this.LastAccessed = lastAccessed
         member this.FilePath = filePath
         member this.MinimalTextureMetadata = minimalTextureMetadata
         member this.MinimalTextureId = minimalTextureId
@@ -74,6 +76,7 @@ module Texture =
             if not fullTextureLoadAttempted then failwithumf ()
             fullTextureIdOpt
 
+        // NOTE: only client may call this!
         member this.FullTextureHandleOpt =
             if fullTextureLoadAttempted then
                 if fullTextureHandleOpt.IsNone then
@@ -89,6 +92,7 @@ module Texture =
                         Hl.Assert ()
                         let fullTextureHandle = CreateTextureHandleFromId textureId
                         Hl.Assert ()
+                        lastAccessed <- Core.getTimeStamp ()
                         fullTextureHandleOpt <- ValueSome fullTextureHandle
                         fullTextureHandleOpt
                     | ValueNone -> ValueNone
@@ -128,7 +132,23 @@ module Texture =
                 fullTextureMetadataOpt <- ValueSome fullTextureMetadata
                 fullTextureIdOpt <- ValueSome fullTextureId
             | ValueNone -> ()
+            lastAccessed <- Core.getTimeStamp ()
             fullTextureLoadAttempted <- true
+
+        member this.EvictFullTexture () =
+            if fullTextureLoadAttempted then
+                match fullTextureIdOpt with
+                | ValueSome fullTextureId ->
+                    match fullTextureHandleOpt with
+                    | ValueSome fullTextureHandle ->
+                        Gl.MakeTextureHandleNonResidentARB fullTextureHandle
+                        fullTextureHandleOpt <- ValueNone
+                    | ValueNone -> ()
+                    Gl.DeleteTextures [|fullTextureId|]
+                    fullTextureMetadataOpt <- ValueNone
+                    fullTextureIdOpt <- ValueNone
+                | ValueNone -> ()
+                fullTextureLoadAttempted <- false
 
     type Texture =
         | EmptyTexture
@@ -508,6 +528,8 @@ module Texture =
         let mutable threadOpt = None
         let [<VolatileField>] mutable started = false
         let [<VolatileField>] mutable terminated = false
+        let lazyTextureStores = ConcurrentDictionary<LazyTexture ConcurrentQueue, ConcurrentDictionary<LazyTexture, LazyTexture>> HashIdentity.Reference
+        let lazyTextureEvictions = ConcurrentDictionary<LazyTexture ConcurrentQueue, ConcurrentDictionary<LazyTexture, LazyTexture>> HashIdentity.Reference
 
         member this.Started =
             started
@@ -515,10 +537,52 @@ module Texture =
         member this.Terminated =
             terminated
 
+        member private this.FullTextureLoad lazyTextureQueue (lazyTexture : LazyTexture) =
+            match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, BlockCompressable lazyTexture.FilePath, lazyTexture.FilePath) with
+            | Right (metadata, textureId) ->
+                Gl.Finish ()
+                try lazyTexture.ServeFullTextureMetadataAndIdOpt (ValueSome (metadata, textureId))
+                    match lazyTextureStores.TryGetValue lazyTextureQueue with
+                    | (true, lazyTextureStore) ->
+                        lazyTextureStore.TryAdd (lazyTexture, lazyTexture) |> ignore<bool>
+                    | (false, _) ->
+                        let lazyTextureStore = ConcurrentDictionary<_, _> HashIdentity.Reference
+                        lazyTextureStores.TryAdd (lazyTextureQueue, lazyTextureStore) |> ignore<bool>
+                        lazyTextureStore.TryAdd (lazyTexture, lazyTexture) |> ignore<bool>
+                    if lazyTexture.DestroyingByClient then
+                        OpenGL.Gl.DeleteTextures [|textureId|]
+                with exn ->
+                    Log.info ("Could not serve lazy texture due to:" + exn.Message)
+                    lazyTexture.ServeFullTextureMetadataAndIdOpt ValueNone
+            | Left error ->
+                Log.info ("Could not serve lazy texture due to:" + error)
+                lazyTexture.ServeFullTextureMetadataAndIdOpt ValueNone
+
+        member this.Sweep age =
+
+            let time = Core.getTimeStamp ()
+            let lazyTexturesEvicting = List<struct (LazyTexture ConcurrentQueue * LazyTexture)> ()
+            for lazyTextureStore in lazyTextureStores do
+                for lazyTexture in lazyTextureStore.Value do
+                    let localTime = (time - lazyTexture.Key.LastAccessed) / Stopwatch.Frequency
+                    if localTime > age then
+                        lazyTexturesEvicting.Add struct (lazyTextureStore.Key, lazyTexture.Key)
+
+            for struct (lazyTextureQueue, lazyTexture) in lazyTexturesEvicting do
+                lazyTexture.EvictFullTexture ()
+                lazyTextureStores.[lazyTextureQueue].Remove lazyTexture |> ignore<bool * _>
+                match lazyTextureEvictions.TryGetValue lazyTextureQueue with
+                | (true, lazyTextures) -> lazyTextures.TryAdd (lazyTexture, lazyTexture)
+                | (false, _) ->
+                    let lazyTextures = ConcurrentDictionary<LazyTexture, LazyTexture> HashIdentity.Reference
+                    lazyTextures.TryAdd (lazyTexture, lazyTexture)
+
         member this.Run () =
             OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
             started <- true
             while not terminated do
+                
+                // attempt to reload evicted textures
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
                 let desiredFrameTimeMinimumMs = Constants.GameTime.DesiredFrameTimeMinimum * 1000.0
                 let lazyTextureQueueEnr = lazyTextureQueues.GetEnumerator ()
@@ -527,18 +591,7 @@ module Texture =
                     let mutable lazyTexture = Unchecked.defaultof<_>
                     while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueue.TryDequeue &lazyTexture do
                         if not lazyTexture.FullTextureLoadAttempted then
-                            match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, BlockCompressable lazyTexture.FilePath, lazyTexture.FilePath) with
-                            | Right (metadata, textureId) ->
-                                Gl.Finish ()
-                                try lazyTexture.ServeFullTextureMetadataAndIdOpt (ValueSome (metadata, textureId))
-                                    if lazyTexture.DestroyingByClient then
-                                        OpenGL.Gl.DeleteTextures [|textureId|]
-                                with exn ->
-                                    Log.info ("Could not serve lazy texture due to:" + exn.Message)
-                                    lazyTexture.ServeFullTextureMetadataAndIdOpt ValueNone
-                            | Left error ->
-                                Log.info ("Could not serve lazy texture due to:" + error)
-                                lazyTexture.ServeFullTextureMetadataAndIdOpt ValueNone
+                            this.FullTextureLoad lazyTextureQueue lazyTexture
                 Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
 
         member this.Start () =
