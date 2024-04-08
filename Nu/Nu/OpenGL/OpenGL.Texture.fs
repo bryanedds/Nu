@@ -535,7 +535,6 @@ module Texture =
                             | Left error ->
                                 Log.info ("Could not serve lazy texture due to:" + error)
                                 lazyTexture.ServeFullTextureMetadataAndIdOpt ValueNone
-                        Thread.Sleep 100
                 Thread.Sleep 1
 
         member this.Start () =
