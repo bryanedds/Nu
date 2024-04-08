@@ -53,7 +53,6 @@
 		<Compile Include="OpenGL\OpenGL.Hl.fs" />
 		<Compile Include="OpenGL\OpenGL.Shader.fs" />
 		<Compile Include="OpenGL\OpenGL.Texture.fs" />
-		<Compile Include="OpenGL\OpenGL.Assimp.fs" />
 		<Compile Include="OpenGL\OpenGL.CubeMap.fs" />
 		<Compile Include="OpenGL\OpenGL.LightMap.fs" />
 		<Compile Include="OpenGL\OpenGL.Framebuffer.fs" />

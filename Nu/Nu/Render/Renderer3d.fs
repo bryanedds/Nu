@@ -840,7 +840,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadModelAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (true, asset.FilePath, renderer.PhysicallyBasedMaterial, assetClient.TextureClient, assetClient.AssimpSceneClient) with
+        match assetClient.SceneClient.TryCreatePhysicallyBasedModel (true, asset.FilePath, renderer.PhysicallyBasedMaterial, assetClient.TextureClient) with
         | Right model -> Some model
         | Left error -> Log.info ("Could not load model '" + asset.FilePath + "' due to: " + error); None
 
@@ -902,7 +902,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             AssetClient
                                 (OpenGL.Texture.TextureClient (Some renderer.LazyTextureQueues),
                                  OpenGL.CubeMap.CubeMapClient (),
-                                 OpenGL.Assimp.AssimpSceneMemo.make ())
+                                 OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -930,7 +930,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
                     | FontAsset _ -> ()
                     | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.AssimpSceneClient.AssimpScenes.Remove filePath |> ignore<bool>
+                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
                     GlRenderer3d.freeRenderAsset renderAsset renderer
 
                 // categorize assets to load
@@ -1191,7 +1191,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     AssetClient
                         (OpenGL.Texture.TextureClient (Some renderer.LazyTextureQueues),
                          OpenGL.CubeMap.CubeMapClient (),
-                         OpenGL.Assimp.AssimpSceneMemo.make ())
+                         OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
                 let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model)); PackageState = assetClient }
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 

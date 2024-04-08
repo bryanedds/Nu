@@ -225,7 +225,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             AssetClient
                                 (OpenGL.Texture.TextureClient None,
                                  OpenGL.CubeMap.CubeMapClient (),
-                                 OpenGL.Assimp.AssimpSceneMemo.make ())
+                                 OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -253,7 +253,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
                     | FontAsset _ -> ()
                     | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.AssimpSceneClient.AssimpScenes.Remove filePath |> ignore<bool>
+                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
                     GlRenderer2d.freeRenderAsset renderAsset renderer
 
                 // categorize assets to load

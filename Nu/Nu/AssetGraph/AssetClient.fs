@@ -8,22 +8,23 @@ open System.IO
 open Prime
 open Nu
 
-/// Exposes assets clients for direct usage.
-type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, assimpSceneClient : OpenGL.Assimp.AssimpSceneMemo) =
+/// Provides clients for direct usage.
+/// TODO: consider encapsulating child clients behind higer-level operations.
+type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
 
-    /// The texture client.
+    /// The cube map client.
     member this.CubeMapClient = cubeMapClient
 
-    /// The texture client.
-    member this.AssimpSceneClient = assimpSceneClient
+    /// The physically-based scene client.
+    member this.SceneClient = sceneClient
 
     /// Preload assets.
     member this.PreloadAssets (is2d, assets : Asset seq) =
 
-        // collect preloadable assets
+        // collect loadable assets
         let textureAssets = List ()
         let cubeMapAssets = List ()
         let assimpSceneAssets = List ()
@@ -77,7 +78,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
         // run assimp scene loading ops
         for assimpScene in assimpSceneLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
             match assimpScene with
-            | Right (filePath, scene) -> assimpSceneClient.AssimpScenes.[filePath] <- scene
+            | Right (filePath, scene) -> sceneClient.Scenes.[filePath] <- scene
             | Left error -> Log.info error
 
         // load cube maps directly
