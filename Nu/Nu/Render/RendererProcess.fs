@@ -390,7 +390,7 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // loop until swap is requested
-                while not swap && not terminated do Thread.Sleep 1
+                while not terminated && not swap do Thread.Sleep 1
 
                 // guard against early termination
                 if not terminated then

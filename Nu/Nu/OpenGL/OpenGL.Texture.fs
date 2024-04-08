@@ -5,6 +5,7 @@ namespace OpenGL
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.Runtime.InteropServices
 open System.Threading
@@ -518,9 +519,13 @@ module Texture =
             OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
             started <- true
             while not terminated do
-                for lazyTextureQueue in lazyTextureQueues.Values do
+                let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
+                let desiredFrameTimeMinimumMs = Constants.GameTime.DesiredFrameTimeMinimum * 1000.0
+                let lazyTextureQueueEnr = lazyTextureQueues.GetEnumerator ()
+                while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueueEnr.MoveNext () do
+                    let lazyTextureQueue = lazyTextureQueueEnr.Current.Key
                     let mutable lazyTexture = Unchecked.defaultof<_>
-                    while lazyTextureQueue.TryDequeue &lazyTexture && not terminated do
+                    while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueue.TryDequeue &lazyTexture do
                         if not lazyTexture.FullTextureLoadAttempted then
                             match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, BlockCompressable lazyTexture.FilePath, lazyTexture.FilePath) with
                             | Right (metadata, textureId) ->
@@ -534,7 +539,7 @@ module Texture =
                             | Left error ->
                                 Log.info ("Could not serve lazy texture due to:" + error)
                                 lazyTexture.ServeFullTextureMetadataAndIdOpt ValueNone
-                Thread.Sleep 1
+                Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
 
         member this.Start () =
             if not started then
