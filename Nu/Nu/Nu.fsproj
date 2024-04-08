@@ -78,7 +78,7 @@
 		<Compile Include="AssetGraph\AssetTag.fs" />
 		<Compile Include="AssetGraph\AssetTypes.fs" />
 		<Compile Include="AssetGraph\AssetGraph.fs" />
-		<Compile Include="AssetGraph\AssetMemo.fs" />
+		<Compile Include="AssetGraph\AssetClient.fs" />
 		<Compile Include="Physics\PhysicsEngine.fs" />
 		<Compile Include="Physics\PhysicsEngine2d.fs" />
 		<Compile Include="Physics\PhysicsEngine3d.fs" />

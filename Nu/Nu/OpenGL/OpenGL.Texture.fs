@@ -459,7 +459,7 @@ module Texture =
             | LazyTexture lazyTexture -> lazyTexture.Destroy ()
 
     /// Memoizes and optionally threads texture loads.
-    type TextureMemo (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
+    type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
         let textures = Dictionary<string, Texture> HashIdentity.Structural
         let lazyTextureQueue = ConcurrentQueue ()
         do  match lazyTextureQueuesOpt with
@@ -467,11 +467,9 @@ module Texture =
             | None -> ()
 
         /// Memoized textures.
-        /// TODO: P1: see if we can encapsulated this by providing a more intentful API.
         member this.Textures = textures
 
         /// Lazy texture queue.
-        /// TODO: P1: see if we can encapsulated this by providing a more intentful API.
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.

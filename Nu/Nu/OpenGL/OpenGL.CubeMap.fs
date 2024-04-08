@@ -14,18 +14,6 @@ open Nu
 [<RequireQualifiedAccess>]
 module CubeMap =
 
-    /// The key identifying a cube map.
-    type CubeMapMemoKey =
-        string * string * string * string * string * string
-
-    /// Memoizes cube map loads.
-    type [<ReferenceEquality>] CubeMapMemo =
-        { CubeMaps : Dictionary<CubeMapMemoKey, Texture.Texture> }
-
-        /// Make a cube map memoizer.
-        static member make () =
-            { CubeMaps = Dictionary HashIdentity.Structural }
-
     /// Attempt to create a cube map from 6 files.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the included
     /// files can't be located.
@@ -81,23 +69,34 @@ module CubeMap =
             Gl.DeleteTextures [|cubeMapId|]
             Left error
 
-    /// Attempt to create a cube map from 6 files.
-    let TryCreateCubeMapMemoized (cubeMapMemoKey, cubeMapMemo) =
+    /// The key identifying a cube map.
+    type CubeMapKey =
+        string * string * string * string * string * string
 
-        // memoize cube map
-        match cubeMapMemo.CubeMaps.TryGetValue cubeMapMemoKey with
-        | (false, _) ->
+    /// Memoizes cube map loads (and may at some point potentially thread them).
+    type CubeMapClient () =
+        let cubeMaps = Dictionary HashIdentity.Structural
 
-            // attempt to create cube map
-            let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapMemoKey
-            match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
-            | Right cubeMap ->
-                cubeMapMemo.CubeMaps.Add (cubeMapMemoKey, cubeMap)
-                Right cubeMap
-            | Left error -> Left error
+        /// Memoized cube maps.
+        member this.CubeMaps = cubeMaps
 
-        // already exists
-        | (true, cubeMap) -> Right cubeMap
+        /// Attempt to create a cube map from 6 files.
+        member this.TryCreateCubeMap cubeMapKey =
+
+            // memoize cube map
+            match cubeMaps.TryGetValue cubeMapKey with
+            | (false, _) ->
+
+                // attempt to create cube map
+                let (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) = cubeMapKey
+                match TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
+                | Right cubeMap ->
+                    cubeMaps.Add (cubeMapKey, cubeMap)
+                    Right cubeMap
+                | Left error -> Left error
+
+            // already exists
+            | (true, cubeMap) -> Right cubeMap
 
     /// Describes some cube map geometry that's loaded into VRAM.
     type CubeMapGeometry =

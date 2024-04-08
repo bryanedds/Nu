@@ -11,6 +11,7 @@ open Nu
 module Assimp =
 
     /// Memoizes assimp scene loads.
+    /// TODO: P1: encapsulate and rename from memo to client.
     type [<ReferenceEquality>] AssimpSceneMemo =
         { AssimpScenes : Dictionary<string, Assimp.Scene> }
 

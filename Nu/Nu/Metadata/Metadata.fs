@@ -87,9 +87,9 @@ module Metadata =
     /// Thread-safe.
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
-            let textureMemo = OpenGL.Texture.TextureMemo None // unused. TODO: consider making this opt.
-            let assimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () // unused. TODO: consider making this opt.
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, OpenGL.PhysicallyBased.PhysicallyBasedMaterial.empty, textureMemo, assimpSceneMemo) with
+            let textureClient = OpenGL.Texture.TextureClient None // unused. TODO: consider making this opt.
+            let assimpSceneClient = OpenGL.Assimp.AssimpSceneMemo.make () // unused. TODO: consider making this opt.
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, OpenGL.PhysicallyBased.PhysicallyBasedMaterial.empty, textureClient, assimpSceneClient) with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)

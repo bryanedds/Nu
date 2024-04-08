@@ -121,12 +121,6 @@ type private LayeredOperation2dComparer () =
                 if assetNameCompare <> 0 then assetNameCompare
                 else strCmp left.AssetTag.PackageName right.AssetTag.PackageName
 
-/// The internally used package state for the 2d OpenGL renderer.
-type [<ReferenceEquality>] private GlPackageState2d =
-    { TextureMemo : OpenGL.Texture.TextureMemo
-      CubeMapMemo : OpenGL.CubeMap.CubeMapMemo
-      AssimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo }
-
 /// The internally used cached asset package.
 type [<NoEquality; NoComparison>] private RenderPackageCached =
     { CachedPackageName : string
@@ -165,7 +159,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           SpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
           TextQuad : uint * uint * uint // TODO: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
-          RenderPackages : Packages<RenderAsset, GlPackageState2d>
+          RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
@@ -187,11 +181,11 @@ type [<ReferenceEquality>] GlRenderer2d =
         | AnimatedModelAsset _ -> ()
         OpenGL.Hl.Assert ()
 
-    static member private tryLoadRenderAsset packageState (asset : Asset) renderer =
+    static member private tryLoadRenderAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff"| ".dds" ->
-            match packageState.TextureMemo.TryCreateTextureUnfiltered (false, asset.FilePath) with
+            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath) with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->
@@ -227,8 +221,12 @@ type [<ReferenceEquality>] GlRenderer2d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo None; CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
-                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
+                        let assetClient =
+                            AssetClient
+                                (OpenGL.Texture.TextureClient None,
+                                 OpenGL.CubeMap.CubeMapClient (),
+                                 OpenGL.Assimp.AssimpSceneMemo.make ())
+                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
 
@@ -252,10 +250,10 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let renderAsset = assetEntry.Value
                     match renderAsset with
                     | RawAsset -> ()
-                    | TextureAsset _ -> renderPackage.PackageState.TextureMemo.Textures.Remove filePath |> ignore<bool>
+                    | TextureAsset _ -> renderPackage.PackageState.TextureClient.Textures.Remove filePath |> ignore<bool>
                     | FontAsset _ -> ()
-                    | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapMemo.CubeMaps.Remove cubeMapKey |> ignore<bool>
-                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.AssimpSceneMemo.AssimpScenes.Remove filePath |> ignore<bool>
+                    | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
+                    | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.AssimpSceneClient.AssimpScenes.Remove filePath |> ignore<bool>
                     GlRenderer2d.freeRenderAsset renderAsset renderer
 
                 // categorize assets to load
@@ -264,9 +262,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                     if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
                         assetsToLoad.Add asset |> ignore<bool>
 
-                // memoize assets in parallel
-                AssetMemo.memoizeParallel
-                    true assetsToLoad renderPackage.PackageState.TextureMemo renderPackage.PackageState.CubeMapMemo renderPackage.PackageState.AssimpSceneMemo
+                // preload assets in parallel
+                renderPackage.PackageState.PreloadAssets (true, assetsToLoad)
 
                 // load assets
                 let assetsLoaded = Dictionary ()

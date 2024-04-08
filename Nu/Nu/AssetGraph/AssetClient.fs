@@ -8,13 +8,22 @@ open System.IO
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
-module AssetMemo =
+/// Exposes assets clients for direct usage.
+type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, assimpSceneClient : OpenGL.Assimp.AssimpSceneMemo) =
 
-    /// Memoize assets in parallel.
-    let memoizeParallel is2d (assets : Asset seq) (textureMemo : OpenGL.Texture.TextureMemo) (cubeMapMemo : OpenGL.CubeMap.CubeMapMemo) (assimpSceneMemo : OpenGL.Assimp.AssimpSceneMemo) =
+    /// The texture client.
+    member this.TextureClient = textureClient
 
-        // collect memoizable assets
+    /// The texture client.
+    member this.CubeMapClient = cubeMapClient
+
+    /// The texture client.
+    member this.AssimpSceneClient = assimpSceneClient
+
+    /// Preload assets.
+    member this.PreloadAssets (is2d, assets : Asset seq) =
+
+        // collect preloadable assets
         let textureAssets = List ()
         let cubeMapAssets = List ()
         let assimpSceneAssets = List ()
@@ -60,18 +69,18 @@ module AssetMemo =
                         let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, OpenGL.Texture.BlockCompressable filePath, textureData)
                         let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                         let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, textureHandle, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
-                        textureMemo.LazyTextureQueue.Enqueue lazyTexture
+                        textureClient.LazyTextureQueue.Enqueue lazyTexture
                         OpenGL.Texture.LazyTexture lazyTexture
-                textureMemo.Textures.[filePath] <- texture
+                textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
 
         // run assimp scene loading ops
         for assimpScene in assimpSceneLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
             match assimpScene with
-            | Right (filePath, scene) -> assimpSceneMemo.AssimpScenes.[filePath] <- scene
+            | Right (filePath, scene) -> assimpSceneClient.AssimpScenes.[filePath] <- scene
             | Left error -> Log.info error
 
-        // memoize cube maps directly
+        // load cube maps directly
         for cubeMap in cubeMapAssets do
             match File.ReadAllLines cubeMap.FilePath |> Array.filter (String.IsNullOrWhiteSpace >> not) with
             | [|faceRightFilePath; faceLeftFilePath; faceTopFilePath; faceBottomFilePath; faceBackFilePath; faceFrontFilePath|] ->
@@ -82,8 +91,8 @@ module AssetMemo =
                 let faceBottomFilePath = dirPath + "/" + faceBottomFilePath.Trim ()
                 let faceBackFilePath = dirPath + "/" + faceBackFilePath.Trim ()
                 let faceFrontFilePath = dirPath + "/" + faceFrontFilePath.Trim ()
-                let cubeMapMemoKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
+                let cubeMapKey = (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath)
                 match OpenGL.CubeMap.TryCreateCubeMap (faceRightFilePath, faceLeftFilePath, faceTopFilePath, faceBottomFilePath, faceBackFilePath, faceFrontFilePath) with
-                | Right cubeMap -> cubeMapMemo.CubeMaps.[cubeMapMemoKey] <- cubeMap
+                | Right cubeMap -> cubeMapClient.CubeMaps.[cubeMapKey] <- cubeMap
                 | Left error -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to: " + error)
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")
