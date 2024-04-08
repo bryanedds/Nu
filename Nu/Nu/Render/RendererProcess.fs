@@ -13,10 +13,6 @@ open Prime
 /// A renderer process that may or may not be threaded.
 type RendererProcess =
     interface
-        /// Whether the rendering process has started.
-        abstract Started : bool
-        /// Whether the rendering process has been terminated.
-        abstract Terminated : bool
         /// Start the rendering process.
         abstract Start : ImFontAtlasPtr -> Window option -> unit
         /// Enqueue a 3d rendering message.
@@ -52,12 +48,6 @@ type RendererInline () =
     let mutable renderersOpt = Option<Renderer3d * Renderer2d * RendererImGui>.None
 
     interface RendererProcess with
-
-        member this.Started =
-            started
-
-        member this.Terminated =
-            terminated
 
         member this.Start fonts windowOpt_ =
 
@@ -407,12 +397,6 @@ type RendererThread () =
         renderer2d.CleanUp ()
 
     interface RendererProcess with
-
-        member this.Started =
-            started
-
-        member this.Terminated =
-            terminated
 
         member this.Start fonts windowOpt =
 
