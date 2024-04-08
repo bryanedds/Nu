@@ -180,7 +180,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset -> ()
-        | TextureAsset (_, texture) -> OpenGL.Texture.DestroyTexture texture
+        | TextureAsset texture -> OpenGL.Texture.DestroyTexture texture
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -190,9 +190,9 @@ type [<ReferenceEquality>] GlRenderer2d =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff"| ".dds" ->
-            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (asset.FilePath, packageState.TextureMemo) with
-            | Right (textureMetadata, texture) ->
-                Some (TextureAsset (textureMetadata, texture))
+            match OpenGL.Texture.TryCreateTextureUnfilteredMemoized (false, asset.FilePath, packageState.TextureMemo) with
+            | Right texture ->
+                Some (TextureAsset texture)
             | Left error ->
                 Log.infoOnce ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
@@ -226,7 +226,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make None; CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -384,7 +384,6 @@ type [<ReferenceEquality>] GlRenderer2d =
         pivot
         rotation
         (insetOpt : Box2 voption)
-        (textureMetadata : OpenGL.Texture.TextureMetadata)
         (texture : OpenGL.Texture.Texture)
         (color : Color)
         blend
@@ -394,6 +393,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
+            let textureMetadata = texture.TextureMetadata
             let texelWidth = textureMetadata.TextureTexelWidth
             let texelHeight = textureMetadata.TextureTexelHeight
             let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
@@ -464,8 +464,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (textureMetadata, texture) ->
-                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
+            | TextureAsset texture ->
+                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
             | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
@@ -474,7 +474,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
-            | TextureAsset (textureMetadata, texture) ->
+            | TextureAsset texture ->
                 let mutable index = 0
                 while index < particles.Length do
                     let particle = &particles.[index]
@@ -489,7 +489,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let emission = &particle.Emission
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt textureMetadata texture color blend emission flip renderer
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
                     index <- inc index
             | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -524,7 +524,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
                 | ValueSome asset ->
                     match asset with
-                    | TextureAsset (tileSetTexture, tileSetTextureMetadata) -> ValueSome struct (tileSet, tileSetImage, tileSetTexture, tileSetTextureMetadata)
+                    | TextureAsset tileSetTexture -> ValueSome struct (tileSet, tileSetImage, tileSetTexture)
                     | _ -> tileSetTexturesAllFound <- false; ValueNone
                 | ValueNone -> tileSetTexturesAllFound <- false; ValueNone) |>
             Array.filter ValueOption.isSome |>
@@ -565,7 +565,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let mutable tileSetIndex = 0
                         let mutable tileSetWidth = 0
                         let mutable tileSetTextureOpt = ValueNone
-                        for struct (set, _, textureMetadata, texture) in tileSetTextures do
+                        for struct (set, _, texture) in tileSetTextures do
                             let tileCountOpt = set.TileCount
                             let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
                             if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
@@ -574,19 +574,19 @@ type [<ReferenceEquality>] GlRenderer2d =
 #if DEBUG
                                 if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
 #endif
-                                tileSetTextureOpt <- ValueSome struct (textureMetadata, texture)
+                                tileSetTextureOpt <- ValueSome texture
                             if tileSetTextureOpt.IsNone then
                                 tileSetIndex <- inc tileSetIndex
                                 tileOffset <- tileOffset + tileCount
 
                         // attempt to render tile
                         match tileSetTextureOpt with
-                        | ValueSome struct (textureMetadata, texture) ->
+                        | ValueSome texture ->
                             let tileId = tile.Gid - tileOffset
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) textureMetadata texture color Transparent emission flip renderer
+                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) texture color Transparent emission flip renderer
                         | ValueNone -> ()
 
                 // fin
@@ -711,7 +711,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                             OpenGL.Hl.Assert ()
 
                             // make texture drawable
-                            let textTexture = OpenGL.Texture.CreateTextureFromId textTextureId
+                            let textTextureMetadata = OpenGL.Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
+                            let textTextureHandle = OpenGL.Texture.CreateTextureHandleFromId textTextureId
+                            let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId; TextureHandle = textTextureHandle }
                             OpenGL.Hl.Assert ()
 
                             // draw text sprite

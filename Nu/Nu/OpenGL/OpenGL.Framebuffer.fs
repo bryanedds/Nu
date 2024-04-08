@@ -24,6 +24,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, textureId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // create depth and stencil buffers
@@ -35,7 +36,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let texture = Texture.CreateTextureFromId textureId
+            let textureHandle = Texture.CreateTextureHandleFromId textureId
+            let texture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = textureId; TextureHandle = textureHandle }
             Right (texture, framebuffer)
         else Left ("Could not create complete texture 2d framebuffer.")
 
@@ -61,6 +63,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, filterBoxId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -76,7 +79,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let filterBox = Texture.CreateTextureFromId filterBoxId
+            let filterBoxHandle = Texture.CreateTextureHandleFromId filterBoxId
+            let filterBox = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterBoxId; TextureHandle = filterBoxHandle }
             Right (filterBox, renderbuffer, framebuffer)
         else Left "Could not create complete filter box 1d framebuffer."
 
@@ -103,6 +107,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, filterGaussianId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -118,7 +123,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let filterGaussian = Texture.CreateTextureFromId filterGaussianId
+            let filterGaussianHandle = Texture.CreateTextureHandleFromId filterGaussianId
+            let filterGaussian = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterGaussianId; TextureHandle = filterGaussianHandle }
             Right (filterGaussian, renderbuffer, framebuffer)
         else Left "Could not create complete filter gaussian 2d framebuffer."
 
@@ -145,6 +151,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, filterId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -160,7 +167,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let filter = Texture.CreateTextureFromId filterId
+            let filterHandle = Texture.CreateTextureHandleFromId filterId
+            let filter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterId; TextureHandle = filterHandle }
             Right (filter, renderbuffer, framebuffer)
         else Left "Could not create complete filter framebuffer."
 
@@ -185,6 +193,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, positionId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // create depth and stencil buffers
@@ -196,7 +205,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let position = Texture.CreateTextureFromId positionId
+            let positionHandle = Texture.CreateTextureHandleFromId positionId
+            let position = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = positionId; TextureHandle = positionHandle }
             Right (position, framebuffer)
         else Left ("Could not create complete HDR framebuffer.")
 
@@ -222,6 +232,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, shadowTextureId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -237,7 +248,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let shadowTexture = Texture.CreateTextureFromId shadowTextureId
+            let shadowTextureHandle = Texture.CreateTextureHandleFromId shadowTextureId
+            let shadowTexture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowTextureId; TextureHandle = shadowTextureHandle }
             Right (shadowTexture, renderbuffer, framebuffer)
         else Left "Could not create complete shadow texture framebuffer."
 
@@ -264,6 +276,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, positionId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // create albedo buffer
@@ -275,6 +288,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, albedoId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // create material buffer
@@ -286,6 +300,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, materialId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // create normal plus buffer
@@ -297,6 +312,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, normalPlusId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -316,10 +332,14 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let position = Texture.CreateTextureFromId positionId
-            let albedo = Texture.CreateTextureFromId albedoId
-            let material = Texture.CreateTextureFromId materialId
-            let normalPlus = Texture.CreateTextureFromId normalPlusId
+            let positionHandle = Texture.CreateTextureHandleFromId positionId
+            let position = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = positionId; TextureHandle = positionHandle }
+            let albedoHandle = Texture.CreateTextureHandleFromId albedoId
+            let albedo = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = albedoId; TextureHandle = albedoHandle }
+            let materialHandle = Texture.CreateTextureHandleFromId materialId
+            let material = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = materialId; TextureHandle = materialHandle }
+            let normalPlusHandle = Texture.CreateTextureHandleFromId normalPlusId
+            let normalPlus = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = normalPlusId; TextureHandle = normalPlusHandle }
             Right (position, albedo, material, normalPlus, renderbuffer, framebuffer)
         else Left "Could not create complete geometry framebuffer."
 
@@ -349,6 +369,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, lightMappingId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -364,7 +385,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let lightMapping = Texture.CreateTextureFromId lightMappingId
+            let lightMappingHandle = Texture.CreateTextureHandleFromId lightMappingId
+            let lightMapping = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = lightMappingId; TextureHandle = lightMappingHandle }
             Right (lightMapping, renderbuffer, framebuffer)
         else Left "Could not create complete light mapping framebuffer."
 
@@ -391,6 +413,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, irradianceId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -406,7 +429,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let irradiance = Texture.CreateTextureFromId irradianceId
+            let irradianceHandle = Texture.CreateTextureHandleFromId irradianceId
+            let irradiance = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = irradianceId; TextureHandle = irradianceHandle }
             Right (irradiance, renderbuffer, framebuffer)
         else Left "Could not create complete irradiance framebuffer."
 
@@ -433,6 +457,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, environmentFilterId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -448,7 +473,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let environmentFilter = Texture.CreateTextureFromId environmentFilterId
+            let environmentFilterHandle = Texture.CreateTextureHandleFromId environmentFilterId
+            let environmentFilter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = environmentFilterId; TextureHandle = environmentFilterHandle }
             Right (environmentFilter, renderbuffer, framebuffer)
         else Left "Could not create complete environment filter framebuffer."
 
@@ -475,6 +501,7 @@ module Framebuffer =
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, ssaoId, 0)
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // associate draw buffers
@@ -490,7 +517,8 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let ssao = Texture.CreateTextureFromId ssaoId
+            let ssaoHandle = Texture.CreateTextureHandleFromId ssaoId
+            let ssao = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = ssaoId; TextureHandle = ssaoHandle }
             Right (ssao, renderbuffer, framebuffer)
         else Left "Could not create complete ssao framebuffer."
 

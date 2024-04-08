@@ -39,7 +39,7 @@ type HeightMap =
     static member private tryGetTextureData tryGetAssetFilePath (assetTag : Image AssetTag) =
         match tryGetAssetFilePath assetTag with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateTextureData filePath with
+            match OpenGL.Texture.TryCreateTextureData (false, filePath) with
             | Some textureData ->
                 let metadata = textureData.Metadata
                 let (blockCompressed, bytes) = textureData.Bytes

@@ -44,7 +44,7 @@ module CubeMap =
                 let faceFilePath = faceFilePaths.[i]
                 let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".png") else faceFilePath
                 let faceFilePath = if not (File.Exists faceFilePath) then PathF.ChangeExtension (faceFilePath, ".dds") else faceFilePath
-                match Texture.TryCreateTextureData faceFilePath with
+                match Texture.TryCreateTextureData (false, faceFilePath) with
                 | Some textureData ->
                     match textureData with
                     | OpenGL.Texture.TextureData.TextureDataDotNet (metadata, bytes) ->
@@ -73,7 +73,9 @@ module CubeMap =
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
-            let cubeMap = Texture.CreateTextureFromId cubeMapId
+            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+            let cubeMapHandle = Texture.CreateTextureHandleFromId cubeMapId
+            let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId; TextureHandle = cubeMapHandle }
             Right cubeMap
         | Some error ->
             Gl.DeleteTextures [|cubeMapId|]

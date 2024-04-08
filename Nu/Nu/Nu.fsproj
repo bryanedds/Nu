@@ -31,7 +31,6 @@
 		<Compile Include="Core\Branchless.fs" />
 		<Compile Include="Core\StructPair.fs" />
 		<Compile Include="Core\PathF.fs" />
-		<Compile Include="Core\WaitOnce.fs" />
 		<Compile Include="Core\Assets.fs" />
 		<Compile Include="Core\Address.fs" />
 		<Compile Include="Core\Relation.fs" />

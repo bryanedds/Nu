@@ -73,17 +73,15 @@ type RendererInline () =
                 | Some window ->
                 
                     // create gl context
-                    match window with
-                    | SglWindow window ->
-                        OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-                        OpenGL.Hl.Assert ()
+                    let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                    OpenGL.Hl.Assert ()
 
                     // initialize gl context
                     OpenGL.Hl.InitContext ()
                     OpenGL.Hl.Assert ()
 
                     // create 3d renderer
-                    let renderer3d = GlRenderer3d.make window :> Renderer3d
+                    let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
                     OpenGL.Hl.Assert ()
 
                     // create 2d renderer
@@ -323,17 +321,15 @@ type RendererThread () =
             | Some window ->
                 
                 // create gl context
-                match window with
-                | SglWindow window ->
-                    OpenGL.Hl.CreateSglContext window.SglWindow |> ignore<nativeint>
-                    OpenGL.Hl.Assert ()
+                let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                OpenGL.Hl.Assert ()
 
                 // initialize gl context
                 OpenGL.Hl.InitContext ()
                 OpenGL.Hl.Assert ()
 
                 // create 3d renderer
-                let renderer3d = GlRenderer3d.make window :> Renderer3d
+                let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
                 OpenGL.Hl.Assert ()
 
                 // create 2d renderer
@@ -401,9 +397,7 @@ type RendererThread () =
 
                     // attempt to swap
                     match windowOpt with
-                    | Some window ->
-                        match window with
-                        | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                    | Some window -> match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
                     | None -> ()
 
                     // complete swap request

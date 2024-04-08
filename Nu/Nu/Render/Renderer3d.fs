@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
@@ -509,8 +510,8 @@ type [<ReferenceEquality>] private SortableLightMap =
         let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
-        let lightMapIrradianceMaps = Array.zeroCreate<OpenGL.Texture.Texture> lightMapsMax
-        let lightMapEnvironmentFilterMaps = Array.zeroCreate<OpenGL.Texture.Texture> lightMapsMax
+        let lightMapIrradianceMaps = Array.init<OpenGL.Texture.Texture> lightMapsMax (fun _ -> OpenGL.Texture.EmptyTexture)
+        let lightMapEnvironmentFilterMaps = Array.init<OpenGL.Texture.Texture> lightMapsMax (fun _ -> OpenGL.Texture.EmptyTexture)
         let lightMapsFiltered =
             match boundsOpt with
             | Some (bounds : Box3) -> lightMaps |> Array.filter (fun lightMap -> lightMap.SortableLightMapBounds.Intersects bounds)
@@ -755,6 +756,8 @@ type [<ReferenceEquality>] StubRenderer3d =
 type [<ReferenceEquality>] GlRenderer3d =
     private
         { Window : Window
+          LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
+          LazyTextureServer : OpenGL.Texture.LazyTextureServer
           SkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           IrradianceShader : OpenGL.CubeMap.CubeMapShader
           EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
@@ -817,9 +820,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private tryLoadTextureAsset packageState (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
-        match OpenGL.Texture.TryCreateTextureFilteredMemoized (OpenGL.Texture.BlockCompressable asset.FilePath, asset.FilePath, packageState.TextureMemo) with
-        | Right (textureMetadata, texture) ->
-            Some (textureMetadata, texture)
+        match OpenGL.Texture.TryCreateTextureFilteredMemoized (true, OpenGL.Texture.BlockCompressable asset.FilePath, asset.FilePath, packageState.TextureMemo) with
+        | Right texture ->
+            Some texture
         | Left error ->
             Log.info ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
             None
@@ -862,7 +865,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> None
         | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" ->
             match GlRenderer3d.tryLoadTextureAsset packageState asset renderer with
-            | Some (metadata, texture) -> Some (TextureAsset (metadata, texture))
+            | Some texture -> Some (TextureAsset texture)
             | None -> None
         | ".cbm" ->
             match GlRenderer3d.tryLoadCubeMapAsset packageState asset renderer with
@@ -882,7 +885,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         match renderAsset with
         | RawAsset ->
             () // nothing to do
-        | TextureAsset (_, texture) ->
+        | TextureAsset texture ->
             OpenGL.Texture.DestroyTexture texture
             OpenGL.Hl.Assert ()
         | FontAsset (_, font) ->
@@ -910,7 +913,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
+                        let renderPackageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (Some renderer.LazyTextureQueues); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
@@ -1057,10 +1060,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (false, _) -> None
         | ValueNone -> None
 
-    static member private tryGetTextureData (assetTag : Image AssetTag) renderer =
+    static member private tryGetTextureData minimal (assetTag : Image AssetTag) renderer =
         match GlRenderer3d.tryGetFilePath assetTag renderer with
         | Some filePath ->
-            match OpenGL.Texture.TryCreateTextureData filePath with
+            match OpenGL.Texture.TryCreateTextureData (minimal, filePath) with
             | Some textureData ->
                 let metadata = textureData.Metadata
                 let (blockCompressed, bytes) = textureData.Bytes
@@ -1075,7 +1078,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             match GlRenderer3d.tryGetRenderAsset image renderer with
             | ValueSome renderAsset ->
                 match renderAsset with
-                | TextureAsset (metadata, _) -> Some (metadata.TextureWidth, metadata.TextureHeight)
+                | TextureAsset texture ->
+                    let metadata = texture.TextureMetadata
+                    Some (metadata.TextureWidth, metadata.TextureHeight)
                 | _ -> None
             | ValueNone -> None
         | RawHeightMap map -> Some (map.Resolution.X, map.Resolution.Y)
@@ -1117,10 +1122,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             for (surfaceDescriptor : StaticModelSurfaceDescriptor) in surfaceDescriptors do
 
                 // get albedo metadata and texture
-                let (albedoMetadata, albedoTexture) =
+                let albedoTexture =
                     match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.AlbedoImage renderer with
-                    | ValueSome (TextureAsset (textureMetadata, texture)) -> (textureMetadata, texture)
-                    | _ -> (renderer.PhysicallyBasedMaterial.AlbedoMetadata, renderer.PhysicallyBasedMaterial.AlbedoTexture)
+                    | ValueSome (TextureAsset texture) -> texture
+                    | _ -> renderer.PhysicallyBasedMaterial.AlbedoTexture
 
                 // make material properties
                 let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
@@ -1135,14 +1140,13 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                 // make material
                 let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-                    { AlbedoMetadata = albedoMetadata
-                      AlbedoTexture = albedoTexture
-                      RoughnessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.RoughnessImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
-                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.MetallicImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
-                      AmbientOcclusionTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.AmbientOcclusionImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
-                      EmissionTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.EmissionImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
-                      NormalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.NormalImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
-                      HeightTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.HeightImage renderer with ValueSome (TextureAsset (_, texture)) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
+                    { AlbedoTexture = albedoTexture
+                      RoughnessTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.RoughnessImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
+                      MetallicTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.MetallicImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
+                      AmbientOcclusionTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.AmbientOcclusionImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
+                      EmissionTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.EmissionImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
+                      NormalTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.NormalImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
+                      HeightTexture = match GlRenderer3d.tryGetRenderAsset surfaceDescriptor.HeightImage renderer with ValueSome (TextureAsset texture) -> texture | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
                       TwoSided = surfaceDescriptor.TwoSided }
 
                 // create vertex data, truncating it when required
@@ -1195,7 +1199,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | (true, package) ->
                 package.Assets.[assetTag.AssetName] <- (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model))
             | (false, _) ->
-                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
+                let packageState = { TextureMemo = OpenGL.Texture.TextureMemo.make (Some renderer.LazyTextureQueues); CubeMapMemo = OpenGL.CubeMap.CubeMapMemo.make (); AssimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () }
                 let package = { Assets = Dictionary.singleton StringComparer.Ordinal assetTag.AssetName (DateTimeOffset.MinValue.DateTime, "", StaticModelAsset (true, model)); PackageState = packageState }
                 renderer.RenderPackages.[assetTag.PackageName] <- package
 
@@ -1244,7 +1248,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let normalsOpt =
                 match geometryDescriptor.NormalImageOpt with
                 | Some normalImage ->
-                    match GlRenderer3d.tryGetTextureData normalImage renderer with
+                    match GlRenderer3d.tryGetTextureData false normalImage renderer with
                     | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         if not blockCompressed then
                             let scalar = 1.0f / single Byte.MaxValue
@@ -1264,7 +1268,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let tintOpt =
                 match geometryDescriptor.TintImageOpt with
                 | Some tintImage ->
-                    match GlRenderer3d.tryGetTextureData tintImage renderer with
+                    match GlRenderer3d.tryGetTextureData false tintImage renderer with
                     | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         if not blockCompressed then
                             let scalar = 1.0f / single Byte.MaxValue
@@ -1288,7 +1292,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                          " layers which references more than the number of supported fragment shader textures.")
                 match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
-                    match GlRenderer3d.tryGetTextureData rgbaMap renderer with
+                    match GlRenderer3d.tryGetTextureData false rgbaMap renderer with
                     | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                         if not blockCompressed then
                             let scalar = 1.0f / single Byte.MaxValue
@@ -1305,7 +1309,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let scalar = 1.0f / single Byte.MaxValue
                     for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
                         let red = reds.[i]
-                        match GlRenderer3d.tryGetTextureData red renderer with
+                        match GlRenderer3d.tryGetTextureData false red renderer with
                         | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
                             if not blockCompressed then
                                 for j in 0 .. dec positionsAndTexCoordses.Length do
@@ -1363,6 +1367,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
             for (_, _, asset) in package.Assets.Values do GlRenderer3d.freeRenderAsset asset renderer
+            let mutable unused = Unchecked.defaultof<_>
+            renderer.LazyTextureQueues.Remove (package.PackageState.TextureMemo.LazyTextures, &unused) |> ignore<bool>
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
@@ -1454,7 +1460,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let texCoordsOffset =
             match insetOpt with
             | ValueSome inset ->
-                let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
+                let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
                 let texelWidth = albedoMetadata.TextureTexelWidth
                 let texelHeight = albedoMetadata.TextureTexelHeight
                 let px = inset.Min.X * texelWidth
@@ -1603,7 +1609,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let texCoordsOffset =
                         match insetOpt with
                         | ValueSome inset ->
-                            let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
+                            let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
                             let texelWidth = albedoMetadata.TextureTexelWidth
                             let texelHeight = albedoMetadata.TextureTexelHeight
                             let px = inset.Min.X * texelWidth
@@ -1654,7 +1660,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let texCoordsOffset =
                             match insetOpt with
                             | Some inset ->
-                                let albedoMetadata = surface.SurfaceMaterial.AlbedoMetadata
+                                let albedoMetadata = surface.SurfaceMaterial.AlbedoTexture.TextureMetadata
                                 let texelWidth = albedoMetadata.TextureTexelWidth
                                 let texelHeight = albedoMetadata.TextureTexelHeight
                                 let px = inset.Min.X * texelWidth
@@ -1791,7 +1797,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- surface.SurfaceMaterialProperties.OpaqueDistance
@@ -1837,7 +1843,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 1] <- metallic
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 2] <- ambientOcclusion
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoMetadata.TextureTexelHeight * height
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- surface.SurfaceMaterialProperties.OpaqueDistance
@@ -1863,86 +1869,84 @@ type [<ReferenceEquality>] GlRenderer3d =
               Height = Option.defaultValue Constants.Render.HeightDefault terrainMaterialProperties.HeightOpt
               IgnoreLightMaps = Option.defaultValue Constants.Render.IgnoreLightMapsDefault terrainMaterialProperties.IgnoreLightMapsOpt
               OpaqueDistance = Constants.Render.OpaqueDistanceDefault }
-        let (texelWidthAvg, texelHeightAvg, materials) =
+        let (texelWidth, texelHeight, materials) =
             match terrainDescriptor.Material with
             | BlendMaterial blendMaterial ->
-                let mutable texelWidthAvg = 0.0f
-                let mutable texelHeightAvg = 0.0f
+                let mutable texelWidth = Single.MaxValue
+                let mutable texelHeight = Single.MaxValue
                 let materials =
                     [|for i in 0 .. dec blendMaterial.TerrainLayers.Length do
                         let layer =
                             blendMaterial.TerrainLayers.[i]
                         let defaultMaterial =
                             renderer.PhysicallyBasedMaterial
-                        let (albedoMetadata, albedoTexture) =
+                        let albedoTexture =
                             match GlRenderer3d.tryGetRenderAsset layer.AlbedoImage renderer with
-                            | ValueSome renderAsset -> match renderAsset with TextureAsset (metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                            | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AlbedoTexture
+                            | ValueNone -> defaultMaterial.AlbedoTexture
                         let roughnessTexture =
                             match GlRenderer3d.tryGetRenderAsset layer.RoughnessImage renderer with
-                            | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.RoughnessTexture
                             | ValueNone -> defaultMaterial.RoughnessTexture
                         let ambientOcclusionTexture =
                             match GlRenderer3d.tryGetRenderAsset layer.AmbientOcclusionImage renderer with
-                            | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
                             | ValueNone -> defaultMaterial.AmbientOcclusionTexture
                         let normalTexture =
                             match GlRenderer3d.tryGetRenderAsset layer.NormalImage renderer with
-                            | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.NormalTexture
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                             | ValueNone -> defaultMaterial.NormalTexture
                         let heightTexture =
                             match GlRenderer3d.tryGetRenderAsset layer.HeightImage renderer with
-                            | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.HeightTexture
+                            | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.HeightTexture
                             | ValueNone -> defaultMaterial.HeightTexture
-                        texelWidthAvg <- texelWidthAvg + albedoMetadata.TextureTexelWidth
-                        texelHeightAvg <- texelHeightAvg + albedoMetadata.TextureTexelHeight
+                        let albedoMetadata = albedoTexture.TextureMetadata
+                        texelWidth <- min texelWidth albedoMetadata.TextureTexelWidth
+                        texelHeight <- min texelHeight albedoMetadata.TextureTexelHeight
                         { defaultMaterial with
-                            AlbedoMetadata = albedoMetadata
                             AlbedoTexture = albedoTexture
                             RoughnessTexture = roughnessTexture
                             AmbientOcclusionTexture = ambientOcclusionTexture
                             NormalTexture = normalTexture
                             HeightTexture = heightTexture }|]
-                texelWidthAvg <- texelWidthAvg / single materials.Length
-                texelHeightAvg <- texelHeightAvg / single materials.Length
-                (texelWidthAvg, texelHeightAvg, materials)
+                (texelWidth, texelHeight, materials)
             | FlatMaterial flatMaterial ->
                 let defaultMaterial =
                     renderer.PhysicallyBasedMaterial
-                let (albedoMetadata, albedoTexture) =
+                let albedoTexture =
                     match GlRenderer3d.tryGetRenderAsset flatMaterial.AlbedoImage renderer with
-                    | ValueSome renderAsset -> match renderAsset with TextureAsset (metadata, texture) -> (metadata, texture) | _ -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
-                    | ValueNone -> (defaultMaterial.AlbedoMetadata, defaultMaterial.AlbedoTexture)
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AlbedoTexture
+                    | ValueNone -> defaultMaterial.AlbedoTexture
                 let roughnessTexture =
                     match GlRenderer3d.tryGetRenderAsset flatMaterial.RoughnessImage renderer with
-                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.RoughnessTexture
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.RoughnessTexture
                     | ValueNone -> defaultMaterial.RoughnessTexture
                 let ambientOcclusionTexture =
                     match GlRenderer3d.tryGetRenderAsset flatMaterial.AmbientOcclusionImage renderer with
-                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.AmbientOcclusionTexture
                     | ValueNone -> defaultMaterial.AmbientOcclusionTexture
                 let normalTexture =
                     match GlRenderer3d.tryGetRenderAsset flatMaterial.NormalImage renderer with
-                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.NormalTexture
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.NormalTexture
                     | ValueNone -> defaultMaterial.NormalTexture
                 let heightTexture =
                     match GlRenderer3d.tryGetRenderAsset flatMaterial.HeightImage renderer with
-                    | ValueSome renderAsset -> match renderAsset with TextureAsset (_, texture) -> texture | _ -> defaultMaterial.HeightTexture
+                    | ValueSome renderAsset -> match renderAsset with TextureAsset texture -> texture | _ -> defaultMaterial.HeightTexture
                     | ValueNone -> defaultMaterial.HeightTexture
                 let material =
                     { defaultMaterial with
-                        AlbedoMetadata = albedoMetadata
                         AlbedoTexture = albedoTexture
                         RoughnessTexture = roughnessTexture
                         AmbientOcclusionTexture = ambientOcclusionTexture
                         NormalTexture = normalTexture
                         HeightTexture = heightTexture }
+                let albedoMetadata = albedoTexture.TextureMetadata
                 (albedoMetadata.TextureTexelWidth, albedoMetadata.TextureTexelHeight, [|material|])
         let texCoordsOffset =
             match terrainDescriptor.InsetOpt with
             | Some inset ->
-                let texelWidth = texelWidthAvg
-                let texelHeight = texelHeightAvg
+                let texelWidth = texelWidth
+                let texelHeight = texelHeight
                 let px = inset.Min.X * texelWidth
                 let py = (inset.Min.Y + inset.Size.Y) * texelHeight
                 let sx = inset.Size.X * texelWidth
@@ -1955,40 +1959,40 @@ type [<ReferenceEquality>] GlRenderer3d =
                 ([|texCoordsOffset.Min.X; texCoordsOffset.Min.Y; texCoordsOffset.Min.X + texCoordsOffset.Size.X; texCoordsOffset.Min.Y + texCoordsOffset.Size.Y
                    materialProperties.Albedo.R; materialProperties.Albedo.G; materialProperties.Albedo.B; materialProperties.Albedo.A
                    materialProperties.Roughness; materialProperties.Metallic; materialProperties.AmbientOcclusion; materialProperties.Emission
-                   texelHeightAvg * materialProperties.Height|])
+                   texelHeight * materialProperties.Height|])
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, geometryProjectionArray, eyeCenter,
              instanceFields, elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
-        let struct (albedoMetadata, albedoTexture) =
+        let albedoTexture =
             match GlRenderer3d.tryGetRenderAsset material.AlbedoImage renderer with
-            | ValueSome (TextureAsset (metadata, texture)) -> struct (metadata, texture)
-            | _ -> struct (OpenGL.Texture.TextureMetadata.empty, renderer.PhysicallyBasedMaterial.AlbedoTexture)
+            | ValueSome (TextureAsset texture) -> texture
+            | _ -> renderer.PhysicallyBasedMaterial.AlbedoTexture
         let roughnessTexture =
             match GlRenderer3d.tryGetRenderAsset material.RoughnessImage renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
+            | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.RoughnessTexture
         let metallicTexture =
             match GlRenderer3d.tryGetRenderAsset material.MetallicImage renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
+            | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.MetallicTexture
         let ambientOcclusionTexture =
             match GlRenderer3d.tryGetRenderAsset material.AmbientOcclusionImage renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
+            | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.AmbientOcclusionTexture
         let emissionTexture =
             match GlRenderer3d.tryGetRenderAsset material.EmissionImage renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
+            | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.EmissionTexture
         let normalTexture =
             match GlRenderer3d.tryGetRenderAsset material.NormalImage renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
+            | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.NormalTexture
         let heightTexture =
             match GlRenderer3d.tryGetRenderAsset material.HeightImage renderer with
-            | ValueSome (TextureAsset (_, texture)) -> texture
+            | ValueSome (TextureAsset texture) -> texture
             | _ -> renderer.PhysicallyBasedMaterial.HeightTexture
         let properties : OpenGL.PhysicallyBased.PhysicallyBasedMaterialProperties =
             { Albedo = properties.Albedo
@@ -2000,8 +2004,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               IgnoreLightMaps = properties.IgnoreLightMaps
               OpaqueDistance = properties.OpaqueDistance }
         let material : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoMetadata = albedoMetadata
-              AlbedoTexture = albedoTexture
+            { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
               AmbientOcclusionTexture = ambientOcclusionTexture
@@ -2012,53 +2015,53 @@ type [<ReferenceEquality>] GlRenderer3d =
         struct (properties, material)
 
     static member private applySurfaceMaterial (material : Material inref, surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial inref, renderer) =
-        let struct (albedoMetadata, albedoTexture) =
+        let albedoTexture =
             match material.AlbedoImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (metadata, texture)) -> struct (metadata, texture)
-                | _ -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
-            | None -> struct (surfaceMaterial.AlbedoMetadata, surfaceMaterial.AlbedoTexture)
+                | ValueSome (TextureAsset texture) -> texture
+                | _ -> surfaceMaterial.AlbedoTexture
+            | None -> surfaceMaterial.AlbedoTexture
         let roughnessTexture =
             match material.RoughnessImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (_, texture)) -> texture
+                | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.RoughnessTexture
             | None -> surfaceMaterial.RoughnessTexture
         let metallicTexture =
             match material.MetallicImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (_, texture)) -> texture
+                | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.MetallicTexture
             | None -> surfaceMaterial.MetallicTexture
         let ambientOcclusionTexture =
             match material.AmbientOcclusionImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (_, texture)) -> texture
+                | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.AmbientOcclusionTexture
             | None -> surfaceMaterial.AmbientOcclusionTexture
         let emissionTexture =
             match material.EmissionImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (_, texture)) -> texture
+                | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.EmissionTexture
             | None -> surfaceMaterial.EmissionTexture
         let normalTexture =
             match material.NormalImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (_, texture)) -> texture
+                | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.NormalTexture
             | None -> surfaceMaterial.NormalTexture
         let heightTexture =
             match material.HeightImageOpt with
             | Some image ->
                 match GlRenderer3d.tryGetRenderAsset image renderer with
-                | ValueSome (TextureAsset (_, texture)) -> texture
+                | ValueSome (TextureAsset texture) -> texture
                 | _ -> surfaceMaterial.HeightTexture
             | None -> surfaceMaterial.HeightTexture
         let twoSided =
@@ -2066,8 +2069,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Some twoSided -> twoSided
             | None -> surfaceMaterial.TwoSided
         let surfaceMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoMetadata = albedoMetadata
-              AlbedoTexture = albedoTexture
+            { AlbedoTexture = albedoTexture
               RoughnessTexture = roughnessTexture
               MetallicTexture = metallicTexture
               AmbientOcclusionTexture = ambientOcclusionTexture
@@ -2260,9 +2262,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort light maps for deferred rendering relative to eye center
         let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
-            if topLevelRender
-            then SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
-            else (Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, Array.zeroCreate Constants.Render.LightMapsMaxDeferred, 0)
+            if topLevelRender then
+                SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
+            else
+                (Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.zeroCreate Constants.Render.LightMapsMaxDeferred,
+                 Array.init Constants.Render.LightMapsMaxDeferred (fun _ -> OpenGL.Texture.EmptyTexture),
+                 Array.init Constants.Render.LightMapsMaxDeferred (fun _ -> OpenGL.Texture.EmptyTexture),
+                 0)
 
         // sort lights for deferred rendering relative to eye center
         let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows) =
@@ -2605,12 +2613,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
+                GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 for (model, presence, insetOpt) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, model, presence, insetOpt, billboardMaterial.AlbedoMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, model, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
@@ -2621,7 +2629,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoMetadata, false, rbps.MaterialProperties, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, false, rbps.MaterialProperties, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
@@ -2828,7 +2836,15 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.ReloadAssetsRequested <- false
 
     /// Make a GlRenderer3d.
-    static member make window =
+    static member make glContext window =
+
+        // start lazy texture server
+        let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
+        SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) |> ignore<int>
+        let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
+        let lazyTextureServer = OpenGL.Texture.LazyTextureServer (lazyTextureQueues, glContext, sglWindow)
+        lazyTextureServer.Start ()
+        SDL.SDL_GL_MakeCurrent (sglWindow, glContext) |> ignore<int>
 
         // create sky box shader
         let skyBoxShader = OpenGL.SkyBox.CreateSkyBoxShader Constants.Paths.SkyBoxShaderFilePath
@@ -2976,23 +2992,29 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create white texture
         let whiteTexture =
-            match OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/White.bmp") with
-            | Right (_, texture) -> texture
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, false, "Assets/Default/White.bmp") with
+            | Right (metadata, textureId) ->
+                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
             | Left error -> failwith ("Could not load white texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create black texture
         let blackTexture =
-            match OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/Black.bmp") with
-            | Right (_, texture) -> texture
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, false, "Assets/Default/Black.bmp") with
+            | Right (metadata, textureId) ->
+                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureUnfiltered "Assets/Default/Brdf.bmp" with
-            | Right (_, texture) -> texture
-            | Left error -> failwith ("Could not load BRDF texture due to: " + error)
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, "Assets/Default/Brdf.bmp") with
+            | Right (metadata, textureId) ->
+                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+            | Left error -> failwith ("Could not load brdf texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create default irradiance map
@@ -3004,19 +3026,59 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // get albedo metadata and texture
-        let (albedoMetadata, albedoTexture) = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialAlbedo.dds") |> Either.getRight
+        let albedoTexture =
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialAlbedo.dds") with
+            | Right (metadata, textureId) ->
+                let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+            | Left error -> failwith ("Could not load albedo material texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create default physically-based material
         let physicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial =
-            { AlbedoMetadata = albedoMetadata
-              AlbedoTexture = albedoTexture
-              RoughnessTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialRoughness.dds") |> Either.getRight |> snd
-              MetallicTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialMetallic.dds") |> Either.getRight |> snd
-              AmbientOcclusionTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialAmbientOcclusion.dds") |> Either.getRight |> snd
-              EmissionTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialEmission.dds") |> Either.getRight |> snd
-              NormalTexture = OpenGL.Texture.TryCreateTextureFiltered (false, "Assets/Default/MaterialNormal.dds") |> Either.getRight |> snd
-              HeightTexture = OpenGL.Texture.TryCreateTextureFiltered (true, "Assets/Default/MaterialHeight.dds") |> Either.getRight |> snd
+            let roughnessTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialRoughness.dds") with
+                | Right (metadata, textureId) ->
+                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                | Left error -> failwith ("Could not load material roughness texture due to: " + error)
+            let metallicTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialMetallic.dds") with
+                | Right (metadata, textureId) ->
+                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                | Left error -> failwith ("Could not load material metallic texture due to: " + error)
+            let ambientOcclusionTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialAmbientOcclusion.dds") with
+                | Right (metadata, textureId) ->
+                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                | Left error -> failwith ("Could not load material ambient occlusion texture due to: " + error)
+            let emissionTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialEmission.dds") with
+                | Right (metadata, textureId) ->
+                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                | Left error -> failwith ("Could not load material emission texture due to: " + error)
+            let normalTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, false, "Assets/Default/MaterialNormal.dds") with
+                | Right (metadata, textureId) ->
+                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                | Left error -> failwith ("Could not load material normal texture due to: " + error)
+            let heightTexture =
+                match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, "Assets/Default/MaterialHeight.dds") with
+                | Right (metadata, textureId) ->
+                    let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                    OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                | Left error -> failwith ("Could not load material height texture due to: " + error)
+            { AlbedoTexture = albedoTexture
+              RoughnessTexture = roughnessTexture
+              MetallicTexture = metallicTexture
+              AmbientOcclusionTexture = ambientOcclusionTexture
+              EmissionTexture = emissionTexture
+              NormalTexture = normalTexture
+              HeightTexture = heightTexture
               TwoSided = false }
 
         // create forward surfaces comparer
@@ -3039,6 +3101,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // make renderer
         let renderer =
             { Window = window
+              LazyTextureQueues = lazyTextureQueues
+              LazyTextureServer = lazyTextureServer
               SkyBoxShader = skyBoxShader
               IrradianceShader = irradianceShader
               EnvironmentFilterShader = environmentFilterShader
@@ -3153,3 +3217,4 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroyFilterBuffers renderer.FilterBuffers
             for shadowBuffers in renderer.ShadowBuffersArray do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers
             for shadowBuffers2 in renderer.ShadowBuffers2Array do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers2
+            renderer.LazyTextureServer.Terminate ()

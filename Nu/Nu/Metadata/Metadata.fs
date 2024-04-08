@@ -59,8 +59,9 @@ module Metadata =
                 use image = Drawing.Image.FromStream (fileStream, false, false)
                 Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make image.Width image.Height))
             else
-                // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow path here.
-                match OpenGL.Texture.TryCreateTextureData asset.FilePath with
+                // NOTE: System.Drawing.Image is not, AFAIK, available on non-Windows platforms, so we use a VERY slow
+                // path here.
+                match OpenGL.Texture.TryCreateTextureData (true, asset.FilePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
@@ -87,9 +88,9 @@ module Metadata =
     /// Thread-safe.
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
-            let textureMemo = OpenGL.Texture.TextureMemo.make () // unused
-            let assimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () // unused
-            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, Unchecked.defaultof<_>, textureMemo, assimpSceneMemo) with
+            let textureMemo = OpenGL.Texture.TextureMemo.make None // unused. TODO: consider making this opt.
+            let assimpSceneMemo = OpenGL.Assimp.AssimpSceneMemo.make () // unused. TODO: consider making this opt.
+            match OpenGL.PhysicallyBased.TryCreatePhysicallyBasedModel (false, asset.FilePath, OpenGL.PhysicallyBased.PhysicallyBasedMaterial.empty, textureMemo, assimpSceneMemo) with
             | Right model ->
                 if model.Animated
                 then Some (AnimatedModelMetadata model)

@@ -29,7 +29,7 @@ module AssetMemo =
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match OpenGL.Texture.TryCreateTextureData textureAsset.FilePath with
+                    match OpenGL.Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -51,14 +51,21 @@ module AssetMemo =
         for textureData in textureDataArray do
             match textureData with
             | Right (filePath, textureData) ->
-                let (metadata, texture) =
-                    if is2d
-                    then OpenGL.Texture.CreateTextureFromDataUnfiltered textureData
-                    else OpenGL.Texture.CreateTextureFromDataFiltered (OpenGL.Texture.BlockCompressable filePath, textureData)
-                textureMemo.Textures.[filePath] <- (metadata, texture)
+                let texture =
+                    if is2d then
+                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, textureData)
+                        let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                        OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                    else
+                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, OpenGL.Texture.BlockCompressable filePath, textureData)
+                        let textureHandle = OpenGL.Texture.CreateTextureHandleFromId textureId
+                        let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, textureHandle, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
+                        textureMemo.LazyTextures.Enqueue lazyTexture
+                        OpenGL.Texture.LazyTexture lazyTexture
+                textureMemo.Textures.[filePath] <- texture
             | Left error -> Log.info error
 
-        // run assimp scene loading op
+        // run assimp scene loading ops
         for assimpScene in assimpSceneLoadOps |> Vsync.Parallel |> Vsync.RunSynchronously do
             match assimpScene with
             | Right (filePath, scene) -> assimpSceneMemo.AssimpScenes.[filePath] <- scene

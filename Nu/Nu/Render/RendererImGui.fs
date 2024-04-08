@@ -139,7 +139,9 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.Repeat)
             OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.Repeat)
-            fontTexture <- OpenGL.Texture.CreateTextureFromId fontTextureId
+            let fontTextureMetadata = OpenGL.Texture.TextureMetadata.make fontTextureWidth fontTextureHeight
+            let fontTextureHandle = OpenGL.Texture.CreateTextureHandleFromId fontTextureId
+            fontTexture <- OpenGL.Texture.EagerTexture { TextureMetadata = fontTextureMetadata; TextureId = fontTextureId; TextureHandle = fontTextureHandle }
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 

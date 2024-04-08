@@ -42,6 +42,7 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
         // assert reflection framebuffer completion
@@ -115,7 +116,8 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|rasterRenderbuffer|]
         Gl.DeleteFramebuffers [|rasterFramebuffer|]
-        let rasterCubeMap = Texture.CreateTextureFromId rasterCubeMapId
+        let rasterCubeMapHandle = Texture.CreateTextureHandleFromId rasterCubeMapId
+        let rasterCubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = rasterCubeMapId; TextureHandle = rasterCubeMapHandle }
         rasterCubeMap
 
     let CreateIrradianceMap
@@ -151,6 +153,7 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
         // assert irradiance framebuffer completion
@@ -195,7 +198,8 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        let cubeMap = Texture.CreateTextureFromId cubeMapId
+        let cubeMapHandle = Texture.CreateTextureHandleFromId cubeMapId
+        let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId; TextureHandle = cubeMapHandle }
         cubeMap
 
     /// Describes an environment filter shader that's loaded into GPU.
@@ -303,6 +307,7 @@ module LightMap =
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
         Gl.GenerateMipmap TextureTarget.TextureCubeMap
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
         // assert environment filter framebuffer completion
@@ -349,7 +354,8 @@ module LightMap =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, 0u)
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        let cubeMap = Texture.CreateTextureFromId cubeMapId
+        let cubeMapHandle = Texture.CreateTextureHandleFromId cubeMapId
+        let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId; TextureHandle = cubeMapHandle }
         cubeMap
 
     /// A collection of maps consisting a light map.
