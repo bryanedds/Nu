@@ -898,12 +898,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match Dictionary.tryFind packageName renderer.RenderPackages with
                     | Some renderPackage -> renderPackage
                     | None ->
-                        let renderPackageState =
+                        let assetClient =
                             AssetClient
                                 (OpenGL.Texture.TextureClient (Some renderer.LazyTextureQueues),
                                  OpenGL.CubeMap.CubeMapClient (),
                                  OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
-                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = renderPackageState }
+                        let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
                         renderer.RenderPackages.[packageName] <- renderPackage
                         renderPackage
 
