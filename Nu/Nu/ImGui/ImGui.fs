@@ -197,11 +197,8 @@ type ImGui (windowWidth : int, windowHeight : int) =
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
-    static member PositionToWindow (modelViewProjection : Matrix4x4, position : Vector3) =
-
-        // grab dependencies
-        let windowPosition = ImGui.GetWindowPos ()
-        let windowSize = ImGui.GetWindowSize ()
+    // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
+    static member PositionToWindow (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, position : Vector3) =
 
         // transform the position from world coordinates to clip space coordinates
         let mutable position = Vector4.Transform (Vector4 (position, 1.0f), modelViewProjection)
@@ -220,12 +217,11 @@ type ImGui (windowWidth : int, windowHeight : int) =
         // fin
         v2 position.X position.Y
 
-    static member WindowToPosition (model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
+    // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
+    static member WindowToPosition (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
 
         // grab dependencies
         let io = ImGui.GetIO ()
-        let windowPosition = ImGui.GetWindowPos ()
-        let windowSize = ImGui.GetWindowSize ()
 
         // map mouse position from window coordinates to normalized device coordinates
         let mouseXNdc = ((io.MousePos.X - windowPosition.X) / windowSize.X) * 2.0f - 1.0f

@@ -18,6 +18,8 @@ module WorldImGui =
         /// Render circles via ImGui in the current eye 3d space, computing color as specified.
         static member imGuiCircles3dPlus absolute (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
+            let windowPosition = ImGui.GetWindowPos ()
+            let windowSize = ImGui.GetWindowSize ()
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFrustum = World.getEye3dFrustumView world
@@ -28,7 +30,7 @@ module WorldImGui =
             for position in positions do
                 if eyeFrustum.Contains position = ContainmentType.Contains then
                     let color = computeColor position
-                    let positionWindow = ImGui.PositionToWindow (viewProjection, position)
+                    let positionWindow = ImGui.PositionToWindow (windowPosition, windowSize, viewProjection, position)
                     if filled
                     then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
                     else drawList.AddCircle (positionWindow, radius, color.Abgr)
@@ -44,6 +46,8 @@ module WorldImGui =
         /// Render segments via ImGui in the current eye 3d space, computing color as specified.
         static member imGuiSegments3dPlus absolute (segments : struct (Vector3 * Vector3) seq) thickness (computeColor : struct (Vector3 * Vector3) -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
+            let windowPosition = ImGui.GetWindowPos ()
+            let windowSize = ImGui.GetWindowSize ()
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFrustum = World.getEye3dFrustumView world
@@ -55,8 +59,8 @@ module WorldImGui =
                 match Math.tryUnionSegmentAndFrustum (fst' segment) (snd' segment) eyeFrustum with
                 | Some (start, stop) ->
                     let color = computeColor segment
-                    let startWindow = ImGui.PositionToWindow (viewProjection, start)
-                    let stopWindow = ImGui.PositionToWindow (viewProjection, stop)
+                    let startWindow = ImGui.PositionToWindow (windowPosition, windowSize, viewProjection, start)
+                    let stopWindow = ImGui.PositionToWindow (windowPosition, windowSize, viewProjection, stop)
                     drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
                 | None -> ()
 
