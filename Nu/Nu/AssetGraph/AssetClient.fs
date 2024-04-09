@@ -63,11 +63,11 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
             | Right (filePath, textureData) ->
                 let texture =
                     if is2d then
-                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, textureData)
+                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, false, textureData)
                         let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                         OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
                     else
-                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, OpenGL.Texture.BlockCompressable filePath, textureData)
+                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.BlockCompressable filePath, textureData)
                         let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
                         let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, textureHandle, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
                         textureClient.LazyTextureQueue.Enqueue lazyTexture
