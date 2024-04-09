@@ -38,7 +38,7 @@ module Texture =
     /// Attempt to format compressed pfim image data.
     /// TODO: make this an IImage extension and move elsewhere?
     let FormatCompressedPfimageData (minimal, dds : Dds) =
-        let minimal = minimal && dds.MipMaps.Length >= 2 // NOTE: two mipmaps are needed for minimal load since the last mipmap may not be valid!
+        let minimal = minimal && dds.Header.MipMapCount >= 2u // NOTE: two mipmaps are needed for minimal load since the last mipmap may not be valid!
         let mutable dims = v2i dds.Width dds.Height
         let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
         let mutable index = 0
@@ -55,7 +55,7 @@ module Texture =
                 dims <- dims / 2
                 index <- index + size
                 size <- size / 4
-                if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|]
+                if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|] // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid.
         if minimal then
             let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
