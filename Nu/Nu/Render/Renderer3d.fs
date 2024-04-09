@@ -751,7 +751,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     private
         { Window : Window
           LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
-          LazyTextureServer : OpenGL.Texture.LazyTextureServer
+          TextureServer : OpenGL.Texture.TextureServer
           SkyBoxShader : OpenGL.SkyBox.SkyBoxShader
           IrradianceShader : OpenGL.CubeMap.CubeMapShader
           EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
@@ -2834,8 +2834,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
         SDL.SDL_GL_MakeCurrent (sglWindow, IntPtr.Zero) |> ignore<int>
         let lazyTextureQueues = ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue> HashIdentity.Reference
-        let lazyTextureServer = OpenGL.Texture.LazyTextureServer (lazyTextureQueues, glContext, sglWindow)
-        lazyTextureServer.Start ()
+        let textureServer = OpenGL.Texture.TextureServer (lazyTextureQueues, glContext, sglWindow)
+        textureServer.Start ()
         SDL.SDL_GL_MakeCurrent (sglWindow, glContext) |> ignore<int>
 
         // create sky box shader
@@ -3094,7 +3094,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let renderer =
             { Window = window
               LazyTextureQueues = lazyTextureQueues
-              LazyTextureServer = lazyTextureServer
+              TextureServer = textureServer
               SkyBoxShader = skyBoxShader
               IrradianceShader = irradianceShader
               EnvironmentFilterShader = environmentFilterShader

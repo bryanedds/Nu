@@ -59,6 +59,8 @@ module Override =
                 | nameof Render.VirtualScalar -> Render.VirtualScalar <- scvalue value
                 | nameof Render.SsaoResolutionDivisor -> Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Render.FieldOfView -> Render.FieldOfView <- scvalue value
+                | nameof Render.TextureAnisotropyMax -> Render.TextureAnisotropyMax <- scvalue value
+                | nameof Render.TextureMinimalMipmapIndex -> Render.TextureMinimalMipmapIndex <- scvalue value
                 | nameof Render.ShadowDetailedCount -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
