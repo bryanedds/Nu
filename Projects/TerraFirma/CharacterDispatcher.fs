@@ -50,6 +50,11 @@ module CharacterDispatcher =
              Entity.UpdateEvent => Update
              Game.PostUpdateEvent => SyncWeaponTransform]
 
+        override this.Register (entity, world) =
+            let world = base.Register (entity, world)
+            let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+            animatedModel.SetAnimations [|Animation.loop GameTime.zero None "Armature|Idle"|] world
+
         override this.Content (character, _) =
 
             [// animated model

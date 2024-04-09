@@ -15,14 +15,30 @@ type [<Struct>] Playback =
     | Bounce
 
 /// Describes an animation.
-type Animation =
+type [<SymbolicExpansion>] Animation =
     { StartTime : GameTime
       LifeTimeOpt : GameTime option
       Name : string
       Playback : Playback
-      Rate : single
       Weight : single
+      Rate : single
       BoneFilterOpt : string Set option }
+
+    /// Make an animation value.
+    static member make startTime lifeTimeOpt name playback weight rate boneFilterOpt =
+        { StartTime = startTime; LifeTimeOpt = lifeTimeOpt; Name = name; Playback = playback; Weight = weight; Rate = rate; BoneFilterOpt = boneFilterOpt }
+
+    /// Make an play-once animation value.
+    static member once startTime lifeTimeOpt name =
+        Animation.make startTime lifeTimeOpt name Once 1.0f 1.0f None
+
+    /// Make an looping animation value.
+    static member loop startTime lifeTimeOpt name =
+        Animation.make startTime lifeTimeOpt name Loop 1.0f 1.0f None
+
+    /// Make an bouncing animation value.
+    static member bounce startTime lifeTimeOpt name =
+        Animation.make startTime lifeTimeOpt name Bounce 1.0f 1.0f None
 
 /// The type of rendering used on a surface (for use by the higher-level engine API).
 type RenderStyle =
