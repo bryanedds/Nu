@@ -123,7 +123,7 @@ module Texture =
 
     /// Attempt to format compressed pfim image data.
     /// TODO: make this a Dds extension and move elsewhere?
-    let FormatCompressedPfimage (minimal, dds : Dds) =
+    let FormatCompressedPfdds (minimal, dds : Dds) =
         let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
         let mutable dims = v2i dds.Width dds.Height
         let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
@@ -322,7 +322,7 @@ module Texture =
                     use fileStream = File.OpenRead filePath
                     use dds = Dds.Create (fileStream, config)
                     if dds.Compressed then
-                        let (resolution, bytes, mipmapBytesArray) = FormatCompressedPfimage (minimal, dds)
+                        let (resolution, bytes, mipmapBytesArray) = FormatCompressedPfdds (minimal, dds)
                         let metadata = TextureMetadata.make resolution.X resolution.Y
                         Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
                     else
