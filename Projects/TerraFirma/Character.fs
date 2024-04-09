@@ -94,18 +94,18 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
             let turnLeftness = -turnRightness
             let animations =
-                [{ StartTime = 0L; LifeTimeOpt = None; Name = "Armature|Idle"; Playback = Loop; Rate = 1.0f; Weight = 0.5f; BoneFilterOpt = None }]
+                [Animation.make 0L None "Armature|Idle" Loop 1.0f 0.5f None]
             let animations =
-                if forwardness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkForward"; Playback = Loop; Rate = 1.0f; Weight = forwardness; BoneFilterOpt = None } :: animations
-                elif backness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkBack"; Playback = Loop; Rate = 1.0f; Weight = backness; BoneFilterOpt = None } :: animations
+                if forwardness >= 0.01f then Animation.make 0L None "Armature|WalkForward" Loop 1.0f (max 0.025f forwardness) None :: animations
+                elif backness >= 0.01f then Animation.make 0L None "Armature|WalkBack" Loop 1.0f (max 0.025f backness) None :: animations
                 else animations
             let animations =
-                if rightness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkRight"; Playback = Loop; Rate = 1.0f; Weight = rightness; BoneFilterOpt = None } :: animations
-                elif leftness >= 0.2f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|WalkLeft"; Playback = Loop; Rate = 1.0f; Weight = leftness; BoneFilterOpt = None } :: animations
+                if rightness >= 0.01f then Animation.make 0L None "Armature|WalkRight" Loop 1.0f (max 0.025f rightness) None :: animations
+                elif leftness >= 0.01f then Animation.make 0L None "Armature|WalkLeft" Loop 1.0f (max 0.025f leftness) None :: animations
                 else animations
             let animations =
-                if turnRightness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnRight"; Playback = Loop; Rate = 1.0f; Weight = turnRightness; BoneFilterOpt = None } :: animations
-                elif turnLeftness >= 0.05f then { StartTime = 0L; LifeTimeOpt = None; Name = "Armature|TurnLeft"; Playback = Loop; Rate = 1.0f; Weight = turnLeftness; BoneFilterOpt = None } :: animations
+                if turnRightness >= 0.01f then Animation.make 0L None "Armature|TurnRight" Loop 1.0f (max 0.025f turnRightness) None :: animations
+                elif turnLeftness >= 0.01f then Animation.make 0L None "Armature|TurnLeft" Loop 1.0f (max 0.025f turnLeftness) None :: animations
                 else animations
             animations
         else []
