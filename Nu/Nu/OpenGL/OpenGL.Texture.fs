@@ -507,7 +507,6 @@ module Texture =
     /// Populated the texture ids and handles of lazy textures in a threaded manner.
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.
     type LazyTextureServer (lazyTextureQueues : ConcurrentDictionary<LazyTexture ConcurrentQueue, LazyTexture ConcurrentQueue>, sharedContext, window) =
-
         let mutable threadOpt = None
         let [<VolatileField>] mutable started = false
         let [<VolatileField>] mutable terminated = false
