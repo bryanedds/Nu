@@ -20,13 +20,13 @@ type [<SymbolicExpansion>] Animation =
       LifeTimeOpt : GameTime option
       Name : string
       Playback : Playback
-      Weight : single
       Rate : single
+      Weight : single
       BoneFilterOpt : string Set option }
 
     /// Make an animation value.
-    static member make startTime lifeTimeOpt name playback weight rate boneFilterOpt =
-        { StartTime = startTime; LifeTimeOpt = lifeTimeOpt; Name = name; Playback = playback; Weight = weight; Rate = rate; BoneFilterOpt = boneFilterOpt }
+    static member make startTime lifeTimeOpt name playback rate weight boneFilterOpt =
+        { StartTime = startTime; LifeTimeOpt = lifeTimeOpt; Name = name; Playback = playback; Rate = rate; Weight = weight; BoneFilterOpt = boneFilterOpt }
 
     /// Make an play-once animation value.
     static member once startTime lifeTimeOpt name =
