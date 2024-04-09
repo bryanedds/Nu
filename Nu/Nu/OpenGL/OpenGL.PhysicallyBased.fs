@@ -138,26 +138,26 @@ module PhysicallyBased =
             surface.HashCode
 
         static member equals left right =
-            left.SurfaceMaterial.AlbedoTexture.TextureId = right.SurfaceMaterial.AlbedoTexture.TextureId &&
-            left.SurfaceMaterial.RoughnessTexture.TextureId = right.SurfaceMaterial.RoughnessTexture.TextureId &&
-            left.SurfaceMaterial.MetallicTexture.TextureId = right.SurfaceMaterial.MetallicTexture.TextureId &&
-            left.SurfaceMaterial.AmbientOcclusionTexture.TextureId = right.SurfaceMaterial.AmbientOcclusionTexture.TextureId &&
-            left.SurfaceMaterial.EmissionTexture.TextureId = right.SurfaceMaterial.EmissionTexture.TextureId &&
-            left.SurfaceMaterial.NormalTexture.TextureId = right.SurfaceMaterial.NormalTexture.TextureId &&
-            left.SurfaceMaterial.HeightTexture.TextureId = right.SurfaceMaterial.HeightTexture.TextureId &&
+            left.SurfaceMaterial.AlbedoTexture = right.SurfaceMaterial.AlbedoTexture &&
+            left.SurfaceMaterial.RoughnessTexture = right.SurfaceMaterial.RoughnessTexture &&
+            left.SurfaceMaterial.MetallicTexture = right.SurfaceMaterial.MetallicTexture &&
+            left.SurfaceMaterial.AmbientOcclusionTexture = right.SurfaceMaterial.AmbientOcclusionTexture &&
+            left.SurfaceMaterial.EmissionTexture = right.SurfaceMaterial.EmissionTexture &&
+            left.SurfaceMaterial.NormalTexture = right.SurfaceMaterial.NormalTexture &&
+            left.SurfaceMaterial.HeightTexture = right.SurfaceMaterial.HeightTexture &&
             left.SurfaceMaterial.TwoSided = right.SurfaceMaterial.TwoSided &&
             left.PhysicallyBasedGeometry.PrimitiveType = right.PhysicallyBasedGeometry.PrimitiveType &&
             left.PhysicallyBasedGeometry.PhysicallyBasedVao = right.PhysicallyBasedGeometry.PhysicallyBasedVao
 
         static member make names (surfaceMatrix : Matrix4x4) bounds properties material materialIndex surfaceNode geometry =
             let hashCode =
-                (int material.AlbedoTexture.TextureId) ^^^
-                (int material.RoughnessTexture.TextureId <<< 2) ^^^
-                (int material.MetallicTexture.TextureId <<< 4) ^^^
-                (int material.AmbientOcclusionTexture.TextureId <<< 6) ^^^
-                (int material.EmissionTexture.TextureId <<< 8) ^^^
-                (int material.NormalTexture.TextureId <<< 10) ^^^
-                (int material.HeightTexture.TextureId <<< 12) ^^^
+                (hash material.AlbedoTexture) ^^^
+                (hash material.RoughnessTexture <<< 2) ^^^
+                (hash material.MetallicTexture <<< 4) ^^^
+                (hash material.AmbientOcclusionTexture <<< 6) ^^^
+                (hash material.EmissionTexture <<< 8) ^^^
+                (hash material.NormalTexture <<< 10) ^^^
+                (hash material.HeightTexture <<< 12) ^^^
                 (hash material.TwoSided <<< 14) ^^^
                 (int geometry.PrimitiveType <<< 16) ^^^
                 (int geometry.PhysicallyBasedVao <<< 18)
@@ -1828,24 +1828,27 @@ module PhysicallyBased =
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Hl.Assert ()
 
-        // update instance buffer
-        let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+        // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
+        if surfacesCount > 0 then
+
+            // update instance buffer
+            let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
+            try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
+                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+                Hl.Assert ()
+            finally instanceFieldsPtr.Free ()
+
+            // setup geometry
+            Gl.BindVertexArray geometry.PhysicallyBasedVao
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+            Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
             Hl.Assert ()
-        finally instanceFieldsPtr.Free ()
 
-        // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        Hl.Assert ()
-
-        // draw geometry
-        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
-        Hl.ReportDrawCall surfacesCount
-        Hl.Assert ()
+            // draw geometry
+            Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
+            Hl.ReportDrawCall surfacesCount
+            Hl.Assert ()
 
         // stop batch
         if batchPhase.Stopping then
@@ -1897,34 +1900,37 @@ module PhysicallyBased =
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
             Hl.Assert ()
 
-        // setup textures
-        Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.RoughnessTextureUniform, material.RoughnessTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.MetallicTextureUniform, material.MetallicTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.AmbientOcclusionTextureUniform, material.AmbientOcclusionTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.EmissionTextureUniform, material.EmissionTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.NormalTextureUniform, material.NormalTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
-        Hl.Assert ()
+        // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
+        if surfacesCount > 0 then
 
-        // update instance buffer
-        let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+            // setup textures
+            Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.RoughnessTextureUniform, material.RoughnessTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.MetallicTextureUniform, material.MetallicTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.AmbientOcclusionTextureUniform, material.AmbientOcclusionTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.EmissionTextureUniform, material.EmissionTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.NormalTextureUniform, material.NormalTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
             Hl.Assert ()
-        finally instanceFieldsPtr.Free ()
 
-        // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        Hl.Assert ()
+            // update instance buffer
+            let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
+            try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
+                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+                Hl.Assert ()
+            finally instanceFieldsPtr.Free ()
 
-        // draw geometry
-        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
-        Hl.ReportDrawCall surfacesCount
-        Hl.Assert ()
+            // setup geometry
+            Gl.BindVertexArray geometry.PhysicallyBasedVao
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+            Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+            Hl.Assert ()
+
+            // draw geometry
+            Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
+            Hl.ReportDrawCall surfacesCount
+            Hl.Assert ()
 
         // stop batch
         if batchPhase.Stopping then
@@ -1987,103 +1993,106 @@ module PhysicallyBased =
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
-        // setup state
-        Gl.DepthFunc DepthFunction.Lequal
-        Gl.Enable EnableCap.DepthTest
-        if blending then
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-            Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
-            Gl.Enable EnableCap.Blend
-        if not material.TwoSided then Gl.Enable EnableCap.CullFace
-        Hl.Assert ()
+        // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
+        if surfacesCount > 0 then
 
-        // setup shader
-        Gl.UseProgram shader.PhysicallyBasedShader
-        Gl.UniformMatrix4 (shader.ViewUniform, false, view)
-        Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
-            Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-        Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
-        if lightAmbientColor.Length = 3 then
-            Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
-        Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-        Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
-        Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
-        Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
-        Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
-        Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
-        Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
-        Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
-        Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
-        Gl.Uniform3 (shader.LightColorsUniform, lightColors)
-        Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
-        Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
-        Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
-        Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
-        Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
-        Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
-        Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
-        Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
-        Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
-        for i in 0 .. dec (min Constants.Render.ShadowsMax shadowMatrices.Length) do
-            Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
-        Hl.Assert ()
-
-        // setup textures
-        Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.RoughnessTextureUniform, material.RoughnessTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.MetallicTextureUniform, material.MetallicTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.AmbientOcclusionTextureUniform, material.AmbientOcclusionTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.EmissionTextureUniform, material.EmissionTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.NormalTextureUniform, material.NormalTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.BrdfTextureUniform, brdfTexture.TextureHandle)
-        Gl.UniformHandleARB (shader.IrradianceMapUniform, irradianceMap.TextureHandle)
-        Gl.UniformHandleARB (shader.EnvironmentFilterMapUniform, environmentFilterMap.TextureHandle)
-        for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
-            Gl.UniformHandleARB (shader.IrradianceMapsUniforms.[i], irradianceMaps.[i].TextureHandle)
-        for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
-            Gl.UniformHandleARB (shader.EnvironmentFilterMapsUniforms.[i], environmentFilterMaps.[i].TextureHandle)
-        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
-            Gl.UniformHandleARB (shader.ShadowTexturesUniforms.[i], shadowTextures.[i].TextureHandle)
-        Hl.Assert ()
-
-        // update instance buffer
-        let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
-        try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
-            Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
-            Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+            // setup state
+            Gl.DepthFunc DepthFunction.Lequal
+            Gl.Enable EnableCap.DepthTest
+            if blending then
+                Gl.BlendEquation BlendEquationMode.FuncAdd
+                Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
+                Gl.Enable EnableCap.Blend
+            if not material.TwoSided then Gl.Enable EnableCap.CullFace
             Hl.Assert ()
-        finally instanceFieldsPtr.Free ()
 
-        // setup geometry
-        Gl.BindVertexArray geometry.PhysicallyBasedVao
-        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
-        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
-        Hl.Assert ()
+            // setup shader
+            Gl.UseProgram shader.PhysicallyBasedShader
+            Gl.UniformMatrix4 (shader.ViewUniform, false, view)
+            Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
+            for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
+                Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+            Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+            Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
+            if lightAmbientColor.Length = 3 then
+                Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
+            Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
+            Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
+            Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
+            Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
+            Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
+            Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
+            Gl.Uniform1 (shader.LightMapsCountUniform, lightMapsCount)
+            Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
+            Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
+            Gl.Uniform3 (shader.LightColorsUniform, lightColors)
+            Gl.Uniform1 (shader.LightBrightnessesUniform, lightBrightnesses)
+            Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
+            Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
+            Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
+            Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
+            Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
+            Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
+            Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
+            Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
+            for i in 0 .. dec (min Constants.Render.ShadowsMax shadowMatrices.Length) do
+                Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
+            Hl.Assert ()
 
-        // draw geometry
-        Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
-        Hl.ReportDrawCall surfacesCount
-        Hl.Assert ()
+            // setup textures
+            Gl.UniformHandleARB (shader.AlbedoTextureUniform, material.AlbedoTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.RoughnessTextureUniform, material.RoughnessTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.MetallicTextureUniform, material.MetallicTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.AmbientOcclusionTextureUniform, material.AmbientOcclusionTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.EmissionTextureUniform, material.EmissionTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.NormalTextureUniform, material.NormalTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.HeightTextureUniform, material.HeightTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.BrdfTextureUniform, brdfTexture.TextureHandle)
+            Gl.UniformHandleARB (shader.IrradianceMapUniform, irradianceMap.TextureHandle)
+            Gl.UniformHandleARB (shader.EnvironmentFilterMapUniform, environmentFilterMap.TextureHandle)
+            for i in 0 .. dec (min irradianceMaps.Length Constants.Render.LightMapsMaxForward) do
+                Gl.UniformHandleARB (shader.IrradianceMapsUniforms.[i], irradianceMaps.[i].TextureHandle)
+            for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
+                Gl.UniformHandleARB (shader.EnvironmentFilterMapsUniforms.[i], environmentFilterMaps.[i].TextureHandle)
+            for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
+                Gl.UniformHandleARB (shader.ShadowTexturesUniforms.[i], shadowTextures.[i].TextureHandle)
+            Hl.Assert ()
 
-        // teardown geometry
-        Gl.BindVertexArray 0u
-        Hl.Assert ()
+            // update instance buffer
+            let instanceFieldsPtr = GCHandle.Alloc (instanceFields, GCHandleType.Pinned)
+            try Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.InstanceBuffer)
+                Gl.BufferData (BufferTarget.ArrayBuffer, uint (surfacesCount * Constants.Render.InstanceFieldCount * sizeof<single>), instanceFieldsPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
+                Gl.BindBuffer (BufferTarget.ArrayBuffer, 0u)
+                Hl.Assert ()
+            finally instanceFieldsPtr.Free ()
 
-        // teardown shader
-        Gl.UseProgram 0u
-        Hl.Assert ()
+            // setup geometry
+            Gl.BindVertexArray geometry.PhysicallyBasedVao
+            Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+            Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+            Hl.Assert ()
 
-        // teardown state
-        Gl.DepthFunc DepthFunction.Less
-        Gl.Disable EnableCap.DepthTest
-        if blending then
-            Gl.Disable EnableCap.Blend
-            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-        if not material.TwoSided then Gl.Disable EnableCap.CullFace
+            // draw geometry
+            Gl.DrawElementsInstanced (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0, surfacesCount)
+            Hl.ReportDrawCall surfacesCount
+            Hl.Assert ()
+
+            // teardown geometry
+            Gl.BindVertexArray 0u
+            Hl.Assert ()
+
+            // teardown shader
+            Gl.UseProgram 0u
+            Hl.Assert ()
+
+            // teardown state
+            Gl.DepthFunc DepthFunction.Less
+            Gl.Disable EnableCap.DepthTest
+            if blending then
+                Gl.Disable EnableCap.Blend
+                Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
+                Gl.BlendEquation BlendEquationMode.FuncAdd
+            if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     let DrawPhysicallyBasedTerrain
         (view : single array,
