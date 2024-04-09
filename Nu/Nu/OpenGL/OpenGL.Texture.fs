@@ -38,7 +38,7 @@ module Texture =
     /// Attempt to format compressed pfim image data.
     /// TODO: make this an IImage extension and move elsewhere?
     let FormatCompressedPfimageData (minimal, dds : Dds) =
-        let minimal = minimal && dds.Header.MipMapCount >= 2u // NOTE: two mipmaps are needed for minimal load since the last mipmap may not be valid!
+        let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
         let mutable dims = v2i dds.Width dds.Height
         let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
         let mutable index = 0
@@ -48,14 +48,14 @@ module Texture =
             else [||]
         let minimalMipmapIndex =
             if minimal // NOTE: inc mipmap indexes here because dds header seems to count full image as mipmap 0.
-            then min dds.Header.MipMapCount (uint (inc Constants.Render.TextureMinimalMipmapIndex))
-            else 1u
+            then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
+            else 0u
         let mipmapBytesArray =
             [|for _ in minimalMipmapIndex .. dec dds.Header.MipMapCount do
                 dims <- dims / 2
                 index <- index + size
                 size <- size / 4
-                if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|] // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid.
+                if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|] // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
         if minimal then
             let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
@@ -65,7 +65,7 @@ module Texture =
     /// Attempt to format uncompressed pfim image data.
     /// TODO: make this an IImage extension and move elsewhere?
     let TryFormatUncompressedPfimageData (minimal, image : IImage) =
-        let minimal = minimal && image.MipMaps.Length >= 2 // NOTE: two mipmaps are needed for minimal load since the last mipmap may not be valid!
+        let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap are needed for minimal load.
         let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
         let format = image.Format
         let height = image.Height
