@@ -38,16 +38,20 @@ module Texture =
     /// Attempt to format uncompressed pfim image data.
     /// TODO: make this an IImage extension and move elsewhere?
     let TryFormatUncompressedPfimageData (image : IImage) =
-        let data = image.Data
+        let data = image.Data // OPTIMIZATION: pulling all data out of image to avoid slow property calls.
+        let format = image.Format
+        let height = image.Height
+        let stride = image.Stride
+        let mipmaps = image.MipMaps
         let bytesOpt =
-            match image.Format with
+            match format with
             | ImageFormat.Rgb24 ->
                 let converted =
                     [|let mutable y = 0
-                      while y < image.Height do
+                      while y < height do
                         let mutable x = 0
-                        while x < image.Stride - 2 do
-                            let i = x + image.Stride * y
+                        while x < stride - 2 do
+                            let i = x + stride * y
                             data.[i]; data.[i+1]; data.[i+2]; 255uy
                             x <- x + 3
                         y <- inc y|]
@@ -55,21 +59,21 @@ module Texture =
             | ImageFormat.Rgba32 ->
                 let converted =
                     [|let mutable y = 0
-                      while y < image.Height do
+                      while y < height do
                         let mutable x = 0
-                        while x < image.Stride - 3 do
-                            let i = x + image.Stride * y
+                        while x < stride - 3 do
+                            let i = x + stride * y
                             data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
                             x <- x + 4
                         y <- inc y|]
                 Some converted
-            | _ -> Log.info ("Unsupported image format '" + scstring image.Format + "'."); None
+            | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
         match bytesOpt with
         | Some bytes ->
             let mipmaps =
-                [|for i in 0 .. dec image.MipMaps.Length do
-                    let mipmap = image.MipMaps.[i]
-                    match image.Format with
+                [|for i in 0 .. dec mipmaps.Length do
+                    let mipmap = mipmaps.[i]
+                    match format with
                     | ImageFormat.Rgb24 ->
                         let converted =
                             [|let mutable y = 0
