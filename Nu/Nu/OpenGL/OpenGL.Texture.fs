@@ -429,7 +429,7 @@ module Texture =
 
         (* Server API - only the client may call this! *)
 
-        member internal this.TryFullServe () =
+        member internal this.TryServe () =
             lock destructionLock $ fun () ->
                 if not destroyed && not fullServeAttempted then
                     match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, fullAnisoFilter, false, BlockCompressable filePath, filePath) with
@@ -529,7 +529,7 @@ module Texture =
                     let lazyTextureQueue = lazyTextureQueueEnr.Current.Key
                     let mutable lazyTexture = Unchecked.defaultof<_>
                     while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueue.TryDequeue &lazyTexture do
-                        lazyTexture.TryFullServe ()
+                        lazyTexture.TryServe ()
                 Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
 
         member this.Start () =
