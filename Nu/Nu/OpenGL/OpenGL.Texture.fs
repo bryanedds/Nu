@@ -112,8 +112,7 @@ module Texture =
                 else 0
             let mipmapBytesArray =
                 [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                    let mipmap = mipmaps.[i]
-                    FormatUncompressedPfimageMipmap (format, mipmap, data)|]
+                    FormatUncompressedPfimageMipmap (format, mipmaps.[i], data)|]
             if minimal then
                 let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
                 let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]

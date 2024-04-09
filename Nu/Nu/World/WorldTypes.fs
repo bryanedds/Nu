@@ -304,7 +304,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
       Nav3dBodiesOldOpt : Map<Entity, Box3 * Matrix4x4 * StaticModel AssetTag * int * NavShape> option
       Nav3dConfig : Nav3dConfig
       Nav3dConfigOldOpt : Nav3dConfig option
-      Nav3dMeshOpt : (RcBuilderResult * DtNavMesh * DtNavMeshQuery) option }
+      Nav3dMeshOpt : (NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }
 
     // Make an empty 3d navigation service.
     static member make () =

@@ -128,6 +128,110 @@ type NavOutput =
       NavLinearVelocity : Vector3
       NavAngularVelocity : Vector3 }
 
+/// The data collected from a navigation builder result.
+type NavBuilderResultData =
+    { NavPointsMinY : single
+      NavPointsMaxY : single
+      NavPoints : Vector3 array
+      NavEdgesMinY : single
+      NavEdgesMaxY : single
+      NavInteriorEdges : struct (Vector3 * Vector3) array
+      NavExteriorEdges : struct (Vector3 * Vector3) array }
+      
+    /// Make from an RcBuilderResult.
+    static member make (builderResult : RcBuilderResult) =
+
+        // compute points
+        let dmesh = builderResult.GetMeshDetail ()
+        let mutable pointsMinY = Single.MaxValue
+        let mutable pointsMaxY = Single.MinValue
+        let points =
+            [|for i in 0 .. dec dmesh.nmeshes do
+                let m = i * 4
+                let bverts = dmesh.meshes.[m]
+                let nverts = dmesh.meshes.[m + 1]
+                let verts = bverts * 3
+                for j in 0 .. dec nverts do
+                    let point = v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2]
+                    if pointsMinY > point.Y then pointsMinY <- point.Y
+                    if pointsMaxY < point.Y then pointsMaxY <- point.Y
+                    point|]
+
+        // compute interior edges
+        let mutable edgesMinY = Single.MaxValue
+        let mutable edgesMaxY = Single.MinValue
+        let interiorEdges =
+            [|for i in 0 .. dec dmesh.nmeshes do
+                let m = i * 4
+                let bverts = dmesh.meshes.[m]
+                let btris = dmesh.meshes.[m + 2]
+                let ntris = dmesh.meshes.[m + 3]
+                let verts = bverts * 3
+                let tris = btris * 4
+                for j in 0 .. dec ntris do
+                    let t = tris + j * 4
+                    let mutable k = 0
+                    let mutable kp = 2
+                    while k < 3 do
+                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                        if ef = 0 then
+                            let start =
+                                v3
+                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
+                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
+                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                            let stop =
+                                v3
+                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
+                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
+                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                            struct (start, stop)
+                        kp <- k
+                        k <- inc k|]
+
+        // compute exterior edges
+        let exteriorEdges =
+            [|for i in 0 .. dec dmesh.nmeshes do
+                let m = i * 4
+                let bverts = dmesh.meshes.[m]
+                let btris = dmesh.meshes.[m + 2]
+                let ntris = dmesh.meshes.[m + 3]
+                let verts = bverts * 3
+                let tris = btris * 4
+                for j in 0 .. dec ntris do
+                    let t = tris + j * 4
+                    let mutable k = 0
+                    let mutable kp = 2
+                    while k < 3 do
+                        let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
+                        if ef <> 0 then
+                            let start =
+                                v3
+                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
+                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
+                                    dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
+                            let stop =
+                                v3
+                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
+                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
+                                    dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
+                            if edgesMinY > start.Y then edgesMinY <- start.Y
+                            if edgesMaxY < start.Y then edgesMaxY <- start.Y
+                            if edgesMinY > stop.Y then edgesMinY <- stop.Y
+                            if edgesMaxY < stop.Y then edgesMaxY <- stop.Y
+                            struct (start, stop)
+                        kp <- k
+                        k <- inc k|]
+
+        // fin
+        { NavPointsMinY = pointsMinY
+          NavPointsMaxY = pointsMaxY
+          NavPoints = points
+          NavEdgesMinY = edgesMinY
+          NavEdgesMaxY = edgesMaxY
+          NavInteriorEdges = interiorEdges
+          NavExteriorEdges = exteriorEdges }
+
 /// The manner in which a gui entity may be docked by a parent entity.
 type DockType =
     | DockCenter

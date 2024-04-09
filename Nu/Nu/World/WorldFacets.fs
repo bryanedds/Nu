@@ -3092,106 +3092,23 @@ module Nav3dConfigFacetModule =
             | OverlayViewport _ ->
                 let nav3d = World.getScreenNav3d entity.Screen world
                 match nav3d.Nav3dMeshOpt with
-                | Some (builderResult, _, _) ->
-
-                    // draw exterior edges
-                    let dmesh = builderResult.GetMeshDetail ()
-                    let mutable segmentsMinY = Single.MaxValue
-                    let mutable segmentsMaxY = Single.MinValue
-                    let segments =
-                        SArray.ofSeq
-                            (seq {
-                                for i in 0 .. dec dmesh.nmeshes do
-                                    let m = i * 4
-                                    let bverts = dmesh.meshes.[m]
-                                    let btris = dmesh.meshes.[m + 2]
-                                    let ntris = dmesh.meshes.[m + 3]
-                                    let verts = bverts * 3
-                                    let tris = btris * 4
-                                    for j in 0 .. dec ntris do
-                                        let t = tris + j * 4
-                                        let mutable k = 0
-                                        let mutable kp = 2
-                                        while k < 3 do
-                                            let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
-                                            if ef <> 0 then
-                                                let start =
-                                                    v3
-                                                        dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
-                                                let stop =
-                                                    v3
-                                                        dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                                                if segmentsMinY > start.Y then segmentsMinY <- start.Y
-                                                if segmentsMaxY < start.Y then segmentsMaxY <- start.Y
-                                                if segmentsMinY > stop.Y then segmentsMinY <- stop.Y
-                                                if segmentsMaxY < stop.Y then segmentsMaxY <- stop.Y
-                                                struct (start, stop)
-                                            kp <- k
-                                            k <- inc k })
-                    let computeSegmentColor (segment : struct (Vector3 * Vector3)) =
-                        let middleY = (fst' segment).Y + (snd' segment).Y * 0.5f
-                        let height = Math.Lerp (0.0f, 1.0f, (middleY - segmentsMinY) / (segmentsMaxY - segmentsMinY))
+                | Some (nbrData, _, _) ->
+                
+                    // edge color compute lambda
+                    let computeEdgeColor (edge : struct (Vector3 * Vector3)) =
+                        let middleY = (fst' edge).Y + (snd' edge).Y * 0.5f
+                        let height = Math.Lerp (0.0f, 1.0f, (middleY - nbrData.NavEdgesMinY) / (nbrData.NavEdgesMaxY - nbrData.NavEdgesMinY))
                         Color (1.0f, 1.0f - height, height, 1.0f)
-                    World.imGuiSegments3dPlus false segments 1.0f computeSegmentColor world
 
-                    // draw interior edges
-                    let dmesh = builderResult.GetMeshDetail ()
-                    let segments =
-                        SArray.ofSeq
-                            (seq {
-                                for i in 0 .. dec dmesh.nmeshes do
-                                    let m = i * 4
-                                    let bverts = dmesh.meshes.[m]
-                                    let btris = dmesh.meshes.[m + 2]
-                                    let ntris = dmesh.meshes.[m + 3]
-                                    let verts = bverts * 3
-                                    let tris = btris * 4
-                                    for j in 0 .. dec ntris do
-                                        let t = tris + j * 4
-                                        let mutable k = 0
-                                        let mutable kp = 2
-                                        while k < 3 do
-                                            let ef = (dmesh.tris.[t + 3] >>> (kp * 2)) &&& 0x3
-                                            if ef = 0 then
-                                                let start =
-                                                    v3
-                                                        dmesh.verts.[verts + dmesh.tris.[t + kp] * 3]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 1]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + kp] * 3 + 2]
-                                                let stop =
-                                                    v3
-                                                        dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
-                                                        dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                                                struct (start, stop)
-                                            kp <- k
-                                            k <- inc k })
-                    World.imGuiSegments3dPlus false segments 1.0f computeSegmentColor world
-
-                    // draw points
-                    let mutable pointsMinY = Single.MaxValue
-                    let mutable pointsMaxY = Single.MinValue
-                    let points =
-                        SArray.ofSeq
-                            (seq {
-                                for i in 0 .. dec dmesh.nmeshes do
-                                    let m = i * 4
-                                    let bverts = dmesh.meshes.[m]
-                                    let nverts = dmesh.meshes.[m + 1]
-                                    let verts = bverts * 3
-                                    for j in 0 .. dec nverts do
-                                        let point = v3 dmesh.verts.[verts + j * 3] dmesh.verts.[verts + j * 3 + 1] dmesh.verts.[verts + j * 3 + 2]
-                                        if pointsMinY > point.Y then pointsMinY <- point.Y
-                                        if pointsMaxY < point.Y then pointsMaxY <- point.Y
-                                        point })
+                    // point color compute lambda
                     let computePointColor (point : Vector3) =
-                        let height = Math.Lerp (0.0f, 1.0f, (point.Y - pointsMinY) / (pointsMaxY - pointsMinY))
+                        let height = Math.Lerp (0.0f, 1.0f, (point.Y - nbrData.NavPointsMinY) / (nbrData.NavPointsMaxY - nbrData.NavPointsMinY))
                         Color (1.0f, 1.0f - height, height, 1.0f)
-                    World.imGuiCircles3dPlus false points 2.5f true computePointColor world
+
+                    // draw edges and points
+                    World.imGuiSegments3dPlus false nbrData.NavInteriorEdges 1.0f computeEdgeColor world
+                    World.imGuiSegments3dPlus false nbrData.NavExteriorEdges 1.0f computeEdgeColor world
+                    World.imGuiCircles3dPlus false nbrData.NavPoints 2.5f true computePointColor world
                     world
 
                 | None -> world

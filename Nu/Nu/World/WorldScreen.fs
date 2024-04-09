@@ -465,6 +465,7 @@ module WorldScreenModule =
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig)
+                let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
                 let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
                 match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
                 | null -> None // some sort of argument issue
@@ -472,7 +473,7 @@ module WorldScreenModule =
                     DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
                     let dtNavMesh = DtNavMesh (dtMeshData, 6, 0) // TODO: introduce constant?
                     let dtQuery = DtNavMeshQuery dtNavMesh
-                    Some (rcBuilderResult, dtNavMesh, dtQuery)
+                    Some (navBuilderResultData, dtNavMesh, dtQuery)
 
             // geometry not found
             | None -> None
