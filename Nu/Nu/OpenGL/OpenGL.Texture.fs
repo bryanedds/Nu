@@ -35,9 +35,95 @@ module Texture =
         not (name.EndsWith "Blend") &&
         not (name.EndsWith "Tint")
 
-    /// Attempt to format compressed pfim image data.
+    /// Attempt to format an uncompressed pfim image texture (non-mipmap).
     /// TODO: make this an IImage extension and move elsewhere?
-    let FormatCompressedPfimageData (minimal, dds : Dds) =
+    let TryFormatUncompressedPfimageTexture (format, height, stride, data : byte array) =
+        match format with
+        | ImageFormat.Rgb24 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < height do
+                    let mutable x = 0
+                    while x < stride - 2 do
+                        let i = x + stride * y
+                        data.[i]; data.[i+1]; data.[i+2]; 255uy
+                        x <- x + 3
+                    y <- inc y|]
+            Some converted
+        | ImageFormat.Rgba32 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < height do
+                    let mutable x = 0
+                    while x < stride - 3 do
+                        let i = x + stride * y
+                        data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                        x <- x + 4
+                    y <- inc y|]
+            Some converted
+        | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
+        
+    /// Attempt to format an uncompressed pfim image mipmap.
+    /// TODO: make this an IImage extension and move elsewhere?
+    let FormatUncompressedPfimageMipmap (format, mipmap : MipMapOffset, data : byte array) =
+        match format with
+        | ImageFormat.Rgb24 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < mipmap.Height do
+                    let mutable x = 0
+                    while x < mipmap.Stride - 2 do
+                        let i = x + mipmap.Stride * y + mipmap.DataOffset
+                        data.[i]; data.[i+1]; data.[i+2]; 255uy
+                        x <- x + 3
+                    y <- inc y|]
+            (v2i mipmap.Width mipmap.Height, converted)
+        | ImageFormat.Rgba32 ->
+            let converted =
+                [|let mutable y = 0
+                  while y < mipmap.Height do
+                    let mutable x = 0
+                    while x < mipmap.Stride - 3 do
+                        let i = x + mipmap.Stride * y + mipmap.DataOffset
+                        data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
+                        x <- x + 4
+                    y <- inc y|]
+            (v2i mipmap.Width mipmap.Height, converted)
+        | _ -> failwithumf ()
+
+    /// Attempt to format an uncompressed pfim image.
+    /// TODO: make this an IImage extension and move elsewhere?
+    let TryFormatUncompressedPfimage (minimal, image : IImage) =
+        let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap is needed for minimal load.
+        let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
+        let format = image.Format
+        let height = image.Height
+        let stride = image.Stride
+        let mipmaps = image.MipMaps
+        let bytesOpt =
+            if not minimal
+            then TryFormatUncompressedPfimageTexture (format, height, stride, data)
+            else Some [||]
+        match bytesOpt with
+        | Some bytes ->
+            let minimalMipmapIndex =
+                if minimal
+                then min mipmaps.Length Constants.Render.TextureMinimalMipmapIndex
+                else 0
+            let mipmapBytesArray =
+                [|for i in minimalMipmapIndex .. dec mipmaps.Length do
+                    let mipmap = mipmaps.[i]
+                    FormatUncompressedPfimageMipmap (format, mipmap, data)|]
+            if minimal then
+                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
+                let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
+                Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
+            else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
+        | None -> None
+
+    /// Attempt to format compressed pfim image data.
+    /// TODO: make this a Dds extension and move elsewhere?
+    let FormatCompressedPfimage (minimal, dds : Dds) =
         let minimal = minimal && dds.Header.MipMapCount >= 3u // NOTE: at least three mipmaps are needed for minimal load since the last 2 are not valid when compressed.
         let mutable dims = v2i dds.Width dds.Height
         let mutable size = ((dims.X + 3) / 4) * ((dims.Y + 3) / 4) * 16
@@ -61,82 +147,6 @@ module Texture =
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
-
-    /// Attempt to format uncompressed pfim image data.
-    /// TODO: make this an IImage extension and move elsewhere?
-    let TryFormatUncompressedPfimageData (minimal, image : IImage) =
-        let minimal = minimal && image.MipMaps.Length >= 1 // NOTE: at least one mipmap are needed for minimal load.
-        let data = image.Data // OPTIMIZATION: pulling all values out of image to avoid slow property calls.
-        let format = image.Format
-        let height = image.Height
-        let stride = image.Stride
-        let mipmaps = image.MipMaps
-        let bytesOpt =
-            if not minimal then
-                match format with
-                | ImageFormat.Rgb24 ->
-                    let converted =
-                        [|let mutable y = 0
-                          while y < height do
-                            let mutable x = 0
-                            while x < stride - 2 do
-                                let i = x + stride * y
-                                data.[i]; data.[i+1]; data.[i+2]; 255uy
-                                x <- x + 3
-                            y <- inc y|]
-                    Some converted
-                | ImageFormat.Rgba32 ->
-                    let converted =
-                        [|let mutable y = 0
-                          while y < height do
-                            let mutable x = 0
-                            while x < stride - 3 do
-                                let i = x + stride * y
-                                data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
-                                x <- x + 4
-                            y <- inc y|]
-                    Some converted
-                | _ -> Log.info ("Unsupported image format '" + scstring format + "'."); None
-            else Some [||]
-        match bytesOpt with
-        | Some bytes ->
-            let minimalMipmapIndex =
-                if minimal
-                then min mipmaps.Length Constants.Render.TextureMinimalMipmapIndex
-                else 0
-            let mipmapBytesArray =
-                [|for i in minimalMipmapIndex .. dec mipmaps.Length do
-                    let mipmap = mipmaps.[i]
-                    match format with
-                    | ImageFormat.Rgb24 ->
-                        let converted =
-                            [|let mutable y = 0
-                              while y < mipmap.Height do
-                                let mutable x = 0
-                                while x < mipmap.Stride - 2 do
-                                    let i = x + mipmap.Stride * y + mipmap.DataOffset
-                                    data.[i]; data.[i+1]; data.[i+2]; 255uy
-                                    x <- x + 3
-                                y <- inc y|]
-                        (v2i mipmap.Width mipmap.Height, converted)
-                    | ImageFormat.Rgba32 ->
-                        let converted =
-                            [|let mutable y = 0
-                              while y < mipmap.Height do
-                                let mutable x = 0
-                                while x < mipmap.Stride - 3 do
-                                    let i = x + mipmap.Stride * y + mipmap.DataOffset
-                                    data.[i]; data.[i+1]; data.[i+2]; data.[i+3]
-                                    x <- x + 4
-                                y <- inc y|]
-                        (v2i mipmap.Width mipmap.Height, converted)
-                    | _ -> failwithumf ()|]
-            if minimal then
-                let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
-                let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
-                Some (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
-            else Some (v2i image.Width image.Height, bytes, mipmapBytesArray)
-        | None -> None
 
     /// An OpenGL texture's metadata.
     type TextureMetadata =
@@ -299,7 +309,7 @@ module Texture =
             let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".tga" then
                 try let image = Pfimage.FromFile filePath
-                    match TryFormatUncompressedPfimageData (false, image) with
+                    match TryFormatUncompressedPfimage (false, image) with
                     | Some (resolution, bytes, _) ->
                         let metadata = TextureMetadata.make resolution.X resolution.Y
                         Some (TextureDataDotNet (metadata, bytes))
@@ -312,11 +322,11 @@ module Texture =
                     use fileStream = File.OpenRead filePath
                     use dds = Dds.Create (fileStream, config)
                     if dds.Compressed then
-                        let (resolution, bytes, mipmapBytesArray) = FormatCompressedPfimageData (minimal, dds)
+                        let (resolution, bytes, mipmapBytesArray) = FormatCompressedPfimage (minimal, dds)
                         let metadata = TextureMetadata.make resolution.X resolution.Y
                         Some (TextureDataMipmap (metadata, true, bytes, mipmapBytesArray))
                     else
-                        match TryFormatUncompressedPfimageData (minimal, dds) with
+                        match TryFormatUncompressedPfimage (minimal, dds) with
                         | Some (resolution, bytes, mipmapBytesArray) ->
                             let metadata = TextureMetadata.make resolution.X resolution.Y
                             Some (TextureDataMipmap (metadata, false, bytes, mipmapBytesArray))
