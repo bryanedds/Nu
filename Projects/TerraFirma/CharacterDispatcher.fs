@@ -13,6 +13,7 @@ type CharacterMessage =
     interface Message
 
 type CharacterCommand =
+    | Register
     | UpdateTransform of Vector3 * Quaternion
     | UpdateAnimatedModel of Vector3 * Quaternion * Animation array
     | SyncWeaponTransform
@@ -46,14 +47,10 @@ module CharacterDispatcher =
              Entity.CharacterProperties == character.CharacterProperties
              Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
              Entity.FollowTargetOpt := match character.CharacterType with Enemy -> Some Simulants.GameplayPlayer | Player -> None
+             Entity.RegisterEvent => Register
              Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
              Entity.UpdateEvent => Update
              Game.PostUpdateEvent => SyncWeaponTransform]
-
-        override this.Register (entity, world) =
-            let world = base.Register (entity, world)
-            let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
-            animatedModel.SetAnimations [|Animation.loop GameTime.zero None "Armature|Idle"|] world
 
         override this.Content (character, _) =
 
@@ -134,6 +131,11 @@ module CharacterDispatcher =
         override this.Command (character, command, entity, world) =
 
             match command with
+            | Register ->
+                let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+                let world = animatedModel.SetAnimations [|Animation.loop GameTime.zero None "Armature|Idle"|] world
+                withSignal SyncWeaponTransform world
+
             | UpdateTransform (position, rotation) ->
                 let world = entity.SetPosition position world
                 let world = entity.SetRotation rotation world
