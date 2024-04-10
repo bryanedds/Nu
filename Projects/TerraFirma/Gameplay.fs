@@ -89,9 +89,12 @@ module Gameplay =
                             let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
                             withSignal playSound character
                     else
-                        let character = { character with ActionState = WoundState { WoundTime = world.UpdateTime }}
-                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
-                        withSignal playSound character
+                        match character.ActionState with
+                        | WoundState _ -> just character
+                        | _ ->
+                            let character = { character with ActionState = WoundState { WoundTime = world.UpdateTime }}
+                            let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
+                            withSignal playSound character
                 let world = attackedCharacter.SetCharacter character world
                 withSignals signals world
 
