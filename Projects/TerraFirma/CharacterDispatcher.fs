@@ -15,7 +15,7 @@ type CharacterMessage =
 type CharacterCommand =
     | Register
     | UpdateTransform of Vector3 * Quaternion
-    | UpdateAnimatedModel of Vector3 * Quaternion * Animation array * bool
+    | UpdateAnimations of Vector3 * Quaternion * Animation array * bool
     | SyncWeaponTransform
     | PublishAttacks of Entity Set
     | PublishDie
@@ -100,7 +100,7 @@ module CharacterDispatcher =
 
                 // deploy signals from update
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
-                let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimatedModel (position, rotation, Array.ofList animations, invisible) :: signals
+                let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
                 let signals = match character.ActionState with WoundState _ -> PublishDie :> Signal :: signals | _ -> signals
                 let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
                 let signals = if destroy then Destroy :> Signal :: signals else signals
@@ -143,12 +143,14 @@ module CharacterDispatcher =
                 let world = entity.SetRotation rotation world
                 just world
 
-            | UpdateAnimatedModel (position, rotation, animations, invisible) ->
+            | UpdateAnimations (position, rotation, animations, invisible) ->
                 let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+                let weapon = entity / Constants.Gameplay.CharacterWeaponName
                 let world = animatedModel.SetPosition (character.PositionInterp position) world
                 let world = animatedModel.SetRotation (character.RotationInterp rotation) world
                 let world = animatedModel.SetAnimations animations world
                 let world = animatedModel.SetVisible (not invisible) world
+                let world = weapon.SetVisible (not invisible) world
                 just world
 
             | SyncWeaponTransform ->
