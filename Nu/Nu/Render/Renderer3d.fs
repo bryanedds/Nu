@@ -897,7 +897,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if List.exists (fun (asset : Asset) ->
                     let extension = PathF.GetExtensionLower asset.FilePath
                     match extension with
-                    | ImageExtension _ when asset.Associations.Contains Constants.Associations.Render2d -> true
+                    | ImageExtension _ ->
+                        asset.Associations.Contains Constants.Associations.Render2d &&
+                        asset.Associations.Contains Constants.Associations.Render3d
                     | _ -> false)
                     assetsCollected then
                     Log.warnOnce "Due to asset graph limitations, associating image assets with both Render2d and Render3d is not fully supported."
