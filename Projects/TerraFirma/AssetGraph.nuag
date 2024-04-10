@@ -14,8 +14,8 @@
    [Assets Assets/Gui [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Gui [nuentity nugroup tsx tmx] [] []]]]
  [Gameplay
-  [[Assets Assets/Gameplay [bmp png psd] [Render2d] [PsdToPng]]
-   [Assets Assets/Gameplay [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
+  [[Assets Assets/Gameplay [bmp png psd dds] [Render2d] [PsdToPng]]
+   [Assets Assets/Gameplay [bmp png psd jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Gameplay [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Gameplay [wav ogg] [Audio] []]
    [Assets Assets/Gameplay [nueffect nuscript csv] [Symbol] []]

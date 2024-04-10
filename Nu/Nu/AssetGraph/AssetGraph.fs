@@ -195,39 +195,27 @@ module AssetGraph =
                 with _ -> Log.info ("Resource lock on '" + outputFilePath + "' has prevented build for asset '" + scstring asset.AssetTag + "'.")
 
     /// Collect the associated assets from package descriptor assets value.
-    let private collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements : Asset list =
+    let private collectAssetsFromPackageDescriptorAssets packageName directory extensions associations refinements : Asset list =
         [if Directory.Exists directory then
             let filePaths =
                 [for extension in extensions do
                     for filePath in Directory.GetFiles (directory, "*." + extension, SearchOption.AllDirectories) do
                         PathF.Normalize filePath]
             for filePath in filePaths do
-                let extension = PathF.GetExtensionLower(filePath).Replace(".", "")
                 let assetName = PathF.GetFileNameWithoutExtension filePath
                 let tag = AssetTag.make<obj> packageName assetName
-                let asset = Asset.make tag filePath refinements associations
-                if Option.isSome associationOpt
-                then if Set.contains extension extensions then yield asset
-                else yield asset
+                yield Asset.make tag filePath refinements associations
          else Log.info ("Invalid directory '" + directory + "'. when looking for assets.")]
 
     /// Collect the associated assets from a package descriptor.
-    let private collectAssetsFromPackageDescriptor (associationOpt : string option) packageName packageDescriptor : Asset list =
+    let private collectAssetsFromPackageDescriptor packageName packageDescriptor : Asset list =
         [for assetDescriptor in packageDescriptor do
             match assetDescriptor with
             | Asset (assetName, filePath, associations, refinements) ->
                 let tag = AssetTag.make<obj> packageName assetName
-                let asset = Asset.make tag filePath refinements associations
-                match associationOpt with
-                | Some association -> if Set.contains association associations then yield asset
-                | None -> yield asset
+                yield Asset.make tag filePath refinements associations
             | Assets (directory, extensions, associations, refinements) ->
-                match associationOpt with
-                | Some association when Set.contains association associations ->
-                    yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
-                | None ->
-                    yield! collectAssetsFromPackageDescriptorAssets associationOpt packageName directory extensions associations refinements
-                | _ -> ()]
+                yield! collectAssetsFromPackageDescriptorAssets packageName directory extensions associations refinements]
 
     /// Get package descriptors.
     let getPackageDescriptors assetGraph =
@@ -242,9 +230,15 @@ module AssetGraph =
         let mutable packageDescriptor = Unchecked.defaultof<PackageDescriptor>
         match Map.tryGetValue (packageName, assetGraph.PackageDescriptors, &packageDescriptor) with
         | true ->
-            collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor |>
+            collectAssetsFromPackageDescriptor packageName packageDescriptor |>
             List.groupBy (fun asset -> asset.FilePath) |>
-            List.map (snd >> List.last) |>
+            List.map snd |>
+            List.map (List.reduce (fun asset asset2 ->
+                { AssetTag = AssetTag.make asset.AssetTag.PackageName asset.AssetTag.AssetName
+                  FilePath = asset.FilePath
+                  Refinements = List.append asset.Refinements asset2.Refinements
+                  Associations = Set.union asset.Associations asset2.Associations } :> Asset)) |>
+            List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true) |>
             Right
         | false -> Left ("Could not find package '" + packageName + "' in asset graph.")
 
@@ -253,14 +247,15 @@ module AssetGraph =
         [for entry in assetGraph.PackageDescriptors do
             let packageName = entry.Key
             let packageDescriptor = entry.Value
-            yield! collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor] |>
+            yield! collectAssetsFromPackageDescriptor packageName packageDescriptor] |>
         List.groupBy (fun asset -> asset.FilePath) |>
         List.map snd |>
         List.map (List.reduce (fun asset asset2 ->
             { AssetTag = AssetTag.make asset.AssetTag.PackageName asset.AssetTag.AssetName
               FilePath = asset.FilePath
               Refinements = List.append asset.Refinements asset2.Refinements
-              Associations = Set.union asset.Associations asset2.Associations } :> Asset))
+              Associations = Set.union asset.Associations asset2.Associations } :> Asset)) |>
+        List.filter (fun asset -> match associationOpt with Some association -> asset.Associations.Contains association | _ -> true)
 
     /// Build all the available assets found in the given asset graph.
     let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
