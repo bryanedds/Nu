@@ -15,14 +15,16 @@ module Gameplay =
         | Quit
 
     // this is our MMCC model type representing gameplay.
-    type [<ReferenceEquality; SymbolicExpansion>] Gameplay =
-        { GameplayState : GameplayState }
+    type [<SymbolicExpansion>] Gameplay =
+        { GameplayState : GameplayState
+          Score : int }
 
     // this is our MMCC message type.
     type GameplayMessage =
         | FinishCommencing
         | StartQuitting
         | FinishQuitting
+        | Die of Entity
         interface Message
 
     // this is our MMCC command type.
@@ -41,17 +43,18 @@ module Gameplay =
 
     // this is the screen dispatcher that defines the screen where gameplay takes place.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer
-             Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Attack evt.Data]
+             Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Attack evt.Data
+             Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Die evt.Data]
 
         // here we handle the gameplay messages
-        override this.Message (gameplay, message, _, _) =
+        override this.Message (gameplay, message, _, world) =
 
             match message with
             | FinishCommencing ->
@@ -65,6 +68,16 @@ module Gameplay =
             | FinishQuitting ->
                 let gameplay = { gameplay with GameplayState = Quit }
                 just gameplay
+
+            | Die deadCharacter ->
+                let character = deadCharacter.GetCharacter world
+                match character.CharacterType with
+                | Player ->
+                    let gameplay = { gameplay with GameplayState = Quitting }
+                    just gameplay
+                | Enemy ->
+                    let gameplay = { gameplay with Score = gameplay.Score + 100 }
+                    just gameplay
 
         // here we handle the gameplay commands
         // notice how in here we handle events from characters to implement intra-character interactions rather than
@@ -124,7 +137,13 @@ module Gameplay =
             [// the gui group
              Content.group Simulants.GameplayGui.Name []
 
-                [// quit
+                [// score
+                 Content.text Simulants.GameplayScore.Name
+                    [Entity.Position == v3 260.0f 155.0f 0.0f
+                     Entity.Elevation == 10.0f
+                     Entity.Text := "Score: " + string gameplay.Score]
+                  
+                 // quit
                  Content.button Simulants.GameplayQuit.Name
                     [Entity.Position == v3 232.0f -144.0f 0.0f
                      Entity.Elevation == 10.0f
@@ -139,7 +158,7 @@ module Gameplay =
                     [// the player that's always present in the scene
                      Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Persistent == false
-                         Entity.DieEvent => StartQuitting]]
+                         Entity.DieEvent => Die Simulants.GameplayPlayer]]
 
              // no scene group otherwise
              | Commencing | Quit -> ()]

@@ -63,7 +63,7 @@ module TerraFirma =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay { GameplayState = Commencing })
+            | ShowGameplay -> just (Gameplay { GameplayState = Commencing; Score = 0 })
             | Update ->
                 match model with
                 | Gameplay gameplay ->

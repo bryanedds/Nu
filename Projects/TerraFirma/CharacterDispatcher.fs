@@ -101,7 +101,7 @@ module CharacterDispatcher =
                 // deploy signals from update
                 let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
                 let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
-                let signals = match character.ActionState with WoundState _ -> PublishDie :> Signal :: signals | _ -> signals
+                let signals = match character.ActionState with WoundState wound when wound.WoundTime = world.UpdateTime - 60L -> PublishDie :> Signal :: signals | _ -> signals
                 let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
                 let signals = if destroy then Destroy :> Signal :: signals else signals
                 withSignals signals character
@@ -175,7 +175,7 @@ module CharacterDispatcher =
                 just world
 
             | PublishDie ->
-                let world = World.publish () entity.DieEvent entity world
+                let world = World.publish entity entity.DieEvent entity world
                 just world
 
             | Jump ->
