@@ -29,11 +29,14 @@ type AttackState =
 type InjuryState =
     { InjuryTime : int64 }
 
+type WoundState =
+    { WoundTime : int64 }
+
 type ActionState =
     | NormalState
     | AttackState of AttackState
     | InjuryState of InjuryState
-    | WoundedState
+    | WoundState of WoundState
 
 type [<ReferenceEquality; SymbolicExpansion>] Character =
     { CharacterType : CharacterType
@@ -83,7 +86,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | Enemy -> { CharacterProperties.defaultProperties with PenetrationDepthMax = 0.1f }
 
     static member private computeTraversalAnimations rotation linearVelocity angularVelocity character =
-        if character.ActionState <> WoundedState then
+        match character.ActionState with
+        | NormalState ->
             let rotationInterp = character.RotationInterp rotation
             let linearVelocityInterp = character.LinearVelocityInterp linearVelocity
             let angularVelocityInterp = character.AngularVelocityInterp angularVelocity
@@ -108,10 +112,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 elif turnLeftness >= 0.01f then Animation.make 0L None "Armature|TurnLeft" Loop 1.0f turnLeftness None :: animations
                 else animations
             animations
-        else []
+        | _ -> []
 
     static member private tryComputeActionAnimation time character =
         match character.ActionState with
+        | NormalState -> None
         | AttackState attack ->
             let localTime = time - attack.AttackTime
             let soundOpt =
@@ -121,14 +126,20 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 | _ -> None
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
-            let animation = Animation.make animationStartTime None animationName Once 1.0f 32.0f None
-            Some (soundOpt, animation)
+            let animation = Animation.once animationStartTime None animationName
+            Some (soundOpt, animation, false, false)
         | InjuryState injury ->
             let localTime = time - injury.InjuryTime
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
-            let animation = Animation.make animationStartTime None "Armature|WalkBack" Once 1.0f 32.0f None
-            (Some (None, animation))
-        | NormalState | WoundedState -> None
+            let animation = Animation.once animationStartTime None "Armature|WalkBack"
+            Some (None, animation, false, false)
+        | WoundState wound ->
+            let localTime = time - wound.WoundTime
+            let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
+            let animation = Animation.loop animationStartTime None "Armature|WalkBack"
+            let invisible = localTime / 5L % 2L = 0L
+            let destroy = match character.CharacterType with Player -> false | Enemy -> localTime > 60L
+            Some (None, animation, invisible, destroy)
 
     static member private updateInterps position rotation linearVelocity angularVelocity character =
 
@@ -213,6 +224,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
     static member private updateState time character =
         match character.ActionState with
+        | NormalState -> character
         | AttackState attack ->
             let actionState =
                 let localTime = time - attack.AttackTime
@@ -228,17 +240,16 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 then InjuryState injury
                 else NormalState
             { character with ActionState = actionState }
-        | NormalState -> character
-        | WoundedState -> character
+        | WoundState _ -> character
 
     static member private computeAnimations time position rotation linearVelocity angularVelocity character =
         ignore<Vector3> position
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
-        let (soundOpt, animations) =
+        let (soundOpt, animations, invisible, destroy) =
             match Character.tryComputeActionAnimation time character with
-            | Some (soundOpt, animation) -> (soundOpt, animation :: traversalAnimations)
-            | None -> (None, traversalAnimations)
-        (soundOpt, animations)
+            | Some (soundOpt, animation, invisible, destroy) -> (soundOpt, animation :: traversalAnimations, invisible, destroy)
+            | None -> (None, traversalAnimations, false, false)
+        (soundOpt, animations, invisible, destroy)
 
     static member private updateAttackedCharacters time character =
         match character.ActionState with
@@ -279,7 +290,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                         if localTime > 10L && not attack.FollowUpBuffered
                         then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
                         else character
-                    | InjuryState _ | WoundedState -> character
+                    | InjuryState _ | WoundState _ -> character
                 (false, character)
             else (false, character)
 
@@ -291,8 +302,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = Character.updateAction time position rotation playerPosition character
         let character = Character.updateState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        let (soundOpt, animations) = Character.computeAnimations time position rotation linearVelocity angularVelocity character
-        (soundOpt, animations, attackedCharacters, position, rotation, character)
+        let (soundOpt, animations, invisible, destroy) = Character.computeAnimations time position rotation linearVelocity angularVelocity character
+        (soundOpt, animations, invisible, destroy, attackedCharacters, position, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType
