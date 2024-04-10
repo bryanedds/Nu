@@ -199,7 +199,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         
             // enemy traversal
             if character.ActionState = NormalState then
-                let sphere = Sphere (playerPosition, 0.75f)
+                let sphere = Sphere (playerPosition, 0.7f) // slightly closer than attack range or else precision issue can make it just 'stand there'
                 let nearest = sphere.Nearest position
                 let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation nearest
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
