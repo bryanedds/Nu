@@ -825,7 +825,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         // create separation messages
         for entry in collisionsOld do
             let (bodySourceA, bodySourceB) = entry.Key
-            if not (physicsEngine.CollisionsFiltered.ContainsKey entry.Key) then
+            if  not (physicsEngine.CollisionsFiltered.ContainsKey entry.Key) &&
+                physicsEngine.Objects.ContainsKey bodySourceA &&
+                physicsEngine.Objects.ContainsKey bodySourceB then
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceA bodySourceB
                 PhysicsEngine3d.handleSeparation physicsEngine bodySourceB bodySourceA
 
