@@ -853,19 +853,19 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private tryLoadRenderAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer3d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
-        | ".raw" ->
+        | RawExtension _ ->
             match GlRenderer3d.tryLoadRawAsset asset renderer with
             | Some () -> Some RawAsset
             | None -> None
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" ->
+        | ImageExtension _ ->
             match GlRenderer3d.tryLoadTextureAsset assetClient asset renderer with
             | Some texture -> Some (TextureAsset texture)
             | None -> None
-        | ".cbm" ->
+        | CubeMapExtension _ ->
             match GlRenderer3d.tryLoadCubeMapAsset assetClient asset renderer with
             | Some (cubeMapKey, cubeMap, opt) -> Some (CubeMapAsset (cubeMapKey, cubeMap, opt))
             | None -> None
-        | ".fbx" | ".dae" | ".obj" ->
+        | ModelExtension _ ->
             match GlRenderer3d.tryLoadModelAsset assetClient asset renderer with
             | Some model ->
                 if model.Animated
@@ -893,9 +893,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
             | Right assetsCollected ->
 
-                // log when assets are being shared between 2d and 3d renders
-                if List.exists (fun (asset : Asset) -> asset.Associations.Contains Constants.Associations.Render2d) assetsCollected then
-                    Log.warnOnce ("Due to the limitations of the design of Nu's asset graph, having an asset that is associated with both Render2d and Render3d is not fully supported.")
+                // log when image assets are being shared between 2d and 3d renders
+                if List.exists (fun (asset : Asset) ->
+                    let extension = PathF.GetExtensionLower asset.FilePath
+                    match extension with
+                    | ImageExtension _ when asset.Associations.Contains Constants.Associations.Render2d -> true
+                    | _ -> false)
+                    assetsCollected then
+                    Log.warnOnce ("Due to the limitations of the design of Nu's asset graph, having an image asset that is associated with both Render2d and Render3d is not fully supported.")
 
                 // find or create render package
                 let renderPackage =

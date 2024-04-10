@@ -116,14 +116,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
     static member private tryLoadAudioAsset (asset : Asset) =
         match PathF.GetExtensionLower asset.FilePath with
-        | ".wav" ->
+        | SoundExtension _ ->
             let wavOpt = SDL_mixer.Mix_LoadWAV asset.FilePath
             if wavOpt <> IntPtr.Zero then Some (WavAsset wavOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
                 Log.info ("Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
-        | ".ogg" ->
+        | SongExtension _ ->
             let oggOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
             if oggOpt <> IntPtr.Zero then Some (OggAsset oggOpt)
             else

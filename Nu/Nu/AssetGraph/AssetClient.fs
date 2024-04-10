@@ -30,9 +30,9 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
         let assimpSceneAssets = List ()
         for asset in assets do
             match PathF.GetExtensionLower asset.FilePath with
-            | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" -> textureAssets.Add asset
-            | ".cbm" -> cubeMapAssets.Add asset
-            | ".fbx" | ".dae" | ".obj" -> assimpSceneAssets.Add asset
+            | ImageExtension _ -> textureAssets.Add asset
+            | CubeMapExtension _ -> cubeMapAssets.Add asset
+            | ModelExtension _ -> assimpSceneAssets.Add asset
             | _ -> ()
 
         // instantiate texture data loading ops

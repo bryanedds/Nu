@@ -184,14 +184,14 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private tryLoadRenderAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" ->
+        | ImageExtension _ ->
             match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath) with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->
                 Log.infoOnce ("Could not load texture '" + asset.FilePath + "' due to '" + error + "'.")
                 None
-        | ".ttf" ->
+        | FontExtension _ ->
             let fileFirstName = PathF.GetFileNameWithoutExtension asset.FilePath
             let fileFirstNameLength = String.length fileFirstName
             let fontSizeDefault =

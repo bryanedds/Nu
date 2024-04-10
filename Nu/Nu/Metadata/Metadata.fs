@@ -107,12 +107,12 @@ module Metadata =
     let private tryGenerateAssetMetadata (asset : Asset) =
         let extension = PathF.GetExtensionLower asset.FilePath
         match extension with
-        | ".raw" -> tryGenerateRawMetadata asset
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" -> tryGenerateTextureMetadata asset
-        | ".tmx" -> tryGenerateTileMapMetadata asset
-        | ".fbx" | ".dae" | ".obj" -> tryGenerateModelMetadata asset
-        | ".wav" -> Some SoundMetadata
-        | ".ogg" -> Some SongMetadata
+        | RawExtension _ -> tryGenerateRawMetadata asset
+        | ImageExtension _ -> tryGenerateTextureMetadata asset
+        | TileMapExtension _ -> tryGenerateTileMapMetadata asset
+        | ModelExtension _ -> tryGenerateModelMetadata asset
+        | SoundExtension _ -> Some SoundMetadata
+        | SongExtension _ -> Some SongMetadata
         | _ -> None
 
     let private tryGenerateMetadataPackage config packageName assetGraph =
