@@ -282,6 +282,15 @@ module AssetGraph =
             finally
                 Directory.SetCurrentDirectory currentDirectory
 
+        // log when image assets are being shared between 2d and 3d renders
+        if List.exists (fun (asset : Asset) ->
+            let extension = PathF.GetExtensionLower asset.FilePath
+            match extension with
+            | ImageExtension _ when asset.Associations.Contains Constants.Associations.Render2d -> true
+            | _ -> false)
+            assets then
+            Console.WriteLine "Warning: Due to asset graph limitations, associating image assets with both Render2d and Render3d is not fully supported."
+
         // build assets
         buildAssets5 inputDirectory outputDirectory refinementDirectory fullBuild assets
 

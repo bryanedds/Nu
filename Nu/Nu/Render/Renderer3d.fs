@@ -900,7 +900,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | ImageExtension _ when asset.Associations.Contains Constants.Associations.Render2d -> true
                     | _ -> false)
                     assetsCollected then
-                    Log.warnOnce ("Due to the limitations of Nu's asset graph, having an image asset that is associated with both Render2d and Render3d is not fully supported.")
+                    Log.warnOnce "Due to asset graph limitations, associating image assets with both Render2d and Render3d is not fully supported."
 
                 // find or create render package
                 let renderPackage =
