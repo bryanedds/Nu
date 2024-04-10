@@ -184,7 +184,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private tryLoadRenderAsset (assetClient : AssetClient) (asset : Asset) renderer =
         GlRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
-        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff"| ".dds" ->
+        | ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" ->
             match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath) with
             | Right texture ->
                 Some (TextureAsset texture)

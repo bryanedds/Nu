@@ -893,6 +893,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             match AssetGraph.tryCollectAssetsFromPackage (Some Constants.Associations.Render3d) packageName assetGraph with
             | Right assetsCollected ->
 
+                // log when assets are being shared between 2d and 3d renders
+                if List.exists (fun (asset : Asset) -> asset.Associations.Contains Constants.Associations.Render2d) assetsCollected then
+                    Log.warnOnce ("Due to the limitations of the design of Nu's asset graph, having an asset that is associated with both Render2d and Render3d is not fully supported.")
+
                 // find or create render package
                 let renderPackage =
                     match Dictionary.tryFind packageName renderer.RenderPackages with

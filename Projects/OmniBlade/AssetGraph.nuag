@@ -1,12 +1,12 @@
 [[Battle
-  [[Assets Assets/Battle [bmp png psd] [Render2d Render3d] [PsdToPng]]
+  [[Assets Assets/Battle [bmp png psd] [Render2d] [PsdToPng]]
    [Assets Assets/Battle [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Battle [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Battle [ogg wav] [Audio] []]
    [Assets Assets/Battle [csv nueffect nuscript] [Symbol] []]
    [Assets Assets/Battle [nuentity nugroup tmx tsx] [] []]]]
  [Castle
-  [[Assets Assets/Castle [bmp png psd] [Render2d Render3d] [PsdToPng]]
+  [[Assets Assets/Castle [bmp png psd] [Render2d] [PsdToPng]]
    [Assets Assets/Castle [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Castle [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Castle [ogg wav] [Audio] []]
@@ -16,14 +16,14 @@
   [[Assets Assets/Data [csv] [Symbol] []]]]
  [Default
   [[Asset Font "Assets/Default/FreeMonoBold.016.ttf" [Render2d] []]
-   [Assets Assets/Default [bmp png psd] [Render2d Render3d] [PsdToPng]]
+   [Assets Assets/Default [bmp png psd] [Render2d] [PsdToPng]]
    [Assets Assets/Default [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Default [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Default [ogg wav] [Audio] []]
    [Assets Assets/Default [csv nueffect nuscript] [Symbol] []]
    [Assets Assets/Default [nuentity nugroup tmx tsx] [] []]]]
  [Field
-  [[Assets Assets/Field [bmp png psd] [Render2d Render3d] [PsdToPng]]
+  [[Assets Assets/Field [bmp png psd] [Render2d] [PsdToPng]]
    [Assets Assets/Field [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Field [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Field [ogg wav] [Audio] []]
@@ -31,7 +31,7 @@
    [Assets Assets/Field [nuentity nugroup tmx tsx] [] []]]]
  [Gui
   [[Asset Font "Assets/Gui/Fonts/Manaspc.024.ttf" [Render2d] []]
-   [Assets Assets/Gui [bmp png psd] [Render2d Render3d] [PsdToPng]]
+   [Assets Assets/Gui [bmp png psd] [Render2d] [PsdToPng]]
    [Assets Assets/Gui [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Gui [cbm fbx dae obj mtl glsl raw] [Render3d] []]
    [Assets Assets/Gui [ogg wav] [Audio] []]
