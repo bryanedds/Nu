@@ -21,11 +21,11 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
-    /// Check that an asset with the given name or file path can utilize block compression (IE, it's not a normal map,
+    /// Check that an asset with the given file path can utilize block compression (IE, it's not a normal map,
     /// blend map, or specified as uncompressed).
     /// TODO: move this somewhere more general?
-    let BlockCompressable (assetNameOrFilePath : string) =
-        let name = PathF.GetFileNameWithoutExtension assetNameOrFilePath
+    let BlockCompressable (filePath : string) =
+        let name = PathF.GetFileNameWithoutExtension filePath
         not (name.EndsWith "_n") &&
         not (name.EndsWith "_u") &&
         not (name.EndsWith "_b") &&

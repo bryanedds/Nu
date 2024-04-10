@@ -255,7 +255,12 @@ module AssetGraph =
             let packageDescriptor = entry.Value
             yield! collectAssetsFromPackageDescriptor associationOpt packageName packageDescriptor] |>
         List.groupBy (fun asset -> asset.FilePath) |>
-        List.map (snd >> List.last)
+        List.map snd |>
+        List.map (List.reduce (fun asset asset2 ->
+            { AssetTag = AssetTag.make asset.AssetTag.PackageName asset.AssetTag.AssetName
+              FilePath = asset.FilePath
+              Refinements = List.append asset.Refinements asset2.Refinements
+              Associations = Set.union asset.Associations asset2.Associations } :> Asset))
 
     /// Build all the available assets found in the given asset graph.
     let buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph =
