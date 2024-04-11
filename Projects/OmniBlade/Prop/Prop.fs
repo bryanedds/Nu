@@ -36,16 +36,16 @@ module Prop =
         member this.PropState = this.PropState_
         member this.PropId = this.PropId_
 
-    let updatePerimeter updater (prop : Prop) =
+    let mapPerimeter updater (prop : Prop) =
         { prop with Perimeter_ = updater prop.Perimeter_ }
 
-    let updateCenter updater (prop : Prop) =
+    let mapCenter updater (prop : Prop) =
         { prop with Perimeter_ = prop.Center |> updater |> prop.Perimeter.WithCenter }
 
-    let updateBottom updater (prop : Prop) =
+    let mapBottom updater (prop : Prop) =
         { prop with Perimeter_ = prop.Bottom |> updater |> prop.Perimeter.WithBottom }
 
-    let updatePropState updater (prop : Prop) =
+    let mapPropState updater (prop : Prop) =
         { prop with PropState_ = updater prop.PropState_ }
 
     let make bounds elevation propData propState propId =

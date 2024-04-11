@@ -41,34 +41,34 @@ module Avatar =
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.CharacterAnimationState_
 
-    let updatePerimeter updater (avatar : Avatar) =
+    let mapPerimeter updater (avatar : Avatar) =
         let bounds = updater avatar.Perimeter_
         if bounds =/= avatar.Perimeter
         then { avatar with Perimeter_ = bounds }
         else avatar
 
-    let updateCenter updater (avatar : Avatar) =
-        updatePerimeter (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar
+    let mapCenter updater (avatar : Avatar) =
+        mapPerimeter (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar
 
-    let updateBottom updater (avatar : Avatar) =
-        updatePerimeter (fun bounds -> bounds.Bottom |> updater |> bounds.WithBottom) avatar
+    let mapBottom updater (avatar : Avatar) =
+        mapPerimeter (fun bounds -> bounds.Bottom |> updater |> bounds.WithBottom) avatar
 
-    let updateCharacterAnimationState updater (avatar : Avatar) =
+    let mapCharacterAnimationState updater (avatar : Avatar) =
         let characterAnimationState = updater avatar.CharacterAnimationState_
         if characterAnimationState =/= avatar.CharacterAnimationState_
         then { avatar with CharacterAnimationState_ = characterAnimationState }
         else avatar
 
-    let updateDirection updater (avatar : Avatar) =
-        updateCharacterAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
+    let mapDirection updater (avatar : Avatar) =
+        mapCharacterAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
 
     let lookAt bottomOffset (avatar : Avatar) =
         let delta = bottomOffset - avatar.BottomOffset
         let direction = Direction.ofVector3 delta
-        updateDirection (constant direction) avatar
+        mapDirection (constant direction) avatar
 
     let animate time characterAnimationType avatar =
-        updateCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType time characterAnimationType state) avatar
+        mapCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType time characterAnimationType state) avatar
 
     let make bounds animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; MaterializationOpt = None; Direction = direction }

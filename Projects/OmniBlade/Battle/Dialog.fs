@@ -28,7 +28,7 @@ type [<SymbolicExpansion>] Dialog =
             | DialogNarration -> detokenized
         String.tryTake dialog.DialogProgress text
 
-    static member advance (detokenize : string -> string) time dialog =
+    static member update (detokenize : string -> string) time dialog =
         let dialog =
             if time % 3L = 0L
             then { dialog with DialogProgress = inc dialog.DialogProgress }

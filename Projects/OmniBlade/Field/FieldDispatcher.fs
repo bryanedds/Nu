@@ -66,13 +66,13 @@ module FieldDispatcher =
             match message with
             | Update ->
 
-                // advance field
-                Field.advance field
+                // update field
+                Field.update field
 
             | TimeUpdate ->
 
-                // advance field time
-                Field.advanceUpdateTime field
+                // update field time
+                Field.updateFieldTime field
 
             | UpdateFieldTransition ->
 
@@ -85,7 +85,7 @@ module FieldDispatcher =
                     | (true, destinationData) ->
 
                         // start field transition
-                        let time = field.UpdateTime
+                        let time = field.FieldTime
                         let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
                         if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
 
@@ -105,8 +105,8 @@ module FieldDispatcher =
                             match destinationData.FieldType with // HACK: pre-generate fields.
                             | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
                             | _ -> ()
-                            let field = Field.updateFieldType world.UpdateTime (constant fieldTransition.FieldType) field
-                            let field = Field.updateAvatar (Avatar.updateDirection (constant fieldTransition.FieldDirection)) field
+                            let field = Field.mapFieldType world.UpdateTime (constant fieldTransition.FieldType) field
+                            let field = Field.mapAvatar (Avatar.mapDirection (constant fieldTransition.FieldDirection)) field
                             let warpAvatar = WarpAvatar fieldTransition.FieldDestination
                             let songCmd =
                                 match Field.getFieldSongOpt field with
@@ -120,9 +120,9 @@ module FieldDispatcher =
 
                         // finish field transition
                         elif time = fieldTransition.FieldTransitionTime then
-                            let startTime = field.UpdateTime
-                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
-                            let field = Field.updateFieldTransitionOpt (constant None) field
+                            let startTime = field.FieldTime
+                            let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
+                            let field = Field.mapFieldTransitionOpt (constant None) field
                             just field
 
                         // intermediate field transition state
@@ -137,8 +137,8 @@ module FieldDispatcher =
             | UpdateAvatarBodyTracking ->
 
                 // clear all temporary avatar body shapes
-                let field = Field.updateAvatarCollidedPropIds (constant []) field
-                let field = Field.updateAvatarSeparatedPropIds (constant []) field
+                let field = Field.mapAvatarCollidedPropIds (constant []) field
+                let field = Field.mapAvatarSeparatedPropIds (constant []) field
                 just field
 
             | AvatarBodyTransform transform ->
@@ -146,25 +146,25 @@ module FieldDispatcher =
                 // update avatar from transform if warped
                 let time = world.UpdateTime
                 let avatar = field.Avatar
-                let avatar = Avatar.updateCenter (constant transform.BodyCenter) avatar
+                let avatar = Avatar.mapCenter (constant transform.BodyCenter) avatar
                 let avatar =
                     let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
                     let speed = transform.BodyLinearVelocity.Magnitude
                     if speed > Constants.Field.AvatarIdleSpeedMax then
                         if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
-                            let avatar = Avatar.updateDirection (constant direction) avatar
+                            let avatar = Avatar.mapDirection (constant direction) avatar
                             Avatar.animate time WalkAnimation avatar
                         else avatar
                     else Avatar.animate time IdleAnimation avatar
-                just (Field.updateAvatar (constant avatar) field)
+                just (Field.mapAvatar (constant avatar) field)
 
             | AvatarBodyCollision collision ->
 
                 // add collided body shape
                 let field =
                     if isIntersectedProp collision.BodyShapeCollider collision.BodyShapeCollidee world then
-                        let field = Field.updateAvatarCollidedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                        let field = Field.updateAvatarIntersectedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                        let field = Field.mapAvatarCollidedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                        let field = Field.mapAvatarIntersectedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                         field
                     else field
                 just field
@@ -174,8 +174,8 @@ module FieldDispatcher =
                 // add separated body shape
                 let field =
                     if isIntersectedProp separation.BodyShapeSeparator separation.BodyShapeSeparatee world then
-                        let field = Field.updateAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                        let field = Field.updateAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
+                        let field = Field.mapAvatarSeparatedPropIds (List.cons ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                        let field = Field.mapAvatarIntersectedPropIds (List.remove ((=) ((separation.BodyShapeSeparatee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId)) field
                         field
                     else field
                 just field
@@ -187,23 +187,23 @@ module FieldDispatcher =
                 | :? Entity as entity when entity.Is<PropDispatcher> world ->
                     let propId = (entity.GetPropPlus world).Prop.PropId
                     let (separatedPropIds, intersectedPropIds) = List.split ((=) propId) field.AvatarIntersectedPropIds
-                    let field = Field.updateAvatarIntersectedPropIds (constant intersectedPropIds) field
-                    let field = Field.updateAvatarSeparatedPropIds ((@) separatedPropIds) field
+                    let field = Field.mapAvatarIntersectedPropIds (constant intersectedPropIds) field
+                    let field = Field.mapAvatarSeparatedPropIds ((@) separatedPropIds) field
                     just field
                 | _ -> just field
 
             | ScreenTransitioning transitioning ->
-                let field = Field.updateScreenTransitioning (constant transitioning) field
+                let field = Field.mapScreenTransitioning (constant transitioning) field
                 just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuState = state }) field
                 just field
 
             | MenuTeamAlly index ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         let state =
                             match menu.MenuState with
                             | MenuTeam menuTeam -> MenuTeam { menuTeam with TeamIndex = index }
@@ -214,12 +214,12 @@ module FieldDispatcher =
 
             | MenuInventoryOpen ->
                 let inventoryState = MenuInventory { InventoryPage = 0 }
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = inventoryState }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuState = inventoryState }) field
                 just field
 
             | MenuInventoryPageUp ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         match menu.MenuState with
                         | MenuInventory inventory -> { menu with MenuState = MenuInventory { InventoryPage = max 0 (dec inventory.InventoryPage) }}
                         | _ -> menu)
@@ -228,7 +228,7 @@ module FieldDispatcher =
 
             | MenuInventoryPageDown ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         match menu.MenuState with
                         | MenuInventory menuInventory -> { menu with MenuState = MenuInventory { InventoryPage = inc menuInventory.InventoryPage }}
                         | _ -> menu)
@@ -236,7 +236,7 @@ module FieldDispatcher =
                 just field
 
             | MenuInventorySelect (index, (itemType, _)) ->
-                let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = MenuUse.tryMakeFromSelection (index, itemType) }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuUseOpt = MenuUse.tryMakeFromSelection (index, itemType) }) field
                 just field
 
             | MenuInventoryUse index ->
@@ -246,27 +246,27 @@ module FieldDispatcher =
                     | Some menuUse ->
                         let itemType = snd menuUse.MenuUseSelection
                         let (result, displacedOpt, teammate) = Teammate.tryUseItem itemType teammate
-                        let field = if result then Field.updateInventory (Inventory.tryRemoveItem itemType >> snd) field else field
-                        let field = match displacedOpt with Some displaced -> Field.updateInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
-                        let field = Field.updateTeam (Map.add index teammate) field
-                        let field = Field.updateMenu (constant { field.Menu with MenuUseOpt = None }) field
+                        let field = if result then Field.mapInventory (Inventory.tryRemoveItem itemType >> snd) field else field
+                        let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
+                        let field = Field.mapTeam (Map.add index teammate) field
+                        let field = Field.mapMenu (constant { field.Menu with MenuUseOpt = None }) field
                         if result then withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                         else just field
                     | None -> just field
                 | None -> just field
 
             | MenuInventoryCancel ->
-                let field = Field.updateMenu (fun menu -> { menu with MenuUseOpt = None }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuUseOpt = None }) field
                 just field
 
             | MenuTechsOpen ->
                 let state = MenuTechs { TeamIndex = 0; TechIndexOpt = None }
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuState = state }) field
                 just field
             
             | MenuTechsAlly index ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         let state =
                             match menu.MenuState with
                             | MenuTechs menuTech -> MenuTechs { menuTech with TeamIndex = index }
@@ -277,7 +277,7 @@ module FieldDispatcher =
             
             | MenuTechsSelect techIndex ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         let state =
                             match menu.MenuState with
                             | MenuTechs menuTech -> MenuTechs { menuTech with TechIndexOpt = Some techIndex }
@@ -288,7 +288,7 @@ module FieldDispatcher =
             
             | MenuTechClose ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         let state =
                             match menu.MenuState with
                             | MenuTechs menuTech -> MenuTechs { menuTech with TechIndexOpt = None }
@@ -299,12 +299,12 @@ module FieldDispatcher =
 
             | MenuKeyItemsOpen ->
                 let inventoryState = MenuKeyItems { KeyItemsPage = 0 }
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = inventoryState }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuState = inventoryState }) field
                 just field
 
             | MenuKeyItemsPageUp ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         match menu.MenuState with
                         | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { KeyItemsPage = max 0 (dec menuKeyItems.KeyItemsPage) }}
                         | _ -> menu)
@@ -313,7 +313,7 @@ module FieldDispatcher =
 
             | MenuKeyItemsPageDown ->
                 let field =
-                    Field.updateMenu (fun menu ->
+                    Field.mapMenu (fun menu ->
                         match menu.MenuState with
                         | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { KeyItemsPage = inc menuKeyItems.KeyItemsPage }}
                         | _ -> menu)
@@ -325,11 +325,11 @@ module FieldDispatcher =
 
             | MenuOptionsOpen ->
                 let state = MenuOptions false
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = state }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuState = state }) field
                 just field
 
             | MenuOptionsSelectBattleSpeed battleSpeed ->
-                let field = Field.updateOptions (constant { BattleSpeed = battleSpeed }) field
+                let field = Field.mapOptions (constant { BattleSpeed = battleSpeed }) field
                 just field
 
             | MenuOptionsQuitPrompt ->
@@ -345,16 +345,16 @@ module FieldDispatcher =
                 just field
 
             | MenuClose ->
-                let field = Field.updateMenu (fun menu -> { menu with MenuState = MenuClosed }) field
+                let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuClosed }) field
                 just field
 
             | PartyMenuOpen ->
-                let field = Field.updatePartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [] }) field
+                let field = Field.mapPartyMenu (fun partyMenu -> { partyMenu with PartyMenuState = PartyMenuOpened; PartyMenuSelections = [] }) field
                 just field
 
             | PartyMenuSelect teamIndex ->
                 let field =
-                    Field.updatePartyMenu (fun partyMenu ->
+                    Field.mapPartyMenu (fun partyMenu ->
                         if not (List.contains teamIndex partyMenu.PartyMenuSelections)
                         then { partyMenu with PartyMenuSelections = partyMenu.PartyMenuSelections @ [teamIndex] }
                         else partyMenu)
@@ -363,35 +363,35 @@ module FieldDispatcher =
 
             | PartyMenuDeselect teamIndex ->
                 let field =
-                    Field.updatePartyMenu (fun partyMenu ->
+                    Field.mapPartyMenu (fun partyMenu ->
                         { partyMenu with PartyMenuSelections = List.remove ((=) teamIndex) partyMenu.PartyMenuSelections })
                         field
                 just field
 
             | PartyMenuClose ->
                 let field = Field.arrangeTeam field.PartyMenu.PartyMenuSelections field
-                let field = Field.updatePartyMenu (constant { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }) field
+                let field = Field.mapPartyMenu (constant { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }) field
                 just field
 
             | ShopBuy ->
-                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopState = ShopBuying; ShopPage = 0 })) field
+                let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopState = ShopBuying; ShopPage = 0 })) field
                 just field
 
             | ShopSell ->
-                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopState = ShopSelling; ShopPage = 0 })) field
+                let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopState = ShopSelling; ShopPage = 0 })) field
                 just field
 
             | ShopPageUp ->
-                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopPage = max 0 (dec shop.ShopPage) })) field
+                let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopPage = max 0 (dec shop.ShopPage) })) field
                 just field
 
             | ShopPageDown ->
-                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopPage = inc shop.ShopPage })) field
+                let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopPage = inc shop.ShopPage })) field
                 just field
 
             | ShopSelect (index, (itemType, _)) ->
                 let field =
-                    Field.updateShopOpt (Option.map (fun shop ->
+                    Field.mapShopOpt (Option.map (fun shop ->
                         let buying = match shop.ShopState with ShopBuying -> true | ShopSelling -> false
                         let shopConfirmOpt = ShopConfirm.tryMakeFromSelection buying field.Inventory (index, itemType)
                         { shop with ShopConfirmOpt = shopConfirmOpt }))
@@ -411,20 +411,20 @@ module FieldDispatcher =
                                 field.Inventory.Gold >= shopConfirm.ShopConfirmPrice
                             | ShopSelling -> true
                         if valid then
-                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
-                            let field = Field.updateInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
-                            let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
+                            let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
+                            let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
+                            let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
                             withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
                         else withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                     | None -> just field
                 | None -> just field
 
             | ShopConfirmDecline ->
-                let field = Field.updateShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
+                let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
                 just field
 
             | ShopLeave ->
-                let field = Field.updateShopOpt (constant None) field
+                let field = Field.mapShopOpt (constant None) field
                 just field
 
             | PromptLeft ->
@@ -432,8 +432,8 @@ module FieldDispatcher =
                 | Some dialog ->
                     match dialog.DialogPromptOpt with
                     | Some ((_, promptCue), _) ->
-                        let field = Field.updateDialogOpt (constant None) field
-                        let field = Field.updateCue (constant promptCue) field
+                        let field = Field.mapDialogOpt (constant None) field
+                        let field = Field.mapCue (constant promptCue) field
                         just field
                     | None -> just field
                 | None -> just field
@@ -443,8 +443,8 @@ module FieldDispatcher =
                 | Some dialog ->
                     match dialog.DialogPromptOpt with
                     | Some (_, (_, promptCue)) ->
-                        let field = Field.updateDialogOpt (constant None) field
-                        let field = Field.updateCue (constant promptCue) field
+                        let field = Field.mapDialogOpt (constant None) field
+                        let field = Field.mapCue (constant promptCue) field
                         just field
                     | None -> just field
                 | None -> just field
@@ -452,7 +452,7 @@ module FieldDispatcher =
             | TryBattle (battleType, consequents) ->
                 match Map.tryFind battleType Data.Value.Battles with
                 | Some battleData ->
-                    let time = field.UpdateTime
+                    let time = field.FieldTime
                     let playTime = Option.defaultValue time field.FieldSongTimeOpt
                     let startTime = time - playTime
                     let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
@@ -549,7 +549,7 @@ module FieldDispatcher =
                 let speed = linearVelocity.Magnitude
                 let field =
                     if speed <= Constants.Field.AvatarIdleSpeedMax
-                    then Field.updateAvatar (Avatar.updateDirection (constant direction)) field
+                    then Field.mapAvatar (Avatar.mapDirection (constant direction)) field
                     else field
                 let world = screen.SetField field world
                 just world
@@ -562,7 +562,7 @@ module FieldDispatcher =
                         let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                         if not (AssetTag.equals fieldSong currentSong.Song) then
                             let (playTime, startTime) =
-                                let time = field.UpdateTime
+                                let time = field.FieldTime
                                 match field.FieldSongTimeOpt with
                                 | Some playTime ->
                                     let startTime = time - playTime
@@ -571,14 +571,14 @@ module FieldDispatcher =
                                     else (0L, time)
                                 | None -> (0L, time)
                             let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
-                            let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
+                            let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
                             let world = screen.SetField field world
                             withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
                         else just world
                     | (Some fieldSong, None) ->
                         let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                         let (playTime, startTime) =
-                            let time = field.UpdateTime
+                            let time = field.FieldTime
                             match field.FieldSongTimeOpt with
                             | Some playTime ->
                                 let startTime = time - playTime
@@ -587,7 +587,7 @@ module FieldDispatcher =
                                 else (0L, time)
                             | None -> (0L, time)
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
-                        let field = Field.updateFieldSongTimeOpt (constant (Some startTime)) field
+                        let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
                         withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
                     | (None, _) -> just world
@@ -623,7 +623,7 @@ module FieldDispatcher =
                  // props
                  for (index, prop) in field.Props.Pairs do
                     Content.entity<PropDispatcher> ("Prop+" + string index)
-                        [Entity.PropPlus := PropPlus.make field.UpdateTime field.Avatar.Bottom field.Advents prop]
+                        [Entity.PropPlus := PropPlus.make field.FieldTime field.Avatar.Bottom field.Advents prop]
 
                  // spirit orb
                  if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then
@@ -661,7 +661,7 @@ module FieldDispatcher =
                      Entity.Color :=
                         match field.FieldTransitionOpt with
                         | Some transition ->
-                            let time = field.UpdateTime
+                            let time = field.FieldTime
                             let localTime = single transition.FieldTransitionTime - single time
                             let halfTransitionTime = single (dec Constants.Field.TransitionTime) * 0.5f
                             let progress =

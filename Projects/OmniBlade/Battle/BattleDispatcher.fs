@@ -46,7 +46,7 @@ module BattleDispatcher =
 
             match message with
             | Update ->
-                Battle.advance battle
+                Battle.update battle
 
             | UpdateRideTokens rideTokens ->
                 match Map.tryFind "Tag" rideTokens with
@@ -54,23 +54,23 @@ module BattleDispatcher =
                     match battle.CurrentCommandOpt with
                     | Some command ->
                         let character = command.ActionCommand.SourceIndex
-                        let battle = Battle.updateCharacterBottom (constant rideToken.Position) character battle
+                        let battle = Battle.mapCharacterBottom (constant rideToken.Position) character battle
                         just battle
                     | None -> just battle
                 | None -> just battle
 
             | TimeUpdate ->
-                Battle.advanceUpdateTime battle
+                Battle.updateBattleTime battle
 
             | InteractDialog ->
                 match battle.DialogOpt with
                 | Some dialog ->
                     match Dialog.tryAdvance id dialog with
                     | (true, dialog) ->
-                        let battle = Battle.updateDialogOpt (constant (Some dialog)) battle
+                        let battle = Battle.mapDialogOpt (constant (Some dialog)) battle
                         just battle
                     | (false, _) ->
-                        let battle = Battle.updateDialogOpt (constant None) battle
+                        let battle = Battle.mapDialogOpt (constant None) battle
                         just battle
                 | None -> just battle
 
@@ -79,26 +79,26 @@ module BattleDispatcher =
                     match item with
                     | "Attack" ->
                         battle |>
-                        Battle.updateCharacterInputState (constant (AimReticles (item, EnemyAim true))) characterIndex |>
+                        Battle.mapCharacterInputState (constant (AimReticles (item, EnemyAim true))) characterIndex |>
                         Battle.undefendCharacter characterIndex
                     | "Defend" ->
-                        let battle = Battle.updateCharacterInputState (constant NoInput) characterIndex battle
+                        let battle = Battle.mapCharacterInputState (constant NoInput) characterIndex battle
                         let command = ActionCommand.make Defend characterIndex None None
                         let battle = Battle.appendActionCommand command battle
                         battle
                     | "Tech" ->
                         battle |>
-                        Battle.updateCharacterInputState (constant TechMenu) characterIndex |>
+                        Battle.mapCharacterInputState (constant TechMenu) characterIndex |>
                         Battle.undefendCharacter characterIndex
                     | "Consumable" ->
                         battle |>
-                        Battle.updateCharacterInputState (constant ItemMenu) characterIndex |>
+                        Battle.mapCharacterInputState (constant ItemMenu) characterIndex |>
                         Battle.undefendCharacter characterIndex
                     | _ -> failwithumf ()
                 just battle
 
             | RegularItemCancel characterIndex ->
-                let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
+                let battle = Battle.mapCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle
 
             | ConsumableItemSelect (characterIndex, item) ->
@@ -108,11 +108,11 @@ module BattleDispatcher =
                     match Data.Value.Consumables.TryGetValue consumableType with
                     | (true, consumableData) -> consumableData.AimType
                     | (false, _) -> NoAim
-                let battle = Battle.updateCharacterInputState (constant (AimReticles (item, aimType))) characterIndex battle
+                let battle = Battle.mapCharacterInputState (constant (AimReticles (item, aimType))) characterIndex battle
                 just battle
 
             | ConsumableItemCancel characterIndex ->
-                let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
+                let battle = Battle.mapCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle
 
             | TechItemSelect (characterIndex, item) ->
@@ -122,11 +122,11 @@ module BattleDispatcher =
                     match Data.Value.Techs.TryGetValue techType with
                     | (true, techData) -> techData.AimType
                     | (false, _) -> NoAim
-                let battle = Battle.updateCharacterInputState (constant (AimReticles (item, aimType))) characterIndex battle
+                let battle = Battle.mapCharacterInputState (constant (AimReticles (item, aimType))) characterIndex battle
                 just battle
 
             | TechItemCancel characterIndex ->
-                let battle = Battle.updateCharacterInputState (constant RegularMenu) characterIndex battle
+                let battle = Battle.mapCharacterInputState (constant RegularMenu) characterIndex battle
                 just battle
 
             | ReticlesSelect (sourceIndex, targetIndex) ->
@@ -394,7 +394,7 @@ module BattleDispatcher =
                  for (index, character) in (Battle.getCharacters battle).Pairs do
 
                     // character
-                    let characterPlus = CharacterPlus.make battle.UpdateTime character
+                    let characterPlus = CharacterPlus.make battle.BattleTime character
                     Content.entity<CharacterDispatcher> (CharacterIndex.toEntityName index) [Entity.CharacterPlus := characterPlus]
 
                  // hud
@@ -413,7 +413,7 @@ module BattleDispatcher =
                                  Entity.Fill := single character.HitPoints / single character.HitPointsMax
                                  Entity.FillInset := 1.0f / 12.0f
                                  Entity.FillColor :=
-                                    (let pulseTime = battle.UpdateTime % Constants.Battle.CharacterFillColorPulseDuration
+                                    (let pulseTime = battle.BattleTime % Constants.Battle.CharacterFillColorPulseDuration
                                      let pulseProgress = single pulseTime / single Constants.Battle.CharacterFillColorPulseDuration
                                      let pulseIntensity = byte (sin (pulseProgress * MathF.PI) * 127.0f) / byte 2 + byte 32
                                      match character.AutoBattleOpt with

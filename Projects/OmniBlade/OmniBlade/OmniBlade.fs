@@ -123,7 +123,7 @@ module OmniBlade =
                             if field =/= field' then Field field' else model
                         | Some battle ->
                             let battle' = Simulants.Battle.GetBattle world
-                            if battle =/= battle' then Field (Field.updateBattleOpt (constant (Some battle')) field) else model
+                            if battle =/= battle' then Field (Field.mapBattleOpt (constant (Some battle')) field) else model
 
                 // update model
                 let model =
@@ -142,8 +142,8 @@ module OmniBlade =
                             | BattleQuitting (_, outcome, consequents) ->
                                 if outcome then
                                     let field = Field.exitBattle consequents battle field
-                                    Field (Field.updateBattleOpt (constant None) field)
-                                else Field (Field.updateFieldState (constant Quitting) field)
+                                    Field (Field.mapBattleOpt (constant None) field)
+                                else Field (Field.mapFieldState (constant Quitting) field)
                             | _ -> model
                         | None -> model
 

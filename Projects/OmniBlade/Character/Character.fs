@@ -401,18 +401,18 @@ module Character =
     let burndownStatuses burndownTime character =
         { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
 
-    let updateCharacterInputState updater character =
+    let mapCharacterInputState updater character =
         { character with CharacterInputState_ = updater character.CharacterInputState_ }
 
-    let updateStatuses updater character =
+    let mapStatuses updater character =
         let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
         { character with CharacterState_ = characterState }
 
-    let updateVulnerabilities updater character =
+    let mapVulnerabilities updater character =
         let characterState = { character.CharacterState_ with Vulnerabilities = updater character.CharacterState_.Vulnerabilities }
         { character with CharacterState_ = characterState }
 
-    let updateHitPoints updater affectWounded alliesHealthy character =
+    let mapHitPoints updater affectWounded alliesHealthy character =
         let (cancelled, characterState) =
             if character.CharacterState_.Healthy || affectWounded then
                 let (cancel, hitPoints) = updater character.CharacterState_.HitPoints
@@ -435,28 +435,28 @@ module Character =
             else character.ActionTime_
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt; ActionTime_ = actionTime }
 
-    let updateTechPoints updater character =
+    let mapTechPoints updater character =
         { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
 
-    let updateExpPoints updater character =
+    let mapExpPoints updater character =
         { character with CharacterState_ = CharacterState.updateExpPoints updater character.CharacterState_ }
 
-    let updateConjureChargeOpt updater character =
+    let mapConjureChargeOpt updater character =
         { character with ConjureChargeOpt_ = updater character.ConjureChargeOpt_ }
 
-    let updateTechChargeOpt updater character =
+    let mapTechChargeOpt updater character =
         { character with TechChargeOpt_ = updater character.TechChargeOpt_ }
 
-    let updateAutoBattleOpt updater character =
+    let mapAutoBattleOpt updater character =
         { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
 
-    let updateActionTime updater character =
+    let mapActionTime updater character =
         { character with ActionTime_ = updater character.ActionTime_ }
 
-    let updatePerimeter updater (character : Character) =
+    let mapPerimeter updater (character : Character) =
         { character with Perimeter_ = updater character.Perimeter_ }
 
-    let updateBottom updater (character : Character) =
+    let mapBottom updater (character : Character) =
         { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
 
     let restore (character : Character) =
@@ -465,12 +465,12 @@ module Character =
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.Healthy then
             let character =
-                updateStatuses (fun statuses ->
+                mapStatuses (fun statuses ->
                     let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.StatusBurndownTime statuses) statuses statusesAdded
                     let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
                     statuses)
                     character
-            updateActionTime (fun actionTime ->
+            mapActionTime (fun actionTime ->
                 if  Set.exists (function Time false -> true | _ -> false) statusesAdded &&
                     actionTime < Constants.Battle.ActionTime then
                     let slowScalar =
@@ -483,16 +483,16 @@ module Character =
         else character
 
     let applyVulnerabilityChanges vulnerabilitiesAdded vulnerabilitiesRemoved (character : Character) =
-        updateVulnerabilities (fun vulnerabilities ->
+        mapVulnerabilities (fun vulnerabilities ->
             let vulnerabilities = Map.fold (fun vulnerabilities vulnerabilityType vulnerabilityRank -> Map.add vulnerabilityType vulnerabilityRank vulnerabilities) vulnerabilities vulnerabilitiesAdded
             let vulnerabilities = Set.fold (fun vulnerabilities vulnerabilityType -> Map.remove vulnerabilityType vulnerabilities) vulnerabilities vulnerabilitiesRemoved
             vulnerabilities)
             character
 
     let resetConjureCharge character =
-        updateConjureChargeOpt (Option.map (constant -Constants.Battle.ConjureChargeRate)) character
+        mapConjureChargeOpt (Option.map (constant -Constants.Battle.ConjureChargeRate)) character
 
-    let advanceConjureCharge (character : Character) =
+    let updateConjureCharge (character : Character) =
         if hasConjureTechs character then
             match character.ConjureChargeOpt with
             | Some conjureCharge ->
@@ -502,7 +502,7 @@ module Character =
         else character
 
     let resetTechCharge (character : Character) =
-        updateTechChargeOpt
+        mapTechChargeOpt
             (function
              | Some (_, chargeAmount, _) as chargeTechOpt ->
                 if chargeAmount >= Constants.Battle.ChargeMax then
@@ -512,8 +512,8 @@ module Character =
              | None -> None)
             character
 
-    let advanceTechCharge (character : Character) =
-        updateTechChargeOpt
+    let updateTechCharge (character : Character) =
+        mapTechChargeOpt
             (function
              | Some (chargeRate, chargeAmount, techType) -> Some (chargeRate, chargeRate + chargeAmount, techType)
              | None -> None)
@@ -524,8 +524,8 @@ module Character =
         // TODO: once techs have the ability to revive, check for that in the curative case.
         ignore (alliesWounded, enemiesSwooning)
 
-        // advance tech charge
-        let source = advanceTechCharge source
+        // update tech charge
+        let source = updateTechCharge source
 
         // choose a tech
         let (techOpt, isChargeTech) =

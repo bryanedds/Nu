@@ -48,7 +48,7 @@ type SpiritState =
       SpiritMovementStart : int64
       SpiritMovementCachedOpt : Vector3 option }
 
-    static member advance time (position : Vector3) (target : Vector3) spiritState =
+    static member update time (position : Vector3) (target : Vector3) spiritState =
         let localTime = time - spiritState.SpiritMovementStart
         let spiritState =
             if localTime >= Constants.Field.SpiritMovementDuration then
@@ -107,8 +107,8 @@ module Spirit =
         member this.SpiritType = this.SpiritType_
         member this.SpiritState = this.SpiritState_
 
-        static member advance time target (spirit : Spirit) =
-            let (movement, state) = SpiritState.advance time spirit.Center target spirit.SpiritState
+        static member update time target (spirit : Spirit) =
+            let (movement, state) = SpiritState.update time spirit.Center target spirit.SpiritState
             { spirit with
                 Perimeter_ = spirit.Perimeter_.Translate movement
                 SpiritState_ = state }
