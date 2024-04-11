@@ -66,6 +66,9 @@ module internal Quadnode =
               Comparer_ : 'e QuadelementEqualityComparer
               Leaves_ : Dictionary<Vector2, 'e Quadnode> }
 
+        override this.ToString () =
+            ""
+
         member this.Id = this.Id_
 
     let internal makeChildren<'e when 'e : equality> node =
