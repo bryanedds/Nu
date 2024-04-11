@@ -4,9 +4,7 @@
   [Persistent True]
   [Visible True]]
  [[Entity3dDispatcher
-   [[FacetNames [LightingConfigFacet Nav3dConfigFacet]]
-    [Name Environment]
-    [Presence Omnipresent]]
+   [[Name Environment] [Presence Omnipresent]]
    [[Light3dDispatcher
      [[AttenuationLinear 0.005050505]
       [AttenuationQuadratic 0.00028058363]
