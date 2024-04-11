@@ -161,7 +161,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         // fin
         character
 
-    static member private updateMotion isKeyboardKeyDown nav3dFollow time position (rotation : Quaternion) grounded playerPosition character =
+    static member private updateMotion isKeyboardKeyDown nav3dFollow time position (rotation : Quaternion) grounded (playerPosition : Vector3) character =
 
         // update jump state
         let lastTimeOnGround = if grounded then time else character.JumpState.LastTimeOnGround
@@ -199,7 +199,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         
             // enemy traversal
             if character.ActionState = NormalState then
-                let sphere = Sphere (playerPosition, 0.7f) // slightly closer than attack range or else precision issue can make it just 'stand there'
+                let sphere =
+                    if position.Y - playerPosition.Y >= 0.25f
+                    then Sphere (playerPosition, 0.1f) // when above player
+                    else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
                 let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation nearest
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
@@ -213,11 +216,16 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
                 let positionFlat = position.WithY 0.0f
                 let playerPositionFlat = playerPosition.WithY 0.0f
-                if  Vector3.Distance (playerPosition, position) < 1.75f &&
-                    rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.2f && 
-                    playerPosition.Y - position.Y < 1.3f &&
-                    position.Y - playerPosition.Y < 1.3f then
-                    { character with ActionState = AttackState (AttackState.make time) }
+                if position.Y - playerPosition.Y >= 0.25f then // above player
+                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
+                        rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
+                        { character with ActionState = AttackState (AttackState.make time) }
+                    else character
+                elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
+                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
+                        rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
+                        { character with ActionState = AttackState (AttackState.make time) }
+                    else character
                 else character
             | _ -> character
         | Player -> character

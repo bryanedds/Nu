@@ -2229,16 +2229,14 @@ module LightingConfigFacetModule =
     type LightingConfigFacet () =
         inherit Facet (false)
 
-        static let configureLighting (entity : Entity) world =
+        static member Properties =
+            [define Entity.LightingConfig LightingConfig.defaultConfig
+             define Entity.Presence Omnipresent
+             define Entity.AlwaysUpdate true]
+
+        override this.Update (entity, world) =
             let lightingConfig = entity.GetLightingConfig world
             World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
-
-        static member Properties =
-            [define Entity.LightingConfig LightingConfig.defaultConfig]
-
-        override this.Register (entity, world) =
-            let world = World.sense (fun evt world -> configureLighting evt.Subscriber world; (Cascade, world)) (entity.ChangeEvent (nameof entity.LightingConfig)) entity (nameof LightingConfigFacet) world
-            configureLighting entity world
             world
 
 [<AutoOpen>]
