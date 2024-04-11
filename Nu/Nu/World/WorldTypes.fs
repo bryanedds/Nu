@@ -135,40 +135,40 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
         | (true, world) -> world
         | (false, _) -> failwith ("Lens for '" + this.Name + "' is readonly.")
 
-    /// Attempt to update the lensed property's value using the given updater function that also receives the world as input.
-    member this.TryUpdateWorld (updater : 'a -> World -> 'a) world =
+    /// Attempt to transform the lensed property's value using the given updater function that also receives the world as input.
+    member this.TryMapWorld (mapper : 'a -> World -> 'a) world =
         let value = this.Get world
-        let value' = updater value world
+        let value' = mapper value world
         this.TrySet value' world
 
-    /// Attempt to update the lensed property's value using the given updater function, optionally updating the world value in the process.
-    member this.TryUpdateEffect (updater : 'a -> World -> ('a * World)) (world : World) =
+    /// Attempt to transform the lensed property's value using the given updater function, optionally updating the world value in the process.
+    member this.TryMapEffect (mapper : 'a -> World -> ('a * World)) (world : World) =
         let value = this.Get world
-        let (value', world) = updater value world
+        let (value', world) = mapper value world
         this.TrySet value' world
 
-    /// Attempt to update the lensed property's value using the given updater function.
-    member this.TryUpdate (updater : 'a -> 'a) world =
-        this.TryUpdateWorld (fun value _ -> updater value) world
+    /// Attempt to transform the lensed property's value using the given updater function.
+    member this.TryMap (mapper : 'a -> 'a) world =
+        this.TryMapWorld (fun value _ -> mapper value) world
 
     /// Update the lensed property's value using the given updater function that also receives the world as input.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    member this.UpdateWorld updater world =
-        match this.TryUpdateWorld updater world with
+    member this.MapWorld mapper world =
+        match this.TryMapWorld mapper world with
         | (true, world) -> world
         | (false, _) -> failwithumf ()
 
     /// Update the lensed property's value using the given updater function, optionally updating the world value in the process.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    member this.UpdateEffect updater world =
-        match this.TryUpdateEffect updater world with
+    member this.MapEffect mapper world =
+        match this.TryMapEffect mapper world with
         | (true, world) -> world
         | (false, _) -> failwithumf ()
 
     /// Update the lensed property's value using the given updater function.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    member this.Update updater world =
-        match this.TryUpdate updater world with
+    member this.Map mapper world =
+        match this.TryMap mapper world with
         | (true, world) -> world
         | (false, _) -> failwithumf ()
 
@@ -188,39 +188,39 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
 
     /// Adds the specified value to the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( += ) (lens : Lens<_, _>, value) =  lens.Update (flip (+) value)
+    static member inline ( += ) (lens : Lens<_, _>, value) =  lens.Map (flip (+) value)
 
     /// Subtracts the specified value from the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Update (flip (-) value)
+    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Map (flip (-) value)
 
     /// Multiplies the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Update (flip (*) value)
+    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Map (flip (*) value)
 
     /// Divides the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Update (flip (/) value)
+    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Map (flip (/) value)
 
     /// Computes the modulus of the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Update (flip (%) value)
+    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Map (flip (%) value)
 
     /// Negates the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( ~+ ) (lens : Lens<_, _>) =  lens.Update (~+)
+    static member inline ( ~+ ) (lens : Lens<_, _>) =  lens.Map (~+)
 
     /// Negates the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( ~- ) (lens : Lens<_, _>) =  lens.Update (~-)
+    static member inline ( ~- ) (lens : Lens<_, _>) =  lens.Map (~-)
 
     /// Increments the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( !+ ) (lens : Lens<_, _>) =  lens.Update inc
+    static member inline ( !+ ) (lens : Lens<_, _>) =  lens.Map inc
 
     /// Decrements the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( !- ) (lens : Lens<_, _>) =  lens.Update dec
+    static member inline ( !- ) (lens : Lens<_, _>) =  lens.Map dec
 
     /// Set a lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
@@ -1882,23 +1882,23 @@ module Lens =
     let set<'a, 's when 's :> Simulant> a (lens : Lens<'a, 's>) world =
         lens.Set a world
 
-    let tryUpdateEffect<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
-        lens.TryUpdateEffect updater world
+    let tryMapEffect<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.TryMapEffect mapper world
 
-    let tryUpdateWorld<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
-        lens.TryUpdateWorld updater world
+    let tryMapWorld<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.TryMapWorld mapper world
 
-    let tryUpdate<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
-        lens.TryUpdate updater world
+    let tryMap<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.TryMap mapper world
 
-    let updateEffect<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
-        lens.UpdateEffect updater world
+    let mapEffect<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.MapEffect mapper world
 
-    let updateWorld<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
-        lens.UpdateWorld updater world
+    let mapWorld<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.MapWorld mapper world
 
-    let update<'a, 's when 's :> Simulant> updater (lens : Lens<'a, 's>) world =
-        lens.Update updater world
+    let map<'a, 's when 's :> Simulant> mapper (lens : Lens<'a, 's>) world =
+        lens.Map mapper world
 
     let changeEvent<'a, 's when 's :> Simulant> (lens : Lens<'a, 's>) =
         lens.ChangeEvent

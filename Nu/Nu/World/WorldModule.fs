@@ -153,8 +153,8 @@ module WorldModule =
         static member internal getAmbientStateBy by world =
             by world.AmbientState
 
-        static member internal updateAmbientState updater world =
-            World.choose { world with AmbientState = updater world.AmbientState }
+        static member internal mapAmbientState mapper world =
+            World.choose { world with AmbientState = mapper world.AmbientState }
 
         /// Check that the update rate is non-zero.
         static member getAdvancing (world : World) =
@@ -166,11 +166,11 @@ module WorldModule =
 
         /// Set whether the world state is advancing.
         static member setAdvancing advancing world =
-            World.frame (World.updateAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
+            World.frame (World.mapAmbientState (AmbientState.setAdvancing advancing)) Game.Handle world
 
         /// Set whether the world's frame rate is being explicitly paced based on clock progression.
         static member setFramePacing clockPacing world =
-            World.updateAmbientState (AmbientState.setFramePacing clockPacing) world
+            World.mapAmbientState (AmbientState.setFramePacing clockPacing) world
 
         /// Check that the world is executing with imperative semantics where applicable.
         static member getImperative (world : World) =
@@ -197,7 +197,7 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.getLiveness world
 
         static member internal updateTime world =
-            World.updateAmbientState AmbientState.updateTime world
+            World.mapAmbientState AmbientState.updateTime world
 
         /// Get the world's update time.
         static member getUpdateTime world =
@@ -225,7 +225,7 @@ module WorldModule =
 
         /// Place the engine into a state such that the app will exit at the end of the current frame.
         static member exit world =
-            World.updateAmbientState AmbientState.exit world
+            World.mapAmbientState AmbientState.exit world
 
         static member internal getKeyValueStoreBy by world =
             World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
@@ -234,10 +234,10 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.getKeyValueStore world
 
         static member internal setKeyValueStore symbolics world =
-            World.updateAmbientState (AmbientState.setKeyValueStore symbolics) world
+            World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
 
-        static member internal updateKeyValueStore updater world =
-            World.updateAmbientState (AmbientState.updateKeyValueStore updater) world
+        static member internal mapKeyValueStore mapper world =
+            World.mapAmbientState (AmbientState.mapKeyValueStore mapper) world
 
         static member internal tryGetKeyedValueFast<'k, 'v> (key : 'k, world, value : 'v outref) =
             let ambientState = World.getAmbientState world
@@ -260,31 +260,31 @@ module WorldModule =
 
         /// Add a value to the world's key value store.
         static member addKeyedValue<'k, 'v> (key : 'k) (value : 'v) world =
-            World.updateKeyValueStore (SUMap.add (key :> obj) (value :> obj)) world
+            World.mapKeyValueStore (SUMap.add (key :> obj) (value :> obj)) world
 
         /// Remove a value from the world's key value store.
         static member removeKeyedValue<'k> (key : 'k) world =
-            World.updateKeyValueStore (SUMap.remove (key :> obj)) world
+            World.mapKeyValueStore (SUMap.remove (key :> obj)) world
 
         /// Transform a value in the world's key value store if it exists.
-        static member updateKeyedValue<'k, 'v> (updater : 'v -> 'v) (key : 'k) world =
-            World.addKeyedValue<'k, 'v> key (updater (World.getKeyedValue<'k, 'v> key world)) world
+        static member mapKeyedValue<'k, 'v> (mapper : 'v -> 'v) (key : 'k) world =
+            World.addKeyedValue<'k, 'v> key (mapper (World.getKeyedValue<'k, 'v> key world)) world
 
         static member internal getTasklets world =
             World.getAmbientStateBy AmbientState.getTasklets world
 
         static member internal removeTasklets simulant world =
-            World.updateAmbientState (AmbientState.removeTasklets simulant) world
+            World.mapAmbientState (AmbientState.removeTasklets simulant) world
 
         static member internal clearTasklets world =
-            World.updateAmbientState AmbientState.clearTasklets world
+            World.mapAmbientState AmbientState.clearTasklets world
 
         static member internal restoreTasklets tasklets world =
-            World.updateAmbientState (AmbientState.restoreTasklets tasklets) world
+            World.mapAmbientState (AmbientState.restoreTasklets tasklets) world
 
         /// Add a tasklet to be executed by the engine at the scheduled time.
         static member addTasklet simulant tasklet world =
-            World.updateAmbientState (AmbientState.addTasklet simulant tasklet) world
+            World.mapAmbientState (AmbientState.addTasklet simulant tasklet) world
 
         /// Schedule an operation to be executed by the engine with the given delay.
         static member schedule delay operation (simulant : Simulant) (world : World) =
@@ -318,7 +318,7 @@ module WorldModule =
 
         /// Attempt to set the window's full screen state.
         static member trySetWindowFullScreen fullScreen world =
-            World.updateAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
+            World.mapAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
         /// Attempt to get the window size.
         static member tryGetWindowSize world =
@@ -347,10 +347,10 @@ module WorldModule =
             World.getAmbientStateBy AmbientState.getSymbolics world
 
         static member internal setSymbolics symbolics world =
-            World.updateAmbientState (AmbientState.setSymbolics symbolics) world
+            World.mapAmbientState (AmbientState.setSymbolics symbolics) world
 
-        static member internal updateSymbolics updater world =
-            World.updateAmbientState (AmbientState.updateSymbolics updater) world
+        static member internal mapSymbolics mapper world =
+            World.mapAmbientState (AmbientState.mapSymbolics mapper) world
 
         /// Try to load a symbol package with the given name.
         static member tryLoadSymbolPackage implicitDelimiters packageName world =
@@ -383,7 +383,7 @@ module WorldModule =
             World.getOverlayerBy id world
 
         static member internal setOverlayer overlayer world =
-            World.updateAmbientState (AmbientState.setOverlayer overlayer) world
+            World.mapAmbientState (AmbientState.setOverlayer overlayer) world
 
         /// Get overlay names.
         static member getOverlayNames world =
@@ -394,7 +394,7 @@ module WorldModule =
             World.getOverlayerBy (Overlayer.tryGetOverlayNameOpt dispatcherName) world
 
         static member internal acknowledgeLightMapRenderRequest world =
-            World.updateAmbientState AmbientState.acknowledgeLightMapRenderRequest world
+            World.mapAmbientState AmbientState.acknowledgeLightMapRenderRequest world
 
         /// Get whether a light map render was requested.
         static member getLightMapRenderRequested world =
@@ -402,7 +402,7 @@ module WorldModule =
 
         /// Request a light map render for the current frame, such as when a light probe needs to be rendered.
         static member requestLightMapRender world =
-            World.updateAmbientState AmbientState.requestLightMapRender world
+            World.mapAmbientState AmbientState.requestLightMapRender world
 
     type World with // Quadtree
 
@@ -422,11 +422,11 @@ module WorldModule =
         static member internal setSubsystems subsystems world =
             World.choose { world with Subsystems = subsystems }
 
-        static member internal updateSubsystems updater world =
-            World.setSubsystems (updater world.Subsystems) world
+        static member internal mapSubsystems mapper world =
+            World.setSubsystems (mapper world.Subsystems) world
 
         static member internal cleanUpSubsystems world =
-            World.updateSubsystems (fun subsystems ->
+            World.mapSubsystems (fun subsystems ->
                 subsystems.RendererProcess.Terminate ()
                 subsystems.PhysicsEngine3d.CleanUp ()
                 subsystems.PhysicsEngine2d.CleanUp ()
@@ -441,8 +441,8 @@ module WorldModule =
         static member internal setEventGraph eventGraph world =
             World.choose { world with EventGraph = eventGraph }
 
-        static member internal updateEventGraph updater world =
-            World.setEventGraph (updater world.EventGraph) world
+        static member internal mapEventGraph mapper world =
+            World.setEventGraph (mapper world.EventGraph) world
 
         static member inline internal boxCallback<'a, 's when 's :> Simulant> (callback : Callback<'a, 's>) : obj =
             let boxableCallback = fun (evt : Event<obj, Simulant>) (world : World) ->
@@ -457,22 +457,22 @@ module WorldModule =
             EventGraph.getEventState key (World.getEventGraph world)
 
         static member internal addEventState<'a> key (state : 'a) world =
-            World.updateEventGraph (EventGraph.addEventState key state) world
+            World.mapEventGraph (EventGraph.addEventState key state) world
 
         static member internal removeEventState key world =
-            World.updateEventGraph (EventGraph.removeEventState key) world
+            World.mapEventGraph (EventGraph.removeEventState key) world
 
         static member internal getSubscriptions world =
             EventGraph.getSubscriptions (World.getEventGraph world)
 
         static member internal setSubscriptions subscriptions world =
-            World.updateEventGraph (EventGraph.setSubscriptions subscriptions) world
+            World.mapEventGraph (EventGraph.setSubscriptions subscriptions) world
 
         static member internal getUnsubscriptions world =
             EventGraph.getUnsubscriptions (World.getEventGraph world)
 
         static member internal setUnsubscriptions unsubscriptions world =
-            World.updateEventGraph (EventGraph.setUnsubscriptions unsubscriptions) world
+            World.mapEventGraph (EventGraph.setUnsubscriptions unsubscriptions) world
 
         /// Get how events are being traced.
         static member getEventTracerOpt (world : World) =
@@ -480,7 +480,7 @@ module WorldModule =
 
         /// Set how events are being traced, if at all.
         static member setEventTracerOpt tracerOpt (world : World) =
-            World.updateEventGraph (EventGraph.setEventTracerOpt tracerOpt) world
+            World.mapEventGraph (EventGraph.setEventTracerOpt tracerOpt) world
 
         /// Get the state of the event filter.
         static member getEventFilter (world : World) =
@@ -488,7 +488,7 @@ module WorldModule =
 
         /// Set the state of the event filter.
         static member setEventFilter filter (world : World) =
-            World.updateEventGraph (EventGraph.setEventFilter filter) world
+            World.mapEventGraph (EventGraph.setEventFilter filter) world
 
         /// Publish an event.
         static member publishPlus<'a, 'p when 'p :> Simulant>

@@ -482,8 +482,8 @@ module AmbientState =
         { state with KeyValueStore = store }
 
     /// Update the key-value store.
-    let updateKeyValueStore updater state =
-        let store = updater (getKeyValueStore state)
+    let mapKeyValueStore mapper state =
+        let store = mapper (getKeyValueStore state)
         { state with KeyValueStore = store }
 
     /// Get the tasklets scheduled for future processing.
@@ -556,8 +556,8 @@ module AmbientState =
         { state with Symbolics = symbolics }
 
     /// Update symbolics.
-    let updateSymbolics updater state =
-        let store = updater (getSymbolics state)
+    let mapSymbolics mapper state =
+        let store = mapper (getSymbolics state)
         { state with Symbolics = store }
 
     /// Get the overlayer.

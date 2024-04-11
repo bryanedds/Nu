@@ -14,8 +14,8 @@ module WorldRender =
         static member internal getRendererProcess world =
             world.Subsystems.RendererProcess
 
-        static member internal withRendererProcess updater world =
-            updater (World.getRendererProcess world)
+        static member internal withRendererProcess fn world =
+            fn (World.getRendererProcess world)
 
         /// Enqueue a 2d rendering message.
         static member enqueueRenderMessage2d (message : RenderMessage2d) world =

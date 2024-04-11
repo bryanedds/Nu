@@ -232,70 +232,70 @@ module BasicStaticSpriteEmitterFacetModule =
                     (entity.GetParticleRate world)
                     (entity.GetParticleMax world)
 
-        static let updateParticleSystem updater (entity : Entity) world =
+        static let mapParticleSystem mapper (entity : Entity) world =
             let particleSystem = entity.GetParticleSystem world
-            let particleSystem = updater particleSystem
+            let particleSystem = mapper particleSystem
             let world = entity.SetParticleSystem particleSystem world
             world
 
-        static let updateEmitter updater (entity : Entity) world =
-            updateParticleSystem (fun particleSystem ->
+        static let mapEmitter mapper (entity : Entity) world =
+            mapParticleSystem (fun particleSystem ->
                 match Map.tryFind typeof<Particles.BasicStaticSpriteEmitter>.Name particleSystem.Emitters with
                 | Some (:? Particles.BasicStaticSpriteEmitter as emitter) ->
-                    let emitter = updater emitter
+                    let emitter = mapper emitter
                     { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticSpriteEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem)
                 entity world
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
 
         static let handleEmitterBlendChange evt world =
             let emitterBlend = evt.Data.Value :?> Blend
-            let world = updateEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.Blend <> emitterBlend then { emitter with Blend = emitterBlend } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterImageChange evt world =
             let emitterImage = evt.Data.Value :?> Image AssetTag
-            let world = updateEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if assetNeq emitter.Image emitterImage then { emitter with Image = emitterImage } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterLifeTimeOptChange evt world =
             let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
-            let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleLifeTimeMaxOptChange evt world =
             let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
-            let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleRateChange evt world =
             let particleRate = evt.Data.Value :?> single
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleMaxChange evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticSpriteEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleBasicParticleSeedChange evt world =
             let particleSeed = evt.Data.Value :?> Particles.BasicParticle
-            let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterConstraintChange evt world =
             let emitterConstraint = evt.Data.Value :?> Particles.Constraint
-            let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterStyleChange evt world =
             let entity = evt.Subscriber
             let emitter = makeEmitter entity world
-            let world = updateEmitter (constant emitter) entity world
+            let world = mapEmitter (constant emitter) entity world
             (Cascade, world)
 
         static let handlePositionChange evt world =
@@ -2345,75 +2345,75 @@ module BasicStaticBillboardEmitterFacetModule =
                     (entity.GetParticleRate world)
                     (entity.GetParticleMax world)
 
-        static let updateParticleSystem updater (entity : Entity) world =
+        static let mapParticleSystem mapper (entity : Entity) world =
             let particleSystem = entity.GetParticleSystem world
-            let particleSystem = updater particleSystem
+            let particleSystem = mapper particleSystem
             let world = entity.SetParticleSystem particleSystem world
             world
 
-        static let updateEmitter updater (entity : Entity) world =
-            updateParticleSystem (fun particleSystem ->
+        static let mapEmitter mapper (entity : Entity) world =
+            mapParticleSystem (fun particleSystem ->
                 match Map.tryFind typeof<Particles.BasicStaticBillboardEmitter>.Name particleSystem.Emitters with
                 | Some (:? Particles.BasicStaticBillboardEmitter as emitter) ->
-                    let emitter = updater emitter
+                    let emitter = mapper emitter
                     { particleSystem with Emitters = Map.add typeof<Particles.BasicStaticBillboardEmitter>.Name (emitter :> Particles.Emitter) particleSystem.Emitters }
                 | _ -> particleSystem)
                 entity world
 
         static let rec processOutput output entity world =
             match output with
-            | Particles.OutputEmitter (name, emitter) -> updateParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
+            | Particles.OutputEmitter (name, emitter) -> mapParticleSystem (fun ps -> { ps with Emitters = Map.add name emitter ps.Emitters }) entity world
             | Particles.Outputs outputs -> SArray.fold (fun world output -> processOutput output entity world) world outputs
 
         static let handleEmitterMaterialPropertiesChange evt world =
             let emitterMaterialProperties = evt.Data.Value :?> MaterialProperties
-            let world = updateEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.MaterialProperties <> emitterMaterialProperties then { emitter with MaterialProperties = emitterMaterialProperties } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterMaterialChange evt world =
             let emitterMaterial = evt.Data.Value :?> Material
-            let world = updateEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.Material <> emitterMaterial then { emitter with Material = emitterMaterial } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterRenderTypeChange evt world =
             let emitterRenderType = evt.Data.Value :?> RenderType
-            let world = updateEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterLifeTimeOptChange evt world =
             let emitterLifeTimeOpt = evt.Data.Value :?> GameTime
-            let world = updateEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.Life.LifeTimeOpt <> emitterLifeTimeOpt then { emitter with Life = { emitter.Life with LifeTimeOpt = emitterLifeTimeOpt }} else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleLifeTimeMaxOptChange evt world =
             let particleLifeTimeMaxOpt = evt.Data.Value :?> GameTime
-            let world = updateEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleLifeTimeMaxOpt <> particleLifeTimeMaxOpt then { emitter with ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleRateChange evt world =
             let particleRate = evt.Data.Value :?> single
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleRate <> particleRate then { emitter with ParticleRate = particleRate } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleParticleMaxChange evt world =
             let particleMax = evt.Data.Value :?> int
-            let world = updateEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticBillboardEmitter.resize particleMax emitter else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleRing.Length <> particleMax then Particles.BasicStaticBillboardEmitter.resize particleMax emitter else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleBasicParticleSeedChange evt world =
             let particleSeed = evt.Data.Value :?> Particles.BasicParticle
-            let world = updateEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.ParticleSeed <> particleSeed then { emitter with ParticleSeed = particleSeed } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterConstraintChange evt world =
             let emitterConstraint = evt.Data.Value :?> Particles.Constraint
-            let world = updateEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
+            let world = mapEmitter (fun emitter -> if emitter.Constraint <> emitterConstraint then { emitter with Constraint = emitterConstraint } else emitter) evt.Subscriber world
             (Cascade, world)
 
         static let handleEmitterStyleChange evt world =
             let entity = evt.Subscriber
             let emitter = makeEmitter entity world
-            let world = updateEmitter (constant emitter) entity world
+            let world = mapEmitter (constant emitter) entity world
             (Cascade, world)
 
         static let handlePositionChange evt world =
