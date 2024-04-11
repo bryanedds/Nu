@@ -2219,27 +2219,6 @@ module Light3dFacetModule =
             | _ -> world
 
 [<AutoOpen>]
-module LightingConfigFacetModule =
-
-    type Entity with
-        member this.GetLightingConfig world : LightingConfig = this.Get (nameof this.LightingConfig) world
-        member this.SetLightingConfig (value : LightingConfig) world = this.Set (nameof this.LightingConfig) value world
-        member this.LightingConfig = lens (nameof this.LightingConfig) this this.GetLightingConfig this.SetLightingConfig
-
-    type LightingConfigFacet () =
-        inherit Facet (false)
-
-        static member Properties =
-            [define Entity.LightingConfig LightingConfig.defaultConfig
-             define Entity.Presence Omnipresent
-             define Entity.AlwaysUpdate true]
-
-        override this.Update (entity, world) =
-            let lightingConfig = entity.GetLightingConfig world
-            World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
-            world
-
-[<AutoOpen>]
 module StaticBillboardFacetModule =
 
     type Entity with
@@ -3059,58 +3038,6 @@ module NavBodyFacetModule =
             if entity.GetIs2d world
             then world // TODO: implement for 2d navigation when it's available.
             else World.setNav3dBodyOpt None entity world
-
-        override this.GetAttributesInferred (_, _) =
-            AttributesInferred.unimportant
-
-[<AutoOpen>]
-module Nav3dConfigFacetModule =
-
-    type Entity with
-        member this.GetNav3dConfig world : Nav3dConfig = this.Get (nameof this.Nav3dConfig) world
-        member this.SetNav3dConfig (value : Nav3dConfig) world = this.Set (nameof this.Nav3dConfig) value world
-        member this.Nav3dConfig = lens (nameof this.Nav3dConfig) this this.GetNav3dConfig this.SetNav3dConfig
-
-    /// Augments an entity with a navigation mesh.
-    type Nav3dConfigFacet () =
-        inherit Facet (false)
-
-        static let propagateNav3dConfig (entity : Entity) world =
-            let config = entity.GetNav3dConfig world
-            World.setNav3dConfig config entity.Screen world
-
-        static member Properties =
-            [define Entity.Nav3dConfig Nav3dConfig.defaultConfig]
-
-        override this.Register (entity, world) =
-            World.sense (fun _ world -> (Cascade, propagateNav3dConfig entity world)) (entity.ChangeEvent (nameof entity.Nav3dConfig)) entity (nameof Nav3dConfigFacet) world
-
-        override this.Edit (op, entity, world) =
-            match op with
-            | OverlayViewport _ ->
-                let nav3d = World.getScreenNav3d entity.Screen world
-                match nav3d.Nav3dMeshOpt with
-                | Some (nbrData, _, _) ->
-                
-                    // edge color compute lambda
-                    let computeEdgeColor (edge : struct (Vector3 * Vector3)) =
-                        let middleY = (fst' edge).Y + (snd' edge).Y * 0.5f
-                        let height = Math.Lerp (0.0f, 1.0f, (middleY - nbrData.NavEdgesMinY) / (nbrData.NavEdgesMaxY - nbrData.NavEdgesMinY))
-                        Color (1.0f, 1.0f - height, height, 1.0f)
-
-                    // point color compute lambda
-                    let computePointColor (point : Vector3) =
-                        let height = Math.Lerp (0.0f, 1.0f, (point.Y - nbrData.NavPointsMinY) / (nbrData.NavPointsMaxY - nbrData.NavPointsMinY))
-                        Color (1.0f, 1.0f - height, height, 1.0f)
-
-                    // draw edges and points
-                    World.imGuiSegments3dPlus false nbrData.NavInteriorEdges 1.0f computeEdgeColor world
-                    World.imGuiSegments3dPlus false nbrData.NavExteriorEdges 1.0f computeEdgeColor world
-                    World.imGuiCircles3dPlus false nbrData.NavPoints 2.5f true computePointColor world
-                    world
-
-                | None -> world
-            | _ -> world
 
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.unimportant

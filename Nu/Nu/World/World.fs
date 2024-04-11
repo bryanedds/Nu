@@ -145,6 +145,7 @@ module WorldModule3 =
                  Character2dDispatcher ()
                  TileMapDispatcher ()
                  TmxMapDispatcher ()
+                 Lighting3dConfigDispatcher ()
                  LightProbe3dDispatcher ()
                  Light3dDispatcher ()
                  SkyBoxDispatcher ()
@@ -159,6 +160,7 @@ module WorldModule3 =
                  Box3dDispatcher ()
                  Character3dDispatcher ()
                  TerrainDispatcher ()
+                 Nav3dConfigDispatcher ()
                  StaticModelHierarchyDispatcher ()
                  RigidModelHierarchyDispatcher ()]
 
@@ -184,7 +186,6 @@ module WorldModule3 =
                  LayoutFacet ()
                  LightProbe3dFacet ()
                  Light3dFacet ()
-                 LightingConfigFacet ()
                  SkyBoxFacet ()
                  StaticBillboardFacet ()
                  StaticModelSurfaceFacet ()
@@ -192,7 +193,6 @@ module WorldModule3 =
                  AnimatedModelFacet ()
                  TerrainFacet ()
                  NavBodyFacet ()
-                 Nav3dConfigFacet ()
                  FollowerFacet ()
                  FreezerFacet ()]
 
