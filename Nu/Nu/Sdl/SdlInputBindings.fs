@@ -9,7 +9,6 @@
 
 namespace Nu
 open System
-open Prime
 
 type KeyboardKey =
     | Unknown = 0

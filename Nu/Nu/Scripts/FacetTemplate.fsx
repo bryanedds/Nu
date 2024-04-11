@@ -11,7 +11,7 @@
 #r "nuget: Prime, 9.20.2"
 #r "nuget: System.Configuration.ConfigurationManager, 8.0.0"
 #r "nuget: System.Drawing.Common, 8.0.0"
-#r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard1.3/AssimpNet.dll"
+#r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1/AssimpNet.dll"
 #r "../../../Nu/Nu.Dependencies/BulletSharpPInvoke/netstandard2.1/BulletSharp.dll"
 #r "../../../Nu/Nu.Dependencies/OpenGL.NET/lib/netcoreapp2.2/OpenGL.Net.dll"
 #r "../../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"

@@ -3,8 +3,6 @@
 
 namespace ImGuiNET
 open System
-open Prime
-open Nu
 
 [<AutoOpen>]
 module ImGuiIOPtr =

@@ -3,7 +3,6 @@
 
 namespace Nu
 open System
-open System.Collections
 open System.Collections.Generic
 open System.Numerics
 open Prime
