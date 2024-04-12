@@ -503,6 +503,12 @@ module Content =
     /// Describe a rigid model expanded into an entity hierarchy with the given definitions.
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
+    /// Describe a 3d navigation configuration.
+    let nav3dConfig entityName definitions = entity<Nav3dConfigDispatcher> entityName definitions
+
+    /// Describe a 3d lighting configuration.
+    let lighting3dConfig entityName definitions = entity<Lighting3dConfigDispatcher> entityName definitions
+
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
     let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt definitions entities =
         let mutable eventSignalContentsOpt = null

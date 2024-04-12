@@ -412,7 +412,7 @@ module WorldModule3 =
                     // make the world's ambient state
                     let symbolics = Symbolics.makeEmpty ()
                     let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer (Some sdlDeps)
-                    
+
                     // make the world's spatial trees
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
                     let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
