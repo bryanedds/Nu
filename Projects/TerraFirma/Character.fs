@@ -127,19 +127,18 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
             let animation = Animation.once animationStartTime None animationName
-            Some (soundOpt, animation, false, false)
+            Some (soundOpt, animation, false)
         | InjuryState injury ->
             let localTime = time - injury.InjuryTime
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = Animation.once animationStartTime None "Armature|WalkBack"
-            Some (None, animation, false, false)
+            Some (None, animation, false)
         | WoundState wound ->
             let localTime = time - wound.WoundTime
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = Animation.loop animationStartTime None "Armature|WalkBack"
             let invisible = localTime / 5L % 2L = 0L
-            let destroy = match character.CharacterType with Player -> false | Enemy -> localTime > 60L
-            Some (None, animation, invisible, destroy)
+            Some (None, animation, invisible)
 
     static member private updateInterps position rotation linearVelocity angularVelocity character =
 
@@ -253,11 +252,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member private computeAnimations time position rotation linearVelocity angularVelocity character =
         ignore<Vector3> position
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
-        let (soundOpt, animations, invisible, destroy) =
+        let (soundOpt, animations, invisible) =
             match Character.tryComputeActionAnimation time character with
-            | Some (soundOpt, animation, invisible, destroy) -> (soundOpt, animation :: traversalAnimations, invisible, destroy)
-            | None -> (None, traversalAnimations, false, false)
-        (soundOpt, animations, invisible, destroy)
+            | Some (soundOpt, animation, invisible) -> (soundOpt, animation :: traversalAnimations, invisible)
+            | None -> (None, traversalAnimations, false)
+        (soundOpt, animations, invisible)
 
     static member private updateAttackedCharacters time character =
         match character.ActionState with
@@ -310,8 +309,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = Character.updateAction time position rotation playerPosition character
         let character = Character.updateState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        let (soundOpt, animations, invisible, destroy) = Character.computeAnimations time position rotation linearVelocity angularVelocity character
-        (soundOpt, animations, invisible, destroy, attackedCharacters, position, rotation, character)
+        let (soundOpt, animations, invisible) = Character.computeAnimations time position rotation linearVelocity angularVelocity character
+        (soundOpt, animations, invisible, attackedCharacters, position, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType

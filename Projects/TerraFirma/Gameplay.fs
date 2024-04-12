@@ -30,7 +30,8 @@ module Gameplay =
     // this is our MMCC command type.
     type GameplayCommand =
         | SetupScene
-        | Attack of Entity
+        | AttackCharacter of Entity
+        | DestroyEnemy of Entity
         | TrackPlayer
         | PlaySound of int64 * single * Sound AssetTag
         interface Command
@@ -50,7 +51,7 @@ module Gameplay =
             [Screen.SelectEvent => FinishCommencing
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer
-             Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Attack evt.Data
+             Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> AttackCharacter evt.Data
              Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Die evt.Data]
 
         // here we handle the gameplay messages
@@ -77,7 +78,7 @@ module Gameplay =
                     just gameplay
                 | Enemy ->
                     let gameplay = { gameplay with Score = gameplay.Score + 100 }
-                    just gameplay
+                    withSignal (DestroyEnemy deadCharacter) gameplay
 
         // here we handle the gameplay commands
         // notice how in here we handle events from characters to implement intra-character interactions rather than
@@ -90,7 +91,7 @@ module Gameplay =
                 let world = World.synchronizeNav3d screen world
                 just world
 
-            | Attack attackedCharacter ->
+            | AttackCharacter attackedCharacter ->
                 let character = attackedCharacter.GetCharacter world
                 let character = { character with HitPoints = max (dec character.HitPoints) 0 }
                 let (signals, character) =
@@ -110,6 +111,10 @@ module Gameplay =
                             withSignal playSound character
                 let world = attackedCharacter.SetCharacter character world
                 withSignals signals world
+
+            | DestroyEnemy enemy ->
+                let world = World.destroyEntity enemy world
+                just world
 
             | TrackPlayer ->
                 

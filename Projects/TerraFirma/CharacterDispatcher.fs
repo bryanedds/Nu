@@ -20,7 +20,6 @@ type CharacterCommand =
     | PublishAttacks of Entity Set
     | PublishDie
     | Jump
-    | Destroy
     | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
@@ -95,7 +94,7 @@ module CharacterDispatcher =
                 let bodyId = entity.GetBodyId world
                 let grounded = World.getBodyGrounded bodyId world
                 let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                let (soundOpt, animations, invisible, destroy, attackedCharacters, position, rotation, character) =
+                let (soundOpt, animations, invisible, attackedCharacters, position, rotation, character) =
                     Character.update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character
 
                 // deploy signals from update
@@ -103,7 +102,6 @@ module CharacterDispatcher =
                 let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
                 let signals = match character.ActionState with WoundState wound when wound.WoundTime = world.UpdateTime - 60L -> PublishDie :> Signal :: signals | _ -> signals
                 let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
-                let signals = if destroy then Destroy :> Signal :: signals else signals
                 withSignals signals character
 
             | WeaponCollide collisionData ->
@@ -181,10 +179,6 @@ module CharacterDispatcher =
             | Jump ->
                 let bodyId = entity.GetBodyId world
                 let world = World.jumpBody true character.JumpSpeed bodyId world
-                just world
-
-            | Destroy ->
-                let world = World.destroyEntity entity world
                 just world
 
             | CharacterCommand.PlaySound (delay, volume, sound) ->
