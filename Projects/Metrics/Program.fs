@@ -39,10 +39,10 @@ type MyGameDispatcher () =
         let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
-        let positions = // 37,500 entities (goal: 60FPS, current 60FPS)
+        let positions = // 40,000 entities (goal: 60FPS, current 56FPS)
             [|for i in 0 .. dec 50 do
                 for j in 0 .. dec 50 do
-                    for k in 0 .. dec 15 do
+                    for k in 0 .. dec 16 do
                         yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
         let world =
             Array.fold (fun world position ->
@@ -74,7 +74,7 @@ type Message =
     interface Nu.Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 110) // 12,100 MMCC entities (goal: 60FPS, current: 60FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 57FPS)
 
     override this.Definitions (_, _) =
         [Game.UpdateEvent => Inc]
@@ -90,7 +90,7 @@ type MmccGameDispatcher () =
                 Content.group (string i) []
                     [|for (j, int) in ints.Ints.Pairs' do
                         Content.entity<MetricsEntityDispatcher> (string j)
-                            [Entity.Position == v3 (single i * 4.25f - 250.0f) (single j * 2.25f - 125.0f) -250.0f
+                            [Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
                              Entity.Scale := v3Dup (single (int % 10)) * 0.5f
                              Entity.Presence == Omnipresent]|]
               Content.group "Other" []
