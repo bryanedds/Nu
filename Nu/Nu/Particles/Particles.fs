@@ -856,7 +856,7 @@ module BasicStaticSpriteEmitter =
     let private toParticlesDescriptor time (emitter : BasicStaticSpriteEmitter) =
         let particles =
             SArray.append
-                (if emitter.ParticleWatermark > emitter.ParticleIndex
+                (if emitter.ParticleWatermark >= emitter.ParticleIndex
                  then SArray.skip emitter.ParticleIndex emitter.ParticleRing
                  else SArray.empty)
                 (SArray.take emitter.ParticleIndex emitter.ParticleRing)
@@ -1108,7 +1108,7 @@ module BasicStaticBillboardEmitter =
     let private toParticlesDescriptor time (emitter : BasicStaticBillboardEmitter) =
         let particles =
             SArray.append
-                (if emitter.ParticleWatermark > emitter.ParticleIndex
+                (if emitter.ParticleWatermark >= emitter.ParticleIndex
                  then SArray.skip emitter.ParticleIndex emitter.ParticleRing
                  else SArray.empty)
                 (SArray.take emitter.ParticleIndex emitter.ParticleRing)
