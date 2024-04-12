@@ -42,7 +42,7 @@ type MyGameDispatcher () =
         let positions = // 40,000 entities (goal: 60FPS, current 60FPS)
             [|for i in 0 .. dec 50 do
                 for j in 0 .. dec 50 do
-                    for k in 0 .. dec 6 do
+                    for k in 0 .. dec 16 do
                         yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
         let world =
             Array.fold (fun world position ->
