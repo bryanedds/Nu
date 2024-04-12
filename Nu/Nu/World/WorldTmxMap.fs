@@ -361,7 +361,7 @@ module TmxMap =
                 let descriptors = List ()
                 let mutable yC = 0
                 let mutable yO = r.Y + single yC * tileSize.Y
-                yO <- yO - 0.0001f |> ceil // NOTE: fixes #766 and seems to provide more horizontal tile alignement stability.
+                yO <- yO + 0.0001f |> floor // NOTE: fixes #766 and seems to provide more horizontal tile alignement stability. Alternatively, we could instead do + 0.5f |> floor on yI.
                 while r.Y + single yC * tileSize.Y < r2.Y + tileSize.Y do
 
                     // compute y index and ensure it's in bounds
