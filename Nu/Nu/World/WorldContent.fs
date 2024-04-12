@@ -371,6 +371,10 @@ module Content =
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
             entityContentsOpt.Add (entity.EntityName, entity)
+#if DEBUG
+        if notNull entityContentsOpt && entityContentsOpt.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
+            Log.warnOnce "High MMCC entity content count: having a large number of MMCC entities (> 2048) in a single entity parent may thrash the LOH."
+#endif
         { EntityDispatcherName = typeof<'entityDispatcher>.Name; EntityName = entityName; EntityFilePathOpt = entityFilePathOpt; EntityCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
@@ -457,6 +461,12 @@ module Content =
     /// Describe a sky box with the given definitions.
     let skyBox entityName definitions = entity<SkyBoxDispatcher> entityName definitions
 
+    /// Describe a basic static billboard emitter with the given definitions.
+    let basicStaticBillboardEmitter entityName definitions = entity<BasicStaticBillboardEmitterDispatcher> entityName definitions
+
+    /// Describe a 3d effect with the given definitions.
+    let effect3d entityName definitions = entity<Effect3dDispatcher> entityName definitions
+
     /// Describe a 3d block with the given definitions.
     let block3d entityName definitions = entity<Block3dDispatcher> entityName definitions
 
@@ -465,9 +475,6 @@ module Content =
 
     /// Describe a static billboard with the given definitions.
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
-
-    /// Describe a basic static billboard emitter with the given definitions.
-    let basicStaticBillboardEmitter entityName definitions = entity<BasicStaticSpriteEmitterDispatcher> entityName definitions
 
     /// Describe a static model with the given definitions.
     let staticModel entityName definitions = entity<StaticModelDispatcher> entityName definitions
@@ -510,6 +517,10 @@ module Content =
         for entity in entities do
             if isNull entityContentsOpt then entityContentsOpt <- OrderedDictionary StringComparer.Ordinal
             entityContentsOpt.Add (entity.EntityName, entity)
+#if DEBUG
+        if notNull entityContentsOpt && entityContentsOpt.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
+            Log.warnOnce "High MMCC entity content count: having a large number of MMCC entities (> 2048) in a single group may thrash the LOH."
+#endif
         { GroupDispatcherName = typeof<'groupDispatcher>.Name; GroupName = groupName; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           EntityContentsOpt = entityContentsOpt }
@@ -535,6 +546,10 @@ module Content =
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for group in groups do
             groupContents.Add (group.GroupName, group)
+#if DEBUG
+        if groupContents.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
+            Log.warnOnce "High MMCC group content count: having a large number of MMCC groups (> 2048) in a single screen may thrash the LOH."
+#endif
         { ScreenDispatcherName = typeof<'screenDispatcher>.Name; ScreenName = screenName; ScreenBehavior = screenBehavior; GroupFilePathOpt = groupFilePathOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           GroupContents = groupContents }
@@ -562,6 +577,10 @@ module Content =
             | PropertyContent pc -> (if isNull propertyContentsOpt then propertyContentsOpt <- List ()); propertyContentsOpt.Add pc
         for screen in screens do
             screenContents.Add (screen.ScreenName, screen)
+#if DEBUG
+        if screenContents.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
+            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screen (> 2048) in a single game may thrash the LOH."
+#endif
         { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           ScreenContents = screenContents }

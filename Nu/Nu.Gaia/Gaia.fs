@@ -759,7 +759,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let entityPosition =
                 if atMouse
                 then viewport.MouseToWorld2d (entity.GetAbsolute world, rightClickPosition, eyeCenter, eyeSize)
-                else viewport.MouseToWorld2d (entity.GetAbsolute world, World.getEye2dSize world, eyeCenter, eyeSize)
+                else eyeCenter
             let attributes = entity.GetAttributesInferred world
             entityTransform.Position <- entityPosition.V3
             entityTransform.Size <- attributes.SizeInferred

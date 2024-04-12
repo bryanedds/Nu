@@ -943,8 +943,8 @@ module BasicStaticSpriteEmitter =
             Output.empty
         let gravity =
             match Constants.GameTime.DesiredFrameRate with
-            | StaticFrameRate frameRate -> Constants.Physics.GravityDefault * Constants.Engine.Meter2d / single frameRate
-            | DynamicFrameRate _ -> Constants.Physics.GravityDefault * Constants.Engine.Meter2d
+            | StaticFrameRate frameRate -> Constants.Physics.GravityDefault * Constants.Engine.Meter2d / single frameRate * 0.1f
+            | DynamicFrameRate _ -> Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 0.1f
         let particleBehaviors =
             Behaviors.singleton
                 (Behavior.ofSeq BasicParticle.body
