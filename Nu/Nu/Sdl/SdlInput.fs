@@ -129,14 +129,13 @@ module internal KeyboardState =
     let internal isShiftUp () =
         not (isShiftDown ())
 
-// TODO: P1: internalize all this and expose through World API.
 [<RequireQualifiedAccess>]        
 module GamepadState =
 
     let mutable private Joysticks = [||]
 
     /// Initialize gamepad state.
-    let init () =
+    let internal init () =
         let indices = SDL.SDL_NumJoysticks ()
         Joysticks <-
             Array.map (fun joystick ->
@@ -145,15 +144,15 @@ module GamepadState =
                 [|0 .. indices|]
 
     /// Check that an SDL gamepad button is supported.
-    let isSdlButtonSupported button =
+    let internal isSdlButtonSupported button =
         button < 8
 
     /// Get the number of open gamepad.
-    let getGamepadCount () =
+    let internal getGamepadCount () =
         Array.length Joysticks
 
     /// Convert a GamepadButton to SDL's representation.
-    let toSdlButton gamepadButton =
+    let internal toSdlButton gamepadButton =
         match gamepadButton with
         | ButtonA -> 0
         | ButtonB -> 1
@@ -165,7 +164,7 @@ module GamepadState =
         | ButtonStart -> 7
 
     /// Convert SDL's representation of a joystick button to a GamepadButton.
-    let toNuButton gamepadButton =
+    let internal toNuButton gamepadButton =
         match gamepadButton with
         | 0 -> ButtonA
         | 1 -> ButtonB
@@ -178,7 +177,7 @@ module GamepadState =
         | _ -> failwith "Invalid SDL joystick button."
 
     /// Convert a GamepadDirection to SDL's representation.
-    let toSdlDirection gamepadDirection =
+    let internal toSdlDirection gamepadDirection =
         match gamepadDirection with
         | DirectionUp -> SDL.SDL_HAT_UP
         | DirectionUpLeft -> SDL.SDL_HAT_LEFTUP
@@ -191,7 +190,7 @@ module GamepadState =
         | DirectionCentered -> SDL.SDL_HAT_CENTERED
 
     /// Convert SDL's representation of a hat direction to a GamepadDirection.
-    let toNuDirection gamepadDirection =
+    let internal toNuDirection gamepadDirection =
         match gamepadDirection with
         | SDL.SDL_HAT_UP -> DirectionUp
         | SDL.SDL_HAT_LEFTUP -> DirectionUpLeft
@@ -205,7 +204,7 @@ module GamepadState =
         | _ -> failwith "Invalid SDL hat direction."
 
     /// Get the given gamepad's current direction.
-    let getDirection index =
+    let internal getDirection index =
         match Array.tryItem index Joysticks with
         | Some joystick ->
             let hat = SDL.SDL_JoystickGetHat (joystick, 0)
@@ -213,7 +212,7 @@ module GamepadState =
         | None -> DirectionCentered
 
     /// Check that the given gamepad's button is down.
-    let isButtonDown index button =
+    let internal isButtonDown index button =
         let sdlButton = toSdlButton button
         match Array.tryItem index Joysticks with
         | Some joystick -> SDL.SDL_JoystickGetButton (joystick, sdlButton) = byte 1
