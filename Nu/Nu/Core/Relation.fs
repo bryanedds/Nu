@@ -133,9 +133,6 @@ module Relation =
 
         /// Relate the second address to the first.
         static member relate<'a, 'b> (address : 'a Address) (address2 : 'b Address) : 'b Relation =
-            // TODO: P1: use Uri.MakeRelativeUri here instead of this likely screwed up algorithm -
-            // https://stackoverflow.com/a/1766773/1082782
-            // ...and don't forget to special handle the '?' character like resolve does!
             let names = Address.getNames address
             let names2 = Address.getNames address2
             let namesMatching =
