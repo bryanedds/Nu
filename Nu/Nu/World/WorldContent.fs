@@ -138,8 +138,9 @@ module Content =
             List.foldGeneric (fun world propertyContent ->
                 if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
-                    let simulant = match lens.This :> obj with null -> simulant | _ -> lens.This
-                    World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
+                    match lens.This :> obj with
+                    | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
+                    | _ -> lens.TrySet propertyContent.PropertyValue world
                 else world)
                 world content.PropertyContentsOpt
         else world
@@ -159,8 +160,9 @@ module Content =
                 if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
                     if strEq lens.Name "MountOpt" then mountOptFound <- true
-                    let entity = match lens.This :> obj with null -> entity | _ -> lens.This :?> Entity
-                    world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
+                    match lens.This :> obj with
+                    | null -> world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
+                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
             world
         else world
