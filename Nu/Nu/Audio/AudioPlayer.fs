@@ -32,9 +32,9 @@ type AudioMessage =
     | ReloadAudioAssetsMessage
 
 /// An audio asset used by the audio system.
-type AudioAsset =
+type internal AudioAsset =
     | WavAsset of nativeint
-    | OggAsset of nativeint
+    | MusAsset of nativeint
 
 /// The audio player. Represents the audio subsystem of Nu generally.
 type AudioPlayer =
@@ -98,14 +98,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | None ->
                 SDL_mixer.Mix_FreeChunk wav
                 true
-        | OggAsset ogg ->
+        | MusAsset mus ->
             match audioPlayer.CurrentSongOpt with
-            | Some (_, oggPlaying) ->
-                let freeing = ogg <> oggPlaying
-                if freeing then SDL_mixer.Mix_FreeMusic ogg
+            | Some (_, musPlaying) ->
+                let freeing = mus <> musPlaying
+                if freeing then SDL_mixer.Mix_FreeMusic mus
                 freeing
             | None ->
-                SDL_mixer.Mix_FreeMusic ogg
+                SDL_mixer.Mix_FreeMusic mus
                 true
 
     static member private haltSound () =
@@ -124,11 +124,11 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 Log.info ("Could not load wav '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
         | SongExtension _ ->
-            let oggOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
-            if oggOpt <> IntPtr.Zero then Some (OggAsset oggOpt)
+            let musOpt = SDL_mixer.Mix_LoadMUS asset.FilePath
+            if musOpt <> IntPtr.Zero then Some (MusAsset musOpt)
             else
                 let errorMsg = SDL.SDL_GetError ()
-                Log.info ("Could not load ogg '" + asset.FilePath + "' due to '" + errorMsg + "'.")
+                Log.info ("Could not load song asset '" + asset.FilePath + "' due to '" + errorMsg + "'.")
                 None
         | _ -> None
 
@@ -216,15 +216,15 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             match audioAsset with
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
-            | OggAsset oggAsset ->
+            | MusAsset musAsset ->
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime.Seconds) with
+                match SDL_mixer.Mix_FadeInMusicPos (musAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime.Seconds) with
                 | -1 ->
                     // HACK: start time exceeded length of track, so starting over.
-                    SDL_mixer.Mix_FadeInMusicPos (oggAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
+                    SDL_mixer.Mix_FadeInMusicPos (musAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
                 | _ -> ()
-                audioPlayer.CurrentSongOpt <- Some (playSongMessage, oggAsset)
+                audioPlayer.CurrentSongOpt <- Some (playSongMessage, musAsset)
         | None ->
             Log.info ("PlaySongMessage failed due to unloadable assets for '" + scstring song + "'.")
 
@@ -240,7 +240,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             for asset in package.Assets do
                 match __c asset.Value with
                 | WavAsset wavAsset -> SDL_mixer.Mix_FreeChunk wavAsset
-                | OggAsset oggAsset -> SDL_mixer.Mix_FreeMusic oggAsset
+                | MusAsset musAsset -> SDL_mixer.Mix_FreeMusic musAsset
             audioPlayer.AudioPackages.Remove packageName |> ignore
         | None -> ()
 
@@ -252,7 +252,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | WavAsset wavAsset ->
                 SDL_mixer.Mix_VolumeChunk (wavAsset, int (playSoundMessage.Volume * audioPlayer.MasterSoundVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
                 SDL_mixer.Mix_PlayChannel (-1, wavAsset, 0) |> ignore
-            | OggAsset _ -> Log.info ("Cannot play ogg file as sound '" + scstring sound + "'.")
+            | MusAsset _ -> Log.info ("Cannot play song asset as sound '" + scstring sound + "'.")
         | None ->
             Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
     
@@ -347,7 +347,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
 
         member audioPlayer.CurrentSongPosition =
             match audioPlayer.CurrentSongOpt with
-            | Some (_, oggAsset) -> ignore oggAsset; failwithnie () // SDL_mixer.Mix_GetMusicPosition oggAsset
+            | Some (_, musAsset) -> ignore musAsset; failwithnie () // SDL_mixer.Mix_GetMusicPosition musAsset
             | None -> failwithnie () // 0.0
 
         member audioPlayer.Play audioMessages =

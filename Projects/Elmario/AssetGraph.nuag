@@ -3,7 +3,7 @@
    [Assets Assets/Default [bmp png psd] [Render2d] [PsdToPng]]
    [Assets Assets/Default [jpg jpeg tga tif tiff dds] [Render3d] [ConvertToDds]]
    [Assets Assets/Default [cbm fbx dae obj mtl glsl raw] [Render3d] []]
-   [Assets Assets/Default [wav ogg] [Audio] []]
+   [Assets Assets/Default [wav ogg mp3] [Audio] []]
    [Assets Assets/Default [nueffect nuscript csv] [Symbol] []]
    [Assets Assets/Default [nuentity nugroup tsx tmx] [] []]]]
  [Gameplay
