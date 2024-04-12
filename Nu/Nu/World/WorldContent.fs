@@ -67,7 +67,7 @@ module Content =
                         world)
                         world eventSignalsAdded
 
-                /// drag event signals with existing subscription ids forward in time
+                // drag event signals with existing subscription ids forward in time
                 for eventSignalEntry in eventSignalContentsOld do
                     if eventSignalContents.ContainsKey eventSignalEntry.Key then
                         eventSignalContents.[eventSignalEntry.Key] <- eventSignalEntry.Value
@@ -117,7 +117,7 @@ module Content =
                         world)
                         world eventHandlersAdded
 
-                /// drag event signals with existing subscription ids forward in time
+                // drag event signals with existing subscription ids forward in time
                 for eventHandlerEntry in eventHandlerContentsOld do
                     if eventHandlerContents.ContainsKey eventHandlerEntry.Key then
                         eventHandlerContents.[eventHandlerEntry.Key] <- eventHandlerEntry.Value
