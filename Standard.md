@@ -146,9 +146,25 @@ Correctness, Consistency, Simplicity
     let a, b = b, a
 ```
 
-12) Conceptually, () is unit, so please treat it as such. For example, write `fn ()` rather than `fn()`.
+12) For sequentially-named identifiers, prefer to start counting with blank, then 2, 3, 4. For example, write this -
 
-13) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write `fn (a, b, c)` rather than `fn(a, b, c)`. The exception is when you need to use F#'s flow-syntax feature.
+```
+    let player = Player.make ()
+    let player2 = Player.make ()
+```
+
+- rather than this -
+
+```
+    let player0 = Player.make ()
+    let player1 = Player.make ()
+```
+
+- **except** when you intend to use indexing as part of the naming scheme, then write like the latter.
+
+13) Conceptually, () is unit, so please treat it as such. For example, write `fn ()` rather than `fn()`.
+
+14) Conceptually, (a, b, c) is a tuple, so please treat it as such. For example, write `fn (a, b, c)` rather than `fn(a, b, c)`. The exception is when you need to use F#'s flow-syntax feature.
 
 **C) Simplicity**
 
