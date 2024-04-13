@@ -163,7 +163,7 @@ module Gaia =
     let mutable ofSymbolMemo = new ForgetfulDictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
 
     (* Fsi Session *)
-    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560"// TODO: add warnings as errors, too?    
+    let fsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560"
     let fsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; fsProjectNoWarn|] // TODO: see if can we use --warnon as well.
     let fsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private fsiErrorStream = new StringWriter ()
