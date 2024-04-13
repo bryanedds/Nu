@@ -1461,7 +1461,7 @@ module WorldModule2 =
                         Seq.fold (fun world (lightProbe : Entity) ->
                             let id = lightProbe.GetId world
                             let bounds = lightProbe.GetProbeBounds world
-                            let boundsPlus = box3 (bounds.Min - bounds.Size) (bounds.Max + bounds.Size) // TODO: allow user to specify bounds scalar?
+                            let boundsPlus = bounds.ScaleUniform 4.0f // TODO: allow user to specify bounds scalar?
                             let renderPass = LightMapPass (id, boundsPlus)
                             let world = World.renderSimulantsInternal renderPass world
                             World.enqueueRenderMessage3d (RenderLightMap3d { LightProbeId = id; RenderPass = renderPass }) world
