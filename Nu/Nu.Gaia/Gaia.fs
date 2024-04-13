@@ -3336,14 +3336,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // interactive window
                     if ImGui.Begin ("Interactive", ImGuiWindowFlags.NoNav) then
                         let mutable toBottom = false
-                        let eval = ImGui.Button "Eval" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsShiftDown ()
+                        let eval = ImGui.Button "Eval" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () && ImGui.IsShiftUp ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Evaluate current expression (Shift+Enter)"
+                            ImGui.Text "Evaluate current expression (Ctrl+Enter)"
                             ImGui.EndTooltip ()
                         ImGui.SameLine ()
-                        let enter = ImGui.Button "Enter" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown ()
+                        let enter = ImGui.Button "Enter" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () && ImGui.IsShiftDown ()
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Evaluate current expression, then clear input (Ctrl+Enter)"
+                            ImGui.Text "Evaluate current expression, then clear input (Ctrl+Shift+Enter)"
                             ImGui.EndTooltip ()
                         if eval || enter then
                             snapshot ()
@@ -3371,6 +3371,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     "#r \"Nu.dll\"\n" +
                                     "#r \"Nu.Gaia.dll\"\n" +
                                     (if projectDllPathValid then "#r \"" + PathF.GetFileName projectDllPath + "\"\n" else "") +
+                                    "open System\n" +
+                                    "open System.Numerics\n" +
                                     "open Prime\n" +
                                     "open Nu\n" +
                                     "open Nu.Gaia\n" +
