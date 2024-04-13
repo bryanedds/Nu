@@ -3347,7 +3347,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.EndTooltip ()
                         if eval || enter then
                             snapshot ()
-                            if fsiSession.DynamicAssemblies.Length = 0 then
+                            let initialEntry = fsiSession.DynamicAssemblies.Length = 0
+                            if initialEntry then
                                 let projectDllPathValid = File.Exists projectDllPath
                                 let initial =
                                     "#r \"System.Configuration.ConfigurationManager.dll\"\n" +
@@ -3393,6 +3394,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let errorStr = string fsiErrorStream
                                 let outStr = string fsiOutStream
                                 let outStr =
+                                    if initialEntry then
+                                        let outStr = outStr.Replace ("\r\n> ", "") // TODO: ensure the use of \r\n also works on linux.
+                                        let outStrLines = outStr.Split "\r\n"
+                                        let outStrLines = Array.filter (fun (line : string) -> not (line.Contains "--> Referenced '")) outStrLines
+                                        String.join "\r\n" outStrLines
+                                    else outStr
+                                let outStr =
                                     if selectedEntityOpt.IsNone // HACK: 2/2: strip eval output relating to above 1/2 hack.
                                     then outStr.Replace ("val selectedEntityOpt: Entity option = None\r\n", "")
                                     else outStr
@@ -3425,7 +3433,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if enter then interactiveInputStr <- ""
                         if eval || enter then interactiveInputFocusRequested <- true
                         ImGui.Separator ()
-                        ImGui.BeginChild "##interactiveOutputStr" |> ignore<bool>
+                        ImGui.BeginChild ("##interactiveOutputStr", v2Zero, false, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
                         ImGui.TextUnformatted interactiveOutputStr
                         if toBottom then ImGui.SetScrollHereY 1.0f
                         ImGui.EndChild ()
