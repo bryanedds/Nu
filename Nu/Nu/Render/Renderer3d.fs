@@ -188,6 +188,7 @@ type [<Struct>] BillboardValue =
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
       mutable Material : Material
+      mutable ShadowOffset : single
       mutable RenderType : RenderType }
 
 /// A mutable static model value.
@@ -217,6 +218,7 @@ type BillboardParticlesDescriptor =
     { Absolute : bool
       MaterialProperties : MaterialProperties
       Material : Material
+      ShadowOffset : single
       Particles : Particle SArray
       RenderType : RenderType }
 
@@ -353,6 +355,7 @@ type [<ReferenceEquality>] RenderBillboard =
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
       Material : Material
+      ShadowOffset : single
       RenderType : RenderType
       RenderPass : RenderPass }
 
@@ -361,6 +364,7 @@ type [<ReferenceEquality>] RenderBillboards =
       Billboards : (Matrix4x4 * Presence * Box2 option) SList
       MaterialProperties : MaterialProperties
       Material : Material
+      ShadowOffset : single
       RenderType : RenderType
       RenderPass : RenderPass }
 
@@ -369,6 +373,7 @@ type [<ReferenceEquality>] RenderBillboardParticles =
       Presence : Presence
       MaterialProperties : MaterialProperties
       Material : Material
+      ShadowOffset : single
       Particles : Particle SArray
       RenderType : RenderType
       RenderPass : RenderPass }
@@ -1404,8 +1409,9 @@ type [<ReferenceEquality>] GlRenderer3d =
          presence : Presence,
          insetOpt : Box2 option,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
-         orientUp,
          properties,
+         orientUp,
+         shadowOffset,
          billboardSurface,
          renderType,
          renderPass,
@@ -1421,16 +1427,23 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let sy = -inset.Size.Y * texelHeight
                 Box2 (px, py, sx, sy)
             | None -> box2 v2Zero v2One // shouldn't we still be using borders?
+        let lookRotation =
+            match renderPass with
+            | ShadowPass (_, _, shadowRotation, _) -> shadowRotation
+            | _ -> eyeRotation
         let billboardRotation =
             if orientUp then
-                let eyeForward = (Vector3.Transform (v3Forward, eyeRotation)).WithY 0.0f
-                let billboardAngle = if Vector3.Dot (eyeForward, v3Right) >= 0.0f then -eyeForward.AngleBetween v3Forward else eyeForward.AngleBetween v3Forward
+                let lookForward = (Vector3.Transform (v3Forward, lookRotation)).WithY 0.0f
+                let billboardAngle = if Vector3.Dot (lookForward, v3Right) >= 0.0f then -lookForward.AngleBetween v3Forward else lookForward.AngleBetween v3Forward
                 Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
-            else Matrix4x4.CreateFromQuaternion -eyeRotation
+            else Matrix4x4.CreateFromQuaternion -lookRotation
         let mutable affineRotation = model
         affineRotation.Translation <- v3Zero
         let mutable billboardMatrix = model * billboardRotation
-        billboardMatrix.Translation <- model.Translation
+        billboardMatrix.Translation <-
+            match renderPass with
+            | ShadowPass (_, _, _, _) -> model.Translation + lookRotation.Forward * shadowOffset
+            | _ -> model.Translation
         let renderTasks = GlRenderer3d.getRenderTasks renderPass renderer
         match renderType with
         | DeferredRenderType ->
@@ -1580,7 +1593,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         match renderPass with
                         | NormalPass -> Presence.intersects3d (Some frustumInterior) frustumExterior frustumImposter (Some lightBox) false false presence surfaceBounds
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, shadowDirectional, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false presence surfaceBounds
+                        | ShadowPass (_, shadowDirectional, _, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d None reflFrustum reflFrustum None false false presence surfaceBounds
                     if unculled then
                         GlRenderer3d.categorizeStaticModelSurface (absolute, &surfaceMatrix, presence, &insetOpt, &properties, surface, renderType, renderPass, Some renderTasks, renderer)
@@ -2616,12 +2629,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, true, rb.MaterialProperties, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
+                GlRenderer3d.categorizeBillboardSurface (rb.Absolute, eyeRotation, rb.ModelMatrix, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, true, rb.ShadowOffset, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
                 for (model, presence, insetOpt) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, model, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, true, rbs.MaterialProperties, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rbs.Absolute, eyeRotation, model, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, true, rbs.ShadowOffset, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
@@ -2632,7 +2645,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, false, rbps.MaterialProperties, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (rbps.Absolute, eyeRotation, billboardMatrix, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, false, rbps.ShadowOffset, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
                 GlRenderer3d.categorizeStaticModelSurfaceByIndex (rsms.Absolute, &rsms.ModelMatrix, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
@@ -2750,7 +2763,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     | (false, _) -> ()
 
-            | ShadowPass (lightId, _, _) ->
+            | ShadowPass (lightId, _, _, _) ->
                 match renderer.LightsDesiringShadows.TryGetValue lightId with
                 | (true, light) ->
                     if shadowBufferIndex < Constants.Render.ShadowsMax then

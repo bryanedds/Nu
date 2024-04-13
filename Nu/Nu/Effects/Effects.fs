@@ -276,6 +276,7 @@ module EffectSystem =
               EffectProgressOffset : single
               EffectAbsolute : bool
               EffectPresence : Presence
+              EffectShadowOffset : single
               EffectRenderType : RenderType
               EffectDataTokens : DataToken SList
               EffectEnv : Definitions }
@@ -789,6 +790,7 @@ module EffectSystem =
                           InsetOpt = insetOpt
                           MaterialProperties = properties
                           Material = material
+                          ShadowOffset = effectSystem.EffectShadowOffset
                           RenderType = effectSystem.EffectRenderType }
                 addDataToken billboardToken effectSystem
             else effectSystem
@@ -988,15 +990,17 @@ module EffectSystem =
     ///   - delta: The delta time for the effect.
     ///   - absolute: A flag indicating if the effect is absolute.
     ///   - presence: The presence of the effect.
+    ///   - shadowOffset: How far to offset shadows of any billboards.
     ///   - renderType: The render type of the effect.
     ///   - globalEnv: The global environment for the effect.
-    let make localTime delta absolute presence renderType globalEnv =
+    let make localTime delta absolute presence shadowOffset renderType globalEnv =
         { EffectDelta = delta
           EffectTime = localTime
           EffectTimeOriginal = localTime
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
           EffectPresence = presence
+          EffectShadowOffset = shadowOffset
           EffectRenderType = renderType
           EffectDataTokens = SList.make ()
           EffectEnv = globalEnv }

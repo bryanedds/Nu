@@ -1393,12 +1393,12 @@ module WorldModule2 =
                     for element in hashSet do
                         if element.Static then
                             CachedHashSet3dNormal.Add element |> ignore<bool>
-                | ShadowPass (_, shadowDirectional, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
+                | ShadowPass (_, shadowDirectional, _, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
                 | ReflectionPass (_, _) -> ()
                 match renderPass with
                 | NormalPass -> World.getElements2dInView CachedHashSet2dNormal world
                 | LightMapPass (_, _) -> ()
-                | ShadowPass (_, _, _) -> ()
+                | ShadowPass (_, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
                 RenderGatherTimer.Stop ()
 
@@ -1521,7 +1521,8 @@ module WorldModule2 =
                     Array.sortBy fst' |>
                     Array.tryTake Constants.Render.ShadowsMax |>
                     Array.fold (fun world struct (struct (directionalSort, _), struct (shadowFrustum, light)) ->
-                        World.renderSimulantsInternal (ShadowPass (light.GetId world, isZero directionalSort, shadowFrustum)) world)
+                        let shadowRotation = light.GetRotation world * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
+                        World.renderSimulantsInternal (ShadowPass (light.GetId world, isZero directionalSort, shadowRotation, shadowFrustum)) world)
                         world
 
                 // render simulants normally, remember to clear 3d shadow cache

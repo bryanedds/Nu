@@ -990,6 +990,7 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
       Absolute : bool
       MaterialProperties : MaterialProperties
       Material : Material
+      ShadowOffset : single
       RenderType : RenderType
       Life : Life
       ParticleLifeTimeMaxOpt : GameTime // OPTIMIZATION: uses GameTime.zero to represent infinite particle life.
@@ -1059,13 +1060,14 @@ type [<ReferenceEquality>] StaticBillboardEmitter<'a when 'a :> Particle and 'a 
     /// Make a basic particle emitter.
     static member make<'a>
         time body absolute materialProperties material
-        renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor : 'a StaticBillboardEmitter =
         let particleMax = max 1 particleMax
         { Body = body
           Absolute = absolute
           MaterialProperties = materialProperties
           Material = material
+          ShadowOffset = shadowOffset
           RenderType = renderType
           Life = Life.make time lifeTimeOpt
           ParticleLifeTimeMaxOpt = particleLifeTimeMaxOpt
@@ -1133,6 +1135,7 @@ module BasicStaticBillboardEmitter =
               MaterialProperties = emitter.MaterialProperties
               Material = emitter.Material
               Particles = particles'
+              ShadowOffset = emitter.ShadowOffset
               RenderType = emitter.RenderType }
         descriptor
 
@@ -1143,11 +1146,11 @@ module BasicStaticBillboardEmitter =
     /// Make a basic static billboard particle emitter.
     let make
         time body absolute materialProperties material
-        renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+        shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
         constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors =
         BasicStaticBillboardEmitter.make
             time body absolute materialProperties material
-            renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            shadowOffset renderType lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             constrain particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors toParticlesDescriptor
 
     /// Make an empty basic billboard particle emitter.
@@ -1160,7 +1163,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors = Behaviors.empty
         make
             time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
-            (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            0.1f (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic billboard particle emitter.
@@ -1182,7 +1185,7 @@ module BasicStaticBillboardEmitter =
             let particle = emitter.ParticleSeed
             particle.Body.Position <- emitter.Body.Position
             particle.Body.Angles <- emitter.Body.Angles
-            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.25f) Gen.randomf (Gen.randomf - 0.25f)) * v3Dup 20.0f * particleScalar
+            particle.Body.LinearVelocity <- (v3 (Gen.randomf - 0.5f) Gen.randomf (Gen.randomf - 0.5f)) * v3Dup 20.0f * particleScalar
             particle.Body.AngularVelocity <- v3 0.0f 0.0f (Gen.randomf * 30.0f - 15.0f) * particleScalar
             particle
         let particleBehavior = fun time emitter ->
@@ -1210,7 +1213,7 @@ module BasicStaticBillboardEmitter =
             Behaviors.empty
         make
             time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
-            (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            0.1f (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// Describes a billboard emitter.

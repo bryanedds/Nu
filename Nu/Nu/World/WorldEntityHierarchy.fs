@@ -287,7 +287,7 @@ module FreezerFacetModule =
                     match renderPass with
                     | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds
                     | LightMapPass _ -> false
-                    | ShadowPass (_, _, frustum) -> not probe && not light && frustum.Intersects bounds
+                    | ShadowPass (_, _, _, frustum) -> not probe && not light && frustum.Intersects bounds
                     | ReflectionPass (_, _) -> false
 
             // render all probes, clearing staleness when appropriate

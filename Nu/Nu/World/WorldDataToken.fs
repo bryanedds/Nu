@@ -55,6 +55,7 @@ module WorldDataToken =
                       InsetOpt = billboard.InsetOpt
                       MaterialProperties = billboard.MaterialProperties
                       Material = billboard.Material
+                      ShadowOffset = billboard.ShadowOffset
                       RenderType = billboard.RenderType
                       RenderPass = renderPass }
                 World.enqueueRenderMessage3d (RenderBillboard renderBillboard) world

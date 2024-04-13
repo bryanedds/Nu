@@ -43,6 +43,7 @@ module Effect =
               PerimeterCentered_ : bool
               Offset_ : Vector3
               Transform_ : Transform
+              ShadowOffset_ : single
               RenderType_ : RenderType
               ParticleSystem_ : ParticleSystem
               HistoryMax_ : int
@@ -53,6 +54,7 @@ module Effect =
 
         member this.StartTime = this.StartTime_
         member this.Transform = this.Transform_
+        member this.ShadowOffset = this.ShadowOffset_
         member this.RenderType = this.RenderType_
         member this.ParticleSystem = this.ParticleSystem_
         member this.HistoryMax = this.HistoryMax_
@@ -116,7 +118,7 @@ module Effect =
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true
                   PerimeterCentered = effect.PerimeterCentered_ }
-            let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.RenderType_ effect.Definitions_
+            let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
             let (dataToken, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
@@ -185,11 +187,12 @@ module Effect =
         | Dead -> (Dead, effect, DataToken.empty)
 
     /// Make an effect.
-    let makePlus startTime perimeterCentered offset transform renderType particleSystem historyMax history definitions descriptor =
+    let makePlus startTime perimeterCentered offset transform shadowOffset renderType particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
           PerimeterCentered_ = perimeterCentered
           Offset_ = offset
           Transform_ = transform
+          ShadowOffset_ = shadowOffset
           RenderType_ = renderType
           ParticleSystem_ = particleSystem
           HistoryMax_ = historyMax
@@ -199,11 +202,11 @@ module Effect =
           Descriptor_ = descriptor }
 
     /// Make an effect.
-    let make startTime offset transform renderType descriptor =
-        makePlus startTime true offset transform renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
+    let make startTime offset transform shadowOffset renderType descriptor =
+        makePlus startTime true offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =
-        make GameTime.zero v3Zero (Transform.makeEmpty ()) DeferredRenderType EffectDescriptor.empty
+        make GameTime.zero v3Zero (Transform.makeEmpty ()) 0.0f DeferredRenderType EffectDescriptor.empty
 
 type Effect = Effect.Effect
