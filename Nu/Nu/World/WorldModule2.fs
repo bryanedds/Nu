@@ -368,7 +368,7 @@ module WorldModule2 =
             let world = slideSprite.SetPersistent false world
             let world = slideSprite.SetSize eyeSize.V3 world
             let world =
-                if not Constants.Engine.EntityPerimeterCentered2dDefault
+                if not Constants.Engine.Entity2dPerimeterCenteredDefault
                 then slideSprite.SetPosition (-eyeSize.V3 * 0.5f) world
                 else world
             let world = slideSprite.SetAbsolute true world
@@ -1945,18 +1945,18 @@ module EntityDispatcherModule2 =
             Entity2dDispatcher<'model, 'message, 'command> (centered, physical, fun _ -> initial)
 
         new (physical, makeInitial : World -> 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.EntityPerimeterCentered2dDefault, physical, makeInitial)
+            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, makeInitial)
 
         new (physical, initial : 'model) =
             Entity2dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault
+             define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
 
     /// A gui entity dispatcher.
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityPerimeterCenteredGuiDefault, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
@@ -1965,8 +1965,8 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
+            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.DisabledColor Constants.Gui.DisabledColor
@@ -1984,7 +1984,7 @@ module EntityDispatcherModule2 =
             Entity3dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
@@ -1998,7 +1998,7 @@ module EntityDispatcherModule2 =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, makeInitial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =

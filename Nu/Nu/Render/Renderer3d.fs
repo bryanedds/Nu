@@ -1432,11 +1432,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ShadowPass (_, _, shadowRotation, _) -> shadowRotation
             | _ -> eyeRotation
         let billboardRotation =
-            if orientUp then
-                let lookForward = (Vector3.Transform (v3Forward, lookRotation)).WithY 0.0f
-                let billboardAngle = if Vector3.Dot (lookForward, v3Right) >= 0.0f then -lookForward.AngleBetween v3Forward else lookForward.AngleBetween v3Forward
-                Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
-            else Matrix4x4.CreateFromQuaternion -lookRotation
+            match renderPass with
+            | ShadowPass (_, _, _, _) -> Matrix4x4.CreateFromQuaternion -lookRotation
+            | _ ->
+                if orientUp then
+                    let lookForward = (Vector3.Transform (v3Forward, lookRotation)).WithY 0.0f
+                    let billboardAngle = if Vector3.Dot (lookForward, v3Right) >= 0.0f then -lookForward.AngleBetween v3Forward else lookForward.AngleBetween v3Forward
+                    Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
+                else Matrix4x4.CreateFromQuaternion -lookRotation
         let mutable affineRotation = model
         affineRotation.Translation <- v3Zero
         let mutable billboardMatrix = model * billboardRotation

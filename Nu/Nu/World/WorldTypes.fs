@@ -559,8 +559,8 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (_, _) =
         if this.Is2d
-        then AttributesInferred.important Constants.Engine.EntitySize2dDefault v3Zero
-        else AttributesInferred.important Constants.Engine.EntitySize3dDefault v3Zero
+        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
+        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Attempt to pick an entity with a ray.
     abstract RayCast : Ray3 * Entity * World -> single array
@@ -625,8 +625,8 @@ and Facet (physical) =
     abstract GetAttributesInferred : Entity * World -> AttributesInferred
     default this.GetAttributesInferred (entity, world) =
         if WorldTypes.getEntityIs2d entity world
-        then AttributesInferred.important Constants.Engine.EntitySize2dDefault v3Zero
-        else AttributesInferred.important Constants.Engine.EntitySize3dDefault v3Zero
+        then AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
+        else AttributesInferred.important Constants.Engine.Entity3dSizeDefault v3Zero
 
     /// Participate in defining additional editing behavior for an entity via the ImGui API.
     abstract Edit : EditOperation * Entity * World -> World

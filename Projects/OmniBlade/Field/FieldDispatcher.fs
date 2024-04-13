@@ -1115,27 +1115,27 @@ module FieldDispatcher =
                          Entity.Enabled := Option.isNone shop.ShopConfirmOpt]
                         [yield! Content.items (v3 96.0f 347.0f 0.0f) pageSize rows field ShopSelect
                          Content.button "Buy"
-                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.Text == "Buy"
                              Entity.VisibleLocal := shop.ShopState = ShopSelling
                              Entity.ClickEvent => ShopBuy]
                          Content.text "BuyWhat"
-                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 24.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Buy what?"
                              Entity.VisibleLocal := shop.ShopState = ShopBuying]
                          Content.button "Sell"
-                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.Text == "Sell"
                              Entity.VisibleLocal := shop.ShopState = ShopBuying
                              Entity.ClickEvent => ShopSell]
                          Content.text "SellWhat"
-                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 352.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Sell what?"
                              Entity.VisibleLocal := shop.ShopState = ShopSelling]
                          Content.button "Leave"
-                            [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 678.0f 438.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.Text == "Leave"
                              Entity.ClickEvent => ShopLeave]
                          Content.button "PageUp"
@@ -1167,11 +1167,11 @@ module FieldDispatcher =
                            [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
                             Entity.LabelImage == Assets.Gui.DialogFatImage]
                            [Content.button "Accept"
-                               [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f
+                               [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                                 Entity.Text == "Accept"
                                 Entity.ClickEvent => ShopConfirmAccept]
                             Content.button "Decline"
-                               [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f
+                               [Entity.PositionLocal == v3 498.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                                 Entity.Text == "Decline"
                                 Entity.ClickEvent => ShopConfirmDecline]
                             Content.text "Offer"

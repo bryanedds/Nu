@@ -916,7 +916,7 @@ module BasicStaticSpriteEmitter =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
               Body = Body.defaultBody
               Offset = v3Zero
-              Size = Constants.Engine.ParticleSize2dDefault
+              Size = Constants.Engine.Particle2dSizeDefault
               Inset = box2Zero
               Color = Color.One
               Emission = Color.Zero
@@ -1163,7 +1163,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors = Behaviors.empty
         make
             time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
-            0.1f (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            Constants.Engine.Particle3dShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic billboard particle emitter.
@@ -1172,7 +1172,7 @@ module BasicStaticBillboardEmitter =
             { Life = Life.make GameTime.zero (GameTime.ofSeconds 2.0f)
               Body = Body.defaultBody
               Offset = v3Zero
-              Size = Constants.Engine.ParticleSize3dDefault
+              Size = Constants.Engine.Particle3dSizeDefault
               Inset = box2Zero
               Color = Color.One
               Emission = Color.Zero
@@ -1213,7 +1213,7 @@ module BasicStaticBillboardEmitter =
             Behaviors.empty
         make
             time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
-            0.1f (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            Constants.Engine.Particle3dShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// Describes a billboard emitter.

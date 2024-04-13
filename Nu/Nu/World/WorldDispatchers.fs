@@ -15,22 +15,22 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (true, perimeterCentered, physical)
 
         new (physical) =
-            Entity2dDispatcher (Constants.Engine.EntityPerimeterCentered2dDefault, physical)
+            Entity2dDispatcher (Constants.Engine.Entity2dPerimeterCenteredDefault, physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize2dDefault
-             define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCentered2dDefault]
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault
+             define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
 
     /// A gui entity dispatcher.
     type GuiDispatcher () =
-        inherit EntityDispatcher (true, Constants.Engine.EntityPerimeterCenteredGuiDefault, false)
+        inherit EntityDispatcher (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false)
 
         static member Facets =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeGuiDefault
-             define Entity.PerimeterCentered Constants.Engine.EntityPerimeterCenteredGuiDefault
+            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
+             define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
              define Entity.Absolute true
              define Entity.Presence Omnipresent
              define Entity.DisabledColor Constants.Gui.DisabledColor
@@ -48,7 +48,7 @@ module EntityDispatcherModule =
             Entity3dDispatcher (physical)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySize3dDefault]
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
 
         override this.RayCast (ray, entity, world) =
             if Array.isEmpty (entity.GetFacets world) then
@@ -62,7 +62,7 @@ module EntityDispatcherModule =
         inherit EntityDispatcher (false, true, false)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntitySizeVuiDefault]
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
 [<AutoOpen>]
 module StaticSpriteDispatcherModule =
@@ -120,8 +120,8 @@ module TextDispatcherModule =
             | Some image ->
                 match Metadata.tryGetTextureSizeF image with
                 | Some size -> AttributesInferred.important size.V3 v3Zero
-                | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
-            | None -> AttributesInferred.important Constants.Engine.EntitySizeGuiDefault v3Zero
+                | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module LabelDispatcherModule =
