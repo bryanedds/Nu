@@ -446,12 +446,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private selectScreen screen =
         if screen <> selectedScreen then
+            ImGui.SetWindowFocus "Screen Properties" // make sure group properties are showing
             ImGui.SetWindowFocus null
             newEntityParentOpt <- None
             selectedScreen <- screen
 
     let private selectGroup group =
         if group <> selectedGroup then
+            ImGui.SetWindowFocus "Group Properties" // make sure group properties are showing
             ImGui.SetWindowFocus null
             newEntityParentOpt <- None
             selectedGroup <- group
@@ -483,6 +485,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | None -> focusedPropertyDescriptorOpt <- None
                 | Some _ | None -> focusedPropertyDescriptorOpt <- None
             | Some _ | None -> ()
+
+            // make sure entity properties are showing5
+            if entityOpt.IsSome then ImGui.SetWindowFocus "Entity Properties"
 
             // HACK: in order to keep the property of one simulant from being copied to another when the selected
             // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
@@ -651,6 +656,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         then (Resolve, world)
         else (Cascade, world)
 
+    let private handleNuLifeCycleGroup (evt : Event<LifeCycleData, Game>) wtemp =
+        world <- wtemp
+        match evt.Data with
+        | RegisterData simulant ->
+            match simulant with
+            | :? Group as group when group.Selected world && group.Name = "Scene" ->
+                selectGroup group // select newly created Scene group since it's more likely to be the group the user wants to edit.
+            | _ -> ()
+        | _ -> ()
+        (Cascade, world)
+
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) wtemp =
         world <- wtemp
         match evt.Data.Value :?> Screen option with
@@ -659,9 +675,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             selectGroupInitial screen
             selectEntityOpt None
             (Cascade, world)
-        | None ->
-            // just keep current group selection and screen if no screen selected
-            (Cascade, world)
+        | None -> (Cascade, world) // just keep current group selection and screen if no screen selected
 
     let private imGuiRender wtemp =
 
@@ -4081,6 +4095,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.subscribe handleNuMouseButton Game.MouseMiddleUpEvent Game world
                 let world = World.subscribe handleNuMouseButton Game.MouseRightDownEvent Game world
                 let world = World.subscribe handleNuMouseButton Game.MouseRightUpEvent Game world
+                let world = World.subscribe handleNuLifeCycleGroup (Game.LifeCycleEvent (nameof Group)) Game world
                 let world = World.subscribe handleNuSelectedScreenOptChange Game.SelectedScreenOpt.ChangeEvent Game world
                 
                 // run the world
