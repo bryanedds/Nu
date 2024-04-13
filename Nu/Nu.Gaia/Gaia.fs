@@ -21,7 +21,6 @@ open DotRecast.Recast
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
-// Log Output window.                                                               //
 // Perhaps look up (Value)Some-constructed default property values from overlayer.  //
 // Custom properties in order of priority:                                          //
 //  NormalOpt (for terrain)                                                         //
