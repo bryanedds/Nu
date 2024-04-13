@@ -136,11 +136,13 @@ module Texture =
             then min dds.Header.MipMapCount (uint Constants.Render.TextureMinimalMipmapIndex)
             else 0u
         let mipmapBytesArray =
-            [|for _ in minimalMipmapIndex .. dec dds.Header.MipMapCount do
-                dims <- dims / 2
-                index <- index + size
-                size <- size / 4
-                if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|] // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+            if dds.Header.MipMapCount >= 2u then
+                [|for _ in minimalMipmapIndex .. dec dds.Header.MipMapCount - 1u do
+                    dims <- dims / 2
+                    index <- index + size
+                    size <- size / 4
+                    if size >= 16 then (dims, dds.Data.AsSpan(index, size).ToArray())|] // NOTE: as mentioned above, mipmap with size < 16 can exist but isn't valid when compressed.
+            else [||]
         if minimal then
             let (minimalMipmapResolution, minimalMipmapBytes) = mipmapBytesArray.[0]
             let remainingMipmapBytes = if minimalMipmapBytes.Length > 1 then Array.tail mipmapBytesArray else [||]
