@@ -2872,20 +2872,20 @@ module TerrainFacetModule =
              define Entity.TerrainMaterial
                 (BlendMaterial
                     { TerrainLayers =
-                        [|{ AlbedoImage = Assets.Default.TerrainLayerAlbedo
-                            RoughnessImage = Assets.Default.TerrainLayerRoughness
-                            AmbientOcclusionImage = Assets.Default.TerrainLayerAmbientOcclusion
-                            NormalImage = Assets.Default.TerrainLayerNormal
-                            HeightImage = Assets.Default.TerrainLayerHeight }
-                          { AlbedoImage = Assets.Default.TerrainLayer2Albedo
-                            RoughnessImage = Assets.Default.TerrainLayer2Roughness
-                            AmbientOcclusionImage = Assets.Default.TerrainLayer2AmbientOcclusion
-                            NormalImage = Assets.Default.TerrainLayer2Normal
-                            HeightImage = Assets.Default.TerrainLayer2Height }|]
+                        [|{ AlbedoImage = Assets.Default.TerrainLayer0Albedo
+                            RoughnessImage = Assets.Default.TerrainLayer0Roughness
+                            AmbientOcclusionImage = Assets.Default.TerrainLayer0AmbientOcclusion
+                            NormalImage = Assets.Default.TerrainLayer0Normal
+                            HeightImage = Assets.Default.TerrainLayer0Height }
+                          { AlbedoImage = Assets.Default.TerrainLayer1Albedo
+                            RoughnessImage = Assets.Default.TerrainLayer1Roughness
+                            AmbientOcclusionImage = Assets.Default.TerrainLayer1AmbientOcclusion
+                            NormalImage = Assets.Default.TerrainLayer1Normal
+                            HeightImage = Assets.Default.TerrainLayer1Height }|]
                       BlendMap =
                           RedsMap
-                            [|Assets.Default.TerrainLayerBlend
-                              Assets.Default.TerrainLayer2Blend|]})
+                            [|Assets.Default.TerrainLayer0Blend
+                              Assets.Default.TerrainLayer1Blend|]})
              define Entity.TintImageOpt None
              define Entity.NormalImageOpt None
              define Entity.Tiles (v2 256.0f 256.0f)
