@@ -445,25 +445,12 @@ module Texture =
                             fullHandleOpt <- ValueSome fullHandle
                             fullHandle
                         | ValueNone ->
-                            Gl.BindTexture (TextureTarget.Texture2d, textureId)
-                            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-                            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+                            Gl.DeleteTextures [|textureId|]
                             Hl.Assert ()
-                            match TryCreateTextureHandle textureId with
-                            | ValueSome fullHandle ->
-                                Hl.Assert ()
-                                fullHandleOpt <- ValueSome fullHandle
-                                fullHandle
-                            | ValueNone ->
-                                Gl.DeleteTextures [|textureId|]
-                                Hl.Assert ()
-                                fullMetadataAndIdOpt <- ValueNone
-                                fullHandleOpt <- ValueNone
-                                Log.warn
-                                    ("Failed to properly load full texture from '" +
-                                     filePath +
-                                     "' likely due to unconverted image type (EG, a .png file wasn't specified as ConvertToDds in its asset package).")
-                                minimalHandle
+                            fullMetadataAndIdOpt <- ValueNone
+                            fullHandleOpt <- ValueNone
+                            Log.warn ("Failed to properly load full texture from '" + filePath + "'.")
+                            minimalHandle
                     | ValueNone -> minimalHandle
                 | ValueSome fullHandle -> fullHandle
             else minimalHandle
@@ -540,18 +527,18 @@ module Texture =
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.
-        member this.TryCreateTexture (isLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath : string) =
+        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath : string) =
 
             // memoize texture
             match textures.TryGetValue filePath with
             | (false, _) ->
 
                 // attempt to create texture
-                match TryCreateTextureGl (isLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath) with
+                match TryCreateTextureGl (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath) with
                 | Right (metadata, textureId) ->
                     let textureHandle = CreateTextureHandle textureId
                     let texture =
-                        if isLazy then
+                        if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
                             let lazyTexture = new LazyTexture (filePath, metadata, textureId, textureHandle, minFilter, magFilter, anisoFilter)
                             lazyTextureQueue.Enqueue lazyTexture
                             LazyTexture lazyTexture
@@ -564,12 +551,12 @@ module Texture =
             | (true, texture) -> Right texture
 
         /// Attempt to create a filtered memoized texture from a file.
-        member this.TryCreateTextureFiltered (isLazy, blockCompress, filePath) =
-            this.TryCreateTexture (isLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, true, blockCompress, filePath)
+        member this.TryCreateTextureFiltered (desireLazy, blockCompress, filePath) =
+            this.TryCreateTexture (desireLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, true, blockCompress, filePath)
 
         /// Attempt to create an unfiltered memoized texture from a file.
-        member this.TryCreateTextureUnfiltered (isLazy, filePath) =
-            this.TryCreateTexture (isLazy, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, false, false, filePath)
+        member this.TryCreateTextureUnfiltered (desireLazy, filePath) =
+            this.TryCreateTexture (desireLazy, TextureMinFilter.Nearest, TextureMagFilter.Nearest, false, false, false, filePath)
 
     /// Populated the texture ids and handles of lazy textures in a threaded manner.
     /// TODO: abstract this to interface that can represent either inline or threaded implementation.
