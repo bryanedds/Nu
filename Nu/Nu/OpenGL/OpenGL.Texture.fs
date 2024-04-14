@@ -368,13 +368,20 @@ module Texture =
             Right (metadata, textureId)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
-    /// Create an opengl representation of a bindless texture handle from an already generated opengl texture.
-    let CreateTextureHandle textureId =
+    /// Attempt to create an opengl representation of a bindless texture handle from an already generated opengl texture.
+    let TryCreateTextureHandle textureId =
         let textureHandle = Gl.GetTextureHandleARB textureId
         Hl.Assert () // defensive assertion
-        if textureHandle = 0UL then failwith ("Failed to create handle for texture id '" + string textureId + "'.")
-        Gl.MakeTextureHandleResidentARB textureHandle
-        textureHandle
+        if textureHandle <> 0UL then
+            Gl.MakeTextureHandleResidentARB textureHandle
+            ValueSome textureHandle
+        else ValueNone
+
+    /// Create an opengl representation of a bindless texture handle from an already generated opengl texture.
+    let CreateTextureHandle textureId =
+        match TryCreateTextureHandle textureId with
+        | ValueSome textureHandle -> textureHandle
+        | ValueNone -> failwith ("Failed to create handle for texture id '" + string textureId + "'.")
 
     /// A texture that's immediately loaded.
     type [<Struct>] EagerTexture =
@@ -432,10 +439,31 @@ module Texture =
                         if fullAnisoFilter then Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
                         Gl.BindTexture (TextureTarget.Texture2d, 0u)
                         Hl.Assert ()
-                        let fullHandle = CreateTextureHandle textureId
-                        Hl.Assert ()
-                        fullHandleOpt <- ValueSome fullHandle
-                        fullHandle
+                        match TryCreateTextureHandle textureId with
+                        | ValueSome fullHandle ->
+                            Hl.Assert ()
+                            fullHandleOpt <- ValueSome fullHandle
+                            fullHandle
+                        | ValueNone ->
+                            Gl.BindTexture (TextureTarget.Texture2d, textureId)
+                            Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+                            Gl.BindTexture (TextureTarget.Texture2d, 0u)
+                            Hl.Assert ()
+                            match TryCreateTextureHandle textureId with
+                            | ValueSome fullHandle ->
+                                Hl.Assert ()
+                                fullHandleOpt <- ValueSome fullHandle
+                                fullHandle
+                            | ValueNone ->
+                                Gl.DeleteTextures [|textureId|]
+                                Hl.Assert ()
+                                fullMetadataAndIdOpt <- ValueNone
+                                fullHandleOpt <- ValueNone
+                                Log.warn
+                                    ("Failed to properly load full texture from '" +
+                                     filePath +
+                                     "' likely due to unconverted image type (EG, a .png file wasn't specified as ConvertToDds in its asset package).")
+                                minimalHandle
                     | ValueNone -> minimalHandle
                 | ValueSome fullHandle -> fullHandle
             else minimalHandle
