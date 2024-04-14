@@ -81,7 +81,7 @@ namespace Nu
         /// <summary>
         /// Determines if a long number is a power of two.
         /// </summary>
-        public static bool IsPowerOfTwo(long n)
+        public static bool PowerOfTwo(long n)
         {
             return NextPowerOfTwo(n) == n;
         }
@@ -89,7 +89,7 @@ namespace Nu
         /// <summary>
         /// Determines if an integer number is a power of two.
         /// </summary>
-        public static bool IsPowerOfTwo(int n)
+        public static bool PowerOfTwo(int n)
         {
             return NextPowerOfTwo(n) == n;
         }
@@ -97,7 +97,7 @@ namespace Nu
         /// <summary>
         /// Determines if a floating point number is a power of two.
         /// </summary>
-        public static bool IsPowerOfTwo(float n)
+        public static bool PowerOfTwo(float n)
         {
             return NextPowerOfTwo(n) == n;
         }
@@ -105,7 +105,7 @@ namespace Nu
         /// <summary>
         /// Determines if a double precision floating point number is a power of two.
         /// </summary>
-        public static bool IsPowerOfTwo(double n)
+        public static bool PowerOfTwo(double n)
         {
             return NextPowerOfTwo(n) == n;
         }

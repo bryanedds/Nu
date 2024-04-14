@@ -687,9 +687,9 @@ module Octree =
     /// Create an Octree with the given depth and overall size.
     /// Size dimensions must be a power of two.
     let make<'e when 'e : equality> (depth : int) (size : Vector3) =
-        if  not (Math.IsPowerOfTwo size.X) ||
-            not (Math.IsPowerOfTwo size.Y) ||
-            not (Math.IsPowerOfTwo size.Z) then
+        if  not (Math.PowerOfTwo size.X) ||
+            not (Math.PowerOfTwo size.Y) ||
+            not (Math.PowerOfTwo size.Z) then
             failwith "Invalid size for Octtree. Expected value whose components are a power of two."
         let leafComparer = // OPTIMIZATION: avoid allocation on Equals calls.
             { new IEqualityComparer<Vector3> with
