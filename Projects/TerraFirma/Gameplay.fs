@@ -91,8 +91,8 @@ module Gameplay =
                 let world = World.synchronizeNav3d screen world
                 just world
 
-            | AttackCharacter attackedCharacter ->
-                let character = attackedCharacter.GetCharacter world
+            | AttackCharacter entity ->
+                let character = entity.GetCharacter world
                 let character = { character with HitPoints = max (dec character.HitPoints) 0 }
                 let (signals, character) =
                     if character.HitPoints > 0 then
@@ -109,11 +109,11 @@ module Gameplay =
                             let character = { character with ActionState = WoundState { WoundTime = world.UpdateTime }}
                             let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
                             withSignal playSound character
-                let world = attackedCharacter.SetCharacter character world
+                let world = entity.SetCharacter character world
                 withSignals signals world
 
-            | DestroyEnemy enemy ->
-                let world = World.destroyEntity enemy world
+            | DestroyEnemy entity ->
+                let world = World.destroyEntity entity world
                 just world
 
             | TrackPlayer ->
