@@ -4,7 +4,6 @@
 namespace Nu.Constants
 open System
 open System.Configuration
-open System.Numerics
 open Prime
 open Nu
 

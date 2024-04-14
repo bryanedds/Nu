@@ -9,7 +9,6 @@ open Prime
 open Nu
 
 /// Provides clients for direct usage.
-/// TODO: consider encapsulating child clients behind higer-level operations.
 type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.

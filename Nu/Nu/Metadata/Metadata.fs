@@ -10,10 +10,10 @@ open TiledSharp
 open Prime
 
 (* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystems from accessing
-Metadata from another thread. *)
+global Metadata from another thread. *)
 
-/// Metadata for an asset. Useful to describe various attributes of an asset without having the
-/// full asset loaded into memory.
+/// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
+/// memory.
 type Metadata =
     | RawMetadata
     | TextureMetadata of OpenGL.Texture.TextureMetadata

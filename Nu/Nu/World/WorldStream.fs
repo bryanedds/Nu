@@ -11,7 +11,6 @@ type [<ReferenceEquality>] Stream<'a> =
     { Subscribe : World -> 'a Address * (World -> World) * World }
 
 // TODO: document track functions.
-// TODO: implement sense functions.
 [<RequireQualifiedAccess>]
 module Stream =
 

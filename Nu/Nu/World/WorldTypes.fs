@@ -10,7 +10,6 @@ open System.Numerics
 open System.Reflection
 open DotRecast.Core
 open DotRecast.Detour
-open DotRecast.Recast
 open Prime
 
 [<RequireQualifiedAccess>]

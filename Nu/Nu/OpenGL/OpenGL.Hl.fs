@@ -47,7 +47,7 @@ module Hl =
             let messageBytes = Array.zeroCreate<byte> length
             Marshal.Copy (message, messageBytes, 0, length)
             let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
-            Log.info messageStr
+            Log.debug messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DebugSeverityLow
         | DebugSeverity.DontCare
