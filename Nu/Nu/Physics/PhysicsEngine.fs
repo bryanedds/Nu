@@ -446,7 +446,7 @@ type BodyJointId =
       BodyJointIndex : int }
 
 /// Angle joint, aka, hinge joint.
-type AngleJoint =
+type [<SymbolicExpansion>] AngleJoint =
     { Anchor : Vector3
       Anchor2 : Vector3
       Axis : Vector3
@@ -458,7 +458,7 @@ type AngleJoint =
       RelaxationFactor : single }
 
 /// Distance joint.
-type DistanceJoint =
+type [<SymbolicExpansion>] DistanceJoint =
     { Anchor : Vector3
       Anchor2 : Vector3
       Length : single
@@ -466,42 +466,42 @@ type DistanceJoint =
       DampingRatio : single }
 
 /// TODO: implement.
-type FrictionJoint =
+type [<SymbolicExpansion>] FrictionJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type GearJoint =
+type [<SymbolicExpansion>] GearJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type MotorJoint =
+type [<SymbolicExpansion>] MotorJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type PrismaticJoint =
+type [<SymbolicExpansion>] PrismaticJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type PulleyJoint =
+type [<SymbolicExpansion>] PulleyJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type RevoluteJoint =
+type [<SymbolicExpansion>] RevoluteJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type RopeJoint =
+type [<SymbolicExpansion>] RopeJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// TODO: implement.
-type WheelJoint =
+type [<SymbolicExpansion>] WheelJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 

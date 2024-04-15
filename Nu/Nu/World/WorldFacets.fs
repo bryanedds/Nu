@@ -1436,7 +1436,7 @@ module RigidBodyFacetModule =
             [define Entity.BodyEnabled true
              define Entity.BodyType Static
              define Entity.SleepingAllowed true
-             define Entity.Friction 0.2f
+             define Entity.Friction 0.5f
              define Entity.Restitution 0.0f
              define Entity.LinearVelocity v3Zero
              define Entity.LinearDamping 0.0f // leave this up to friction by default
