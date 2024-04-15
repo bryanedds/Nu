@@ -348,6 +348,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.BiasFactor <- angleJoint.BiasFactor
                         joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
                         joint.CollideConnected <- bodyJointProperties.CollideConnected
+                        joint.Enabled <- bodyJointProperties.BodyJointEnabled
                         if physicsEngine.Joints.TryAdd (bodyJointId, joint)
                         then () // nothing to do
                         else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
@@ -361,6 +362,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.DampingRatio <- distanceJoint.DampingRatio
                         joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
                         joint.CollideConnected <- bodyJointProperties.CollideConnected
+                        joint.Enabled <- bodyJointProperties.BodyJointEnabled
                         if physicsEngine.Joints.TryAdd (bodyJointId, joint)
                         then () // nothing to do
                         else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")

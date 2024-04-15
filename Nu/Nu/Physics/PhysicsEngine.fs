@@ -512,19 +512,14 @@ type BodyJoint =
     | RopeJoint of RopeJoint
     | WheelJoint of WheelJoint
 
+/// Describes the universal properties of a body joint.
 type BodyJointProperties =
     { BodyJointIndex : int
       BodyJoint : BodyJoint
       BodyTargets : BodyId list
+      BodyJointEnabled : bool
       BreakImpulseThreshold : single
       CollideConnected : bool }
-
-    static member empty =
-        { BodyJointIndex = 0
-          BodyJoint = EmptyJoint
-          BodyTargets = []
-          BreakImpulseThreshold = 0.0f
-          CollideConnected = false }
 
 /// A message to the physics system to create a body.
 type CreateBodyMessage =

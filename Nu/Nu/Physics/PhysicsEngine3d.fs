@@ -534,6 +534,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
                         hinge.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
                         // TODO: implement CollideConnected.
+                        hinge.IsEnabled <- bodyJointProperties.BodyJointEnabled
                         physicsEngine.PhysicsContext.AddConstraint (hinge, false)
                         if physicsEngine.Constraints.TryAdd (bodyJointId, hinge)
                         then () // nothing to do
@@ -548,6 +549,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         slider.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
                         // TODO: implement softness.
                         // TODO: implement CollideConnected.
+                        slider.IsEnabled <- bodyJointProperties.BodyJointEnabled
                         physicsEngine.PhysicsContext.AddConstraint (slider, false)
                         if physicsEngine.Constraints.TryAdd (bodyJointId, slider)
                         then () // nothing to do

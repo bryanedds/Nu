@@ -1533,20 +1533,23 @@ module RigidBodyFacetModule =
 module BodyJointFacetModule =
 
     type Entity with
-        member this.GetBodyJointId world : BodyJointId = this.Get (nameof this.BodyJointId) world
-        member this.BodyJointId = lensReadOnly (nameof this.BodyJointId) this this.GetBodyJointId
         member this.GetBodyJoint world : BodyJoint = this.Get (nameof this.BodyJoint) world
         member this.SetBodyJoint (value : BodyJoint) world = this.Set (nameof this.BodyJoint) value world
         member this.BodyJoint = lens (nameof this.BodyJoint) this this.GetBodyJoint this.SetBodyJoint
         member this.GetBodyTargets world : Entity Relation list = this.Get (nameof this.BodyTargets) world
         member this.SetBodyTargets (value : Entity Relation list) world = this.Set (nameof this.BodyTargets) value world
         member this.BodyTargets = lens (nameof this.BodyTargets) this this.GetBodyTargets this.SetBodyTargets
+        member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
+        member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
+        member this.BodyJointEnabled = lens (nameof this.BodyJointEnabled) this this.GetBodyJointEnabled this.SetBodyJointEnabled
         member this.GetBreakImpulseThreshold world : single = this.Get (nameof this.BreakImpulseThreshold) world
         member this.SetBreakImpulseThreshold (value : single) world = this.Set (nameof this.BreakImpulseThreshold) value world
         member this.BreakImpulseThreshold = lens (nameof this.BreakImpulseThreshold) this this.GetBreakImpulseThreshold this.SetBreakImpulseThreshold
         member this.GetCollideConnected world : bool = this.Get (nameof this.CollideConnected) world
         member this.SetCollideConnected (value : bool) world = this.Set (nameof this.CollideConnected) value world
         member this.CollideConnected = lens (nameof this.CollideConnected) this this.GetCollideConnected this.SetCollideConnected
+        member this.GetBodyJointId world : BodyJointId = this.Get (nameof this.BodyJointId) world
+        member this.BodyJointId = lensReadOnly (nameof this.BodyJointId) this this.GetBodyJointId
 
     /// Augments an entity with a physics-driven joint.
     type BodyJointFacet () =
@@ -1554,14 +1557,16 @@ module BodyJointFacetModule =
 
         static member Properties =
             [define Entity.BodyJoint EmptyJoint
-             computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None
              define Entity.BodyTargets []
+             define Entity.BodyJointEnabled true
              define Entity.BreakImpulseThreshold Constants.Physics.BreakImpulseThresholdDefault
-             define Entity.CollideConnected true]
+             define Entity.CollideConnected true
+             computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
         override this.Register (entity, world) =
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyTargets)) entity (nameof BodyJointFacet) world
+            let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakImpulseThreshold)) entity (nameof BodyJointFacet) world
             let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
             world
@@ -1584,6 +1589,7 @@ module BodyJointFacetModule =
                     { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
                       BodyJoint = entity.GetBodyJoint world
                       BodyTargets = bodyTargetIds
+                      BodyJointEnabled = entity.GetBodyJointEnabled world
                       BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
                       CollideConnected = entity.GetCollideConnected world }
                 World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world)
