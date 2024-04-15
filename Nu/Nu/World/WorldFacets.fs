@@ -1567,28 +1567,32 @@ module BodyJointFacetModule =
             world
 
         override this.RegisterPhysics (entity, world) =
-            let bodyTargetIds =
-                [for targetRelation in entity.GetBodyTargets world do
-                    match tryResolve entity targetRelation with
-                    | Some targetEntity ->
-                        match targetEntity.TryGetProperty "BodyId" world with
-                        | Some property ->
-                            match property.PropertyValue with
-                            | :? BodyId as bodyId -> Some bodyId
-                            | _ -> None
-                        | None -> None
-                    | None -> None] |>
-                List.definitize
-            let bodyJointProperties =
-                { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
-                  BodyJoint = entity.GetBodyJoint world
-                  BodyTargets = bodyTargetIds
-                  BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
-                  CollideConnected = entity.GetCollideConnected world }
-            World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
+            World.frame (fun world ->
+                let bodyTargetIds =
+                    [for targetRelation in entity.GetBodyTargets world do
+                        match tryResolve entity targetRelation with
+                        | Some targetEntity ->
+                            match targetEntity.TryGetProperty (nameof Entity.BodyId) world with
+                            | Some property ->
+                                match property.PropertyValue with
+                                | :? BodyId as bodyId -> Some bodyId
+                                | _ -> None
+                            | None -> None
+                        | None -> None] |>
+                    List.definitize
+                let bodyJointProperties =
+                    { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
+                      BodyJoint = entity.GetBodyJoint world
+                      BodyTargets = bodyTargetIds
+                      BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
+                      CollideConnected = entity.GetCollideConnected world }
+                World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world)
+                entity world
 
         override this.UnregisterPhysics (entity, world) =
-            World.destroyBodyJoint (entity.GetIs2d world) (entity.GetBodyJointId world) world
+            World.frame (fun world ->
+                World.destroyBodyJoint (entity.GetIs2d world) (entity.GetBodyJointId world) world)
+                entity world
 
 [<AutoOpen>]
 module TileMapFacetModule =
