@@ -544,38 +544,34 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | _ ->
             match bodyJointProperties.BodyTargets with
             | bodyId :: body2Id :: _ ->
-                match bodyJointProperties.BodyJoint with
-                | EmptyJoint ->
-                    failwithumf () // already checked
-                | AngleJoint angleJoint ->
-                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-                    | ((true, body), (true, body2)) ->
-                        let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
-                        hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
-                        hinge.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
-                        // TODO: implement CollideConnected.
-                        hinge.IsEnabled <- bodyJointProperties.BodyJointEnabled
-                        physicsEngine.PhysicsContext.AddConstraint (hinge, false)
-                        if physicsEngine.Constraints.TryAdd (bodyJointId, hinge)
-                        then () // nothing to do
-                        else Log.info ("Could not add joint for '" + scstring bodyJointId + "'.")
-                    | (_, _) -> ()
-                | DistanceJoint distanceJoint ->
-                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-                    | ((true, body), (true, body2)) ->
-                        let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, true)
-                        slider.LowerLinearLimit <- distanceJoint.Length
-                        slider.UpperLinearLimit <- distanceJoint.Length
-                        slider.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
-                        // TODO: implement softness.
-                        // TODO: implement CollideConnected.
-                        slider.IsEnabled <- bodyJointProperties.BodyJointEnabled
-                        physicsEngine.PhysicsContext.AddConstraint (slider, false)
-                        if physicsEngine.Constraints.TryAdd (bodyJointId, slider)
-                        then () // nothing to do
-                        else Log.info ("Could not add joint for '" + scstring bodyJointId + "'.")
-                    | (_, _) -> ()
-                | _ -> ()
+                match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                | ((true, body), (true, body2)) ->
+                    let constrain =
+                        match bodyJointProperties.BodyJoint with
+                        | EmptyJoint ->
+                            failwithumf () // already checked
+                        | AngleJoint angleJoint ->
+                            let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
+                            hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
+                            hinge.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
+                            hinge :> TypedConstraint
+                        | DistanceJoint distanceJoint ->
+                            let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, true)
+                            slider.LowerLinearLimit <- distanceJoint.Length
+                            slider.UpperLinearLimit <- distanceJoint.Length
+                            slider.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
+                            // TODO: implement softness.
+                            slider
+                        | _ -> failwithnie ()
+                    // TODO: implement CollideConnected.
+                    constrain.IsEnabled <- bodyJointProperties.BodyJointEnabled
+                    body.Activate true
+                    body2.Activate true
+                    physicsEngine.PhysicsContext.AddConstraint (constrain, false)
+                    if physicsEngine.Constraints.TryAdd (bodyJointId, constrain)
+                    then () // nothing to do
+                    else Log.info ("Could not add joint for '" + scstring bodyJointId + "'.")
+                | (_, _) -> ()
             | _ -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =

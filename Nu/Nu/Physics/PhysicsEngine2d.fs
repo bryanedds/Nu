@@ -354,38 +354,37 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | _ ->
             match bodyJointProperties.BodyTargets with
             | bodyId :: body2Id :: _ ->
-                match bodyJointProperties.BodyJoint with
-                | EmptyJoint ->
-                    failwithumf () // already checked
-                | AngleJoint angleJoint ->
-                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-                    | ((true, (_, body)), (true, (_, body2))) ->
-                        let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                        joint.TargetAngle <- -(angleJoint.AngleMax - angleJoint.AngleMin)
-                        joint.Softness <- angleJoint.Softness
-                        joint.BiasFactor <- angleJoint.BiasFactor
-                        joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                        joint.CollideConnected <- bodyJointProperties.CollideConnected
-                        joint.Enabled <- bodyJointProperties.BodyJointEnabled
-                        if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-                        then () // nothing to do
-                        else Log.info ("Could not add body joint for '" + scstring bodyJointId + "'.")
-                    | (_, _) -> ()
-                | DistanceJoint distanceJoint ->
-                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-                    | ((true, (_, body)), (true, (_, body2))) ->
-                        let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
-                        joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
-                        joint.Frequency <- distanceJoint.Frequency
-                        joint.DampingRatio <- distanceJoint.DampingRatio
-                        joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                        joint.CollideConnected <- bodyJointProperties.CollideConnected
-                        joint.Enabled <- bodyJointProperties.BodyJointEnabled
-                        if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-                        then () // nothing to do
-                        else Log.info ("Could not add body joint for '" + scstring bodyJointId + "'.")
-                    | (_, _) -> ()
-                | _ -> ()
+                match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                | ((true, (_, body)), (true, (_, body2))) ->
+                    let joint =
+                        match bodyJointProperties.BodyJoint with
+                        | EmptyJoint ->
+                            failwithumf () // already checked
+                        | AngleJoint angleJoint ->
+                            let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
+                            joint.TargetAngle <- -(angleJoint.AngleMax - angleJoint.AngleMin)
+                            joint.Softness <- angleJoint.Softness
+                            joint.BiasFactor <- angleJoint.BiasFactor
+                            joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
+                            joint :> Joint
+                        | DistanceJoint distanceJoint ->
+                            let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
+                            joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
+                            joint.Frequency <- distanceJoint.Frequency
+                            joint.DampingRatio <- distanceJoint.DampingRatio
+                            joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
+                            joint.CollideConnected <- bodyJointProperties.CollideConnected
+                            joint.Enabled <- bodyJointProperties.BodyJointEnabled
+                            joint
+                        | _ -> failwithnie ()
+                    joint.CollideConnected <- bodyJointProperties.CollideConnected
+                    joint.Enabled <- bodyJointProperties.BodyJointEnabled
+                    body.Awake <- true
+                    body2.Awake <- true
+                    if physicsEngine.Joints.TryAdd (bodyJointId, joint)
+                    then () // nothing to do
+                    else Log.info ("Could not add body joint for '" + scstring bodyJointId + "'.")
+                | (_, _) -> ()
             | _ -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
