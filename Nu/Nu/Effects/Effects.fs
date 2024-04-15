@@ -723,7 +723,7 @@ module EffectSystem =
         // build light tokens
         let effectSystem =
             if slice.Enabled then
-                let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Z, slice.Angles.Y, slice.Angles.X)
+                let rotation = Quaternion.CreateFromYawPitchRoll (slice.Angles.Y, slice.Angles.X, slice.Angles.Z)
                 let direction = rotation.Down
                 let lightToken =
                     Light3dToken

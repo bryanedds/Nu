@@ -373,6 +373,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                             joint.Frequency <- distanceJoint.Frequency
                             joint.DampingRatio <- distanceJoint.DampingRatio
                             Some joint
+                        | UserDefinedAetherJoint aetherJoint ->
+                            Some (aetherJoint.CreateBodyJoint body body2)
                         | _ ->
                             Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
                             None

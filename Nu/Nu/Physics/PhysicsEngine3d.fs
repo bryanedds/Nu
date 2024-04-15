@@ -553,13 +553,46 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         | AngleJoint angleJoint ->
                             let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
                             hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
-                            hinge.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
                             Some (hinge :> TypedConstraint)
                         | DistanceJoint distanceJoint ->
-                            let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, true)
+                            let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, false)
                             slider.LowerLinearLimit <- distanceJoint.Length
                             slider.UpperLinearLimit <- distanceJoint.Length
                             Some slider
+                        | HingeJoint hingeJoint ->
+                            let hinge = new HingeConstraint (body, body2, hingeJoint.Anchor, hingeJoint.Anchor2, hingeJoint.Axis, hingeJoint.Axis2)
+                            hinge.AngularOnly <- hingeJoint.AngularOnly
+                            hinge.SetLimit (hingeJoint.AngleMin, hingeJoint.AngleMax, hingeJoint.Softness, hingeJoint.BiasFactor, hingeJoint.RelaxationFactor)
+                            Some (hinge :> TypedConstraint)
+                        | SliderJoint sliderJoint ->
+                            let frameInA = Matrix4x4.CreateFromTrs (sliderJoint.Anchor, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis.Y, sliderJoint.Axis.X, sliderJoint.Axis.Z), v3One)
+                            let frameInB = Matrix4x4.CreateFromTrs (sliderJoint.Anchor2, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis2.Y, sliderJoint.Axis2.X, sliderJoint.Axis2.Z), v3One)
+                            let slider = new SliderConstraint (body, body2, frameInA, frameInB, false)
+                            slider.LowerLinearLimit <- sliderJoint.LinearLimitLower
+                            slider.UpperLinearLimit <- sliderJoint.LinearLimitUpper
+                            slider.LowerAngularLimit <- sliderJoint.AngularLimitLower
+                            slider.UpperAngularLimit <- sliderJoint.AngularLimitUpper
+                            slider.SoftnessDirLinear <- sliderJoint.DirectionLinearSoftness
+                            slider.RestitutionDirLinear <- sliderJoint.DirectionLinearRestitution
+                            slider.DampingDirLinear <- sliderJoint.DirectionLinearDamping
+                            slider.SoftnessDirAngular <- sliderJoint.DirectionAngularSoftness
+                            slider.RestitutionDirAngular <- sliderJoint.DirectionAngularRestitution
+                            slider.DampingDirAngular <- sliderJoint.DirectionAngularDamping
+                            slider.SoftnessLimLinear <- sliderJoint.LimitLinearSoftness
+                            slider.RestitutionLimLinear <- sliderJoint.LimitLinearRestitution
+                            slider.DampingLimLinear <- sliderJoint.LimitLinearDamping
+                            slider.SoftnessLimAngular <- sliderJoint.LimitAngularSoftness
+                            slider.RestitutionLimAngular <- sliderJoint.LimitAngularRestitution
+                            slider.DampingLimAngular <- sliderJoint.LimitAngularDamping
+                            slider.SoftnessOrthoLinear <- sliderJoint.OrthoLinearSoftness
+                            slider.RestitutionOrthoLinear <- sliderJoint.OrthoLinearRestitution
+                            slider.DampingOrthoLinear <- sliderJoint.OrthoLinearDamping
+                            slider.SoftnessOrthoAngular <- sliderJoint.OrthoAngularSoftness
+                            slider.RestitutionOrthoAngular <- sliderJoint.OrthoAngularRestitution
+                            slider.DampingOrthoAngular <- sliderJoint.OrthoAngularDamping
+                            Some slider
+                        | UserDefinedBulletJoint bulletJoint ->
+                            Some (bulletJoint.CreateBodyJoint body body2)
                         | _ ->
                             Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
                             None

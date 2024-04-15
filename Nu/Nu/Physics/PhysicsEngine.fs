@@ -445,7 +445,7 @@ type BodyJointId =
     { BodyJointSource : Simulant
       BodyJointIndex : int }
 
-/// Angle joint, aka, hinge joint.
+/// Angle joint.
 type [<SymbolicExpansion>] AngleJoint =
     { Anchor : Vector3
       Anchor2 : Vector3
@@ -505,6 +505,54 @@ type [<SymbolicExpansion>] WheelJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+type UserDefinedAetherJoint =
+    { CreateBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+
+/// Hinge joint.
+type [<SymbolicExpansion>] HingeJoint =
+    { Anchor : Vector3
+      Anchor2 : Vector3
+      Axis : Vector3
+      Axis2 : Vector3
+      AngleMin : single
+      AngleMax : single
+      Softness : single
+      BiasFactor : single
+      RelaxationFactor : single
+      AngularOnly : bool }
+
+/// Slider joint.
+type [<SymbolicExpansion>] SliderJoint =
+    { Anchor : Vector3
+      Anchor2 : Vector3
+      Axis : Vector3
+      Axis2 : Vector3
+      LinearLimitLower : single
+      LinearLimitUpper : single
+      AngularLimitLower : single
+      AngularLimitUpper : single
+      DirectionLinearSoftness : single
+      DirectionLinearRestitution : single
+      DirectionLinearDamping : single
+      DirectionAngularSoftness : single
+      DirectionAngularRestitution : single
+      DirectionAngularDamping : single
+      LimitLinearSoftness : single
+      LimitLinearRestitution : single
+      LimitLinearDamping : single
+      LimitAngularSoftness : single
+      LimitAngularRestitution : single
+      LimitAngularDamping : single
+      OrthoLinearSoftness : single
+      OrthoLinearRestitution : single
+      OrthoLinearDamping : single
+      OrthoAngularSoftness : single
+      OrthoAngularRestitution : single
+      OrthoAngularDamping : single }
+
+type UserDefinedBulletJoint =
+    { CreateBodyJoint : BulletSharp.RigidBody -> BulletSharp.RigidBody -> BulletSharp.TypedConstraint }
+
 /// A joint on physics bodies.
 [<Syntax
     ("", "", "", "", "",
@@ -522,6 +570,10 @@ type BodyJoint =
     | RevoluteJoint of RevoluteJoint
     | RopeJoint of RopeJoint
     | WheelJoint of WheelJoint
+    | UserDefinedAetherJoint of UserDefinedAetherJoint
+    | HingeJoint of HingeJoint
+    | SliderJoint of SliderJoint
+    | UserDefinedBulletJoint of UserDefinedBulletJoint
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
