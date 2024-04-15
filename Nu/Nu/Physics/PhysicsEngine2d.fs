@@ -356,7 +356,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             | bodyId :: body2Id :: _ ->
                 match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                 | ((true, (_, body)), (true, (_, body2))) ->
-                    let joint =
+                    let jointOpt =
                         match bodyJointProperties.BodyJoint with
                         | EmptyJoint ->
                             failwithumf () // already checked
@@ -366,7 +366,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                             joint.Softness <- angleJoint.Softness
                             joint.BiasFactor <- angleJoint.BiasFactor
                             joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                            joint :> Joint
+                            Some (joint :> Joint)
                         | DistanceJoint distanceJoint ->
                             let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
                             joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
@@ -375,15 +375,20 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                             joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
                             joint.CollideConnected <- bodyJointProperties.CollideConnected
                             joint.Enabled <- bodyJointProperties.BodyJointEnabled
-                            joint
-                        | _ -> failwithnie ()
-                    joint.CollideConnected <- bodyJointProperties.CollideConnected
-                    joint.Enabled <- bodyJointProperties.BodyJointEnabled
-                    body.Awake <- true
-                    body2.Awake <- true
-                    if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-                    then () // nothing to do
-                    else Log.info ("Could not add body joint for '" + scstring bodyJointId + "'.")
+                            Some joint
+                        | _ ->
+                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "'not implemented for PhysicsEngine2d.")
+                            None
+                    match jointOpt with
+                    | Some joint ->
+                        joint.CollideConnected <- bodyJointProperties.CollideConnected
+                        joint.Enabled <- bodyJointProperties.BodyJointEnabled
+                        body.Awake <- true
+                        body2.Awake <- true
+                        if physicsEngine.Joints.TryAdd (bodyJointId, joint)
+                        then () // nothing to do
+                        else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
+                    | None -> ()
                 | (_, _) -> ()
             | _ -> ()
 
