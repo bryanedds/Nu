@@ -551,23 +551,23 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | EmptyJoint ->
                         failwithumf () // already checked
                     | AngleJoint angleJoint ->
-                        let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
+                        let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2, true)
                         hinge.SetLimit (angleJoint.Angle, angleJoint.Angle, angleJoint.Softness, angleJoint.BiasFactor, 1.0f)
                         Some (hinge :> TypedConstraint)
                     | DistanceJoint distanceJoint ->
-                        let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, false)
+                        let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, true)
                         slider.LowerLinearLimit <- distanceJoint.Length
                         slider.UpperLinearLimit <- distanceJoint.Length
                         Some slider
                     | HingeJoint hingeJoint ->
-                        let hinge = new HingeConstraint (body, body2, hingeJoint.Anchor, hingeJoint.Anchor2, hingeJoint.Axis, hingeJoint.Axis2)
+                        let hinge = new HingeConstraint (body, body2, hingeJoint.Anchor, hingeJoint.Anchor2, hingeJoint.Axis, hingeJoint.Axis2, true)
                         hinge.AngularOnly <- hingeJoint.AngularOnly
                         hinge.SetLimit (hingeJoint.AngleMin, hingeJoint.AngleMax, hingeJoint.Softness, hingeJoint.BiasFactor, hingeJoint.RelaxationFactor)
                         Some (hinge :> TypedConstraint)
                     | SliderJoint sliderJoint ->
                         let frameInA = Matrix4x4.CreateFromTrs (sliderJoint.Anchor, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis.Y, sliderJoint.Axis.X, sliderJoint.Axis.Z), v3One)
                         let frameInB = Matrix4x4.CreateFromTrs (sliderJoint.Anchor2, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis2.Y, sliderJoint.Axis2.X, sliderJoint.Axis2.Z), v3One)
-                        let slider = new SliderConstraint (body, body2, frameInA, frameInB, false)
+                        let slider = new SliderConstraint (body, body2, frameInA, frameInB, true)
                         slider.LowerLinearLimit <- sliderJoint.LinearLimitLower
                         slider.UpperLinearLimit <- sliderJoint.LinearLimitUpper
                         slider.LowerAngularLimit <- sliderJoint.AngularLimitLower
