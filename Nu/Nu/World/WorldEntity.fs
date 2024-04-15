@@ -827,7 +827,7 @@ module WorldEntityModule =
                         let position =
                             match pasteType with
                             | PasteAtMouse -> (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
-                            | PasteAtLook -> (viewport.MouseToWorld2d (absolute, World.getEye2dSize world, eyeCenter, eyeSize)).V3
+                            | PasteAtLook -> eyeCenter.V3
                             | PasteAt position -> position
                         match positionSnapEir with
                         | Left positionSnap -> (position, Some positionSnap)
