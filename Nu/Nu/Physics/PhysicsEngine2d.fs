@@ -372,15 +372,13 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                             joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
                             joint.Frequency <- distanceJoint.Frequency
                             joint.DampingRatio <- distanceJoint.DampingRatio
-                            joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                            joint.CollideConnected <- bodyJointProperties.CollideConnected
-                            joint.Enabled <- bodyJointProperties.BodyJointEnabled
                             Some joint
                         | _ ->
-                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "'not implemented for PhysicsEngine2d.")
+                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
                             None
                     match jointOpt with
                     | Some joint ->
+                        joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
                         joint.CollideConnected <- bodyJointProperties.CollideConnected
                         joint.Enabled <- bodyJointProperties.BodyJointEnabled
                         body.Awake <- true

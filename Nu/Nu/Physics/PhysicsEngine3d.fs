@@ -559,14 +559,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, true)
                             slider.LowerLinearLimit <- distanceJoint.Length
                             slider.UpperLinearLimit <- distanceJoint.Length
-                            slider.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
-                            // TODO: implement softness.
                             Some slider
                         | _ ->
-                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "'not implemented for PhysicsEngine3d.")
+                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
                             None
                     match constrainOpt with
                     | Some constrain ->
+                        constrain.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
                         // TODO: implement CollideConnected.
                         constrain.IsEnabled <- bodyJointProperties.BodyJointEnabled
                         body.Activate true
