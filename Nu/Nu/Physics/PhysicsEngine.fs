@@ -444,6 +444,7 @@ type BodyJointId =
     { BodyJointSource : Simulant
       BodyJointIndex : int }
 
+/// Angle joint, aka, hinge joint.
 type AngleJoint =
     { Anchor : Vector3
       Anchor2 : Vector3
@@ -455,6 +456,7 @@ type AngleJoint =
       BiasFactor : single
       RelaxationFactor : single }
 
+/// Distance joint.
 type DistanceJoint =
     { Anchor : Vector3
       Anchor2 : Vector3
@@ -462,34 +464,42 @@ type DistanceJoint =
       Frequency : single
       DampingRatio : single }
 
+/// TODO: implement.
 type FrictionJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type GearJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type MotorJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type PrismaticJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type PulleyJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type RevoluteJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type RopeJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// TODO: implement.
 type WheelJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
