@@ -1594,6 +1594,9 @@ module BodyJointFacetModule =
                 World.destroyBodyJoint (entity.GetIs2d world) (entity.GetBodyJointId world) world)
                 entity world
 
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.unimportant
+
 [<AutoOpen>]
 module TileMapFacetModule =
 

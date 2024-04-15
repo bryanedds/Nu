@@ -392,6 +392,9 @@ module BodyJoint2dDispatcherModule =
         static member Properties =
             [define Entity.BodyJoint EmptyJoint]
 
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.important Constants.Engine.BodyJoint2dSizeDefault v3Zero
+
 [<AutoOpen>]
 module TileMapDispatcherModule =
 
@@ -796,6 +799,9 @@ module BodyJoint3dDispatcherModule =
 
         static member Properties =
             [define Entity.BodyJoint EmptyJoint]
+
+        override this.GetAttributesInferred (_, _) =
+            AttributesInferred.important Constants.Engine.BodyJoint3dSizeDefault v3Zero
 
 [<AutoOpen>]
 module TerrainDispatcherModule =
