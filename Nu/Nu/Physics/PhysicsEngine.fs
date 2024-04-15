@@ -173,6 +173,7 @@ type HeightMap =
         | RawHeightMap map -> HeightMap.tryGetRawHeightMapMetadata tryGetAssetFilePath bounds tiles map
 
 /// Identifies a body that can be found in a physics engine.
+/// TODO: see if removing CustomEquality here doesn't increase GC pressure or causes other perf overhead.
 type [<CustomEquality; NoComparison>] BodyId =
     { BodySource : Simulant
       BodyIndex : int }
@@ -554,18 +555,10 @@ type CreateBodyJointMessage =
     { BodyJointSource : Simulant
       BodyJointProperties : BodyJointProperties }
 
-/// A message to the physics system to create multiple joints.
-type CreateBodyJointsMessage =
-    { BodyJointsSource : Simulant
-      BodyJointsProperties : BodyJointProperties list }
-
 /// A message to the physics system to destroy a joint.
 type DestroyBodyJointMessage =
-    { BodyJointId : BodyJointId }
-
-/// A message to the physics system to destroy multiple joints.
-type DestroyBodyJointsMessage =
-    { BodyJointIds : BodyJointId list }
+    { BodyJointId : BodyJointId
+      BodyTargets : BodyId list }
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
@@ -652,9 +645,7 @@ type PhysicsMessage =
     | DestroyBodyMessage of DestroyBodyMessage
     | DestroyBodiesMessage of DestroyBodiesMessage
     | CreateBodyJointMessage of CreateBodyJointMessage
-    | CreateBodyJointsMessage of CreateBodyJointsMessage
     | DestroyBodyJointMessage of DestroyBodyJointMessage
-    | DestroyBodyJointsMessage of DestroyBodyJointsMessage
     | SetBodyEnabledMessage of SetBodyEnabledMessage
     | SetBodyCenterMessage of SetBodyCenterMessage
     | SetBodyRotationMessage of SetBodyRotationMessage

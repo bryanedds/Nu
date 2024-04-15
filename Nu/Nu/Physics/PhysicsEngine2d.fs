@@ -19,6 +19,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         { PhysicsContext : Dynamics.World
           Bodies : Dictionary<BodyId, Vector3 option * Dynamics.Body>
           Joints : Dictionary<BodyJointId, Dynamics.Joints.Joint>
+          CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List
           CollisionHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler }
@@ -306,6 +307,15 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         if not (physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverride, body))) then
             Log.debug ("Could not add body for '" + scstring bodyId + "'.")
 
+        // attempt to run any related body joint creation functions
+        match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with
+        | (true, createBodyJointMessages) ->
+            for createBodyJointMessage in createBodyJointMessages do
+                let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
+                PhysicsEngine2d.destroyBodyJointInternal bodyJointId physicsEngine
+                PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+        | (false, _) -> ()
+
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
         List.iter
             (fun (bodyProperties : BodyProperties) ->
@@ -316,7 +326,17 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
+
+        // attempt to run any related body joint destruction functions
         let bodyId = destroyBodyMessage.BodyId
+        match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with
+        | (true, createBodyJointMessages) ->
+            for createBodyJointMessage in createBodyJointMessages do
+                let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
+                PhysicsEngine2d.destroyBodyJointInternal bodyJointId physicsEngine
+        | (false, _) -> ()
+
+        // attempt to destroy body
         match physicsEngine.Bodies.TryGetValue bodyId with
         | (true, (_, body)) ->
             physicsEngine.Bodies.Remove bodyId |> ignore
@@ -328,12 +348,10 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             PhysicsEngine2d.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
-    static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
-        let bodyJointProperties = createBodyJointMessage.BodyJointProperties
+    static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
         | _ ->
-            let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = bodyJointProperties.BodyJointIndex }
             match bodyJointProperties.BodyTargets with
             | bodyId :: body2Id :: _ ->
                 match bodyJointProperties.BodyJoint with
@@ -351,8 +369,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.Enabled <- bodyJointProperties.BodyJointEnabled
                         if physicsEngine.Joints.TryAdd (bodyJointId, joint)
                         then () // nothing to do
-                        else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
-                    | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
+                        else Log.info ("Could not add body joint for '" + scstring bodyJointId + "'.")
+                    | (_, _) -> ()
                 | DistanceJoint distanceJoint ->
                     match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                     | ((true, (_, body)), (true, (_, body2))) ->
@@ -365,28 +383,45 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.Enabled <- bodyJointProperties.BodyJointEnabled
                         if physicsEngine.Joints.TryAdd (bodyJointId, joint)
                         then () // nothing to do
-                        else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
-                    | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
+                        else Log.info ("Could not add body joint for '" + scstring bodyJointId + "'.")
+                    | (_, _) -> ()
                 | _ -> ()
             | _ -> ()
 
-    static member private createBodyJoints (createBodyJointsMessage : CreateBodyJointsMessage) physicsEngine =
-        List.iter (fun (bodyJointProperties : BodyJointProperties) ->
-            let createBodyJointMessage = { BodyJointSource = createBodyJointsMessage.BodyJointsSource; BodyJointProperties = bodyJointProperties }
-            PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine)
-            createBodyJointsMessage.BodyJointsProperties
+    static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
-    static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
-        match physicsEngine.Joints.TryGetValue destroyBodyJointMessage.BodyJointId with
+        // log creation message
+        for bodyTarget in createBodyJointMessage.BodyJointProperties.BodyTargets do
+            match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
+            | (true, messages) -> messages.Add createBodyJointMessage
+            | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
+
+        // attempt to add b0dy joint
+        let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
+        PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+
+    static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
+        match physicsEngine.Joints.TryGetValue bodyJointId with
         | (true, joint) ->
-            physicsEngine.Joints.Remove destroyBodyJointMessage.BodyJointId |> ignore
+            physicsEngine.Joints.Remove bodyJointId |> ignore
             physicsEngine.PhysicsContext.Remove joint
         | (false, _) -> ()
 
-    static member private destroyBodyJoints (destroyBodyJointsMessage : DestroyBodyJointsMessage) physicsEngine =
-        List.iter (fun bodyJointId ->
-            PhysicsEngine2d.destroyBodyJoint { BodyJointId = bodyJointId } physicsEngine)
-            destroyBodyJointsMessage.BodyJointIds
+    static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
+
+        // unlog creation message
+        for bodyTarget in destroyBodyJointMessage.BodyTargets do
+            match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
+            | (true, messages) ->
+                let removed =
+                    messages.RemoveAll (fun message ->
+                        message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
+                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex)
+                if removed > 1 then Log.info "Unsupported body joint removal pattern."
+            | (false, _) -> ()
+
+        // attempt to destroy body joint
+        PhysicsEngine2d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
         match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
@@ -467,9 +502,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine2d.destroyBody destroyBodyMessage physicsEngine
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine2d.destroyBodies destroyBodiesMessage physicsEngine
         | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine2d.createBodyJoint createBodyJointMessage physicsEngine
-        | CreateBodyJointsMessage createBodyJointsMessage -> PhysicsEngine2d.createBodyJoints createBodyJointsMessage physicsEngine
         | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine2d.destroyBodyJoint destroyBodyJointMessage physicsEngine
-        | DestroyBodyJointsMessage destroyBodyJointsMessage -> PhysicsEngine2d.destroyBodyJoints destroyBodyJointsMessage physicsEngine
         | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine2d.setBodyEnabled setBodyEnabledMessage physicsEngine
         | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine2d.setBodyCenter setBodyCenterMessage physicsEngine
         | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine2d.setBodyRotation setBodyRotationMessage physicsEngine
@@ -485,6 +518,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             physicsEngine.PhysicsContext.Clear ()
             physicsEngine.Joints.Clear ()
             physicsEngine.Bodies.Clear ()
+            physicsEngine.CreateBodyJointMessages.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
 
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
@@ -522,8 +556,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
         let physicsEngine =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
-              Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> (HashIdentity.FromFunctions BodyId.hash BodyId.equals)
+              Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> HashIdentity.Structural
               Joints = Dictionary<BodyJointId, Dynamics.Joints.Joint> HashIdentity.Structural
+              CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = integrationMessages
               CollisionHandler = collisionHandler
               SeparationHandler = separationHandler }

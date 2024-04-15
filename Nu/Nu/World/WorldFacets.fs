@@ -1555,6 +1555,13 @@ module BodyJointFacetModule =
     type BodyJointFacet () =
         inherit Facet (true)
 
+        static let getBodyTargetIds (entity : Entity) world =
+            [for targetRelation in entity.GetBodyTargets world do
+                match tryResolve entity targetRelation with
+                | Some targetEntity -> Some { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
+                | None -> None] |>
+            List.definitize
+
         static member Properties =
             [define Entity.BodyJoint EmptyJoint
              define Entity.BodyTargets []
@@ -1572,33 +1579,19 @@ module BodyJointFacetModule =
             world
 
         override this.RegisterPhysics (entity, world) =
-            World.frame (fun world ->
-                let bodyTargetIds =
-                    [for targetRelation in entity.GetBodyTargets world do
-                        match tryResolve entity targetRelation with
-                        | Some targetEntity ->
-                            match targetEntity.TryGetProperty (nameof Entity.BodyId) world with
-                            | Some property ->
-                                match property.PropertyValue with
-                                | :? BodyId as bodyId -> Some bodyId
-                                | _ -> None
-                            | None -> None
-                        | None -> None] |>
-                    List.definitize
-                let bodyJointProperties =
-                    { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
-                      BodyJoint = entity.GetBodyJoint world
-                      BodyTargets = bodyTargetIds
-                      BodyJointEnabled = entity.GetBodyJointEnabled world
-                      BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
-                      CollideConnected = entity.GetCollideConnected world }
-                World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world)
-                entity world
+            let bodyTargetIds = getBodyTargetIds entity world
+            let bodyJointProperties =
+                { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
+                  BodyJoint = entity.GetBodyJoint world
+                  BodyTargets = bodyTargetIds
+                  BodyJointEnabled = entity.GetBodyJointEnabled world
+                  BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
+                  CollideConnected = entity.GetCollideConnected world }
+            World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
 
         override this.UnregisterPhysics (entity, world) =
-            World.frame (fun world ->
-                World.destroyBodyJoint (entity.GetIs2d world) (entity.GetBodyJointId world) world)
-                entity world
+            let bodyTargetIds = getBodyTargetIds entity world
+            World.destroyBodyJoint (entity.GetIs2d world) bodyTargetIds (entity.GetBodyJointId world) world
 
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.unimportant
