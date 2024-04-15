@@ -350,8 +350,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.CollideConnected <- bodyJointProperties.CollideConnected
                         if physicsEngine.Joints.TryAdd (bodyJointId, joint)
                         then () // nothing to do
-                        else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
-                    | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
+                        else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
                 | DistanceJoint distanceJoint ->
                     match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                     | ((true, (_, body)), (true, (_, body2))) ->
@@ -363,8 +363,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.CollideConnected <- bodyJointProperties.CollideConnected
                         if physicsEngine.Joints.TryAdd (bodyJointId, joint)
                         then () // nothing to do
-                        else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
-                    | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
+                        else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
                 | _ -> ()
             | _ -> ()
 

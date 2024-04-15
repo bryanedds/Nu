@@ -537,8 +537,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         physicsEngine.PhysicsContext.AddConstraint (hinge, false)
                         if physicsEngine.Constraints.TryAdd (bodyJointId, hinge)
                         then () // nothing to do
-                        else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
-                    | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
+                        else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
                 | _ -> ()
             | _ -> ()
 
