@@ -539,6 +539,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         then () // nothing to do
                         else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
                     | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
+                | DistanceJoint distanceJoint ->
+                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                    | ((true, body), (true, body2)) ->
+                        let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, true)
+                        slider.LowerLinearLimit <- distanceJoint.Length
+                        slider.UpperLinearLimit <- distanceJoint.Length
+                        slider.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
+                        // TODO: implement softness.
+                        // TODO: implement CollideConnected.
+                        physicsEngine.PhysicsContext.AddConstraint (slider, false)
+                        if physicsEngine.Constraints.TryAdd (bodyJointId, slider)
+                        then () // nothing to do
+                        else Log.info ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.info "Could not create a joint for one or more non-existent bodies."
                 | _ -> ()
             | _ -> ()
 

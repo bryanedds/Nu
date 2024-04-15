@@ -1556,7 +1556,7 @@ module BodyJointFacetModule =
             [define Entity.BodyJoint EmptyJoint
              computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None
              define Entity.BodyTargets []
-             define Entity.BreakImpulseThreshold 1000.0f
+             define Entity.BreakImpulseThreshold Constants.Physics.BreakImpulseThresholdDefault
              define Entity.CollideConnected true]
 
         override this.Register (entity, world) =
