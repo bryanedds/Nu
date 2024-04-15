@@ -362,7 +362,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         failwithumf () // already checked
                     | AngleJoint angleJoint ->
                         let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                        joint.TargetAngle <- -(angleJoint.AngleMax - angleJoint.AngleMin)
+                        joint.TargetAngle <- angleJoint.Angle
                         joint.Softness <- angleJoint.Softness
                         joint.BiasFactor <- angleJoint.BiasFactor
                         joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold

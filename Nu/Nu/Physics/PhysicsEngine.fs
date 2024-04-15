@@ -451,11 +451,9 @@ type [<SymbolicExpansion>] AngleJoint =
       Anchor2 : Vector3
       Axis : Vector3
       Axis2 : Vector3
-      AngleMin : single
-      AngleMax : single
+      Angle : single
       Softness : single
-      BiasFactor : single
-      RelaxationFactor : single }
+      BiasFactor : single }
 
 /// Distance joint.
 type [<SymbolicExpansion>] DistanceJoint =

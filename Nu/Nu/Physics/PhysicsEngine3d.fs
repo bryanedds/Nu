@@ -552,7 +552,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         failwithumf () // already checked
                     | AngleJoint angleJoint ->
                         let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
-                        hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
+                        hinge.SetLimit (angleJoint.Angle, angleJoint.Angle, angleJoint.Softness, angleJoint.BiasFactor, 1.0f)
                         Some (hinge :> TypedConstraint)
                     | DistanceJoint distanceJoint ->
                         let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, false)
