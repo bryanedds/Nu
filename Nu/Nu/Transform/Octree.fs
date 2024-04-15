@@ -515,7 +515,6 @@ module Octree =
             tree.Omnipresent.Add element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
-                Log.info "Element is outside the octree's containment area or is being added redundantly."
                 tree.Omnipresent.Remove element |> ignore
                 tree.Omnipresent.Add element |> ignore
             else
@@ -529,7 +528,6 @@ module Octree =
             tree.Omnipresent.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
-                Log.info "Element is outside the octree's containment area or is not present for removal."
                 tree.Omnipresent.Remove element |> ignore
             else
                 Octnode.removeElement bounds &element tree.Node |> ignore

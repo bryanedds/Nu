@@ -306,7 +306,6 @@ module Quadtree =
             tree.Ubiquitous.Add element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
-                Log.info "Element is outside the quadtree's containment area or is being added redundantly."
                 tree.Ubiquitous.Remove element |> ignore
                 tree.Ubiquitous.Add element |> ignore
             else
@@ -318,7 +317,6 @@ module Quadtree =
             tree.Ubiquitous.Remove element |> ignore
         else
             if not (Quadnode.isIntersectingBounds bounds tree.Node) then
-                Log.info "Element is outside the quadtree's containment area or is not present for removal."
                 tree.Ubiquitous.Remove element |> ignore
             else
                 Quadnode.removeElement bounds &element tree.Node |> ignore
