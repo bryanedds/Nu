@@ -542,84 +542,83 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
         | _ ->
-            match bodyJointProperties.BodyTargets with
-            | bodyId :: body2Id :: _ ->
-                match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-                | ((true, body), (true, body2)) ->
-                    let constrainOpt =
-                        match bodyJointProperties.BodyJoint with
-                        | EmptyJoint ->
-                            failwithumf () // already checked
-                        | AngleJoint angleJoint ->
-                            let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
-                            hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
-                            Some (hinge :> TypedConstraint)
-                        | DistanceJoint distanceJoint ->
-                            let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, false)
-                            slider.LowerLinearLimit <- distanceJoint.Length
-                            slider.UpperLinearLimit <- distanceJoint.Length
-                            Some slider
-                        | HingeJoint hingeJoint ->
-                            let hinge = new HingeConstraint (body, body2, hingeJoint.Anchor, hingeJoint.Anchor2, hingeJoint.Axis, hingeJoint.Axis2)
-                            hinge.AngularOnly <- hingeJoint.AngularOnly
-                            hinge.SetLimit (hingeJoint.AngleMin, hingeJoint.AngleMax, hingeJoint.Softness, hingeJoint.BiasFactor, hingeJoint.RelaxationFactor)
-                            Some (hinge :> TypedConstraint)
-                        | SliderJoint sliderJoint ->
-                            let frameInA = Matrix4x4.CreateFromTrs (sliderJoint.Anchor, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis.Y, sliderJoint.Axis.X, sliderJoint.Axis.Z), v3One)
-                            let frameInB = Matrix4x4.CreateFromTrs (sliderJoint.Anchor2, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis2.Y, sliderJoint.Axis2.X, sliderJoint.Axis2.Z), v3One)
-                            let slider = new SliderConstraint (body, body2, frameInA, frameInB, false)
-                            slider.LowerLinearLimit <- sliderJoint.LinearLimitLower
-                            slider.UpperLinearLimit <- sliderJoint.LinearLimitUpper
-                            slider.LowerAngularLimit <- sliderJoint.AngularLimitLower
-                            slider.UpperAngularLimit <- sliderJoint.AngularLimitUpper
-                            slider.SoftnessDirLinear <- sliderJoint.DirectionLinearSoftness
-                            slider.RestitutionDirLinear <- sliderJoint.DirectionLinearRestitution
-                            slider.DampingDirLinear <- sliderJoint.DirectionLinearDamping
-                            slider.SoftnessDirAngular <- sliderJoint.DirectionAngularSoftness
-                            slider.RestitutionDirAngular <- sliderJoint.DirectionAngularRestitution
-                            slider.DampingDirAngular <- sliderJoint.DirectionAngularDamping
-                            slider.SoftnessLimLinear <- sliderJoint.LimitLinearSoftness
-                            slider.RestitutionLimLinear <- sliderJoint.LimitLinearRestitution
-                            slider.DampingLimLinear <- sliderJoint.LimitLinearDamping
-                            slider.SoftnessLimAngular <- sliderJoint.LimitAngularSoftness
-                            slider.RestitutionLimAngular <- sliderJoint.LimitAngularRestitution
-                            slider.DampingLimAngular <- sliderJoint.LimitAngularDamping
-                            slider.SoftnessOrthoLinear <- sliderJoint.OrthoLinearSoftness
-                            slider.RestitutionOrthoLinear <- sliderJoint.OrthoLinearRestitution
-                            slider.DampingOrthoLinear <- sliderJoint.OrthoLinearDamping
-                            slider.SoftnessOrthoAngular <- sliderJoint.OrthoAngularSoftness
-                            slider.RestitutionOrthoAngular <- sliderJoint.OrthoAngularRestitution
-                            slider.DampingOrthoAngular <- sliderJoint.OrthoAngularDamping
-                            Some slider
-                        | UserDefinedBulletJoint bulletJoint ->
-                            Some (bulletJoint.CreateBodyJoint body body2)
-                        | _ ->
-                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
-                            None
-                    match constrainOpt with
-                    | Some constrain ->
-                        constrain.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
-                        // TODO: implement CollideConnected.
-                        constrain.IsEnabled <- bodyJointProperties.BodyJointEnabled
-                        body.Activate true
-                        body2.Activate true
-                        physicsEngine.PhysicsContext.AddConstraint (constrain, false)
-                        if physicsEngine.Constraints.TryAdd (bodyJointId, constrain)
-                        then () // nothing to do
-                        else Log.warn ("Could not add joint for '" + scstring bodyJointId + "'.")
-                    | None -> ()
-                | (_, _) -> ()
-            | _ -> ()
+            let bodyId = bodyJointProperties.BodyJointTarget
+            let body2Id = bodyJointProperties.BodyJointTarget2
+            match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+            | ((true, body), (true, body2)) ->
+                let constrainOpt =
+                    match bodyJointProperties.BodyJoint with
+                    | EmptyJoint ->
+                        failwithumf () // already checked
+                    | AngleJoint angleJoint ->
+                        let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
+                        hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
+                        Some (hinge :> TypedConstraint)
+                    | DistanceJoint distanceJoint ->
+                        let slider = new SliderConstraint (body, body2, Matrix4x4.CreateTranslation distanceJoint.Anchor, Matrix4x4.CreateTranslation distanceJoint.Anchor2, false)
+                        slider.LowerLinearLimit <- distanceJoint.Length
+                        slider.UpperLinearLimit <- distanceJoint.Length
+                        Some slider
+                    | HingeJoint hingeJoint ->
+                        let hinge = new HingeConstraint (body, body2, hingeJoint.Anchor, hingeJoint.Anchor2, hingeJoint.Axis, hingeJoint.Axis2)
+                        hinge.AngularOnly <- hingeJoint.AngularOnly
+                        hinge.SetLimit (hingeJoint.AngleMin, hingeJoint.AngleMax, hingeJoint.Softness, hingeJoint.BiasFactor, hingeJoint.RelaxationFactor)
+                        Some (hinge :> TypedConstraint)
+                    | SliderJoint sliderJoint ->
+                        let frameInA = Matrix4x4.CreateFromTrs (sliderJoint.Anchor, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis.Y, sliderJoint.Axis.X, sliderJoint.Axis.Z), v3One)
+                        let frameInB = Matrix4x4.CreateFromTrs (sliderJoint.Anchor2, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis2.Y, sliderJoint.Axis2.X, sliderJoint.Axis2.Z), v3One)
+                        let slider = new SliderConstraint (body, body2, frameInA, frameInB, false)
+                        slider.LowerLinearLimit <- sliderJoint.LinearLimitLower
+                        slider.UpperLinearLimit <- sliderJoint.LinearLimitUpper
+                        slider.LowerAngularLimit <- sliderJoint.AngularLimitLower
+                        slider.UpperAngularLimit <- sliderJoint.AngularLimitUpper
+                        slider.SoftnessDirLinear <- sliderJoint.DirectionLinearSoftness
+                        slider.RestitutionDirLinear <- sliderJoint.DirectionLinearRestitution
+                        slider.DampingDirLinear <- sliderJoint.DirectionLinearDamping
+                        slider.SoftnessDirAngular <- sliderJoint.DirectionAngularSoftness
+                        slider.RestitutionDirAngular <- sliderJoint.DirectionAngularRestitution
+                        slider.DampingDirAngular <- sliderJoint.DirectionAngularDamping
+                        slider.SoftnessLimLinear <- sliderJoint.LimitLinearSoftness
+                        slider.RestitutionLimLinear <- sliderJoint.LimitLinearRestitution
+                        slider.DampingLimLinear <- sliderJoint.LimitLinearDamping
+                        slider.SoftnessLimAngular <- sliderJoint.LimitAngularSoftness
+                        slider.RestitutionLimAngular <- sliderJoint.LimitAngularRestitution
+                        slider.DampingLimAngular <- sliderJoint.LimitAngularDamping
+                        slider.SoftnessOrthoLinear <- sliderJoint.OrthoLinearSoftness
+                        slider.RestitutionOrthoLinear <- sliderJoint.OrthoLinearRestitution
+                        slider.DampingOrthoLinear <- sliderJoint.OrthoLinearDamping
+                        slider.SoftnessOrthoAngular <- sliderJoint.OrthoAngularSoftness
+                        slider.RestitutionOrthoAngular <- sliderJoint.OrthoAngularRestitution
+                        slider.DampingOrthoAngular <- sliderJoint.OrthoAngularDamping
+                        Some slider
+                    | UserDefinedBulletJoint bulletJoint ->
+                        Some (bulletJoint.CreateBodyJoint body body2)
+                    | _ ->
+                        Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
+                        None
+                match constrainOpt with
+                | Some constrain ->
+                    constrain.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
+                    // TODO: implement CollideConnected.
+                    constrain.IsEnabled <- bodyJointProperties.BodyJointEnabled
+                    body.Activate true
+                    body2.Activate true
+                    physicsEngine.PhysicsContext.AddConstraint (constrain, false)
+                    if physicsEngine.Constraints.TryAdd (bodyJointId, constrain)
+                    then () // nothing to do
+                    else Log.warn ("Could not add joint for '" + scstring bodyJointId + "'.")
+                | None -> ()
+            | (_, _) -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
         // log creation message
-        for bodyTarget in createBodyJointMessage.BodyJointProperties.BodyTargets do
+        for bodyTarget in [createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) -> messages.Add createBodyJointMessage
             | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
 
-        // attempt to add b0dy joint
+        // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
         PhysicsEngine3d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
@@ -633,7 +632,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
 
         // unlog creation message
-        for bodyTarget in destroyBodyJointMessage.BodyTargets do
+        for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
                 let removed =

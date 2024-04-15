@@ -579,7 +579,8 @@ type BodyJoint =
 type BodyJointProperties =
     { BodyJointIndex : int
       BodyJoint : BodyJoint
-      BodyTargets : BodyId list
+      BodyJointTarget : BodyId
+      BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
       BreakImpulseThreshold : single
       CollideConnected : bool }
@@ -610,7 +611,8 @@ type CreateBodyJointMessage =
 /// A message to the physics system to destroy a joint.
 type DestroyBodyJointMessage =
     { BodyJointId : BodyJointId
-      BodyTargets : BodyId list }
+      BodyJointTarget : BodyId
+      BodyJointTarget2 : BodyId }
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =

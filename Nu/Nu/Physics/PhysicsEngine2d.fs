@@ -352,55 +352,54 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
         | _ ->
-            match bodyJointProperties.BodyTargets with
-            | bodyId :: body2Id :: _ ->
-                match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-                | ((true, (_, body)), (true, (_, body2))) ->
-                    let jointOpt =
-                        match bodyJointProperties.BodyJoint with
-                        | EmptyJoint ->
-                            failwithumf () // already checked
-                        | AngleJoint angleJoint ->
-                            let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                            joint.TargetAngle <- -(angleJoint.AngleMax - angleJoint.AngleMin)
-                            joint.Softness <- angleJoint.Softness
-                            joint.BiasFactor <- angleJoint.BiasFactor
-                            joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                            Some (joint :> Joint)
-                        | DistanceJoint distanceJoint ->
-                            let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
-                            joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
-                            joint.Frequency <- distanceJoint.Frequency
-                            joint.DampingRatio <- distanceJoint.DampingRatio
-                            Some joint
-                        | UserDefinedAetherJoint aetherJoint ->
-                            Some (aetherJoint.CreateBodyJoint body body2)
-                        | _ ->
-                            Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
-                            None
-                    match jointOpt with
-                    | Some joint ->
+            let bodyId = bodyJointProperties.BodyJointTarget
+            let body2Id = bodyJointProperties.BodyJointTarget2
+            match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+            | ((true, (_, body)), (true, (_, body2))) ->
+                let jointOpt =
+                    match bodyJointProperties.BodyJoint with
+                    | EmptyJoint ->
+                        failwithumf () // already checked
+                    | AngleJoint angleJoint ->
+                        let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
+                        joint.TargetAngle <- -(angleJoint.AngleMax - angleJoint.AngleMin)
+                        joint.Softness <- angleJoint.Softness
+                        joint.BiasFactor <- angleJoint.BiasFactor
                         joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
-                        joint.CollideConnected <- bodyJointProperties.CollideConnected
-                        joint.Enabled <- bodyJointProperties.BodyJointEnabled
-                        body.Awake <- true
-                        body2.Awake <- true
-                        if physicsEngine.Joints.TryAdd (bodyJointId, joint)
-                        then () // nothing to do
-                        else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
-                    | None -> ()
-                | (_, _) -> ()
-            | _ -> ()
+                        Some (joint :> Joint)
+                    | DistanceJoint distanceJoint ->
+                        let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
+                        joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
+                        joint.Frequency <- distanceJoint.Frequency
+                        joint.DampingRatio <- distanceJoint.DampingRatio
+                        Some joint
+                    | UserDefinedAetherJoint aetherJoint ->
+                        Some (aetherJoint.CreateBodyJoint body body2)
+                    | _ ->
+                        Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
+                        None
+                match jointOpt with
+                | Some joint ->
+                    joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
+                    joint.CollideConnected <- bodyJointProperties.CollideConnected
+                    joint.Enabled <- bodyJointProperties.BodyJointEnabled
+                    body.Awake <- true
+                    body2.Awake <- true
+                    if physicsEngine.Joints.TryAdd (bodyJointId, joint)
+                    then () // nothing to do
+                    else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
+                | None -> ()
+            | (_, _) -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
         // log creation message
-        for bodyTarget in createBodyJointMessage.BodyJointProperties.BodyTargets do
+        for bodyTarget in [createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) -> messages.Add createBodyJointMessage
             | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
 
-        // attempt to add b0dy joint
+        // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
         PhysicsEngine2d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
@@ -414,7 +413,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
 
         // unlog creation message
-        for bodyTarget in destroyBodyJointMessage.BodyTargets do
+        for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
                 let removed =

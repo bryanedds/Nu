@@ -206,8 +206,8 @@ module WorldPhysics =
             else World.handlePhysicsMessage2d createBodyJointMessage world
 
         /// Send a physics message to destroy a physics joint.
-        static member destroyBodyJoint is2d bodyTargets bodyJointId world =
-            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyTargets = bodyTargets }
+        static member destroyBodyJoint is2d bodyJointTarget bodyJointTarget2 bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2 = bodyJointTarget2 }
             if not is2d
             then World.handlePhysicsMessage3d destroyBodyJointMessage world
             else World.handlePhysicsMessage2d destroyBodyJointMessage world
