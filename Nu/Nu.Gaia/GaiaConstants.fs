@@ -12,7 +12,7 @@ module Constants =
     [<RequireQualifiedAccess>]
     module Gaia =
 
-        let [<Literal>] PositionSnap2dDefault = 12.0f
+        let [<Literal>] PositionSnap2dDefault = 8.0f
         let [<Literal>] DegreesSnap2dDefault = 5.0f
         let [<Literal>] ScaleSnap2dDefault = 0.1f
         let [<Uniform>] Snaps2dDefault = (PositionSnap2dDefault, DegreesSnap2dDefault, ScaleSnap2dDefault)
