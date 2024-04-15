@@ -1163,7 +1163,7 @@ module BasicStaticBillboardEmitter =
         let emitterBehaviors = Behaviors.empty
         make
             time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
-            Constants.Engine.Particle3dShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            Constants.Engine.ParticleShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
     /// Make the default basic billboard particle emitter.
@@ -1213,7 +1213,7 @@ module BasicStaticBillboardEmitter =
             Behaviors.empty
         make
             time Body.defaultBody false MaterialProperties.defaultProperties Material.defaultMaterial
-            Constants.Engine.Particle3dShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
+            Constants.Engine.ParticleShadowOffsetDefault (ForwardRenderType (0.0f, 0.0f)) lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
 /// Describes a billboard emitter.

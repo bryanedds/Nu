@@ -445,9 +445,7 @@ type BodyJointId =
       BodyJointIndex : int }
 
 type AngleJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3
       Axis : Vector3
       Axis2 : Vector3
@@ -455,63 +453,45 @@ type AngleJoint =
       AngleMax : single
       Softness : single
       BiasFactor : single
-      RelaxationFactor : single
-      BreakImpulseThreshold : single }
+      RelaxationFactor : single }
 
 type DistanceJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3
       Length : single
-      Frequency : single }
+      Frequency : single
+      DampingRatio : single }
 
 type FrictionJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type GearJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type MotorJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type PrismaticJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type PulleyJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type RevoluteJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type RopeJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 type WheelJoint =
-    { TargetId : BodyId
-      TargetId2 : BodyId
-      Anchor : Vector3
+    { Anchor : Vector3
       Anchor2 : Vector3 }
 
 /// A joint on physics bodies.
@@ -534,11 +514,17 @@ type BodyJoint =
 
 type BodyJointProperties =
     { BodyJointIndex : int
-      BodyJoint : BodyJoint }
+      BodyJoint : BodyJoint
+      BodyTargets : BodyId list
+      BreakImpulseThreshold : single
+      CollideConnected : bool }
 
     static member empty =
         { BodyJointIndex = 0
-          BodyJoint = EmptyJoint }
+          BodyJoint = EmptyJoint
+          BodyTargets = []
+          BreakImpulseThreshold = 0.0f
+          CollideConnected = false }
 
 /// A message to the physics system to create a body.
 type CreateBodyMessage =

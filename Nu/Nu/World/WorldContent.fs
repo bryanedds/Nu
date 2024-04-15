@@ -446,6 +446,9 @@ module Content =
     /// Describe a 2d character with the given definitions.
     let character2d entityName definitions = entity<Character2dDispatcher> entityName definitions
 
+    /// Describe a 2d body joint with the given definitions.
+    let bodyJoint2d entityName definitions = entity<BodyJoint2dDispatcher> entityName definitions
+
     /// Describe a tile map with the given definitions.
     let tileMap entityName definitions = entity<TileMapDispatcher> entityName definitions
 
@@ -493,6 +496,9 @@ module Content =
 
     /// Describe a 3d character with the given definitions.
     let character3d entityName definitions = entity<Character3dDispatcher> entityName definitions
+
+    /// Describe a 3d body joint with the given definitions.
+    let bodyJoint3d entityName definitions = entity<BodyJoint3dDispatcher> entityName definitions
 
     /// Describe a terrain with the given definitions.
     let terrain entityName definitions = entity<TerrainDispatcher> entityName definitions

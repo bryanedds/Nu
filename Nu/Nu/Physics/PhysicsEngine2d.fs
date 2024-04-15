@@ -332,16 +332,41 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let bodyJointProperties = createBodyJointMessage.BodyJointProperties
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
-        | AngleJoint jointAngle ->
-            match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
-            | ((true, (_, body)), (true, (_, body2))) ->
-                let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
-                joint.TargetAngle <- -(jointAngle.AngleMax - jointAngle.AngleMin)
-                joint.Softness <- jointAngle.Softness
-                joint.BiasFactor <- jointAngle.BiasFactor
-                joint.Breakpoint <- jointAngle.BreakImpulseThreshold
-            | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
-        | _ -> failwithnie ()
+        | _ ->
+            let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = bodyJointProperties.BodyJointIndex }
+            match bodyJointProperties.BodyTargets with
+            | bodyId :: body2Id :: _ ->
+                match bodyJointProperties.BodyJoint with
+                | EmptyJoint ->
+                    failwithumf () // already checked
+                | AngleJoint angleJoint ->
+                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                    | ((true, (_, body)), (true, (_, body2))) ->
+                        let joint = JointFactory.CreateAngleJoint (physicsEngine.PhysicsContext, body, body2)
+                        joint.TargetAngle <- -(angleJoint.AngleMax - angleJoint.AngleMin)
+                        joint.Softness <- angleJoint.Softness
+                        joint.BiasFactor <- angleJoint.BiasFactor
+                        joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
+                        joint.CollideConnected <- bodyJointProperties.CollideConnected
+                        if physicsEngine.Joints.TryAdd (bodyJointId, joint)
+                        then () // nothing to do
+                        else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
+                | DistanceJoint distanceJoint ->
+                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                    | ((true, (_, body)), (true, (_, body2))) ->
+                        let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
+                        joint.Length <- PhysicsEngine2d.toPhysics distanceJoint.Length
+                        joint.Frequency <- distanceJoint.Frequency
+                        joint.DampingRatio <- distanceJoint.DampingRatio
+                        joint.Breakpoint <- bodyJointProperties.BreakImpulseThreshold
+                        joint.CollideConnected <- bodyJointProperties.CollideConnected
+                        if physicsEngine.Joints.TryAdd (bodyJointId, joint)
+                        then () // nothing to do
+                        else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
+                | _ -> ()
+            | _ -> ()
 
     static member private createBodyJoints (createBodyJointsMessage : CreateBodyJointsMessage) physicsEngine =
         List.iter (fun (bodyJointProperties : BodyJointProperties) ->

@@ -521,18 +521,26 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = bodyJointProperties.BodyJointIndex }
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
-        | AngleJoint jointAngle ->
-            match (physicsEngine.Bodies.TryGetValue jointAngle.TargetId, physicsEngine.Bodies.TryGetValue jointAngle.TargetId2) with
-            | ((true, body), (true, body2)) ->
-                let hinge = new HingeConstraint (body, body2, jointAngle.Anchor, jointAngle.Anchor2, jointAngle.Axis, jointAngle.Axis2)
-                hinge.SetLimit (jointAngle.AngleMin, jointAngle.AngleMax, jointAngle.Softness, jointAngle.BiasFactor, jointAngle.RelaxationFactor)
-                hinge.BreakingImpulseThreshold <- jointAngle.BreakImpulseThreshold
-                physicsEngine.PhysicsContext.AddConstraint (hinge, false)
-                if physicsEngine.Constraints.TryAdd (bodyJointId, hinge)
-                then () // nothing to do
-                else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
-            | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
-        | _ -> failwithnie ()
+        | _ ->
+            match bodyJointProperties.BodyTargets with
+            | bodyId :: body2Id :: _ ->
+                match bodyJointProperties.BodyJoint with
+                | EmptyJoint ->
+                    failwithumf () // already checked
+                | AngleJoint angleJoint ->
+                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                    | ((true, body), (true, body2)) ->
+                        let hinge = new HingeConstraint (body, body2, angleJoint.Anchor, angleJoint.Anchor2, angleJoint.Axis, angleJoint.Axis2)
+                        hinge.SetLimit (angleJoint.AngleMin, angleJoint.AngleMax, angleJoint.Softness, angleJoint.BiasFactor, angleJoint.RelaxationFactor)
+                        hinge.BreakingImpulseThreshold <- bodyJointProperties.BreakImpulseThreshold
+                        // TODO: implement CollideConnected.
+                        physicsEngine.PhysicsContext.AddConstraint (hinge, false)
+                        if physicsEngine.Constraints.TryAdd (bodyJointId, hinge)
+                        then () // nothing to do
+                        else Log.debug ("Could not add joint via '" + scstring createBodyJointMessage + "'.")
+                    | (_, _) -> Log.debug "Could not create a joint for one or more non-existent bodies."
+                | _ -> ()
+            | _ -> ()
 
     static member private createBodyJoints (createBodyJointsMessage : CreateBodyJointsMessage) physicsEngine =
         List.iter (fun (bodyJointProperties : BodyJointProperties) ->
