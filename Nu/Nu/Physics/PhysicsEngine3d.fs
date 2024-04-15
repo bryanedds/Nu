@@ -635,11 +635,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
             match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
             | (true, messages) ->
-                let removed =
-                    messages.RemoveAll (fun message ->
-                        message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
-                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex)
-                if removed > 1 then Log.info "Unsupported body joint removal pattern."
+                messages.RemoveAll (fun message ->
+                    message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
+                    message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
+                ignore<int>
             | (false, _) -> ()
 
         // attempt to destroy body joint

@@ -803,6 +803,11 @@ module BodyJoint3dDispatcherModule =
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.important Constants.Engine.BodyJoint3dSizeDefault v3Zero
 
+        override this.RayCast (ray, entity, world) =
+            let intersectionOpt = ray.Intersects (entity.GetBounds world)
+            if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+            else [||]
+
 [<AutoOpen>]
 module TerrainDispatcherModule =
 
