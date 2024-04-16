@@ -475,6 +475,40 @@ module Stream =
     let [<DebuggerHidden; DebuggerStepThrough>] monitor callback subscriber stream world =
         monitorEffect (fun evt world -> (Cascade, callback evt world)) subscriber stream world |> snd
 
+    /// Subscribe to a stream for the life span of an entity and a given facet.
+    let [<DebuggerHidden; DebuggerStepThrough>] senseEffect<'a> callback (entity : Entity) facetName stream world =
+        let subscribe world =
+            let removalId = makeGuid ()
+            let fastenId = makeGuid ()
+            let subscriptionId = makeGuid ()
+            let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
+            let (address, unsubscribe, world) = stream.Subscribe world
+            let unsubscribe = fun (world : World) ->
+                let world = unsubscribe world
+                let world = World.unsubscribe removalId world
+                let world = World.unsubscribe fastenId world
+                let world = World.unsubscribe subscriptionId world
+                world
+            let callback' = fun _ world -> (Cascade, unsubscribe world)
+            let callback'' = fun changeEvent world ->
+                let previous = changeEvent.Data.Previous :?> string Set
+                let value = changeEvent.Data.Value :?> string Set
+                if previous.Contains facetName && not (value.Contains facetName)
+                then (Cascade, unsubscribe world)
+                else (Cascade, world)
+            let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> entity.EntityAddress
+            let changeFacetNamesEventAddress = rtoa<ChangeData> [|"Change"; "FacetNames"; "Event"|] --> entity.EntityAddress
+            let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress entity world |> snd
+            let world = World.subscribePlus<ChangeData, Simulant> fastenId callback'' changeFacetNamesEventAddress entity world |> snd
+            let world = World.subscribePlus<'a, Entity> subscriptionId callback address entity world |> snd
+            (subscriptionAddress, unsubscribe, world)
+        let stream = { Subscribe = subscribe }
+        stream.Subscribe world |> _bc
+
+    /// Subscribe to a stream for the life span of an entity and a given facet.
+    let [<DebuggerHidden; DebuggerStepThrough>] sense callback entity facet stream world =
+        senseEffect (fun evt world -> (Cascade, callback evt world)) entity facet stream world |> snd
+
     /// Insert a persistent state value into the stream.
     let [<DebuggerHidden; DebuggerStepThrough>] insert state stream =
         stream |>
