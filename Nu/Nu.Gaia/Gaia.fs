@@ -3098,6 +3098,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             entityHierarchySearchRequested <- false
                         ImGui.SetNextItemWidth 165.0f
                         ImGui.InputTextWithHint ("##entityHierarchySearchStr", "[enter search text]", &entityHierarchySearchStr, 4096u) |> ignore<bool>
+                        if ImGui.IsItemFocused () then entityHierarchyFocused <- false
                         ImGui.SameLine ()
                         ImGui.Checkbox ("Propagators", &entityHierarchyFilterPropagationSources) |> ignore<bool>
 
