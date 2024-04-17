@@ -219,7 +219,7 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
-        /// Unshelve the ambient state.
+        /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =
             World.choose { world with AmbientState = AmbientState.switch world.AmbientState }
 

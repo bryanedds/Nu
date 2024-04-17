@@ -838,6 +838,9 @@ module WorldModule2 =
             // manually choose world to override choose count check
             WorldTypes.Chosen <- world
 
+            // wipe memoized named content
+            Content.wipe ()
+
             // sync tick watch state to advancing
             let world = World.switchAmbientState world
 
