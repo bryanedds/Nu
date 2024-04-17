@@ -57,9 +57,9 @@ module WorldModule2 =
     let private ScreenTransitionKeyboardKeyId = Gen.id
 
     (* Cached HashSets *)
-    let private CachedHashSet2dNormal = HashSet (QuadelementEqualityComparer ())
-    let private CachedHashSet3dNormal = HashSet (OctelementEqualityComparer ())
-    let private CachedHashSet3dShadow = HashSet (OctelementEqualityComparer ())
+    let private HashSet2dNormalCached = HashSet (QuadelementEqualityComparer ())
+    let private HashSet3dNormalCached = HashSet (OctelementEqualityComparer ())
+    let private HashSet3dShadowCached = HashSet (OctelementEqualityComparer ())
 
     (* Frame Pacing *)
     let mutable private FramePaceIssues = 0
@@ -1257,8 +1257,8 @@ module WorldModule2 =
                 let advancing = world.Advancing
                 let screenOpt = World.getSelectedScreenOpt world
                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
-                World.getElements3dInPlay CachedHashSet3dNormal world
-                World.getElements2dInPlay CachedHashSet2dNormal world
+                World.getElements3dInPlay HashSet3dNormalCached world
+                World.getElements2dInPlay HashSet2dNormalCached world
                 UpdateGatherTimer.Stop ()
 
                 // update game
@@ -1283,13 +1283,13 @@ module WorldModule2 =
                         if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
                         then World.updateEntity element.Entry world
                         else world)
-                        world CachedHashSet3dNormal
+                        world HashSet3dNormalCached
                 let world =
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
                         then World.updateEntity element.Entry world
                         else world)
-                        world CachedHashSet2dNormal
+                        world HashSet2dNormalCached
                 UpdateEntitiesTimer.Stop ()
 
                 // fin
@@ -1297,8 +1297,8 @@ module WorldModule2 =
 
             // free cached values
             finally
-                CachedHashSet3dNormal.Clear ()
-                CachedHashSet2dNormal.Clear ()
+                HashSet3dNormalCached.Clear ()
+                HashSet2dNormalCached.Clear ()
 
         static member private postUpdateSimulants (world : World) =
 
@@ -1389,17 +1389,17 @@ module WorldModule2 =
                     then hashSetPlus HashIdentity.Structural (Seq.filter (fun (group : Group) -> not (group.GetVisible world)) groups)
                     else hashSetPlus HashIdentity.Structural []
                 match renderPass with
-                | NormalPass -> World.getElements3dInView CachedHashSet3dNormal world
+                | NormalPass -> World.getElements3dInView HashSet3dNormalCached world
                 | LightMapPass (_, lightMapBounds) ->
                     let hashSet = HashSet ()
                     World.getElements3dInViewBox lightMapBounds hashSet world
                     for element in hashSet do
                         if element.Static then
-                            CachedHashSet3dNormal.Add element |> ignore<bool>
-                | ShadowPass (_, shadowDirectional, _, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum CachedHashSet3dNormal world
+                            HashSet3dNormalCached.Add element |> ignore<bool>
+                | ShadowPass (_, shadowDirectional, _, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
                 match renderPass with
-                | NormalPass -> World.getElements2dInView CachedHashSet2dNormal world
+                | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
@@ -1426,19 +1426,19 @@ module WorldModule2 =
                 // render entities
                 RenderEntitiesTimer.Start ()
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    for element in CachedHashSet3dNormal do
+                    for element in HashSet3dNormalCached do
                         if element.Visible then
                             World.renderEntity renderPass element.Entry world
                 else
-                    for element in CachedHashSet3dNormal do
+                    for element in HashSet3dNormalCached do
                         if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
-                    for element in CachedHashSet2dNormal do
+                    for element in HashSet2dNormalCached do
                         if element.Visible then
                             World.renderEntity renderPass element.Entry world
                 else
-                    for element in CachedHashSet2dNormal do
+                    for element in HashSet2dNormalCached do
                         if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
                 RenderEntitiesTimer.Stop ()
@@ -1448,8 +1448,8 @@ module WorldModule2 =
 
             // free cached values
             finally
-                CachedHashSet3dNormal.Clear ()
-                CachedHashSet2dNormal.Clear ()
+                HashSet3dNormalCached.Clear ()
+                HashSet2dNormalCached.Clear ()
 
         static member private renderSimulants lightMapRenderRequested world =
 
@@ -1474,7 +1474,7 @@ module WorldModule2 =
 
                 // create shadow pass descriptors
                 let lightBox = World.getLight3dBox world
-                let lights = World.getLights3dInBox lightBox CachedHashSet3dShadow world // NOTE: this may not be the optimal way to query.
+                let lights = World.getLights3dInBox lightBox HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
                 let eyeCenter = World.getEye3dCenter world
                 let sortableShadowPassDescriptors =
                     [|for light in lights do
@@ -1533,7 +1533,7 @@ module WorldModule2 =
 
             // free cached values
             finally
-                CachedHashSet3dShadow.Clear ()
+                HashSet3dShadowCached.Clear ()
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then

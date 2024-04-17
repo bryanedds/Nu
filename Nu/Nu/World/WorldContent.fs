@@ -11,7 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Content =
 
-    let private Contents = Dictionary<string, struct (obj * SimulantContent)> StringComparer.Ordinal
+    let private ContentsCached = Dictionary<string, struct (obj * SimulantContent)> StringComparer.Ordinal
 
     /// Helps to track when content bound to event handlers needs to be updated due to LateBindings changing, such as
     /// via code reloading.
@@ -599,25 +599,21 @@ module Content =
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
           ScreenContents = screenContents }
 
-    /// Memoize named content. Name must be globally unique!
-    let memo<'a, 'c when 'c :> SimulantContent> name (a : 'a) (fn : 'a -> 'c) : 'c =
-        match Contents.TryGetValue name with
+    /// Cache named content. Name must be globally unique!
+    let cache<'a, 'c when 'c :> SimulantContent> name (a : 'a) (fn : 'a -> 'c) : 'c =
+        match ContentsCached.TryGetValue name with
         | (true, struct (v, (:? 'c as content))) when v === a -> content
         | (_, _) ->
             let content = fn a
-            Contents.[name] <- struct (a, content)
+            ContentsCached.[name] <- struct (a, content)
             content
 
-    /// Discard memoized named content.
+    /// Discard cached content.
     let wipe () =
-        Contents.Clear ()
+        ContentsCached.Clear ()
 
 [<AutoOpen>]
 module ContentOperators =
-
-    /// Memoize named content. Name must be globally unique!
-    let inline memo<'a, 'c when 'c :> SimulantContent> =
-        Content.memo<'a, 'c>
 
     /// Define a static property equality.
     let
