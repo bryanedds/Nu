@@ -118,7 +118,7 @@ module Battle =
               BattleSongOpt_ : Song AssetTag option
               BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
-              ActionCommands_ : ActionCommand Queue
+              ActionCommands_ : ActionCommand FQueue
               MessageOpt_ : (int64 * int64 * Dialog) option
               DialogOpt_ : Dialog option
               BattleState_ : BattleState }
@@ -151,7 +151,7 @@ module Battle =
     let private sortActionCommands battle =
         let actionCommands = Array.ofSeq battle.ActionCommands_
         let actionCommandsSorted = Array.sortStableBy (fun command -> match command.Action with Wound -> 0 | Consequence _ -> 1 | _ -> 2) actionCommands
-        { battle with ActionCommands_ = Queue.ofSeq actionCommandsSorted }
+        { battle with ActionCommands_ = FQueue.ofSeq actionCommandsSorted }
 
     let private mapMessageOpt updater field =
         { field with MessageOpt_ = updater field.MessageOpt_ }
@@ -166,10 +166,10 @@ module Battle =
         { battle with ActionCommands_ = updater battle.ActionCommands_ }
 
     let appendActionCommand command battle =
-        { battle with ActionCommands_ = Queue.conj command battle.ActionCommands_ }
+        { battle with ActionCommands_ = FQueue.conj command battle.ActionCommands_ }
 
     let prependActionCommand command battle =
-        { battle with ActionCommands_ = Queue.rev battle.ActionCommands_ |> Queue.conj command |> Queue.rev }
+        { battle with ActionCommands_ = FQueue.rev battle.ActionCommands_ |> FQueue.conj command |> FQueue.rev }
 
     (* Multi-Character Operations *)
 
@@ -1937,8 +1937,8 @@ module Battle =
 
     and private updateNoCurrentCommand (battle : Battle) =
         match battle.ActionCommands_ with
-        | Queue.Cons (nextCommand, futureCommands) -> updateNextCommand nextCommand futureCommands battle
-        | Queue.Nil -> updateNoNextCommand battle
+        | FQueue.Cons (nextCommand, futureCommands) -> updateNextCommand nextCommand futureCommands battle
+        | FQueue.Nil -> updateNoNextCommand battle
 
     and private updateRunning (battle : Battle) =
         if battle.MessageOpt_.IsNone then
@@ -2054,7 +2054,7 @@ module Battle =
               BattleSongOpt_ = battleData.BattleSongOpt
               BattleSpeed_ = battleSpeed
               CurrentCommandOpt_ = None
-              ActionCommands_ = Queue.empty
+              ActionCommands_ = FQueue.empty
               MessageOpt_ = None
               DialogOpt_ = None
               BattleState_ = BattleReady 1L }
@@ -2073,7 +2073,7 @@ module Battle =
               BattleSongOpt_ = None
               BattleSpeed_ = PacedSpeed
               CurrentCommandOpt_ = None
-              ActionCommands_ = Queue.empty
+              ActionCommands_ = FQueue.empty
               MessageOpt_ = None
               DialogOpt_ = None
               BattleState_ = BattleQuit }

@@ -40,10 +40,10 @@ type ActionState =
 
 type [<ReferenceEquality; SymbolicExpansion>] Character =
     { CharacterType : CharacterType
-      PositionPrevious : Vector3 Queue
-      RotationPrevious : Quaternion Queue
-      LinearVelocityPrevious : Vector3 Queue
-      AngularVelocityPrevious : Vector3 Queue
+      PositionPrevious : Vector3 FQueue
+      RotationPrevious : Quaternion FQueue
+      LinearVelocityPrevious : Vector3 FQueue
+      AngularVelocityPrevious : Vector3 FQueue
       HitPoints : int
       ActionState : ActionState
       JumpState : JumpState
@@ -54,14 +54,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       WeaponModel : StaticModel AssetTag }
 
     member this.PositionInterp position =
-        if not (Queue.isEmpty this.PositionPrevious) then
-            let positions = Queue.conj position this.PositionPrevious
+        if not (FQueue.isEmpty this.PositionPrevious) then
+            let positions = FQueue.conj position this.PositionPrevious
             Seq.sum positions / single positions.Length
         else position
 
     member this.RotationInterp rotation =
-        if not (Queue.isEmpty this.RotationPrevious) then
-            let rotations = Queue.conj rotation this.RotationPrevious
+        if not (FQueue.isEmpty this.RotationPrevious) then
+            let rotations = FQueue.conj rotation this.RotationPrevious
             if rotations.Length > 1 then
                 let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f)
                 unnormalized.Normalized
@@ -69,14 +69,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         else rotation
 
     member this.LinearVelocityInterp linearVelocity =
-        if not (Queue.isEmpty this.LinearVelocityPrevious) then
-            let linearVelocities = Queue.conj linearVelocity this.LinearVelocityPrevious
+        if not (FQueue.isEmpty this.LinearVelocityPrevious) then
+            let linearVelocities = FQueue.conj linearVelocity this.LinearVelocityPrevious
             Seq.sum linearVelocities / single linearVelocities.Length
         else linearVelocity
 
     member this.AngularVelocityInterp angularVelocity =
-        if not (Queue.isEmpty this.AngularVelocityPrevious) then
-            let angularVelocities = Queue.conj angularVelocity this.AngularVelocityPrevious
+        if not (FQueue.isEmpty this.AngularVelocityPrevious) then
+            let angularVelocities = FQueue.conj angularVelocity this.AngularVelocityPrevious
             Seq.sum angularVelocities / single angularVelocities.Length
         else angularVelocity
 
@@ -145,16 +145,16 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         // update interps
         let character =
             { character with
-                PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> Queue.tail else character.PositionPrevious) |> Queue.conj position
-                RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> Queue.tail else character.RotationPrevious) |> Queue.conj rotation
-                LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> Queue.tail else character.LinearVelocityPrevious) |> Queue.conj linearVelocity
-                AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> Queue.tail else character.AngularVelocityPrevious) |> Queue.conj angularVelocity }
+                PositionPrevious = (if character.PositionPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.PositionPrevious |> FQueue.tail else character.PositionPrevious) |> FQueue.conj position
+                RotationPrevious = (if character.RotationPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.RotationPrevious |> FQueue.tail else character.RotationPrevious) |> FQueue.conj rotation
+                LinearVelocityPrevious = (if character.LinearVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.LinearVelocityPrevious |> FQueue.tail else character.LinearVelocityPrevious) |> FQueue.conj linearVelocity
+                AngularVelocityPrevious = (if character.AngularVelocityPrevious.Length >= Constants.Gameplay.CharacterInterpolationSteps then character.AngularVelocityPrevious |> FQueue.tail else character.AngularVelocityPrevious) |> FQueue.conj angularVelocity }
 
         // ensure previous positions interp aren't stale (such as when an entity is moved in the editor with existing previous position state)
         let character =
             let positionInterp = character.PositionInterp position
             if Vector3.Distance (positionInterp, position) > Constants.Gameplay.CharacterPositionInterpDistanceMax
-            then { character with PositionPrevious = List.init Constants.Gameplay.CharacterInterpolationSteps (fun _ -> position) |> Queue.ofList }
+            then { character with PositionPrevious = List.init Constants.Gameplay.CharacterInterpolationSteps (fun _ -> position) |> FQueue.ofList }
             else character
 
         // fin
@@ -314,10 +314,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
     static member initial characterType =
         { CharacterType = characterType
-          PositionPrevious = Queue.empty
-          RotationPrevious = Queue.empty
-          LinearVelocityPrevious = Queue.empty
-          AngularVelocityPrevious = Queue.empty
+          PositionPrevious = FQueue.empty
+          RotationPrevious = FQueue.empty
+          LinearVelocityPrevious = FQueue.empty
+          AngularVelocityPrevious = FQueue.empty
           HitPoints = 5
           ActionState = NormalState
           JumpState = JumpState.initial
