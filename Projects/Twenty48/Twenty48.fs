@@ -1,5 +1,6 @@
 ﻿namespace Twenty48
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -12,14 +13,13 @@ module Twenty48 =
         | Splash
         | Title
         | Credits
-        | Gameplay of Gameplay
+        | Gameplay
 
     // this is our MMCC message type.
     type Message =
         | ShowTitle
         | ShowCredits
         | ShowGameplay
-        | Update
         interface Nu.Message
 
     // this is our MMCC command type. Commands are used instead of messages when the world is to be
@@ -46,30 +46,20 @@ module Twenty48 =
                 | Splash -> Desire Simulants.Splash
                 | Title -> Desire Simulants.Title
                 | Credits -> Desire Simulants.Credits
-                | Gameplay gameplay ->
-                    match gameplay.GameplayState with
-                    | Commencing | Commence _ -> Desire Simulants.Gameplay
-                    | Quitting | Quit -> Desire Simulants.Title
-             match model with Gameplay gameplay -> Simulants.Gameplay.Gameplay := gameplay | _ -> ()
-             Game.UpdateEvent => Update
+                | Gameplay -> Desire Simulants.Gameplay
              Simulants.Splash.DeselectingEvent => ShowTitle
              Simulants.TitleCredits.ClickEvent => ShowCredits
              Simulants.TitlePlay.ClickEvent => ShowGameplay
              Simulants.TitleExit.ClickEvent => Exit
-             Simulants.CreditsBack.ClickEvent => ShowTitle]
+             Simulants.CreditsBack.ClickEvent => ShowTitle
+             Simulants.Gameplay.QuitEvent => ShowTitle]
 
         // here we handle the above messages
-        override this.Message (model, message, _, world) =
+        override this.Message (_, message, _, _) =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits
-            | ShowGameplay -> just (Gameplay Gameplay.commencing)
-            | Update ->
-                match model with
-                | Gameplay gameplay ->
-                    let gameplay' = Simulants.Gameplay.GetGameplay world
-                    if gameplay =/= gameplay' then just (Gameplay gameplay') else just model
-                | _ -> just model
+            | ShowGameplay -> just Gameplay
 
         // here we handle the above commands
         override this.Command (_, command, _, world) =

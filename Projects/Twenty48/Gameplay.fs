@@ -1,6 +1,7 @@
 ﻿namespace Twenty48
 open System
 open System.Collections.Generic
+open System.Numerics
 open Prime
 open Nu
 
@@ -21,9 +22,7 @@ type Tile =
           Value = value }
 
 type GameplayState =
-    | Commencing
-    | Commence of bool
-    | Quitting
+    | Playing of bool
     | Quit
 
 type Gameplay =
@@ -146,13 +145,9 @@ type Gameplay =
           Tiles = []
           Score = 0 }
 
-    static member commencing =
+    static member initial =
         let gameplay = Gameplay.empty
         let position = v2i (Gen.random1 gameplay.BoardSize.X) (Gen.random1 gameplay.BoardSize.Y)
         let value = if Gen.random1 10 = 0 then 4 else 2
         let tile = Tile.make position value
-        { gameplay with GameplayState = Commencing; Tiles = [tile] }
-
-    static member commence =
-        let gameplay = Gameplay.commencing
-        { gameplay with GameplayState = Commence false }
+        { gameplay with GameplayState = Playing false; Tiles = [tile] }

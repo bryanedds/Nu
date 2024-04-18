@@ -37,12 +37,12 @@ module Gameplay =
         | TimeUpdate
         interface Message
 
-    // this our MMCC command type.
+    // this is our MMCC command type.
     type GameplayCommand =
         | StartQuitting
         interface Command
 
-    // this extends the Screen API to expose the above Gameplay model as well as the gameplay quit event.
+    // this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world

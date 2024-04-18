@@ -37,6 +37,7 @@
 	<ItemGroup>
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
+		<Compile Include="Events.fs" />
 		<Compile Include="Gameplay.fs" />
 		<Compile Include="GameplayDispatcher.fs" />
 		<Compile Include="Twenty48.fs" />

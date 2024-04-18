@@ -1,5 +1,6 @@
 ﻿namespace Twenty48
 open System
+open System.Numerics
 open Prime
 open Nu
 
@@ -8,27 +9,32 @@ module GameplayDispatcher =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | FinishCommencing
-        | StartQuitting
+        | StartPlaying
         | FinishQuitting
         | TimeUpdate
         | TryShift of Direction
         | Nil
         interface Message
 
-    // this extends the Screen API to expose the above Gameplay model.
+    // this our MMCC command type.
+    type GameplayCommand =
+        | StartQuitting
+        interface Command
+
+    // this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
+        member this.QuitEvent = Events.QuitEvent --> this
 
     // this is the screen dispatcher that defines the screen where gameplay takes place
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.empty)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
-            [Screen.SelectEvent => FinishCommencing
+            [Screen.SelectEvent => StartPlaying
              Screen.DeselectingEvent => FinishQuitting
              Screen.TimeUpdateEvent => TimeUpdate
              Game.KeyboardKeyDownEvent =|> fun evt ->
@@ -45,14 +51,9 @@ module GameplayDispatcher =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | FinishCommencing ->
-                let gameplay = { gameplay with GameplayState = Commence false }
+            | StartPlaying ->
+                let gameplay = Gameplay.initial
                 just gameplay
-
-            | StartQuitting ->
-                match gameplay.GameplayState with
-                | Commence _ -> just { gameplay with GameplayState = Quitting }
-                | _ -> just gameplay
 
             | FinishQuitting ->
                 just { gameplay with GameplayState = Quit }
@@ -61,7 +62,7 @@ module GameplayDispatcher =
                 just { gameplay with GameplayTime = inc gameplay.GameplayTime }
 
             | TryShift direction ->
-                if world.Advancing && gameplay.GameplayState = Commence false then
+                if world.Advancing && gameplay.GameplayState = Playing false then
                     let gameplay' =
                         match direction with
                         | Upward -> Gameplay.shiftUp gameplay
@@ -71,13 +72,21 @@ module GameplayDispatcher =
                     if Gameplay.detectTileChange gameplay gameplay' then
                         let gameplay = Gameplay.addTile gameplay'
                         if not (Gameplay.detectMoveAvailability gameplay)
-                        then just { gameplay with GameplayState = Commence true }
+                        then just { gameplay with GameplayState = Playing true }
                         else just gameplay
                     else just gameplay
                 else just gameplay
 
             | Nil ->
                 just gameplay
+
+        // here we handle the above commands
+        override this.Command (_, command, screen, world) =
+
+            match command with
+            | StartQuitting ->
+                let world = World.publish () screen.QuitEvent screen world
+                just world
 
         // here we describe the content of the game including the level, the hud, and the player
         override this.Content (gameplay, _) =
@@ -107,13 +116,13 @@ module GameplayDispatcher =
 
                  // game over
                  match gameplay.GameplayState with
-                 | Commence true | Quitting ->
+                 | Playing true ->
                     Content.text "GameOver"
                         [Entity.Position == v3 0.0f 155.0f 0.0f
                          Entity.Elevation == 10.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Game Over!"]
-                 | Commencing | Commence false | Quit -> ()
+                 | Playing false | Quit -> ()
 
                  // board
                  let gutter = v3 4.0f 4.0f 0.0f
