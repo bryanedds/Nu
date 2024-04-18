@@ -55,7 +55,7 @@ module TerraFirma =
              Simulants.Gameplay.QuitEvent => ShowTitle]
 
         // here we handle the above messages
-        override this.Message (model, message, _, world) =
+        override this.Message (_, message, _, _) =
             match message with
             | ShowTitle -> just Title
             | ShowCredits -> just Credits

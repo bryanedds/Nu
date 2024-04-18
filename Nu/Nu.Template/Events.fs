@@ -2,7 +2,7 @@
 open System
 open Nu
 
-// this module contains our own user-defined events.
+// this module contains our user-defined events.
 [<RequireQualifiedAccess>]
 module Events =
 
