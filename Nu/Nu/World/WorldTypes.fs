@@ -53,10 +53,19 @@ and [<ReferenceEquality>] ReplaceProperty =
       IndicateReplaced : World -> World
       PropertyDescriptor : PropertyDescriptor }
 
-/// Details additional editing behavior for an simulant's properties.
+/// Details additional editing behavior for a simulant's properties.
 and AppendProperties =
     { Snapshot : World -> World
       UnfocusProperty : World -> World }
+
+/// Details additional editing behavior for viewport context menu.
+and ContextHierarchy =
+    { Snapshot : World -> World }
+
+/// Details additional editing behavior for viewport context menu.
+and ContextViewport =
+    { Snapshot : World -> World
+      RightClickPosition : Vector2 }
 
 /// Details the additional editing behavior for a simulant in a viewport.
 and [<ReferenceEquality>] OverlayViewport =
@@ -69,6 +78,8 @@ and [<ReferenceEquality>] OverlayViewport =
 and [<ReferenceEquality>] EditOperation =
     | ReplaceProperty of ReplaceProperty
     | AppendProperties of AppendProperties
+    | ContextHierarchy of ContextHierarchy
+    | ContextViewport of ContextViewport
     | OverlayViewport of OverlayViewport
 
 /// The data for a change in a simulant.

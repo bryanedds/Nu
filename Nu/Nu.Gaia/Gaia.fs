@@ -1556,6 +1556,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.MenuItem "Reset Creation Parent" then newEntityParentOpt <- None; showEntityContextMenu <- false
             else
                 if ImGui.MenuItem "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+            match selectedEntityOpt with
+            | Some selectedEntity -> world <- World.edit (ContextHierarchy { Snapshot = fun world -> snapshot (); world }) selectedEntity world
+            | None -> ()
             ImGui.EndPopup ()
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
@@ -3880,7 +3883,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if not showing then messageBoxOpt <- None
                         ImGui.EndPopup ()
 
-                // entity context menu
+                // viewport context menu
                 if showEntityContextMenu then
                     ImGui.SetNextWindowPos rightClickPosition
                     ImGui.SetNextWindowSize (v2 280.0f 323.0f)
@@ -3925,6 +3928,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Button "Wipe Propagation Targets" then tryWipePropagationTargets () |> ignore<bool>
                         if ImGui.Button "Show in Hierarchy" then showSelectedEntity <- true; showEntityContextMenu <- false
                         if ImGui.Button "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+                        match selectedEntityOpt with
+                        | Some selectedEntity -> world <- World.edit (ContextViewport { Snapshot = (fun world -> snapshot (); world); RightClickPosition = rightClickPosition }) selectedEntity world
+                        | None -> ()
                         ImGui.End ()
 
                 // imgui inspector window
