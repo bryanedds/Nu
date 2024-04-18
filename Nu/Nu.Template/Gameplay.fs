@@ -74,7 +74,8 @@ module Gameplay =
                 just gameplay
 
             | TimeUpdate ->
-                let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
+                let gameDelta = world.GameDelta
+                let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
                 just gameplay
 
         // here we handle the above commands
