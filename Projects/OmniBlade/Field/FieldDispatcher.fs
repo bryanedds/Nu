@@ -614,8 +614,7 @@ module FieldDispatcher =
 
                 [// avatar
                  Content.entity<AvatarDispatcher> Simulants.FieldAvatar.Name
-                    [Entity.Position == v3Zero
-                     Entity.Elevation == Constants.Field.ForegroundElevation
+                    [Entity.Elevation == Constants.Field.ForegroundElevation
                      Entity.Size == Constants.Gameplay.CharacterSize
                      Entity.Substance == Density 1.0f
                      Entity.Avatar := field.Avatar]
@@ -964,7 +963,7 @@ module FieldDispatcher =
                                  Entity.Text == "This build of OmniBlade contains only the first few hours of content."]
                          else
                             Content.text "Confirm Quit:"
-                                [Entity.PositionLocal == v3 384.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
                                  Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                                  Entity.Text == "Confirm Quit:"]
                             Content.button "Cancel"
