@@ -1,6 +1,5 @@
 ﻿namespace BlazeVector
 open System
-open Prime
 open Nu
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor

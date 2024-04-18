@@ -1,6 +1,5 @@
 ﻿namespace BlazeVector
 open System
-open Prime
 open Nu
 
 // this module specifies new events types for BlazeVector.
