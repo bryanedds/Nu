@@ -1501,8 +1501,7 @@ module RigidBodyFacetModule =
         override this.RegisterPhysics (entity, world) =
             let mutable transform = entity.GetTransform world
             let bodyProperties =
-                { BodyIndex = (entity.GetBodyId world).BodyIndex
-                  Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
+                { Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
                   Rotation = transform.Rotation
                   Scale = transform.Scale
                   BodyShape = getBodyShape entity world
@@ -1523,7 +1522,8 @@ module RigidBodyFacetModule =
                   CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = entity.GetSensor world
-                  Observable = entity.GetObservable world }
+                  Observable = entity.GetObservable world
+                  BodyIndex = (entity.GetBodyId world).BodyIndex }
             World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
 
         override this.UnregisterPhysics (entity, world) =
@@ -1591,13 +1591,13 @@ module BodyJointFacetModule =
             match tryGetBodyTargetIds entity world with
             | Some (targetId, target2Id) ->
                 let bodyJointProperties =
-                    { BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex
-                      BodyJoint = entity.GetBodyJoint world
+                    { BodyJoint = entity.GetBodyJoint world
                       BodyJointTarget = targetId
                       BodyJointTarget2 = target2Id
                       BodyJointEnabled = entity.GetBodyJointEnabled world
                       BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
-                      CollideConnected = entity.GetCollideConnected world }
+                      CollideConnected = entity.GetCollideConnected world
+                      BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
                 World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
             | None -> world
 
@@ -3008,8 +3008,7 @@ module TerrainFacetModule =
                       TransformOpt = None
                       PropertiesOpt = None }
                 let bodyProperties =
-                    { BodyIndex = (entity.GetBodyId world).BodyIndex
-                      Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
+                    { Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
                       Rotation = transform.Rotation
                       Scale = transform.Scale
                       BodyShape = TerrainShape terrainShape
@@ -3030,7 +3029,8 @@ module TerrainFacetModule =
                       CollisionCategories = Physics.categorizeCollisionMask (entity.GetCollisionCategories world)
                       CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                       Sensor = false
-                      Observable = entity.GetObservable world }
+                      Observable = entity.GetObservable world
+                      BodyIndex = (entity.GetBodyId world).BodyIndex }
                 World.createBody false (entity.GetBodyId world) bodyProperties world
             | None -> world
 

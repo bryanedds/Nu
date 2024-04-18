@@ -410,8 +410,7 @@ type [<SymbolicExpansion>] CharacterProperties =
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
-    { BodyIndex : int
-      Center : Vector3
+    { Center : Vector3
       Rotation : Quaternion
       Scale : Vector3
       BodyType : BodyType
@@ -432,7 +431,8 @@ type BodyProperties =
       CollisionCategories : int
       CollisionMask : int
       Sensor : bool // sensor is always inherently observable
-      Observable : bool }
+      Observable : bool
+      BodyIndex : int }
 
     member this.HasSensors =
         this.Sensor || this.BodyShape.HasSensors
@@ -575,13 +575,13 @@ type BodyJoint =
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
-    { BodyJointIndex : int
-      BodyJoint : BodyJoint
+    { BodyJoint : BodyJoint
       BodyJointTarget : BodyId
       BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
       BreakImpulseThreshold : single
-      CollideConnected : bool }
+      CollideConnected : bool
+      BodyJointIndex : int }
 
 /// A message to the physics system to create a body.
 type CreateBodyMessage =
