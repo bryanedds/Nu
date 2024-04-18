@@ -9,8 +9,8 @@ module Gameplay =
 
     // this represents the state of gameplay simulation.
     type GameplayState =
-        | Empty
         | Playing
+        | Quit
 
     // this is our MMCC model type representing gameplay.
     // this model representation uses update time, that is, time based on number of engine updates.
@@ -24,9 +24,9 @@ module Gameplay =
 
         static member empty =
             { GameplayTime = 0L
-              GameplayState = Empty }
+              GameplayState = Quit }
 
-        static member playing =
+        static member initial =
             { Gameplay.empty with
                 GameplayState = Playing }
 
@@ -65,7 +65,7 @@ module Gameplay =
 
             match message with
             | StartPlaying ->
-                let gameplay = Gameplay.playing
+                let gameplay = Gameplay.initial
                 just gameplay
 
             | FinishQuitting ->
@@ -110,4 +110,4 @@ module Gameplay =
              | Playing -> Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
 
              // no scene group otherwise
-             | Empty -> ()]
+             | Quit -> ()]

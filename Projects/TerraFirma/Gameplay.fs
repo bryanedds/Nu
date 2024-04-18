@@ -9,10 +9,9 @@ module Gameplay =
 
     // this represents that state of gameplay simulation.
     type GameplayState =
-        | Commencing
-        | Commence
-        | Quitting
         | Quit
+        | Quitting
+        | Playing
 
     // this is our MMCC model type representing gameplay.
     type [<SymbolicExpansion>] Gameplay =
@@ -21,8 +20,7 @@ module Gameplay =
 
     // this is our MMCC message type.
     type GameplayMessage =
-        | FinishCommencing
-        | StartQuitting
+        | StartPlaying
         | FinishQuitting
         | Die of Entity
         interface Message
@@ -30,17 +28,19 @@ module Gameplay =
     // this is our MMCC command type.
     type GameplayCommand =
         | SetupScene
+        | StartQuitting
         | AttackCharacter of Entity
         | DestroyEnemy of Entity
         | TrackPlayer
         | PlaySound of int64 * single * Sound AssetTag
         interface Command
 
-    // this extends the Screen API to expose the Gameplay model.
+    // this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
+        member this.QuitEvent = Events.QuitEvent --> this
 
     // this is the screen dispatcher that defines the screen where gameplay takes place.
     type GameplayDispatcher () =
@@ -48,7 +48,7 @@ module Gameplay =
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
-            [Screen.SelectEvent => FinishCommencing
+            [Screen.SelectEvent => StartPlaying
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => TrackPlayer
              Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> AttackCharacter evt.Data
@@ -58,13 +58,9 @@ module Gameplay =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | FinishCommencing ->
-                let gameplay = { gameplay with GameplayState = Commence }
+            | StartPlaying ->
+                let gameplay = { gameplay with GameplayState = Playing }
                 withSignal SetupScene gameplay
-
-            | StartQuitting ->
-                let gameplay = { gameplay with GameplayState = Quitting }
-                just gameplay
 
             | FinishQuitting ->
                 let gameplay = { gameplay with GameplayState = Quit }
@@ -75,7 +71,7 @@ module Gameplay =
                 match character.CharacterType with
                 | Player ->
                     let gameplay = { gameplay with GameplayState = Quitting }
-                    just gameplay
+                    withSignal StartQuitting gameplay
                 | Enemy ->
                     let gameplay = { gameplay with Score = gameplay.Score + 100 }
                     withSignal (DestroyEnemy deadCharacter) gameplay
@@ -89,6 +85,10 @@ module Gameplay =
             | SetupScene ->
                 let world = Simulants.GameplayPlayer.SetPosition (v3 0.0f 2.0f 0.0f) world
                 let world = World.synchronizeNav3d screen world
+                just world
+
+            | StartQuitting ->
+                let world = World.publish () screen.QuitEvent screen world
                 just world
 
             | AttackCharacter entity ->
@@ -155,9 +155,11 @@ module Gameplay =
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]
 
-             // the scene group while gameplay commences or quitting
+             // the scene group while playing or quitting
              match gameplay.GameplayState with
-             | Commence | Quitting ->
+             | Playing | Quitting ->
+                
+                // loads scene from file edited in Gaia
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// the player that's always present in the scene
@@ -166,4 +168,4 @@ module Gameplay =
                          Entity.DieEvent => Die Simulants.GameplayPlayer]]
 
              // no scene group otherwise
-             | Commencing | Quit -> ()]
+             | Quit -> ()]

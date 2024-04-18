@@ -8,8 +8,8 @@ open Nu
 module Gameplay =
 
     type GameplayState =
-        | Empty
         | Playing
+        | Quit
 
     type [<SymbolicExpansion>] Gameplay =
         { GameplayState : GameplayState
@@ -35,7 +35,7 @@ module Gameplay =
         member this.QuitEvent = Events.QuitEvent --> this
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Empty; Score = 0 })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
 
         static let [<Literal>] SectionCount = 12
 
@@ -54,7 +54,7 @@ module Gameplay =
                 withSignal CreateSections gameplay
 
             | FinishQuitting ->
-                let gameplay = { gameplay with GameplayState = Empty }
+                let gameplay = { gameplay with GameplayState = Quit }
                 withSignal DestroySections gameplay
 
             | Score score ->
@@ -125,7 +125,7 @@ module Gameplay =
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]
 
-             // the scene group while gameplay commences or quitting
+             // the scene group while playing
              match gameplay.GameplayState with
              | Playing ->
                 Content.group Simulants.GameplayScene.Name []
@@ -135,4 +135,4 @@ module Gameplay =
                          Entity.DieEvent => StartQuitting]]
 
              // no scene group otherwise
-             | Empty -> ()]
+             | Quit -> ()]

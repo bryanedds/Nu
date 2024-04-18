@@ -9,8 +9,9 @@ module Gameplay =
 
     // this represents that state of gameplay simulation.
     type GameplayState =
-        | Empty
         | Playing
+        | Quitting
+        | Quit
 
     // the state of our breakout paddle
     type Paddle =
@@ -60,13 +61,13 @@ module Gameplay =
 
         static member empty =
             { GameplayTime = 0L
-              GameplayState = Empty
+              GameplayState = Quit
               Paddle = Paddle.initial
               Ball = Ball.initial
               Bricks = Map.empty
               Lives = 0 }
 
-        static member playing =
+        static member initial =
             let bricks =
                 Map.ofSeq
                     [|for i in 0 .. dec 5 do
@@ -114,7 +115,7 @@ module Gameplay =
 
             match message with
             | StartPlaying ->
-                let gameplay = Gameplay.playing
+                let gameplay = Gameplay.initial
                 just gameplay
 
             | FinishQuitting ->
@@ -239,9 +240,11 @@ module Gameplay =
                      Entity.Text == "Quit"
                      Entity.ClickEvent => StartQuitting]]
 
-             // the scene group while gameplay commences or quitting
+             // the scene group while playing
              match gameplay.GameplayState with
-             | Playing ->
+             | Playing | Quitting ->
+                
+                // loads scene from file edited in Gaia
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// paddle
@@ -283,4 +286,4 @@ module Gameplay =
                              Entity.StaticImage == Assets.Default.Brick]]
 
              // no scene group otherwise
-             | Empty -> ()]
+             | Quit -> ()]

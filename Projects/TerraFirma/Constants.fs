@@ -1,6 +1,5 @@
 ﻿namespace TerraFirma
 open System
-open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
