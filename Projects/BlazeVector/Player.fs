@@ -71,7 +71,7 @@ module PlayerDispatcher =
                     then { player with LastTimeOnGround = world.UpdateTime }
                     else player
                 let (player, dying) =
-                    if player.Alive && (entity.GetPosition world).Y <= -600.0f
+                    if player.Alive && (entity.GetPosition world).Y <= -320.0f
                     then ({ player with Alive = false }, true)
                     else (player, false)
                 if dying then withSignal Die player
@@ -128,6 +128,6 @@ module PlayerDispatcher =
                 just world
 
             | Die ->
-                let world = World.publish () entity.DieEvent entity world
+                let world = World.publish entity entity.DieEvent entity world
                 let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
                 just world

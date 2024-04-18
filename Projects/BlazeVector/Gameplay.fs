@@ -7,23 +7,22 @@ open Nu
 module Gameplay =
 
     type GameplayState =
-        | Commencing
-        | Commence
+        | Empty
+        | Playing
         | Quitting
-        | Quit
 
     type [<SymbolicExpansion>] Gameplay =
         { GameplayState : GameplayState
           Score : int }
 
     type GameplayMessage =
-        | FinishCommencing
-        | StartQuitting
+        | StartPlaying
         | FinishQuitting
         | Score of int
         interface Message
 
     type GameplayCommand =
+        | StartQuitting
         | CreateSections
         | DestroySections
         | UpdateEye
@@ -33,14 +32,15 @@ module Gameplay =
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
+        member this.QuitEvent = Events.QuitEvent --> this
 
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Empty; Score = 0 })
 
         static let [<Literal>] SectionCount = 12
 
         override this.Definitions (_, _) =
-            [Screen.SelectEvent => FinishCommencing
+            [Screen.SelectEvent => StartPlaying
              Screen.DeselectingEvent => FinishQuitting
              Screen.PostUpdateEvent => UpdateEye
              for i in 0 .. dec SectionCount do
@@ -49,23 +49,19 @@ module Gameplay =
         override this.Message (gameplay, message, _, _) =
 
             match message with
-            | FinishCommencing ->
-                let gameplay = { gameplay with GameplayState = Commence }
+            | StartPlaying ->
+                let gameplay = { gameplay with GameplayState = Playing }
                 withSignal CreateSections gameplay
 
-            | StartQuitting ->
-                let gameplay = { gameplay with GameplayState = Quitting }
-                just gameplay
-
             | FinishQuitting ->
-                let gameplay = { gameplay with GameplayState = Quit }
+                let gameplay = { gameplay with GameplayState = Empty }
                 withSignal DestroySections gameplay
 
             | Score score ->
                 let gameplay = { gameplay with Score = gameplay.Score + score }
                 just gameplay
 
-        override this.Command (_, command, _, world) =
+        override this.Command (_, command, screen, world) =
 
             match command with
             | CreateSections ->
@@ -86,6 +82,12 @@ module Gameplay =
                         world sectionEntities)
 
                 // fin
+                just world
+
+            | StartQuitting ->
+
+                // publish the gameplay quit event
+                let world = World.publish () screen.QuitEvent screen world
                 just world
 
             | DestroySections ->
@@ -125,7 +127,7 @@ module Gameplay =
 
              // the scene group while gameplay commences or quitting
              match gameplay.GameplayState with
-             | Commence | Quitting ->
+             | Playing | Quitting ->
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Position == v3 -390.0f -50.0f 0.0f
@@ -133,4 +135,4 @@ module Gameplay =
                          Entity.DieEvent => StartQuitting]]
 
              // no scene group otherwise
-             | Commencing | Quit -> ()]
+             | Empty -> ()]

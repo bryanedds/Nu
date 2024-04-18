@@ -70,7 +70,7 @@ module EnemyDispatcher =
                 let world =
                     if enemy.Health <= 0 then
                         let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
-                        let world = World.publish () entity.DieEvent entity world
+                        let world = World.publish entity entity.DieEvent entity world
                         World.destroyEntity entity world
                     else world
                 just world
