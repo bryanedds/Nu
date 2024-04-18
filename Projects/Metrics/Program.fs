@@ -70,11 +70,10 @@ type [<ReferenceEquality>] Intss =
 
 type Message =
     | Inc
-    | Nop
     interface Nu.Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 57FPS)
+    inherit GameDispatcher<Intss, Message, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 58FPS)
 
     override this.Definitions (_, _) =
         [Game.UpdateEvent => Inc]
@@ -82,20 +81,19 @@ type MmccGameDispatcher () =
     override this.Message (intss, message, _, _) =
         match message with
         | Inc -> just (Intss.inc intss)
-        | Nop -> just intss
 
     override this.Content (intss, _) =
         [Content.screen "Screen" Vanilla []
-            [|for (i, ints) in intss.Intss.Pairs' do
+            [for (i, ints) in intss.Intss.Pairs' do
                 Content.group (string i) []
-                    [|for (j, int) in ints.Ints.Pairs' do
+                    [for (j, int) in ints.Ints.Pairs' do
                         Content.entity<MetricsEntityDispatcher> (string j)
-                            [Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
-                             Entity.Scale := v3Dup (single (int % 10)) * 0.5f
-                             Entity.Presence == Omnipresent]|]
-              Content.group "Other" []
+                            [Entity.Presence == Omnipresent
+                             Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
+                             Entity.Scale := v3Dup (single (int % 10)) * 0.5f]]
+             Content.group "Other" []
                 [Content.skyBox "SkyBox" []
-                 Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]|]]
+                 Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
 #endif
 
 type MetricsPlugin () =

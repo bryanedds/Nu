@@ -11,7 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Content =
 
-    let internal ContentsCached = Dictionary<string, struct (obj * obj)> StringComparer.Ordinal
+    let private ContentsCached = Dictionary<string, struct (obj * obj)> StringComparer.Ordinal
 
     /// Helps to track when content bound to event handlers needs to be updated due to LateBindings changing, such as
     /// via code reloading.
