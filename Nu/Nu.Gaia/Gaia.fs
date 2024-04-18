@@ -2849,101 +2849,115 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
         else world
 
+    // TODO: decompose this function.
     let private imGuiEditProperties (simulant : Simulant) world =
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
-        for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
-            if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
-                let propertyDescriptors =
-                    propertyDescriptors |>
-                    Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
-                    Array.sortBy (fun pd ->
-                        match pd.PropertyName with
-                        | Constants.Engine.NamePropertyName -> "!00" // put Name first
-                        | Constants.Engine.ModelPropertyName -> "!01" // put Model second
-                        | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
-                        | Constants.Engine.PropagationSourceOptPropertyName -> "!03"
-                        | nameof Entity.Position -> "!04"
-                        | nameof Entity.PositionLocal -> "!05"
-                        | nameof Entity.Degrees -> "!06"
-                        | nameof Entity.DegreesLocal -> "!07"
-                        | nameof Entity.Scale -> "!08"
-                        | nameof Entity.ScaleLocal -> "!09"
-                        | nameof Entity.Size -> "!10"
-                        | nameof Entity.Offset -> "!11"
-                        | nameof Entity.Overflow -> "!12"
-                        | name -> name)
-                for propertyDescriptor in propertyDescriptors do
-                    if containsProperty propertyDescriptor simulant then
-                        if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
-                            match simulant with
-                            | :? Screen as screen ->
-                                // NOTE: can't edit screen names for now.
-                                let mutable name = screen.Name
-                                ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            | :? Group as group ->
-                                let mutable name = group.Name
-                                ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                                ImGui.SameLine ()
-                                if not (group.GetProtected world) then
-                                    if ImGui.Button "Rename" then
-                                        showRenameGroupDialog <- true
-                                else ImGui.Text "Name"
-                            | :? Entity as entity ->
-                                let mutable name = entity.Name
-                                ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                                ImGui.SameLine ()
-                                if not (entity.GetProtected world) then
-                                    if ImGui.Button "Rename" then
-                                        showRenameEntityDialog <- true
-                                else ImGui.Text "Name"
-                            | _ -> ()
-                            if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
-                        elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                            let mutable clickToEditModel = "*click to view*"
-                            ImGui.InputText ("Model", &clickToEditModel, uint clickToEditModel.Length, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            if ImGui.IsItemFocused () then
-                                focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-                                propertyEditorFocusRequested <- true
-                        else
-                            let focusProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
-                            let mutable replaced = false
-                            let replaceProperty =
-                                ReplaceProperty
-                                    { Snapshot = fun world -> snapshot (); world
-                                      FocusProperty = fun world -> focusProperty (); world
-                                      IndicateReplaced = fun world -> replaced <- true; world
-                                      PropertyDescriptor = propertyDescriptor }
-                            world <- World.edit replaceProperty simulant world
-                            if not replaced then
-                                imGuiEditProperty getPropertyValue setPropertyValue focusProperty "" propertyDescriptor simulant
-            if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
-                if ImGui.CollapsingHeader ("Applied Types", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
-                    match simulant with
-                    | :? Game as game ->
-                        let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
-                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                    | :? Screen as screen ->
-                        let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
-                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                    | :? Group as group ->
-                        let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
-                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                    | :? Entity as entity ->
-                        imGuiEditEntityAppliedTypes entity
-                    | _ -> Log.infoOnce "Unexpected simulant type."
+        let world =
+            Seq.fold (fun world (propertyCategory, propertyDescriptors) ->
+                let world =
+                    if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                        let propertyDescriptors =
+                            propertyDescriptors |>
+                            Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
+                            Array.sortBy (fun pd ->
+                                match pd.PropertyName with
+                                | Constants.Engine.NamePropertyName -> "!00" // put Name first
+                                | Constants.Engine.ModelPropertyName -> "!01" // put Model second
+                                | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
+                                | Constants.Engine.PropagationSourceOptPropertyName -> "!03"
+                                | nameof Entity.Position -> "!04"
+                                | nameof Entity.PositionLocal -> "!05"
+                                | nameof Entity.Degrees -> "!06"
+                                | nameof Entity.DegreesLocal -> "!07"
+                                | nameof Entity.Scale -> "!08"
+                                | nameof Entity.ScaleLocal -> "!09"
+                                | nameof Entity.Size -> "!10"
+                                | nameof Entity.Offset -> "!11"
+                                | nameof Entity.Overflow -> "!12"
+                                | name -> name)
+                        Array.fold (fun world propertyDescriptor ->
+                            if containsProperty propertyDescriptor simulant world then
+                                if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
+                                    match simulant with
+                                    | :? Screen as screen ->
+                                        // NOTE: can't edit screen names for now.
+                                        let mutable name = screen.Name
+                                        ImGui.InputText ("Name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                    | :? Group as group ->
+                                        let mutable name = group.Name
+                                        ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                        ImGui.SameLine ()
+                                        if not (group.GetProtected world) then
+                                            if ImGui.Button "Rename" then
+                                                showRenameGroupDialog <- true
+                                        else ImGui.Text "Name"
+                                    | :? Entity as entity ->
+                                        let mutable name = entity.Name
+                                        ImGui.InputText ("##name", &name, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                        ImGui.SameLine ()
+                                        if not (entity.GetProtected world) then
+                                            if ImGui.Button "Rename" then
+                                                showRenameEntityDialog <- true
+                                        else ImGui.Text "Name"
+                                    | _ -> ()
+                                    if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- None
+                                    world
+                                elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                    let mutable clickToEditModel = "*click to view*"
+                                    ImGui.InputText ("Model", &clickToEditModel, uint clickToEditModel.Length, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                    if ImGui.IsItemFocused () then
+                                        focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                                        propertyEditorFocusRequested <- true
+                                    world
+                                else
+                                    let focusProperty = fun () -> if ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (propertyDescriptor, simulant)
+                                    let mutable replaced = false
+                                    let replaceProperty =
+                                        ReplaceProperty
+                                            { Snapshot = fun world -> snapshot world; world
+                                              FocusProperty = fun world -> focusProperty (); world
+                                              IndicateReplaced = fun world -> replaced <- true; world
+                                              PropertyDescriptor = propertyDescriptor }
+                                    let world = World.edit replaceProperty simulant world
+                                    if not replaced
+                                    then imGuiEditProperty getPropertyValue setPropertyValue focusProperty "" propertyDescriptor simulant world
+                                    else world
+                            else world)
+                            world propertyDescriptors
+                    else world
+                if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
+                    if ImGui.CollapsingHeader ("Applied Types", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                        match simulant with
+                        | :? Game as game ->
+                            let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
+                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            world
+                        | :? Screen as screen ->
+                            let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
+                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            world
+                        | :? Group as group ->
+                            let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
+                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                            world
+                        | :? Entity as entity ->
+                            imGuiEditEntityAppliedTypes entity world
+                        | _ ->
+                            Log.infoOnce "Unexpected simulant type."
+                            world
+                    else world
+                else world)
+                world propertyDescriptorses.Pairs
         let appendProperties =
-            { Snapshot = fun world -> snapshot (); world
+            { Snapshot = fun world -> snapshot world; world
               UnfocusProperty = fun world -> focusedPropertyDescriptorOpt <- None; world }
-        world <- World.edit (AppendProperties appendProperties) simulant world
+        World.edit (AppendProperties appendProperties) simulant world
 
-    let private imGuiProcess wtemp =
+    let private imGuiProcess world =
 
         // store old world
-        let worldOld = wtemp
-
-        // transfer to world mutation mode
-        world <- worldOld
+        let worldOld = world
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
         if  World.getEye2dCenter world <> desiredEye2dCenter ||
