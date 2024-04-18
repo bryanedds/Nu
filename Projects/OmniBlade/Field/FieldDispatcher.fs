@@ -19,7 +19,7 @@ module FieldDispatcher =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getViewBounds2dAbsolute world))
 
         // HACK: override songs under special conditions.
-        // NOTE: Technically this should be data-driven, but it may not worth doing so for this game.
+        // NOTE: technically this should be data-driven, but it may not worth doing so for this game.
         static let overrideSong (_ : FieldType) (_ : Advent Set) song =
             // NOTE: no special conditions in demo.
             song
