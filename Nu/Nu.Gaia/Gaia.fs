@@ -2632,145 +2632,174 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else world
             | _ ->
                 let mutable combo = false
-                if FSharpType.IsUnion ty then
-                    let cases = FSharpType.GetUnionCases ty
-                    if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                        combo <- true
-                        let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                        let (unionCaseInfo, _) = FSharpValue.GetUnionFields (propertyValue, ty)
-                        let mutable tag = unionCaseInfo.Tag
-                        if ImGui.Combo (name, &tag, caseNames, caseNames.Length) then
-                            let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                            setProperty value' propertyDescriptor simulant
-                if not combo then
-                    if ty.IsGenericType &&
-                       ty.GetGenericTypeDefinition () = typedefof<_ option> &&
-                       (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                       (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                       ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                       ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                       (ty.GenericTypeArguments.[0].IsValueType ||
-                        ty.GenericTypeArguments.[0] = typeof<string> ||
-                        ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                        (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                        ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                        let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
-                        if ImGui.Checkbox ("##" + name, &isSome) then
-                            if isSome then
-                                if ty.GenericTypeArguments.[0].IsValueType then
-                                    if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                        setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant
-                                    elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                        setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant
-                                    else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
-                                elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                    setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
-                                elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                    let relationType = ty.GenericTypeArguments.[0]
-                                    let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                    let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                    let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                    setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant
-                                elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                    setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
-                                elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                    setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant
-                                else ()
-                            else setProperty None propertyDescriptor simulant
-                        focusProperty ()
-                        if isSome then
-                            ImGui.SameLine ()
-                            let getProperty = fun _ simulant -> let opt = getProperty propertyDescriptor simulant in ty.GetProperty("Value").GetValue(opt, [||])
-                            let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
-                            let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
-                            imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
-                        else
-                            ImGui.SameLine ()
-                            ImGui.Text name
-                    elif ty.IsGenericType &&
-                         ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                         (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                         (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                         ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                         ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                         (ty.GenericTypeArguments.[0].IsValueType ||
-                          ty.GenericTypeArguments.[0] = typeof<string> ||
-                          ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                          ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                        let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
-                        if ImGui.Checkbox ("##" + name, &isSome) then
-                            if isSome then
-                                if ty.GenericTypeArguments.[0].IsValueType then
-                                    if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                        setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant
-                                    elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                        setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant
-                                    else
-                                        setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant
-                                elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                    setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant
-                                elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                    let relationType = ty.GenericTypeArguments.[0]
-                                    let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                    let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                    let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                    setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant
-                                elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                    setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant
-                                elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                    setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant
+                let world =
+                    if FSharpType.IsUnion ty then
+                        let cases = FSharpType.GetUnionCases ty
+                        if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                            combo <- true
+                            let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (propertyValue, ty)
+                            let mutable tag = unionCaseInfo.Tag
+                            if ImGui.Combo (name, &tag, caseNames, caseNames.Length) then
+                                let value' = FSharpValue.MakeUnion (cases.[tag], [||])
+                                setProperty value' propertyDescriptor simulant world
+                            else world
+                        else world
+                    else world
+                let world =
+                    if not combo then
+                        if  ty.IsGenericType &&
+                            ty.GetGenericTypeDefinition () = typedefof<_ option> &&
+                            (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                            (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
+                            ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                            ty.GenericTypeArguments.[0] <> typeof<Material> &&
+                            (ty.GenericTypeArguments.[0].IsValueType ||
+                             ty.GenericTypeArguments.[0] = typeof<string> ||
+                             ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                             (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                             ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                            let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
+                            let world =
+                                if ImGui.Checkbox ("##" + name, &isSome) then
+                                    if isSome then
+                                        if ty.GenericTypeArguments.[0].IsValueType then
+                                            if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                                setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant world
+                                            elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                                setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant world
+                                            else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant world
+                                        elif ty.GenericTypeArguments.[0] = typeof<string> then
+                                            setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant world
+                                        elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                            let relationType = ty.GenericTypeArguments.[0]
+                                            let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                            let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
+                                            setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant world
+                                        elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                            setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant world
+                                        elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
+                                            setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant world
+                                        else world
+                                    else setProperty None propertyDescriptor simulant world
+                                else world
+                            focusProperty ()
+                            let world =
+                                if isSome then
+                                    ImGui.SameLine ()
+                                    let getProperty = fun _ simulant world -> let opt = getProperty propertyDescriptor simulant world in ty.GetProperty("Value").GetValue(opt, [||])
+                                    let setProperty = fun value _ simulant world -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant world
+                                    let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
+                                    imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant world
                                 else
-                                    failwithumf ()
-                            else setProperty ValueNone propertyDescriptor simulant
-                        focusProperty ()
-                        if isSome then
-                            ImGui.SameLine ()
-                            let getProperty = fun _ simulant -> let opt = getProperty propertyDescriptor simulant in ty.GetProperty("Value").GetValue(opt, [||])
-                            let setProperty = fun value _ simulant -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant
-                            let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
-                            imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant
-                        else
-                            ImGui.SameLine ()
-                            ImGui.Text name
-                    elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
-                        let mutable propertyValueStr = propertyValueStr
-                        if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
-                            let worldsPast' = worldsPast
-                            try let propertyValue = converter.ConvertFromString propertyValueStr
-                                setProperty propertyValue propertyDescriptor simulant
-                            with _ ->
-                                worldsPast <- worldsPast'
-                        focusProperty ()
-                        if ImGui.BeginDragDropTarget () then
-                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                match dragDropPayloadOpt with
-                                | Some payload ->
+                                    ImGui.SameLine ()
+                                    ImGui.Text name
+                                    world
+                            world
+                        elif ty.IsGenericType &&
+                             ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
+                             (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                             (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
+                             ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                             ty.GenericTypeArguments.[0] <> typeof<Material> &&
+                             (ty.GenericTypeArguments.[0].IsValueType ||
+                              ty.GenericTypeArguments.[0] = typeof<string> ||
+                              ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                              (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                              ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                            let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
+                            let world =
+                                if ImGui.Checkbox ("##" + name, &isSome) then
+                                    if isSome then
+                                        if ty.GenericTypeArguments.[0].IsValueType then
+                                            if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                                setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant world
+                                            elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                                setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant world
+                                            else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant world
+                                        elif ty.GenericTypeArguments.[0] = typeof<string> then
+                                            setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant world
+                                        elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                            let relationType = ty.GenericTypeArguments.[0]
+                                            let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                            let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                            setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant world
+                                        elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                            setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|])) propertyDescriptor simulant world
+                                        elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
+                                            setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant world
+                                        else failwithumf ()
+                                    else setProperty ValueNone propertyDescriptor simulant world
+                                else world
+                            focusProperty ()
+                            let world =
+                                if isSome then
+                                    ImGui.SameLine ()
+                                    let getProperty = fun _ simulant world -> let opt = getProperty propertyDescriptor simulant world in ty.GetProperty("Value").GetValue(opt, [||])
+                                    let setProperty = fun value _ simulant world -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant world
+                                    let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
+                                    imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant world
+                                else
+                                    ImGui.SameLine ()
+                                    ImGui.Text name
+                                    world
+                            world
+                        elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                            let mutable propertyValueStr = propertyValueStr
+                            let world =
+                                if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
                                     let worldsPast' = worldsPast
-                                    try let propertyValueEscaped = payload
-                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                        setProperty propertyValue propertyDescriptor simulant
+                                    try let propertyValue = converter.ConvertFromString propertyValueStr
+                                        setProperty propertyValue propertyDescriptor simulant world
                                     with _ ->
                                         worldsPast <- worldsPast'
-                                | None -> ()
-                            ImGui.EndDragDropTarget ()
-                        ImGui.SameLine ()
-                        ImGui.PushID ("##pickAsset" + name)
-                        if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                        focusProperty ()
-                        ImGui.PopID ()
-                        ImGui.SameLine ()
-                        ImGui.Text name
-                    else
-                        let mutable propertyValueStr = propertyValueStr
-                        if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> propertyValueStrPrevious then
-                            let worldsPast' = worldsPast
-                            try let propertyValue = converter.ConvertFromString propertyValueStr
-                                setProperty propertyValue propertyDescriptor simulant
-                            with _ ->
-                                worldsPast <- worldsPast'
-                            propertyValueStrPrevious <- propertyValueStr
+                                        world
+                                else world
+                            focusProperty ()
+                            let world =
+                                if ImGui.BeginDragDropTarget () then
+                                    let world =
+                                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                            match dragDropPayloadOpt with
+                                            | Some payload ->
+                                                let worldsPast' = worldsPast
+                                                try let propertyValueEscaped = payload
+                                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                    setProperty propertyValue propertyDescriptor simulant world
+                                                with _ ->
+                                                    worldsPast <- worldsPast'
+                                                    world
+                                            | None -> world
+                                        else world
+                                    ImGui.EndDragDropTarget ()
+                                    world
+                                else world
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##pickAsset" + name)
+                            if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
+                            focusProperty ()
+                            ImGui.PopID ()
+                            ImGui.SameLine ()
+                            ImGui.Text name
+                            world
+                        else
+                            let mutable propertyValueStr = propertyValueStr
+                            if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> propertyValueStrPrevious then
+                                let worldsPast' = worldsPast
+                                let world =
+                                    try let propertyValue = converter.ConvertFromString propertyValueStr
+                                        setProperty propertyValue propertyDescriptor simulant world
+                                    with _ ->
+                                        worldsPast <- worldsPast'
+                                        world
+                                propertyValueStrPrevious <- propertyValueStr
+                                world
+                            else world
+                    else world
+                world
         focusProperty ()
         world
 
