@@ -2803,20 +2803,27 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         focusProperty ()
         world
 
-    let private imGuiEditEntityAppliedTypes (entity : Entity) =
+    let private imGuiEditEntityAppliedTypes (entity : Entity) world =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
-        if ImGui.BeginCombo ("Dispatcher Name", dispatcherNameCurrent) then
-            let dispatcherNames = (World.getEntityDispatchers world).Keys
-            let dispatcherNamePicked = tryPickName dispatcherNames
-            for dispatcherName in dispatcherNames do
-                if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
-                if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
-                    if not (entity.GetProtected world) then
-                        snapshot ()
-                        world <- World.changeEntityDispatcher dispatcherName entity world
-                    else
-                        messageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."
-            ImGui.EndCombo ()
+        let world =
+            if ImGui.BeginCombo ("Dispatcher Name", dispatcherNameCurrent) then
+                let dispatcherNames = (World.getEntityDispatchers world).Keys
+                let dispatcherNamePicked = tryPickName dispatcherNames
+                let world =
+                    Seq.fold (fun world dispatcherName ->
+                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
+                        if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
+                            if not (entity.GetProtected world) then
+                                snapshot world
+                                World.changeEntityDispatcher dispatcherName entity world
+                            else
+                                messageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."
+                                world
+                        else world)
+                        world dispatcherNames
+                ImGui.EndCombo ()
+                world
+            else world
         let facetNameEmpty = "(Empty)"
         let facetNamesValue = entity.GetFacetNames world
         let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
@@ -2838,9 +2845,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if not last && ImGui.IsItemFocused () then focusedPropertyDescriptorOpt <- Some (facetNamesPropertyDescriptor, entity :> Simulant)
             if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
         ImGui.Unindent ()
-        if changed then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity
+        if changed
+        then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
+        else world
 
-    let private imGuiEditProperties (simulant : Simulant) =
+    let private imGuiEditProperties (simulant : Simulant) world =
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
         for (propertyCategory, propertyDescriptors) in propertyDescriptorses.Pairs do
