@@ -11,7 +11,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Content =
 
-    let private ContentsCached = Dictionary<string, struct (obj * SimulantContent)> StringComparer.Ordinal
+    let internal ContentsCached = Dictionary<string, struct (obj * obj)> StringComparer.Ordinal
 
     /// Helps to track when content bound to event handlers needs to be updated due to LateBindings changing, such as
     /// via code reloading.
@@ -600,12 +600,12 @@ module Content =
           ScreenContents = screenContents }
 
     /// Cache named content. Name must be globally unique!
-    let cache<'a, 'c when 'c :> SimulantContent> name (a : 'a) (fn : 'a -> 'c) : 'c =
+    let cache<'v, 'c> name (value : 'v) (fn : 'v -> 'c) : 'c =
         match ContentsCached.TryGetValue name with
-        | (true, struct (v, (:? 'c as content))) when v === a -> content
+        | (true, struct (v, (:? 'c as content))) when v === value -> content
         | (_, _) ->
-            let content = fn a
-            ContentsCached.[name] <- struct (a, content)
+            let content = fn value
+            ContentsCached.[name] <- struct (value, content)
             content
 
     /// Discard cached content.
