@@ -10,7 +10,6 @@ module Gameplay =
     type GameplayState =
         | Empty
         | Playing
-        | Quitting
 
     type [<SymbolicExpansion>] Gameplay =
         { GameplayState : GameplayState
@@ -128,7 +127,7 @@ module Gameplay =
 
              // the scene group while gameplay commences or quitting
              match gameplay.GameplayState with
-             | Playing | Quitting ->
+             | Playing ->
                 Content.group Simulants.GameplayScene.Name []
                     [Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
                         [Entity.Position == v3 -390.0f -50.0f 0.0f

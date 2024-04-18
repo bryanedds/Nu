@@ -7,11 +7,10 @@ open Nu
 [<AutoOpen>]
 module Gameplay =
 
-    // this represents that state of gameplay simulation.
+    // this represents the state of gameplay simulation.
     type GameplayState =
         | Empty
         | Playing
-        | Quitting
 
     // this is our MMCC model type representing gameplay.
     // this model representation uses update time, that is, time based on number of engine updates.
@@ -108,8 +107,7 @@ module Gameplay =
 
              // the scene group while playing or quitting
              match gameplay.GameplayState with
-             | Playing | Quitting ->
-                Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
+             | Playing -> Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
 
              // no scene group otherwise
              | Empty -> ()]

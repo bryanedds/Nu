@@ -36,9 +36,10 @@
 
 	<ItemGroup>
 		<Compile Include="Simulants.fs" />
+		<Compile Include="Events.fs" />
 		<Compile Include="Gameplay.fs" />
-		<Compile Include="MyGame.fs" />
-		<Compile Include="MyGamePlugin.fs" />
+		<Compile Include="Breakout.fs" />
+		<Compile Include="BreakoutPlugin.fs" />
 		<Compile Include="Program.fs" />
 		<None Include="App.config" />
 		<Content Include="AssetGraph.nuag">

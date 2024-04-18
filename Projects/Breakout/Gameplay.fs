@@ -1,4 +1,4 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open System.Numerics
 open Prime
@@ -9,10 +9,8 @@ module Gameplay =
 
     // this represents that state of gameplay simulation.
     type GameplayState =
-        | Commencing
-        | Commence
-        | Quitting
-        | Quit
+        | Empty
+        | Playing
 
     // the state of our breakout paddle
     type Paddle =
@@ -62,50 +60,51 @@ module Gameplay =
 
         static member empty =
             { GameplayTime = 0L
-              GameplayState = Quit
+              GameplayState = Empty
               Paddle = Paddle.initial
               Ball = Ball.initial
               Bricks = Map.empty
               Lives = 0 }
 
-        static member commencing =
+        static member playing =
             let bricks =
                 Map.ofSeq
                     [|for i in 0 .. dec 5 do
                         for j in 0 .. dec 6 do
                             (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))|]
             { Gameplay.empty with
-                GameplayState = Commencing
+                GameplayState = Playing
                 Bricks = bricks
                 Lives = 3 }
 
-        static member commence =
-            { Gameplay.commencing with
-                GameplayState = Commence }
-
     // this is our MMCC message type.
     type GameplayMessage =
-        | FinishCommencing
-        | StartQuitting
+        | StartPlaying
         | FinishQuitting
         | Update
         | TimeUpdate
         interface Message
 
-    // this extends the Screen API to expose the above Gameplay model.
+    // this our MMCC command type.
+    type GameplayCommand =
+        | StartQuitting
+        interface Command
+
+    // this extends the Screen API to expose the above Gameplay model as well as the gameplay quit event.
     type Screen with
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
+        member this.QuitEvent = Events.QuitEvent --> this
 
     // this is the screen dispatcher that defines the screen where gameplay takes place. Note that we just use the
     // empty Command type because there are no commands needed for this template.
     type GameplayDispatcher () =
-        inherit ScreenDispatcher<Gameplay, GameplayMessage, Command> (Gameplay.empty)
+        inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
 
         // here we define the screen's property values and event handling
         override this.Definitions (_, _) =
-            [Screen.SelectEvent => FinishCommencing
+            [Screen.SelectEvent => StartPlaying
              Screen.DeselectingEvent => FinishQuitting
              Screen.UpdateEvent => Update
              Screen.TimeUpdateEvent => TimeUpdate]
@@ -114,91 +113,87 @@ module Gameplay =
         override this.Message (gameplay, message, _, world) =
 
             match message with
-            | FinishCommencing ->
-                let gameplay = { gameplay with GameplayState = Commence }
-                just gameplay
-
-            | StartQuitting ->
-                let gameplay = { gameplay with GameplayState = Quitting }
+            | StartPlaying ->
+                let gameplay = Gameplay.playing
                 just gameplay
 
             | FinishQuitting ->
-                let gameplay = { gameplay with GameplayState = Quit }
+                let gameplay = Gameplay.empty
                 just gameplay
 
             | Update ->
 
-                // update scene only during commencement
+                // update scene only while playing
                 match gameplay.GameplayState with
-                | Commence ->
+                | Playing ->
 
-                    // update paddle motion
-                    let gameplay =
-                        if World.isKeyboardKeyDown KeyboardKey.Left world then
+                    // ...and while living and bticks are present
+                    if gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
+
+                        // update paddle motion
+                        let gameplay =
+                            if World.isKeyboardKeyDown KeyboardKey.Left world then
+                                let paddle = gameplay.Paddle
+                                let paddle = { paddle with Position = paddle.Position.MapX (fun x -> max -128.0f (x - 4.0f)) }
+                                { gameplay with Paddle = paddle }
+                            elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                                let paddle = gameplay.Paddle
+                                let paddle = { paddle with Position = paddle.Position.MapX (fun x -> min 128.0f (x + 4.0f)) }
+                                { gameplay with Paddle = paddle }
+                            else gameplay
+
+                        // update ball motion against walls
+                        let gameplay =
+                            let ball = gameplay.Ball
+                            let ball = { ball with Position = ball.Position + ball.Velocity }
+                            let ball =
+                                if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f
+                                then { ball with Velocity = ball.Velocity.MapX negate }
+                                else ball
+                            let ball =
+                                if ball.Position.Y >= 172.0f
+                                then { ball with Velocity = ball.Velocity.MapY negate }
+                                else ball
+                            { gameplay with Ball = ball }
+
+                        // update ball motion against paddle
+                        let gameplay =
                             let paddle = gameplay.Paddle
-                            let paddle = { paddle with Position = paddle.Position.MapX (fun x -> max -128.0f (x - 4.0f)) }
-                            { gameplay with Paddle = paddle }
-                        elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                            let paddle = gameplay.Paddle
-                            let paddle = { paddle with Position = paddle.Position.MapX (fun x -> min 128.0f (x + 4.0f)) }
-                            { gameplay with Paddle = paddle }
-                        else gameplay
+                            let ball = gameplay.Ball
+                            let ball =
+                                let perimeter = paddle.Perimeter
+                                if perimeter.Intersects ball.Position
+                                then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
+                                else ball
+                            { gameplay with Ball = ball }
 
-                    // update ball motion against walls
-                    let gameplay =
-                        let ball = gameplay.Ball
-                        let ball = { ball with Position = ball.Position + ball.Velocity }
-                        let ball =
-                            if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f
-                            then { ball with Velocity = ball.Velocity.MapX negate }
-                            else ball
-                        let ball =
-                            if ball.Position.Y >= 172.0f
-                            then { ball with Velocity = ball.Velocity.MapY negate }
-                            else ball
-                        { gameplay with Ball = ball }
+                        // update ball motion against bricks
+                        let gameplay =
+                            let ball = gameplay.Ball
+                            let bricks =
+                                Map.filter (fun _ (brick : Brick) ->
+                                    let perimeter = brick.Perimeter
+                                    perimeter.Intersects ball.Position)
+                                    gameplay.Bricks
+                            let ball =
+                                if Map.notEmpty bricks then
+                                    let brick = Seq.head bricks.Values
+                                    { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
+                                else ball
+                            let bricks = Map.removeMany bricks.Keys gameplay.Bricks
+                            { gameplay with Ball = ball; Bricks = bricks }
 
-                    // update ball motion against paddle
-                    let gameplay =
-                        let paddle = gameplay.Paddle
-                        let ball = gameplay.Ball
-                        let ball =
-                            let perimeter = paddle.Perimeter
-                            if perimeter.Intersects ball.Position
-                            then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
-                            else ball
-                        { gameplay with Ball = ball }
+                        // update ball death
+                        let gameplay =
+                            if gameplay.Ball.Position.Y < -180.0f then
+                                let gameplay = { gameplay with Lives = dec gameplay.Lives }
+                                let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
+                                gameplay
+                            else gameplay
+                        just gameplay
 
-                    // update ball motion against bricks
-                    let gameplay =
-                        let ball = gameplay.Ball
-                        let bricks =
-                            Map.filter (fun _ (brick : Brick) ->
-                                let perimeter = brick.Perimeter
-                                perimeter.Intersects ball.Position)
-                                gameplay.Bricks
-                        let ball =
-                            if Map.notEmpty bricks then
-                                let brick = Seq.head bricks.Values
-                                { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
-                            else ball
-                        let bricks = Map.removeMany bricks.Keys gameplay.Bricks
-                        { gameplay with Ball = ball; Bricks = bricks }
-
-                    // update ball death
-                    let gameplay =
-                        if gameplay.Ball.Position.Y < -180.0f then
-                            let gameplay = { gameplay with Lives = dec gameplay.Lives }
-                            let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
-                            gameplay
-                        else gameplay
-
-                    // check game ending
-                    let gameplay =
-                        if gameplay.Bricks.Count = 0 || gameplay.Lives = 0
-                        then { gameplay with GameplayState = Quitting }
-                        else gameplay
-                    just gameplay
+                    // ...otherwise we should start quitting game
+                    else withSignal StartQuitting gameplay
 
                 // nothing to do
                 | _ -> just gameplay
@@ -206,6 +201,14 @@ module Gameplay =
             | TimeUpdate ->
                 let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
                 just gameplay
+
+        // here we handle the above commands
+        override this.Command (_, command, screen, world) =
+
+            match command with
+            | StartQuitting ->
+                let world = World.publish () screen.QuitEvent screen world
+                just world
 
         // here we describe the content of the game including the hud, the scene, and the player
         override this.Content (gameplay, _) =
@@ -238,7 +241,7 @@ module Gameplay =
 
              // the scene group while gameplay commences or quitting
              match gameplay.GameplayState with
-             | Commence | Quitting ->
+             | Playing ->
                 Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
 
                     [// paddle
@@ -280,4 +283,4 @@ module Gameplay =
                              Entity.StaticImage == Assets.Default.Brick]]
 
              // no scene group otherwise
-             | Commencing | Quit -> ()]
+             | Empty -> ()]
