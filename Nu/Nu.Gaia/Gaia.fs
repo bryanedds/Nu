@@ -13,11 +13,11 @@ open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
 open Microsoft.FSharp.Core
+open DotRecast.Recast
 open ImGuiNET
 open ImGuizmoNET
 open Prime
 open Nu
-open DotRecast.Recast
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
