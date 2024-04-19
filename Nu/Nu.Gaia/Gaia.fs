@@ -3191,191 +3191,251 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                         // fin
                         ImGui.End ()
+                        world
+                    else world
 
                 // show all windows when out in full-screen mode
                 if not fullScreen then
 
                     // main menu window
-                    if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNav) then
-                        if ImGui.BeginMenuBar () then
-                            if ImGui.BeginMenu "Game" then
-                                if ImGui.MenuItem "New Project" then showNewProjectDialog <- true
-                                if ImGui.MenuItem ("Open Project", "Ctrl+Shit+O") then showOpenProjectDialog <- true
-                                if ImGui.MenuItem "Close Project" then showCloseProjectDialog <- true
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo () |> ignore<bool>
-                                if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo () |> ignore<bool>
-                                ImGui.Separator ()
-                                if not world.Advancing
-                                then if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing ()
-                                else if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing ()
-                                if editWhileAdvancing
-                                then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
-                                else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Reload Assets", "F8") then reloadAssetsRequested <- 1
-                                if ImGui.MenuItem ("Reload Code", "F9") then reloadCodeRequested <- 1
-                                if ImGui.MenuItem ("Reload All", "Ctrl+R") then reloadAllRequested <- 1
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Exit", "Alt+F4") then showConfirmExitDialog <- true
-                                ImGui.EndMenu ()
-                            if ImGui.BeginMenu "Screen" then
-                                if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities ()
-                                if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities ()
-                                if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+L") then rerenderLightMaps ()
-                                if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then synchronizeNav ()
-                                ImGui.EndMenu ()
-                            if ImGui.BeginMenu "Group" then
-                                if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
-                                if ImGui.MenuItem ("Open Group", "Ctrl+O") then showOpenGroupDialog <- true
-                                if ImGui.MenuItem ("Save Group", "Ctrl+S") then
-                                    match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
-                                    | Some filePath -> groupFileDialogState.FilePath <- filePath
-                                    | None -> groupFileDialogState.FileName <- ""
-                                    showSaveGroupDialog <- true
-                                if ImGui.MenuItem "Close Group" then
-                                    let groups = world |> World.getGroups selectedScreen |> Set.ofSeq
-                                    if not (selectedGroup.GetProtected world) && Set.count groups > 1 then
-                                        snapshot ()
-                                        let groupsRemaining = Set.remove selectedGroup groups
-                                        selectEntityOpt None
-                                        world <- World.destroyGroupImmediate selectedGroup world
-                                        groupFilePaths <- Map.remove selectedGroup.GroupAddress groupFilePaths
-                                        selectGroup (Seq.head groupsRemaining)
-                                    else messageBoxOpt <- Some "Cannot close protected or only group."
-                                ImGui.EndMenu ()
-                            if ImGui.BeginMenu "Entity" then
-                                if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false
-                                if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity () |> ignore<bool>
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste true PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
-                                if ImGui.MenuItem ("Paste Entity (w/o Propagation Source)", "Ctrl+Shift+V") then tryPaste false PasteAtLook (Option.map cast newEntityParentOpt) |> ignore<bool>
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
-                                if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
-                                    match selectedEntityOpt with
-                                    | Some entity when entity.Exists world ->
-                                        match Map.tryFind entity.EntityAddress entityFilePaths with
-                                        | Some filePath -> entityFileDialogState.FilePath <- filePath
-                                        | None -> entityFileDialogState.FileName <- ""
-                                        showSaveEntityDialog <- true
-                                    | Some _ | None -> ()
-                                ImGui.Separator ()
-                                if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity () |> ignore<bool>
-                                if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure () |> ignore<bool>
-                                if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets () |> ignore<bool>
-                                ImGui.EndMenu ()
-                            ImGui.EndMenuBar ()
-                        if ImGui.Button "Create" then createEntity false false
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 200.0f
-                        if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
-                            let dispatcherNames = (World.getEntityDispatchers world).Keys
-                            let dispatcherNamePicked = tryPickName dispatcherNames
-                            for dispatcherName in dispatcherNames do
-                                if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
-                                if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
-                                    newEntityDispatcherName <- dispatcherName
-                            ImGui.EndCombo ()
-                        ImGui.SameLine ()
-                        ImGui.Text "w/ Overlay"
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 150.0f
-                        let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
-                        if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
-                            let overlayNamePicked = tryPickName overlayNames
-                            for overlayName in overlayNames do
-                                if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.2f
-                                if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
-                                    newEntityOverlayName <- overlayName
-                            ImGui.EndCombo ()
-                        ImGui.SameLine ()
-                        if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity () |> ignore<bool>
-                        ImGui.SameLine ()
-                        if ImGui.Button "Delete" then tryDeleteSelectedEntity () |> ignore<bool>
-                        ImGui.SameLine ()
-                        ImGui.Text "|"
-                        ImGui.SameLine ()
-                        if world.Halted then
-                            if ImGui.Button "Advance (F5)" then toggleAdvancing ()
-                        else
-                            if ImGui.Button "Halt (F5)" then toggleAdvancing ()
-                            ImGui.SameLine ()
-                            ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
-                        ImGui.SameLine ()
-                        ImGui.Text "|"
-                        ImGui.SameLine ()
-                        ImGui.Text "Eye:"
-                        ImGui.SameLine ()
-                        if ImGui.Button "Reset" then resetEye ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            let mutable eye2dCenter = World.getEye2dCenter world
-                            let mutable eye3dCenter = World.getEye3dCenter world
-                            let mutable eye3dDegrees = Math.RadiansToDegrees3d (World.getEye3dRotation world).RollPitchYaw
-                            ImGui.InputFloat2 ("Eye 2d Center", &eye2dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
-                            ImGui.InputFloat3 ("Eye 3d Center", &eye3dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
-                            ImGui.InputFloat3 ("Eye 3d Degrees", &eye3dDegrees, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        ImGui.Text "|"
-                        ImGui.SameLine ()
-                        ImGui.Text "Reload:"
-                        ImGui.SameLine ()
-                        if ImGui.Button "Assets" then reloadAssetsRequested <- 1
-                        ImGui.SameLine ()
-                        if ImGui.Button "Code" then reloadCodeRequested <- 1
-                        ImGui.SameLine ()
-                        if ImGui.Button "All" then reloadAllRequested <- 1
-                        ImGui.SameLine ()
-                        ImGui.Text "|"
-                        ImGui.SameLine ()
-                        ImGui.Text "Mode:"
-                        ImGui.SameLine ()
-                        ImGui.SetNextItemWidth 130.0f
-                        if ImGui.BeginCombo ("##projectEditMode", projectEditMode) then
-                            let editModes = World.getEditModes world
-                            for editMode in editModes do
-                                if ImGui.Selectable (editMode.Key, strEq editMode.Key projectEditMode) then
-                                    projectEditMode <- editMode.Key
-                                    snapshot () // snapshot before mode change
-                                    selectEntityOpt None
-                                    world <- editMode.Value world
-                                    snapshot () // snapshot before after change
-                            ImGui.EndCombo ()
-                        ImGui.SameLine ()
-                        if ImGui.Button "Thaw" then thawEntities ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Thaw all frozen entities. (Ctrl+Shift+T)"
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        if ImGui.Button "Freeze" then freezeEntities ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        if ImGui.Button "Renavigate" then
-                            // TODO: sync nav 2d when it's available.
-                            world <- World.synchronizeNav3d selectedScreen world
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Synchronize navigation mesh. (Ctrl+Shift+N)"
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        if ImGui.Button "Relight" then rerenderLightMaps ()
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Re-render all light maps. (Ctrl+Shift+L)"
-                            ImGui.EndTooltip ()
-                        ImGui.SameLine ()
-                        ImGui.Text "|"
-                        ImGui.SameLine ()
-                        ImGui.Text "Full Screen"
-                        ImGui.SameLine ()
-                        ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
-                        if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                            ImGui.Text "Toggle full screen view (F11 to toggle)."
-                            ImGui.EndTooltip ()
-                        ImGui.End ()
+                    let world =
+                        if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNav) then
+                            
+                            // menu bar
+                            let world =
+                                if ImGui.BeginMenuBar () then
+
+                                    // game menu
+                                    let world =
+                                        if ImGui.BeginMenu "Game" then
+                                            if ImGui.MenuItem "New Project" then showNewProjectDialog <- true
+                                            if ImGui.MenuItem ("Open Project", "Ctrl+Shit+O") then showOpenProjectDialog <- true
+                                            if ImGui.MenuItem "Close Project" then showCloseProjectDialog <- true
+                                            ImGui.Separator ()
+                                            let world = if ImGui.MenuItem ("Undo", "Ctrl+Z") then tryUndo world |> snd else world
+                                            let world = if ImGui.MenuItem ("Redo", "Ctrl+Y") then tryRedo world |> snd else world
+                                            ImGui.Separator ()
+                                            let world =
+                                                if not world.Advancing then
+                                                    if ImGui.MenuItem ("Advance", "F5") then toggleAdvancing world else world
+                                                else
+                                                    if ImGui.MenuItem ("Halt", "F5") then toggleAdvancing world else world
+                                            if editWhileAdvancing
+                                            then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then editWhileAdvancing <- false
+                                            else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then editWhileAdvancing <- true
+                                            ImGui.Separator ()
+                                            if ImGui.MenuItem ("Reload Assets", "F8") then reloadAssetsRequested <- 1
+                                            if ImGui.MenuItem ("Reload Code", "F9") then reloadCodeRequested <- 1
+                                            if ImGui.MenuItem ("Reload All", "Ctrl+R") then reloadAllRequested <- 1
+                                            ImGui.Separator ()
+                                            if ImGui.MenuItem ("Exit", "Alt+F4") then showConfirmExitDialog <- true
+                                            ImGui.EndMenu ()
+                                            world
+                                        else world
+
+                                    // screen menu
+                                    let world =
+                                        if ImGui.BeginMenu "Screen" then
+                                            let world = if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities world else world
+                                            let world = if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities world else world
+                                            let world = if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+L") then rerenderLightMaps world else world
+                                            let world = if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then synchronizeNav world else world
+                                            ImGui.EndMenu ()
+                                            world
+                                        else world
+
+                                    // group menu
+                                    let world =
+                                        if ImGui.BeginMenu "Group" then
+                                            if ImGui.MenuItem ("New Group", "Ctrl+N") then showNewGroupDialog <- true
+                                            if ImGui.MenuItem ("Open Group", "Ctrl+O") then showOpenGroupDialog <- true
+                                            if ImGui.MenuItem ("Save Group", "Ctrl+S") then
+                                                match Map.tryFind selectedGroup.GroupAddress groupFilePaths with
+                                                | Some filePath -> groupFileDialogState.FilePath <- filePath
+                                                | None -> groupFileDialogState.FileName <- ""
+                                                showSaveGroupDialog <- true
+                                            let world =
+                                                if ImGui.MenuItem "Close Group" then
+                                                    let groups = world |> World.getGroups selectedScreen |> Set.ofSeq
+                                                    if not (selectedGroup.GetProtected world) && Set.count groups > 1 then
+                                                        snapshot world
+                                                        let groupsRemaining = Set.remove selectedGroup groups
+                                                        selectEntityOpt None world
+                                                        let world = World.destroyGroupImmediate selectedGroup world
+                                                        groupFilePaths <- Map.remove selectedGroup.GroupAddress groupFilePaths
+                                                        selectGroup (Seq.head groupsRemaining)
+                                                        world
+                                                    else
+                                                        messageBoxOpt <- Some "Cannot close protected or only group."
+                                                        world
+                                                else world
+                                            ImGui.EndMenu ()
+                                            world
+                                        else world
+
+                                    // entity menu
+                                    let world =
+                                        if ImGui.BeginMenu "Entity" then
+                                            let world = if ImGui.MenuItem ("Create Entity", "Ctrl+Enter") then createEntity false false world else world
+                                            let world = if ImGui.MenuItem ("Delete Entity", "Delete") then tryDeleteSelectedEntity world |> snd else world
+                                            ImGui.Separator ()
+                                            let world = if ImGui.MenuItem ("Cut Entity", "Ctrl+X") then tryCutSelectedEntity world |> snd else world
+                                            let world = if ImGui.MenuItem ("Copy Entity", "Ctrl+C") then tryCopySelectedEntity world |> snd else world
+                                            let world = if ImGui.MenuItem ("Paste Entity", "Ctrl+V") then tryPaste true PasteAtLook (Option.map cast newEntityParentOpt) world |> snd else world
+                                            let world =
+                                                if ImGui.MenuItem ("Paste Entity (w/o Propagation Source)", "Ctrl+Shift+V")
+                                                then tryPaste false PasteAtLook (Option.map cast newEntityParentOpt) world |> snd
+                                                else world
+                                            ImGui.Separator ()
+                                            if ImGui.MenuItem ("Open Entity", "Ctrl+Alt+O") then showOpenEntityDialog <- true
+                                            if ImGui.MenuItem ("Save Entity", "Ctrl+Alt+S") then
+                                                match selectedEntityOpt with
+                                                | Some entity when entity.Exists world ->
+                                                    match Map.tryFind entity.EntityAddress entityFilePaths with
+                                                    | Some filePath -> entityFileDialogState.FilePath <- filePath
+                                                    | None -> entityFileDialogState.FileName <- ""
+                                                    showSaveEntityDialog <- true
+                                                | Some _ | None -> ()
+                                            ImGui.Separator ()
+                                            let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
+                                            let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
+                                            let world = if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipePropagationTargets world |> snd else world
+                                            ImGui.EndMenu ()
+                                            world
+                                        else world
+
+                                    // fin
+                                    ImGui.EndMenuBar ()
+                                    world
+                                else world
+
+                            // tool bar
+                            let world =
+                                let world = if ImGui.Button "Create" then createEntity false false world else world
+                                ImGui.SameLine ()
+                                ImGui.SetNextItemWidth 200.0f
+                                if ImGui.BeginCombo ("##newEntityDispatcherName", newEntityDispatcherName) then
+                                    let dispatcherNames = (World.getEntityDispatchers world).Keys
+                                    let dispatcherNamePicked = tryPickName dispatcherNames
+                                    for dispatcherName in dispatcherNames do
+                                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.2f
+                                        if ImGui.Selectable (dispatcherName, strEq dispatcherName newEntityDispatcherName) then
+                                            newEntityDispatcherName <- dispatcherName
+                                    ImGui.EndCombo ()
+                                ImGui.SameLine ()
+                                ImGui.Text "w/ Overlay"
+                                ImGui.SameLine ()
+                                ImGui.SetNextItemWidth 150.0f
+                                let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
+                                if ImGui.BeginCombo ("##newEntityOverlayName", newEntityOverlayName) then
+                                    let overlayNamePicked = tryPickName overlayNames
+                                    for overlayName in overlayNames do
+                                        if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.2f
+                                        if ImGui.Selectable (overlayName, strEq overlayName newEntityOverlayName) then
+                                            newEntityOverlayName <- overlayName
+                                    ImGui.EndCombo ()
+                                ImGui.SameLine ()
+                                let world = if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity world |> snd else world
+                                ImGui.SameLine ()
+                                let world = if ImGui.Button "Delete" then tryDeleteSelectedEntity world |> snd else world
+                                ImGui.SameLine ()
+                                ImGui.Text "|"
+                                ImGui.SameLine ()
+                                let world =
+                                    if world.Halted then
+                                        if ImGui.Button "Advance (F5)" then toggleAdvancing world else world
+                                    else
+                                        let world = if ImGui.Button "Halt (F5)" then toggleAdvancing world else world
+                                        ImGui.SameLine ()
+                                        ImGui.Checkbox ("Edit", &editWhileAdvancing) |> ignore<bool>
+                                        world
+                                ImGui.SameLine ()
+                                ImGui.Text "|"
+                                ImGui.SameLine ()
+                                ImGui.Text "Eye:"
+                                ImGui.SameLine ()
+                                if ImGui.Button "Reset" then resetEye ()
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                    let mutable eye2dCenter = World.getEye2dCenter world
+                                    let mutable eye3dCenter = World.getEye3dCenter world
+                                    let mutable eye3dDegrees = Math.RadiansToDegrees3d (World.getEye3dRotation world).RollPitchYaw
+                                    ImGui.InputFloat2 ("Eye 2d Center", &eye2dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
+                                    ImGui.InputFloat3 ("Eye 3d Center", &eye3dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
+                                    ImGui.InputFloat3 ("Eye 3d Degrees", &eye3dDegrees, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
+                                    ImGui.EndTooltip ()
+                                ImGui.SameLine ()
+                                ImGui.Text "|"
+                                ImGui.SameLine ()
+                                ImGui.Text "Reload:"
+                                ImGui.SameLine ()
+                                if ImGui.Button "Assets" then reloadAssetsRequested <- 1
+                                ImGui.SameLine ()
+                                if ImGui.Button "Code" then reloadCodeRequested <- 1
+                                ImGui.SameLine ()
+                                if ImGui.Button "All" then reloadAllRequested <- 1
+                                ImGui.SameLine ()
+                                ImGui.Text "|"
+                                ImGui.SameLine ()
+                                ImGui.Text "Mode:"
+                                ImGui.SameLine ()
+                                ImGui.SetNextItemWidth 130.0f
+                                let world =
+                                    if ImGui.BeginCombo ("##projectEditMode", projectEditMode) then
+                                        let editModes = World.getEditModes world
+                                        let world =
+                                            Seq.fold (fun world (editModeName, editModeFn) ->
+                                                if ImGui.Selectable (editModeName, strEq editModeName projectEditMode) then
+                                                    projectEditMode <- editModeName
+                                                    snapshot world // snapshot before mode change
+                                                    selectEntityOpt None world
+                                                    let world = editModeFn world
+                                                    snapshot world // snapshot before after change
+                                                    world
+                                                else world)
+                                                world editModes.Pairs
+                                        ImGui.EndCombo ()
+                                        world
+                                    else world
+                                ImGui.SameLine ()
+                                let world = if ImGui.Button "Thaw" then thawEntities world else world
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                    ImGui.Text "Thaw all frozen entities. (Ctrl+Shift+T)"
+                                    ImGui.EndTooltip ()
+                                ImGui.SameLine ()
+                                let world = if ImGui.Button "Freeze" then freezeEntities world else world
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                    ImGui.Text "Freeze all thawed entities. (Ctrl+Shift+F)"
+                                    ImGui.EndTooltip ()
+                                ImGui.SameLine ()
+                                let world =
+                                    if ImGui.Button "Renavigate" then
+                                        // TODO: sync nav 2d when it's available.
+                                        let world = World.synchronizeNav3d selectedScreen world
+                                        world
+                                    else world
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                    ImGui.Text "Synchronize navigation mesh. (Ctrl+Shift+N)"
+                                    ImGui.EndTooltip ()
+                                ImGui.SameLine ()
+                                let world = if ImGui.Button "Relight" then rerenderLightMaps world else world
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                    ImGui.Text "Re-render all light maps. (Ctrl+Shift+L)"
+                                    ImGui.EndTooltip ()
+                                ImGui.SameLine ()
+                                ImGui.Text "|"
+                                ImGui.SameLine ()
+                                ImGui.Text "Full Screen"
+                                ImGui.SameLine ()
+                                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                                    ImGui.Text "Toggle full screen view (F11 to toggle)."
+                                    ImGui.EndTooltip ()
+                                ImGui.End ()
+                                world
+
+                            // fin
+                            world
+                        else world
 
                     // entity hierarchy window
                     if ImGui.Begin "Entity Hierarchy" then
