@@ -3669,7 +3669,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         toSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                                         ofSymbolMemo.Evict Constants.Gaia.PropertyValueStrMemoEvictionAge
                                         let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, toSymbolMemo, ofSymbolMemo)
-                                        let propertyValueUntruncated = getPropertyValue propertyDescriptor simulant
+                                        let propertyValueUntruncated = getPropertyValue propertyDescriptor simulant world
                                         let propertyValue =
                                             if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
                                                 match World.tryTruncateModel propertyValueUntruncated simulant world with
