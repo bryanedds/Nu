@@ -4,18 +4,21 @@
   [Persistent True]
   [Visible True]]
  [[TileMapDispatcher
-   [[Size [1024 416 0]]
+   [[Presence Omnipresent]
+    [Size [1024 416 0]]
     [TileMap [Gameplay Section3TileMap]]
     [TileSizeDivisor 2]]
    []]
   [TileMapDispatcher
    [[Elevation -4]
+    [Presence Omnipresent]
     [Size [1024 416 0]]
     [TileMap [Gameplay BackgroundB]]
     [TileSizeDivisor 2]]
    []]
   [TileMapDispatcher
    [[Elevation -8]
+    [Presence Omnipresent]
     [Size [1024 416 0]]
     [TileMap [Gameplay BackgroundA]]
     [TileSizeDivisor 2]]
