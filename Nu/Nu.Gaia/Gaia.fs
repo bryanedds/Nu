@@ -1297,7 +1297,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 rightClickPosition <- mousePosition
                 showEntityContextMenu <- true
 
-    // TODO: decompose this function.
     let private updateEntityDrag world =
 
         let world =
@@ -1529,7 +1528,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             else world
         else world
 
-    // TODO: decompose this function.
     let private imGuiEntity branch filtering (entity : Entity) world =
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
@@ -2847,7 +2845,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
         else world
 
-    // TODO: decompose this function.
     let private imGuiEditProperties (simulant : Simulant) world =
         let propertyDescriptors = world |> SimulantPropertyDescriptor.getPropertyDescriptors simulant |> Array.ofList
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
