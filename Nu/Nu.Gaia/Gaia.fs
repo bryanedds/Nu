@@ -817,7 +817,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match selectedEntityOpt with
             | Some entity ->
                 if inHierarchy then
-                    if entity.Exists world then Array.add name entity.Surnames
+                    if entity.Exists world
+                    then Array.add name entity.Surnames
                     else [|name|]
                 else
                     match newEntityParentOpt with
