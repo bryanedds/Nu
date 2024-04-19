@@ -39,13 +39,10 @@ open Nu
 [<RequireQualifiedAccess>]
 module Gaia =
 
-    (* World States - mutable to accomodatae ImGui's intended authoring style *)
+    (* Active Editing States *)
 
     let mutable private worldsPast = []
     let mutable private worldsFuture = []
-
-    (* Active Editing States *)
-
     let mutable private manipulationActive = false
     let mutable private manipulationOperation = OPERATION.TRANSLATE
     let mutable private expandEntityHierarchy = false
