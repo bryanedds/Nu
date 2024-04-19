@@ -55,7 +55,6 @@ type FieldMessage =
     | ShopLeave
     | PromptLeft
     | PromptRight
-    | TryBattle of BattleType * Advent Set
     | Interact
     interface Message
 
@@ -66,6 +65,8 @@ type FieldCommand =
     | WarpAvatar of Vector3
     | MoveAvatar of Vector3
     | FaceAvatar of Direction
+    | TryCommencingBattle of BattleType * Advent Set
+    | CommencingBattle of BattleData * PrizePool
     | PlayFieldSong
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
@@ -82,7 +83,7 @@ type [<SymbolicExpansion>] Options =
     { BattleSpeed : BattleSpeed }
 
 type FieldState =
-    | Play
+    | Playing
     | Quitting
     | Quit
 
@@ -124,7 +125,6 @@ module Field =
               Tint_ : Color
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
-              BattleOpt_ : Battle option
               FieldSongTimeOpt_ : int64 option
               FieldState_ : FieldState }
 
@@ -154,7 +154,6 @@ module Field =
         member this.Tint = this.Tint_
         member this.ShopOpt = this.ShopOpt_
         member this.DialogOpt = this.DialogOpt_
-        member this.BattleOpt = this.BattleOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
         member this.FieldState = this.FieldState_
 
@@ -500,10 +499,6 @@ module Field =
     let mapDialogOpt updater field =
         { field with DialogOpt_ = updater field.DialogOpt_ }
 
-    let mapBattleOpt updater field =
-        let battleOpt = updater field.BattleOpt_
-        { field with BattleOpt_ = battleOpt }
-
     let mapFieldSongTimeOpt updater field =
         { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
 
@@ -555,12 +550,12 @@ module Field =
         let field = mapAvatarIntersectedPropIds (constant []) field
         field
 
-    let enterBattle songTime prizePool battleData (field : Field) =
+    let commenceBattle songTime prizePool battleData (field : Field) =
         let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData
         let field = mapFieldSongTimeOpt (constant (Some songTime)) field
-        mapBattleOpt (constant (Some battle)) field
+        (battle, field)
 
-    let exitBattle consequents battle field =
+    let concludeBattle consequents battle field =
         let field = synchronizeFromBattle consequents battle field
         let field = clearSpirits field
         field
@@ -615,7 +610,7 @@ module Field =
         | (false, dialog) ->
             let field = mapDialogOpt (constant None) field
             match dialog.DialogBattleOpt with
-            | Some (battleType, consequence) -> withSignal (TryBattle (battleType, consequence)) field
+            | Some (battleType, consequence) -> withSignal (TryCommencingBattle (battleType, consequence)) field
             | None -> just field
 
     let private interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
@@ -996,16 +991,6 @@ module Field =
             | Some _ -> (cue, definitions, just field)
             | None -> (Fin, definitions, just field)
 
-        | Battle (battleType, consequents) ->
-            match field.BattleOpt_ with
-            | Some _ -> (cue, definitions, just field)
-            | None -> (BattleState, definitions, withSignal (TryBattle (battleType, consequents)) field)
-
-        | BattleState ->
-            match field.BattleOpt_ with
-            | Some _ -> (cue, definitions, just field)
-            | None -> (Fin, definitions, just field)
-
         | Dialog (text, isNarration) ->
             match field.DialogOpt_ with
             | Some _ ->
@@ -1034,6 +1019,9 @@ module Field =
             match field.DialogOpt_ with
             | None -> (Fin, definitions, just field)
             | Some _ -> (cue, definitions, just field)
+
+        | Battle (battleType, consequents) ->
+            (Fin, definitions, withSignal (TryCommencingBattle (battleType, consequents)) field)
 
         | If (p, c, a) ->
             match p with
@@ -1164,90 +1152,80 @@ module Field =
             | None -> Right field
         | Some _ -> Right field
 
-    let update (field : Field) =
+    let update (field : Field) : Signal list * Field =
 
-        // update when battle is inactive
-        match field.BattleOpt_ with
-        | None ->
+        // update dialog
+        let field =
+            match field.DialogOpt_ with
+            | Some dialog ->
+                let dialog = Dialog.update (detokenize field) field.FieldTime_ dialog
+                mapDialogOpt (constant (Some dialog)) field
+            | None -> field
 
-            // update dialog
-            let field =
-                match field.DialogOpt_ with
-                | Some dialog ->
-                    let dialog = Dialog.update (detokenize field) field.FieldTime_ dialog
-                    mapDialogOpt (constant (Some dialog)) field
-                | None -> field
+        // update cue
+        let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field
 
-            // update cue
-            let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field
+        // reset cue definitions if finished
+        let field =
+            match cue with
+            | CueSystem.Fin -> mapDefinitions (constant field.DefinitionsOriginal_) field
+            | _ -> mapDefinitions (constant definitions) field
+        let field = mapCue (constant cue) field
 
-            // reset cue definitions if finished
-            let field =
-                match cue with
-                | CueSystem.Fin -> mapDefinitions (constant field.DefinitionsOriginal_) field
-                | _ -> mapDefinitions (constant definitions) field
-            let field = mapCue (constant cue) field
+        // update portal
+        let (signals, field) =
+            match field.FieldTransitionOpt_ with
+            | None ->
+                match tryGetTouchingPortal field with
+                | Some (fieldType, destination, direction, isWarp) ->
+                    let transition =
+                        { FieldType = fieldType
+                          FieldDestination = destination
+                          FieldDirection = direction
+                          FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
+                    let field = mapFieldTransitionOpt (constant (Some transition)) field
+                    let playSound =
+                        if isWarp
+                        then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                        else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                    (signal playSound :: signals, field)
+                | None -> (signals, field)
+            | Some _ -> (signals, field)
 
-            // update portal
-            let (signals, field) =
-                match field.FieldTransitionOpt_ with
-                | None ->
-                    match tryGetTouchingPortal field with
-                    | Some (fieldType, destination, direction, isWarp) ->
-                        let transition =
-                            { FieldType = fieldType
-                              FieldDestination = destination
-                              FieldDirection = direction
-                              FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
-                        let field = mapFieldTransitionOpt (constant (Some transition)) field
-                        let playSound =
-                            if isWarp
-                            then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
-                            else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
-                        (signal playSound :: signals, field)
-                    | None -> (signals, field)
-                | Some _ -> (signals, field)
+        // update sensor
+        let (signals, field) =
+            match field.FieldTransitionOpt_ with
+            | None ->
+                let sensors = getTouchedSensors field
+                let results =
+                    List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
+                        if field.Advents_.IsSupersetOf requirements then
+                            let field = mapCue (constant cue) field
+                            match sensorType with
+                            | AirSensor -> (signals, field)
+                            | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                        else (signals, field))
+                        (signals, field) sensors
+                results
+            | Some _ -> (signals, field)
 
-            // update sensor
-            let (signals, field) =
-                match field.FieldTransitionOpt_ with
-                | None ->
-                    let sensors = getTouchedSensors field
-                    let results =
-                        List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
-                            if field.Advents_.IsSupersetOf requirements then
-                                let field = mapCue (constant cue) field
-                                match sensorType with
-                                | AirSensor -> (signals, field)
-                                | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
-                            else (signals, field))
-                            (signals, field) sensors
-                    results
-                | Some _ -> (signals, field)
+        // update spirits
+        let (signals : Signal list, field) =
+            if  field.Menu_.MenuState = MenuClosed &&
+                CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
+                Option.isNone field.DialogOpt_ &&
+                Option.isNone field.ShopOpt_ &&
+                Option.isNone field.FieldTransitionOpt_ then
+                match updateSpirits field with
+                | Left (battleData, field) ->
+                    let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+                    let doBattle = CommencingBattle (battleData, prizePool)
+                    (signal doBattle :: signals, field)
+                | Right field -> (signals, field)
+            else (signals, field)
 
-            // update spirits
-            let (signals : Signal list, field) =
-                if  field.Menu_.MenuState = MenuClosed &&
-                    CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
-                    Option.isNone field.DialogOpt_ &&
-                    Option.isNone field.ShopOpt_ &&
-                    Option.isNone field.FieldTransitionOpt_ then
-                    match updateSpirits field with
-                    | Left (battleData, field) ->
-                        let fieldTime = field.FieldTime_
-                        let playTime = Option.defaultValue fieldTime field.FieldSongTimeOpt_
-                        let startTime = fieldTime - playTime
-                        let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                        let field = enterBattle startTime prizePool battleData field
-                        let fade = FadeOutSong 60L
-                        let beastGrowl = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
-                        (signal fade :: signal beastGrowl :: signals, field)
-                    | Right field -> (signals, field)
-                else (signals, field)
-
-            // fin
-            (signals, field)
-        | Some _ -> just field
+        // fin
+        (signals, field)
 
     let updateFieldTime field =
         let field = { field with FieldTime_ = inc field.FieldTime_ }
@@ -1291,9 +1269,8 @@ module Field =
           Tint_ = Color.Zero
           ShopOpt_ = None
           DialogOpt_ = None
-          BattleOpt_ = None
           FieldSongTimeOpt_ = None
-          FieldState_ = Play }
+          FieldState_ = Playing }
 
     let empty viewBounds2dAbsolute =
         { FieldTime_ = 0L
@@ -1323,7 +1300,6 @@ module Field =
           Tint_ = Color.Zero
           ShopOpt_ = None
           DialogOpt_ = None
-          BattleOpt_ = None
           FieldSongTimeOpt_ = None
           FieldState_ = Quit }
 
@@ -1332,20 +1308,6 @@ module Field =
 
     let debug time viewBounds2dAbsolute =
         make time viewBounds2dAbsolute DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
-
-    let debugBattle time viewBounds2dAbsolute =
-        let field = debug time viewBounds2dAbsolute
-        let battle =
-            match Map.tryFind DebugBattle Data.Value.Battles with
-            | Some battle ->
-                let level = 50
-                let team =
-                    Map.singleton 0 (Teammate.make level 0 Jinn) |>
-                    Map.add 1 (Teammate.make level 1 Mael) |>
-                    Map.add 2 (Teammate.make level 2 Riain)
-                makeBattleFromTeam Inventory.initial PrizePool.empty team PacedSpeed battle
-            | None -> Battle.empty
-        mapBattleOpt (constant (Some battle)) field
 
     let tryLoad time saveSlot =
         try let saveFilePath =

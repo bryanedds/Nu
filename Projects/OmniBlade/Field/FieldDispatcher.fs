@@ -14,6 +14,9 @@ module FieldDispatcher =
         member this.GetField world = this.GetModelGeneric<Field> world
         member this.SetField value world = this.SetModelGeneric<Field> value world
         member this.Field = this.ModelGeneric<Field> ()
+        member this.CommencingBattleEvent = Events.CommencingBattleEvent --> this
+        member this.CommenceBattleEvent = Events.CommenceBattleEvent --> this
+        member this.QuitFieldEvent = Events.QuitFieldEvent --> this
 
     type FieldDispatcher () =
         inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getViewBounds2dAbsolute world))
@@ -61,13 +64,15 @@ module FieldDispatcher =
              Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
              Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal]
 
-        override this.Message (field, message, _, world) =
+        override this.Message (field, message, screen, world) =
 
             match message with
             | Update ->
 
-                // update field
-                Field.update field
+                // update field if screen not transitioning
+                match screen.GetTransitionState world with
+                | IdlingState _ -> Field.update field
+                | _ -> just field
 
             | TimeUpdate ->
 
@@ -449,17 +454,6 @@ module FieldDispatcher =
                     | None -> just field
                 | None -> just field
 
-            | TryBattle (battleType, consequents) ->
-                match Map.tryFind battleType Data.Value.Battles with
-                | Some battleData ->
-                    let time = field.FieldTime
-                    let playTime = Option.defaultValue time field.FieldSongTimeOpt
-                    let startTime = time - playTime
-                    let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    let field = Field.enterBattle startTime prizePool battleData field
-                    withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)) field
-                | None -> just field
-
             | Interact ->
                 let (signals, field) = Field.interact field
                 (signals, field)
@@ -553,6 +547,20 @@ module FieldDispatcher =
                     else field
                 let world = screen.SetField field world
                 just world
+
+            | TryCommencingBattle (battleType, consequents) ->
+                match Map.tryFind battleType Data.Value.Battles with
+                | Some battleData ->
+                    let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
+                    withSignal (CommencingBattle (battleData, prizePool)) world
+                | None -> just world
+
+            | CommencingBattle (battleData, prizePool) ->
+                let world = World.publish () screen.CommencingBattleEvent screen world
+                let world = World.schedule 60L (World.publish (battleData, prizePool) screen.CommenceBattleEvent screen) screen world
+                let fade = FadeOutSong 60L
+                let growl = FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
+                withSignals [fade; growl] world
 
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
@@ -746,7 +754,6 @@ module FieldDispatcher =
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
-                        Option.isNone field.BattleOpt &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
@@ -765,7 +772,6 @@ module FieldDispatcher =
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
-                        Option.isNone field.BattleOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Option.isSome (Field.tryGetInteraction field) &&

@@ -14,6 +14,8 @@ module BattleDispatcher =
         member this.GetBattle world = this.GetModelGeneric<Battle> world
         member this.SetBattle value world = this.SetModelGeneric<Battle> value world
         member this.Battle = this.ModelGeneric<Battle> ()
+        member this.ConcludingBattleEvent = Events.ConcludingBattleEvent --> this
+        member this.ConcludeBattleEvent = Events.ConcludeBattleEvent --> this
 
     type BattleDispatcher () =
         inherit ScreenDispatcher<Battle, BattleMessage, BattleCommand> (Battle.empty : Battle)
@@ -149,6 +151,11 @@ module BattleDispatcher =
             match command with
             | UpdateEye ->
                 let world = World.setEye2dCenter v2Zero world
+                just world
+
+            | Concluding (outcome, prizePool) ->
+                let world = World.publish outcome screen.ConcludingBattleEvent screen world
+                let world = World.schedule 60L (World.publish (outcome, prizePool) screen.ConcludeBattleEvent screen) screen world
                 just world
 
             | BattleCommand.PlaySound (delay, volume, sound) ->

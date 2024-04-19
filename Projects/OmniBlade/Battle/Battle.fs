@@ -26,6 +26,7 @@ type BattleMessage =
 
 type BattleCommand =
     | UpdateEye
+    | Concluding of bool * PrizePool
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
     | FadeOutSong of GameTime
@@ -78,11 +79,11 @@ type BattleSpeed =
     | WaitSpeed
 
 type BattleState =
-    | BattleReady of int64
+    | BattleReadying of int64
     | BattleRunning
     | BattleResult of int64 * bool
-    | BattleQuitting of int64 * bool * Advent Set
-    | BattleQuit
+    | BattleConcluding of int64 * bool
+    | BattleConclude
 
 type ActionCommand =
     { Action : ActionType
@@ -1743,7 +1744,7 @@ module Battle =
                     if List.forall (fun (character : Character) -> character.Wounded) allies then
                         // lost battle
                         let battle = animateCharactersCelebrate false battle
-                        let battle = mapBattleState (constant (BattleQuitting (battle.BattleTime_, false, Set.empty))) battle
+                        let battle = mapBattleState (constant (BattleConcluding (battle.BattleTime_, false))) battle
                         let (sigs2, battle) = update battle
                         (sigs @ sigs2, battle)
                     elif List.isEmpty enemies then
@@ -1757,7 +1758,7 @@ module Battle =
             withSignals sigs battle
         | None -> just battle
 
-    and private updateReady startTime (battle : Battle) =
+    and private updateReadying startTime (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L then // first frame after transitioning in
             match battle.BattleSongOpt_ with
@@ -1947,7 +1948,7 @@ module Battle =
             | None -> updateNoCurrentCommand battle
         else just battle
 
-    and private updateResults startTime outcome (battle : Battle) =
+    and private updateResult startTime outcome (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L then
             let alliesLevelingUp =
@@ -1995,12 +1996,16 @@ module Battle =
             (signal (FadeOutSong 360L) :: sigs, battle)
         else
             match battle.DialogOpt_ with
-            | None -> just (mapBattleState (constant (BattleQuitting (battle.BattleTime_, outcome, battle.PrizePool_.Consequents))) battle)
+            | None ->
+                let battle = mapBattleState (constant (BattleConcluding (battle.BattleTime_, outcome))) battle
+                update battle
             | Some _ -> just battle
 
-    and private updateCease startTime (battle : Battle) =
-        ignore<int64> startTime
-        just battle
+    and private updateConcluding startTime outcome (battle : Battle) =
+        let localTime = battle.BattleTime_ - startTime
+        if localTime = 0L
+        then withSignal (Concluding (outcome, battle.PrizePool_)) battle
+        else just battle
 
     and update (battle : Battle) : Signal list * Battle =
 
@@ -2021,11 +2026,11 @@ module Battle =
         // update battle state
         let (signals, battle) =
             match battle.BattleState_ with
-            | BattleReady startTime -> updateReady startTime battle
+            | BattleReadying startTime -> updateReadying startTime battle
             | BattleRunning -> updateRunning battle
-            | BattleResult (startTime, outcome) -> updateResults startTime outcome battle
-            | BattleQuitting (startTime, _, _) -> updateCease startTime battle
-            | BattleQuit -> just battle
+            | BattleResult (startTime, outcome) -> updateResult startTime outcome battle
+            | BattleConcluding (startTime, outcome) -> updateConcluding startTime outcome battle
+            | BattleConclude -> just battle
 
         // fin
         (signals, battle)
@@ -2043,22 +2048,20 @@ module Battle =
         let tileMap = battleData.BattleTileMap
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
-        let battle =
-            { BattleTime_ = 0L
-              Characters_ = characters
-              Inventory_ = inventory
-              PrizePool_ = prizePool
-              TileMap_ = tileMap
-              TileIndexOffset_ = tileIndexOffset
-              TileIndexOffsetRange_ = tileIndexOffsetRange
-              BattleSongOpt_ = battleData.BattleSongOpt
-              BattleSpeed_ = battleSpeed
-              CurrentCommandOpt_ = None
-              ActionCommands_ = FQueue.empty
-              MessageOpt_ = None
-              DialogOpt_ = None
-              BattleState_ = BattleReady 1L }
-        battle
+        { BattleTime_ = 0L
+          Characters_ = characters
+          Inventory_ = inventory
+          PrizePool_ = prizePool
+          TileMap_ = tileMap
+          TileIndexOffset_ = tileIndexOffset
+          TileIndexOffsetRange_ = tileIndexOffsetRange
+          BattleSongOpt_ = battleData.BattleSongOpt
+          BattleSpeed_ = battleSpeed
+          CurrentCommandOpt_ = None
+          ActionCommands_ = FQueue.empty
+          MessageOpt_ = None
+          DialogOpt_ = None
+          BattleState_ = BattleReadying 1L }
 
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
@@ -2076,7 +2079,7 @@ module Battle =
               ActionCommands_ = FQueue.empty
               MessageOpt_ = None
               DialogOpt_ = None
-              BattleState_ = BattleQuit }
+              BattleState_ = BattleConclude }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle

@@ -10,29 +10,34 @@ open Nu
 [<AutoOpen>]
 module OmniBlade =
 
-    type Gui =
+    type Model =
         | Splash
         | Title
         | Credits
         | Pick
         | Intro of SaveSlot
-
-    type Model =
-        | Gui of Gui
-        | Field of Field
+        | Field
+        | Battle
 
     type Message =
         | ShowTitle
         | ShowCredits
         | ShowPick
         | ShowIntro of SaveSlot
+        | ShowFieldInitial
         | TryLoad of SaveSlot
-        | UpdateMessage
+        | CommencingBattle
+        | CommenceBattle of BattleData * PrizePool
+        | ConcludingBattle of bool
+        | ConcludeBattle
         interface Nu.Message
 
     type Command =
+        | SetField of Field
+        | FromFieldToBattle of BattleData * PrizePool
+        | FromBattleToField of PrizePool
+        | Update
         | Exit
-        | UpdateCommand
         interface Nu.Command
 
     type Game with
@@ -41,7 +46,7 @@ module OmniBlade =
         member this.Model = this.ModelGeneric<Model> ()
 
     type OmniBladeDispatcher () =
-        inherit GameDispatcher<Model, Message, Command> (Gui Splash)
+        inherit GameDispatcher<Model, Message, Command> (Splash)
 
         override this.Register (game, world) =
             // HACK: since I incorrectly assumed that master song volume was 0.5f while mixing songs in the editor
@@ -52,31 +57,14 @@ module OmniBlade =
         override this.Definitions (model, _) =
             [Game.DesiredScreen :=
                 match model with
-                | Gui gui ->
-                    match gui with
-                    | Splash -> Desire Simulants.Splash
-                    | Title -> Desire Simulants.Title
-                    | Credits -> Desire Simulants.Credits
-                    | Pick -> Desire Simulants.Pick
-                    | Intro _ -> Desire Simulants.Intro
-                | Field field ->
-                    match field.FieldState with
-                    | Play ->
-                        match field.BattleOpt with
-                        | Some battle ->
-                            match battle.BattleState with
-                            | BattleQuitting (_, _, _) | BattleQuit -> Desire Simulants.Field
-                            | _ -> Desire Simulants.Battle
-                        | None -> Desire Simulants.Field
-                    | Quitting | Quit -> Desire Simulants.Title
-             match model with
-             | Gui _ -> ()
-             | Field field ->
-                 match field.BattleOpt with
-                 | None -> Simulants.Field.Field := field
-                 | Some battle -> Simulants.Battle.Battle := battle
-             Game.UpdateEvent => UpdateMessage
-             Game.UpdateEvent => UpdateCommand
+                | Splash -> Desire Simulants.Splash
+                | Title -> Desire Simulants.Title
+                | Credits -> Desire Simulants.Credits
+                | Pick -> Desire Simulants.Pick
+                | Intro _ -> Desire Simulants.Intro
+                | Field -> Desire Simulants.Field
+                | Battle -> Desire Simulants.Battle
+             Game.UpdateEvent => Update
              Simulants.Splash.DeselectingEvent => ShowTitle
              Simulants.TitlePlay.ClickEvent => ShowPick
              Simulants.TitleCredits.ClickEvent => ShowCredits
@@ -88,79 +76,84 @@ module OmniBlade =
              Simulants.PickLoadGame2.ClickEvent => TryLoad Slot2
              Simulants.PickLoadGame3.ClickEvent => TryLoad Slot3
              Simulants.PickBack.ClickEvent => ShowTitle
-             Simulants.CreditsBack.ClickEvent => ShowTitle]
+             Simulants.CreditsBack.ClickEvent => ShowTitle
+             Simulants.Intro5.DeselectingEvent => ShowFieldInitial
+             Simulants.Battle.ConcludingBattleEvent =|> fun evt -> ConcludingBattle evt.Data
+             Simulants.Battle.ConcludeBattleEvent => ConcludeBattle
+             Simulants.Field.CommencingBattleEvent => CommencingBattle
+             Simulants.Field.CommenceBattleEvent =|> fun evt -> CommenceBattle evt.Data
+             Simulants.Field.QuitFieldEvent => ShowTitle]
 
         override this.Message (model, message, _, world) =
 
             match message with
             | ShowTitle ->
-                just (Gui Title)
+                just Title
 
             | ShowCredits ->
-                just (Gui Credits)
+                just Credits
 
             | ShowPick ->
-                just (Gui Pick)
+                just Pick
 
             | ShowIntro slot ->
-                just (Gui (Intro slot))
+                just (Intro slot)
+
+            | ShowFieldInitial ->
+                let slot = match model with Intro slot -> slot | _ -> Slot1
+                let field = Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) slot
+                withSignal (SetField field) Field
 
             | TryLoad saveSlot ->
                 match Field.tryLoad world.UpdateTime saveSlot with
-                | Some loaded -> just (Field loaded)
+                | Some loaded -> withSignal (SetField loaded) Field
                 | None -> just model
 
-            | UpdateMessage ->
+            | CommencingBattle ->
+                just Battle
 
-                // pull model state from field and battle screens
-                let model =
-                    match model with
-                    | Gui _ -> model
-                    | Field field ->
-                        match field.BattleOpt with
-                        | None ->
-                            let field' = Simulants.Field.GetField world
-                            if field =/= field' then Field field' else model
-                        | Some battle ->
-                            let battle' = Simulants.Battle.GetBattle world
-                            if battle =/= battle' then Field (Field.mapBattleOpt (constant (Some battle')) field) else model
+            | CommenceBattle (prizePool, battleData) ->
+                withSignal (FromFieldToBattle (prizePool, battleData)) Battle
 
-                // update model
-                let model =
-                    match model with
-                    | Gui gui ->
-                        match gui with
-                        | Intro slot ->
-                            match Simulants.Intro5.GetTransitionState world with
-                            | OutgoingState _ -> Field (Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) slot )
-                            | _ -> model
-                        | _ -> model
-                    | Field field ->
-                        match field.BattleOpt with
-                        | Some battle ->
-                            match battle.BattleState with
-                            | BattleQuitting (_, outcome, consequents) ->
-                                if outcome then
-                                    let field = Field.exitBattle consequents battle field
-                                    Field (Field.mapBattleOpt (constant None) field)
-                                else Field (Field.mapFieldState (constant Quitting) field)
-                            | _ -> model
-                        | None -> model
+            | ConcludingBattle outcome ->
+                if outcome
+                then just Field
+                else just Title
 
-                // fin
-                just model
+            | ConcludeBattle ->
+                let battle = Simulants.Battle.GetBattle world
+                match battle.BattleState with
+                | BattleConcluding (_, outcome) ->
+                    if outcome
+                    then withSignal (FromBattleToField battle.PrizePool) Field
+                    else just Title
+                | _ -> just model
 
         override this.Command (_, command, _, world) =
 
             match command with
-            | Exit ->
+            | SetField field ->
+                let world = Simulants.Field.SetField field world
+                just world
 
-                // exit when not in editor
-                if world.Unaccompanied
-                then just (World.exit world)
-                else just world
+            | FromFieldToBattle (battleData, prizePool) ->
+                let field = Simulants.Field.GetField world
+                let playTime = Option.defaultValue field.FieldTime field.FieldSongTimeOpt
+                let songTime = field.FieldTime - playTime
+                let (battle, field) = Field.commenceBattle songTime prizePool battleData field
+                let world = Simulants.Battle.SetBattle battle world
+                let world = Simulants.Field.SetField field world
+                just world
 
-            | UpdateCommand ->
+            | FromBattleToField prizePool ->
+                let battle = Simulants.Battle.GetBattle world
+                let field = Simulants.Field.GetField world
+                let field = Field.concludeBattle prizePool.Consequents battle field
+                let world = Simulants.Battle.SetBattle Battle.empty world
+                let world = Simulants.Field.SetField field world
+                just world
+
+            | Update ->
 
                 // update picks
                 let world =
@@ -185,6 +178,13 @@ module OmniBlade =
                 // fin
                 just world
 
+            | Exit ->
+
+                // exit when not in editor
+                if world.Unaccompanied
+                then just (World.exit world)
+                else just world
+
         override this.Content (_, _) =
             [Content.screen<ScreenDispatcher> Simulants.Splash.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []
              Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
@@ -197,13 +197,3 @@ module OmniBlade =
              Content.screenWithGroupFromFile Simulants.Intro3.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4)) Assets.Gui.Intro3GroupFilePath [] []
              Content.screenWithGroupFromFile Simulants.Intro4.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5)) Assets.Gui.Intro4GroupFilePath [] []
              Content.screenWithGroupFromFile Simulants.Intro5.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []]
-
-        override this.TruncateModel model =
-            match model with
-            | Field field -> Field (Field.truncate field)
-            | _ -> model
-
-        override this.UntruncateModel (current, incoming) =
-            match (current, incoming) with
-            | (Field fieldCurrent, Field fieldIncoming) -> Field (Field.untruncate fieldCurrent fieldIncoming)
-            | _ -> current

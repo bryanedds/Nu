@@ -614,12 +614,11 @@ module CueSystem =
         | MoveState of int64 * CueTarget * Vector3 * Vector3 * CueMovement
         | Warp of FieldType * Vector3 * Direction
         | WarpState
-        | Battle of BattleType * Advent Set // TODO: consider using three Cues (start, end, post) in battle rather than advents directly...
-        | BattleState
         | Dialog of string * bool
         | DialogState
         | Prompt of string * (string * Cue) * (string * Cue)
         | PromptState
+        | Battle of BattleType * Advent Set // TODO: consider using three Cues (start, end, post) in battle rather than advents directly...
         | If of CuePredicate * Cue * Cue
         | Not of CuePredicate * Cue * Cue
         | Define of string * Cue
@@ -633,7 +632,7 @@ module CueSystem =
             match cue with
             | Fin | PlaySound _ | PlaySong _ | FadeOutSong _ | Face _ | ClearSpirits | Recruit _ -> false
             | AddItem _ | RemoveItem _ | AddAdvent _ | RemoveAdvent _ | ReplaceAdvent _ -> false
-            | Wait _ | WaitState _ | Tint _ | TintState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState | Battle _ | BattleState | Dialog _ | DialogState | Prompt _ | PromptState -> true
+            | Wait _ | WaitState _ | Tint _ | TintState _ | Fade _ | FadeState _ | Move _ | MoveState _ | Warp _ | WarpState | Dialog _ | DialogState | Prompt _ | PromptState | Battle _ -> true
             | Animate (_, _, wait) | AnimateState (_, wait) -> match wait with Timed 0L | NoWait -> false | _ -> true
             | If (p, c, a) ->
                 match p with
