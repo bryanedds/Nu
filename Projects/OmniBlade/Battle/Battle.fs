@@ -26,7 +26,8 @@ type BattleMessage =
 
 type BattleCommand =
     | UpdateEye
-    | Concluding of bool * PrizePool
+    | Concluding
+    | Conclude
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
     | FadeOutSong of GameTime
@@ -2001,10 +2002,10 @@ module Battle =
                 update battle
             | Some _ -> just battle
 
-    and private updateConcluding startTime outcome (battle : Battle) =
+    and private updateConcluding startTime (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L
-        then withSignal (Concluding (outcome, battle.PrizePool_)) battle
+        then withSignal Concluding battle
         else just battle
 
     and update (battle : Battle) : Signal list * Battle =
@@ -2029,7 +2030,7 @@ module Battle =
             | BattleReadying startTime -> updateReadying startTime battle
             | BattleRunning -> updateRunning battle
             | BattleResult (startTime, outcome) -> updateResult startTime outcome battle
-            | BattleConcluding (startTime, outcome) -> updateConcluding startTime outcome battle
+            | BattleConcluding (startTime, _) -> updateConcluding startTime battle
             | BattleConclude -> just battle
 
         // fin

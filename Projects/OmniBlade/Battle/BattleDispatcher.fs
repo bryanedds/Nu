@@ -40,6 +40,7 @@ module BattleDispatcher =
 
         override this.Definitions (_, _) =
             [Screen.UpdateEvent => Update
+             Screen.DeselectingEvent => Conclude
              Screen.PostUpdateEvent => UpdateEye
              Screen.TimeUpdateEvent => TimeUpdate
              Simulants.BattleRide.EffectTagTokens.ChangeEvent =|> fun evt -> UpdateRideTokens (evt.Data.Value :?> Map<string, Effects.Slice>)]
@@ -153,10 +154,19 @@ module BattleDispatcher =
                 let world = World.setEye2dCenter v2Zero world
                 just world
 
-            | Concluding (outcome, prizePool) ->
-                let world = World.publish outcome screen.ConcludingBattleEvent screen world
-                let world = World.schedule 60L (World.publish (outcome, prizePool) screen.ConcludeBattleEvent screen) screen world
-                just world
+            | Concluding ->
+                match battle.BattleState with
+                | BattleConcluding (_, outcome) ->
+                    let world = World.publish outcome screen.ConcludingBattleEvent screen world
+                    just world
+                | _ -> just world
+
+            | Conclude ->
+                match battle.BattleState with
+                | BattleConcluding (_, outcome) ->
+                    let world = World.publish (outcome, battle.PrizePool) screen.ConcludeBattleEvent screen world
+                    just world
+                | _ -> just world
 
             | BattleCommand.PlaySound (delay, volume, sound) ->
                 let world = World.schedule delay (World.playSound volume sound) screen world
