@@ -24,7 +24,7 @@ type CharacterCommand =
     interface Command
 
 [<AutoOpen>]
-module CharacterDispatcher =
+module CharacterExtensions =
     type Entity with
         member this.GetCharacter world = this.GetModelGeneric<Character> world
         member this.SetCharacter value world = this.SetModelGeneric<Character> value world
