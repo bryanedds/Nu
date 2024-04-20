@@ -640,7 +640,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         openProjectEditMode <- projectEditMode
         openProjectImperativeExecution <- world.Imperative
 
-    (* Nu Event Handlers *)
+    (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
         if canEditWithMouse world
@@ -749,7 +749,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // fin
         world
 
-    (* Editor Commands *)
+    (* Editor Command Functions *)
 
     let private inductEntity atMouse (entity : Entity) world =
         let (positionSnap, _, _) = getSnaps ()
@@ -1284,7 +1284,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Left msg -> Left msg
         | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
-    (* ImGui Callback Functions *)
+    (* Update Functions *)
 
     let private updateEntityContext world =
         if canEditWithMouse world then
@@ -1524,6 +1524,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else world
             else world
         else world
+
+    (* Top-Level Functions *)
 
     let private imGuiEntity branch filtering (entity : Entity) world =
         let selected = match selectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
@@ -4600,7 +4602,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         fsiOutStream.Dispose ()
         result
 
-    (* Public API *)
+    (* Public Functions *)
 
     /// Run Gaia.
     let run gaiaState targetDir plugin =
