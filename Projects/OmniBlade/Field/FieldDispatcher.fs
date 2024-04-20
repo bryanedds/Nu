@@ -469,15 +469,15 @@ module FieldDispatcher =
 
             match command with
             | ProcessKeyInput ->
-                if  not (World.getSelectedScreenTransitioning world) &&
-                    field.FieldState = Playing &&
+                if  field.FieldState = Playing &&
                     field.Menu.MenuState = MenuClosed &&
                     field.PartyMenu.PartyMenuState = PartyMenuClosed &&
+                    not field.ScreenTransitioning &&
                     CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
                     Option.isNone field.FieldTransitionOpt &&
-                    Simulants.FieldFeeler.GetTouched world |> not then
+                    not (Simulants.FieldFeeler.GetTouched world) then
                     let force = v3Zero
                     let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
                     let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
@@ -498,10 +498,10 @@ module FieldDispatcher =
                 else just world
 
             | ProcessTouchInput position ->
-                if  not (World.getSelectedScreenTransitioning world) &&
-                    field.FieldState = Playing &&
+                if  field.FieldState = Playing &&
                     field.Menu.MenuState = MenuClosed &&
                     field.PartyMenu.PartyMenuState = PartyMenuClosed &&
+                    not field.ScreenTransitioning &&
                     CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                     Option.isNone field.DialogOpt &&
                     Option.isNone field.ShopOpt &&
@@ -744,11 +744,11 @@ module FieldDispatcher =
                         field.FieldState = Playing &&
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
+                        not field.ScreenTransitioning &&
                         CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
-                        Option.isNone field.FieldTransitionOpt &&
-                        not field.ScreenTransitioning
+                        Option.isNone field.FieldTransitionOpt
                      Entity.ClickEvent => MenuTeamOpen]
 
                  // party button
@@ -760,12 +760,12 @@ module FieldDispatcher =
                         field.FieldState = Playing &&
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
+                        not field.ScreenTransitioning &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.DialogOpt &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
                         Field.touchingSavePoint field &&
-                        not field.ScreenTransitioning &&
                         field.Team.Count >= 3
                      Entity.Text == "Party"
                      Entity.ClickEvent => PartyMenuOpen]
@@ -779,11 +779,11 @@ module FieldDispatcher =
                         field.FieldState = Playing &&
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
+                        not field.ScreenTransitioning &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
                         Option.isNone field.ShopOpt &&
                         Option.isNone field.FieldTransitionOpt &&
-                        Option.isSome (Field.tryGetInteraction field) &&
-                        not field.ScreenTransitioning
+                        Option.isSome (Field.tryGetInteraction field)
                      Entity.Text :=
                         match Field.tryGetInteraction field with
                         | Some interaction -> interaction
