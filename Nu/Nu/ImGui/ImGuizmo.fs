@@ -10,7 +10,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module ImGuizmo =
 
-    let mutable private boxCenterSelectedOpt = Option<int>.None
+    let mutable private BoxCenterSelectedOpt = Option<int>.None
 
     /// Manipulate a Box3 value via ImGuizmo.
     let ManipulateBox3 (eyeCenter, eyeRotation, eyeFrustum, absolute, snap, box : Box3 byref) =
@@ -66,7 +66,7 @@ module ImGuizmo =
             let mouseHeld = not mouseClicked && mouseDown
             let inView = eyeFrustum.Contains center <> ContainmentType.Disjoint
             let inRange = mouseDistance < 10.0f // TODO: make constant.
-            let dragging = not draggingFound && mouseAvailable && inView && mouseHeld && boxCenterSelectedOpt = Some i
+            let dragging = not draggingFound && mouseAvailable && inView && mouseHeld && BoxCenterSelectedOpt = Some i
             let selecting = not draggingFound && mouseAvailable && inView && mouseClicked && inRange
             let hovering = not draggingFound && not hoveringFound && mouseAvailable && inView && not mouseDown && inRange
             let viewing = inView
@@ -90,7 +90,7 @@ module ImGuizmo =
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                 io.SwallowMouse ()
                 draggingFound <- true
-                boxCenterSelectedOpt <- Some i
+                BoxCenterSelectedOpt <- Some i
                 result <- ImGuiEditActive true
             elif hovering then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CF00)
@@ -99,7 +99,7 @@ module ImGuizmo =
             elif viewing then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF00CFCF)
         if not draggingFound then
-            boxCenterSelectedOpt <- None
+            BoxCenterSelectedOpt <- None
 
         // fin
         result

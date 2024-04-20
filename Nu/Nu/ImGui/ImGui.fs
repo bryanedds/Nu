@@ -18,10 +18,10 @@ type ImGuiEditResult =
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port.
 type ImGui (windowWidth : int, windowHeight : int) =
 
-    static let mutable mouseDraggingStarted =
+    static let mutable MouseDraggingStarted =
         [|false; false; false|]
 
-    static let mutable mouseDraggingContinued =
+    static let mutable MouseDraggingContinued =
         [|false; false; false|]
 
     let charsPressed =
@@ -111,11 +111,11 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGuizmo.BeginFrame ()
         for i in 0 .. dec 3 do
             if ImGui.IsMouseDragging (LanguagePrimitives.EnumOfValue i) then
-                if not mouseDraggingStarted.[i] then mouseDraggingStarted.[i] <- true
-                else mouseDraggingContinued.[i] <- true
+                if not MouseDraggingStarted.[i] then MouseDraggingStarted.[i] <- true
+                else MouseDraggingContinued.[i] <- true
             else
-                mouseDraggingStarted.[i] <- false
-                mouseDraggingContinued.[i] <- false
+                MouseDraggingStarted.[i] <- false
+                MouseDraggingContinued.[i] <- false
 
     member this.EndFrame () =
         () // nothing to do
@@ -160,7 +160,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
 
     static member IsMouseDraggingContinued (mouseButton : ImGuiMouseButton) =
-        mouseDraggingContinued.[int mouseButton]
+        MouseDraggingContinued.[int mouseButton]
 
     static member IsKeyUp key =
         not (ImGui.IsKeyDown key)

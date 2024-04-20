@@ -40,17 +40,17 @@ type [<AllowNullLiteral>] ImGuiFileDialogState (directoryPath : string) =
 [<RequireQualifiedAccess>]
 module ImGui =
 
-    let mutable private spacingColumn0 = 230.0f
-    let mutable private spacingColumn1 = 80.0f
-    let mutable private spacingColumn2 = 90.0f
-    let mutable private fileNameSortOrder = ImGuiFileSortOrder.Unsorted
-    let mutable private fileNameSortOrderCopy = ImGuiFileSortOrder.Unsorted
-    let mutable private sizeSortOrder = ImGuiFileSortOrder.Unsorted
-    let mutable private sizeSortOrderCopy = ImGuiFileSortOrder.Unsorted
-    let mutable private dateSortOrder = ImGuiFileSortOrder.Unsorted
-    let mutable private dateSortOrderCopy = ImGuiFileSortOrder.Unsorted
-    let mutable private typeSortOrder = ImGuiFileSortOrder.Unsorted
-    let mutable private typeSortOrderCopy = ImGuiFileSortOrder.Unsorted
+    let mutable private SpacingColumn0 = 230.0f
+    let mutable private SpacingColumn1 = 80.0f
+    let mutable private SpacingColumn2 = 90.0f
+    let mutable private FileNameSortOrder = ImGuiFileSortOrder.Unsorted
+    let mutable private FileNameSortOrderCopy = ImGuiFileSortOrder.Unsorted
+    let mutable private SizeSortOrder = ImGuiFileSortOrder.Unsorted
+    let mutable private SizeSortOrderCopy = ImGuiFileSortOrder.Unsorted
+    let mutable private DateSortOrder = ImGuiFileSortOrder.Unsorted
+    let mutable private DateSortOrderCopy = ImGuiFileSortOrder.Unsorted
+    let mutable private TypeSortOrder = ImGuiFileSortOrder.Unsorted
+    let mutable private TypeSortOrderCopy = ImGuiFileSortOrder.Unsorted
 
     let private refreshInfo (dialogInfo : ImGuiFileDialogState) =
         dialogInfo.RefreshInfo <- false
@@ -65,55 +65,55 @@ module ImGui =
     let private sort (dialogState : ImGuiFileDialogState, forceSort : bool) =
         let mutable sort = false
 
-        if  fileNameSortOrderCopy <> fileNameSortOrder then
-            fileNameSortOrderCopy <- fileNameSortOrder
+        if  FileNameSortOrderCopy <> FileNameSortOrder then
+            FileNameSortOrderCopy <- FileNameSortOrder
             sort <- true
 
-        if  sizeSortOrderCopy <> sizeSortOrder then
-            sizeSortOrderCopy <- sizeSortOrder
+        if  SizeSortOrderCopy <> SizeSortOrder then
+            SizeSortOrderCopy <- SizeSortOrder
             sort <- true
 
-        if  dateSortOrderCopy <> dateSortOrder then
-            dateSortOrderCopy <- dateSortOrder
+        if  DateSortOrderCopy <> DateSortOrder then
+            DateSortOrderCopy <- DateSortOrder
             sort <- true
 
-        if  typeSortOrderCopy <> typeSortOrder then
-            typeSortOrderCopy <- typeSortOrder
+        if  TypeSortOrderCopy <> TypeSortOrder then
+            TypeSortOrderCopy <- TypeSortOrder
             sort <- true
 
         if sort || forceSort then
 
             // Sort directories
-            if fileNameSortOrder <> ImGuiFileSortOrder.Unsorted || sizeSortOrder <> ImGuiFileSortOrder.Unsorted || typeSortOrder <> ImGuiFileSortOrder.Unsorted then
+            if FileNameSortOrder <> ImGuiFileSortOrder.Unsorted || SizeSortOrder <> ImGuiFileSortOrder.Unsorted || TypeSortOrder <> ImGuiFileSortOrder.Unsorted then
                 dialogState.CurrentDirectories <-
-                    if fileNameSortOrder = ImGuiFileSortOrder.Descending
+                    if FileNameSortOrder = ImGuiFileSortOrder.Descending
                     then dialogState.CurrentDirectories |> List.sortBy (fun i -> i.Name)
                     else dialogState.CurrentDirectories |> List.sortByDescending (fun i -> i.Name)
-            elif dateSortOrder <> ImGuiFileSortOrder.Unsorted then
+            elif DateSortOrder <> ImGuiFileSortOrder.Unsorted then
                 dialogState.CurrentDirectories <-
-                    if dateSortOrder = ImGuiFileSortOrder.Descending
+                    if DateSortOrder = ImGuiFileSortOrder.Descending
                     then dialogState.CurrentDirectories |> List.sortBy (fun i -> i.LastWriteTime)
                     else dialogState.CurrentDirectories |> List.sortByDescending (fun i -> i.LastWriteTime)
 
             // Sort files
-            if fileNameSortOrder <> ImGuiFileSortOrder.Unsorted then
+            if FileNameSortOrder <> ImGuiFileSortOrder.Unsorted then
                 dialogState.CurrentFiles <-
-                    if fileNameSortOrder = ImGuiFileSortOrder.Descending
+                    if FileNameSortOrder = ImGuiFileSortOrder.Descending
                     then dialogState.CurrentFiles |> List.sortBy (fun i -> i.Name)
                     else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.Name)
-            elif sizeSortOrder <> ImGuiFileSortOrder.Unsorted then
+            elif SizeSortOrder <> ImGuiFileSortOrder.Unsorted then
                 dialogState.CurrentFiles <-
-                    if sizeSortOrder = ImGuiFileSortOrder.Descending
+                    if SizeSortOrder = ImGuiFileSortOrder.Descending
                     then dialogState.CurrentFiles |> List.sortBy (fun i -> i.Length)
                     else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.Length)
-            elif typeSortOrder <> ImGuiFileSortOrder.Unsorted then
+            elif TypeSortOrder <> ImGuiFileSortOrder.Unsorted then
                 dialogState.CurrentFiles <-
-                    if typeSortOrder = ImGuiFileSortOrder.Descending
+                    if TypeSortOrder = ImGuiFileSortOrder.Descending
                     then dialogState.CurrentFiles |> List.sortBy (fun i -> i.Extension)
                     else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.Extension)
-            elif dateSortOrder <> ImGuiFileSortOrder.Unsorted then
+            elif DateSortOrder <> ImGuiFileSortOrder.Unsorted then
                 dialogState.CurrentFiles <-
-                    if dateSortOrder = ImGuiFileSortOrder.Descending
+                    if DateSortOrder = ImGuiFileSortOrder.Descending
                     then dialogState.CurrentFiles |> List.sortBy (fun i -> i.LastWriteTime)
                     else dialogState.CurrentFiles |> List.sortByDescending (fun i -> i.LastWriteTime)
 
@@ -141,52 +141,52 @@ module ImGui =
                 ImGui.Columns 4
 
                 // Columns size
-                if spacingColumn0 > 0.0f then
-                    ImGui.SetColumnWidth (0, spacingColumn0)
-                    spacingColumn0 <- 0.0f
+                if SpacingColumn0 > 0.0f then
+                    ImGui.SetColumnWidth (0, SpacingColumn0)
+                    SpacingColumn0 <- 0.0f
 
-                if spacingColumn1 > 0.0f then
-                    ImGui.SetColumnWidth (1, spacingColumn1)
-                    spacingColumn1 <- 0.0f
+                if SpacingColumn1 > 0.0f then
+                    ImGui.SetColumnWidth (1, SpacingColumn1)
+                    SpacingColumn1 <- 0.0f
 
-                if spacingColumn2 > 0.0f then
-                    ImGui.SetColumnWidth (2, spacingColumn2)
-                    spacingColumn2 <- 0.0f
+                if SpacingColumn2 > 0.0f then
+                    ImGui.SetColumnWidth (2, SpacingColumn2)
+                    SpacingColumn2 <- 0.0f
 
                 // File Columns
                 if ImGui.Selectable "Name" then
-                    sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    dateSortOrder <- ImGuiFileSortOrder.Unsorted
-                    typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    fileNameSortOrder <- if fileNameSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
-                    fileNameSortOrderCopy <- fileNameSortOrder
+                    SizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    DateSortOrder <- ImGuiFileSortOrder.Unsorted
+                    TypeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    FileNameSortOrder <- if FileNameSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
+                    FileNameSortOrderCopy <- FileNameSortOrder
                     sort (dialogState, true)
                 ImGui.NextColumn ()
 
                 if ImGui.Selectable "Size" then
-                    fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                    dateSortOrder <- ImGuiFileSortOrder.Unsorted
-                    typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    sizeSortOrder <- if sizeSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
-                    sizeSortOrderCopy <- sizeSortOrder
+                    FileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                    DateSortOrder <- ImGuiFileSortOrder.Unsorted
+                    TypeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    SizeSortOrder <- if SizeSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
+                    SizeSortOrderCopy <- SizeSortOrder
                     sort (dialogState, true)
                 ImGui.NextColumn()
 
                 if ImGui.Selectable "Type" then
-                    fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                    dateSortOrder <- ImGuiFileSortOrder.Unsorted
-                    sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    typeSortOrder <- if typeSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
-                    typeSortOrderCopy <- typeSortOrder
+                    FileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                    DateSortOrder <- ImGuiFileSortOrder.Unsorted
+                    SizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    TypeSortOrder <- if TypeSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
+                    TypeSortOrderCopy <- TypeSortOrder
                     sort (dialogState, true)
                 ImGui.NextColumn()
 
                 if ImGui.Selectable "Date" then
-                    fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                    sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    dateSortOrder <- if dateSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
-                    dateSortOrderCopy <- dateSortOrder
+                    FileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                    SizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    TypeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    DateSortOrder <- if DateSortOrder = ImGuiFileSortOrder.Descending then ImGuiFileSortOrder.Ascending else ImGuiFileSortOrder.Descending
+                    DateSortOrderCopy <- DateSortOrder
                     sort (dialogState, true)
                 ImGui.NextColumn ()
 
@@ -298,10 +298,10 @@ module ImGui =
                         dialogState.ResultPath <- PathF.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
                         if File.Exists dialogState.ResultPath then
-                            fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                            sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                            typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                            dateSortOrder <- ImGuiFileSortOrder.Unsorted
+                            FileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                            SizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                            TypeSortOrder <- ImGuiFileSortOrder.Unsorted
+                            DateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                             dialogState.RefreshInfo <- false
                             dialogState.CurrentDirectories <- []
@@ -317,10 +317,10 @@ module ImGui =
                         dialogState.ResultPath <- PathF.Combine (dialogState.DirectoryPath.FullName, dialogState.FileName)
 
                         if dialogState.DirectoryPath.Exists && String.notEmpty (dialogState.FileName.Trim ()) then
-                            fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                            sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                            typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                            dateSortOrder <- ImGuiFileSortOrder.Unsorted
+                            FileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                            SizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                            TypeSortOrder <- ImGuiFileSortOrder.Unsorted
+                            DateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                             dialogState.RefreshInfo <- false
                             dialogState.CurrentDirectories <- []
@@ -335,10 +335,10 @@ module ImGui =
                 ImGui.SameLine()
 
                 if ImGui.Button "Cancel" || ImGui.IsKeyPressed ImGuiKey.Escape then
-                    fileNameSortOrder <- ImGuiFileSortOrder.Unsorted
-                    sizeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    typeSortOrder <- ImGuiFileSortOrder.Unsorted
-                    dateSortOrder <- ImGuiFileSortOrder.Unsorted
+                    FileNameSortOrder <- ImGuiFileSortOrder.Unsorted
+                    SizeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    TypeSortOrder <- ImGuiFileSortOrder.Unsorted
+                    DateSortOrder <- ImGuiFileSortOrder.Unsorted
 
                     dialogState.RefreshInfo <- false
                     dialogState.CurrentDirectories <- []
