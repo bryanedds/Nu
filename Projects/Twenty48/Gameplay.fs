@@ -5,12 +5,14 @@ open System.Numerics
 open Prime
 open Nu
 
+// this represent one of four cardinal directions.
 type Direction =
     | Upward
     | Rightward
     | Downward
     | Leftward
 
+// this represent the state of a tile.
 type Tile =
     { TileId : Guid
       Position : Vector2i
@@ -21,10 +23,12 @@ type Tile =
           Position = position
           Value = value }
 
+// this represents the state of gameplay simulation.
 type GameplayState =
     | Playing of bool
     | Quit
 
+// this is our MMCC model type representing gameplay.
 type Gameplay =
     { GameplayTime : int64
       GameplayState : GameplayState

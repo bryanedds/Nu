@@ -9,7 +9,7 @@ type BreakoutPlugin () =
     // this exposes different editing modes in the editor
     override this.EditModes =
         Map.ofSeq
-            [("Splash", fun world -> Game.SetModel Splash world)
-             ("Title", fun world -> Game.SetModel Title world)
-             ("Credits", fun world -> Game.SetModel Credits world)
-             ("Gameplay", fun world -> Game.SetModel Gameplay world)]
+            [("Splash", fun world -> Game.SetBreakout Splash world)
+             ("Title", fun world -> Game.SetBreakout Title world)
+             ("Credits", fun world -> Game.SetBreakout Credits world)
+             ("Gameplay", fun world -> Game.SetBreakout Gameplay world)]

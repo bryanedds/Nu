@@ -2,25 +2,25 @@
 open Nu
 
 // this is our MMCC model type
-type Model =
+type Nelmish =
     int
 
 // this is our MMCC message type
-type Message =
+type NelmishMessage =
     | Decrement
     | Increment
     | Reset
-    interface Nu.Message
+    interface Message
 
 // this is our MMCC game dispatcher
 type NelmishDispatcher () =
-    inherit GameDispatcher<Model, Message, Command> (0) // initial model value
+    inherit GameDispatcher<Nelmish, NelmishMessage, Command> (0) // initial model value
 
     // here we handle the MMCC messages
-    override this.Message (model, message, _, _) =
+    override this.Message (nelmish, message, _, _) =
         match message with
-        | Decrement -> just (model - 1)
-        | Increment -> just (model + 1)
+        | Decrement -> just (nelmish - 1)
+        | Increment -> just (nelmish + 1)
         | Reset -> just 0
 
     // here we describe the content of the game including its one screen, one group, three

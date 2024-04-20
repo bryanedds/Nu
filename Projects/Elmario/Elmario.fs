@@ -11,15 +11,15 @@ module Simulants =
     let Elmario = Group / "Elmario"
 
 // this is our MMCC command type
-type Command =
+type ElmarioCommand =
     | Update
     | Jump
     | Nop
-    interface Nu.Command
+    interface Command
 
 // this is our MMCC game dispatcher
 type ElmarioDispatcher () =
-    inherit GameDispatcher<unit, Message, Command> (())
+    inherit GameDispatcher<unit, Message, ElmarioCommand> (())
 
     // here we define the game's properties and event handling
     override this.Definitions (_, _) =
