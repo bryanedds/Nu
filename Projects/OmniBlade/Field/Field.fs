@@ -84,7 +84,7 @@ type [<SymbolicExpansion>] Options =
     { BattleSpeed : BattleSpeed }
 
 type FieldState =
-    | Fielding
+    | Playing
     | Battling of BattleData * PrizePool
     | Quitting
     | Quit
@@ -564,7 +564,7 @@ module Field =
     let concludeBattle consequents battle field =
         let field = synchronizeFromBattle consequents battle field
         let field = clearSpirits field
-        let field = { field with FieldState_ = Fielding }
+        let field = { field with FieldState_ = Playing }
         field
 
     let private toSavable field =
@@ -1277,7 +1277,7 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
-          FieldState_ = Fielding }
+          FieldState_ = Playing }
 
     let empty viewBounds2dAbsolute =
         { FieldTime_ = 0L
