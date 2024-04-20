@@ -38,7 +38,7 @@ type OmniBladeCommand =
     interface Command
 
 [<AutoOpen>]
-module OmniBlade =
+module OmniBladeExtensions =
     type Game with
         member this.GetOmniBlade world = this.GetModelGeneric<OmniBlade> world
         member this.SetOmniBlade value world = this.SetModelGeneric<OmniBlade> value world
@@ -68,6 +68,7 @@ type OmniBladeDispatcher () =
          Simulants.TitlePlay.ClickEvent => ShowPick
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitleExit.ClickEvent => Exit
+         Simulants.CreditsBack.ClickEvent => ShowTitle
          Simulants.PickNewGame1.ClickEvent => ShowIntro Slot1
          Simulants.PickNewGame2.ClickEvent => ShowIntro Slot2
          Simulants.PickNewGame3.ClickEvent => ShowIntro Slot3
@@ -75,13 +76,12 @@ type OmniBladeDispatcher () =
          Simulants.PickLoadGame2.ClickEvent => TryLoad Slot2
          Simulants.PickLoadGame3.ClickEvent => TryLoad Slot3
          Simulants.PickBack.ClickEvent => ShowTitle
-         Simulants.CreditsBack.ClickEvent => ShowTitle
          Simulants.Intro5.DeselectingEvent => ShowFieldInitial
-         Simulants.Battle.ConcludingBattleEvent =|> fun evt -> ConcludingBattle evt.Data
-         Simulants.Battle.ConcludeBattleEvent => ConcludeBattle
+         Simulants.Field.QuitFieldEvent => ShowTitle
          Simulants.Field.CommencingBattleEvent => CommencingBattle
          Simulants.Field.CommenceBattleEvent =|> fun evt -> CommenceBattle evt.Data
-         Simulants.Field.QuitFieldEvent => ShowTitle]
+         Simulants.Battle.ConcludingBattleEvent =|> fun evt -> ConcludingBattle evt.Data
+         Simulants.Battle.ConcludeBattleEvent => ConcludeBattle]
 
     override this.Message (omniBlade, message, _, world) =
 
@@ -166,7 +166,7 @@ type OmniBladeDispatcher () =
 
             // update full screen toggle
             let world =
-                if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.Enter world then
+                if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.Enter world && world.Unaccompanied then
                     match World.tryGetWindowFullScreen world with
                     | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
                     | None -> world
@@ -176,8 +176,6 @@ type OmniBladeDispatcher () =
             just world
 
         | Exit ->
-
-            // exit when not in editor
             if world.Unaccompanied
             then just (World.exit world)
             else just world
@@ -187,10 +185,10 @@ type OmniBladeDispatcher () =
          Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.CreditsGroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
-         Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
-         Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
          Content.screenWithGroupFromFile Simulants.Intro.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2)) Assets.Gui.IntroGroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Intro2.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3)) Assets.Gui.Intro2GroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Intro3.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro4)) Assets.Gui.Intro3GroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Intro4.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro5)) Assets.Gui.Intro4GroupFilePath [] []
-         Content.screenWithGroupFromFile Simulants.Intro5.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []]
+         Content.screenWithGroupFromFile Simulants.Intro5.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Field)) Assets.Gui.Intro5GroupFilePath [] []
+         Content.screen<FieldDispatcher> Simulants.Field.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
+         Content.screen<BattleDispatcher> Simulants.Battle.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []]

@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module SpiritOrbDispatcher =
+module SpiritOrbExtensions =
     type Entity with
         member this.GetSpiritOrb world = this.GetModelGeneric<SpiritOrb> world
         member this.SetSpiritOrb value world = this.SetModelGeneric<SpiritOrb> value world

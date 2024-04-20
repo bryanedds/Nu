@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module PropDispatcher =
+module PropExtensions =
     type Entity with
         member this.GetPropPlus world = this.GetModelGeneric<PropPlus> world
         member this.SetPropPlus value world = this.SetModelGeneric<PropPlus> value world

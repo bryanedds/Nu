@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module TeammateDispatcher =
+module TeammateExtensions =
     type Entity with
         member this.GetTeammate world = this.GetModelGeneric<Teammate> world
         member this.SetTeammate value world = this.SetModelGeneric<Teammate> value world

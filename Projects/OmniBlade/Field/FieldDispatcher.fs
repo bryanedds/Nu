@@ -8,14 +8,14 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module FieldDispatcher =
+module FieldExtensions =
     type Screen with
         member this.GetField world = this.GetModelGeneric<Field> world
         member this.SetField value world = this.SetModelGeneric<Field> value world
         member this.Field = this.ModelGeneric<Field> ()
+        member this.QuitFieldEvent = Events.QuitFieldEvent --> this
         member this.CommencingBattleEvent = Events.CommencingBattleEvent --> this
         member this.CommenceBattleEvent = Events.CommenceBattleEvent --> this
-        member this.QuitFieldEvent = Events.QuitFieldEvent --> this
 
 type FieldDispatcher () =
     inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getViewBounds2dAbsolute world))

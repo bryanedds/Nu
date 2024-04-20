@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 [<AutoOpen>]
-module AvatarDispatcher =
+module AvatarExtensions =
     type Entity with
         member this.GetAvatar world = this.GetModelGeneric<Avatar> world
         member this.SetAvatar value world = this.SetModelGeneric<Avatar> value world

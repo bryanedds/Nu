@@ -16,7 +16,7 @@ type ReticlesCommand =
     interface Command
 
 [<AutoOpen>]
-module ReticlesDispatcher =
+module ReticlesExtensions =
     type Entity with
         member this.GetReticles world = this.GetModelGeneric<Reticles> world
         member this.SetReticles value world = this.SetModelGeneric<Reticles> value world

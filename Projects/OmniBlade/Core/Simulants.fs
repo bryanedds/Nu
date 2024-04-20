@@ -12,19 +12,17 @@ module Simulants =
     // splash screen
     let Splash = Game / "Splash"
 
-    // intro screens
-    let Intro = Game / "Intro"
-    let Intro2 = Game / "Intro2"
-    let Intro3 = Game / "Intro3"
-    let Intro4 = Game / "Intro4"
-    let Intro5 = Game / "Intro5"
-
     // title screen
     let Title = Game / "Title"
     let TitleGui = Title / "Gui"
     let TitlePlay = TitleGui / "Play"
     let TitleCredits = TitleGui / "Credits"
     let TitleExit = TitleGui / "Exit"
+
+    // credits screen
+    let Credits = Game / "Credits"
+    let CreditsGui = Credits / "Gui"
+    let CreditsBack = CreditsGui / "Back"
 
     // pick screen
     let Pick = Game / "Pick"
@@ -37,10 +35,12 @@ module Simulants =
     let PickLoadGame3 = PickGui / "LoadGame3"
     let PickBack = PickGui / "Back"
 
-    // credits screen
-    let Credits = Game / "Credits"
-    let CreditsGui = Credits / "Gui"
-    let CreditsBack = CreditsGui / "Back"
+    // intro screens
+    let Intro = Game / "Intro"
+    let Intro2 = Game / "Intro2"
+    let Intro3 = Game / "Intro3"
+    let Intro4 = Game / "Intro4"
+    let Intro5 = Game / "Intro5"
 
     // field screen
     let Field = Game / "Field"
