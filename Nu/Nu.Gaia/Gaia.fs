@@ -753,6 +753,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     (* Editor Command Functions *)
 
+    let private createSnapshot world =
+        let world = World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
+        let world = snapshot world
+        world
+
     let private inductEntity atMouse (entity : Entity) world =
         let (positionSnap, _, _) = getSnaps ()
         let viewport = World.getViewport world
@@ -1490,6 +1495,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.F4 && ImGui.IsAltDown () then ShowConfirmExitDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.F5 then toggleAdvancing world
             elif ImGui.IsKeyPressed ImGuiKey.F6 then EditWhileAdvancing <- not EditWhileAdvancing; world
+            elif ImGui.IsKeyPressed ImGuiKey.F7 then createSnapshot world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then FullScreen <- not FullScreen; world
@@ -3205,6 +3211,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if EditWhileAdvancing
                             then if ImGui.MenuItem ("Disable Edit while Advancing", "F6") then EditWhileAdvancing <- false
                             else if ImGui.MenuItem ("Enable Edit while Advancing", "F6") then EditWhileAdvancing <- true
+                            let world = if ImGui.MenuItem ("Create Snapshot", "F7") then createSnapshot world else world
                             ImGui.Separator ()
                             if ImGui.MenuItem ("Reload Assets", "F8") then ReloadAssetsRequested <- 1
                             if ImGui.MenuItem ("Reload Code", "F9") then ReloadCodeRequested <- 1
