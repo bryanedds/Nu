@@ -15,5 +15,8 @@ type OmniBladePlugin () =
              ("Title", fun world -> Game.SetModel Title world)
              ("Credits", fun world -> Game.SetModel Credits world)
              ("Pick", fun world -> Game.SetModel Pick world)
-             ("Field", fun world -> let world = Game.SetModel Field world in Simulants.Field.SetField (Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1) world)
+             ("Gameplay", fun world -> let world = Game.SetModel Field world in Simulants.Field.SetField (Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1) world)
+             ("Slot1", fun world -> let world = Game.SetModel Field world in Simulants.Field.SetField (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1) world)
+             ("Slot2", fun world -> let world = Game.SetModel Field world in Simulants.Field.SetField (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot2) world)
+             ("Slot3", fun world -> let world = Game.SetModel Field world in Simulants.Field.SetField (Field.loadOrInitial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot3) world)
              ("FieldDebug", fun world -> let world = Game.SetModel Field world in Simulants.Field.SetField (Field.debug world.UpdateTime (World.getViewBounds2dAbsolute world)) world)]
