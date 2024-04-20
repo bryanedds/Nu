@@ -112,13 +112,11 @@ module OmniBlade =
             | CommencingBattle ->
                 just Battle
 
-            | CommenceBattle (prizePool, battleData) ->
-                withSignal (FromFieldToBattle (prizePool, battleData)) Battle
+            | CommenceBattle (battleData, prizePool) ->
+                withSignal (FromFieldToBattle (battleData, prizePool)) Battle
 
             | ConcludingBattle outcome ->
-                if outcome
-                then just Field
-                else just Title
+                if outcome then just Field else just Title
 
             | ConcludeBattle ->
                 let battle = Simulants.Battle.GetBattle world
@@ -140,7 +138,7 @@ module OmniBlade =
                 let field = Simulants.Field.GetField world
                 let playTime = Option.defaultValue field.FieldTime field.FieldSongTimeOpt
                 let songTime = field.FieldTime - playTime
-                let (battle, field) = Field.commenceBattle songTime prizePool battleData field
+                let (battle, field) = Field.commenceBattle songTime battleData prizePool field
                 let world = Simulants.Battle.SetBattle battle world
                 let world = Simulants.Field.SetField field world
                 just world

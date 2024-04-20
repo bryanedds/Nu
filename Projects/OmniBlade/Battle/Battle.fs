@@ -2040,7 +2040,7 @@ module Battle =
         let field = { field with BattleTime_ = inc field.BattleTime_ }
         just field
 
-    let makeFromParty inventory (prizePool : PrizePool) (party : Party) battleSpeed battleData =
+    let makeFromParty (party : Party) inventory (prizePool : PrizePool) battleSpeed battleData =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }

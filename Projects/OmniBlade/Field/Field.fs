@@ -12,13 +12,14 @@ open CueSystem
 type FieldMessage =
     | Update
     | UpdateFieldTransition
-    | UpdateAvatarBodyTracking
     | TimeUpdate
+    | UpdateAvatarBodyTracking
     | AvatarBodyTransform of BodyTransformData
     | AvatarBodyCollision of BodyCollisionData
     | AvatarBodySeparationExplicit of BodySeparationExplicitData
     | AvatarBodySeparationImplicit of BodySeparationImplicitData
     | ScreenTransitioning of bool
+    | TryCommencingBattle of BattleType * Advent Set
     | MenuTeamOpen
     | MenuTeamAlly of int
     | MenuInventoryOpen
@@ -65,8 +66,8 @@ type FieldCommand =
     | WarpAvatar of Vector3
     | MoveAvatar of Vector3
     | FaceAvatar of Direction
-    | TryCommencingBattle of BattleType * Advent Set
-    | CommencingBattle of BattleData * PrizePool
+    | CommencingBattle
+    | CommenceBattle of BattleData * PrizePool
     | PlayFieldSong
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
@@ -84,6 +85,7 @@ type [<SymbolicExpansion>] Options =
 
 type FieldState =
     | Playing
+    | Battling of BattleData * PrizePool
     | Quitting
     | Quit
 
@@ -215,7 +217,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty inventory prizePool party battleSpeed battleData
+        let battle = Battle.makeFromParty party inventory prizePool battleSpeed battleData
         battle
         
     let rec detokenize (field : Field) (text : string) =
@@ -550,7 +552,11 @@ module Field =
         let field = mapAvatarIntersectedPropIds (constant []) field
         field
 
-    let commenceBattle songTime prizePool battleData (field : Field) =
+    let commencingBattle battleData prizePool field =
+        let field = { field with FieldState_ = Battling (battleData, prizePool) }
+        field
+
+    let commenceBattle songTime battleData prizePool (field : Field) =
         let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData
         let field = mapFieldSongTimeOpt (constant (Some songTime)) field
         (battle, field)
@@ -558,6 +564,7 @@ module Field =
     let concludeBattle consequents battle field =
         let field = synchronizeFromBattle consequents battle field
         let field = clearSpirits field
+        let field = { field with FieldState_ = Playing }
         field
 
     let private toSavable field =
@@ -1219,8 +1226,8 @@ module Field =
                 match updateSpirits field with
                 | Left (battleData, field) ->
                     let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                    let doBattle = CommencingBattle (battleData, prizePool)
-                    (signal doBattle :: signals, field)
+                    let field = commencingBattle battleData prizePool field
+                    (signal CommencingBattle :: signals, field)
                 | Right field -> (signals, field)
             else (signals, field)
 

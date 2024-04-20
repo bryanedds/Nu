@@ -47,7 +47,7 @@ module FieldDispatcher =
                 true
             else false
 
-        override this.Definitions (_, _) =
+        override this.Definitions (field, _) =
             [Screen.UpdateEvent => Update
              Screen.UpdateEvent => ProcessKeyInput
              Screen.PostUpdateEvent => UpdateFieldTransition
@@ -59,6 +59,7 @@ module FieldDispatcher =
              Screen.IncomingFinishEvent => ScreenTransitioning false
              Screen.OutgoingStartEvent => ScreenTransitioning true
              Screen.OutgoingFinishEvent => ScreenTransitioning false
+             match field.FieldState with Battling (battleData, prizePool) -> Screen.DeselectingEvent => CommenceBattle (battleData, prizePool) | _ -> ()
              Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
              Simulants.FieldAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
              Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
@@ -200,6 +201,14 @@ module FieldDispatcher =
             | ScreenTransitioning transitioning ->
                 let field = Field.mapScreenTransitioning (constant transitioning) field
                 just field
+
+            | TryCommencingBattle (battleType, consequents) ->
+                match Map.tryFind battleType Data.Value.Battles with
+                | Some battleData ->
+                    let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
+                    let field = Field.commencingBattle battleData prizePool field
+                    withSignal CommencingBattle field
+                | None -> just field
 
             | MenuTeamOpen ->
                 let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
@@ -548,19 +557,15 @@ module FieldDispatcher =
                 let world = screen.SetField field world
                 just world
 
-            | TryCommencingBattle (battleType, consequents) ->
-                match Map.tryFind battleType Data.Value.Battles with
-                | Some battleData ->
-                    let prizePool = { Consequents = consequents; Items = []; Gold = 0; Exp = 0 }
-                    withSignal (CommencingBattle (battleData, prizePool)) world
-                | None -> just world
-
-            | CommencingBattle (battleData, prizePool) ->
+            | CommencingBattle ->
                 let world = World.publish () screen.CommencingBattleEvent screen world
-                let world = World.schedule 60L (World.publish (battleData, prizePool) screen.CommenceBattleEvent screen) screen world
                 let fade = FadeOutSong 60L
                 let growl = FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
                 withSignals [fade; growl] world
+
+            | CommenceBattle (battleData, prizePool) ->
+                let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
+                just world
 
             | PlayFieldSong ->
                 match Data.Value.Fields.TryGetValue field.FieldType with
