@@ -190,7 +190,7 @@ module Field =
                 (propDescriptor.PropId, prop))
         | None -> Map.empty
 
-    let private makeBattleFromTeam inventory prizePool (team : Map<int, Teammate>) battleSpeed battleData =
+    let private makeBattleFromTeam battleSpeed inventory (team : Map<int, Teammate>) prizePool battleData =
         let party = team |> Map.toList |> List.tryTake 3
         let allyPositions =
             if List.length party < 3
@@ -217,7 +217,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty party inventory prizePool battleSpeed battleData
+        let battle = Battle.makeFromParty battleSpeed inventory party prizePool battleData
         battle
         
     let rec detokenize (field : Field) (text : string) =
@@ -557,7 +557,7 @@ module Field =
         field
 
     let commenceBattle songTime battleData prizePool (field : Field) =
-        let battle = makeBattleFromTeam field.Inventory prizePool field.Team field.Options.BattleSpeed battleData
+        let battle = makeBattleFromTeam field.Options.BattleSpeed field.Inventory field.Team prizePool battleData
         let field = mapFieldSongTimeOpt (constant (Some songTime)) field
         (battle, field)
 

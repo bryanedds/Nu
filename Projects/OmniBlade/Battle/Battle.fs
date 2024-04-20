@@ -111,14 +111,14 @@ module Battle =
     type [<ReferenceEquality; SymbolicExpansion>] Battle =
         private
             { BattleTime_ : int64
-              Characters_ : Map<CharacterIndex, Character>
+              BattleSpeed_ : BattleSpeed
               Inventory_ : Inventory
+              Characters_ : Map<CharacterIndex, Character>
               PrizePool_ : PrizePool
               TileMap_ : TileMap AssetTag
               TileIndexOffset_ : int
               TileIndexOffsetRange_ : int * int
               BattleSongOpt_ : Song AssetTag option
-              BattleSpeed_ : BattleSpeed
               CurrentCommandOpt_ : CurrentCommand option
               ActionCommands_ : ActionCommand FQueue
               MessageOpt_ : (int64 * int64 * Dialog) option
@@ -127,15 +127,15 @@ module Battle =
 
         (* Local Properties *)
         member this.BattleTime = this.BattleTime_
+        member this.BattleSpeed = this.BattleSpeed_
         member this.Running = match this.BattleState with BattleRunning -> true | _ -> false
-        member this.Characters = this.Characters_
         member this.Inventory = this.Inventory_
+        member this.Characters = this.Characters_
         member this.PrizePool = this.PrizePool_
         member this.TileMap = this.TileMap_
         member this.TileIndexOffset = this.TileIndexOffset_
         member this.TileIndexOffsetRange = this.TileIndexOffsetRange_
         member this.BattleSongOpt = this.BattleSongOpt_
-        member this.BattleSpeed = this.BattleSpeed_
         member this.CurrentCommandOpt = this.CurrentCommandOpt_
         member this.ActionCommands = this.ActionCommands_
         member this.MessageOpt = this.MessageOpt_
@@ -2040,7 +2040,7 @@ module Battle =
         let field = { field with BattleTime_ = inc field.BattleTime_ }
         just field
 
-    let makeFromParty (party : Party) inventory (prizePool : PrizePool) battleSpeed battleData =
+    let makeFromParty battleSpeed inventory (party : Party) (prizePool : PrizePool) battleData =
         let enemies = randomizeEnemies party.Length (battleSpeed = WaitSpeed) battleData.BattleEnemies
         let characters = party @ enemies |> Map.ofListBy (fun (character : Character) -> (character.CharacterIndex, character))
         let prizePool = { prizePool with Gold = List.fold (fun gold (enemy : Character) -> gold + enemy.GoldPrize) prizePool.Gold enemies }
@@ -2050,14 +2050,14 @@ module Battle =
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         { BattleTime_ = 0L
-          Characters_ = characters
+          BattleSpeed_ = battleSpeed
           Inventory_ = inventory
+          Characters_ = characters
           PrizePool_ = prizePool
           TileMap_ = tileMap
           TileIndexOffset_ = tileIndexOffset
           TileIndexOffsetRange_ = tileIndexOffsetRange
           BattleSongOpt_ = battleData.BattleSongOpt
-          BattleSpeed_ = battleSpeed
           CurrentCommandOpt_ = None
           ActionCommands_ = FQueue.empty
           MessageOpt_ = None
@@ -2068,14 +2068,14 @@ module Battle =
         match Map.tryFind EmptyBattle Data.Value.Battles with
         | Some battle ->
             { BattleTime_ = 0L
-              Characters_ = Map.empty
+              BattleSpeed_ = PacedSpeed
               Inventory_ = Inventory.empty
+              Characters_ = Map.empty
               PrizePool_ = PrizePool.empty
               TileMap_ = battle.BattleTileMap
               TileIndexOffset_ = 0
               TileIndexOffsetRange_ = (0, 0)
               BattleSongOpt_ = None
-              BattleSpeed_ = PacedSpeed
               CurrentCommandOpt_ = None
               ActionCommands_ = FQueue.empty
               MessageOpt_ = None
