@@ -70,7 +70,7 @@ type [<ReferenceEquality>] Intss =
 
 type Message =
     | Inc
-    interface Nu.Message
+    interface Message
 
 type MmccGameDispatcher () =
     inherit GameDispatcher<Intss, Message, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 58FPS)
