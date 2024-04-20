@@ -65,15 +65,13 @@ module FieldDispatcher =
              Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
              Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal]
 
-        override this.Message (field, message, screen, world) =
+        override this.Message (field, message, _, world) =
 
             match message with
             | Update ->
 
-                // update field if screen not transitioning
-                match screen.GetTransitionState world with
-                | IdlingState _ -> Field.update field
-                | _ -> just field
+                // update field
+                Field.update field
 
             | TimeUpdate ->
 
@@ -472,6 +470,7 @@ module FieldDispatcher =
             match command with
             | ProcessKeyInput ->
                 if  not (World.getSelectedScreenTransitioning world) &&
+                    field.FieldState = Playing &&
                     field.Menu.MenuState = MenuClosed &&
                     field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                     CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
@@ -500,6 +499,7 @@ module FieldDispatcher =
 
             | ProcessTouchInput position ->
                 if  not (World.getSelectedScreenTransitioning world) &&
+                    field.FieldState = Playing &&
                     field.Menu.MenuState = MenuClosed &&
                     field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                     CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
@@ -741,6 +741,7 @@ module FieldDispatcher =
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Text == "Menu"
                      Entity.Visible :=
+                        field.FieldState = Playing &&
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue &&
@@ -756,6 +757,7 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
+                        field.FieldState = Playing &&
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&
@@ -774,6 +776,7 @@ module FieldDispatcher =
                      Entity.UpImage == Assets.Gui.ButtonShortUpImage
                      Entity.DownImage == Assets.Gui.ButtonShortDownImage
                      Entity.Visible :=
+                        field.FieldState = Playing &&
                         field.Menu.MenuState = MenuClosed &&
                         field.PartyMenu.PartyMenuState = PartyMenuClosed &&
                         (CueSystem.Cue.notInterrupting field.Inventory field.Advents field.Cue || Option.isSome field.DialogOpt) &&

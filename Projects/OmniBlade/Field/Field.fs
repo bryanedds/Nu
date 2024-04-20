@@ -1159,80 +1159,87 @@ module Field =
             | None -> Right field
         | Some _ -> Right field
 
-    let update (field : Field) : Signal list * Field =
+    let update field =
 
-        // update dialog
-        let field =
-            match field.DialogOpt_ with
-            | Some dialog ->
-                let dialog = Dialog.update (detokenize field) field.FieldTime_ dialog
-                mapDialogOpt (constant (Some dialog)) field
-            | None -> field
+        // ensure we're playing
+        match field.FieldState_ with
+        | Playing ->
 
-        // update cue
-        let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field
+            // update dialog
+            let field =
+                match field.DialogOpt_ with
+                | Some dialog ->
+                    let dialog = Dialog.update (detokenize field) field.FieldTime_ dialog
+                    mapDialogOpt (constant (Some dialog)) field
+                | None -> field
 
-        // reset cue definitions if finished
-        let field =
-            match cue with
-            | CueSystem.Fin -> mapDefinitions (constant field.DefinitionsOriginal_) field
-            | _ -> mapDefinitions (constant definitions) field
-        let field = mapCue (constant cue) field
+            // update cue
+            let (cue, definitions, (signals, field)) = updateCue field.Cue_ field.Definitions_ field
 
-        // update portal
-        let (signals, field) =
-            match field.FieldTransitionOpt_ with
-            | None ->
-                match tryGetTouchingPortal field with
-                | Some (fieldType, destination, direction, isWarp) ->
-                    let transition =
-                        { FieldType = fieldType
-                          FieldDestination = destination
-                          FieldDirection = direction
-                          FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
-                    let field = mapFieldTransitionOpt (constant (Some transition)) field
-                    let playSound =
-                        if isWarp
-                        then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
-                        else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
-                    (signal playSound :: signals, field)
-                | None -> (signals, field)
-            | Some _ -> (signals, field)
+            // reset cue definitions if finished
+            let field =
+                match cue with
+                | CueSystem.Fin -> mapDefinitions (constant field.DefinitionsOriginal_) field
+                | _ -> mapDefinitions (constant definitions) field
+            let field = mapCue (constant cue) field
 
-        // update sensor
-        let (signals, field) =
-            match field.FieldTransitionOpt_ with
-            | None ->
-                let sensors = getTouchedSensors field
-                let results =
-                    List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
-                        if field.Advents_.IsSupersetOf requirements then
-                            let field = mapCue (constant cue) field
-                            match sensorType with
-                            | AirSensor -> (signals, field)
-                            | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
-                        else (signals, field))
-                        (signals, field) sensors
-                results
-            | Some _ -> (signals, field)
+            // update portal
+            let (signals, field) =
+                match field.FieldTransitionOpt_ with
+                | None ->
+                    match tryGetTouchingPortal field with
+                    | Some (fieldType, destination, direction, isWarp) ->
+                        let transition =
+                            { FieldType = fieldType
+                              FieldDestination = destination
+                              FieldDirection = direction
+                              FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
+                        let field = mapFieldTransitionOpt (constant (Some transition)) field
+                        let playSound =
+                            if isWarp
+                            then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                            else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                        (signal playSound :: signals, field)
+                    | None -> (signals, field)
+                | Some _ -> (signals, field)
 
-        // update spirits
-        let (signals : Signal list, field) =
-            if  field.Menu_.MenuState = MenuClosed &&
-                CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
-                Option.isNone field.DialogOpt_ &&
-                Option.isNone field.ShopOpt_ &&
-                Option.isNone field.FieldTransitionOpt_ then
-                match updateSpirits field with
-                | Left (battleData, field) ->
-                    let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
-                    let field = commencingBattle battleData prizePool field
-                    (signal CommencingBattle :: signals, field)
-                | Right field -> (signals, field)
-            else (signals, field)
+            // update sensor
+            let (signals, field) =
+                match field.FieldTransitionOpt_ with
+                | None ->
+                    let sensors = getTouchedSensors field
+                    let results =
+                        List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
+                            if field.Advents_.IsSupersetOf requirements then
+                                let field = mapCue (constant cue) field
+                                match sensorType with
+                                | AirSensor -> (signals, field)
+                                | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                            else (signals, field))
+                            (signals, field) sensors
+                    results
+                | Some _ -> (signals, field)
+
+            // update spirits
+            let (signals : Signal list, field) =
+                if  field.Menu_.MenuState = MenuClosed &&
+                    CueSystem.Cue.notInterrupting field.Inventory_ field.Advents_ field.Cue_ &&
+                    Option.isNone field.DialogOpt_ &&
+                    Option.isNone field.ShopOpt_ &&
+                    Option.isNone field.FieldTransitionOpt_ then
+                    match updateSpirits field with
+                    | Left (battleData, field) ->
+                        let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
+                        let field = commencingBattle battleData prizePool field
+                        (signal CommencingBattle :: signals, field)
+                    | Right field -> (signals, field)
+                else (signals, field)
+
+            // fin
+            (signals, field)
 
         // fin
-        (signals, field)
+        | _ -> just field
 
     let updateFieldTime field =
         let field = { field with FieldTime_ = inc field.FieldTime_ }
