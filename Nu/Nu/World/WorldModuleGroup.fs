@@ -118,7 +118,7 @@ module WorldModuleGroup =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal getGroupModel<'a> group world =
+        static member internal getGroupModelGeneric<'a> group world =
             let groupState = World.getGroupState group world
             match groupState.Model.DesignerValue with
             | :? 'a as model -> model
@@ -133,7 +133,7 @@ module WorldModuleGroup =
                     | None -> failwithnie ()
                     | Some value -> value
 
-        static member internal setGroupModel<'a> initializing (value : 'a) group world =
+        static member internal setGroupModelGeneric<'a> initializing (value : 'a) group world =
             let groupState = World.getGroupState group world
             let valueObj = value :> obj
             let previous = groupState.Model

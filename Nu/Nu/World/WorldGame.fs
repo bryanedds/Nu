@@ -13,8 +13,8 @@ module WorldGameModule =
 
         member this.GetDispatcher world = World.getGameDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
-        member this.GetModelGeneric<'a> world = World.getGameModel<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setGameModel<'a> false value this world |> snd'
+        member this.GetModelGeneric<'a> world = World.getGameModelGeneric<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setGameModelGeneric<'a> false value this world |> snd'
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetSelectedScreenOpt world = World.getGameSelectedScreenOpt this world
         member this.SelectedScreenOpt = lensReadOnly (nameof this.SelectedScreenOpt) this this.GetSelectedScreenOpt

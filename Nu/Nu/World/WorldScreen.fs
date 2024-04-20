@@ -21,8 +21,8 @@ module WorldScreenModule =
 
         member this.GetDispatcher world = World.getScreenDispatcher this world
         member this.Dispatcher = lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher
-        member this.GetModelGeneric<'a> world = World.getScreenModel<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setScreenModel<'a> false value this world |> snd'
+        member this.GetModelGeneric<'a> world = World.getScreenModelGeneric<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setScreenModelGeneric<'a> false value this world |> snd'
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetTransitionState world = World.getScreenTransitionState this world
         member this.SetTransitionState value world = World.setScreenTransitionState value this world |> snd'

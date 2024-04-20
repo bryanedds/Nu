@@ -115,7 +115,7 @@ module WorldModuleScreen =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal getScreenModel<'a> screen world =
+        static member internal getScreenModelGeneric<'a> screen world =
             let screenState = World.getScreenState screen world
             match screenState.Model.DesignerValue with
             | :? 'a as model -> model
@@ -130,7 +130,7 @@ module WorldModuleScreen =
                     | None -> failwithnie ()
                     | Some value -> value
 
-        static member internal setScreenModel<'a> initializing (value : 'a) screen world =
+        static member internal setScreenModelGeneric<'a> initializing (value : 'a) screen world =
             let screenState = World.getScreenState screen world
             let valueObj = value :> obj
             let previous = screenState.Model

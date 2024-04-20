@@ -276,7 +276,7 @@ module WorldModuleEntity =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal getEntityModel<'a> entity world =
+        static member internal getEntityModelGeneric<'a> entity world =
             let entityState = World.getEntityState entity world
             match entityState.Model.DesignerValue with
             | :? 'a as model -> model
@@ -291,7 +291,7 @@ module WorldModuleEntity =
                     | None -> failwithnie ()
                     | Some value -> value
 
-        static member internal setEntityModel<'a> initializing (value : 'a) entity world =
+        static member internal setEntityModelGeneric<'a> initializing (value : 'a) entity world =
             let entityState = World.getEntityState entity world
             let valueObj = value :> obj
             let previous = entityState.Model

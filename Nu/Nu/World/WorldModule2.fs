@@ -1846,7 +1846,7 @@ module EntityDispatcherModule2 =
                     with _ ->
                         Log.debugOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setEntityModel<'model> true model entity world |> snd'
+            World.setEntityModelGeneric<'model> true model entity world |> snd'
 
         override this.ApplyPhysics (center, rotation, linearVelocity, angularVelocity, entity, world) =
             let model = this.GetModel entity world
@@ -2162,7 +2162,7 @@ module GroupDispatcherModule =
                     with _ ->
                         Log.debugOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGroupModel<'model> true model group world |> snd'
+            World.setGroupModelGeneric<'model> true model group world |> snd'
 
         override this.Render (renderPass, group, world) =
             this.Render (this.GetModel group world, renderPass, group, world)
@@ -2334,7 +2334,7 @@ module ScreenDispatcherModule =
                     with _ ->
                         Log.debugOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setScreenModel<'model> true model screen world |> snd'
+            World.setScreenModelGeneric<'model> true model screen world |> snd'
 
         override this.Render (renderPass, screen, world) =
             this.Render (this.GetModel screen world, renderPass, screen, world)
@@ -2513,7 +2513,7 @@ module GameDispatcherModule =
                     with _ ->
                         Log.debugOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
-            World.setGameModel<'model> true model game world |> snd'
+            World.setGameModelGeneric<'model> true model game world |> snd'
 
         override this.Render (renderPass, game, world) =
             this.Render (this.GetModel game world, renderPass, game, world)

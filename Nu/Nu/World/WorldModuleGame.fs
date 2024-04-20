@@ -57,7 +57,7 @@ module WorldModuleGame =
                 struct (true, world)
             else struct (false, world)
 
-        static member internal getGameModel<'a> game world =
+        static member internal getGameModelGeneric<'a> game world =
             let gameState = World.getGameState game world
             match gameState.Model.DesignerValue with
             | :? 'a as model -> model
@@ -72,7 +72,7 @@ module WorldModuleGame =
                     | None -> failwithnie ()
                     | Some value -> value
 
-        static member internal setGameModel<'a> initializing (value : 'a) (game : Game) world =
+        static member internal setGameModelGeneric<'a> initializing (value : 'a) (game : Game) world =
             let gameState = World.getGameState game world
             let valueObj = value :> obj
             let previous = gameState.Model

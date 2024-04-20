@@ -79,8 +79,8 @@ module WorldEntityModule =
     type Entity with
         member this.GetDispatcher world = World.getEntityDispatcher this world
         member this.Dispatcher = if notNull (this :> obj) then lensReadOnly (nameof this.Dispatcher) this this.GetDispatcher else Cached.Dispatcher
-        member this.GetModelGeneric<'a> world = World.getEntityModel<'a> this world
-        member this.SetModelGeneric<'a> value world = World.setEntityModel<'a> false value this world |> snd'
+        member this.GetModelGeneric<'a> world = World.getEntityModelGeneric<'a> this world
+        member this.SetModelGeneric<'a> value world = World.setEntityModelGeneric<'a> false value this world |> snd'
         member this.ModelGeneric<'a> () = lens Constants.Engine.ModelPropertyName this this.GetModelGeneric<'a> this.SetModelGeneric<'a>
         member this.GetFacets world = World.getEntityFacets this world
         member this.Facets = if notNull (this :> obj) then lensReadOnly (nameof this.Facets) this this.GetFacets else Cached.Facets
