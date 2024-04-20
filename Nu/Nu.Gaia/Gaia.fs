@@ -836,8 +836,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
                     if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                         File.Copy (filePath, deploymentPath, true)
-                with exn ->
-                    messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
+                with exn -> messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
                 entityFilePaths <- Map.add entity.EntityAddress entityFileDialogState.FilePath entityFilePaths
                 true
             with exn ->
@@ -1025,8 +1024,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             try let deploymentPath = PathF.Combine (targetDir, PathF.GetRelativePath(targetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     File.Copy (filePath, deploymentPath, true)
-            with exn ->
-                messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
+            with exn -> messageBoxOpt <- Some ("Could not deploy file due to: " + scstring exn)
             groupFilePaths <- Map.add selectedGroup.GroupAddress groupFileDialogState.FilePath groupFilePaths
             true
         with exn ->
@@ -1597,9 +1595,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true world else world
                     | Some _ | None -> world
                 if newEntityParentOpt = Some entity then
-                    if ImGui.MenuItem "Reset Creation Parent" then newEntityParentOpt <- None; showEntityContextMenu <- false
+                    if ImGui.MenuItem "Reset Creation Parent" then
+                        newEntityParentOpt <- None
+                        showEntityContextMenu <- false
                 else
-                    if ImGui.MenuItem "Set as Creation Parent" then newEntityParentOpt <- selectedEntityOpt; showEntityContextMenu <- false
+                    if ImGui.MenuItem "Set as Creation Parent" then
+                        newEntityParentOpt <- selectedEntityOpt
+                        showEntityContextMenu <- false
                 let world =
                     match selectedEntityOpt with
                     | Some selectedEntity -> World.edit (ContextHierarchy { Snapshot = snapshot }) selectedEntity world
@@ -2812,9 +2814,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             if not (entity.GetProtected world) then
                                 let world = snapshot world
                                 World.changeEntityDispatcher dispatcherName entity world
-                            else
-                                messageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."
-                                world
+                            else messageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."; world
                         else world)
                         world dispatcherNames
                 ImGui.EndCombo ()
@@ -3262,9 +3262,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                             groupFilePaths <- Map.remove selectedGroup.GroupAddress groupFilePaths
                                                             selectGroup (Seq.head groupsRemaining)
                                                             world
-                                                        else
-                                                            messageBoxOpt <- Some "Cannot close protected or only group."
-                                                            world
+                                                        else messageBoxOpt <- Some "Cannot close protected or only group."; world
                                                     else world
                                                 ImGui.EndMenu ()
                                                 world
@@ -3536,12 +3534,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                             selectEntityOpt (Some sourceEntity') world
                                                             showSelectedEntity <- true
                                                             world
-                                                        else
-                                                            messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."
-                                                            world
-                                                else
-                                                    messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."
-                                                    world
+                                                        else messageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."; world
+                                                else messageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."; world
                                             | None -> world
                                         else world
                                     else world
@@ -4624,9 +4618,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                 PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
-            | Left error ->
-                messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
-                ""
+            | Left error -> messageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'."); ""
         overlayerStr <-
             let overlayerFilePath = targetDir + "/" + Assets.Global.OverlayerFilePath
             match Overlayer.tryMakeFromFile [] overlayerFilePath with
@@ -4634,9 +4626,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let extrinsicOverlaysStr = scstring (Overlayer.getExtrinsicOverlays overlayer)
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<Overlay>).PrettyPrinter
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
-            | Left error ->
-                messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'.")
-                ""
+            | Left error -> messageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'."); ""
         fsiSession <- Shell.FsiEvaluationSession.Create (fsiConfig, fsiArgs, fsiInStream, fsiOutStream, fsiErrorStream)
         let result = World.runWithCleanUp tautology imGuiPostProcess id imGuiRender imGuiProcess imGuiPostProcess Live true world
         (fsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
