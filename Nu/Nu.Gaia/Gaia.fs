@@ -116,8 +116,8 @@ module Gaia =
     let mutable private GcTimingPrevious = 0.0
     let private TimingCapacity = 200
     let private TimingsArray = Array.zeroCreate<single> TimingCapacity
-    let private MiscTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private GcTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private MiscTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private PhysicsTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private RenderTimings = Queue (Array.zeroCreate<single> TimingCapacity)
@@ -3754,14 +3754,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // frame timing plot
             if world.Advancing then
+                GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
+                GcTimings.Dequeue () |> ignore<single>
                 MiscTimings.Enqueue
                     (single
                         (world.Timers.InputTimer.Elapsed.TotalMilliseconds +
                          world.Timers.AudioTimer.Elapsed.TotalMilliseconds))
                 MiscTimings.Dequeue () |> ignore<single>
-                GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds + Seq.last MiscTimings)
-                GcTimings.Dequeue () |> ignore<single>
-                PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last GcTimings)
+                PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last MiscTimings)
                 PhysicsTimings.Dequeue () |> ignore<single>
                 UpdateTimings.Enqueue
                     (single
@@ -3784,10 +3784,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
                 ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 20.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
+                GcTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotShaded ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
                 MiscTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Misc Time", &TimingsArray.[0], TimingsArray.Length)
-                GcTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
                 PhysicsTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Physics Time", &TimingsArray.[0], TimingsArray.Length)
                 UpdateTimings.CopyTo (TimingsArray, 0)
