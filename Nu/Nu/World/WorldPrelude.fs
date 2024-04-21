@@ -375,9 +375,12 @@ type Timers =
       AudioTimer : Stopwatch
       TotalTimer : Stopwatch
       FrameTimer : Stopwatch
-      mutable FrameTime : TimeSpan }
+      mutable FrameTime : TimeSpan
+      mutable GcTotalTime : TimeSpan
+      mutable GcFrameTime : TimeSpan }
 
     static member make () =
+        let gcTime = GC.GetTotalPauseDuration ()
         { InputTimer = Stopwatch ()
           PhysicsTimer = Stopwatch ()
           PreUpdateTimer = Stopwatch ()
@@ -407,7 +410,9 @@ type Timers =
           AudioTimer = Stopwatch ()
           TotalTimer = Stopwatch ()
           FrameTimer = Stopwatch ()
-          FrameTime = TimeSpan.Zero }
+          FrameTime = TimeSpan.Zero
+          GcTotalTime = gcTime
+          GcFrameTime = gcTime }
 
 [<AutoOpen>]
 module AmbientState =

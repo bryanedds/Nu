@@ -3752,10 +3752,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // frame timing plot
             if world.Advancing then
-                let gcTotal = GC.GetTotalPauseDuration().TotalMilliseconds
-                let gcTiming = gcTotal - GcTimingPrevious
-                GcTimingPrevious <- gcTotal
-                GcTimings.Enqueue (single gcTiming)
+                GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
                 GcTimings.Dequeue () |> ignore<single>
                 PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last GcTimings)
                 PhysicsTimings.Dequeue () |> ignore<single>

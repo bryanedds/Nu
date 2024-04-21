@@ -29,6 +29,7 @@ module Engine =
 
     let [<Literal>] ExitCodeSuccess = 0
     let [<Literal>] ExitCodeFailure = 1
+    let [<Literal>] AggressiveGc = true
     let [<Uniform>] mutable RunSynchronously = match ConfigurationManager.AppSettings.["RunSynchronously"] with null -> false | size -> scvalue size
     let [<Uniform>] mutable Meter2d = match ConfigurationManager.AppSettings.["Meter2d"] with null -> 32.0f | centered -> scvalue centered
     let [<Literal>] GameSortPriority = Single.MaxValue

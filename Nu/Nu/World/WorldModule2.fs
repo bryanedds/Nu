@@ -1676,6 +1676,9 @@ module WorldModule2 =
                                                                     else world
                                                                 world.Timers.AudioTimer.Stop ()
 
+                                                                // process aggressive when desired
+                                                                if GC.GetTotalPauseDuration () = world.Timers.GcTotalTime && Constants.Engine.AggressiveGc then GC.Collect 0
+
                                                                 // process frame time recording
                                                                 world.Timers.FrameTime <- world.Timers.FrameTimer.Elapsed
 
@@ -1710,6 +1713,12 @@ module WorldModule2 =
                                                                         world
                                                                     else world
                                                                 world.Timers.FrameTimer.Restart ()
+
+                                                                // process gc frame time recording
+                                                                let gcTotalTime = GC.GetTotalPauseDuration ()
+                                                                let gcFrameTime = gcTotalTime - world.Timers.GcTotalTime
+                                                                world.Timers.GcTotalTime <- gcTotalTime
+                                                                world.Timers.GcFrameTime <- gcFrameTime
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world
