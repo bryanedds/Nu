@@ -236,9 +236,21 @@ module WorldModule2 =
                     else world
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
-                    if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                    then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                    else world
+                    match World.getDesiredScreen world with
+                    | Desire desiredScreen ->
+                        if desiredScreen <> selectedScreen then
+                            if world.Unaccompanied || world.Advancing
+                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                            else World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world // quick cut
+                        else
+                            if World.updateScreenIdling3 transitionTime slide selectedScreen world
+                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                            else world
+                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                    | DesireIgnore ->
+                        if World.updateScreenIdling3 transitionTime slide selectedScreen world
+                        then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                        else world
                 | None ->
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
@@ -253,9 +265,11 @@ module WorldModule2 =
 
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
-                if (match transitionTime with
+                let firstFrame =
+                    match transitionTime with
                     | UpdateTime time -> time + 1L = world.UpdateTime
-                    | ClockTime time -> time + world.ClockDelta >= world.ClockTime) then
+                    | ClockTime time -> time + world.ClockDelta = world.ClockTime
+                if firstFrame then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     let world =
