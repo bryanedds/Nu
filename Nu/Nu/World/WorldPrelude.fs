@@ -376,6 +376,8 @@ type Timers =
       TotalTimer : Stopwatch
       FrameTimer : Stopwatch
       mutable FrameTime : TimeSpan
+      ImGuiTimer : Stopwatch
+      mutable ImGuiTime : TimeSpan
       mutable GcTotalTime : TimeSpan
       mutable GcFrameTime : TimeSpan }
 
@@ -411,6 +413,8 @@ type Timers =
           TotalTimer = Stopwatch ()
           FrameTimer = Stopwatch ()
           FrameTime = TimeSpan.Zero
+          ImGuiTimer = Stopwatch ()
+          ImGuiTime = TimeSpan.Zero
           GcTotalTime = gcTime
           GcFrameTime = gcTime }
 

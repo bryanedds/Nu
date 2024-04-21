@@ -116,10 +116,13 @@ module Gaia =
     let mutable private GcTimingPrevious = 0.0
     let private TimingCapacity = 200
     let private TimingsArray = Array.zeroCreate<single> TimingCapacity
+    let private MiscTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private GcTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private PhysicsTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private RenderTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private AudioTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private ImGuiTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private FrameTimings = Queue (Array.zeroCreate<single> TimingCapacity)
 
     (* Modal Activity States *)
@@ -3752,20 +3755,37 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // frame timing plot
             if world.Advancing then
-                GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
+                MiscTimings.Enqueue (single world.Timers.InputTimer.Elapsed.TotalMilliseconds) // just input for now
+                MiscTimings.Dequeue () |> ignore<single>
+                GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds + Seq.last MiscTimings)
                 GcTimings.Dequeue () |> ignore<single>
                 PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last GcTimings)
                 PhysicsTimings.Dequeue () |> ignore<single>
-                UpdateTimings.Enqueue (single (world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds + world.Timers.UpdateTimer.Elapsed.TotalMilliseconds + world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
+                UpdateTimings.Enqueue
+                    (single
+                        (world.Timers.PreProcessTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.UpdateTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.PerProcessTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.TaskletsTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.DestructionTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.PostProcessTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
                 UpdateTimings.Dequeue () |> ignore<single>
                 RenderTimings.Enqueue (single world.Timers.RenderTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
                 RenderTimings.Dequeue () |> ignore<single>
+                AudioTimings.Enqueue (single world.Timers.AudioTimer.Elapsed.TotalMilliseconds + Seq.last RenderTimings)
+                AudioTimings.Dequeue () |> ignore<single>
+                ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last AudioTimings)
+                ImGuiTimings.Dequeue () |> ignore<single>
                 FrameTimings.Enqueue (single world.Timers.FrameTime.TotalMilliseconds)
                 FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
                 ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 20.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
+                MiscTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Misc Time", &TimingsArray.[0], TimingsArray.Length)
                 GcTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
                 PhysicsTimings.CopyTo (TimingsArray, 0)
@@ -3774,6 +3794,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
                 RenderTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Render Time", &TimingsArray.[0], TimingsArray.Length)
+                AudioTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Audio Time", &TimingsArray.[0], TimingsArray.Length)
+                ImGuiTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
                 ImPlot.EndPlot ()

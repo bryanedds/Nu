@@ -1676,9 +1676,6 @@ module WorldModule2 =
                                                                     else world
                                                                 world.Timers.AudioTimer.Stop ()
 
-                                                                // process aggressive when desired
-                                                                if GC.GetTotalPauseDuration () = world.Timers.GcTotalTime && Constants.Engine.AggressiveGc then GC.Collect 0
-
                                                                 // process frame time recording
                                                                 world.Timers.FrameTime <- world.Timers.FrameTimer.Elapsed
 
@@ -1714,13 +1711,15 @@ module WorldModule2 =
                                                                     else world
                                                                 world.Timers.FrameTimer.Restart ()
 
-                                                                // process gc frame time recording
+                                                                // process additional frame time recording
                                                                 let gcTotalTime = GC.GetTotalPauseDuration ()
                                                                 let gcFrameTime = gcTotalTime - world.Timers.GcTotalTime
                                                                 world.Timers.GcTotalTime <- gcTotalTime
                                                                 world.Timers.GcFrameTime <- gcFrameTime
+                                                                world.Timers.ImGuiTime <- world.Timers.ImGuiTimer.Elapsed
 
                                                                 // process imgui frame
+                                                                world.Timers.ImGuiTimer.Restart ()
                                                                 let imGui = World.getImGui world
                                                                 if not firstFrame then imGui.EndFrame ()
                                                                 imGui.BeginFrame ()
@@ -1728,6 +1727,7 @@ module WorldModule2 =
                                                                 let (world : World) = imGuiProcess world
                                                                 imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
+                                                                world.Timers.ImGuiTimer.Stop ()
 
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
