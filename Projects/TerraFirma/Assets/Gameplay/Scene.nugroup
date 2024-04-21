@@ -36,7 +36,7 @@
      []]
     [LightProbe3dDispatcher
      [[MountOpt [Some ^]]
-      [Name LightProbe]
+      [Name LightProbe3d]
       [Position [12.4 5.7 11.4]]
       [PositionLocal [12.4 5.7 11.4]]
       [ProbeBounds
@@ -44,7 +44,7 @@
      []]
     [Lighting3dConfigDispatcher
      [[LightingConfig
-       [[LightCutoffMargin 0.333] [LightShadowBiasAcne 2E-07] [LightShadowBiasBleed 0.5] [LightMappingEnabled True] [SsaoEnabled True] [SsaoIntensity 1.35] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2] [SsaoSampleCount 12]]]
+       [[LightCutoffMargin 0.333] [LightShadowBiasAcne 2E-07] [LightShadowBiasBleed 0.5] [LightMappingEnabled True] [SsaoEnabled True] [SsaoIntensity 1.333] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2] [SsaoSampleCount 12]]]
       [MountOpt [Some ^]]
       [Name Lighting3dConfig]]
      []]
