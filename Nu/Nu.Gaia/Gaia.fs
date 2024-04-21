@@ -3769,9 +3769,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let updateTimingsArr = Array.ofSeq UpdateTimings // TODO: remove allocation.
             let renderTimingsArr = Array.ofSeq RenderTimings // TODO: remove allocation.
             let frameTimingsArr = Array.ofSeq FrameTimings // TODO: remove allocation.
-            if ImPlot.BeginPlot ("##Timings", v2 -1.0f 130.0f, ImPlotFlags.NoMenus ||| ImPlotFlags.NoMouseText ||| ImPlotFlags.NoInputs) then
+            if ImPlot.BeginPlot ("##Timings", v2 -1.0f 130.0f, ImPlotFlags.NoMouseText ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
-                ImPlot.SetupAxesLimits (0.0, double (dec frameTimingsArr.Length), 0.0, 35.0)
+                ImPlot.SetupAxesLimits (0.0, double (dec frameTimingsArr.Length), 0.0, 20.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
                 ImPlot.PlotLine ("Gc Time", &gcTimingsArr.[0], gcTimingsArr.Length)
                 ImPlot.PlotLine ("Physics Time", &physicsTimingsArr.[0], physicsTimingsArr.Length)
