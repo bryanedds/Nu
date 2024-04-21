@@ -121,7 +121,6 @@ module Gaia =
     let private PhysicsTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private RenderTimings = Queue (Array.zeroCreate<single> TimingCapacity)
-    let private AudioTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private ImGuiTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private FrameTimings = Queue (Array.zeroCreate<single> TimingCapacity)
 
@@ -3755,7 +3754,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // frame timing plot
             if world.Advancing then
-                MiscTimings.Enqueue (single world.Timers.InputTimer.Elapsed.TotalMilliseconds) // just input for now
+                MiscTimings.Enqueue
+                    (single
+                        (world.Timers.InputTimer.Elapsed.TotalMilliseconds +
+                         world.Timers.AudioTimer.Elapsed.TotalMilliseconds))
                 MiscTimings.Dequeue () |> ignore<single>
                 GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds + Seq.last MiscTimings)
                 GcTimings.Dequeue () |> ignore<single>
@@ -3774,9 +3776,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 UpdateTimings.Dequeue () |> ignore<single>
                 RenderTimings.Enqueue (single world.Timers.RenderTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
                 RenderTimings.Dequeue () |> ignore<single>
-                AudioTimings.Enqueue (single world.Timers.AudioTimer.Elapsed.TotalMilliseconds + Seq.last RenderTimings)
-                AudioTimings.Dequeue () |> ignore<single>
-                ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last AudioTimings)
+                ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last RenderTimings)
                 ImGuiTimings.Dequeue () |> ignore<single>
                 FrameTimings.Enqueue (single world.Timers.FrameTime.TotalMilliseconds)
                 FrameTimings.Dequeue () |> ignore<single>
@@ -3794,8 +3794,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
                 RenderTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Render Time", &TimingsArray.[0], TimingsArray.Length)
-                AudioTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Audio Time", &TimingsArray.[0], TimingsArray.Length)
                 ImGuiTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
                 FrameTimings.CopyTo (TimingsArray, 0)
