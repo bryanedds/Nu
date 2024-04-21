@@ -78,6 +78,7 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
 		<PackageReference Include="NUnit" Version="3.14.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+		<PackageReference Include="Twizzle.ImPlot.NET" Version="1.89.4" />
 	</ItemGroup>
 
 	<ItemGroup>

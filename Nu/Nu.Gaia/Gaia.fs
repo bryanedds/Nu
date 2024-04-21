@@ -16,6 +16,7 @@ open Microsoft.FSharp.Core
 open DotRecast.Recast
 open ImGuiNET
 open ImGuizmoNET
+open ImPlotNET
 open Prime
 open Nu
 
@@ -109,6 +110,16 @@ module Gaia =
     let mutable private EntityFilePaths = Map.empty<Entity Address, string>
     let mutable private AssetGraphStr = null // this will be initialized on start
     let mutable private OverlayerStr = null // this will be initialized on start
+
+    (* Metrics States *)
+
+    let private TimingCapacity = 200
+    let mutable private GcTimingPrevious = 0.0
+    let private GcTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private PhysicsTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private RenderTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private FrameTimings = Queue (Array.zeroCreate<single> TimingCapacity)
 
     (* Modal Activity States *)
 
@@ -3711,7 +3722,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else world
 
     let private imGuiMetricsWindow (world : World) =
+
+        // metrics window
         if ImGui.Begin ("Metrics", ImGuiWindowFlags.NoNav) then
+
+            // fps
             ImGui.Text "Fps:"
             ImGui.SameLine ()
             let currentDateTime = DateTimeOffset.Now
@@ -3723,14 +3738,51 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let time = double (world.UpdateTime - FpsStartUpdateTime)
             let frames = time / elapsedDateTime.TotalSeconds
             ImGui.Text (if not (Double.IsNaN frames) then String.Format ("{0:f2}", frames) else "0.00")
+
+            // draw call count
             ImGui.Text "Draw Call Count:"
             ImGui.SameLine ()
             ImGui.Text (string (OpenGL.Hl.GetDrawCallCount ()))
+
+            // draw instance count
             ImGui.Text "Draw Instance Count:"
             ImGui.SameLine ()
             ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
+
+            // frame timing plot
+            if world.Advancing then
+                let gcTotal = GC.GetTotalPauseDuration().TotalMilliseconds
+                let gcTiming = gcTotal - GcTimingPrevious
+                GcTimingPrevious <- gcTotal
+                GcTimings.Enqueue (single gcTiming)
+                GcTimings.Dequeue () |> ignore<single>
+                PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last GcTimings)
+                PhysicsTimings.Dequeue () |> ignore<single>
+                UpdateTimings.Enqueue (single (world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds + world.Timers.UpdateTimer.Elapsed.TotalMilliseconds + world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
+                UpdateTimings.Dequeue () |> ignore<single>
+                RenderTimings.Enqueue (single world.Timers.RenderTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
+                RenderTimings.Dequeue () |> ignore<single>
+                FrameTimings.Enqueue (single world.Timers.FrameTime.TotalMilliseconds)
+                FrameTimings.Dequeue () |> ignore<single>
+            let gcTimingsArr = Array.ofSeq GcTimings // TODO: remove allocation.
+            let physicsTimingsArr = Array.ofSeq PhysicsTimings // TODO: remove allocation.
+            let updateTimingsArr = Array.ofSeq UpdateTimings // TODO: remove allocation.
+            let renderTimingsArr = Array.ofSeq RenderTimings // TODO: remove allocation.
+            let frameTimingsArr = Array.ofSeq FrameTimings // TODO: remove allocation.
+            if ImPlot.BeginPlot ("##Timings", v2 -1.0f 130.0f, ImPlotFlags.NoMenus ||| ImPlotFlags.NoMouseText ||| ImPlotFlags.NoInputs) then
+                ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
+                ImPlot.SetupAxesLimits (0.0, double (dec frameTimingsArr.Length), 0.0, 35.0)
+                ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
+                ImPlot.PlotLine ("Gc Time", &gcTimingsArr.[0], gcTimingsArr.Length)
+                ImPlot.PlotLine ("Physics Time", &physicsTimingsArr.[0], physicsTimingsArr.Length)
+                ImPlot.PlotLine ("Update Time", &updateTimingsArr.[0], updateTimingsArr.Length)
+                ImPlot.PlotLine ("Render Time", &renderTimingsArr.[0], renderTimingsArr.Length)
+                ImPlot.PlotLine ("Frame Time", &frameTimingsArr.[0], frameTimingsArr.Length)
+                ImPlot.EndPlot ()
             ImGui.End ()
             world
+
+        // fin
         else world
 
     let private imGuiInteractiveWindow world =

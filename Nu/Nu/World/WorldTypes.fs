@@ -1775,6 +1775,10 @@ and [<ReferenceEquality>] World =
     member this.DateTime =
         AmbientState.getDateTime this.AmbientState
 
+    /// Get the timers.
+    member this.Timers =
+        AmbientState.getTimers this.AmbientState
+
 #if DEBUG
     member internal this.Choose () =
         match WorldTypes.Chosen with

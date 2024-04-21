@@ -63,6 +63,7 @@
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
+		<PackageReference Include="Twizzle.ImPlot.NET" Version="1.89.4" />
 	</ItemGroup>
 
 	<ItemGroup>

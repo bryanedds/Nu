@@ -327,7 +327,8 @@ module WorldModule3 =
 
             // make the world's ambient state
             let symbolics = Symbolics.makeEmpty ()
-            let ambientState = AmbientState.make config.Imperative config.Accompanied true false symbolics Overlayer.empty None
+            let timers = Timers.make ()
+            let ambientState = AmbientState.make config.Imperative config.Accompanied true false symbolics Overlayer.empty timers None
 
             // make the world's spatial trees
             let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize
@@ -406,6 +407,7 @@ module WorldModule3 =
                     then SdlAudioPlayer.make () :> AudioPlayer
                     else StubAudioPlayer.make () :> AudioPlayer
                 audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
+                let symbolics = Symbolics.makeEmpty ()
 
                 // attempt to make the overlayer
                 let intrinsicOverlays = World.makeIntrinsicOverlays dispatchers.Facets dispatchers.EntityDispatchers
@@ -413,8 +415,8 @@ module WorldModule3 =
                 | Right overlayer ->
 
                     // make the world's ambient state
-                    let symbolics = Symbolics.makeEmpty ()
-                    let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer (Some sdlDeps)
+                    let timers = Timers.make ()
+                    let ambientState = AmbientState.make config.Imperative config.Accompanied config.Advancing config.FramePacing symbolics overlayer timers (Some sdlDeps)
 
                     // make the world's spatial trees
                     let quadtree = Quadtree.make Constants.Engine.QuadtreeDepth Constants.Engine.QuadtreeSize

@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Numerics
 open ImGuiNET
 open ImGuizmoNET
+open ImPlotNET
 open Prime
 
 /// The result of an imgui editing operation.
@@ -36,6 +37,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
     let context =
         ImGui.CreateContext ()
 
+    let plot =
+        ImPlot.CreateContext ()
+
     do
         // make context current
         ImGui.SetCurrentContext context
@@ -45,6 +49,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
         // enable guizmo
         ImGuizmo.Enable true
+
+        // set plot context
+        ImPlot.SetImGuiContext context
 
         // retrieve configuration targets
         let io = ImGui.GetIO ()
@@ -149,6 +156,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.GetDrawData ()
 
     member this.CleanUp () =
+        ImPlot.DestroyContext plot
         ImGui.DestroyContext context
 
     static member StyleColorsNu () =

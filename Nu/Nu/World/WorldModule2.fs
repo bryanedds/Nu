@@ -15,39 +15,6 @@ open Prime
 [<AutoOpen>]
 module WorldModule2 =
 
-    (* Frame Pacing Timer *)
-    let private FrameTimer = Stopwatch ()
-
-    (* Performance Timers *)
-    let private TotalTimer = Stopwatch ()
-    let private InputTimer = Stopwatch ()
-    let private PhysicsTimer = Stopwatch ()
-    let private PreUpdateTimer = Stopwatch ()
-    let private PreUpdateGatherTimer = Stopwatch ()
-    let private PreUpdateGameTimer = Stopwatch ()
-    let private PreUpdateScreensTimer = Stopwatch ()
-    let private PreUpdateGroupsTimer = Stopwatch ()
-    let private UpdateTimer = Stopwatch ()
-    let private UpdateGatherTimer = Stopwatch ()
-    let private UpdateGameTimer = Stopwatch ()
-    let private UpdateScreensTimer = Stopwatch ()
-    let private UpdateGroupsTimer = Stopwatch ()
-    let private UpdateEntitiesTimer = Stopwatch ()
-    let private PostUpdateTimer = Stopwatch ()
-    let private PostUpdateGatherTimer = Stopwatch ()
-    let private PostUpdateGameTimer = Stopwatch ()
-    let private PostUpdateScreensTimer = Stopwatch ()
-    let private PostUpdateGroupsTimer = Stopwatch ()
-    let private TaskletsTimer = Stopwatch ()
-    let private DestructionTimer = Stopwatch ()
-    let private PerProcessTimer = Stopwatch ()
-    let private PreProcessTimer = Stopwatch ()
-    let private PostProcessTimer = Stopwatch ()
-    let private RenderGatherTimer = Stopwatch ()
-    let private RenderEntitiesTimer = Stopwatch ()
-    let private RenderTimer = Stopwatch ()
-    let private AudioTimer = Stopwatch ()
-
     (* Transition Values *)
     let private ScreenTransitionMouseLeftId = Gen.id
     let private ScreenTransitionMouseMiddleId = Gen.id
@@ -1246,27 +1213,27 @@ module WorldModule2 =
         static member private preUpdateSimulants (world : World) =
 
             // gather simulants
-            PreUpdateGatherTimer.Start ()
+            world.Timers.PreUpdateGatherTimer.Restart ()
             let game = Nu.Game.Handle
             let advancing = world.Advancing
             let screenOpt = World.getSelectedScreenOpt world
             let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
-            PreUpdateGatherTimer.Stop ()
+            world.Timers.PreUpdateGatherTimer.Stop ()
 
             // pre-update game
-            PreUpdateGameTimer.Start ()
+            world.Timers.PreUpdateGameTimer.Restart ()
             let world = if advancing then World.preUpdateGame game world else world
-            PreUpdateGameTimer.Stop ()
+            world.Timers.PreUpdateGameTimer.Stop ()
 
             // pre-update screen if any
-            PreUpdateScreensTimer.Start ()
+            world.Timers.PreUpdateScreensTimer.Restart ()
             let world = Option.fold (fun world screen -> if advancing then World.preUpdateScreen screen world else world) world screenOpt
-            PreUpdateScreensTimer.Stop ()
+            world.Timers.PreUpdateScreensTimer.Stop ()
 
             // pre-update groups
-            PreUpdateGroupsTimer.Start ()
+            world.Timers.PreUpdateGroupsTimer.Restart ()
             let world = Seq.fold (fun world group -> if advancing then World.preUpdateGroup group world else world) world groups
-            PreUpdateGroupsTimer.Stop ()
+            world.Timers.PreUpdateGroupsTimer.Stop ()
 
             // fin
             world
@@ -1277,32 +1244,32 @@ module WorldModule2 =
             try
 
                 // gather simulants
-                UpdateGatherTimer.Start ()
+                world.Timers.UpdateGatherTimer.Restart ()
                 let game = Nu.Game.Handle
                 let advancing = world.Advancing
                 let screenOpt = World.getSelectedScreenOpt world
                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 World.getElements3dInPlay HashSet3dNormalCached world
                 World.getElements2dInPlay HashSet2dNormalCached world
-                UpdateGatherTimer.Stop ()
+                world.Timers.UpdateGatherTimer.Stop ()
 
                 // update game
-                UpdateGameTimer.Start ()
+                world.Timers.UpdateGameTimer.Restart ()
                 let world = if advancing then World.updateGame game world else world
-                UpdateGameTimer.Stop ()
+                world.Timers.UpdateGameTimer.Stop ()
             
                 // update screen if any
-                UpdateScreensTimer.Start ()
+                world.Timers.UpdateScreensTimer.Restart ()
                 let world = Option.fold (fun world screen -> if advancing then World.updateScreen screen world else world) world screenOpt
-                UpdateScreensTimer.Stop ()
+                world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
-                UpdateGroupsTimer.Start ()
+                world.Timers.UpdateGroupsTimer.Restart ()
                 let world = Seq.fold (fun world group -> if advancing then World.updateGroup group world else world) world groups
-                UpdateGroupsTimer.Stop ()
+                world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
-                UpdateEntitiesTimer.Start ()
+                world.Timers.UpdateEntitiesTimer.Restart ()
                 let world =
                     Seq.fold (fun world (element : Entity Octelement) ->
                         if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
@@ -1315,7 +1282,7 @@ module WorldModule2 =
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet2dNormalCached
-                UpdateEntitiesTimer.Stop ()
+                world.Timers.UpdateEntitiesTimer.Stop ()
 
                 // fin
                 world
@@ -1328,27 +1295,27 @@ module WorldModule2 =
         static member private postUpdateSimulants (world : World) =
 
             // gather simulants
-            PostUpdateGatherTimer.Start ()
+            world.Timers.PostUpdateGatherTimer.Restart ()
             let game = Nu.Game.Handle
             let advancing = world.Advancing
             let screenOpt = World.getSelectedScreenOpt world
             let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> []
-            PostUpdateGatherTimer.Stop ()
+            world.Timers.PostUpdateGatherTimer.Stop ()
 
             // post-update game
-            PostUpdateGameTimer.Start ()
+            world.Timers.PostUpdateGameTimer.Restart ()
             let world = if advancing then World.postUpdateGame game world else world
-            PostUpdateGameTimer.Stop ()
+            world.Timers.PostUpdateGameTimer.Stop ()
 
             // post-update screen if any
-            PostUpdateScreensTimer.Start ()
+            world.Timers.PostUpdateScreensTimer.Restart ()
             let world = Option.fold (fun world screen -> if advancing then World.postUpdateScreen screen world else world) world screenOpt
-            PostUpdateScreensTimer.Stop ()
+            world.Timers.PostUpdateScreensTimer.Stop ()
 
             // post-update groups
-            PostUpdateGroupsTimer.Start ()
+            world.Timers.PostUpdateGroupsTimer.Restart ()
             let world = Seq.fold (fun world group -> if advancing then World.postUpdateGroup group world else world) world groups
-            PostUpdateGroupsTimer.Stop ()
+            world.Timers.PostUpdateGroupsTimer.Stop ()
 
             // fin
             world
@@ -1399,13 +1366,13 @@ module WorldModule2 =
             | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
-        static member private renderSimulantsInternal renderPass world =
+        static member private renderSimulantsInternal renderPass (world : World) =
 
             // use a finally block to free cached values
             try
 
                 // gather simulants
-                RenderGatherTimer.Start ()
+                world.Timers.RenderGatherTimer.Restart ()
                 let game = Nu.Game.Handle
                 let screenOpt = World.getSelectedScreenOpt world
                 let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
@@ -1428,7 +1395,7 @@ module WorldModule2 =
                 | LightMapPass (_, _) -> ()
                 | ShadowPass (_, _, _, _) -> ()
                 | ReflectionPass (_, _) -> ()
-                RenderGatherTimer.Stop ()
+                world.Timers.RenderGatherTimer.Stop ()
 
                 // render game
                 World.renderGame renderPass game world
@@ -1449,7 +1416,7 @@ module WorldModule2 =
                         World.renderGroup renderPass group world
 
                 // render entities
-                RenderEntitiesTimer.Start ()
+                world.Timers.RenderEntitiesTimer.Restart ()
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
                     for element in HashSet3dNormalCached do
                         if element.Visible then
@@ -1466,7 +1433,7 @@ module WorldModule2 =
                     for element in HashSet2dNormalCached do
                         if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
-                RenderEntitiesTimer.Stop ()
+                world.Timers.RenderEntitiesTimer.Stop ()
 
                 // fin
                 world
@@ -1604,17 +1571,17 @@ module WorldModule2 =
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
-        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame world =
+        static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
 
             // run loop if user-defined run-while predicate passes
-            TotalTimer.Start ()
+            world.Timers.TotalTimer.Restart ()
             if runWhile world then
 
                 // run user-defined pre-process callbacks
-                PreProcessTimer.Start ()
+                world.Timers.PreProcessTimer.Restart ()
                 let world = World.preProcess world
-                let world = preProcess world
-                PreProcessTimer.Stop ()
+                let (world : World) = preProcess world
+                world.Timers.PreProcessTimer.Stop ()
                 match liveness with
                 | Live ->
 
@@ -1624,82 +1591,82 @@ module WorldModule2 =
                     | Live ->
 
                         // process HID inputs
-                        InputTimer.Start ()
+                        world.Timers.InputTimer.Restart ()
                         let world = World.processInput world
-                        InputTimer.Stop ()
+                        world.Timers.InputTimer.Stop ()
                         match World.getLiveness world with
                         | Live ->
 
                             // process physics
-                            PhysicsTimer.Start ()
+                            world.Timers.PhysicsTimer.Restart ()
                             let world = World.processPhysics world
-                            PhysicsTimer.Stop ()
+                            world.Timers.PhysicsTimer.Stop ()
                             match World.getLiveness world with
                             | Live ->
 
                                 // pre-update simulants
-                                PreUpdateTimer.Start ()
+                                world.Timers.PreUpdateTimer.Restart ()
                                 let world = World.preUpdateSimulants world
-                                PreUpdateTimer.Stop ()
+                                world.Timers.PreUpdateTimer.Stop ()
                                 match World.getLiveness world with
                                 | Live ->
 
                                     // update simulants
-                                    UpdateTimer.Start ()
+                                    world.Timers.UpdateTimer.Restart ()
                                     let world = World.updateSimulants world
-                                    UpdateTimer.Stop ()
+                                    world.Timers.UpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
 
                                         // post-update simulants
-                                        PostUpdateTimer.Start ()
+                                        world.Timers.PostUpdateTimer.Restart ()
                                         let world = World.postUpdateSimulants world
-                                        PostUpdateTimer.Stop ()
+                                        world.Timers.PostUpdateTimer.Stop ()
                                         match World.getLiveness world with
                                         | Live ->
 
                                             // run user-defined per-process callbacks
-                                            PerProcessTimer.Start ()
+                                            world.Timers.PerProcessTimer.Restart ()
                                             let world = World.perProcess world
-                                            let world = perProcess world
-                                            PerProcessTimer.Stop ()
+                                            let (world : World) = perProcess world
+                                            world.Timers.PerProcessTimer.Stop ()
                                             match World.getLiveness world with
                                             | Live ->
 
                                                 // process tasklets that have been scheduled and are ready to run
-                                                TaskletsTimer.Start ()
+                                                world.Timers.TaskletsTimer.Restart ()
                                                 WorldModule.TaskletProcessingStarted <- true
                                                 let world = World.processTasklets world
-                                                TaskletsTimer.Stop ()
+                                                world.Timers.TaskletsTimer.Stop ()
                                                 match World.getLiveness world with
                                                 | Live ->
 
                                                     // destroy simulants that have been marked for destruction at the end of frame
-                                                    DestructionTimer.Start ()
+                                                    world.Timers.DestructionTimer.Restart ()
                                                     let world = World.destroySimulants world
-                                                    DestructionTimer.Stop ()
+                                                    world.Timers.DestructionTimer.Stop ()
                                                     match World.getLiveness world with
                                                     | Live ->
                                                     
                                                         // run engine and user-defined post-process callbacks
-                                                        PostProcessTimer.Start ()
+                                                        world.Timers.PostProcessTimer.Restart ()
                                                         let world = World.postProcess world
-                                                        let world = postProcess world
-                                                        PostProcessTimer.Stop ()
+                                                        let (world : World) = postProcess world
+                                                        world.Timers.PostProcessTimer.Stop ()
                                                         match World.getLiveness world with
                                                         | Live ->
 
                                                             // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
-                                                            RenderTimer.Start ()
+                                                            world.Timers.RenderTimer.Restart ()
                                                             let lightMapRenderRequested = World.getLightMapRenderRequested world
                                                             let world = World.acknowledgeLightMapRenderRequest world
                                                             let world = World.renderSimulants lightMapRenderRequested world
-                                                            RenderTimer.Stop ()
+                                                            world.Timers.RenderTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
 
                                                                 // process audio
-                                                                AudioTimer.Start ()
+                                                                world.Timers.AudioTimer.Restart ()
                                                                 let world =
                                                                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u then
                                                                         let audioPlayer = World.getAudioPlayer world
@@ -1707,10 +1674,10 @@ module WorldModule2 =
                                                                         audioPlayer.Play audioMessages
                                                                         world
                                                                     else world
-                                                                AudioTimer.Stop ()
-
-                                                                //// printing out some variance metrics
-                                                                //printfn "F:%A\tGC:%A" FrameTimer.ElapsedMilliseconds (GC.GetTotalPauseDuration ()).TotalMilliseconds
+                                                                world.Timers.AudioTimer.Stop ()
+                                                                
+                                                                // process frame time recording
+                                                                world.Timers.FrameTime <- world.Timers.FrameTimer.Elapsed
 
                                                                 // process rendering (1/2)
                                                                 let rendererProcess = World.getRendererProcess world
@@ -1718,12 +1685,12 @@ module WorldModule2 =
 
                                                                 // process frame pacing mechanics
                                                                 let world =
-                                                                    if FrameTimer.IsRunning then
+                                                                    if world.Timers.FrameTimer.IsRunning then
 
                                                                         // automatically enable frame pacing when need is detected
                                                                         let world =
                                                                             if not world.FramePacing then
-                                                                                if FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                if world.Timers.FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
                                                                                 FramePaceChecks <- inc FramePaceChecks
                                                                                 let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
                                                                                 if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
@@ -1732,24 +1699,24 @@ module WorldModule2 =
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
-                                                                            while FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - FrameTimer.Elapsed.TotalSeconds
+                                                                            while world.Timers.FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.FrameTimer.Elapsed.TotalSeconds
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                                else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep 0|1 instead?
-                                                                        
+                                                                                else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep (0|1) instead?
+
                                                                         // fin
                                                                         world
                                                                     else world
-                                                                FrameTimer.Restart ()
+                                                                world.Timers.FrameTimer.Restart ()
 
                                                                 // process imgui frame
                                                                 let imGui = World.getImGui world
                                                                 if not firstFrame then imGui.EndFrame ()
                                                                 imGui.BeginFrame ()
                                                                 let world = World.imGuiProcess world
-                                                                let world = imGuiProcess world
+                                                                let (world : World) = imGuiProcess world
                                                                 imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
 
@@ -1768,10 +1735,10 @@ module WorldModule2 =
 
                                                                 // post-process imgui frame
                                                                 let world = World.imGuiPostProcess world
-                                                                let world = imGuiPostProcess world
+                                                                let (world : World) = imGuiPostProcess world
 
                                                                 // update time and recur
-                                                                TotalTimer.Stop ()
+                                                                world.Timers.TotalTimer.Stop ()
                                                                 WorldModule.TaskletProcessingStarted <- false
                                                                 let world = World.updateTime world
                                                                 let world =
