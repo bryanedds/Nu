@@ -113,8 +113,9 @@ module Gaia =
 
     (* Metrics States *)
 
-    let private TimingCapacity = 200
     let mutable private GcTimingPrevious = 0.0
+    let private TimingCapacity = 200
+    let private TimingsArray = Array.zeroCreate<single> TimingCapacity
     let private GcTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private PhysicsTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
@@ -3764,20 +3765,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 RenderTimings.Dequeue () |> ignore<single>
                 FrameTimings.Enqueue (single world.Timers.FrameTime.TotalMilliseconds)
                 FrameTimings.Dequeue () |> ignore<single>
-            let gcTimingsArr = Array.ofSeq GcTimings // TODO: remove allocation.
-            let physicsTimingsArr = Array.ofSeq PhysicsTimings // TODO: remove allocation.
-            let updateTimingsArr = Array.ofSeq UpdateTimings // TODO: remove allocation.
-            let renderTimingsArr = Array.ofSeq RenderTimings // TODO: remove allocation.
-            let frameTimingsArr = Array.ofSeq FrameTimings // TODO: remove allocation.
             if ImPlot.BeginPlot ("##Timings", v2 -1.0f 130.0f, ImPlotFlags.NoMouseText ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
-                ImPlot.SetupAxesLimits (0.0, double (dec frameTimingsArr.Length), 0.0, 20.0)
+                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 20.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
-                ImPlot.PlotLine ("Gc Time", &gcTimingsArr.[0], gcTimingsArr.Length)
-                ImPlot.PlotLine ("Physics Time", &physicsTimingsArr.[0], physicsTimingsArr.Length)
-                ImPlot.PlotLine ("Update Time", &updateTimingsArr.[0], updateTimingsArr.Length)
-                ImPlot.PlotLine ("Render Time", &renderTimingsArr.[0], renderTimingsArr.Length)
-                ImPlot.PlotLine ("Frame Time", &frameTimingsArr.[0], frameTimingsArr.Length)
+                GcTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
+                PhysicsTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Physics Time", &TimingsArray.[0], TimingsArray.Length)
+                UpdateTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
+                RenderTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Render Time", &TimingsArray.[0], TimingsArray.Length)
+                FrameTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
                 ImPlot.EndPlot ()
             ImGui.End ()
             world
