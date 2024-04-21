@@ -1736,19 +1736,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.Separator ()
                     ImGui.SameLine ()
                     separatorInserted <- true
+                ImGui.PushID ("##push" + scstringMemo entity + )
                 let world =
                     if ImGui.SmallButton "Push"
                     then propagateEntityStructure entity world
                     else world
+                ImGui.PopID ()
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Propagate entity structure to all targets."
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
+                ImGui.PushID ("##wipe" + scstringMemo entity)
                 let world =
                     if ImGui.SmallButton "Wipe" then
                         let world = snapshot world
                         World.clearPropagationTargets entity world
                     else world
+                ImGui.PopID ()
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Clear entity structure propagation targets."
                     ImGui.EndTooltip ()
