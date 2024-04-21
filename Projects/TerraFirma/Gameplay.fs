@@ -82,7 +82,7 @@ type GameplayDispatcher () =
 
         match command with
         | SetupScene ->
-            let world = Simulants.GameplayPlayer.SetPosition (v3 0.0f 2.0f 0.0f) world
+            let world = Simulants.GameplayPlayer.SetPosition (v3 0.0f 1.65f 0.0f) world
             let world = World.synchronizeNav3d screen world
             just world
 
