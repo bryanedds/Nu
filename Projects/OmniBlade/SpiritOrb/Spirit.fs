@@ -36,7 +36,7 @@ type SpiritPattern =
 
     static member toSpiritMovement pattern =
         match pattern with
-        | Confused ->       [|Creep;    Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander;  Wander; Wander; Wander|]
+        | Confused ->       [|Creep;    Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander; Wander|]
         | Flighty ->        [|Chase;    Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander;   Creep; Creep; Wander|]
         | Steadfast ->      [|Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep;    Creep; Creep; Creep|]
         | Stalking ->       [|Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep;    Chase; Chase; Creep|]

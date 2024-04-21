@@ -197,9 +197,11 @@ module WorldModule2 =
             match World.getLiveness world with
             | Live ->
                 let world =
-                    if (match transitionTime with
+                    let firstFrame = 
+                        match transitionTime with
                         | UpdateTime time -> time + 1L = world.UpdateTime
-                        | ClockTime time -> time + world.ClockDelta >= world.ClockTime) then
+                        | ClockTime time -> time + world.ClockDelta = world.ClockTime
+                    if firstFrame then
                         let world =
                             match (selectedScreen.GetIncoming world).SongOpt with
                             | Some playSong ->
@@ -223,6 +225,15 @@ module WorldModule2 =
         static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
+                let world =
+                    if world.Accompanied && world.Halted then // special case to play song when halted in editor
+                        match (selectedScreen.GetIncoming world).SongOpt with
+                        | Some playSong ->
+                            match World.getCurrentSongOpt world with
+                            | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
+                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                        | None -> world
+                    else world
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
                     if World.updateScreenIdling3 transitionTime slide selectedScreen world
