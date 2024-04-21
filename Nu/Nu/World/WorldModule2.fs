@@ -1675,7 +1675,7 @@ module WorldModule2 =
                                                                         world
                                                                     else world
                                                                 world.Timers.AudioTimer.Stop ()
-                                                                
+
                                                                 // process frame time recording
                                                                 world.Timers.FrameTime <- world.Timers.FrameTimer.Elapsed
 

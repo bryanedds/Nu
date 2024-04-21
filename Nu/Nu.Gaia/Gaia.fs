@@ -3765,7 +3765,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 RenderTimings.Dequeue () |> ignore<single>
                 FrameTimings.Enqueue (single world.Timers.FrameTime.TotalMilliseconds)
                 FrameTimings.Dequeue () |> ignore<single>
-            if ImPlot.BeginPlot ("##Timings", v2 -1.0f 130.0f, ImPlotFlags.NoMouseText ||| ImPlotFlags.NoInputs) then
+            if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
                 ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 20.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
