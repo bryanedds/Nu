@@ -20,7 +20,7 @@ type SpiritPattern =
     | Stalking
     | Ambushing
 
-    static member fromInt i =
+    static member ofInt i =
         match i with
         | 0 -> Confused
         | 1 -> Flighty
@@ -31,8 +31,8 @@ type SpiritPattern =
 
     static member generate () =
         if Gen.randomb // 50% less chance of Stalking and Ambushing spirit
-        then Gen.random1 5 |> SpiritPattern.fromInt
-        else Gen.random1 3 |> SpiritPattern.fromInt
+        then Gen.random1 5 |> SpiritPattern.ofInt
+        else Gen.random1 3 |> SpiritPattern.ofInt
 
     static member toSpiritMovement pattern =
         match pattern with
