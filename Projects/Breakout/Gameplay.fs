@@ -56,6 +56,7 @@ type Gameplay =
       Ball : Ball
       Lives : int }
 
+    // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
     static member empty =
         { GameplayTime = 0L
           GameplayState = Quit
@@ -64,6 +65,7 @@ type Gameplay =
           Bricks = Map.empty
           Lives = 0 }
 
+    // this represents the gameplay model in its initial state, such as when gameplay starts.
     static member initial =
         let bricks =
             Map.ofSeq

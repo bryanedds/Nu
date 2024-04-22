@@ -12,4 +12,7 @@ type TerraFirmaPlugin () =
             [("Splash", fun world -> Game.SetTerraFirma Splash world)
              ("Title", fun world -> Game.SetTerraFirma Title world)
              ("Credits", fun world -> Game.SetTerraFirma Credits world)
-             ("Gameplay", fun world -> Game.SetTerraFirma Gameplay world)]
+             ("Gameplay", fun world ->
+                let world = Game.SetTerraFirma Gameplay world
+                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
+                world)]

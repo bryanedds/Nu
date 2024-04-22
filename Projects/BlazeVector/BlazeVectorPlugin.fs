@@ -12,4 +12,7 @@ type BlazeVectorPlugin () =
             [("Splash", fun world -> Game.SetBlazeVector Splash world)
              ("Title", fun world -> Game.SetBlazeVector Title world)
              ("Credits", fun world -> Game.SetBlazeVector Credits world)
-             ("Gameplay", fun world -> Game.SetBlazeVector Gameplay world)]
+             ("Gameplay", fun world ->
+                let world = Game.SetBlazeVector Gameplay world
+                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
+                world)]

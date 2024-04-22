@@ -12,4 +12,7 @@ type BreakoutPlugin () =
             [("Splash", fun world -> Game.SetBreakout Splash world)
              ("Title", fun world -> Game.SetBreakout Title world)
              ("Credits", fun world -> Game.SetBreakout Credits world)
-             ("Gameplay", fun world -> Game.SetBreakout Gameplay world)]
+             ("Gameplay", fun world ->
+                let world = Game.SetBreakout Gameplay world
+                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
+                world)]

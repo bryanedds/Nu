@@ -12,6 +12,14 @@ type [<SymbolicExpansion>] Gameplay =
     { GameplayState : GameplayState
       Score : int }
 
+    static member empty =
+        { GameplayState = Quit
+          Score = 0 }
+
+    static member initial =
+        { GameplayState = Playing
+          Score = 0 }
+
 type GameplayMessage =
     | StartPlaying
     | FinishQuitting
@@ -34,7 +42,7 @@ module GameplayExtensions =
         member this.QuitEvent = Events.QuitEvent --> this
 
 type GameplayDispatcher () =
-    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
+    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
 
     static let [<Literal>] SectionCount = 12
 

@@ -15,6 +15,16 @@ type [<SymbolicExpansion>] Gameplay =
     { GameplayState : GameplayState
       Score : int }
 
+    // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
+    static member empty =
+        { GameplayState = Quit
+          Score = 0 }
+
+    // this represents the gameplay model in its initial state, such as when gameplay starts.
+    static member initial =
+        { GameplayState = Playing
+          Score = 0 }
+
 // this is our MMCC message type.
 type GameplayMessage =
     | StartPlaying
@@ -43,7 +53,7 @@ module Gameplay =
 
 // this is the screen dispatcher that defines the screen where gameplay takes place.
 type GameplayDispatcher () =
-    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> ({ GameplayState = Quit; Score = 0 })
+    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
 
     // here we define the screen's property values and event handling
     override this.Definitions (_, _) =

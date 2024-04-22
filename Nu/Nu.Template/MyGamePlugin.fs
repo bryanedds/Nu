@@ -12,4 +12,7 @@ type MyGamePlugin () =
             [("Splash", fun world -> Game.SetMyGame Splash world)
              ("Title", fun world -> Game.SetMyGame Title world)
              ("Credits", fun world -> Game.SetMyGame Credits world)
-             ("Gameplay", fun world -> Game.SetMyGame Gameplay world)]
+             ("Gameplay", fun world ->
+                let world = Game.SetMyGame Gameplay world
+                let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
+                world)]
