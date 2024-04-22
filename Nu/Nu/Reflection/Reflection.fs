@@ -89,22 +89,24 @@ module Reflection =
         | (true, result) -> result
         | (false, _) ->
             let result =
-                if ty.IsPrimitive || ty = typeof<string> then
-                    true
-                elif not ty.IsArray && level < 10 then // NOTE: only considered memoizable if <= N layers deep (this avoids infinite recursion).
-                    if ty.IsValueType then
-                        let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
-                        Array.forall (fun (fieldInfo : FieldInfo) -> memoizable2 (inc level) fieldInfo.FieldType) fields
-                    elif FSharpType.IsRecord ty || FSharpType.IsUnion ty then
-                        let setters = ty.GetFields (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.SetProperty)
-                        if setters.Length = 0 then
-                            let getters = ty.GetProperties (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.GetProperty)
-                            Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable2 (inc level) propertyInfo.PropertyType) getters
-                        else false
-                    else
-                        let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
-                        Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable2 (inc level) fieldInfo.FieldType) fields
-                else false
+                if level = 10 then
+                    false // unmemoizable when > N layers deep (this avoids infinite recursion).
+                elif ty.IsArray then
+                    false // empty arrays are safe, but unfortunately not non-empty arrays
+                elif ty = typeof<string> || ty.IsPrimitive then
+                    true // strings and primitives are safe
+                elif ty.IsValueType then
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> memoizable2 (inc level) fieldInfo.FieldType) fields
+                elif FSharpType.IsRecord ty || FSharpType.IsUnion ty then
+                    let setters = ty.GetFields (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.SetProperty)
+                    if setters.Length = 0 then
+                        let getters = ty.GetProperties (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.GetProperty)
+                        Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable2 (inc level) propertyInfo.PropertyType) getters
+                    else false
+                else
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable2 (inc level) fieldInfo.FieldType) fields
             MemoizableMemo.TryAdd (ty, result) |> ignore<bool>
             result
 
