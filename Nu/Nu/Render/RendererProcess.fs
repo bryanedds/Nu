@@ -318,11 +318,11 @@ type RendererThread () =
             | Some window ->
                 
                 // create gl context
-                let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
                 OpenGL.Hl.Assert ()
 
                 // initialize gl context
-                OpenGL.Hl.InitContext ()
+                //OpenGL.Hl.InitContext ()
                 OpenGL.Hl.Assert ()
 
                 // create 3d renderer
@@ -336,7 +336,8 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // create imgui renderer
-                let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+                //let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
 
                 // fin
                 (renderer3d, renderer2d, rendererImGui)
@@ -365,9 +366,9 @@ type RendererThread () =
                 submissionOpt <- None
                 
                 // begin frame
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
+                //OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
                 OpenGL.Hl.Assert ()
-
+                (*
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
                 freeStaticModelMessages messages3d
@@ -379,13 +380,13 @@ type RendererThread () =
                 renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
                 freeSpriteMessages messages2d
                 OpenGL.Hl.Assert ()
-            
+                *)
                 // render imgui
                 rendererImGui.Render drawData
                 OpenGL.Hl.Assert ()
 
                 // end frame
-                OpenGL.Hl.EndFrame ()
+                //OpenGL.Hl.EndFrame ()
                 OpenGL.Hl.Assert ()
 
                 // loop until swap is requested
@@ -396,7 +397,7 @@ type RendererThread () =
 
                     // attempt to swap
                     match windowOpt with
-                    | Some window -> match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                    | Some window -> ()//match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
                     | None -> ()
 
                     // complete swap request

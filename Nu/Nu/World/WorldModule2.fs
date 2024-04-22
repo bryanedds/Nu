@@ -1725,7 +1725,7 @@ module WorldModule2 =
                                                                 imGui.BeginFrame ()
                                                                 let world = World.imGuiProcess world
                                                                 let (world : World) = imGuiProcess world
-                                                                imGui.InputFrame ()
+                                                                //imGui.InputFrame ()
                                                                 let drawData = imGui.RenderFrame ()
                                                                 world.Timers.ImGuiTimer.Stop ()
 
