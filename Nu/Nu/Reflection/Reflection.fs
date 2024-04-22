@@ -10,10 +10,6 @@ open System.Reflection
 open FSharp.Reflection
 open Prime
 
-type Inheritance =
-    | BaseDispatcher of Dispatcher : Type * IntrinsicFacets : Type list
-    | ParentDispatcher of Dispatcher : Type * IntrinsicFacets : Type list * Inheritance
-
 [<RequireQualifiedAccess>]
 module Reflection =
 
