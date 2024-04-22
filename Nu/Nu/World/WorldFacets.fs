@@ -56,7 +56,7 @@ module StaticSpriteFacetModule =
 
         static member Properties =
             [define Entity.InsetOpt None
-             define Entity.StaticImage Assets.Default.Box
+             define Entity.StaticImage Assets.Default.StaticSprite
              define Entity.Color Color.One
              define Entity.Blend Transparent
              define Entity.Emission Color.Zero

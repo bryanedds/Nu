@@ -33,12 +33,7 @@ module EntityDispatcherModule =
              define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
              define Entity.Absolute true
              define Entity.Presence Omnipresent
-             define Entity.DisabledColor Constants.Gui.DisabledColor
-             define Entity.Layout Manual
-             define Entity.LayoutMargin v2Zero
-             define Entity.LayoutOrder 0
-             define Entity.DockType DockCenter
-             define Entity.GridPosition v2iZero]
+             define Entity.DisabledColor Constants.Gui.DisabledColor]
 
     /// A 3d entity dispatcher.
     type Entity3dDispatcher (physical) =
@@ -74,13 +69,6 @@ module StaticSpriteDispatcherModule =
         static member Facets =
             [typeof<StaticSpriteFacet>]
 
-        static member Properties =
-            [define Entity.StaticImage Assets.Default.Box
-             define Entity.Color Color.One
-             define Entity.Emission Color.Zero
-             define Entity.InsetOpt None
-             define Entity.Flip FlipNone]
-
 [<AutoOpen>]
 module AnimatedSpriteDispatcherModule =
 
@@ -90,16 +78,6 @@ module AnimatedSpriteDispatcherModule =
 
         static member Facets =
             [typeof<AnimatedSpriteFacet>]
-
-        static member Properties =
-            [define Entity.CelSize (Vector2 (32.0f, 32.0f))
-             define Entity.CelCount 16
-             define Entity.CelRun 4
-             define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
-             define Entity.AnimationSheet Assets.Default.AnimatedSprite
-             define Entity.Color Color.One
-             define Entity.Emission Color.Zero
-             define Entity.Flip FlipNone]
 
 [<AutoOpen>]
 module TextDispatcherModule =
@@ -111,9 +89,6 @@ module TextDispatcherModule =
         static member Facets =
             [typeof<BackdroppableFacet>
              typeof<TextFacet>]
-
-        static member Properties =
-            [define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
         override this.GetAttributesInferred (entity, world) =
             match entity.GetBackdropImageOpt world with
@@ -267,8 +242,7 @@ module Block2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
-             define Entity.StaticImage Assets.Default.Block]
+            [define Entity.Color Color.Gray]
 
 [<AutoOpen>]
 module Box2dDispatcherModule =
@@ -282,8 +256,7 @@ module Box2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.BodyType Dynamic
-             define Entity.StaticImage Assets.Default.Box]
+            [define Entity.BodyType Dynamic]
 
 [<AutoOpen>]
 module Character2dDispatcherModule =
@@ -326,8 +299,7 @@ module Character2dDispatcherModule =
              define Entity.CelRun 8
              define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
              define Entity.BodyType Dynamic
-             define Entity.SleepingAllowed false
-             define Entity.AngularFactor v3Zero
+             define Entity.SleepingAllowed true
              define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
              define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
              define Entity.Character2dIdleImage Assets.Default.Character2dIdle
@@ -389,9 +361,6 @@ module BodyJoint2dDispatcherModule =
         static member Facets =
             [typeof<BodyJointFacet>]
 
-        static member Properties =
-            [define Entity.BodyJoint EmptyJoint]
-
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.important Constants.Engine.BodyJoint2dSizeDefault v3Zero
 
@@ -405,19 +374,6 @@ module TileMapDispatcherModule =
         static member Facets =
             [typeof<TileMapFacet>]
 
-        static member Properties =
-            [define Entity.BodyEnabled true
-             define Entity.Friction 0.0f
-             define Entity.Restitution 0.0f
-             define Entity.CollisionCategories "1"
-             define Entity.CollisionMask Constants.Physics.CollisionWildcard
-             define Entity.Color Color.One
-             define Entity.Emission Color.Zero
-             define Entity.TileLayerClearance 2.0f
-             define Entity.TileIndexOffset 0
-             define Entity.TileIndexOffsetRange (0, 0)
-             define Entity.TileMap Assets.Default.TileMap]
-
 [<AutoOpen>]
 module TmxMapDispatcherModule =
 
@@ -428,17 +384,6 @@ module TmxMapDispatcherModule =
         static member Facets =
             [typeof<TmxMapFacet>]
 
-        static member Properties =
-            [define Entity.BodyEnabled true
-             define Entity.Friction 0.0f
-             define Entity.Restitution 0.0f
-             define Entity.CollisionCategories "1"
-             define Entity.CollisionMask Constants.Physics.CollisionWildcard
-             define Entity.Color Color.One
-             define Entity.Emission Color.Zero
-             define Entity.TileLayerClearance 2.0f
-             nonPersistent Entity.TmxMap (TmxMap.makeDefault ())]
-
 [<AutoOpen>]
 module SkyBoxDispatcherModule =
 
@@ -448,12 +393,6 @@ module SkyBoxDispatcherModule =
 
         static member Facets =
             [typeof<SkyBoxFacet>]
-
-        static member Properties =
-            [define Entity.Absolute true
-             define Entity.Presence Omnipresent
-             define Entity.Static true
-             define Entity.CubeMap Assets.Default.SkyBoxMap]
 
 [<AutoOpen>]
 module Lighting3dConfigDispatcherModule =
@@ -486,14 +425,6 @@ module LightProbe3dDispatcherModule =
         static member Facets =
             [typeof<LightProbe3dFacet>]
 
-        static member Properties =
-            [define Entity.Size (v3Dup 0.25f)
-             define Entity.LightProbe true
-             define Entity.Presence Omnipresent
-             define Entity.Static true
-             define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
-             define Entity.ProbeStale false]
-
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.important (v3Dup 0.25f) v3Zero
 
@@ -506,16 +437,6 @@ module Light3dDispatcherModule =
 
         static member Facets =
             [typeof<Light3dFacet>]
-
-        static member Properties =
-            [define Entity.Size (v3Dup 0.25f)
-             define Entity.Light true
-             define Entity.Color Color.White
-             define Entity.Brightness Constants.Render.BrightnessDefault
-             define Entity.AttenuationLinear Constants.Render.AttenuationLinearDefault
-             define Entity.AttenuationQuadratic Constants.Render.AttenuationQuadraticDefault
-             define Entity.LightCutoff Constants.Render.LightCutoffDefault
-             define Entity.LightType PointLight]
 
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.important (v3Dup 0.25f) v3Zero
@@ -530,12 +451,6 @@ module StaticBillboardDispatcherModule =
         static member Facets =
             [typeof<StaticBillboardFacet>]
 
-        static member Properties =
-            [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.defaultProperties
-             define Entity.Material Material.defaultMaterial
-             define Entity.RenderStyle Deferred]
-
 // TODO: AnimatedBillboardDispatcher.
 
 [<AutoOpen>]
@@ -548,12 +463,6 @@ module StaticModelDispatcherModule =
         static member Facets =
             [typeof<StaticModelFacet>]
 
-        static member Properties =
-            [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.empty
-             define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred]
-
 [<AutoOpen>]
 module AnimatedModelDispatcherModule =
 
@@ -563,11 +472,6 @@ module AnimatedModelDispatcherModule =
 
         static member Facets =
             [typeof<AnimatedModelFacet>]
-
-        static member Properties =
-            [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.empty
-             define Entity.AnimatedModel Assets.Default.AnimatedModel]
 
 [<AutoOpen>]
 module RigidModelDispatcherModule =
@@ -600,12 +504,7 @@ module RigidModelDispatcherModule =
              typeof<NavBodyFacet>]
 
         static member Properties =
-            [define Entity.BodyType Static
-             define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })
-             define Entity.MaterialProperties MaterialProperties.empty
-             define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred
-             define Entity.NavShape BoundsNavShape]
+            [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })]
 
         override this.Register (entity, world) =
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
@@ -622,14 +521,6 @@ module StaticModelSurfaceDispatcherModule =
 
         static member Facets =
             [typeof<StaticModelSurfaceFacet>]
-
-        static member Properties =
-            [define Entity.InsetOpt None
-             define Entity.MaterialProperties MaterialProperties.empty
-             define Entity.SurfaceIndex 0
-             define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred
-             define Entity.NavShape BoundsNavShape]
 
 [<AutoOpen>]
 module RigidModelSurfaceDispatcherModule =
@@ -655,13 +546,7 @@ module RigidModelSurfaceDispatcherModule =
              typeof<NavBodyFacet>]
 
         static member Properties =
-            [define Entity.InsetOpt None
-             define Entity.BodyType Static
-             define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })
-             define Entity.MaterialProperties MaterialProperties.empty
-             define Entity.SurfaceIndex 0
-             define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.RenderStyle Deferred]
+            [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })]
 
         override this.Register (entity, world) =
             let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
@@ -704,11 +589,6 @@ module Block3dDispatcherModule =
              typeof<StaticModelFacet>
              typeof<NavBodyFacet>]
 
-        static member Properties =
-            [define Entity.BodyType Static
-             define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.NavShape BoundsNavShape]
-
 [<AutoOpen>]
 module Box3dDispatcherModule =
 
@@ -718,12 +598,11 @@ module Box3dDispatcherModule =
 
         static member Facets =
             [typeof<RigidBodyFacet>
-             typeof<StaticModelFacet>]
+             typeof<StaticModelFacet>
+             typeof<NavBodyFacet>]
 
         static member Properties =
-            [define Entity.BodyType Dynamic
-             define Entity.StaticModel Assets.Default.StaticModel
-             define Entity.NavShape BoundsNavShape]
+            [define Entity.BodyType Dynamic]
 
 [<AutoOpen>]
 module Character3dDispatcherModule =
@@ -745,12 +624,8 @@ module Character3dDispatcherModule =
              typeof<RigidBodyFacet>]
 
         static member Properties =
-            [define Entity.MaterialProperties MaterialProperties.empty
-             define Entity.AnimatedModel Assets.Default.AnimatedModel
-             define Entity.BodyType KinematicCharacter
-             define Entity.SleepingAllowed false
+            [define Entity.BodyType KinematicCharacter
              define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
-             define Entity.PhysicsMotion SynchronizedMotion
              define Entity.LinearVelocityPrevious v3Zero
              define Entity.AngularVelocityPrevious v3Zero]
              
@@ -797,9 +672,6 @@ module BodyJoint3dDispatcherModule =
         static member Facets =
             [typeof<BodyJointFacet>]
 
-        static member Properties =
-            [define Entity.BodyJoint EmptyJoint]
-
         override this.GetAttributesInferred (_, _) =
             AttributesInferred.important Constants.Engine.BodyJoint3dSizeDefault v3Zero
 
@@ -817,12 +689,6 @@ module TerrainDispatcherModule =
 
         static member Facets =
             [typeof<TerrainFacet>]
-
-        static member Properties =
-            [define Entity.Size (v3 512.0f 128.0f 512.0f)
-             define Entity.Presence Omnipresent
-             define Entity.Static true
-             define Entity.AlwaysRender true]
 
 [<AutoOpen>]
 module Nav3dConfigDispatcherModule =

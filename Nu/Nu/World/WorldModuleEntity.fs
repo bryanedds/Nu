@@ -2263,9 +2263,9 @@ module WorldModuleEntity =
         static member createEntity5 dispatcherName overlayDescriptor surnames (group : Group) world =
 
             // find the entity's dispatcher
-            let dispatchers = World.getEntityDispatchers world
+            let dispatcherMap = World.getEntityDispatchers world
             let dispatcher =
-                match Map.tryFind dispatcherName dispatchers with
+                match Map.tryFind dispatcherName dispatcherMap with
                 | Some dispatcher -> dispatcher
                 | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
@@ -2281,8 +2281,25 @@ module WorldModuleEntity =
             // make the bare entity state (with name as id if none is provided)
             let entityState = EntityState.make (World.getImperative world) surnames overlayNameOpt dispatcher
 
-            // attach the entity state's intrinsic facets and their properties
-            let entityState = World.attachIntrinsicFacetsViaNames entityState world
+            // attach the entity state's intrinsic properties
+            let facetMap = World.getFacets world
+            let dispatcherType = getType dispatcher
+            let dispatcherTypes = dispatcherType :: Reflection.getBaseTypesExceptObject dispatcherType |> List.rev
+            let entityState =
+                dispatcherTypes |>
+                List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
+                List.fold (fun entityState (facetNames, ty) -> 
+                    let entityState =
+                        if List.notEmpty facetNames
+                        then Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
+                        else entityState
+                    let entityState =
+                        let definitions = Reflection.getPropertyDefinitionsNoInherit ty
+                        if List.notEmpty definitions
+                        then Reflection.attachPropertiesViaDefinitions id definitions entityState world
+                        else entityState
+                    entityState)
+                    entityState
 
             // apply the entity state's overlay to its facet names
             let overlayer = World.getOverlayer world
@@ -2298,9 +2315,6 @@ module WorldModuleEntity =
                     | Right (entityState, _) -> entityState
                     | Left error -> Log.debug error; entityState
                 | None -> entityState
-
-            // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
 
             // apply the entity state's overlay if exists
             let entityState =
@@ -2480,10 +2494,10 @@ module WorldModuleEntity =
         static member readEntity entityDescriptor (nameOpt : string option) (parent : Simulant) world =
 
             // make the dispatcher
+            let dispatcherMap = World.getEntityDispatchers world
             let dispatcherName = entityDescriptor.EntityDispatcherName
-            let dispatchers = World.getEntityDispatchers world
             let (dispatcherName, dispatcher) =
-                match Map.tryFind dispatcherName dispatchers with
+                match Map.tryFind dispatcherName dispatcherMap with
                 | Some dispatcher -> (dispatcherName, dispatcher)
                 | None -> failwith ("Could not find an EntityDispatcher named '" + dispatcherName + "'.")
 
@@ -2493,8 +2507,25 @@ module WorldModuleEntity =
             // make the bare entity state with name as id
             let entityState = EntityState.make (World.getImperative world) None defaultOverlayNameOpt dispatcher
 
-            // attach the entity state's intrinsic facets and their properties
-            let entityState = World.attachIntrinsicFacetsViaNames entityState world
+            // attach the entity state's intrinsic properties
+            let facetMap = World.getFacets world
+            let dispatcherType = getType dispatcher
+            let dispatcherTypes = dispatcherType :: Reflection.getBaseTypesExceptObject dispatcherType |> List.rev
+            let entityState =
+                dispatcherTypes |>
+                List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
+                List.fold (fun entityState (facetNames, ty) -> 
+                    let entityState =
+                        if List.notEmpty facetNames
+                        then Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
+                        else entityState
+                    let entityState =
+                        let definitions = Reflection.getPropertyDefinitionsNoInherit ty
+                        if List.notEmpty definitions
+                        then Reflection.attachPropertiesViaDefinitions id definitions entityState world
+                        else entityState
+                    entityState)
+                    entityState
 
             // read the entity state's overlay and apply it to its facet names if applicable
             let overlayer = World.getOverlayer world
@@ -2507,9 +2538,6 @@ module WorldModuleEntity =
 
             // read the entity state's facet names
             let entityState = Reflection.readFacetNamesToTarget id entityDescriptor.EntityProperties entityState
-
-            // attach the entity state's dispatcher properties
-            let entityState = Reflection.attachProperties id entityState.Dispatcher entityState world
 
             // synchronize the entity state's facets (and attach their properties)
             let entityState =
