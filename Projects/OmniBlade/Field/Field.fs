@@ -68,6 +68,7 @@ type FieldCommand =
     | FaceAvatar of Direction
     | CommencingBattle
     | CommenceBattle of BattleData * PrizePool
+    | StartQuitting
     | PlayFieldSong
     | PlaySound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
@@ -86,7 +87,6 @@ type [<SymbolicExpansion>] Options =
 type FieldState =
     | Playing
     | Battling of BattleData * PrizePool
-    | Quitting
     | Quit
 
 type FieldTransition =
@@ -600,9 +600,6 @@ module Field =
         match field.Menu_.MenuState with
         | MenuOptions false -> { field with Menu_ = { field.Menu_ with MenuState = MenuOptions true }}
         | _ -> field
-
-    let quitConfirm field =
-        { field with FieldState_ = Quitting }
 
     let quitCancel field =
         match field.Menu_.MenuState with

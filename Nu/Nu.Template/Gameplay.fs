@@ -105,7 +105,7 @@ type GameplayDispatcher () =
                  Entity.Text == "Quit"
                  Entity.ClickEvent => StartQuitting]]
 
-         // the scene group while playing or quitting
+         // the scene group while playing
          match gameplay.GameplayState with
          | Playing -> Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
 

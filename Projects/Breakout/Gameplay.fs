@@ -7,7 +7,6 @@ open Nu
 // this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
-    | Quitting
     | Quit
 
 // the state of our breakout paddle
@@ -242,7 +241,7 @@ type GameplayDispatcher () =
 
          // the scene group while playing
          match gameplay.GameplayState with
-         | Playing | Quitting ->
+         | Playing ->
             
             // loads scene from file edited in Gaia
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []

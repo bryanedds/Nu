@@ -348,8 +348,7 @@ type FieldDispatcher () =
             just field
 
         | MenuOptionsQuitConfirm ->
-            let field = Field.quitConfirm field
-            withSignal (FadeOutSong 60L) field
+            withSignals [FadeOutSong 60L; StartQuitting] field
 
         | MenuOptionsQuitCancel ->
             let field = Field.quitCancel field
@@ -604,6 +603,10 @@ type FieldDispatcher () =
                     withSignal (FieldCommand.PlaySong (fadeIn, 30L, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
                 | (None, _) -> just world
             | (false, _) -> just world
+
+        | StartQuitting ->
+            let world = World.publish () screen.QuitFieldEvent screen world
+            just world
 
         | FieldCommand.PlaySound (delay, volume, sound) ->
             let world = World.schedule delay (World.playSound volume sound) screen world

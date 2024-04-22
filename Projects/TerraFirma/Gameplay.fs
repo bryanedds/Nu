@@ -7,7 +7,6 @@ open Nu
 // this represents that state of gameplay simulation.
 type GameplayState =
     | Quit
-    | Quitting
     | Playing
 
 // this is our MMCC model type representing gameplay.
@@ -78,9 +77,7 @@ type GameplayDispatcher () =
         | Die deadCharacter ->
             let character = deadCharacter.GetCharacter world
             match character.CharacterType with
-            | Player ->
-                let gameplay = { gameplay with GameplayState = Quitting }
-                withSignal StartQuitting gameplay
+            | Player -> withSignal StartQuitting gameplay
             | Enemy ->
                 let gameplay = { gameplay with Score = gameplay.Score + 100 }
                 withSignal (DestroyEnemy deadCharacter) gameplay
@@ -164,9 +161,9 @@ type GameplayDispatcher () =
                  Entity.Text == "Quit"
                  Entity.ClickEvent => StartQuitting]]
 
-         // the scene group while playing or quitting
+         // the scene group while playing
          match gameplay.GameplayState with
-         | Playing | Quitting ->
+         | Playing ->
             
             // loads scene from file edited in Gaia
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
