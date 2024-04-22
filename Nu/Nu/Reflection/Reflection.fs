@@ -6,6 +6,7 @@ open System
 open System.Collections
 open System.Collections.Generic
 open System.Reflection
+open FSharp.Reflection
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -82,14 +83,26 @@ module Reflection =
              ("Physical", true)
              ("Optimized", true)]
 
-    let rec private memoizable level (ty : Type) =
+    let rec memoizable level (ty : Type) =
         match MemoizableMemo.TryGetValue ty with
         | (true, result) -> result
         | (false, _) ->
             let result =
-                if level < 5 then // NOTE: just assume non-memoizable if 5 layers deep. Avoids stack-overflow.
-                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
-                    Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable (inc level) fieldInfo.FieldType) fields
+                if ty.IsPrimitive || ty = typeof<string> then
+                    true
+                elif not ty.IsArray && level < 5 then // NOTE: only considered memoizable if < 5 layers deep (this avoids infinite recursion).
+                    if ty.IsValueType then
+                        let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+                        Array.forall (fun (fieldInfo : FieldInfo) -> memoizable (inc level) fieldInfo.FieldType) fields
+                    elif FSharpType.IsRecord ty || FSharpType.IsUnion ty then
+                        let setters = ty.GetFields (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.SetProperty)
+                        if setters.Length = 0 then
+                            let getters = ty.GetProperties (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.GetProperty)
+                            Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable (inc level) propertyInfo.PropertyType) getters
+                        else false
+                    else
+                        let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
+                        Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable (inc level) fieldInfo.FieldType) fields
                 else false
             MemoizableMemo.TryAdd (ty, result) |> ignore<bool>
             result
