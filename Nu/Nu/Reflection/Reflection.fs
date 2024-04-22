@@ -132,7 +132,7 @@ module Reflection =
 
     /// Determine whether a type is safely memoizable.
     /// Thread-safe.
-    /// TODO: consider moving this into Prime.
+    /// TODO: consider moving this into Prime once it's well-tested.
     let memoizable ty = memoizable2 0 ty
 
     /// Make a symbolic converter that conditionally-memoizing (IE, only memoizes when doing so is safe).
@@ -283,7 +283,7 @@ module Reflection =
         (propertyName : string)
         (propertySymbol : Symbol) =
         let targetType = target.GetType ()
-        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties ()) then
+        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties true) then
             match Map.tryFind propertyName propertyDefinitions with
             | Some propertyDefinition ->
                 let converter = SymbolicConverter (false, None, propertyDefinition.PropertyType)
@@ -333,7 +333,7 @@ module Reflection =
     let tryReadOverlayNameOptToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties ()
+        let targetProperties = targetType.GetProperties true
         let overlayNameOptPropertyOpt =
             Array.tryFind (fun (property : PropertyInfo) ->
                 property.Name = Constants.Engine.OverlayNameOptPropertyName &&
@@ -354,7 +354,7 @@ module Reflection =
     let readFacetNamesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties ()
+        let targetProperties = targetType.GetProperties true
         let facetNamesProperty =
             Array.find (fun (property : PropertyInfo) ->
                 property.Name = Constants.Engine.FacetNamesPropertyName &&
@@ -415,7 +415,7 @@ module Reflection =
     /// Write all of a target's property values to property descriptors.
     let writePropertiesFromTarget shouldWriteProperty propertyDescriptors (target : 'a) =
         let targetType = target.GetType ()
-        let properties = targetType.GetProperties ()
+        let properties = targetType.GetProperties true
         Seq.fold (fun propertyDescriptors (property : PropertyInfo) ->
             match property.GetValue target with
             | :? Xtension as xtension -> writeXtension shouldWriteProperty propertyDescriptors xtension

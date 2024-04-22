@@ -168,7 +168,7 @@ module Overlayer =
 
     let internal applyOverlayToProperties target overlaySymbolsOld overlaySymbolsNew =
         let targetType = target.GetType ()
-        let recordProperties = targetType.GetProperties ()
+        let recordProperties = targetType.GetProperties true
         for property in recordProperties do
             if property.Name <> Constants.Engine.FacetNamesPropertyName && property.PropertyType <> typeof<string Set> then
                 match Map.tryFind property.Name overlaySymbolsNew with
@@ -196,7 +196,7 @@ module Overlayer =
                                 Xtension.attachProperty propertyName property xtension
                             | Altered | NonPersistent -> xtension
                         | false ->
-                            let recordProperties = targetType.GetProperties ()
+                            let recordProperties = targetType.GetProperties true
                             if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) recordProperties then
                                 match propertySymbol with
                                 | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
