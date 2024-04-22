@@ -2289,16 +2289,9 @@ module WorldModuleEntity =
                 dispatcherTypes |>
                 List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
                 List.fold (fun entityState (facetNames, ty) -> 
-                    let entityState =
-                        if List.notEmpty facetNames
-                        then Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
-                        else entityState
-                    let entityState =
-                        let definitions = Reflection.getPropertyDefinitionsNoInherit ty
-                        if List.notEmpty definitions
-                        then Reflection.attachPropertiesViaDefinitions id definitions entityState world
-                        else entityState
-                    entityState)
+                    let entityState = Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
+                    let definitions = Reflection.getPropertyDefinitionsNoInherit ty
+                    Reflection.attachPropertiesViaDefinitions id definitions entityState world)
                     entityState
 
             // apply the entity state's overlay to its facet names
@@ -2515,16 +2508,9 @@ module WorldModuleEntity =
                 dispatcherTypes |>
                 List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
                 List.fold (fun entityState (facetNames, ty) -> 
-                    let entityState =
-                        if List.notEmpty facetNames
-                        then Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
-                        else entityState
-                    let entityState =
-                        let definitions = Reflection.getPropertyDefinitionsNoInherit ty
-                        if List.notEmpty definitions
-                        then Reflection.attachPropertiesViaDefinitions id definitions entityState world
-                        else entityState
-                    entityState)
+                    let entityState = Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
+                    let definitions = Reflection.getPropertyDefinitionsNoInherit ty
+                    Reflection.attachPropertiesViaDefinitions id definitions entityState world)
                     entityState
 
             // read the entity state's overlay and apply it to its facet names if applicable

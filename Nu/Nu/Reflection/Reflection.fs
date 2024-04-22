@@ -453,24 +453,27 @@ module Reflection =
 
     /// Attach properties from the given definitions to a target.
     let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target world =
-        let target = copyTarget target
-        let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
-        | null -> failwith "Target does not support Xtensions due to missing Xtension property."
-        | xtensionProperty ->
-            match xtensionProperty.GetValue target with
-            | :? Xtension as xtension ->
-                let mutable xtension = xtension
-                for definition in definitions do
-                    let propertyValue = PropertyExpr.eval definition.PropertyExpr world
-                    match targetType.GetPropertyWritable definition.PropertyName with
-                    | null ->
-                        let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
-                        xtension <- Xtension.attachProperty definition.PropertyName property xtension
-                    | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
-                xtensionProperty.SetValue (target, xtension)
-            | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
-        target
+        match definitions with
+        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | _ ->
+            let target = copyTarget target
+            let targetType = target.GetType ()
+            match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
+            | null -> failwith "Target does not support Xtensions due to missing Xtension property."
+            | xtensionProperty ->
+                match xtensionProperty.GetValue target with
+                | :? Xtension as xtension ->
+                    let mutable xtension = xtension
+                    for definition in definitions do
+                        let propertyValue = PropertyExpr.eval definition.PropertyExpr world
+                        match targetType.GetPropertyWritable definition.PropertyName with
+                        | null ->
+                            let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
+                            xtension <- Xtension.attachProperty definition.PropertyName property xtension
+                        | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
+                    xtensionProperty.SetValue (target, xtension)
+                | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
+            target
 
     /// Detach properties from a target.
     let detachPropertiesViaNames (copyTarget : 'a -> 'a) propertyNames target =
@@ -532,25 +535,28 @@ module Reflection =
 
     /// Attach intrinsic facets to a target by their names.
     let attachIntrinsicFacetsViaNames (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
-        let target = copyTarget target
-        let facets =
-            List.map (fun facetName ->
-                match Map.tryFind facetName facetMap with
-                | Some facet -> facet
-                | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
-                facetNames |>
-            List.toArray
-        let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
-        | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
-        | facetsProperty ->
-            Array.iter (fun facet ->
-                if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
-                then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
-                else ())
-                facets
-            facetsProperty.SetValue (target, facets)
-            Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
+        match facetNames with
+        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | _ ->
+            let target = copyTarget target
+            let facets =
+                List.map (fun facetName ->
+                    match Map.tryFind facetName facetMap with
+                    | Some facet -> facet
+                    | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
+                    facetNames |>
+                List.toArray
+            let targetType = target.GetType ()
+            match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
+            | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
+            | facetsProperty ->
+                Array.iter (fun facet ->
+                    if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
+                    then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
+                    else ())
+                    facets
+                facetsProperty.SetValue (target, facets)
+                Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
 
     /// Attach source's intrinsic facets to a target.
     let attachIntrinsicFacets (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
