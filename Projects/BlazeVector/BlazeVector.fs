@@ -38,14 +38,14 @@ type BlazeVectorDispatcher () =
     inherit GameDispatcher<BlazeVector, BlazeVectorMessage, BlazeVectorCommand> (Splash)
 
     // here we define the game's properties and event handling
-    override this.Definitions (model, _) =
+    override this.Definitions (blazeVector, _) =
         [Game.DesiredScreen :=
-            match model with
+            match blazeVector with
             | Splash -> Desire Simulants.Splash
             | Title -> Desire Simulants.Title
             | Credits -> Desire Simulants.Credits
             | Gameplay -> Desire Simulants.Gameplay
-         Simulants.Splash.DeselectingEvent => ShowTitle
+         if blazeVector = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitlePlay.ClickEvent => ShowGameplay
          Simulants.TitleExit.ClickEvent => Exit

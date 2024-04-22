@@ -45,7 +45,7 @@ type Twenty48Dispatcher () =
             | Title -> Desire Simulants.Title
             | Credits -> Desire Simulants.Credits
             | Gameplay -> Desire Simulants.Gameplay
-         Simulants.Splash.DeselectingEvent => ShowTitle
+         if twenty48 = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitlePlay.ClickEvent => ShowGameplay
          Simulants.TitleExit.ClickEvent => Exit

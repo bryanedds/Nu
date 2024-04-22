@@ -64,7 +64,7 @@ type OmniBladeDispatcher () =
             | Field -> Desire Simulants.Field
             | Battle -> Desire Simulants.Battle
          Game.UpdateEvent => Update
-         Simulants.Splash.DeselectingEvent => ShowTitle
+         if omniBlade = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.TitlePlay.ClickEvent => ShowPick
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitleExit.ClickEvent => Exit
