@@ -1459,7 +1459,7 @@ module RigidBodyFacetModule =
 
             // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
             // OPTIMIZATION: share lambdas to reduce live object count.
-            let subIds = Array.init 26 (fun _ -> makeGuid ())
+            let subIds = Array.init 25 (fun _ -> makeGuid ())
             let world = World.subscribePlus subIds.[0] (propagatePhysicsPosition entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
             let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
             let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
@@ -1480,11 +1480,11 @@ module RigidBodyFacetModule =
             let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
             let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
             let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
-            let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
+            let world = World.subscribePlus subIds.[20] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
             let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
-            let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
-            let world = World.subscribePlus subIds.[24] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
-            let world = World.subscribePlus subIds.[25] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
+            let world = World.subscribePlus subIds.[22] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
+            let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
+            let world = World.subscribePlus subIds.[24] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
             let unsubscribe = fun world ->
                 Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
             let callback = fun evt world ->
