@@ -107,6 +107,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             bodyShape.IsSensor <- bodyProperties.Sensor
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
+        body.BodyType <- PhysicsEngine2d.toPhysicsBodyType bodyProperties.BodyType // NOTE: BodyType must be set first or other configurations may be ignored!
         body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Enabled <- bodyProperties.Enabled
         body.Position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
@@ -122,7 +123,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         body.IgnoreCCD <- match bodyProperties.CollisionDetection with Discontinuous -> true | Continuous _ -> false
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
-        body.BodyType <- PhysicsEngine2d.toPhysicsBodyType bodyProperties.BodyType
         body.SetIsSensor bodyProperties.Sensor
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
