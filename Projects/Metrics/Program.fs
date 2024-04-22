@@ -40,9 +40,9 @@ type MyGameDispatcher () =
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
         let positions = // 40,000 entities (goal: 60FPS, current 56FPS)
-            [|for i in 0 .. dec 1 do
-                for j in 0 .. dec 1 do
-                    for k in 0 .. dec 1 do
+            [|for i in 0 .. dec 50 do
+                for j in 0 .. dec 50 do
+                    for k in 0 .. dec 16 do
                         yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
         let world =
             Array.fold (fun world position ->
@@ -53,16 +53,6 @@ type MyGameDispatcher () =
                 world)
                 world positions
         World.selectScreen (IdlingState world.GameTime) screen world
-
-    override this.Update (game, world) =
-        let group = game / "Screen" / "Group" 
-        let world =
-            seq { for i in 0 .. dec 200 do i } |>
-            Seq.fold (fun world i -> World.createEntity<ButtonDispatcher> DefaultOverlay (Some [|"Temp" + string i|]) group world |> snd) world
-        let world =
-            seq { for i in 0 .. dec 200 do i } |>
-            Seq.fold (fun world i -> World.destroyEntity (group / ("Temp" + string i)) world) world
-        world
 #else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
