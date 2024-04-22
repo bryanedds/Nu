@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Collections
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Reflection
 open FSharp.Reflection
@@ -28,7 +29,7 @@ module Reflection =
         new Dictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
 
     let private MemoizableMemo =
-        new Dictionary<Type, bool> (HashIdentity.Reference)
+        new ConcurrentDictionary<Type, bool> (HashIdentity.Reference)
 
     /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
@@ -83,26 +84,26 @@ module Reflection =
              ("Physical", true)
              ("Optimized", true)]
 
-    let rec memoizable level (ty : Type) =
+    let rec private memoizable2 level (ty : Type) =
         match MemoizableMemo.TryGetValue ty with
         | (true, result) -> result
         | (false, _) ->
             let result =
                 if ty.IsPrimitive || ty = typeof<string> then
                     true
-                elif not ty.IsArray && level < 5 then // NOTE: only considered memoizable if < 5 layers deep (this avoids infinite recursion).
+                elif not ty.IsArray && level < 10 then // NOTE: only considered memoizable if <= N layers deep (this avoids infinite recursion).
                     if ty.IsValueType then
                         let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
-                        Array.forall (fun (fieldInfo : FieldInfo) -> memoizable (inc level) fieldInfo.FieldType) fields
+                        Array.forall (fun (fieldInfo : FieldInfo) -> memoizable2 (inc level) fieldInfo.FieldType) fields
                     elif FSharpType.IsRecord ty || FSharpType.IsUnion ty then
                         let setters = ty.GetFields (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.SetProperty)
                         if setters.Length = 0 then
                             let getters = ty.GetProperties (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.GetProperty)
-                            Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable (inc level) propertyInfo.PropertyType) getters
+                            Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable2 (inc level) propertyInfo.PropertyType) getters
                         else false
                     else
                         let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
-                        Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable (inc level) fieldInfo.FieldType) fields
+                        Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable2 (inc level) fieldInfo.FieldType) fields
                 else false
             MemoizableMemo.TryAdd (ty, result) |> ignore<bool>
             result
@@ -127,9 +128,14 @@ module Reflection =
          property.PropertyType = typeof<string> &&
          Gen.isNameGenerated (property.GetValue target :?> string))
 
-    /// Make a conditionally memoizing, symbolic converter.
+    /// Determine whether a type is safely memoizable.
+    /// Thread-safe.
+    /// TODO: consider moving this into Prime.
+    let memoizable ty = memoizable2 0 ty
+
+    /// Make a symbolic converter that conditionally-memoizing (IE, only memoizes when doing so is safe).
     let internal makeSymbolicConverterMemo printing designerTypeOpt ty =
-        if memoizable 0 ty
+        if memoizable ty
         then SymbolicConverter (printing, designerTypeOpt, ty, ToSymbolMemo, OfSymbolMemo)
         else SymbolicConverter (printing, designerTypeOpt, ty)
 
