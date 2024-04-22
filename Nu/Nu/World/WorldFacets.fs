@@ -2819,7 +2819,15 @@ module AnimatedModelFacetModule =
             let world = tryAnimateBones entity world
             let world =
                 World.sense
-                    (fun evt world -> (Cascade, if world.Halted then tryAnimateBones evt.Subscriber world else world))
+                    (fun evt world ->
+                        let playBox = fst' (World.getPlayBounds3d world)
+                        let notUpdating =
+                            world.Halted ||
+                            entity.GetPresence world <> Omnipresent &&
+                            not (entity.GetAlwaysUpdate world) &&
+                            not (playBox.Intersects (evt.Subscriber.GetBounds world))
+                        let world = if notUpdating then tryAnimateBones evt.Subscriber world else world
+                        (Cascade, world))
                     (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
             let world =
                 World.sense
