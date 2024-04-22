@@ -20,6 +20,15 @@ module Reflection =
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
 
+    let private ToSymbolMemo =
+        new Dictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
+
+    let private OfSymbolMemo =
+        new Dictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
+
+    let private MemoizableMemo =
+        new Dictionary<Type, bool> (HashIdentity.Reference)
+
     /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
         dictPlus
@@ -73,6 +82,18 @@ module Reflection =
              ("Physical", true)
              ("Optimized", true)]
 
+    let rec private memoizable level (ty : Type) =
+        match MemoizableMemo.TryGetValue ty with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                if level < 5 then // NOTE: just assume non-memoizable if 5 layers deep. Avoids stack-overflow.
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable (inc level) fieldInfo.FieldType) fields
+                else false
+            MemoizableMemo.TryAdd (ty, result) |> ignore<bool>
+            result
+
     /// Configure a property to be non-persistent.
     let internal initPropertyNonPersistent nonPersistent propertyName =
         NonPersistentPropertyNames.[propertyName] <- nonPersistent
@@ -92,6 +113,12 @@ module Reflection =
         (property.Name = Constants.Engine.NamePropertyName &&
          property.PropertyType = typeof<string> &&
          Gen.isNameGenerated (property.GetValue target :?> string))
+
+    /// Make a conditionally memoizing, symbolic converter.
+    let internal makeSymbolicConverterMemo printing designerTypeOpt ty =
+        if memoizable 0 ty
+        then SymbolicConverter (printing, designerTypeOpt, ty, ToSymbolMemo, OfSymbolMemo)
+        else SymbolicConverter (printing, designerTypeOpt, ty)
 
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
