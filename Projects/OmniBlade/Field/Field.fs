@@ -20,6 +20,7 @@ type FieldMessage =
     | AvatarBodySeparationImplicit of BodySeparationImplicitData
     | ScreenTransitioning of bool
     | TryCommencingBattle of BattleType * Advent Set
+    | FinishQuitting
     | MenuTeamOpen
     | MenuTeamAlly of int
     | MenuInventoryOpen

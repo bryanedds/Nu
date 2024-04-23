@@ -58,7 +58,9 @@ type FieldDispatcher () =
          Screen.IncomingFinishEvent => ScreenTransitioning false
          Screen.OutgoingStartEvent => ScreenTransitioning true
          Screen.OutgoingFinishEvent => ScreenTransitioning false
-         match field.FieldState with Battling (battleData, prizePool) -> Screen.DeselectingEvent => CommenceBattle (battleData, prizePool) | _ -> ()
+         match field.FieldState with
+         | Playing -> Screen.DeselectingEvent => FinishQuitting
+         | Battling (battleData, prizePool) -> Screen.DeselectingEvent => CommenceBattle (battleData, prizePool) | _ -> ()
          Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
          Simulants.FieldAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
@@ -206,6 +208,9 @@ type FieldDispatcher () =
                 let field = Field.commencingBattle battleData prizePool field
                 withSignal CommencingBattle field
             | None -> just field
+
+        | FinishQuitting ->
+            just (Field.empty (World.getViewBounds2dAbsolute world))
 
         | MenuTeamOpen ->
             let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }
