@@ -17,7 +17,7 @@ module Assets =
 
         let [<Literal>] PackageName = "Default"
         let [<Literal>] ImageName = "Image"
-        let [<Literal>] ImageEmptyName = "ImageEmpty"
+        let [<Literal>] EmptyImageName = "EmptyImage"
         let [<Literal>] BlackName = "Black"
         let [<Literal>] WhiteName = "White"
         let [<Literal>] ButtonUpName = "ButtonUp"
@@ -37,7 +37,7 @@ module Assets =
         let [<Literal>] HeightMapName = "HeightMap"
         let [<Literal>] FontName = "Font"
         let [<Literal>] TileMapName = "TileMap"
-        let [<Literal>] TileMapEmptyName = "TileMapEmpty"
+        let [<Literal>] EmptyTileMapName = "EmptyTileMap"
         let [<Literal>] SkyBoxMapName = "SkyBoxMap"
         let [<Literal>] MaterialAlbedoName = "MaterialAlbedo"
         let [<Literal>] MaterialRoughnessName = "MaterialRoughness"

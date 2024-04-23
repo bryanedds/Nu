@@ -19,7 +19,7 @@ module Assets =
 
         let [<Uniform>] PackageName = Assets.Default.PackageName
         let [<Uniform>] Image = asset<Image> PackageName Assets.Default.ImageName
-        let [<Uniform>] ImageEmpty = asset<Image> PackageName Assets.Default.ImageEmptyName
+        let [<Uniform>] EmptyImage = asset<Image> PackageName Assets.Default.EmptyImageName
         let [<Uniform>] Black = asset<Image> PackageName Assets.Default.BlackName
         let [<Uniform>] White = asset<Image> PackageName Assets.Default.WhiteName
         let [<Uniform>] ButtonUp = asset<Image> PackageName Assets.Default.ButtonUpName
@@ -38,7 +38,7 @@ module Assets =
         let [<Uniform>] HeightMap = asset<Raw> PackageName Assets.Default.HeightMapName
         let [<Uniform>] Font = asset<Font> PackageName Assets.Default.FontName
         let [<Uniform>] TileMap = asset<TileMap> PackageName Assets.Default.TileMapName
-        let [<Uniform>] TileMapEmpty = asset<TileMap> PackageName Assets.Default.TileMapEmptyName
+        let [<Uniform>] EmptyTileMap = asset<TileMap> PackageName Assets.Default.EmptyTileMapName
         let [<Uniform>] MaterialAlbedo = asset<Image> PackageName Assets.Default.MaterialAlbedoName
         let [<Uniform>] MaterialRoughness = asset<Image> PackageName Assets.Default.MaterialRoughnessName
         let [<Uniform>] MaterialMetallic = asset<Image> PackageName Assets.Default.MaterialMetallicName

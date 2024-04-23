@@ -28,7 +28,7 @@ module DialogContent =
                         | DialogShort -> Some Assets.Gui.DialogShortImage
                         | DialogThin -> Some Assets.Gui.DialogThinImage
                         | DialogThick -> Some Assets.Gui.DialogThickImage
-                        | DialogNarration -> Some Assets.Default.ImageEmpty
+                        | DialogNarration -> Some Assets.Default.EmptyImage
                      Entity.Text := Dialog.getText detokenize dialog
                      Entity.Justification :=
                         match dialog.DialogForm with

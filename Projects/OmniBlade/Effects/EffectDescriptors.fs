@@ -194,7 +194,7 @@ module EffectDescriptors =
             | Magic (_, _) -> Assets.Battle.MagicBuffImage
             | Shield (_, _) -> Assets.Battle.ShieldBuffImage
             | Time _ -> Assets.Battle.TimeBuffImage
-            | _ -> Assets.Default.ImageEmpty
+            | _ -> Assets.Default.EmptyImage
         let shrink =
             Sizes
                (Set, EaseIn, Once,
@@ -216,7 +216,7 @@ module EffectDescriptors =
             | Magic (_, _) -> Assets.Battle.MagicDebuffImage
             | Shield (_, _) -> Assets.Battle.ShieldDebuffImage
             | Time _ -> Assets.Battle.TimeDebuffImage
-            | _ -> Assets.Default.ImageEmpty
+            | _ -> Assets.Default.EmptyImage
         let shrink =
             Sizes
                (Set, EaseIn, Once,

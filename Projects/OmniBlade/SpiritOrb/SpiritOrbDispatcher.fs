@@ -32,11 +32,11 @@ type SpiritOrbDispatcher () =
                     let color = Color.One.WithA 0.5f
                     (chest.Center, image, color, ValueNone)
                 | PortalInhabitant portal ->
-                    let image = if portal.Active then Assets.Field.SpiritPortalImage else Assets.Default.ImageEmpty
+                    let image = if portal.Active then Assets.Field.SpiritPortalImage else Assets.Default.EmptyImage
                     let color = Color.One.WithA 0.5f
                     (portal.Center, image, color, ValueNone)
                 | NarrativeInhabitant narrative ->
-                    let image = if narrative.Active then Assets.Field.SpiritNarrativeImage else Assets.Default.ImageEmpty
+                    let image = if narrative.Active then Assets.Field.SpiritNarrativeImage else Assets.Default.EmptyImage
                     let color = Color.One.WithA 0.5f
                     let column = time % 48L / 12L
                     let inset = box2 (v2 (7.0f * single column) 0.0f) (v2Dup 7.0f)

@@ -728,12 +728,12 @@ type FieldDispatcher () =
                        match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                        | Some tileMapChc ->
                            match tileMapChc with
-                           | Choice1Of4 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                           | Choice1Of4 _ -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
                            | Choice2Of4 (_, tileMapFade) -> tileMapFade
-                           | Choice3Of4 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                           | Choice4Of4 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                       | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                    | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                           | Choice3Of4 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
+                           | Choice4Of4 _ -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
+                       | None -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
+                    | None -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
                  Entity.TileLayerClearance == 10.0f]
 
              // feeler
@@ -824,8 +824,8 @@ type FieldDispatcher () =
                             | Some characterData ->
                                 match characterData.PortraitOpt with
                                 | Some portrait -> portrait
-                                | None -> Assets.Default.ImageEmpty
-                            | None -> Assets.Default.ImageEmpty]
+                                | None -> Assets.Default.EmptyImage
+                            | None -> Assets.Default.EmptyImage]
                      Content.text "CharacterType"
                         [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Text :=
