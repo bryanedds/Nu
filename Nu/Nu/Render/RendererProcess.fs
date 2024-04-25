@@ -6,7 +6,9 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
+open FSharp.NativeInterop
 open SDL2
+open Vortice.Vulkan
 open ImGuiNET
 open Prime
 
@@ -316,6 +318,9 @@ type RendererThread () =
         let (renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
             | Some window ->
+
+                let result = Vulkan.vkInitialize ()
+                let result = Vulkan.vkEnumerateInstanceExtensionProperties (NativePtr.nullPtr, NativePtr.nullPtr)
                 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
