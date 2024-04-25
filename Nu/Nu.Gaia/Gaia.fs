@@ -3782,7 +3782,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
-                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 20.0)
+                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 35.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
                 GcTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotShaded ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
@@ -3793,7 +3793,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 UpdateTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
                 RenderTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Render Time", &TimingsArray.[0], TimingsArray.Length)
+                ImPlot.PlotLine ("Render Msgs", &TimingsArray.[0], TimingsArray.Length)
                 ImGuiTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
                 FrameTimings.CopyTo (TimingsArray, 0)
