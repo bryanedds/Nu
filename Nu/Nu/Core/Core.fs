@@ -13,10 +13,12 @@ module Core =
     let private LastTimeStampLock = obj ()
 
     /// Get a time stamp at the highest-available resolution.
+    /// Thread-safe.
     let getTimeStamp () =
         Stopwatch.GetTimestamp ()
 
     /// Get a unique time stamp, spinning until the time stamp advances if need be. Thead-safe.
+    /// Thread-safe.
     let getTimeStampUnique () =
         lock LastTimeStampLock $ fun () ->
             let mutable nextStamp = getTimeStamp ()
@@ -31,14 +33,10 @@ module CoreOperators =
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
 
-    /// Test for object equality.
+    /// Test for object equality, always testing reference equality first.
     /// Same as the (===) operator found in Prime, but placed here to expose it directly from Nu.
-    /// OPTIMIZATION: always tests reference equality first.
-    let inline (===) (a : obj) (b : obj) =
-        objEq a b
+    let inline (===) (a : obj) (b : obj) = objEq a b
 
-    /// Test for object inequality.
+    /// Test for object inequality, always testing reference inequality first.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
-    /// OPTIMIZATION: always tests reference inequality first.
-    let inline (=/=) (a : obj) (b : obj) =
-        objNeq a b
+    let inline (=/=) (a : obj) (b : obj) = objNeq a b
