@@ -28,6 +28,5 @@ module WorldTests =
         | Left _ -> Assert.Fail ()
 
     let [<Test; Category "Integration">] runThreeIntegrationFrameThenCleanUps () =
-        runOneIntegrationFrameThenCleanUp ()
-        runOneIntegrationFrameThenCleanUp ()
-        runOneIntegrationFrameThenCleanUp ()
+        for _ in 0 .. dec 3 do
+            runOneIntegrationFrameThenCleanUp ()
