@@ -1566,8 +1566,8 @@ module WorldModule2 =
 
         /// Clean-up the resources held by the world.
         static member cleanUp world =
-            let game = Nu.Game.Handle
-            let world = World.unregisterGame game world
+            world.JobGraph.CleanUp ()
+            let world = World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.

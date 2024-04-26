@@ -38,6 +38,9 @@ type JobGraph =
     /// Order of jobs with the same key is not guaranteed.
     abstract TryAwait : DateTimeOffset * obj -> JobResult option
 
+    /// Terminate job processing gracefully.
+    abstract CleanUp : unit -> unit
+
 /// Processes jobs based on priority inline.
 type JobGraphInline () =
 
@@ -59,13 +62,17 @@ type JobGraphInline () =
             | (true, jobResult) -> Some jobResult
             | (false, _) -> None
 
+        /// Clean-up.
+        member this.CleanUp () =
+            jobResults.Clear ()
+
 /// Processes jobs based on priority in parallel.
 type JobGraphParallel (resultExpirationTime : TimeSpan) =
 
     let executingRef = ref true
     let jobQueue = ConcurrentPriorityQueue<single, Job> ()
     let jobResults = ConcurrentDictionary<obj, JobResult> ()
-    let _ =
+    let task =
         async {
             while lock executingRef (fun () -> executingRef.Value) do
                 let mutable job = Unchecked.defaultof<_>
@@ -107,3 +114,12 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
                     then deadlinePassed <- true
                     else Thread.Yield () |> ignore<bool>
             jobResultOpt
+
+        /// Terminate job processing gracefully.
+        member this.CleanUp () =
+            lock executingRef $ fun () ->
+                executingRef.Value <- false
+            task.Wait ()
+            let mutable unused = Unchecked.defaultof<Job>
+            while jobQueue.TryDequeue &unused do ()
+            jobResults.Clear ()
