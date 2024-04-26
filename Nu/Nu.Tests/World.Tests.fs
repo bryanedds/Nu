@@ -8,13 +8,13 @@ open Prime
 open Nu
 module WorldTests =
 
-    let [<Test>] runOneEmptyFrameThenCleanUp () =
+    let [<Test>] runEmptyFrameThenCleanUp () =
         Nu.init ()
         let world = World.makeEmpty { WorldConfig.defaultConfig with Accompanied = true } (TestPlugin ())
         let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id id Live true world
         Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
 
-    let [<Test; Category "Integration">] runOneIntegrationFrameThenCleanUp () =
+    let [<Test; Category "Integration">] runIntegrationFrameThenCleanUp () =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }
         match SdlDeps.tryMake worldConfig.SdlConfig with
@@ -27,6 +27,6 @@ module WorldTests =
             | Left _ -> Assert.Fail ()
         | Left _ -> Assert.Fail ()
 
-    let [<Test; Category "Integration">] runThreeIntegrationFrameThenCleanUps () =
+    let [<Test; Category "Integration">] runIntegrationFrameThenCleanUpThreeTimes () =
         for _ in 0 .. dec 3 do
-            runOneIntegrationFrameThenCleanUp ()
+            runIntegrationFrameThenCleanUp ()
