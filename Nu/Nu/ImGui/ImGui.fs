@@ -157,6 +157,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
     member this.CleanUp () =
         ImPlot.DestroyContext plot
+        ImGuizmo.Enable false // NOTE: guessing that this is how imguizmo is torn down...
         ImGui.DestroyContext context
 
     static member StyleColorsNu () =

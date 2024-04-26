@@ -26,3 +26,8 @@ module WorldTests =
                 Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
             | Left _ -> Assert.Fail ()
         | Left _ -> Assert.Fail ()
+
+    let [<Test; Category "Integration">] runThreeIntegrationFramesThenCleanUp () =
+        runOneIntegrationFrameThenCleanUp ()
+        runOneIntegrationFrameThenCleanUp ()
+        runOneIntegrationFrameThenCleanUp ()
