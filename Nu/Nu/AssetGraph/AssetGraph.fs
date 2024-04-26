@@ -82,8 +82,8 @@ type Packages<'a, 's> = Dictionary<string, Package<'a, 's>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =
-    | Asset of string * string * string Set * Refinement list
-    | Assets of string * string Set * string Set * Refinement list
+    | Asset of AssetName : string * FilePath : string * Associations : string Set * Refinements : Refinement list
+    | Assets of Directory : string * Extensions : string Set * Associations : string Set * Refinements : Refinement list
 
 /// Describes asset packages.
 type PackageDescriptor = AssetDescriptor list
