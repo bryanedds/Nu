@@ -4,28 +4,34 @@ open System.Numerics
 open Prime
 open Nu
 
+// this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
     | Quit
 
+// this is our MMCC model type representing gameplay.
 type [<SymbolicExpansion>] Gameplay =
     { GameplayState : GameplayState
       Score : int }
 
+    // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
     static member empty =
         { GameplayState = Quit
           Score = 0 }
 
+    // this represents the gameplay model in its initial state, such as when gameplay starts.
     static member initial =
         { GameplayState = Playing
           Score = 0 }
 
+// this is our gameplay MMCC message type.
 type GameplayMessage =
     | StartPlaying
     | FinishQuitting
     | Score of int
     interface Message
 
+// this is our gameplay MMCC command type.
 type GameplayCommand =
     | StartQuitting
     | CreateSections
@@ -33,6 +39,7 @@ type GameplayCommand =
     | UpdateEye
     interface Command
 
+// this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
 [<AutoOpen>]
 module GameplayExtensions =
     type Screen with
@@ -41,11 +48,13 @@ module GameplayExtensions =
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
         member this.QuitEvent = Events.QuitEvent --> this
 
+// this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type GameplayDispatcher () =
     inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
 
     static let [<Literal>] SectionCount = 12
 
+    // here we define the screen's property values and event handling
     override this.Definitions (_, _) =
         [Screen.SelectEvent => StartPlaying
          Screen.DeselectingEvent => FinishQuitting
@@ -53,6 +62,7 @@ type GameplayDispatcher () =
          for i in 0 .. dec SectionCount do
             Events.DieEvent --> Simulants.GameplaySection i --> Address.Wildcard => Score 100]
 
+    // here we handle the above messages
     override this.Message (gameplay, message, _, _) =
 
         match message with
@@ -68,6 +78,7 @@ type GameplayDispatcher () =
             let gameplay = { gameplay with Score = gameplay.Score + score }
             just gameplay
 
+    // here we handle the above commands
     override this.Command (_, command, screen, world) =
 
         match command with
@@ -118,6 +129,7 @@ type GameplayDispatcher () =
                 just world
             else just world
 
+    // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =
 
         [// the gui group

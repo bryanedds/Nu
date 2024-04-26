@@ -127,7 +127,7 @@ type GameplayDispatcher () =
             match gameplay.GameplayState with
             | Playing ->
 
-                // ...and while living and bticks are present
+                // ...and while living and bricks are present
                 if gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
 
                     // update paddle motion
