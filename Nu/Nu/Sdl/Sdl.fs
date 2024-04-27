@@ -117,7 +117,7 @@ module SdlDeps =
                     SDL.SDL_INIT_GAMECONTROLLER |||
                     SDL.SDL_INIT_EVENTS
                 let result = SDL.SDL_Init initConfig
-                let result2 = SDL.SDL_Vulkan_LoadLibrary("vulkan-1.dll")
+                let result2 = SDL.SDL_Vulkan_LoadLibrary(null)
                 if result = 0 then
                     let mutable sdlVersion = Unchecked.defaultof<_>
                     SDL.SDL_GetVersion (&sdlVersion)
