@@ -320,7 +320,7 @@ type RendererThread () =
             | Some window ->
 
                 let result = Vulkan.vkInitialize ()
-                let result = Vulkan.vkEnumerateInstanceExtensionProperties (NativePtr.nullPtr, NativePtr.nullPtr)
+                let result2 = Vulkan.vkEnumerateInstanceExtensionProperties (NativePtr.nullPtr, NativePtr.nullPtr)
                 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
