@@ -158,7 +158,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let box = new BoxShape (boxShape.Size * 0.5f)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties boxShape.PropertiesOpt box
-        box.LocalScaling <- bodyProperties.Scale
+        box.LocalScaling <-
+            bodyProperties.Scale *
+            match boxShape.TransformOpt with
+            | Some transform -> transform.Scale
+            | None -> v3One
         box.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match boxShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
@@ -179,7 +183,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let sphere = new SphereShape (sphereShape.Radius)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties sphereShape.PropertiesOpt sphere
-        sphere.LocalScaling <- bodyProperties.Scale
+        sphere.LocalScaling <-
+            bodyProperties.Scale *
+            match sphereShape.TransformOpt with
+            | Some transform -> transform.Scale
+            | None -> v3One
         sphere.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match sphereShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
@@ -200,7 +208,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let capsule = new CapsuleShape (capsuleShape.Radius, capsuleShape.Height)
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties capsuleShape.PropertiesOpt capsule
-        capsule.LocalScaling <- bodyProperties.Scale
+        capsule.LocalScaling <-
+            bodyProperties.Scale *
+            match capsuleShape.TransformOpt with
+            | Some transform -> transform.Scale
+            | None -> v3One
         capsule.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match capsuleShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
@@ -238,7 +250,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | null -> [|v3Zero|] // guarding against null
                 | unscaledPoints -> Array.ofSeq unscaledPoints
             physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
-        hull.LocalScaling <- bodyProperties.Scale
+        hull.LocalScaling <-
+            bodyProperties.Scale *
+            match pointsShape.TransformOpt with
+            | Some transform -> transform.Scale
+            | None -> v3One
         hull.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match pointsShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
@@ -267,7 +283,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let shape = new BvhTriangleMeshShape (vertexArray, true)
         shape.BuildOptimizedBvh ()
         PhysicsEngine3d.configureBodyShapeProperties bodyProperties geometryShape.PropertiesOpt shape
-        shape.LocalScaling <- bodyProperties.Scale
+        shape.LocalScaling <-
+            bodyProperties.Scale *
+            match geometryShape.TransformOpt with
+            | Some transform -> transform.Scale
+            | None -> v3One
         shape.UserObject <-
             { BodyId = { BodySource = bodySource; BodyIndex = bodyProperties.BodyIndex }
               BodyShapeIndex = match geometryShape.PropertiesOpt with Some p -> p.BodyShapeIndex | None -> 0 }
@@ -308,13 +328,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | Some transform ->
                         Affine.make
                             (Vector3.Transform (transform.Translation, surface.SurfaceMatrix))
-                            (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion transform.Rotation * surface.SurfaceMatrix))
+                            (transform.Rotation * surface.SurfaceMatrix.Rotation)
                             (Vector3.Transform (transform.Scale, surface.SurfaceMatrix))
-                    | None ->
-                        Affine.make
-                            (Vector3.Transform (v3Zero, surface.SurfaceMatrix))
-                            (Quaternion.CreateFromRotationMatrix (Matrix4x4.CreateFromQuaternion quatIdentity * surface.SurfaceMatrix))
-                            (Vector3.Transform (v3One, surface.SurfaceMatrix))
+                    | None -> Affine.makeFromMatrix surface.SurfaceMatrix
                 let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
                 PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine)
                 centerMassInertiaDisposes
@@ -344,7 +360,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let handle = GCHandle.Alloc (heights, GCHandleType.Pinned)
             try let positionsPtr = handle.AddrOfPinnedObject ()
                 let terrain = new HeightfieldTerrainShape (resolution.X, resolution.Y, positionsPtr, 1.0f, 0.0f, bounds.Height, 1, PhyScalarType.Single, false)
-                terrain.LocalScaling <- v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
+                let scale = v3 (bounds.Width / single (dec resolution.X)) 1.0f (bounds.Depth / single (dec resolution.Y))
+                terrain.LocalScaling <-
+                    bodyProperties.Scale *
+                    match terrainShape.TransformOpt with
+                    | Some transform -> transform.Scale * scale
+                    | None -> scale
                 terrain.SetFlipTriangleWinding true // match terrain winding order - I think!
                 PhysicsEngine3d.configureBodyShapeProperties bodyProperties terrainShape.PropertiesOpt terrain
                 terrain.UserObject <-
