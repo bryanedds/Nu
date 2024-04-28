@@ -242,7 +242,8 @@ module Block2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.Color Color.Gray]
+            [define Entity.Color Color.Gray
+             define Entity.Static true]
 
 [<AutoOpen>]
 module Box2dDispatcherModule =
@@ -588,6 +589,9 @@ module Block3dDispatcherModule =
             [typeof<RigidBodyFacet>
              typeof<StaticModelFacet>
              typeof<NavBodyFacet>]
+
+        static member Properties =
+            [define Entity.Static true]
 
 [<AutoOpen>]
 module Box3dDispatcherModule =
