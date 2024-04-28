@@ -3098,7 +3098,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
 
-        /// load or create and save brdf texture
+        // load or create and save brdf texture
         let brdfTexture =
             let brdfBuffer =
                 let brdfFilePath = "Assets/Default/Brdf.raw"
