@@ -53,55 +53,54 @@ type RendererInline () =
 
         member this.Start fonts windowOpt_ =
             ()
-            (*
-            // assign windowOpt
-            windowOpt <- windowOpt_
-
-            // ensure renderers not already created
-            match renderersOpt with
-            | None ->
-
-                // create renderers
-                match windowOpt with
-                | Some window ->
-                
-                    // create gl context
-                    let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
-                    OpenGL.Hl.Assert ()
-
-                    // initialize gl context
-                    OpenGL.Hl.InitContext ()
-                    OpenGL.Hl.Assert ()
-
-                    // create 3d renderer
-                    let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
-                    OpenGL.Hl.Assert ()
-
-                    // create 2d renderer
-                    let renderer2d = GlRenderer2d.make window :> Renderer2d
-                    OpenGL.Hl.Assert ()
-
-                    // create imgui renderer
-                    let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
-                    OpenGL.Hl.Assert ()
-
-                    // fin
-                    renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
-
-                // create stub renderers
-                | None ->
-                    let renderer3d = StubRenderer3d.make () :> Renderer3d
-                    let renderer2d = StubRenderer2d.make () :> Renderer2d
-                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-                    renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
-                    OpenGL.Hl.Assert ()
-
-                // fin
-                started <- true
-
-            // fail on already created
-            | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
-            *)
+    //        // assign windowOpt
+    //        windowOpt <- windowOpt_
+    //
+    //        // ensure renderers not already created
+    //        match renderersOpt with
+    //        | None ->
+    //
+    //            // create renderers
+    //            match windowOpt with
+    //            | Some window ->
+    //            
+    //                // create gl context
+    //                let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+    //                OpenGL.Hl.Assert ()
+    //
+    //                // initialize gl context
+    //                OpenGL.Hl.InitContext ()
+    //                OpenGL.Hl.Assert ()
+    //
+    //                // create 3d renderer
+    //                let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
+    //                OpenGL.Hl.Assert ()
+    //
+    //                // create 2d renderer
+    //                let renderer2d = GlRenderer2d.make window :> Renderer2d
+    //                OpenGL.Hl.Assert ()
+    //
+    //                // create imgui renderer
+    //                let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+    //                OpenGL.Hl.Assert ()
+    //
+    //                // fin
+    //                renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
+    //
+    //            // create stub renderers
+    //            | None ->
+    //                let renderer3d = StubRenderer3d.make () :> Renderer3d
+    //                let renderer2d = StubRenderer2d.make () :> Renderer2d
+    //                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
+    //                renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
+    //                OpenGL.Hl.Assert ()
+    //
+    //            // fin
+    //            started <- true
+    //
+    //        // fail on already created
+    //        | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
+            
         member this.EnqueueMessage3d message =
             match renderersOpt with
             | Some _ -> ()//messages3d.Add message 
@@ -138,55 +137,52 @@ type RendererInline () =
 
         member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize windowSize drawData =
             ()
-            (*
-            match renderersOpt with
-            | Some (renderer3d, renderer2d, rendererImGui) ->
-                
-                // begin frame
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
-                OpenGL.Hl.Assert ()
-
-                // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
-                messages3d.Clear ()
-                OpenGL.Hl.Assert ()
-
-                // render 2d
-                renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
-                messages2d.Clear ()
-                OpenGL.Hl.Assert ()
-
-                // render imgui
-                rendererImGui.Render drawData
-                OpenGL.Hl.Assert ()
-
-                // end frame
-                OpenGL.Hl.EndFrame ()
-                OpenGL.Hl.Assert ()
-
-            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
-            *)
+    //        match renderersOpt with
+    //        | Some (renderer3d, renderer2d, rendererImGui) ->
+    //            
+    //            // begin frame
+    //            OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
+    //            OpenGL.Hl.Assert ()
+    //
+    //            // render 3d
+    //            renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
+    //            messages3d.Clear ()
+    //            OpenGL.Hl.Assert ()
+    //
+    //            // render 2d
+    //            renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
+    //            messages2d.Clear ()
+    //            OpenGL.Hl.Assert ()
+    //
+    //            // render imgui
+    //            rendererImGui.Render drawData
+    //            OpenGL.Hl.Assert ()
+    //
+    //            // end frame
+    //            OpenGL.Hl.EndFrame ()
+    //            OpenGL.Hl.Assert ()
+    //
+    //        | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+            
         member this.Swap () =
             ()
-            (*
-            match windowOpt with
-            | Some window ->
-                match window with
-                | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-            | None -> ()
-            *)
+    //        match windowOpt with
+    //        | Some window ->
+    //            match window with
+    //            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+    //        | None -> ()
+            
         member this.Terminate () =
             ()
-            (*
-            match renderersOpt with
-            | Some (renderer3d, renderer2d, rendererImGui) ->
-                renderer3d.CleanUp ()
-                renderer2d.CleanUp ()
-                rendererImGui.CleanUp ()
-                renderersOpt <- None
-                terminated <- true
-            | None -> raise (InvalidOperationException "Redundant Terminate calls.")
-            *)
+    //        match renderersOpt with
+    //        | Some (renderer3d, renderer2d, rendererImGui) ->
+    //            renderer3d.CleanUp ()
+    //            renderer2d.CleanUp ()
+    //            rendererImGui.CleanUp ()
+    //            renderersOpt <- None
+    //            terminated <- true
+    //        | None -> raise (InvalidOperationException "Redundant Terminate calls.")
+            
 /// A threaded render process.
 type RendererThread () =
 
@@ -373,19 +369,19 @@ type RendererThread () =
                 // begin frame
                 //OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
                 OpenGL.Hl.Assert ()
-                (*
-                // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
-                freeStaticModelMessages messages3d
-                freeStaticModelSurfaceMessages messages3d
-                freeAnimatedModelMessages messages3d
-                OpenGL.Hl.Assert ()
-
-                // render 2d
-                renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
-                freeSpriteMessages messages2d
-                OpenGL.Hl.Assert ()
-                *)
+                
+            //    // render 3d
+            //    renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
+            //    freeStaticModelMessages messages3d
+            //    freeStaticModelSurfaceMessages messages3d
+            //    freeAnimatedModelMessages messages3d
+            //    OpenGL.Hl.Assert ()
+            //
+            //    // render 2d
+            //    renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
+            //    freeSpriteMessages messages2d
+            //    OpenGL.Hl.Assert ()
+                
                 // render imgui
                 rendererImGui.Render drawData
                 OpenGL.Hl.Assert ()
@@ -429,156 +425,155 @@ type RendererThread () =
 
         member this.EnqueueMessage3d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            () (*
-            match message with
-            | RenderStaticModel rsm ->
-                let cachedStaticModelMessage = allocStaticModelMessage ()
-                match cachedStaticModelMessage with
-                | RenderCachedStaticModel cachedMessage ->
-                    cachedMessage.CachedStaticModelAbsolute <- rsm.Absolute
-                    cachedMessage.CachedStaticModelMatrix <- rsm.ModelMatrix
-                    cachedMessage.CachedStaticModelPresence <- rsm.Presence
-                    cachedMessage.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
-                    cachedMessage.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
-                    cachedMessage.CachedStaticModel <- rsm.StaticModel
-                    cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
-                    cachedMessage.CachedStaticModelRenderPass <- rsm.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
-                | _ -> failwithumf ()
-            | RenderStaticModelSurface rsms ->
-                let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
-                match cachedStaticModelSurfaceMessage with
-                | RenderCachedStaticModelSurface cachedMessage ->
-                    cachedMessage.CachedStaticModelSurfaceAbsolute <- rsms.Absolute
-                    cachedMessage.CachedStaticModelSurfaceMatrix <- rsms.ModelMatrix
-                    cachedMessage.CachedStaticModelSurfacePresence <- rsms.Presence
-                    cachedMessage.CachedStaticModelSurfaceInsetOpt <- ValueOption.ofOption rsms.InsetOpt
-                    cachedMessage.CachedStaticModelSurfaceMaterialProperties <- rsms.MaterialProperties
-                    cachedMessage.CachedStaticModelSurfaceMaterial <- rsms.Material
-                    cachedMessage.CachedStaticModelSurfaceModel <- rsms.StaticModel
-                    cachedMessage.CachedStaticModelSurfaceIndex <- rsms.SurfaceIndex
-                    cachedMessage.CachedStaticModelSurfaceRenderType <- rsms.RenderType
-                    cachedMessage.CachedStaticModelSurfaceRenderPass <- rsms.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
-                | _ -> failwithumf ()
-            | RenderAnimatedModel ram ->
-                let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
-                match cachedAnimatedModelMessage with
-                | RenderCachedAnimatedModel cachedMessage ->
-                    cachedMessage.CachedAnimatedModelAbsolute <- ram.Absolute
-                    cachedMessage.CachedAnimatedModelMatrix <- ram.ModelMatrix
-                    cachedMessage.CachedAnimatedModelPresence <- ram.Presence
-                    cachedMessage.CachedAnimatedModelInsetOpt <- ValueOption.ofOption ram.InsetOpt
-                    cachedMessage.CachedAnimatedModelMaterialProperties <- ram.MaterialProperties
-                    cachedMessage.CachedAnimatedModelBoneTransforms <- ram.BoneTransforms
-                    cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
-                    cachedMessage.CachedAnimatedModelRenderPass <- ram.RenderPass
-                    messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
-                | _ -> failwithumf ()
-            | _ -> messageBuffers3d.[messageBufferIndex].Add message *)
+            ()
+    //        match message with
+    //        | RenderStaticModel rsm ->
+    //            let cachedStaticModelMessage = allocStaticModelMessage ()
+    //            match cachedStaticModelMessage with
+    //            | RenderCachedStaticModel cachedMessage ->
+    //                cachedMessage.CachedStaticModelAbsolute <- rsm.Absolute
+    //                cachedMessage.CachedStaticModelMatrix <- rsm.ModelMatrix
+    //                cachedMessage.CachedStaticModelPresence <- rsm.Presence
+    //                cachedMessage.CachedStaticModelInsetOpt <- ValueOption.ofOption rsm.InsetOpt
+    //                cachedMessage.CachedStaticModelMaterialProperties <- rsm.MaterialProperties
+    //                cachedMessage.CachedStaticModel <- rsm.StaticModel
+    //                cachedMessage.CachedStaticModelRenderType <- rsm.RenderType
+    //                cachedMessage.CachedStaticModelRenderPass <- rsm.RenderPass
+    //                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+    //            | _ -> failwithumf ()
+    //        | RenderStaticModelSurface rsms ->
+    //            let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
+    //            match cachedStaticModelSurfaceMessage with
+    //            | RenderCachedStaticModelSurface cachedMessage ->
+    //                cachedMessage.CachedStaticModelSurfaceAbsolute <- rsms.Absolute
+    //                cachedMessage.CachedStaticModelSurfaceMatrix <- rsms.ModelMatrix
+    //                cachedMessage.CachedStaticModelSurfacePresence <- rsms.Presence
+    //                cachedMessage.CachedStaticModelSurfaceInsetOpt <- ValueOption.ofOption rsms.InsetOpt
+    //                cachedMessage.CachedStaticModelSurfaceMaterialProperties <- rsms.MaterialProperties
+    //                cachedMessage.CachedStaticModelSurfaceMaterial <- rsms.Material
+    //                cachedMessage.CachedStaticModelSurfaceModel <- rsms.StaticModel
+    //                cachedMessage.CachedStaticModelSurfaceIndex <- rsms.SurfaceIndex
+    //                cachedMessage.CachedStaticModelSurfaceRenderType <- rsms.RenderType
+    //                cachedMessage.CachedStaticModelSurfaceRenderPass <- rsms.RenderPass
+    //                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+    //            | _ -> failwithumf ()
+    //        | RenderAnimatedModel ram ->
+    //            let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
+    //            match cachedAnimatedModelMessage with
+    //            | RenderCachedAnimatedModel cachedMessage ->
+    //                cachedMessage.CachedAnimatedModelAbsolute <- ram.Absolute
+    //                cachedMessage.CachedAnimatedModelMatrix <- ram.ModelMatrix
+    //                cachedMessage.CachedAnimatedModelPresence <- ram.Presence
+    //                cachedMessage.CachedAnimatedModelInsetOpt <- ValueOption.ofOption ram.InsetOpt
+    //                cachedMessage.CachedAnimatedModelMaterialProperties <- ram.MaterialProperties
+    //                cachedMessage.CachedAnimatedModelBoneTransforms <- ram.BoneTransforms
+    //                cachedMessage.CachedAnimatedModel <- ram.AnimatedModel
+    //                cachedMessage.CachedAnimatedModelRenderPass <- ram.RenderPass
+    //                messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
+    //            | _ -> failwithumf ()
+    //        | _ -> messageBuffers3d.[messageBufferIndex].Add message
 
         member this.RenderStaticModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, staticModel, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            () (*
-            let cachedStaticModelMessage = allocStaticModelMessage ()
-            match cachedStaticModelMessage with
-            | RenderCachedStaticModel cachedMessage ->
-                cachedMessage.CachedStaticModelAbsolute <- absolute
-                cachedMessage.CachedStaticModelMatrix <- modelMatrix
-                cachedMessage.CachedStaticModelPresence <- presence
-                cachedMessage.CachedStaticModelInsetOpt <- insetOpt
-                cachedMessage.CachedStaticModelMaterialProperties <- materialProperties
-                cachedMessage.CachedStaticModel <- staticModel
-                cachedMessage.CachedStaticModelRenderType <- renderType
-                cachedMessage.CachedStaticModelRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
-            | _ -> failwithumf () *)
+            ()
+    //        let cachedStaticModelMessage = allocStaticModelMessage ()
+    //        match cachedStaticModelMessage with
+    //        | RenderCachedStaticModel cachedMessage ->
+    //            cachedMessage.CachedStaticModelAbsolute <- absolute
+    //            cachedMessage.CachedStaticModelMatrix <- modelMatrix
+    //            cachedMessage.CachedStaticModelPresence <- presence
+    //            cachedMessage.CachedStaticModelInsetOpt <- insetOpt
+    //            cachedMessage.CachedStaticModelMaterialProperties <- materialProperties
+    //            cachedMessage.CachedStaticModel <- staticModel
+    //            cachedMessage.CachedStaticModelRenderType <- renderType
+    //            cachedMessage.CachedStaticModelRenderPass <- renderPass
+    //            messageBuffers3d.[messageBufferIndex].Add cachedStaticModelMessage
+    //        | _ -> failwithumf ()
 
         member this.RenderStaticModelSurfaceFast (absolute, modelMatrix, presence, insetOpt, materialProperties, material, staticModel, surfaceIndex, renderType, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            () (*
-            let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
-            match cachedStaticModelSurfaceMessage with
-            | RenderCachedStaticModelSurface cachedMessage ->
-                cachedMessage.CachedStaticModelSurfaceAbsolute <- absolute
-                cachedMessage.CachedStaticModelSurfaceMatrix <- modelMatrix
-                cachedMessage.CachedStaticModelSurfacePresence <- presence
-                cachedMessage.CachedStaticModelSurfaceInsetOpt <- insetOpt
-                cachedMessage.CachedStaticModelSurfaceMaterialProperties <- materialProperties
-                cachedMessage.CachedStaticModelSurfaceMaterial <- material
-                cachedMessage.CachedStaticModelSurfaceModel <- staticModel
-                cachedMessage.CachedStaticModelSurfaceIndex <- surfaceIndex
-                cachedMessage.CachedStaticModelSurfaceRenderType <- renderType
-                cachedMessage.CachedStaticModelSurfaceRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
-            | _ -> failwithumf () *)
+            ()
+    //        let cachedStaticModelSurfaceMessage = allocStaticModelSurfaceMessage ()
+    //        match cachedStaticModelSurfaceMessage with
+    //        | RenderCachedStaticModelSurface cachedMessage ->
+    //            cachedMessage.CachedStaticModelSurfaceAbsolute <- absolute
+    //            cachedMessage.CachedStaticModelSurfaceMatrix <- modelMatrix
+    //            cachedMessage.CachedStaticModelSurfacePresence <- presence
+    //            cachedMessage.CachedStaticModelSurfaceInsetOpt <- insetOpt
+    //            cachedMessage.CachedStaticModelSurfaceMaterialProperties <- materialProperties
+    //            cachedMessage.CachedStaticModelSurfaceMaterial <- material
+    //            cachedMessage.CachedStaticModelSurfaceModel <- staticModel
+    //            cachedMessage.CachedStaticModelSurfaceIndex <- surfaceIndex
+    //            cachedMessage.CachedStaticModelSurfaceRenderType <- renderType
+    //            cachedMessage.CachedStaticModelSurfaceRenderPass <- renderPass
+    //            messageBuffers3d.[messageBufferIndex].Add cachedStaticModelSurfaceMessage
+    //        | _ -> failwithumf ()
 
         member this.RenderAnimatedModelFast (absolute, modelMatrix, presence, insetOpt, materialProperties, boneTransforms, animatedModel, renderPass) =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            () (*
-            let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
-            match cachedAnimatedModelMessage with
-            | RenderCachedAnimatedModel cachedMessage ->
-                cachedMessage.CachedAnimatedModelAbsolute <- absolute
-                cachedMessage.CachedAnimatedModelMatrix <- modelMatrix
-                cachedMessage.CachedAnimatedModelPresence <- presence
-                cachedMessage.CachedAnimatedModelInsetOpt <- insetOpt
-                cachedMessage.CachedAnimatedModelMaterialProperties <- materialProperties
-                cachedMessage.CachedAnimatedModelBoneTransforms <- boneTransforms
-                cachedMessage.CachedAnimatedModel <- animatedModel
-                cachedMessage.CachedAnimatedModelRenderPass <- renderPass
-                messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
-            | _ -> failwithumf () *)
+            ()
+    //        let cachedAnimatedModelMessage = allocAnimatedModelMessage ()
+    //        match cachedAnimatedModelMessage with
+    //        | RenderCachedAnimatedModel cachedMessage ->
+    //            cachedMessage.CachedAnimatedModelAbsolute <- absolute
+    //            cachedMessage.CachedAnimatedModelMatrix <- modelMatrix
+    //            cachedMessage.CachedAnimatedModelPresence <- presence
+    //            cachedMessage.CachedAnimatedModelInsetOpt <- insetOpt
+    //            cachedMessage.CachedAnimatedModelMaterialProperties <- materialProperties
+    //            cachedMessage.CachedAnimatedModelBoneTransforms <- boneTransforms
+    //            cachedMessage.CachedAnimatedModel <- animatedModel
+    //            cachedMessage.CachedAnimatedModelRenderPass <- renderPass
+    //            messageBuffers3d.[messageBufferIndex].Add cachedAnimatedModelMessage
+    //        | _ -> failwithumf ()
 
         member this.EnqueueMessage2d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            () (*
-            match message with
-            | LayeredOperation2d operation ->
-                match operation.RenderOperation2d with
-                | RenderSprite sprite ->
-                    let cachedSpriteMessage = allocSpriteMessage ()
-                    match cachedSpriteMessage with
-                    | LayeredOperation2d cachedOperation ->
-                        match cachedOperation.RenderOperation2d with
-                        | RenderCachedSprite descriptor ->
-                            cachedOperation.Elevation <- operation.Elevation
-                            cachedOperation.Horizon <- operation.Horizon
-                            cachedOperation.AssetTag <- operation.AssetTag
-                            descriptor.CachedSprite.Transform <- sprite.Transform
-                            descriptor.CachedSprite.InsetOpt <- sprite.InsetOpt
-                            descriptor.CachedSprite.Image <- sprite.Image
-                            descriptor.CachedSprite.Color <- sprite.Color
-                            descriptor.CachedSprite.Blend <- sprite.Blend
-                            descriptor.CachedSprite.Emission <- sprite.Emission
-                            descriptor.CachedSprite.Flip <- sprite.Flip
-                            messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
-                        | _ -> failwithumf ()
-                    | _ -> failwithumf ()
-                | _ -> messageBuffers2d.[messageBufferIndex].Add message
-            | _ -> messageBuffers2d.[messageBufferIndex].Add message *)
+            ()
+    //        match message with
+    //        | LayeredOperation2d operation ->
+    //            match operation.RenderOperation2d with
+    //            | RenderSprite sprite ->
+    //                let cachedSpriteMessage = allocSpriteMessage ()
+    //                match cachedSpriteMessage with
+    //                | LayeredOperation2d cachedOperation ->
+    //                    match cachedOperation.RenderOperation2d with
+    //                    | RenderCachedSprite descriptor ->
+    //                        cachedOperation.Elevation <- operation.Elevation
+    //                        cachedOperation.Horizon <- operation.Horizon
+    //                        cachedOperation.AssetTag <- operation.AssetTag
+    //                        descriptor.CachedSprite.Transform <- sprite.Transform
+    //                        descriptor.CachedSprite.InsetOpt <- sprite.InsetOpt
+    //                        descriptor.CachedSprite.Image <- sprite.Image
+    //                        descriptor.CachedSprite.Color <- sprite.Color
+    //                        descriptor.CachedSprite.Blend <- sprite.Blend
+    //                        descriptor.CachedSprite.Emission <- sprite.Emission
+    //                        descriptor.CachedSprite.Flip <- sprite.Flip
+    //                        messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
+    //                    | _ -> failwithumf ()
+    //                | _ -> failwithumf ()
+    //            | _ -> messageBuffers2d.[messageBufferIndex].Add message
+    //        | _ -> messageBuffers2d.[messageBufferIndex].Add message
 
         member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, image, color, blend, emission, flip) =
             ()
-            (*
-            let cachedSpriteMessage = allocSpriteMessage ()
-            match cachedSpriteMessage with
-            | LayeredOperation2d cachedOperation ->
-                match cachedOperation.RenderOperation2d with
-                | RenderCachedSprite descriptor ->
-                    cachedOperation.Elevation <- elevation
-                    cachedOperation.Horizon <- horizon
-                    cachedOperation.AssetTag <- assetTag
-                    descriptor.CachedSprite.Transform <- transform
-                    descriptor.CachedSprite.InsetOpt <- insetOpt
-                    descriptor.CachedSprite.Image <- image
-                    descriptor.CachedSprite.Color <- color
-                    descriptor.CachedSprite.Blend <- blend
-                    descriptor.CachedSprite.Emission <- emission
-                    descriptor.CachedSprite.Flip <- flip
-                    messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
-                | _ -> failwithumf ()
-            | _ -> failwithumf () *)
+    //        let cachedSpriteMessage = allocSpriteMessage ()
+    //        match cachedSpriteMessage with
+    //        | LayeredOperation2d cachedOperation ->
+    //            match cachedOperation.RenderOperation2d with
+    //            | RenderCachedSprite descriptor ->
+    //                cachedOperation.Elevation <- elevation
+    //                cachedOperation.Horizon <- horizon
+    //                cachedOperation.AssetTag <- assetTag
+    //                descriptor.CachedSprite.Transform <- transform
+    //                descriptor.CachedSprite.InsetOpt <- insetOpt
+    //                descriptor.CachedSprite.Image <- image
+    //                descriptor.CachedSprite.Color <- color
+    //                descriptor.CachedSprite.Blend <- blend
+    //                descriptor.CachedSprite.Emission <- emission
+    //                descriptor.CachedSprite.Flip <- flip
+    //                messageBuffers2d.[messageBufferIndex].Add cachedSpriteMessage 
+    //            | _ -> failwithumf ()
+    //        | _ -> failwithumf ()
 
         member this.ClearMessages () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
