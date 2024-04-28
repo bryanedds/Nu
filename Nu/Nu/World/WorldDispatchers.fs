@@ -242,8 +242,8 @@ module Block2dDispatcherModule =
              typeof<StaticSpriteFacet>]
 
         static member Properties =
-            [define Entity.Color Color.Gray
-             define Entity.Static true]
+            [define Entity.Static true
+             define Entity.Color Color.Gray]
 
 [<AutoOpen>]
 module Box2dDispatcherModule =
