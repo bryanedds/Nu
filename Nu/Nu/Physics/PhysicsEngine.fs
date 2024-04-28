@@ -296,8 +296,8 @@ type StaticModelShape =
 
 /// The shape of a physics body in terms of a static model surface.
 type StaticModelSurfaceShape =
-    { SurfaceIndex : int
-      StaticModel : StaticModel AssetTag
+    { StaticModel : StaticModel AssetTag
+      SurfaceIndex : int
       Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }

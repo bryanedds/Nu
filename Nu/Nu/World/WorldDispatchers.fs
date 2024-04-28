@@ -533,9 +533,9 @@ module RigidModelSurfaceDispatcherModule =
         static let updateBodyShape evt world =
             let entity = evt.Subscriber : Entity
             let bodyShape = entity.GetBodyShape world
-            let surfaceIndex = entity.GetSurfaceIndex world
             let staticModel = entity.GetStaticModel world
-            if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.SurfaceIndex <> surfaceIndex || staticModelSurfaceShape.StaticModel <> staticModel | _ -> false) then
+            let surfaceIndex = entity.GetSurfaceIndex world
+            if (match bodyShape with StaticModelSurfaceShape staticModelSurfaceShape -> staticModelSurfaceShape.StaticModel <> staticModel || staticModelSurfaceShape.SurfaceIndex <> surfaceIndex | _ -> false) then
                 let staticModelShape = { StaticModel = staticModel; SurfaceIndex = surfaceIndex; Convex = true; TransformOpt = None; PropertiesOpt = None }
                 let world = entity.SetBodyShape (StaticModelSurfaceShape staticModelShape) world
                 (Cascade, world)
