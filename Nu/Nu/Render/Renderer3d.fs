@@ -7,6 +7,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open System.Numerics
+open System.Runtime.InteropServices
 open SDL2
 open Prime
 
@@ -811,6 +812,76 @@ type [<ReferenceEquality>] GlRenderer3d =
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
           RenderMessages : RenderMessage3d List }
+
+    static member private radicalInverse (bits : uint) =
+        let mutable bits = bits
+        bits <- (bits <<< 16) ||| (bits >>> 16);
+        bits <- ((bits &&& 0x55555555u) <<< 1) ||| ((bits &&& 0xAAAAAAAAu) >>> 1)
+        bits <- ((bits &&& 0x33333333u) <<< 2) ||| ((bits &&& 0xCCCCCCCCu) >>> 2)
+        bits <- ((bits &&& 0x0F0F0F0Fu) <<< 4) ||| ((bits &&& 0xF0F0F0F0u) >>> 4)
+        bits <- ((bits &&& 0x00FF00FFu) <<< 8) ||| ((bits &&& 0xFF00FF00u) >>> 8)
+        single bits * 2.3283064365386963e-10f
+
+    static member private hammersley (i : int) (N : int) =
+        v2 (single i / single N) (GlRenderer3d.radicalInverse (uint i))
+
+    static member private importanceSampleGGX (xi : Vector2) (roughness : single) (n : Vector3) =
+
+        // compute dependencies
+        let a = roughness * roughness
+        let phi = MathF.TWO_PI * xi.X
+        let cosTheta = sqrt ((1.0f - xi.Y) / (1.0f + (a * a - 1.0f) * xi.Y))
+        let sinTheta = sqrt (1.0f - cosTheta * cosTheta)
+        
+        // from spherical coordinates to cartesian coordinates
+        let mutable h = v3Zero
+        h.X <- cos phi * sinTheta
+        h.Y <- sin phi * sinTheta
+        h.Z <- cosTheta
+
+        // from tangent-space vector to world-space sample vector
+        let up = if abs n.Z < 0.999f then v3Back else v3Right
+        let tangent = Vector3.Normalize (Vector3.Cross (up, n))
+        let bitangent = Vector3.Cross (n, tangent)
+
+        // importance sample
+        Vector3.Normalize (tangent * h.X + bitangent * h.Y + n * h.Z)
+
+    static member private geometrySchlickGGX (nDotV : single) (roughness : single) =
+        let a = roughness
+        let k = a * a / 2.0f
+        let nom = nDotV
+        let denom = nDotV * (1.0f - k) + k
+        nom / denom
+
+    static member private geometrySmith (roughness : single) (nov : single) (nol : single) =
+        let ggx2 = GlRenderer3d.geometrySchlickGGX nov roughness
+        let ggx1 = GlRenderer3d.geometrySchlickGGX nol roughness
+        ggx1 * ggx2
+        
+    static member private integrateBrdf (nDotV : single) (roughness : single) (samples : int) =
+        let mutable v = v3Zero
+        v.X <- sqrt (1.0f - nDotV * nDotV)
+        v.Y <- 0.0f
+        v.Z <- nDotV
+        let mutable a = 0.0f
+        let mutable b = 0.0f
+        let n = v3Back
+        for i in 0 .. dec samples do
+            let xi = GlRenderer3d.hammersley i samples
+            let h = GlRenderer3d.importanceSampleGGX xi roughness n
+            let l = Vector3.Normalize (2.0f * Vector3.Dot (v, h) * h - v)
+            let nol = max l.Z 0.0f
+            let noh = max h.Z 0.0f
+            let voh = max (Vector3.Dot (v, h)) 0.0f
+            let nov = max (Vector3.Dot (n, v)) 0.0f
+            if nol > 0.0f then
+                let g = GlRenderer3d.geometrySmith roughness nov nol
+                let gVis = (g * voh) / (noh * nov)
+                let fc = pown (1.0f - voh) 5
+                a <- a + (1.0f - fc) * gVis
+                b <- b + fc * gVis
+        v2 (a / single samples) (b / single samples)
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -3027,14 +3098,38 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
 
-        // create brdf texture
+        /// load or create and save brdf texture
         let brdfTexture =
-            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, false, "Assets/Default/Brdf.bmp") with
-            | Right (metadata, textureId) ->
-                let textureHandle = OpenGL.Texture.CreateTextureHandle textureId
-                OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
-            | Left error -> failwith ("Could not load brdf texture due to: " + error)
-        OpenGL.Hl.Assert ()
+            let brdfBuffer =
+                let brdfFilePath = "Assets/Default/Brdf.raw"
+                try File.ReadAllBytes brdfFilePath
+                with _ ->
+                    Log.info "Creating missing Brdf.raw file (this may take a lot of time!)"
+                    let brdfBuffer =
+                        [|for y in 0 .. dec Constants.Render.BrdfResolution do
+                            for x in 0 .. dec Constants.Render.BrdfResolution do
+                                let nov = (single y + 0.5f) * (1.0f / single Constants.Render.BrdfResolution)
+                                let roughness = (single x + 0.5f) * (1.0f / single Constants.Render.BrdfResolution)
+                                GlRenderer3d.integrateBrdf nov roughness Constants.Render.BrdfSamples|] |>
+                        Array.map (fun v -> [|BitConverter.GetBytes v.X; BitConverter.GetBytes v.Y|]) |>
+                        Array.concat |>
+                        Array.concat
+                    File.WriteAllBytes (brdfFilePath, brdfBuffer)
+                    brdfBuffer
+            let brdfBufferPtr = GCHandle.Alloc (brdfBuffer, GCHandleType.Pinned)
+            try let brdfMetadata = OpenGL.Texture.TextureMetadata.make Constants.Render.BrdfResolution Constants.Render.BrdfResolution
+                let brdfTextureId = OpenGL.Gl.GenTexture ()
+                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, brdfTextureId)
+                OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, OpenGL.InternalFormat.Rg32f, Constants.Render.BrdfResolution, Constants.Render.BrdfResolution, 0, OpenGL.PixelFormat.Rg, OpenGL.PixelType.Float, brdfBufferPtr.AddrOfPinnedObject ())
+                OpenGL.Hl.Assert ()
+                OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Linear)
+                OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Linear)
+                OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapS, int OpenGL.TextureWrapMode.ClampToEdge)
+                OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureWrapT, int OpenGL.TextureWrapMode.ClampToEdge)
+                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
+                OpenGL.Hl.Assert ()
+                OpenGL.Texture.EagerTexture { TextureMetadata = brdfMetadata; TextureId = brdfTextureId; TextureHandle = OpenGL.Texture.CreateTextureHandle brdfTextureId }
+            finally brdfBufferPtr.Free ()
 
         // create default irradiance map
         let irradianceMap = OpenGL.LightMap.CreateIrradianceMap (Constants.Render.IrradianceMapResolution, irradianceShader, cubeMapSurface)
