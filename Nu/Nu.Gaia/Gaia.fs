@@ -3832,6 +3832,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             "#r \"AssimpNet.dll\"\n" +
                             "#r \"BulletSharp.dll\"\n" +
                             "#r \"Csv.dll\"\n" +
+                            "#r \"DotRecast.Recast.Toolset.dll\"\n" +
                             "#r \"FParsec.dll\"\n" +
                             "#r \"Magick.NET-Q8-AnyCPU.dll\"\n" +
                             "#r \"OpenGL.Net.dll\"\n" +
@@ -3840,6 +3841,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             "#r \"TiledSharp.dll\"\n" +
                             "#r \"ImGui.NET.dll\"\n" +
                             "#r \"ImGuizmo.NET.dll\"\n" +
+                            "#r \"ImPlot.NET.dll\"\n" +
                             "#r \"Prime.dll\"\n" +
                             "#r \"Nu.Math.dll\"\n" +
                             "#r \"Nu.dll\"\n" +
