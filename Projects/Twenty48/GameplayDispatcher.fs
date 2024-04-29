@@ -51,8 +51,7 @@ type GameplayDispatcher () =
 
         match message with
         | StartPlaying ->
-            let gameplay = Gameplay.initial
-            just gameplay
+            just Gameplay.initial
 
         | FinishQuitting ->
             just { gameplay with GameplayState = Quit }

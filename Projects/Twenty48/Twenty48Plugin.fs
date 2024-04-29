@@ -13,6 +13,6 @@ type Twenty48Plugin () =
              ("Title", fun world -> Game.SetTwenty48 Title world)
              ("Credits", fun world -> Game.SetTwenty48 Credits world)
              ("Gameplay", fun world ->
-                let world = Game.SetTwenty48 Gameplay world
                 let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
+                let world = Game.SetTwenty48 Gameplay world
                 world)]
