@@ -168,15 +168,15 @@ type BattleDispatcher () =
             | _ -> just world
 
         | BattleCommand.PlaySound (delay, volume, sound) ->
-            let world = World.schedule delay (World.playSound volume sound) screen world
+            let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
             just world
 
         | BattleCommand.PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
-            let world = World.playSong fadeIn fadeOut start volume assetTag world
+            World.playSong fadeIn fadeOut start volume assetTag world
             just world
 
         | BattleCommand.FadeOutSong fade ->
-            let world = World.fadeOutSong fade world
+            World.fadeOutSong fade world
             just world
 
         | DisplayHop (hopStart, hopStop) ->

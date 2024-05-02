@@ -768,8 +768,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     (* Editor Command Functions *)
 
     let private createSnapshot world =
-        let world = World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
         let world = snapshot world
+        World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
         world
 
     let private inductEntity atMouse (entity : Entity) world =
@@ -3945,12 +3945,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.Begin ("Audio Player", ImGuiWindowFlags.NoNav) then
             ImGui.Text "Master Sound Volume"
             let mutable masterSoundVolume = World.getMasterSoundVolume world
-            let world = if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then World.setMasterSoundVolume masterSoundVolume world else world
+            if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then World.setMasterSoundVolume masterSoundVolume world
             ImGui.SameLine ()
             ImGui.Text (string masterSoundVolume)
             ImGui.Text "Master Song Volume"
             let mutable masterSongVolume = World.getMasterSongVolume world
-            let world = if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then World.setMasterSongVolume masterSongVolume world else world
+            if ImGui.SliderFloat ("##masterSongVolume", &masterSongVolume, 0.0f, 1.0f) then World.setMasterSongVolume masterSongVolume world
             ImGui.SameLine ()
             ImGui.Text (string masterSongVolume)
             ImGui.End ()
@@ -4651,8 +4651,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = World.setEye2dCenter DesiredEye2dCenter world
                 let world = World.setEye3dCenter DesiredEye3dCenter world
                 let world = World.setEye3dRotation DesiredEye3dRotation world
-                let world = World.setMasterSoundVolume gaiaState.MasterSoundVolume world
-                let world = World.setMasterSongVolume gaiaState.MasterSongVolume world
+                World.setMasterSoundVolume gaiaState.MasterSoundVolume world
+                World.setMasterSongVolume gaiaState.MasterSongVolume world
                 world
             else world
         TargetDir <- targetDir_

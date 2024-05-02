@@ -114,31 +114,30 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             animations
         | _ -> []
 
-    static member private tryComputeActionAnimation time character =
+    static member private tryComputeActionAnimation playSound time character =
         match character.ActionState with
         | NormalState -> None
         | AttackState attack ->
             let localTime = time - attack.AttackTime
-            let soundOpt =
-                match localTime with
-                | 7L -> Some Assets.Gameplay.SlashSound
-                | 67L -> Some Assets.Gameplay.Slash2Sound
-                | _ -> None
+            match localTime with
+            | 7L -> playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.SlashSound
+            | 67L -> playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.Slash2Sound
+            | _ -> ()
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
             let animation = Animation.once animationStartTime None animationName
-            Some (soundOpt, animation, false)
+            Some (animation, false)
         | InjuryState injury ->
             let localTime = time - injury.InjuryTime
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = Animation.once animationStartTime None "Armature|WalkBack"
-            Some (None, animation, false)
+            Some (animation, false)
         | WoundState wound ->
             let localTime = time - wound.WoundTime
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animation = Animation.loop animationStartTime None "Armature|WalkBack"
             let invisible = localTime / 5L % 2L = 0L
-            Some (None, animation, invisible)
+            Some (animation, invisible)
 
     static member private updateInterps position rotation linearVelocity angularVelocity character =
 
@@ -249,14 +248,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             { character with ActionState = actionState }
         | WoundState _ -> character
 
-    static member private computeAnimations time position rotation linearVelocity angularVelocity character =
+    static member private computeAnimations playSound time position rotation linearVelocity angularVelocity character =
         ignore<Vector3> position
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
-        let (soundOpt, animations, invisible) =
-            match Character.tryComputeActionAnimation time character with
-            | Some (soundOpt, animation, invisible) -> (soundOpt, animation :: traversalAnimations, invisible)
-            | None -> (None, traversalAnimations, false)
-        (soundOpt, animations, invisible)
+        let (animations, invisible) =
+            match Character.tryComputeActionAnimation playSound time character with
+            | Some (animation, invisible) -> (animation :: traversalAnimations, invisible)
+            | None -> (traversalAnimations, false)
+        (animations, invisible)
 
     static member private updateAttackedCharacters time character =
         match character.ActionState with
@@ -303,14 +302,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
         | Enemy -> (false, character)
 
-    static member update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character =
+    static member update isKeyboardKeyDown nav3dFollow playSound time position rotation linearVelocity angularVelocity grounded playerPosition character =
         let character = Character.updateInterps position rotation linearVelocity angularVelocity character
         let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion isKeyboardKeyDown nav3dFollow time position rotation grounded playerPosition character
         let character = Character.updateAction time position rotation playerPosition character
         let character = Character.updateState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        let (soundOpt, animations, invisible) = Character.computeAnimations time position rotation linearVelocity angularVelocity character
-        (soundOpt, animations, invisible, attackedCharacters, position, rotation, character)
+        let (animations, invisible) = Character.computeAnimations playSound time position rotation linearVelocity angularVelocity character
+        (animations, invisible, attackedCharacters, position, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType

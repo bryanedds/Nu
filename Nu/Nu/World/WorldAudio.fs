@@ -19,13 +19,11 @@ module WorldAudio =
         /// Enqueue an audio message to the world.
         static member enqueueAudioMessage (message : AudioMessage) world =
             world.Subsystems.AudioPlayer.EnqueueMessage message
-            world
 
         /// Enqueue multiple audio messages to the world.
         static member enqueueAudioMessages (messages : AudioMessage seq) world =
             let audioPlayer = World.getAudioPlayer world
             for message in messages do audioPlayer.EnqueueMessage message
-            world
 
         /// Get the currently playing song, if any.
         static member getCurrentSongOpt world =
@@ -56,19 +54,16 @@ module WorldAudio =
         static member setMasterAudioVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterAudioVolume <- volume
-            world
 
         /// Set the master sound volume.
         static member setMasterSoundVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSoundVolume <- volume
-            world
 
         /// Set the master song volume.
         static member setMasterSongVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSongVolume <- volume
-            world
 
         /// Send a message to the audio system to play a song.
         static member playSong fadeInTime fadeOutTime startTime volume song world =
@@ -94,13 +89,16 @@ module WorldAudio =
         static member loadAudioPackage packageName world =
             let loadAudioPackageMessage = LoadAudioPackageMessage packageName
             World.enqueueAudioMessage loadAudioPackageMessage world
+            world
             
         /// Unload an audio package should be unloaded since its assets will not be used again soon.
         static member unloadAudioPackage packageName world =
             let unloadAudioPackageMessage = UnloadAudioPackageMessage packageName
             World.enqueueAudioMessage unloadAudioPackageMessage world
+            world
 
         /// Send a message to the audio player to reload its audio assets.
         static member reloadAudioAssets world =
             let reloadAudioAssetsMessage = ReloadAudioAssetsMessage
             World.enqueueAudioMessage reloadAudioAssetsMessage world
+            world

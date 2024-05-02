@@ -38,7 +38,6 @@ type GameplayCommand =
     | AttackCharacter of Entity
     | DestroyEnemy of Entity
     | TrackPlayer
-    | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
 // this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
@@ -106,15 +105,15 @@ type GameplayDispatcher () =
                     | InjuryState _ -> just character
                     | _ ->
                         let character = { character with ActionState = InjuryState { InjuryTime = world.UpdateTime }}
-                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
-                        withSignal playSound character
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                        just character
                 else
                     match character.ActionState with
                     | WoundState _ -> just character
                     | _ ->
                         let character = { character with ActionState = WoundState { WoundTime = world.UpdateTime }}
-                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
-                        withSignal playSound character
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                        just character
             let world = entity.SetCharacter character world
             withSignals signals world
 
@@ -136,10 +135,6 @@ type GameplayDispatcher () =
             // update sun to shine over player
             let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
             let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
-            just world
-
-        | GameplayCommand.PlaySound (delay, volume, sound) ->
-            let world = World.schedule delay (World.playSound volume sound) screen world
             just world
 
     // here we describe the content of the game including the hud group and the scene group

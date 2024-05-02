@@ -630,10 +630,9 @@ module ButtonFacetModule =
                         let world = World.publishPlus () entity.UpEvent eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ButtonFacet" "handleMouseLeftUp" "Click" EventTrace.empty
                         let world = World.publishPlus () entity.ClickEvent eventTrace entity true false world
-                        let world =
-                            match entity.GetClickSoundOpt world with
-                            | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
-                            | None -> world
+                        match entity.GetClickSoundOpt world with
+                        | Some clickSound -> World.playSound (entity.GetClickSoundVolume world) clickSound world
+                        | None -> ()
                         (Resolve, world)
                     else (Cascade, world)
                 else (Cascade, world)
@@ -744,10 +743,9 @@ module ToggleButtonFacetModule =
                         let world = World.publishPlus () eventAddress eventTrace entity true false world
                         let eventTrace = EventTrace.debug "ToggleFacet" "handleMouseLeftUp" "Toggle" EventTrace.empty
                         let world = World.publishPlus toggled entity.ToggleEvent eventTrace entity true false world
-                        let world =
-                            match entity.GetToggleSoundOpt world with
-                            | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
-                            | None -> world
+                        match entity.GetToggleSoundOpt world with
+                        | Some toggleSound -> World.playSound (entity.GetToggleSoundVolume world) toggleSound world
+                        | None -> ()
                         (Resolve, world)
                     else (Cascade, world)
                 else (Cascade, world)
@@ -866,10 +864,9 @@ module RadioButtonFacetModule =
                         let world = World.publishPlus () eventAddress eventTrace entity true false world
                         let eventTrace = EventTrace.debug "RadioButtonFacet" "handleMouseLeftUp" "Dial" EventTrace.empty
                         let world = World.publishPlus dialed entity.DialEvent eventTrace entity true false world
-                        let world =
-                            match entity.GetDialSoundOpt world with
-                            | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
-                            | None -> world
+                        match entity.GetDialSoundOpt world with
+                        | Some dialSound -> World.playSound (entity.GetDialSoundVolume world) dialSound world
+                        | None -> ()
                         (Resolve, world)
                     else (Cascade, world)
                 else (Cascade, world)

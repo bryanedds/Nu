@@ -50,7 +50,7 @@ type OmniBladeDispatcher () =
     override this.Register (game, world) =
         // HACK: since I incorrectly assumed that master song volume was 0.5f while mixing songs in the editor
         // (it's 1.0f, not 0.5f...), I have to override the default master song volume here...
-        let world = World.setMasterSongVolume 0.5f world
+        World.setMasterSongVolume 0.5f world
         base.Register (game, world)
 
     override this.Definitions (omniBlade, _) =

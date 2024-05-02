@@ -169,15 +169,15 @@ module WorldModule2 =
                         | UpdateTime time -> time + 1L = world.UpdateTime
                         | ClockTime time -> time + world.ClockDelta = world.ClockTime
                     if firstFrame then
-                        let world =
-                            match (selectedScreen.GetIncoming world).SongOpt with
-                            | Some playSong ->
-                                match World.getCurrentSongOpt world with
-                                | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
-                            | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
-                        World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
+                        let world = World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
+                        match (selectedScreen.GetIncoming world).SongOpt with
+                        | Some playSong ->
+                            match World.getCurrentSongOpt world with
+                            | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                        | None -> ()
+                        world
                     else world
                 match World.getLiveness world with
                 | Live ->
@@ -192,15 +192,13 @@ module WorldModule2 =
         static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
-                let world =
-                    if world.Accompanied && world.Halted then // special case to play song when halted in editor
-                        match (selectedScreen.GetIncoming world).SongOpt with
-                        | Some playSong ->
-                            match World.getCurrentSongOpt world with
-                            | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
-                        | None -> world
-                    else world
+                if world.Accompanied && world.Halted then // special case to play song when halted in editor
+                    match (selectedScreen.GetIncoming world).SongOpt with
+                    | Some playSong ->
+                        match World.getCurrentSongOpt world with
+                        | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                        | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                    | None -> ()
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
                     match World.getDesiredScreen world with
@@ -239,31 +237,30 @@ module WorldModule2 =
                 if firstFrame then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
-                    let world =
-                        match outgoing.SongOpt with
-                        | Some playSong ->
-                            let destinationOpt =
-                                match selectedScreen.GetSlideOpt world with
-                                | Some slide -> Some slide.Destination
-                                | None ->
-                                    match World.getScreenTransitionDestinationOpt world with
-                                    | Some destination -> Some destination
-                                    | None ->
-                                        match World.getDesiredScreen world with
-                                        | Desire destination -> Some destination
-                                        | DesireNone -> None
-                                        | DesireIgnore -> None
-                            match destinationOpt with
-                            | Some destination ->
-                                match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
-                                | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
-                                | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
-                                | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
+                    match outgoing.SongOpt with
+                    | Some playSong ->
+                        let destinationOpt =
+                            match selectedScreen.GetSlideOpt world with
+                            | Some slide -> Some slide.Destination
                             | None ->
-                                match incoming.SongOpt with
-                                | Some _ -> World.fadeOutSong playSong.FadeOutTime world
-                                | None -> world
-                        | None -> world
+                                match World.getScreenTransitionDestinationOpt world with
+                                | Some destination -> Some destination
+                                | None ->
+                                    match World.getDesiredScreen world with
+                                    | Desire destination -> Some destination
+                                    | DesireNone -> None
+                                    | DesireIgnore -> None
+                        match destinationOpt with
+                        | Some destination ->
+                            match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
+                            | (Some song, Some song2) when assetEq song.Song song2.Song -> () // do nothing when song is the same
+                            | (None, None) -> () // do nothing when neither plays a song (allowing manual control)
+                            | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
+                        | None ->
+                            match incoming.SongOpt with
+                            | Some _ -> World.fadeOutSong playSong.FadeOutTime world
+                            | None -> ()
+                    | None -> ()
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                     World.publishPlus () selectedScreen.OutgoingStartEvent eventTrace selectedScreen false false world
                 else world
