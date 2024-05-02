@@ -781,9 +781,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let eyeCenter = World.getEye2dCenter world
                 let eyeSize = World.getEye2dSize world
                 let entityPosition =
-                    if atMouse
-                    then viewport.MouseToWorld2d (entity.GetAbsolute world, RightClickPosition, eyeCenter, eyeSize)
-                    else eyeCenter
+                    if atMouse then
+                        viewport.MouseToWorld2d (entity.GetAbsolute world, RightClickPosition, eyeCenter, eyeSize)
+                    elif not (entity.GetAbsolute world) then
+                        eyeCenter
+                    else v2Zero
                 let attributes = entity.GetAttributesInferred world
                 entityTransform.Position <- entityPosition.V3
                 entityTransform.Size <- attributes.SizeInferred
@@ -801,7 +803,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let forward = eyeRotation.Forward
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
-                    else eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * NewEntityDistance
+                    elif not (entity.GetAbsolute world) then
+                        eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * NewEntityDistance
+                    else v3Zero
                 let attributes = entity.GetAttributesInferred world
                 entityTransform.Position <- entityPosition
                 entityTransform.Size <- attributes.SizeInferred
