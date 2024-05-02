@@ -1072,13 +1072,13 @@ type FieldDispatcher () =
                          Entity.DownImage == asset "Field" "CloseButtonDown"
                          Entity.ClickEvent => MenuInventoryCancel]
                      Content.text "Line1"
-                        [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.Text := menuUse.MenuUseLine1]
                      Content.text "Line2"
-                        [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.Text := menuUse.MenuUseLine2]
                      Content.text "Line3"
-                        [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.Text := menuUse.MenuUseLine3]]
              | None -> ()
 
@@ -1195,13 +1195,13 @@ type FieldDispatcher () =
                             Entity.Text == "Decline"
                             Entity.ClickEvent => ShopConfirmDecline]
                         Content.text "Offer"
-                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmOffer]
                         Content.text "Line1"
-                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmLine1]
                         Content.text "Line2"
-                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmLine2]]
                 | None -> ()
              | None -> ()]]
