@@ -63,6 +63,11 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
+/// The timing with which an effect should be evaluated in a frame.
+type RunMode =
+    | RunEarly
+    | RunLate
+
 /// Configure the construction of 3d navigation meshes.
 type [<SymbolicExpansion>] Nav3dConfig =
     { CellSize : single
