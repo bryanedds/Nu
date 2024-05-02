@@ -556,8 +556,8 @@ type Character3dDispatcher () =
         let backness = (Vector3.Dot (linearVelocityAvg * 32.0f, -rotation.Forward))
         let rightness = (Vector3.Dot (linearVelocityAvg * 32.0f, rotation.Right))
         let leftness = (Vector3.Dot (linearVelocityAvg * 32.0f, -rotation.Right))
-        let turnRightness = (angularVelocityAvg * v3Up).Length () * 48.0f
-        let turnLeftness = -turnRightness
+        let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 48.0f else 0.0f
+        let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 48.0f else 0.0f
         let animations =
             [Animation.make 0L None "Armature|Idle" Loop 1.0f 0.5f None]
         let animations =

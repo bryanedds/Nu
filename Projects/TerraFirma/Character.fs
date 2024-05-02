@@ -95,8 +95,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             let backness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotationInterp.Forward))
             let rightness = (Vector3.Dot (linearVelocityInterp * 32.0f, rotationInterp.Right))
             let leftness = (Vector3.Dot (linearVelocityInterp * 32.0f, -rotationInterp.Right))
-            let turnRightness = (angularVelocityInterp * v3Up).Length () * 48.0f
-            let turnLeftness = -turnRightness
+            let turnRightness = if angularVelocityInterp.Y < 0.0f then -angularVelocityInterp.Y * 48.0f else 0.0f
+            let turnLeftness = if angularVelocityInterp.Y > 0.0f then angularVelocityInterp.Y * 48.0f else 0.0f
             let animations =
                 [Animation.make 0L None "Armature|Idle" Loop 1.0f 0.5f None]
             let animations =
