@@ -266,7 +266,7 @@ type FieldDispatcher () =
                     let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                     let field = Field.mapTeam (Map.add index teammate) field
                     let field = Field.mapMenu (constant { field.Menu with MenuUseOpt = None }) field
-                    if result then withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
+                    if result then withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                     else just field
                 | None -> just field
             | None -> just field
@@ -429,8 +429,8 @@ type FieldDispatcher () =
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
                         let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                        withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
-                    else withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
+                        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                    else withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                 | None -> just field
             | None -> just field
 
@@ -563,7 +563,7 @@ type FieldDispatcher () =
         | CommencingBattle ->
             let world = World.publish () screen.CommencingBattleEvent screen world
             let fade = FadeOutSong 60L
-            let growl = FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
+            let growl = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
             withSignals [fade; growl] world
 
         | CommenceBattle (battleData, prizePool) ->
@@ -613,15 +613,15 @@ type FieldDispatcher () =
             let world = World.publish () screen.QuitFieldEvent screen world
             just world
 
-        | FieldCommand.PlaySound (delay, volume, sound) ->
+        | ScheduleSound (delay, volume, sound) ->
             let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
             just world
 
-        | FieldCommand.PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
+        | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
             World.playSong fadeIn fadeOut start volume assetTag world
             just world
 
-        | FieldCommand.FadeOutSong fade ->
+        | FadeOutSong fade ->
             World.fadeOutSong fade world
             just world
 

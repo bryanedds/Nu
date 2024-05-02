@@ -71,7 +71,7 @@ type FieldCommand =
     | CommenceBattle of BattleData * PrizePool
     | StartQuitting
     | PlayFieldSong
-    | PlaySound of int64 * single * Sound AssetTag
+    | ScheduleSound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
     | FadeOutSong of int64
     | Nop
@@ -628,11 +628,11 @@ module Field =
                 | Some battleType -> mapDialogOpt (constant (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty))))) field
                 | None -> mapDialogOpt (constant (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!")))) field
             let field = mapCue (constant cue) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
+            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
         else
             let field = mapAvatar (Avatar.lookAt prop.Center) field
             let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
+            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
 
     let private interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
         match prop.PropState with
@@ -642,11 +642,11 @@ module Field =
                 let field = mapAvatar (Avatar.lookAt prop.Center) field
                 let field = mapCue (constant cue) field
                 let field = mapPropState (constant (DoorState true)) prop.PropId field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
+                withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
             else
                 let field = mapAvatar (Avatar.lookAt prop.Center) field
                 let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
-                withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
+                withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
         | _ -> failwithumf ()
 
     let private interactSwitch cue cue2 onRequirements requirements (prop : Prop) (field : Field) =
@@ -654,16 +654,16 @@ module Field =
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Center) field
             let field = mapCue (constant (if on then cue2 else cue)) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
+            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
         else
             let field = mapAvatar (Avatar.lookAt prop.Center) field
             let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
+            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
 
     let private interactCharacter cue (prop : Prop) (field : Field) =
         let field = mapAvatar (Avatar.lookAt prop.BottomInset) field
         let field = mapCue (constant cue) field
-        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
     let private interactNpc branches requirements (prop : Prop) (field : Field) =
         if field.Advents_.IsSupersetOf requirements then
@@ -671,24 +671,24 @@ module Field =
             let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
             let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
             let field = mapCue (constant branchCue) field
-            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+            withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
         else just field
 
     let private interactShopkeep shopType (prop : Prop) (field : Field) =
         let field = mapAvatar (Avatar.lookAt prop.BottomInset) field
         let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
         let field = mapShopOpt (constant (Some shop)) field
-        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
+        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
     let private interactSeal cue (field : Field) =
         let field = mapCue (constant cue) field
-        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
+        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
 
     let private interactSavePoint (field : Field) =
         let field = restoreTeam field
         save field
         let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Recovered strength and saved game."))) field
-        withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
+        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
     let interact (field : Field) =
         match field.DialogOpt with
@@ -727,7 +727,7 @@ module Field =
             (cue, definitions, just field)
 
         | Cue.PlaySound (volume, sound) ->
-            (Fin, definitions, withSignal (PlaySound (0L, volume, sound)) field)
+            (Fin, definitions, withSignal (ScheduleSound (0L, volume, sound)) field)
 
         | Cue.PlaySong (fadeIn, fadeOut, start, volume, song) ->
             (Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, volume, song)) field)
@@ -781,7 +781,7 @@ module Field =
                 let field = recruit allyType field
                 let field = mapAdvents (Set.add advent) field
                 let field = mapInventory (Inventory.removeGold fee) field
-                (Fin, definitions, withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
+                (Fin, definitions, withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field)
             else
                 updateCue
                     (Parallel
@@ -1195,8 +1195,8 @@ module Field =
                         let field = mapFieldTransitionOpt (constant (Some transition)) field
                         let playSound =
                             if isWarp
-                            then PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
-                            else PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
+                            then ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
+                            else ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepStairSound)
                         (signal playSound :: signals, field)
                     | None -> (signals, field)
                 | Some _ -> (signals, field)
@@ -1212,7 +1212,7 @@ module Field =
                                 let field = mapCue (constant cue) field
                                 match sensorType with
                                 | AirSensor -> (signals, field)
-                                | HiddenSensor | StepPlateSensor -> (signal (PlaySound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                                | HiddenSensor | StepPlateSensor -> (signal (ScheduleSound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
                             else (signals, field))
                             (signals, field) sensors
                     results
