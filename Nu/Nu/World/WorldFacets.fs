@@ -516,49 +516,10 @@ type BackdroppableFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match entity.GetBackdropImageOpt world with
-        | Some image ->
-            match Metadata.tryGetTextureSizeF image with
+        | Some backdropImage ->
+            match Metadata.tryGetTextureSizeF backdropImage with
             | Some size -> AttributesInferred.important size.V3 v3Zero
             | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
-        | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
-
-[<AutoOpen>]
-module LabelFacetExtensions =
-    type Entity with
-        member this.GetLabelImage world : Image AssetTag = this.Get (nameof this.LabelImage) world
-        member this.SetLabelImage (value : Image AssetTag) world = this.Set (nameof this.LabelImage) value world
-        member this.LabelImage = lens (nameof this.LabelImage) this this.GetLabelImage this.SetLabelImage
-
-/// Augments an entity with label behavior.
-type LabelFacet () =
-    inherit Facet (false)
-
-    static member Properties =
-        [define Entity.DisabledColor Constants.Gui.DisabledColor
-         define Entity.LabelImage Assets.Default.Label]
-
-    override this.Render (_, entity, world) =
-        let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignore rotation
-        let spriteImage = entity.GetLabelImage world
-        World.enqueueLayeredOperation2d
-            { Elevation = spriteTransform.Elevation
-              Horizon = spriteTransform.Horizon
-              AssetTag = spriteImage
-              RenderOperation2d =
-                RenderSprite
-                    { Transform = spriteTransform
-                      InsetOpt = ValueNone
-                      Image = spriteImage
-                      Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                      Blend = Transparent
-                      Emission = Color.Zero
-                      Flip = FlipNone }}
-            world
-
-    override this.GetAttributesInferred (entity, world) =
-        match Metadata.tryGetTextureSizeF (entity.GetLabelImage world) with
-        | Some size -> AttributesInferred.important size.V3 v3Zero
         | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]

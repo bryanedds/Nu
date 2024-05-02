@@ -810,7 +810,7 @@ type FieldDispatcher () =
                 // team
                 Content.panel "Team"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
                         match menu.MenuState with
@@ -819,13 +819,13 @@ type FieldDispatcher () =
                         MenuTeamAlly
                      Content.label "Portrait"
                         [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
-                         Entity.LabelImage :=
+                         Entity.BackdropImageOpt :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
                             | Some characterData ->
                                 match characterData.PortraitOpt with
-                                | Some portrait -> portrait
-                                | None -> Assets.Default.EmptyImage
-                            | None -> Assets.Default.EmptyImage]
+                                | Some portrait -> Some portrait
+                                | None -> Some Assets.Default.EmptyImage
+                            | None -> Some Assets.Default.EmptyImage]
                      Content.text "CharacterType"
                         [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Text :=
@@ -876,7 +876,7 @@ type FieldDispatcher () =
              | MenuInventory _ ->
                 Content.panel "Inventory"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
@@ -899,7 +899,7 @@ type FieldDispatcher () =
              | MenuTechs _ ->
                 Content.panel "Techs"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := match field.Menu.MenuState with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
@@ -913,7 +913,7 @@ type FieldDispatcher () =
              | MenuKeyItems _ ->
                 Content.panel "KeyItems"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuKeyItemsSelect
@@ -936,7 +936,7 @@ type FieldDispatcher () =
              | MenuOptions quitPrompt ->
                 Content.panel "Options"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      if not quitPrompt then
                         Content.text "BattleSpeed"
@@ -1008,7 +1008,7 @@ type FieldDispatcher () =
              | PartyMenuOpened ->
                 Content.panel "PartyMenu"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
                     [Content.button "Confirm"
                         [Entity.PositionLocal == v3 810.0f 420.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                          Entity.EnabledLocal := field.PartyMenu.PartyMenuSelections.Length >= 3
@@ -1060,7 +1060,7 @@ type FieldDispatcher () =
              | Some menuUse ->
                 Content.panel "Use"
                     [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXLImage]
                     [yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field (fun teammate menu ->
                         match menu.MenuUseOpt with
                         | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
@@ -1100,7 +1100,7 @@ type FieldDispatcher () =
                         | (true, tech) ->
                             Content.panel "Tech"
                                 [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
-                                 Entity.LabelImage == Assets.Gui.DialogFatImage]
+                                 Entity.BackdropImageOpt == Some Assets.Gui.DialogFatImage]
                                 [Content.button "Close"
                                     [Entity.PositionLocal == v3 810.0f 162.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                                      Entity.UpImage == asset "Field" "CloseButtonUp"
@@ -1131,7 +1131,7 @@ type FieldDispatcher () =
                 let items = Content.pageItems 8 field
                 Content.panel "Shop"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := Option.isNone shop.ShopConfirmOpt]
                     [yield! Content.items (v3 96.0f 347.0f 0.0f) pageSize rows field ShopSelect
                      Content.button "Buy"
@@ -1185,7 +1185,7 @@ type FieldDispatcher () =
                 | Some shopConfirm ->
                     Content.panel "Dialog"
                        [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
-                        Entity.LabelImage == Assets.Gui.DialogFatImage]
+                        Entity.BackdropImageOpt == Some Assets.Gui.DialogFatImage]
                        [Content.button "Accept"
                            [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                             Entity.Text == "Accept"

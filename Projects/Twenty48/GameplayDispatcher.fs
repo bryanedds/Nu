@@ -129,7 +129,7 @@ type GameplayDispatcher () =
              Content.panel Simulants.GameplayBoard.Name
                 [Entity.Size == v3 148.0f 148.0f 0.0f
                  Entity.Elevation == 1.0f
-                 Entity.LabelImage == Assets.Gameplay.BoardImage]
+                 Entity.BackdropImageOpt == Some Assets.Gameplay.BoardImage]
                 [for tile in gameplay.Tiles do
                     Content.text ("Tile+" + string tile.TileId)
                         [Entity.PositionLocal := tile.Position.V3 * (tileSize + gutter) + tileSize * 0.5f + tileOffset

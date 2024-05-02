@@ -78,20 +78,16 @@ type TextDispatcher () =
         [typeof<BackdroppableFacet>
          typeof<TextFacet>]
 
-    override this.GetAttributesInferred (entity, world) =
-        match entity.GetBackdropImageOpt world with
-        | Some image ->
-            match Metadata.tryGetTextureSizeF image with
-            | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
-        | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
-
 /// Gives an entity the base behavior of a gui label.
 type LabelDispatcher () =
     inherit GuiDispatcher ()
 
     static member Facets =
-        [typeof<LabelFacet>]
+        [typeof<BackdroppableFacet>
+         typeof<TextFacet>]
+
+    static member Properties =
+        [define Entity.Justification (Justified (JustifyLeft, JustifyMiddle))]
 
 /// Gives an entity the base behavior of a gui button.
 type ButtonDispatcher () =
@@ -104,7 +100,7 @@ type ButtonDispatcher () =
 /// Gives an entity the base behavior of gui toggle button.
 type ToggleButtonDispatcher () =
     inherit GuiDispatcher ()
-    
+
     static member Facets =
         [typeof<TextFacet>
          typeof<ToggleButtonFacet>]
@@ -112,7 +108,7 @@ type ToggleButtonDispatcher () =
 /// Gives an entity the base behavior of a gui radio button.
 type RadioButtonDispatcher () =
     inherit GuiDispatcher ()
-    
+
     static member Facets =
         [typeof<TextFacet>
          typeof<RadioButtonFacet>]
@@ -120,16 +116,17 @@ type RadioButtonDispatcher () =
 /// Gives an entity the base behavior of gui fill bar.
 type FillBarDispatcher () =
     inherit GuiDispatcher ()
-    
+
     static member Facets =
         [typeof<FillBarFacet>]
 
 /// Gives an entity the base behavior of gui feeler (an invisible control that only takes mouse input).
 type FeelerDispatcher () =
     inherit GuiDispatcher ()
-    
+
     static member Facets =
-        [typeof<FeelerFacet>]
+        [typeof<BackdroppableFacet>
+         typeof<FeelerFacet>]
 
 [<AutoOpen>]
 module FpsDispatcherExtensions =
@@ -171,6 +168,16 @@ type FpsDispatcher () =
                 entity.SetText framesStr world
             else world
         else world
+
+/// Gives an entity the base behavior of a gui panel.
+type PanelDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Facets =
+        [typeof<BackdroppableFacet>]
+
+    static member Properties =
+        [define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =

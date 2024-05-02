@@ -24,6 +24,7 @@ module Assets =
         let [<Literal>] ButtonDownName = "ButtonDown"
         let [<Literal>] LabelName = "Label"
         let [<Literal>] BorderName = "Border"
+        let [<Literal>] PanelName = "Panel"
         let [<Literal>] BlockName = "Block"
         let [<Literal>] BallName = "Ball"
         let [<Literal>] BrickName = "Brick"

@@ -26,6 +26,7 @@ module Assets =
         let [<Uniform>] ButtonDown = asset<Image> PackageName Assets.Default.ButtonDownName
         let [<Uniform>] Label = asset<Image> PackageName Assets.Default.LabelName
         let [<Uniform>] Border = asset<Image> PackageName Assets.Default.BorderName
+        let [<Uniform>] Panel = asset<Image> PackageName Assets.Default.PanelName
         let [<Uniform>] Ball = asset<Image> PackageName Assets.Default.BallName
         let [<Uniform>] Brick = asset<Image> PackageName Assets.Default.BrickName
         let [<Uniform>] StaticSprite = asset<Image> PackageName Assets.Default.StaticSpriteName
