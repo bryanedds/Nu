@@ -66,11 +66,11 @@ type GameplayDispatcher () =
 
         match message with
         | StartPlaying ->
-            let gameplay = { gameplay with GameplayState = Playing }
+            let gameplay = Gameplay.initial
             withSignal SetupScene gameplay
 
         | FinishQuitting ->
-            let gameplay = { gameplay with GameplayState = Quit }
+            let gameplay = Gameplay.empty
             just gameplay
 
         | Die deadCharacter ->

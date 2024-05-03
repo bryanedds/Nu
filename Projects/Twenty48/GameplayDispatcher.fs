@@ -54,7 +54,7 @@ type GameplayDispatcher () =
             just Gameplay.initial
 
         | FinishQuitting ->
-            just { gameplay with GameplayState = Quit }
+            just Gameplay.empty
 
         | TimeUpdate ->
             just { gameplay with GameplayTime = inc gameplay.GameplayTime }
