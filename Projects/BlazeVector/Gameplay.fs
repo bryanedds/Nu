@@ -67,11 +67,11 @@ type GameplayDispatcher () =
 
         match message with
         | StartPlaying ->
-            let gameplay = { gameplay with GameplayState = Playing }
+            let gameplay = Gameplay.initial
             withSignal CreateSections gameplay
 
         | FinishQuitting ->
-            let gameplay = { gameplay with GameplayState = Quit }
+            let gameplay = Gameplay.empty
             withSignal DestroySections gameplay
 
         | Score score ->
