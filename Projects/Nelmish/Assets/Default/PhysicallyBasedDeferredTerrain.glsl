@@ -2,7 +2,7 @@
 #version 410
 
 const int TEX_COORDS_OFFSET_VERTS = 6;
-const int TERRAIN_LAYERS_MAX = 8;
+const int TERRAIN_LAYERS_MAX = 6;
 
 const vec2 TEX_COORDS_OFFSET_FILTERS[TEX_COORDS_OFFSET_VERTS] =
     vec2[TEX_COORDS_OFFSET_VERTS](
@@ -66,7 +66,7 @@ void main()
 #version 410
 
 const float GAMMA = 2.2;
-const int TERRAIN_LAYERS_MAX = 8;
+const int TERRAIN_LAYERS_MAX = 6;
 
 uniform vec3 eyeCenter;
 uniform int layersCount;

@@ -1415,7 +1415,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                               tc.X; tc.Y
                               n.X; n.Y; n.Z
                               t.X; t.Y; t.Z
-                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
+                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; 0.0f; 0.0f|]|] // NOTE: vertices go up to 8 but layers are limited to TerrainLayersMax.
 
                 // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
                 let indices = 
