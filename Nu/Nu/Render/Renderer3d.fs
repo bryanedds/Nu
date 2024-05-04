@@ -1361,7 +1361,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
-            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length Constants.Render.TerrainLayersMax
+            // NOTE: there are 8 blends, each of which we account for regardless of TerrainLayersMax.
+            let blendses = Array2D.zeroCreate<single> positionsAndTexCoordses.Length 8
             match geometryDescriptor.Material with
             | BlendMaterial blendMaterial ->
                 if blendMaterial.TerrainLayers.Length > Constants.Render.TerrainLayersMax then
@@ -1386,7 +1387,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | _ -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     let scalar = 1.0f / single Byte.MaxValue
-                    for i in 0 .. dec (min reds.Length Constants.Render.TerrainLayersMax) do
+                    for i in 0 .. dec (min reds.Length 8) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetTextureData false red renderer with
                         | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
@@ -1415,7 +1416,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                               tc.X; tc.Y
                               n.X; n.Y; n.Z
                               t.X; t.Y; t.Z
-                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; 0.0f; 0.0f|]|] // NOTE: vertices go up to 8 but layers are limited to TerrainLayersMax.
+                              s.[i,0]; s.[i,1]; s.[i,2]; s.[i,3]; s.[i,4]; s.[i,5]; s.[i,6]; s.[i,7]|]|]
 
                 // compute indices, splitting quad along the standard orientation (as used by World Creator, AFAIK).
                 let indices = 
