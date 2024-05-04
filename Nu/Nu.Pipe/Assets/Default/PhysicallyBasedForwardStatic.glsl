@@ -56,7 +56,6 @@ void main()
 
 #shader fragment
 #version 410
-#extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
@@ -73,19 +72,19 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowBiasAcne;
 uniform float lightShadowBiasBleed;
-layout (bindless_sampler) uniform sampler2D albedoTexture;
-layout (bindless_sampler) uniform sampler2D roughnessTexture;
-layout (bindless_sampler) uniform sampler2D metallicTexture;
-layout (bindless_sampler) uniform sampler2D emissionTexture;
-layout (bindless_sampler) uniform sampler2D ambientOcclusionTexture;
-layout (bindless_sampler) uniform sampler2D normalTexture;
-layout (bindless_sampler) uniform sampler2D heightTexture;
-layout (bindless_sampler) uniform sampler2D brdfTexture;
-layout (bindless_sampler) uniform samplerCube irradianceMap;
-layout (bindless_sampler) uniform samplerCube environmentFilterMap;
-layout (bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
-layout (bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
-layout (bindless_sampler) uniform sampler2D shadowTextures[SHADOWS_MAX];
+uniform sampler2D albedoTexture;
+uniform sampler2D roughnessTexture;
+uniform sampler2D metallicTexture;
+uniform sampler2D ambientOcclusionTexture;
+uniform sampler2D emissionTexture;
+uniform sampler2D normalTexture;
+uniform sampler2D heightTexture;
+uniform sampler2D brdfTexture;
+uniform samplerCube irradianceMap;
+uniform samplerCube environmentFilterMap;
+uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
+uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
+uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];

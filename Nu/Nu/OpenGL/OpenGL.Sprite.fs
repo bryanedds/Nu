@@ -77,7 +77,7 @@ module Sprite =
         (vertexBuffer, indexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by Gl.CreateSpriteQuad and whose uniforms and shader match those of CreateSpriteShader.
-    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture : Texture.Texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) =
+    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture : Texture.Texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -129,10 +129,12 @@ module Sprite =
         Gl.UniformMatrix4 (modelViewProjectionUniform, false, modelViewProjection)
         Gl.Uniform4 (texCoords4Uniform, texCoords.Min.X, texCoords.Min.Y, texCoords.Size.X, texCoords.Size.Y)
         Gl.Uniform4 (colorUniform, color.R, color.G, color.B, color.A)
+        Gl.Uniform1 (textureUniform, 0)
         Hl.Assert ()
         
         // setup texture
-        Gl.UniformHandleARB (texUniform, texture.TextureHandle)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, texture.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -149,6 +151,10 @@ module Sprite =
         // teardown geometry
         Gl.BindVertexArray 0u
         Hl.Assert ()
+
+        // teardown texture
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
         // teardown shader
         Gl.UseProgram 0u

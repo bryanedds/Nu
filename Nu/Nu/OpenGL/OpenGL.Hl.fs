@@ -118,10 +118,6 @@ module Hl =
         for i in 0 .. dec extensionsCount do
             extensions.Add (Gl.GetString (StringName.Extensions, uint i)) |> ignore<bool>
 
-        // assert that GL_ARB_bindless_texture is available
-        if not (extensions.Contains "GL_ARB_bindless_texture") then
-            Log.trace "Bindless textures required to run Nu."
-
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =
 

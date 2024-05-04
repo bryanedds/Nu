@@ -36,8 +36,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let textureHandle = Texture.CreateTextureHandle textureId
-            let texture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = textureId; TextureHandle = textureHandle }
+            let texture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = textureId }
             Right (texture, framebuffer)
         else Left ("Could not create complete texture 2d framebuffer.")
 
@@ -79,8 +78,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let filterBoxHandle = Texture.CreateTextureHandle filterBoxId
-            let filterBox = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterBoxId; TextureHandle = filterBoxHandle }
+            let filterBox = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterBoxId }
             Right (filterBox, renderbuffer, framebuffer)
         else Left "Could not create complete filter box 1d framebuffer."
 
@@ -123,8 +121,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let filterGaussianHandle = Texture.CreateTextureHandle filterGaussianId
-            let filterGaussian = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterGaussianId; TextureHandle = filterGaussianHandle }
+            let filterGaussian = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterGaussianId }
             Right (filterGaussian, renderbuffer, framebuffer)
         else Left "Could not create complete filter gaussian 2d framebuffer."
 
@@ -167,8 +164,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let filterHandle = Texture.CreateTextureHandle filterId
-            let filter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterId; TextureHandle = filterHandle }
+            let filter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = filterId }
             Right (filter, renderbuffer, framebuffer)
         else Left "Could not create complete filter framebuffer."
 
@@ -205,8 +201,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let positionHandle = Texture.CreateTextureHandle positionId
-            let position = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = positionId; TextureHandle = positionHandle }
+            let position = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = positionId }
             Right (position, framebuffer)
         else Left ("Could not create complete HDR framebuffer.")
 
@@ -248,8 +243,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let shadowTextureHandle = Texture.CreateTextureHandle shadowTextureId
-            let shadowTexture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowTextureId; TextureHandle = shadowTextureHandle }
+            let shadowTexture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowTextureId }
             Right (shadowTexture, renderbuffer, framebuffer)
         else Left "Could not create complete shadow texture framebuffer."
 
@@ -332,14 +326,10 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let positionHandle = Texture.CreateTextureHandle positionId
-            let position = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = positionId; TextureHandle = positionHandle }
-            let albedoHandle = Texture.CreateTextureHandle albedoId
-            let albedo = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = albedoId; TextureHandle = albedoHandle }
-            let materialHandle = Texture.CreateTextureHandle materialId
-            let material = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = materialId; TextureHandle = materialHandle }
-            let normalPlusHandle = Texture.CreateTextureHandle normalPlusId
-            let normalPlus = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = normalPlusId; TextureHandle = normalPlusHandle }
+            let position = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = positionId }
+            let albedo = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = albedoId }
+            let material = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = materialId }
+            let normalPlus = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = normalPlusId }
             Right (position, albedo, material, normalPlus, renderbuffer, framebuffer)
         else Left "Could not create complete geometry framebuffer."
 
@@ -385,8 +375,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let lightMappingHandle = Texture.CreateTextureHandle lightMappingId
-            let lightMapping = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = lightMappingId; TextureHandle = lightMappingHandle }
+            let lightMapping = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = lightMappingId }
             Right (lightMapping, renderbuffer, framebuffer)
         else Left "Could not create complete light mapping framebuffer."
 
@@ -429,8 +418,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let irradianceHandle = Texture.CreateTextureHandle irradianceId
-            let irradiance = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = irradianceId; TextureHandle = irradianceHandle }
+            let irradiance = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = irradianceId }
             Right (irradiance, renderbuffer, framebuffer)
         else Left "Could not create complete irradiance framebuffer."
 
@@ -473,8 +461,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let environmentFilterHandle = Texture.CreateTextureHandle environmentFilterId
-            let environmentFilter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = environmentFilterId; TextureHandle = environmentFilterHandle }
+            let environmentFilter = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = environmentFilterId }
             Right (environmentFilter, renderbuffer, framebuffer)
         else Left "Could not create complete environment filter framebuffer."
 
@@ -517,8 +504,7 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let ssaoHandle = Texture.CreateTextureHandle ssaoId
-            let ssao = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = ssaoId; TextureHandle = ssaoHandle }
+            let ssao = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = ssaoId }
             Right (ssao, renderbuffer, framebuffer)
         else Left "Could not create complete ssao framebuffer."
 

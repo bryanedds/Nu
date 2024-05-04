@@ -14,13 +14,12 @@ void main()
 
 #shader fragment
 #version 410
-#extension GL_ARB_bindless_texture : require
 
 const float FXAA_SPAN_MAX = 8.0;
 const float FXAA_REDUCE_MIN = 1.0 / 128.0;
 const float FXAA_REDUCE_MUL = 1.0 / 8.0;
 
-layout (bindless_sampler) uniform sampler2D inputTexture;
+uniform sampler2D inputTexture;
 
 in vec2 texCoordsOut;
 

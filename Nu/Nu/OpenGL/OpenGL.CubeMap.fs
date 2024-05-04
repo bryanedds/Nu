@@ -62,8 +62,7 @@ module CubeMap =
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
             Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
             Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-            let cubeMapHandle = Texture.CreateTextureHandle cubeMapId
-            let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId; TextureHandle = cubeMapHandle }
+            let cubeMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = cubeMapId }
             Right cubeMap
         | Some error ->
             Gl.DeleteTextures [|cubeMapId|]
@@ -277,7 +276,9 @@ module CubeMap =
         Gl.UseProgram shader.CubeMapShader
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
-        Gl.UniformHandleARB (shader.CubeMapUniform, cubeMap.TextureHandle)
+        Gl.Uniform1 (shader.CubeMapUniform, 0)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -296,6 +297,8 @@ module CubeMap =
         Hl.Assert ()
 
         // teardown shader
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 

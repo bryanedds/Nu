@@ -61,7 +61,9 @@ module SkyBox =
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.ColorUniform, color)
         Gl.Uniform1 (shader.BrightnessUniform, brightness)
-        Gl.UniformHandleARB (shader.CubeMapUniform, cubeMap.TextureHandle)
+        Gl.Uniform1 (shader.CubeMapUniform, 0)
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, cubeMap.TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -80,6 +82,8 @@ module SkyBox =
         Hl.Assert ()
 
         // teardown shader
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Gl.UseProgram 0u
         Hl.Assert ()
 

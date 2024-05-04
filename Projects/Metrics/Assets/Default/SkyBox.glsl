@@ -16,11 +16,10 @@ void main()
 
 #shader fragment
 #version 410
-#extension GL_ARB_bindless_texture : require
 
 uniform vec3 color;
 uniform float brightness;
-layout (bindless_sampler) uniform samplerCube cubeMap;
+uniform samplerCube cubeMap;
 
 in vec3 texCoordsOut;
 
