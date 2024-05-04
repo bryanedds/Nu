@@ -9,6 +9,7 @@ open System.Threading
 open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
+open type Vortice.Vulkan.Vulkan
 open ImGuiNET
 open Prime
 
@@ -315,9 +316,30 @@ type RendererThread () =
             match windowOpt with
             | Some window ->
 
-                let result = Vulkan.vkInitialize ()
-                let result2 = Vulkan.vkEnumerateInstanceExtensionProperties (NativePtr.nullPtr, NativePtr.nullPtr)
+                let window = match window with SglWindow window -> window.SglWindow
+
+                let result = vkInitialize ()
+        
+                let mutable instance = VkInstance ()
                 
+                let mutable propertyCount = 0u
+                let result = vkEnumerateInstanceExtensionProperties (Interop.AsPointer &propertyCount, NativePtr.nullPtr)
+                printfn "property count: %s" (propertyCount.ToString ())
+        
+                let mutable sdlExtensionCount = 0u
+                // null is required to output to count; [||] does not work
+                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
+                let sdlExtensions = Array.zeroCreate (int sdlExtensionCount)
+                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensions)
+                printfn "sdl extension count: %s" (sdlExtensionCount.ToString ())
+        
+                let mutable instanceCreateInfo = VkInstanceCreateInfo ()
+                instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
+                instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensions
+                
+                let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
+
+
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
                 OpenGL.Hl.Assert ()
