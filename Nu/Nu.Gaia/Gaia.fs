@@ -120,8 +120,9 @@ module Gaia =
     let private MiscTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private PhysicsTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
-    let private RenderTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private RenderMessagesTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private ImGuiTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private CpuTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private FrameTimings = Queue (Array.zeroCreate<single> TimingCapacity)
 
     (* Modal Activity States *)
@@ -3778,11 +3779,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                          world.Timers.DestructionTimer.Elapsed.TotalMilliseconds +
                          world.Timers.PostProcessTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
                 UpdateTimings.Dequeue () |> ignore<single>
-                RenderTimings.Enqueue (single world.Timers.RenderTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
-                RenderTimings.Dequeue () |> ignore<single>
-                ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last RenderTimings)
+                RenderMessagesTimings.Enqueue (single world.Timers.RenderMessagesTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
+                RenderMessagesTimings.Dequeue () |> ignore<single>
+                ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last RenderMessagesTimings)
                 ImGuiTimings.Dequeue () |> ignore<single>
-                FrameTimings.Enqueue (single world.Timers.FrameTime.TotalMilliseconds)
+                CpuTimings.Enqueue (single world.Timers.CpuTime.TotalMilliseconds)
+                CpuTimings.Dequeue () |> ignore<single>
+                FrameTimings.Enqueue (single world.Timers.FrameTimer.Elapsed.TotalMilliseconds)
                 FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
@@ -3796,10 +3799,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImPlot.PlotLine ("Physics Time", &TimingsArray.[0], TimingsArray.Length)
                 UpdateTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
-                RenderTimings.CopyTo (TimingsArray, 0)
+                RenderMessagesTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Render Msgs", &TimingsArray.[0], TimingsArray.Length)
                 ImGuiTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
+                CpuTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Cpu Time", &TimingsArray.[0], TimingsArray.Length)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
                 ImPlot.EndPlot ()

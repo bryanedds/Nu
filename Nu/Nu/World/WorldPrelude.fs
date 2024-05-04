@@ -375,12 +375,12 @@ type Timers =
       PreProcessTimer : Stopwatch
       PostProcessTimer : Stopwatch
       RenderGatherTimer : Stopwatch
-      RenderEntitiesTimer : Stopwatch
-      RenderTimer : Stopwatch
+      RenderEntityMessagesTimer : Stopwatch
+      RenderMessagesTimer : Stopwatch
       AudioTimer : Stopwatch
-      TotalTimer : Stopwatch
       FrameTimer : Stopwatch
-      mutable FrameTime : TimeSpan
+      CpuTimer : Stopwatch
+      mutable CpuTime : TimeSpan
       ImGuiTimer : Stopwatch
       mutable ImGuiTime : TimeSpan
       mutable GcTotalTime : TimeSpan
@@ -412,12 +412,12 @@ type Timers =
           PreProcessTimer = Stopwatch ()
           PostProcessTimer = Stopwatch ()
           RenderGatherTimer = Stopwatch ()
-          RenderEntitiesTimer = Stopwatch ()
-          RenderTimer = Stopwatch ()
+          RenderEntityMessagesTimer = Stopwatch ()
+          RenderMessagesTimer = Stopwatch ()
           AudioTimer = Stopwatch ()
-          TotalTimer = Stopwatch ()
           FrameTimer = Stopwatch ()
-          FrameTime = TimeSpan.Zero
+          CpuTimer = Stopwatch ()
+          CpuTime = TimeSpan.Zero
           ImGuiTimer = Stopwatch ()
           ImGuiTime = TimeSpan.Zero
           GcTotalTime = gcTime

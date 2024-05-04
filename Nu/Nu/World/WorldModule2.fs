@@ -1413,7 +1413,7 @@ module WorldModule2 =
                         World.renderGroup renderPass group world
 
                 // render entities
-                world.Timers.RenderEntitiesTimer.Restart ()
+                world.Timers.RenderEntityMessagesTimer.Restart ()
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
                     for element in HashSet3dNormalCached do
                         if element.Visible then
@@ -1430,7 +1430,7 @@ module WorldModule2 =
                     for element in HashSet2dNormalCached do
                         if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
-                world.Timers.RenderEntitiesTimer.Stop ()
+                world.Timers.RenderEntityMessagesTimer.Stop ()
 
                 // fin
                 world
@@ -1571,7 +1571,7 @@ module WorldModule2 =
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
 
             // run loop if user-defined run-while predicate passes
-            world.Timers.TotalTimer.Restart ()
+            world.Timers.FrameTimer.Restart ()
             if runWhile world then
 
                 // run user-defined pre-process callbacks
@@ -1654,11 +1654,11 @@ module WorldModule2 =
                                                         | Live ->
 
                                                             // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
-                                                            world.Timers.RenderTimer.Restart ()
+                                                            world.Timers.RenderMessagesTimer.Restart ()
                                                             let lightMapRenderRequested = World.getLightMapRenderRequested world
                                                             let world = World.acknowledgeLightMapRenderRequest world
                                                             let world = World.renderSimulants lightMapRenderRequested world
-                                                            world.Timers.RenderTimer.Stop ()
+                                                            world.Timers.RenderMessagesTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
 
@@ -1673,8 +1673,8 @@ module WorldModule2 =
                                                                     else world
                                                                 world.Timers.AudioTimer.Stop ()
 
-                                                                // process frame time recording
-                                                                world.Timers.FrameTime <- world.Timers.FrameTimer.Elapsed
+                                                                // process cpu time recording
+                                                                world.Timers.CpuTime <- world.Timers.CpuTimer.Elapsed
 
                                                                 // process rendering (1/2)
                                                                 let rendererProcess = World.getRendererProcess world
@@ -1682,12 +1682,12 @@ module WorldModule2 =
 
                                                                 // process frame pacing mechanics
                                                                 let world =
-                                                                    if world.Timers.FrameTimer.IsRunning then
+                                                                    if world.Timers.CpuTimer.IsRunning then
 
                                                                         // automatically enable frame pacing when need is detected
                                                                         let world =
                                                                             if not world.FramePacing then
-                                                                                if world.Timers.FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                if world.Timers.CpuTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
                                                                                 FramePaceChecks <- inc FramePaceChecks
                                                                                 let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
                                                                                 if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
@@ -1696,8 +1696,8 @@ module WorldModule2 =
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
-                                                                            while world.Timers.FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.FrameTimer.Elapsed.TotalSeconds
+                                                                            while world.Timers.CpuTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.CpuTimer.Elapsed.TotalSeconds
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1
@@ -1706,7 +1706,7 @@ module WorldModule2 =
                                                                         // fin
                                                                         world
                                                                     else world
-                                                                world.Timers.FrameTimer.Restart ()
+                                                                world.Timers.CpuTimer.Restart ()
 
                                                                 // process additional frame time recording
                                                                 let gcTotalTime = GC.GetTotalPauseDuration ()
@@ -1744,7 +1744,7 @@ module WorldModule2 =
                                                                 let (world : World) = imGuiPostProcess world
 
                                                                 // update time and recur
-                                                                world.Timers.TotalTimer.Stop ()
+                                                                world.Timers.FrameTimer.Stop ()
                                                                 WorldModule.TaskletProcessingStarted <- false
                                                                 let world = World.updateTime world
                                                                 let world =
