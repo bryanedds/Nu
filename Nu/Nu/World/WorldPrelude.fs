@@ -379,8 +379,8 @@ type Timers =
       RenderMessagesTimer : Stopwatch
       AudioTimer : Stopwatch
       FrameTimer : Stopwatch
-      CpuTimer : Stopwatch
-      mutable CpuTime : TimeSpan
+      MainThreadTimer : Stopwatch
+      mutable MainThreadTime : TimeSpan
       ImGuiTimer : Stopwatch
       mutable ImGuiTime : TimeSpan
       mutable GcTotalTime : TimeSpan
@@ -416,8 +416,8 @@ type Timers =
           RenderMessagesTimer = Stopwatch ()
           AudioTimer = Stopwatch ()
           FrameTimer = Stopwatch ()
-          CpuTimer = Stopwatch ()
-          CpuTime = TimeSpan.Zero
+          MainThreadTimer = Stopwatch ()
+          MainThreadTime = TimeSpan.Zero
           ImGuiTimer = Stopwatch ()
           ImGuiTime = TimeSpan.Zero
           GcTotalTime = gcTime

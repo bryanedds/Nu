@@ -122,7 +122,7 @@ module Gaia =
     let private UpdateTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private RenderMessagesTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private ImGuiTimings = Queue (Array.zeroCreate<single> TimingCapacity)
-    let private CpuTimings = Queue (Array.zeroCreate<single> TimingCapacity)
+    let private MainThreadTimings = Queue (Array.zeroCreate<single> TimingCapacity)
     let private FrameTimings = Queue (Array.zeroCreate<single> TimingCapacity)
 
     (* Modal Activity States *)
@@ -3783,8 +3783,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 RenderMessagesTimings.Dequeue () |> ignore<single>
                 ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last RenderMessagesTimings)
                 ImGuiTimings.Dequeue () |> ignore<single>
-                CpuTimings.Enqueue (single world.Timers.CpuTime.TotalMilliseconds)
-                CpuTimings.Dequeue () |> ignore<single>
+                MainThreadTimings.Enqueue (single world.Timers.MainThreadTime.TotalMilliseconds)
+                MainThreadTimings.Dequeue () |> ignore<single>
                 FrameTimings.Enqueue (single world.Timers.FrameTimer.Elapsed.TotalMilliseconds)
                 FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
@@ -3803,8 +3803,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImPlot.PlotLine ("Render Msgs", &TimingsArray.[0], TimingsArray.Length)
                 ImGuiTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
-                CpuTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Cpu Time", &TimingsArray.[0], TimingsArray.Length)
+                MainThreadTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Main Thread", &TimingsArray.[0], TimingsArray.Length)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
                 ImPlot.EndPlot ()

@@ -1673,8 +1673,8 @@ module WorldModule2 =
                                                                     else world
                                                                 world.Timers.AudioTimer.Stop ()
 
-                                                                // process cpu time recording
-                                                                world.Timers.CpuTime <- world.Timers.CpuTimer.Elapsed
+                                                                // process main thread time recording
+                                                                world.Timers.MainThreadTime <- world.Timers.MainThreadTimer.Elapsed
 
                                                                 // process rendering (1/2)
                                                                 let rendererProcess = World.getRendererProcess world
@@ -1682,12 +1682,12 @@ module WorldModule2 =
 
                                                                 // process frame pacing mechanics
                                                                 let world =
-                                                                    if world.Timers.CpuTimer.IsRunning then
+                                                                    if world.Timers.MainThreadTimer.IsRunning then
 
                                                                         // automatically enable frame pacing when need is detected
                                                                         let world =
                                                                             if not world.FramePacing then
-                                                                                if world.Timers.CpuTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
                                                                                 FramePaceChecks <- inc FramePaceChecks
                                                                                 let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
                                                                                 if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
@@ -1696,8 +1696,8 @@ module WorldModule2 =
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
-                                                                            while world.Timers.CpuTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.CpuTimer.Elapsed.TotalSeconds
+                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1
@@ -1706,7 +1706,7 @@ module WorldModule2 =
                                                                         // fin
                                                                         world
                                                                     else world
-                                                                world.Timers.CpuTimer.Restart ()
+                                                                world.Timers.MainThreadTimer.Restart ()
 
                                                                 // process additional frame time recording
                                                                 let gcTotalTime = GC.GetTotalPauseDuration ()
