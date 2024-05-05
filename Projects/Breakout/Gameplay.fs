@@ -76,6 +76,86 @@ type Gameplay =
             Bricks = bricks
             Lives = 3 }
 
+    // this updates the gameplay model every frame while advancing.
+    static member update gameplay world =
+
+        // update scene only while playing
+        match gameplay.GameplayState with
+        | Playing ->
+
+            // ...and while living and bricks are present
+            if gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
+
+                // update paddle motion
+                let gameplay =
+                    if World.isKeyboardKeyDown KeyboardKey.Left world then
+                        let paddle = gameplay.Paddle
+                        let paddle = { paddle with Position = paddle.Position.MapX (fun x -> max -128.0f (x - 4.0f)) }
+                        { gameplay with Paddle = paddle }
+                    elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                        let paddle = gameplay.Paddle
+                        let paddle = { paddle with Position = paddle.Position.MapX (fun x -> min 128.0f (x + 4.0f)) }
+                        { gameplay with Paddle = paddle }
+                    else gameplay
+
+                // update ball motion against walls
+                let gameplay =
+                    let ball = gameplay.Ball
+                    let ball = { ball with Position = ball.Position + ball.Velocity }
+                    let ball =
+                        if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f
+                        then { ball with Velocity = ball.Velocity.MapX negate }
+                        else ball
+                    let ball =
+                        if ball.Position.Y >= 172.0f
+                        then { ball with Velocity = ball.Velocity.MapY negate }
+                        else ball
+                    { gameplay with Ball = ball }
+
+                // update ball motion against paddle
+                let gameplay =
+                    let paddle = gameplay.Paddle
+                    let ball = gameplay.Ball
+                    let ball =
+                        let perimeter = paddle.Perimeter
+                        if perimeter.Intersects ball.Position
+                        then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
+                        else ball
+                    { gameplay with Ball = ball }
+
+                // update ball motion against bricks
+                let gameplay =
+                    let ball = gameplay.Ball
+                    let bricks =
+                        Map.filter (fun _ (brick : Brick) ->
+                            let perimeter = brick.Perimeter
+                            perimeter.Intersects ball.Position)
+                            gameplay.Bricks
+                    let ball =
+                        if Map.notEmpty bricks then
+                            let brick = Seq.head bricks.Values
+                            { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
+                        else ball
+                    let bricks = Map.removeMany bricks.Keys gameplay.Bricks
+                    { gameplay with Ball = ball; Bricks = bricks }
+
+                // update ball death
+                let gameplay =
+                    if gameplay.Ball.Position.Y < -180.0f then
+                        let gameplay = { gameplay with Lives = dec gameplay.Lives }
+                        let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
+                        gameplay
+                    else gameplay
+
+                // gameplay still going
+                Right gameplay
+
+            // ...otherwise gameplay over
+            else Left gameplay
+
+        // nothing to do
+        | _ -> Right gameplay
+
 // this is our gameplay MMCC message type.
 type GameplayMessage =
     | StartPlaying
@@ -122,81 +202,9 @@ type GameplayDispatcher () =
             just gameplay
 
         | Update ->
-
-            // update scene only while playing
-            match gameplay.GameplayState with
-            | Playing ->
-
-                // ...and while living and bricks are present
-                if gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
-
-                    // update paddle motion
-                    let gameplay =
-                        if World.isKeyboardKeyDown KeyboardKey.Left world then
-                            let paddle = gameplay.Paddle
-                            let paddle = { paddle with Position = paddle.Position.MapX (fun x -> max -128.0f (x - 4.0f)) }
-                            { gameplay with Paddle = paddle }
-                        elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                            let paddle = gameplay.Paddle
-                            let paddle = { paddle with Position = paddle.Position.MapX (fun x -> min 128.0f (x + 4.0f)) }
-                            { gameplay with Paddle = paddle }
-                        else gameplay
-
-                    // update ball motion against walls
-                    let gameplay =
-                        let ball = gameplay.Ball
-                        let ball = { ball with Position = ball.Position + ball.Velocity }
-                        let ball =
-                            if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f
-                            then { ball with Velocity = ball.Velocity.MapX negate }
-                            else ball
-                        let ball =
-                            if ball.Position.Y >= 172.0f
-                            then { ball with Velocity = ball.Velocity.MapY negate }
-                            else ball
-                        { gameplay with Ball = ball }
-
-                    // update ball motion against paddle
-                    let gameplay =
-                        let paddle = gameplay.Paddle
-                        let ball = gameplay.Ball
-                        let ball =
-                            let perimeter = paddle.Perimeter
-                            if perimeter.Intersects ball.Position
-                            then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
-                            else ball
-                        { gameplay with Ball = ball }
-
-                    // update ball motion against bricks
-                    let gameplay =
-                        let ball = gameplay.Ball
-                        let bricks =
-                            Map.filter (fun _ (brick : Brick) ->
-                                let perimeter = brick.Perimeter
-                                perimeter.Intersects ball.Position)
-                                gameplay.Bricks
-                        let ball =
-                            if Map.notEmpty bricks then
-                                let brick = Seq.head bricks.Values
-                                { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
-                            else ball
-                        let bricks = Map.removeMany bricks.Keys gameplay.Bricks
-                        { gameplay with Ball = ball; Bricks = bricks }
-
-                    // update ball death
-                    let gameplay =
-                        if gameplay.Ball.Position.Y < -180.0f then
-                            let gameplay = { gameplay with Lives = dec gameplay.Lives }
-                            let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
-                            gameplay
-                        else gameplay
-                    just gameplay
-
-                // ...otherwise we should start quitting game
-                else withSignal StartQuitting gameplay
-
-            // nothing to do
-            | _ -> just gameplay
+            match Gameplay.update gameplay world with
+            | Right gameplay -> just gameplay
+            | Left gameplay -> withSignal StartQuitting gameplay
 
         | TimeUpdate ->
             let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
