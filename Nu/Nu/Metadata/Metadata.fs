@@ -220,6 +220,7 @@ module Metadata =
             match AssetGraphOpt with
             | Some assetGraph ->
                 if assetGraph.PackageDescriptors.ContainsKey assetTag.PackageName then
+                    Log.info ("Loading Metadata package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     let config = if Imperative then TConfig.Imperative else Functional
                     let package = tryGenerateMetadataPackage config assetTag.PackageName assetGraph
                     MetadataPackagesLoaded <- UMap.add assetTag.PackageName package MetadataPackagesLoaded

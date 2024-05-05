@@ -348,7 +348,7 @@ module WorldModule3 =
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
 
-                // initialize metadata and load default metadata
+                // initialize metadata and load default package
                 Metadata.init config.Imperative assetGraph
                 Metadata.loadMetadataPackage Assets.Default.PackageName
 
@@ -393,7 +393,7 @@ module WorldModule3 =
                     | Some (_, dispatcher) -> dispatcher
                     | None -> GameDispatcher ()
 
-                // make the world's subsystems
+                // make the world's subsystems, loading default packages where applicable
                 let imGui = ImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
                 let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
                 let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
@@ -402,12 +402,13 @@ module WorldModule3 =
                     then RendererInline () :> RendererProcess
                     else RendererThread () :> RendererProcess
                 rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
-                rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName) // enqueue default package hint
+                rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName)
+                rendererProcess.EnqueueMessage3d (LoadRenderPackage3d Assets.Default.PackageName)
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                     then SdlAudioPlayer.make () :> AudioPlayer
                     else StubAudioPlayer.make () :> AudioPlayer
-                audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName) // enqueue default package hint
+                audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName)
                 let symbolics = Symbolics.makeEmpty ()
 
                 // attempt to make the overlayer
