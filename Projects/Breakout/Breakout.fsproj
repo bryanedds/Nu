@@ -39,6 +39,7 @@
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Events.fs" />
 		<Compile Include="Gameplay.fs" />
+		<Compile Include="GameplayDispatcher.fs" />
 		<Compile Include="Breakout.fs" />
 		<Compile Include="BreakoutPlugin.fs" />
 		<Compile Include="Program.fs" />
