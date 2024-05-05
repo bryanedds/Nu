@@ -82,9 +82,6 @@ type CharacterDispatcher (character : Character) =
         | Update ->
 
             // update character
-            let isKeyboardKeyDown keyboardKey = World.isKeyboardKeyDown keyboardKey world
-            let nav3dFollow a b c d e f g = World.nav3dFollow a b c d e f g entity.Screen world
-            let playSound volume sound = World.playSound volume sound world
             let time = world.UpdateTime
             let position = entity.GetPosition world
             let rotation = entity.GetRotation world
@@ -94,7 +91,7 @@ type CharacterDispatcher (character : Character) =
             let grounded = World.getBodyGrounded bodyId world
             let playerPosition = Simulants.GameplayPlayer.GetPosition world
             let (animations, invisible, attackedCharacters, position, rotation, character) =
-                Character.update isKeyboardKeyDown nav3dFollow playSound time position rotation linearVelocity angularVelocity grounded playerPosition character
+                Character.update time position rotation linearVelocity angularVelocity grounded playerPosition character world
 
             // deploy signals from update
             let signals = [UpdateTransform (position, rotation) :> Signal; UpdateAnimations (position, rotation, Array.ofList animations, invisible)]

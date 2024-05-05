@@ -114,14 +114,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             animations
         | _ -> []
 
-    static member private tryComputeActionAnimation playSound time character =
+    static member private tryComputeActionAnimation time character world =
         match character.ActionState with
         | NormalState -> None
         | AttackState attack ->
             let localTime = time - attack.AttackTime
             match localTime with
-            | 7L -> playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.SlashSound
-            | 67L -> playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.Slash2Sound
+            | 7L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.SlashSound world
+            | 67L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.Slash2Sound world
             | _ -> ()
             let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
             let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
@@ -159,7 +159,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         // fin
         character
 
-    static member private updateMotion isKeyboardKeyDown nav3dFollow time position (rotation : Quaternion) grounded (playerPosition : Vector3) character =
+    static member private updateMotion time position (rotation : Quaternion) grounded (playerPosition : Vector3) character world =
 
         // update jump state
         let lastTimeOnGround = if grounded then time else character.JumpState.LastTimeOnGround
@@ -177,17 +177,17 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 let right = rotation.Right
                 let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
                 let walkVelocity =
-                    (if isKeyboardKeyDown KeyboardKey.W || isKeyboardKeyDown KeyboardKey.Up then forward * walkSpeed else v3Zero) +
-                    (if isKeyboardKeyDown KeyboardKey.S || isKeyboardKeyDown KeyboardKey.Down then -forward * walkSpeed else v3Zero) +
-                    (if isKeyboardKeyDown KeyboardKey.A then -right * walkSpeed else v3Zero) +
-                    (if isKeyboardKeyDown KeyboardKey.D then right * walkSpeed else v3Zero)
+                    (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                    (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
                 let position = if walkVelocity <> v3Zero then position + walkVelocity else position
 
                 // compute new rotation
                 let turnSpeed = character.TurnSpeed * if grounded then 1.0f else 0.75f
                 let turnVelocity =
-                    (if isKeyboardKeyDown KeyboardKey.Right then -turnSpeed else 0.0f) +
-                    (if isKeyboardKeyDown KeyboardKey.Left then turnSpeed else 0.0f)
+                    (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                    (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
                 let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
                 (position, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
 
@@ -202,7 +202,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     then Sphere (playerPosition, 0.1f) // when above player
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
-                let followOutput = nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation nearest
+                let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation nearest Simulants.Gameplay world
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
             else (position, rotation, v3Zero, v3Zero, character)
 
@@ -248,11 +248,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             { character with ActionState = actionState }
         | WoundState _ -> character
 
-    static member private computeAnimations playSound time position rotation linearVelocity angularVelocity character =
+    static member private computeAnimations time position rotation linearVelocity angularVelocity character world =
         ignore<Vector3> position
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
         let (animations, invisible) =
-            match Character.tryComputeActionAnimation playSound time character with
+            match Character.tryComputeActionAnimation time character world with
             | Some (animation, invisible) -> (animation :: traversalAnimations, invisible)
             | None -> (traversalAnimations, false)
         (animations, invisible)
@@ -302,13 +302,13 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
 
         | Enemy -> (false, character)
 
-    static member update isKeyboardKeyDown nav3dFollow playSound time position rotation linearVelocity angularVelocity grounded playerPosition character =
+    static member update time position rotation linearVelocity angularVelocity grounded playerPosition character world =
         let character = Character.updateInterps position rotation linearVelocity angularVelocity character
-        let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion isKeyboardKeyDown nav3dFollow time position rotation grounded playerPosition character
+        let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion time position rotation grounded playerPosition character world
         let character = Character.updateAction time position rotation playerPosition character
         let character = Character.updateState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        let (animations, invisible) = Character.computeAnimations playSound time position rotation linearVelocity angularVelocity character
+        let (animations, invisible) = Character.computeAnimations time position rotation linearVelocity angularVelocity character world
         (animations, invisible, attackedCharacters, position, rotation, character)
 
     static member initial characterType =
