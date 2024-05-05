@@ -800,7 +800,7 @@ module WorldModule2 =
 
                     // rebuild and reload assets
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    Metadata.regenerateMetadata ()
+                    Metadata.reloadMetadata ()
                     let world = World.reloadExistingAssets world
                     let world = World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
                     (Right assetGraph, world)

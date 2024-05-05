@@ -3640,7 +3640,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.Button "Load" then
                 match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
                 | Right assetGraph ->
-                    let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                    let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
                     let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                     AssetGraphStr <- PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
                 | Left error -> MessageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'.")
@@ -4016,7 +4016,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
             let searchActiveCurrent = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
-            let assets = Metadata.getDiscoveredAssets ()
+            let assets = Metadata.getAssetsDiscovered ()
             for package in assets do
                 let flags = ImGuiTreeNodeFlags.SpanAvailWidth ||| ImGuiTreeNodeFlags.OpenOnArrow
                 if searchActiveCurrent then ImGui.SetNextItemOpen true
@@ -4677,7 +4677,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         AssetGraphStr <-
             match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
             | Right assetGraph ->
-                let packageDescriptorsStr = scstring (AssetGraph.getPackageDescriptors assetGraph)
+                let packageDescriptorsStr = scstring assetGraph.PackageDescriptors
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<AssetGraph>).PrettyPrinter
                 PrettyPrinter.prettyPrint packageDescriptorsStr prettyPrinter
             | Left error -> MessageBoxOpt <- Some ("Could not read asset graph due to: " + error + "'."); ""

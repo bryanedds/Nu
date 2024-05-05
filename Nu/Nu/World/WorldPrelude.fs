@@ -545,10 +545,6 @@ module AmbientState =
     let exit state =
         { state with Liveness = Dead }
 
-    /// Regenerate metadata.
-    let regenerateMetadata () =
-        Metadata.regenerateMetadata ()
-
     /// Get the key-value store with the by map.
     let getKeyValueStoreBy by state =
         by state.KeyValueStore

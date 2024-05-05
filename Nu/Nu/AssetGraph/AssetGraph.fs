@@ -94,8 +94,11 @@ module AssetGraph =
     /// A graph of all the assets used in a game.
     type AssetGraph =
         private
-            { FilePathOpt : string option
-              PackageDescriptors : Map<string, PackageDescriptor> }
+            { FilePathOpt_ : string option
+              PackageDescriptors_ : Map<string, PackageDescriptor> }
+
+        member this.PackageDescriptors =
+            this.PackageDescriptors_
 
     let private getAssetExtension2 rawAssetExtension refinement =
         match refinement with
@@ -217,18 +220,10 @@ module AssetGraph =
             | Assets (directory, extensions, associations, refinements) ->
                 yield! collectAssetsFromPackageDescriptorAssets packageName directory extensions associations refinements]
 
-    /// Get package descriptors.
-    let getPackageDescriptors assetGraph =
-        assetGraph.PackageDescriptors
-
-    /// Get package names.
-    let getPackageNames assetGraph =
-        Map.toKeyList assetGraph.PackageDescriptors
-
     /// Attempt to collect all the available assets from a package.
     let tryCollectAssetsFromPackage associationOpt packageName assetGraph =
         let mutable packageDescriptor = Unchecked.defaultof<PackageDescriptor>
-        match Map.tryGetValue (packageName, assetGraph.PackageDescriptors, &packageDescriptor) with
+        match Map.tryGetValue (packageName, assetGraph.PackageDescriptors_, &packageDescriptor) with
         | true ->
             collectAssetsFromPackageDescriptor packageName packageDescriptor |>
             List.groupBy (fun asset -> asset.FilePath) |>
@@ -244,7 +239,7 @@ module AssetGraph =
 
     /// Collect all the available assets from an asset graph document.
     let collectAssets associationOpt assetGraph =
-        [for entry in assetGraph.PackageDescriptors do
+        [for entry in assetGraph.PackageDescriptors_ do
             let packageName = entry.Key
             let packageDescriptor = entry.Value
             yield! collectAssetsFromPackageDescriptor packageName packageDescriptor] |>
@@ -264,12 +259,12 @@ module AssetGraph =
         let outputFilePathOpt =
             Option.map (fun (filePath : string) ->
                 outputDirectory + "/" + PathF.ChangeExtension (PathF.GetFileName filePath, ".tracker"))
-                assetGraph.FilePathOpt
+                assetGraph.FilePathOpt_
 
         // check if the output assetGraph file is newer than the current
         let fullBuild =
             fullBuild ||
-            match (assetGraph.FilePathOpt, outputFilePathOpt) with
+            match (assetGraph.FilePathOpt_, outputFilePathOpt) with
             | (Some filePath, Some outputFilePath) -> File.GetLastWriteTime filePath > File.GetLastWriteTime outputFilePath
             | (None, None) -> false
             | (_, _) -> failwithumf ()
@@ -303,13 +298,13 @@ module AssetGraph =
 
     /// The empty asset graph.
     let empty =
-        { FilePathOpt = None
-          PackageDescriptors = Map.empty }
+        { FilePathOpt_ = None
+          PackageDescriptors_ = Map.empty }
 
     /// Make an asset graph.
     let make filePathOpt packageDescriptors =
-        { FilePathOpt = filePathOpt
-          PackageDescriptors = packageDescriptors }
+        { FilePathOpt_ = filePathOpt
+          PackageDescriptors_ = packageDescriptors }
 
     /// Attempt to make an asset graph.
     let tryMakeFromFile filePath =

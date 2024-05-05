@@ -348,8 +348,9 @@ module WorldModule3 =
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
 
-                // populate metadata
-                Metadata.generateMetadata config.Imperative assetGraph
+                // initialize metadata and load default metadata
+                Metadata.init config.Imperative assetGraph
+                Metadata.loadMetadataPackage Assets.Default.PackageName
 
                 // make the world's event graph
                 let eventGraph =
