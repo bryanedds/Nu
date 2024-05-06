@@ -2842,6 +2842,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."; world
                             else world
                         if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                        if dispatcherName = dispatcherNameCurrent then ImGui.SetItemDefaultFocus ()
                         world)
                         world dispatcherNames
                 ImGui.EndCombo ()
@@ -2864,6 +2865,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         facetName <- facetNameSelectable
                         changed <- true
                     if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.015f
+                    if facetNameSelectable = facetName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if not last && ImGui.IsItemFocused () then FocusedPropertyDescriptorOpt <- Some (facetNamesPropertyDescriptor, entity :> Simulant)
             if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
@@ -3325,6 +3327,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     for dispatcherName in dispatcherNames do
                         if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then NewEntityDispatcherName <- dispatcherName
                         if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                        if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 ImGui.Text "w/ Overlay"
@@ -3336,6 +3339,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     for overlayName in overlayNames do
                         if ImGui.Selectable (overlayName, strEq overlayName NewEntityOverlayName) then NewEntityOverlayName <- overlayName
                         if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.015f
+                        if overlayName = NewEntityOverlayName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity world |> snd else world
@@ -3387,14 +3391,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let editModes = World.getEditModes world
                         let world =
                             Seq.fold (fun world (editModeName, editModeFn) ->
-                                if ImGui.Selectable (editModeName, strEq editModeName ProjectEditMode) then
-                                    ProjectEditMode <- editModeName
-                                    let world = snapshot world // snapshot before mode change
-                                    selectEntityOpt None world
-                                    let world = editModeFn world
-                                    let world = snapshot world // snapshot before after change
-                                    world
-                                else world)
+                                let world =
+                                    if ImGui.Selectable (editModeName, strEq editModeName ProjectEditMode) then
+                                        ProjectEditMode <- editModeName
+                                        let world = snapshot world // snapshot before mode change
+                                        selectEntityOpt None world
+                                        let world = editModeFn world
+                                        let world = snapshot world // snapshot before after change
+                                        world
+                                    else world
+                                if editModeName = ProjectEditMode then ImGui.SetItemDefaultFocus ()
+                                world)
                                 world editModes.Pairs
                         ImGui.EndCombo ()
                         world
@@ -3496,6 +3503,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
                             selectEntityOpt None world
                             selectGroup group
+                        if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
@@ -4233,6 +4241,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 for dispatcherName in dispatcherNames do
                     if ImGui.Selectable (dispatcherName, strEq dispatcherName NewGroupDispatcherName) then NewGroupDispatcherName <- dispatcherName
                     if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                    if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             let world =
                 if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.Exists world) then
@@ -4424,6 +4433,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     world
                                 else world
                             if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                            if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                             world)
                             world dispatcherNames
                     ImGui.EndCombo ()
