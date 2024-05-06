@@ -255,7 +255,7 @@ module FreezerFacetModule =
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type FreezerFacet () =
-        inherit Facet (false)
+        inherit Facet (false, false, false)
 
         static let handleUpdateFrozenHierarchy evt world =
             let entity = evt.Subscriber : Entity
@@ -333,7 +333,7 @@ module StaticModelHierarchyDispatcherModule =
 
     /// Gives an entity the base behavior of hierarchy of indexed static models.
     type StaticModelHierarchyDispatcher () =
-        inherit Entity3dDispatcher (false)
+        inherit Entity3dDispatcher (false, false, false)
 
         static let updateLoadedHierarchy (entity : Entity) world =
             let world =
@@ -384,7 +384,7 @@ module RigidModelHierarchyDispatcherModule =
 
     /// Gives an entity the base behavior of a hierarchy of indexed, physics-driven rigid models.
     type RigidModelHierarchyDispatcher () =
-        inherit Entity3dDispatcher (true)
+        inherit Entity3dDispatcher (true, false, false)
 
         static let updateLoadedHierarchy (entity : Entity) world =
             let world =

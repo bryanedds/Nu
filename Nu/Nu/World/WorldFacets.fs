@@ -51,7 +51,7 @@ module StaticSpriteFacetExtensions =
 
 /// Augments an entity with a static sprite.
 type StaticSpriteFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.InsetOpt None
@@ -103,7 +103,7 @@ module AnimatedSpriteFacetExtensions =
 
 /// Augments an entity with an animated sprite.
 type AnimatedSpriteFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let getSpriteInsetOpt (entity : Entity) world =
         let startTime = entity.GetStartTime world
@@ -189,7 +189,7 @@ module BasicStaticSpriteEmitterFacetExtensions =
 
 /// Augments an entity with a basic static sprite emitter.
 type BasicStaticSpriteEmitterFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let tryMakeEmitter (entity : Entity) (world : World) =
         World.tryMakeEmitter
@@ -426,7 +426,7 @@ module TextFacetExtensions =
 
 /// Augments an entity with text.
 type TextFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.Text ""
@@ -487,7 +487,7 @@ module BackdroppableFacetExtensions =
 
 /// Augments an entity with optional backdrop behavior.
 type BackdroppableFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.DisabledColor Constants.Gui.DisabledColor
@@ -549,7 +549,7 @@ module ButtonFacetExtensions =
 
 /// Augments an entity with button behavior.
 type ButtonFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
@@ -662,7 +662,7 @@ module ToggleButtonFacetExtensions =
 
 /// Augments an entity with toggle button behavior.
 type ToggleButtonFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
     
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
@@ -781,7 +781,7 @@ module RadioButtonFacetExtensions =
 
 /// Augments an entity with radio button behavior.
 type RadioButtonFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
@@ -898,7 +898,7 @@ module FillBarFacetExtensions =
 
 /// Augments an entity with fill bar behavior.
 type FillBarFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.DisabledColor Constants.Gui.DisabledColor
@@ -986,7 +986,7 @@ module FeelerFacetExtensions =
 
 /// Augments an entity with feeler behavior.
 type FeelerFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let handleMouseLeftDown evt world =
         let entity = evt.Subscriber : Entity
@@ -1107,7 +1107,7 @@ module EffectFacetExtensions =
 
 /// Augments an entity with an effect.
 type EffectFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let setEffect effectSymbolOpt (entity : Entity) world =
         match effectSymbolOpt with
@@ -1329,7 +1329,7 @@ module RigidBodyFacetExtensions =
 
 /// Augments an entity with a physics-driven rigid body.
 type RigidBodyFacet () =
-    inherit Facet (true)
+    inherit Facet (true, false, false)
 
     static let getBodyShape (entity : Entity) world =
         let scalar = entity.GetScale world * entity.GetSize world
@@ -1493,7 +1493,7 @@ module BodyJointFacetExtensions =
 
 /// Augments an entity with a physics-driven joint.
 type BodyJointFacet () =
-    inherit Facet (true)
+    inherit Facet (true, false, false)
 
     static let tryGetBodyTargetIds (entity : Entity) world =
         match tryResolve entity (entity.GetBodyJointTarget world) with
@@ -1568,7 +1568,7 @@ module TileMapFacetExtensions =
 
 /// Augments an entity with a asset-defined tile map.
 type TileMapFacet () =
-    inherit Facet (true)
+    inherit Facet (true, false, false)
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1675,7 +1675,7 @@ module TmxMapFacetExtensions =
 
 /// Augments an entity with a user-defined tile map.
 type TmxMapFacet () =
-    inherit Facet (true)
+    inherit Facet (true, false, false)
 
     static member Properties =
         [define Entity.BodyEnabled true
@@ -1789,7 +1789,7 @@ module LayoutFacetExtensions =
 
 /// Augments an entity with the capability to perform layout transformations on its children.
 type LayoutFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let rec flowRightward
         reentry leftX (margin : Vector2) wrapLimit (offsetX : single byref) (offsetY : single byref) (maximum : single byref) (child : Entity) world =
@@ -2022,7 +2022,7 @@ module SkyBoxFacetExtensions =
 
 /// Augments an entity with sky box.
 type SkyBoxFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.Absolute true
@@ -2073,7 +2073,7 @@ module LightProbe3dFacetExtensions =
 
 /// Augments an entity with a 3d light probe.
 type LightProbe3dFacet () =
-    inherit Facet (false)
+    inherit Facet (false, true, false)
 
     static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
         let world =
@@ -2154,7 +2154,7 @@ module Light3dFacetExtensions =
 
 /// Augments an entity with a 3d light.
 type Light3dFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, true)
 
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
@@ -2237,7 +2237,7 @@ module StaticBillboardFacetExtensions =
 
 /// Augments an entity with a static billboard.
 type StaticBillboardFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.InsetOpt None
@@ -2294,7 +2294,7 @@ module BasicStaticBillboardEmitterFaceExtensions =
 
 /// Augments an entity with basic static billboard emitter.
 type BasicStaticBillboardEmitterFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let tryMakeEmitter (entity : Entity) (world : World) =
         World.tryMakeEmitter
@@ -2552,7 +2552,7 @@ module StaticModelFacetExtensions =
 
 /// Augments an entity with a static model.
 type StaticModelFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.InsetOpt None
@@ -2615,7 +2615,7 @@ module StaticModelSurfaceFacetExtensions =
 
 /// Augments an entity with an indexed static model surface.
 type StaticModelSurfaceFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.InsetOpt None
@@ -2709,7 +2709,7 @@ module AnimatedModelFacetExtensions =
 
 /// Augments an entity with an animated model.
 type AnimatedModelFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
         match sceneOpt with
@@ -2884,7 +2884,7 @@ module TerrainFacetExtensions =
 
 /// Augments an entity with a rigid 3d terrain.
 type TerrainFacet () =
-    inherit Facet (true)
+    inherit Facet (true, false, false)
 
     static member Properties =
         [define Entity.Size (v3 512.0f 128.0f 512.0f)
@@ -3007,7 +3007,7 @@ module NavBodyFacetExtensions =
 
 /// Augments an entity with a 3d navigation body.
 type NavBodyFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static let propagateNavBody (entity : Entity) world =
         match entity.GetNavShape world with
@@ -3093,7 +3093,7 @@ module FollowerFacetExtensions =
         member this.FollowTargetOpt = lens (nameof this.FollowTargetOpt) this this.GetFollowTargetOpt this.SetFollowTargetOpt
 
 type FollowerFacet () =
-    inherit Facet (false)
+    inherit Facet (false, false, false)
 
     static member Properties =
         [define Entity.Following true

@@ -25,7 +25,7 @@ module EnemyExtensions =
         member this.DieEvent = Events.DieEvent --> this
 
 type EnemyDispatcher () =
-    inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, { Health = 7 })
+    inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, false, false, { Health = 7 })
 
     static let WalkForce = v3 -300.0f -1500.0f 0.0f
 

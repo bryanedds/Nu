@@ -32,7 +32,7 @@ module CharacterExtensions =
         member this.DieEvent = Events.DieEvent --> this
 
 type CharacterDispatcher (character : Character) =
-    inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, character)
+    inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, false, false, character)
 
     static member Facets =
         [typeof<RigidBodyFacet>]

@@ -1812,11 +1812,11 @@ module EntityDispatcherModule2 =
 
     /// The MMCC dispatcher for entities.
     and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
-        (is2d, perimeterCentered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher (is2d, perimeterCentered, physical)
+        (is2d, perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light)
 
-        new (is2d, perimeterCentered, physical, initial : 'model) =
-            EntityDispatcher<'model, 'message, 'command> (is2d, perimeterCentered, physical, fun _ -> initial)
+        new (is2d, perimeterCentered, physical, lightProbe, light, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, perimeterCentered, physical, lightProbe, light, fun _ -> initial)
 
         /// Get the entity's model.
         member this.GetModel (entity : Entity) world : 'model =
@@ -1939,17 +1939,17 @@ module EntityDispatcherModule2 =
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
-    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, makeInitial)
+    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, lightProbe, light, makeInitial)
 
-        new (centered, physical, initial : 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+        new (centered, physical, lightProbe, light, initial : 'model) =
+            Entity2dDispatcher<'model, 'message, 'command> (centered, physical, lightProbe, light, fun _ -> initial)
 
-        new (physical, makeInitial : World -> 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, makeInitial)
+        new (physical, lightProbe, light, makeInitial : World -> 'model) =
+            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light, makeInitial)
 
-        new (physical, initial : 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity2dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault
@@ -1957,7 +1957,7 @@ module EntityDispatcherModule2 =
 
     /// A gui entity dispatcher.
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
@@ -1978,11 +1978,11 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     /// A 3d entity dispatcher.
-    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, makeInitial)
+    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, lightProbe, light, makeInitial)
 
-        new (physical, initial : 'model) =
-            Entity3dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity3dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity3dSizeDefault]
@@ -1996,7 +1996,7 @@ module EntityDispatcherModule2 =
 
     /// A vui dispatcher (gui in 3d).
     and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, false, false, makeInitial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]

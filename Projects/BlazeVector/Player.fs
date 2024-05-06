@@ -30,7 +30,7 @@ module PlayerExtensions =
         member this.Player = this.ModelGeneric<Player> ()
 
 type PlayerDispatcher () =
-    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
+    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
     static let [<Literal>] WalkForce = 700.0f
     static let [<Literal>] FallForce = -2500.0f

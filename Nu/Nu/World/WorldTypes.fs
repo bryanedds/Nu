@@ -491,7 +491,7 @@ and GroupDispatcher () =
     default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for entities.
-and EntityDispatcher (is2d, perimeterCentered, physical) =
+and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     inherit SimulantDispatcher ()
 
     static member Properties =
@@ -523,8 +523,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
          Define? Pickable true
          Define? PerimeterCentered true
          Define? Static false
-         Define? LightProbe false
-         Define? Light false
          Define? AlwaysUpdate false
          Define? AlwaysRender false
          Define? PublishPreUpdates false
@@ -588,9 +586,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     abstract TryUntruncateModel<'a> : 'a * Entity* World  -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
 
-    /// Whether the dispatcher participates directly in a physics system (not counting its facets).
-    member this.Physical = physical
-
     /// Whether the dispatcher uses a centered perimeter by default.
     member this.PerimeterCentered = perimeterCentered
 
@@ -600,8 +595,17 @@ and EntityDispatcher (is2d, perimeterCentered, physical) =
     /// Whether the dispatcher has a 3-dimensional transform interpretation.
     member this.Is3d = not is2d
 
+    /// Whether the dispatcher participates directly in a physics system (not counting its facets).
+    member this.Physical = physical
+
+    /// Whether the dispatcher participates directly in light mapping (not counting its facets).
+    member this.LightProbe = lightProbe
+
+    /// Whether the dispatcher participates directly in lighting (not counting its facets).
+    member this.Light = light
+
 /// Dynamically augments an entity's behavior in a composable way.
-and Facet (physical) =
+and Facet (physical, lightProbe, light) =
 
     /// Register a facet when adding it to an entity.
     abstract Register : Entity * World -> World
@@ -644,6 +648,12 @@ and Facet (physical) =
 
     /// Whether a facet participates in a physics system.
     member this.Physical = physical
+
+    /// Whether a facet participates in light mapping.
+    member this.LightProbe = lightProbe
+
+    /// Whether a facet participates in lighting.
+    member this.Light = light
 
     interface LateBindings
 
@@ -1064,11 +1074,11 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Mounted with get () = this.Transform.Mounted and set value = this.Transform.Mounted <- value
     member this.Is2d with get () = this.Dispatcher.Is2d
     member this.Is3d with get () = this.Dispatcher.Is3d
-    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets // TODO: consider using a cache flag to keep from recomputing this.
+    member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets
+    member this.LightProbe with get () = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
+    member this.Light with get () = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.PerimeterCentered with get () = this.Transform.PerimeterCentered and set value = this.Transform.PerimeterCentered <- value
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
-    member this.LightProbe with get () = this.Transform.LightProbe and set value = this.Transform.LightProbe <- value
-    member this.Light with get () = this.Transform.Light and set value = this.Transform.Light <- value
     member this.Optimized with get () = this.Transform.Optimized
 
     /// Make an entity state value.

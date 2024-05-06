@@ -366,9 +366,9 @@ module WorldModuleEntity =
         static member internal getEntityIs3d entity world = (World.getEntityState entity world).Is3d
         static member internal getEntityPerimeterCentered entity world = (World.getEntityState entity world).PerimeterCentered
         static member internal getEntityStatic entity world = (World.getEntityState entity world).Static
+        static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityLightProbe entity world = (World.getEntityState entity world).LightProbe
         static member internal getEntityLight entity world = (World.getEntityState entity world).Light
-        static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityOptimized entity world = (World.getEntityState entity world).Optimized
         static member internal getEntityDestroying (entity : Entity) world = List.exists ((=) (entity :> Simulant)) (World.getDestructionListRev world)
         static member internal getEntityMountOpt entity world = (World.getEntityState entity world).MountOpt
@@ -830,52 +830,6 @@ module WorldModuleEntity =
                         struct (entityState, World.setEntityState entityState entity world)
                 let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
                 let world = World.publishEntityChange (nameof entityState.AlwaysRender) previous value entityState.PublishChangeEvents entity world
-                struct (true, world)
-            else struct (false, world)
-
-        static member internal setEntityLightProbe value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.LightProbe
-            if value <> previous then
-                let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static && not entityState.AlwaysUpdate
-                let lightProbeOld = entityState.LightProbe
-                let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
-                let boundsOld = entityState.Bounds
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.LightProbe <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = EntityState.diverge entityState
-                        entityState.LightProbe <- value
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
-                let world = World.publishEntityChange (nameof entityState.LightProbe) previous value entityState.PublishChangeEvents entity world
-                struct (true, world)
-            else struct (false, world)
-
-        static member internal setEntityLight value entity world =
-            let entityState = World.getEntityState entity world
-            let previous = entityState.Light
-            if value <> previous then
-                let visibleOld = entityState.Visible || entityState.AlwaysRender
-                let staticOld = entityState.Static && not entityState.AlwaysUpdate
-                let lightProbeOld = entityState.LightProbe
-                let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
-                let boundsOld = entityState.Bounds
-                let struct (entityState, world) =
-                    if entityState.Imperative then
-                        entityState.Light <- value
-                        struct (entityState, world)
-                    else
-                        let entityState = EntityState.diverge entityState
-                        entityState.Light <- value
-                        struct (entityState, World.setEntityState entityState entity world)
-                let world = World.updateEntityInEntityTree visibleOld staticOld lightProbeOld lightOld presenceOld boundsOld entity world
-                let world = World.publishEntityChange (nameof entityState.Light) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
 
@@ -2068,9 +2022,11 @@ module WorldModuleEntity =
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
+            let lightProbe = entityState.Dispatcher.LightProbe
+            let light = entityState.Dispatcher.Light
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView3d transform.LightProbe transform.Light presence transform.Bounds3d world
+            presence.OmnipresentType || World.boundsInView3d lightProbe light presence transform.Bounds3d world
 
         static member internal getEntityAttributesInferred (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world
@@ -2827,8 +2783,6 @@ module WorldModuleEntity =
         EntitySetters.["Pickable"] <- fun property entity world -> World.setEntityPickable (property.PropertyValue :?> bool) entity world
         EntitySetters.["PerimeterCentered"] <- fun property entity world -> World.setEntityPerimeterCentered (property.PropertyValue :?> bool) entity world
         EntitySetters.["Static"] <- fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world
-        EntitySetters.["LightProbe"] <- fun property entity world -> World.setEntityLightProbe (property.PropertyValue :?> bool) entity world
-        EntitySetters.["Light"] <- fun property entity world -> World.setEntityLight (property.PropertyValue :?> bool) entity world
         EntitySetters.["AlwaysUpdate"] <- fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
         EntitySetters.["AlwaysRender"] <- fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world
         EntitySetters.["Persistent"] <- fun property entity world -> World.setEntityPersistent (property.PropertyValue :?> bool) entity world

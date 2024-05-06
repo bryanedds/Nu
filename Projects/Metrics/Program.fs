@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 type MetricsEntityDispatcher () =
-    inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
+    inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, false, false, Assets.Default.StaticModel)
 
 #if !MMCC
     override this.Update (entity, world) =

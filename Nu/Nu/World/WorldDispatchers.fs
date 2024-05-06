@@ -8,11 +8,11 @@ open Prime
 open Nu
 
 /// A 2d entity dispatcher.
-type Entity2dDispatcher (perimeterCentered, physical) =
-    inherit EntityDispatcher (true, perimeterCentered, physical)
+type Entity2dDispatcher (perimeterCentered, physical, lightProbe, light) =
+    inherit EntityDispatcher (true, perimeterCentered, physical, lightProbe, light)
 
-    new (physical) =
-        Entity2dDispatcher (Constants.Engine.Entity2dPerimeterCenteredDefault, physical)
+    new (physical, lightProbe, light) =
+        Entity2dDispatcher (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light)
 
     static member Properties =
         [define Entity.Size Constants.Engine.Entity2dSizeDefault
@@ -20,7 +20,7 @@ type Entity2dDispatcher (perimeterCentered, physical) =
 
 /// A gui entity dispatcher.
 type GuiDispatcher () =
-    inherit EntityDispatcher (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false)
+    inherit EntityDispatcher (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false)
 
     static member Facets =
         [typeof<LayoutFacet>]
@@ -33,11 +33,8 @@ type GuiDispatcher () =
          define Entity.DisabledColor Constants.Gui.DisabledColor]
 
 /// A 3d entity dispatcher.
-type Entity3dDispatcher (physical) =
-    inherit EntityDispatcher (false, true, physical)
-
-    new (physical) =
-        Entity3dDispatcher (physical)
+type Entity3dDispatcher (physical, lightProbe, light) =
+    inherit EntityDispatcher (false, true, physical, lightProbe, light)
 
     static member Properties =
         [define Entity.Size Constants.Engine.Entity3dSizeDefault]
@@ -51,21 +48,21 @@ type Entity3dDispatcher (physical) =
 
 /// A vui dispatcher (gui in 3d).
 type VuiDispatcher () =
-    inherit EntityDispatcher (false, true, false)
+    inherit EntityDispatcher (false, true, false, false, false)
 
     static member Properties =
         [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
 /// Gives an entity the base behavior of a static sprite.
 type StaticSpriteDispatcher () =
-    inherit Entity2dDispatcher (false)
+    inherit Entity2dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<StaticSpriteFacet>]
 
 /// Gives an entity the base behavior of an animated sprite.
 type AnimatedSpriteDispatcher () =
-    inherit Entity2dDispatcher (false)
+    inherit Entity2dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<AnimatedSpriteFacet>]
@@ -181,7 +178,7 @@ type PanelDispatcher () =
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
-    inherit Entity2dDispatcher (true, false)
+    inherit Entity2dDispatcher (true, false, false, false)
 
     static member Facets =
         [typeof<BasicStaticSpriteEmitterFacet>]
@@ -191,7 +188,7 @@ type BasicStaticSpriteEmitterDispatcher () =
 
 /// Gives an entity the base behavior of a 2d effect.
 type Effect2dDispatcher () =
-    inherit Entity2dDispatcher (true, false)
+    inherit Entity2dDispatcher (true, false, false, false)
 
     static member Facets =
         [typeof<EffectFacet>]
@@ -202,7 +199,7 @@ type Effect2dDispatcher () =
 
 /// Gives an entity the base behavior of a rigid 2d block using static physics.
 type Block2dDispatcher () =
-    inherit Entity2dDispatcher (true)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -214,7 +211,7 @@ type Block2dDispatcher () =
 
 /// Gives an entity the base behavior of a rigid 2d box using dynamic physics.
 type Box2dDispatcher () =
-    inherit Entity2dDispatcher (true)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -241,7 +238,7 @@ module Character2dDispatcherExtensions =
 
 /// Gives an entity the base behavior of 2d physics-driven character in a platformer.
 type Character2dDispatcher () =
-    inherit Entity2dDispatcher (true)
+    inherit Entity2dDispatcher (true, false, false)
 
     static let computeWalkCelInset time delay (celSize : Vector2) (celRun : int) =
         let compressedTime =
@@ -317,7 +314,7 @@ type Character2dDispatcher () =
 
 /// Gives an entity the base behavior of a physics-driven 2d joint.
 type BodyJoint2dDispatcher () =
-    inherit Entity2dDispatcher (true)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<BodyJointFacet>]
@@ -327,21 +324,21 @@ type BodyJoint2dDispatcher () =
 
 /// Gives an entity the base behavior of an asset-defined tile map.
 type TileMapDispatcher () =
-    inherit Entity2dDispatcher (true)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<TileMapFacet>]
 
 /// Gives an entity the base behavior of a user-defined tile map.
 type TmxMapDispatcher () =
-    inherit Entity2dDispatcher (true)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<TmxMapFacet>]
 
 /// Gives an entity the base behavior of sky box.
 type SkyBoxDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<SkyBoxFacet>]
@@ -354,7 +351,7 @@ module Lighting3dConfigDispatcherExtensions =
         member this.Lighting3dConfig = lens (nameof this.Lighting3dConfig) this this.GetLighting3dConfig this.SetLighting3dConfig
 
 type Lighting3dConfigDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Properties =
         [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig
@@ -368,7 +365,7 @@ type Lighting3dConfigDispatcher () =
 
 /// Gives an entity the base behavior of a 3d light probe.
 type LightProbe3dDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, true, false)
 
     static member Facets =
         [typeof<LightProbe3dFacet>]
@@ -378,7 +375,7 @@ type LightProbe3dDispatcher () =
 
 /// Gives an entity the base behavior of a 3d light.
 type Light3dDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, true)
 
     static member Facets =
         [typeof<Light3dFacet>]
@@ -388,28 +385,28 @@ type Light3dDispatcher () =
 
 /// Gives an entity the base behavior of a static billboard.
 type StaticBillboardDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<StaticBillboardFacet>]
 
 /// Gives an entity the base behavior of a static model.
 type StaticModelDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<StaticModelFacet>]
 
 /// Gives an entity the base behavior of an animated model.
 type AnimatedModelDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<AnimatedModelFacet>]
 
 /// Gives an entity the base behavior of physics-driven rigid model.
 type RigidModelDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static let updateBodyShape evt world =
         let entity = evt.Subscriber : Entity
@@ -445,14 +442,14 @@ type RigidModelDispatcher () =
 
 /// Gives an entity the base behavior of an indexed static model.
 type StaticModelSurfaceDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<StaticModelSurfaceFacet>]
 
 /// Gives an entity the base behavior of an indexed, physics-driven rigid model.
 type RigidModelSurfaceDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static let updateBodyShape evt world =
         let entity = evt.Subscriber : Entity
@@ -481,14 +478,14 @@ type RigidModelSurfaceDispatcher () =
 
 /// Gives an entity the base behavior of basic static billboard emitter.
 type BasicStaticBillboardEmitterDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<BasicStaticBillboardEmitterFacet>]
 
 /// Gives an entity the base behavior of a 3d effect.
 type Effect3dDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static member Facets =
         [typeof<EffectFacet>]
@@ -498,7 +495,7 @@ type Effect3dDispatcher () =
 
 /// Gives an entity the base behavior of a rigid 3d block using static physics.
 type Block3dDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -510,7 +507,7 @@ type Block3dDispatcher () =
 
 /// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
 type Box3dDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -532,7 +529,7 @@ module Character3dDispatcherExtensions =
 
 /// Gives an entity the base behavior of a 3d character.
 type Character3dDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<AnimatedModelFacet>
@@ -579,7 +576,7 @@ type Character3dDispatcher () =
 
 /// Gives an entity the base behavior of a physics-driven 3d joint.
 type BodyJoint3dDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<BodyJointFacet>]
@@ -594,7 +591,7 @@ type BodyJoint3dDispatcher () =
 
 /// Gives an entity the base behavior of a rigid 3d terrain.
 type TerrainDispatcher () =
-    inherit Entity3dDispatcher (true)
+    inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<TerrainFacet>]
@@ -608,7 +605,7 @@ module Nav3dConfigDispatcherExtensions =
 
 /// Augments an entity with a navigation mesh.
 type Nav3dConfigDispatcher () =
-    inherit Entity3dDispatcher (false)
+    inherit Entity3dDispatcher (false, false, false)
 
     static let propagateNav3dConfig (entity : Entity) world =
         let config = entity.GetNav3dConfig world
