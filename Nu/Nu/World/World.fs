@@ -396,7 +396,7 @@ module WorldModule3 =
                 // make the world's subsystems, loading default packages where applicable
                 let imGui = ImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
                 let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
-                let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault Metadata.tryGetFilePath Metadata.tryGetStaticModelMetadata
+                let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
                 let rendererProcess =
                     if Constants.Engine.RunSynchronously
                     then RendererInline () :> RendererProcess

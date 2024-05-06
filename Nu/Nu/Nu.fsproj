@@ -78,6 +78,7 @@
 		<Compile Include="AssetGraph\AssetTypes.fs" />
 		<Compile Include="AssetGraph\AssetGraph.fs" />
 		<Compile Include="AssetGraph\AssetClient.fs" />
+		<Compile Include="Metadata\Metadata.fs" />
 		<Compile Include="Physics\PhysicsEngine.fs" />
 		<Compile Include="Physics\PhysicsEngine2d.fs" />
 		<Compile Include="Physics\PhysicsEngine3d.fs" />
@@ -88,7 +89,6 @@
 		<Compile Include="Render\RendererProcess.fs" />
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
-		<Compile Include="Metadata\Metadata.fs" />
 		<Compile Include="DataToken\DataToken.fs" />
 		<Compile Include="Particles\Particles.fs" />
 		<Compile Include="Effects\Effects.fs" />

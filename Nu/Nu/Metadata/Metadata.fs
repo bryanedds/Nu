@@ -10,9 +10,6 @@ open System.IO
 open TiledSharp
 open Prime
 
-(* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystems from accessing
-global Metadata from another thread. *)
-
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
 /// memory.
 type Metadata =
@@ -117,6 +114,7 @@ module Metadata =
         | SongExtension _ -> Some SongMetadata
         | _ -> None
 
+    /// Thread-safe.
     let private tryGenerateMetadataPackage packageName assetGraph =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assetsCollected ->
@@ -142,6 +140,7 @@ module Metadata =
             ConcurrentDictionary (-1, Seq.empty, HashIdentity.Structural)
 
     /// Attempt to load the given metadata package.
+    /// Thread-safe.
     let loadMetadataPackage packageName =
         match AssetGraphOpt with
         | Some assetGraph ->
@@ -152,10 +151,12 @@ module Metadata =
         | None -> ()
 
     /// Attempt to unload the given metadata package.
+    /// Thread-safe.
     let unloadMetadataPackage packageName =
         MetadataPackagesLoaded.Remove packageName
 
     /// Reload metadata.
+    /// Thread-safe.
     let reloadMetadata () =
 
         // reload outdated metadata from collected package
@@ -212,6 +213,7 @@ module Metadata =
         | Left error -> Log.info ("Metadata regeneration failed due to: '" + error)
 
     /// Attempt to get the metadata package containing the given asset, attempt to load it if it isn't already.
+    /// Thread-safe.
     let private tryGetMetadataPackage (assetTag : AssetTag) =
         match MetadataPackagesLoaded.TryGetValue assetTag.PackageName with
         | (true, package) -> Some package
@@ -229,11 +231,13 @@ module Metadata =
     /// Get the metadate packages that have been loaded.
     /// NOTE: this is a potentially expensive call as the tree of ConcurrentDictionaries must be copied to avoid
     /// invalidating enumeration in a multi-threaded context.
+    /// Thread-safe.
     let getMetadataPackagesLoaded () =
         MetadataPackagesLoaded.ToArray () |>
         Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
 
     /// Determine that a given asset's metadata exists.
+    /// Thread-safe.
     let getMetadataExists (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
         | Some package ->
@@ -243,6 +247,7 @@ module Metadata =
         | None -> false
 
     /// Attempt to get the file path of the given asset.
+    /// Thread-safe.
     let tryGetFilePath (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
         | Some package ->
@@ -252,6 +257,7 @@ module Metadata =
         | None -> None
 
     /// Attempt to get the metadata of the given asset.
+    /// Thread-safe.
     let tryGetMetadata (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
         | Some package ->
@@ -261,6 +267,7 @@ module Metadata =
         | None -> None
 
     /// Attempt to get the texture metadata of the given image.
+    /// Thread-safe.
     let tryGetTextureMetadata (image : Image AssetTag) =
         match tryGetMetadata image with
         | Some (TextureMetadata metadata) -> Some metadata
@@ -268,30 +275,36 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the texture metadata of the given image (throwing on failure).
+    /// Thread-safe.
     let getTextureMetadata image =
         Option.get (tryGetTextureMetadata image)
 
     /// Attempt to get the texture size of the given image.
+    /// Thread-safe.
     let tryGetTextureSize (image : Image AssetTag) =
         match tryGetTextureMetadata image with
         | Some metadata -> Some (v2i metadata.TextureWidth metadata.TextureHeight)
         | None -> None
 
     /// Forcibly get the texture size of the given image (throwing on failure).
+    /// Thread-safe.
     let getTextureSize image =
         Option.get (tryGetTextureSize image)
 
     /// Attempt to get the texture size of the given image.
+    /// Thread-safe.
     let tryGetTextureSizeF image =
         match tryGetTextureSize image with
         | Some size -> Some (v2 (single size.X) (single size.Y))
         | None -> None
 
     /// Forcibly get the texture size of the given image (throwing on failure).
+    /// Thread-safe.
     let getTextureSizeF image =
         Option.get (tryGetTextureSizeF image)
 
     /// Attempt to get the metadata of the given tile map.
+    /// Thread-safe.
     let tryGetTileMapMetadata (tileMap : TileMap AssetTag) =
         match tryGetMetadata tileMap with
         | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
@@ -299,9 +312,11 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the metadata of the given tile map (throwing on failure).
+    /// Thread-safe.
     let getTileMapMetadata tileMap =
         Option.get (tryGetTileMapMetadata tileMap)
 
+    /// Thread-safe.
     let private tryGetModelMetadata model =
         match tryGetMetadata model with
         | Some (StaticModelMetadata model) -> Some model
@@ -309,6 +324,7 @@ module Metadata =
         | None -> None
         | _ -> None
 
+    /// Thread-safe.
     let private tryGetModelAlbedoImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -328,6 +344,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelRoughnessImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -367,6 +384,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelMetallicImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -406,6 +424,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelAmbientOcclusionImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -446,6 +465,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelEmissionImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -475,6 +495,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelNormalImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -504,6 +525,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelHeightImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -533,6 +555,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelTwoSided materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -545,6 +568,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelNavShape materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -558,6 +582,7 @@ module Metadata =
         | None -> None
 
     /// Attempt to get the metadata of the given static model.
+    /// Thread-safe.
     let tryGetStaticModelMetadata (staticModel : StaticModel AssetTag) =
         match tryGetMetadata staticModel with
         | Some (StaticModelMetadata model) -> Some model
@@ -565,46 +590,57 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the metadata of the given static model (throwing on failure).
+    /// Thread-safe.
     let getStaticModelMetadata staticModel =
         Option.get (tryGetStaticModelMetadata staticModel)
 
     /// Attempt to get the albedo image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelAlbedoImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelAlbedoImage materialIndex staticModel
 
     /// Attempt to get the roughness image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelRoughnessImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelRoughnessImage materialIndex staticModel
 
     /// Attempt to get the metallic image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelMetallicImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelMetallicImage materialIndex staticModel
 
     /// Attempt to get the ambient occlusion image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelAmbientOcclusionImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelAmbientOcclusionImage materialIndex staticModel
 
     /// Attempt to get the emission image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelEmissionImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelEmissionImage materialIndex staticModel
 
     /// Attempt to get the normal image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelNormalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelNormalImage materialIndex staticModel
 
     /// Attempt to get the height image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelHeightImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelHeightImage materialIndex staticModel
 
     /// Attempt to get the two-sided property for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelTwoSided materialIndex staticModel
 
     /// Attempt to get the 3d navigation shape for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelNavShape materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelNavShape materialIndex staticModel
 
     /// Attempt to get the metadata of the given animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelMetadata (animatedModel : AnimatedModel AssetTag) =
         match tryGetMetadata animatedModel with
         | Some (AnimatedModelMetadata model) -> Some model
@@ -612,42 +648,52 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the metadata of the given animated model (throwing on failure).
+    /// Thread-safe.
     let getAnimatedModelMetadata animatedModel =
         Option.get (tryGetAnimatedModelMetadata animatedModel)
 
     /// Attempt to get the albedo image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelAlbedoImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelAlbedoImage materialIndex animatedModel
 
     /// Attempt to get the roughness image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelRoughnessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelRoughnessImage materialIndex animatedModel
 
     /// Attempt to get the metallic image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelMetallicImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelMetallicImage materialIndex animatedModel
 
     /// Attempt to get the ambient occlusion image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelAmbientOcclusionImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelAmbientOcclusionImage materialIndex animatedModel
 
     /// Attempt to get the emission image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelEmissionImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelEmissionImage materialIndex animatedModel
 
     /// Attempt to get the normal image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNormalImage materialIndex animatedModel
 
     /// Attempt to get the height image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelHeightImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelHeightImage materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelTwoSided materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelTwoSided materialIndex animatedModel
 
     /// Attempt to get the 3d navigation shape property for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelNavShape materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNavShape materialIndex animatedModel
 

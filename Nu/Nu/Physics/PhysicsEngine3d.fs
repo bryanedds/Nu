@@ -73,8 +73,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BroadPhaseInterface : BroadphaseInterface
           GhostPairCallback : GhostPairCallback
           ConstraintSolver : ConstraintSolver
-          TryGetAssetFilePath : AssetTag -> string option
-          TryGetStaticModelMetadata : StaticModel AssetTag -> OpenGL.PhysicallyBased.PhysicallyBasedModel option
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
@@ -319,7 +317,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     // TODO: add some error logging.
     static member private attachStaticModelShape bodySource (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        match physicsEngine.TryGetStaticModelMetadata staticModelShape.StaticModel with
+        match Metadata.tryGetStaticModelMetadata staticModelShape.StaticModel with
         | Some staticModel ->
             Seq.fold (fun centerMassInertiaDisposes i ->
                 let surface = staticModel.Surfaces.[i]
@@ -339,7 +337,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     // TODO: add some error logging.
     static member private attachStaticModelShapeSurface bodySource (bodyProperties : BodyProperties) (staticModelSurfaceShape : StaticModelSurfaceShape) (compoundShape : CompoundShape) centerMassInertiaDisposes physicsEngine =
-        match physicsEngine.TryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
+        match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
         | Some staticModel ->
             if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
@@ -490,7 +488,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         PhysicsEngine3d.createBody3 (fun ps cs cmas ->
-            PhysicsEngine3d.attachBodyShape physicsEngine.TryGetAssetFilePath bodyId.BodySource ps bodyShape cs cmas physicsEngine)
+            PhysicsEngine3d.attachBodyShape Metadata.tryGetFilePath bodyId.BodySource ps bodyShape cs cmas physicsEngine)
             bodyId bodyProperties physicsEngine
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -974,7 +972,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                           AngularVelocity = character.AngularVelocity }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
 
-    static member make gravity tryGetAssetFilePath tryGetStaticModelMetadata =
+    static member make gravity =
         use collisionConfigurationInfo = new DefaultCollisionConstructionInfo ()
         let collisionConfiguration = new DefaultCollisionConfiguration (collisionConfigurationInfo)
         let collisionDispatcher = new CollisionDispatcher (collisionConfiguration)
@@ -1001,8 +999,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
               BroadPhaseInterface = broadPhaseInterface
               ConstraintSolver = constraintSolver
               GhostPairCallback = ghostPairCallback
-              TryGetAssetFilePath = tryGetAssetFilePath
-              TryGetStaticModelMetadata = tryGetStaticModelMetadata
               UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = List () }
