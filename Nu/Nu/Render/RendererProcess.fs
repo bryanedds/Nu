@@ -324,6 +324,12 @@ type RendererThread () =
                 
                 let mutable propertyCount = 0u
                 let result = vkEnumerateInstanceExtensionProperties (Interop.AsPointer &propertyCount, NativePtr.nullPtr)
+                let mutable properties = Array.zeroCreate<VkExtensionProperties> (int propertyCount)
+
+                use propertiesHnd = properties.AsMemory().Pin() in
+                let propertiesNptr = NativePtr.ofVoidPtr<VkExtensionProperties> propertiesHnd.Pointer
+
+                let result = vkEnumerateInstanceExtensionProperties (Interop.AsPointer &propertyCount, propertiesNptr)
                 printfn "property count: %s" (propertyCount.ToString ())
         
                 let mutable sdlExtensionCount = 0u
