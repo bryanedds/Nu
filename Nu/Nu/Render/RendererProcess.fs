@@ -329,15 +329,25 @@ type RendererThread () =
                 let mutable sdlExtensionCount = 0u
                 // null is required to output to count; [||] does not work
                 let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
-                let sdlExtensions = Array.zeroCreate (int sdlExtensionCount)
-                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensions)
+                let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
+                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
                 printfn "sdl extension count: %s" (sdlExtensionCount.ToString ())
-        
-                let mutable instanceCreateInfo = VkInstanceCreateInfo ()
-                instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
-                instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensions
+
+                let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
+
+                for i in [0 .. dec (int sdlExtensionCount)] do
+                    sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
                 
+                let mutable instanceCreateInfo = VkInstanceCreateInfo ()
+                
+                use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin() in
+                let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
+                    
+                instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
+                instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsNptr
+                    
                 let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
+                printfn "vkCreateInstance returned %s." (result.ToString ())
 
 
                 // create gl context
