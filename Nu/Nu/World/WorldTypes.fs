@@ -818,30 +818,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Order : int64
       Id : Guid }
 
-    /// Make a game state value.
-    static member make (dispatcher : GameDispatcher) =
-        let eye3dCenter = Constants.Engine.Eye3dCenterDefault
-        let eye3dRotation = quatIdentity
-        let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
-        let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
-        let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
-        { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
-          Model = { DesignerType = typeof<unit>; DesignerValue = () }
-          Content = WorldTypes.EmptyGameContent :?> GameContent
-          SelectedScreenOpt = None
-          DesiredScreen = DesireIgnore
-          ScreenTransitionDestinationOpt = None
-          Eye2dCenter = v2Zero
-          Eye2dSize = Constants.Render.VirtualResolution.V2
-          Eye3dCenter = eye3dCenter
-          Eye3dRotation = eye3dRotation
-          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation)
-          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation)
-          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation)
-          Order = Core.getTimeStampUnique ()
-          Id = Gen.id }
-
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, gameState.Xtension, &propertyRef)
@@ -873,6 +849,30 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     static member copy this =
         { this with GameState.Dispatcher = this.Dispatcher }
 
+    /// Make a game state value.
+    static member make (dispatcher : GameDispatcher) =
+        let eye3dCenter = Constants.Engine.Eye3dCenterDefault
+        let eye3dRotation = quatIdentity
+        let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
+        let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
+        let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
+        { Dispatcher = dispatcher
+          Xtension = Xtension.makeFunctional ()
+          Model = { DesignerType = typeof<unit>; DesignerValue = () }
+          Content = WorldTypes.EmptyGameContent :?> GameContent
+          SelectedScreenOpt = None
+          DesiredScreen = DesireIgnore
+          ScreenTransitionDestinationOpt = None
+          Eye2dCenter = v2Zero
+          Eye2dSize = Constants.Render.VirtualResolution.V2
+          Eye3dCenter = eye3dCenter
+          Eye3dRotation = eye3dRotation
+          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation)
+          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation)
+          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation)
+          Order = Core.getTimeStampUnique ()
+          Id = Gen.id }
+
     interface SimulantState with
         member this.GetXtension () = this.Xtension
 
@@ -892,24 +892,6 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Order : int64
       Id : uint64
       Name : string }
-
-    /// Make a screen state value.
-    static member make time nameOpt (dispatcher : ScreenDispatcher) =
-        let (id, name) = Gen.id64AndNameIf nameOpt
-        { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
-          Model = { DesignerType = typeof<unit>; DesignerValue = () }
-          Content = WorldTypes.EmptyScreenContent :?> ScreenContent
-          TransitionState = IdlingState time
-          Incoming = Transition.make Incoming
-          Outgoing = Transition.make Outgoing
-          SlideOpt = None
-          Nav3d = Nav3d.make ()
-          Protected = false
-          Persistent = true
-          Order = Core.getTimeStampUnique ()
-          Id = id
-          Name = name }
 
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, screenState, propertyRef : Property outref) =
@@ -942,6 +924,24 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
     static member copy this =
         { this with ScreenState.Dispatcher = this.Dispatcher }
 
+    /// Make a screen state value.
+    static member make time nameOpt (dispatcher : ScreenDispatcher) =
+        let (id, name) = Gen.id64AndNameIf nameOpt
+        { Dispatcher = dispatcher
+          Xtension = Xtension.makeFunctional ()
+          Model = { DesignerType = typeof<unit>; DesignerValue = () }
+          Content = WorldTypes.EmptyScreenContent :?> ScreenContent
+          TransitionState = IdlingState time
+          Incoming = Transition.make Incoming
+          Outgoing = Transition.make Outgoing
+          SlideOpt = None
+          Nav3d = Nav3d.make ()
+          Protected = false
+          Persistent = true
+          Order = Core.getTimeStampUnique ()
+          Id = id
+          Name = name }
+
     interface SimulantState with
         member this.GetXtension () = this.Xtension
 
@@ -957,20 +957,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       Order : int64
       Id : uint64
       Name : string }
-
-    /// Make a group state value.
-    static member make nameOpt (dispatcher : GroupDispatcher) =
-        let (id, name) = Gen.id64AndNameIf nameOpt
-        { Dispatcher = dispatcher
-          Xtension = Xtension.makeFunctional ()
-          Model = { DesignerType = typeof<unit>; DesignerValue = () }
-          Content = WorldTypes.EmptyGroupContent :?> GroupContent
-          Visible = true
-          Protected = false
-          Persistent = true
-          Order = Core.getTimeStampUnique ()
-          Id = id
-          Name = name }
 
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, groupState, propertyRef : Property outref) =
@@ -1003,11 +989,24 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
     static member copy this =
         { this with GroupState.Dispatcher = this.Dispatcher }
 
+    /// Make a group state value.
+    static member make nameOpt (dispatcher : GroupDispatcher) =
+        let (id, name) = Gen.id64AndNameIf nameOpt
+        { Dispatcher = dispatcher
+          Xtension = Xtension.makeFunctional ()
+          Model = { DesignerType = typeof<unit>; DesignerValue = () }
+          Content = WorldTypes.EmptyGroupContent :?> GroupContent
+          Visible = true
+          Protected = false
+          Persistent = true
+          Order = Core.getTimeStampUnique ()
+          Id = id
+          Name = name }
+
     interface SimulantState with
         member this.GetXtension () = this.Xtension
 
 /// Hosts the ongoing state of an entity.
-/// OPTIMIZATION: ScriptFrameOpt is instantiated only when needed.
 and [<ReferenceEquality; CLIMutable>] EntityState =
     { mutable Transform : Transform
       mutable Dispatcher : EntityDispatcher
@@ -1081,31 +1080,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized with get () = this.Transform.Optimized
 
-    /// Make an entity state value.
-    static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-        let mutable transform = Transform.makeDefault dispatcher.PerimeterCentered
-        transform.Imperative <- imperative
-        let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
-        { Transform = transform
-          Dispatcher = dispatcher
-          Facets = [||]
-          Xtension = Xtension.makeEmpty imperative
-          Model = { DesignerType = typeof<unit>; DesignerValue = () }
-          Content = WorldTypes.EmptyEntityContent :?> EntityContent
-          PositionLocal = Vector3.Zero
-          RotationLocal = Quaternion.Identity
-          ScaleLocal = Vector3.One
-          AnglesLocal = Vector3.Zero
-          ElevationLocal = 0.0f
-          MountOpt = None
-          PropagationSourceOpt = None
-          OverlayNameOpt = overlayNameOpt
-          FacetNames = Set.empty
-          PropagatedDescriptorOpt = None
-          Order = Core.getTimeStampUnique ()
-          Id = id
-          Surnames = surnames }
-
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
     static member inline copy (entityState : EntityState) =
@@ -1118,7 +1092,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         entityState.Transform.InvalidateFast () // OPTIMIZATION: invalidate fast.
         entityState'
 
-    /// Check that there exists an xtenstion proprty that is a runtime property.
+    /// Check that there exists an xtenstion property that is a runtime property.
     static member inline containsRuntimeProperties entityState =
         Xtension.containsRuntimeProperties entityState.Xtension
 
@@ -1159,6 +1133,31 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         let xtension = Xtension.detachProperty name entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
+
+    /// Make an entity state value.
+    static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
+        let mutable transform = Transform.makeDefault dispatcher.PerimeterCentered
+        transform.Imperative <- imperative
+        let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
+        { Transform = transform
+          Dispatcher = dispatcher
+          Facets = [||]
+          Xtension = Xtension.makeEmpty imperative
+          Model = { DesignerType = typeof<unit>; DesignerValue = () }
+          Content = WorldTypes.EmptyEntityContent :?> EntityContent
+          PositionLocal = Vector3.Zero
+          RotationLocal = Quaternion.Identity
+          ScaleLocal = Vector3.One
+          AnglesLocal = Vector3.Zero
+          ElevationLocal = 0.0f
+          MountOpt = None
+          PropagationSourceOpt = None
+          OverlayNameOpt = overlayNameOpt
+          FacetNames = Set.empty
+          PropagatedDescriptorOpt = None
+          Order = Core.getTimeStampUnique ()
+          Id = id
+          Surnames = surnames }
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension

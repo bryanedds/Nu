@@ -322,6 +322,8 @@ module WorldEntityModule =
         /// The state of an entity.
         /// The only place this accessor should be used is in performance-sensitive code.
         /// Otherwise, you should get and set the required entity properties via the Entity interface.
+        /// Do not use this access to add a DesignerProperty to an entity as there may not be a way to update such a
+        /// property when reloading code (https://github.com/bryanedds/Nu/issues/605).
         member this.State world =
             let entityState = World.getEntityState this world
 #if DEBUG
@@ -400,14 +402,6 @@ module WorldEntityModule =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
             world
-
-        /// Attach a property.
-        member this.AttachProperty propertyName property world =
-            World.attachEntityProperty propertyName property this world
-
-        /// Detach a property.
-        member this.DetachProperty propertyName world =
-            World.detachEntityProperty propertyName this world
 
         /// Get an entity's sorting priority in 2d.
         member this.GetSortingPriority2d world = World.getEntitySortingPriority2d this world
