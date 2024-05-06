@@ -138,7 +138,7 @@ module TmxMap =
 
     let tryGetTileMap (tileMapAsset : TileMap AssetTag) =
         match Metadata.tryGetTileMapMetadata tileMapAsset with
-        | Some (_, _, tileMap) -> Some tileMap
+        | Some tileMapMetadata -> Some tileMapMetadata.TileMap
         | None -> None
 
     let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd (tileDescriptor : TileDescriptor outref) =

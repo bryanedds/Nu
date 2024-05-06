@@ -728,12 +728,12 @@ type FieldDispatcher () =
                        match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                        | Some tileMapChc ->
                            match tileMapChc with
-                           | Choice1Of4 _ -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
+                           | Choice1Of4 _ -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
                            | Choice2Of4 (_, tileMapFade) -> tileMapFade
-                           | Choice3Of4 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
-                           | Choice4Of4 _ -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
-                       | None -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
-                    | None -> Metadata.getTileMapMetadata Assets.Default.EmptyTileMap |> __c
+                           | Choice3Of4 (_, _) -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
+                           | Choice4Of4 _ -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
+                       | None -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
+                    | None -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
                  Entity.TileLayerClearance == 10.0f]
 
              // feeler

@@ -10,12 +10,17 @@ open System.IO
 open TiledSharp
 open Prime
 
+/// A tile map's metadata.
+type TileMapMetadata =
+    { TileMapImageAssets : struct (TmxTileset * Image AssetTag) array
+      TileMap : TmxMap }
+
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
 /// memory.
 type Metadata =
     | RawMetadata
     | TextureMetadata of OpenGL.Texture.TextureMetadata
-    | TileMapMetadata of string * struct (TmxTileset * Image AssetTag) array * TmxMap // TODO: create a record for this.
+    | TileMapMetadata of TileMapMetadata
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
@@ -77,7 +82,7 @@ module Metadata =
     let private tryGenerateTileMapMetadata (asset : Asset) =
         try let tmxMap = TmxMap (asset.FilePath, true)
             let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
-            Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
+            Some (TileMapMetadata { TileMapImageAssets = imageAssets; TileMap = tmxMap })
         with exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage
@@ -132,7 +137,8 @@ module Metadata =
                 Vsync.Parallel |>
                 Vsync.RunSynchronously |>
                 Array.definitize |>
-                Array.map KeyValuePair |>
+                Map.ofArray |>
+                Array.ofSeq |>
                 fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
             package
         | Left error ->
@@ -307,7 +313,7 @@ module Metadata =
     /// Thread-safe.
     let tryGetTileMapMetadata (tileMap : TileMap AssetTag) =
         match tryGetMetadata tileMap with
-        | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
+        | Some (TileMapMetadata tileMapMetadata) -> Some tileMapMetadata
         | None -> None
         | _ -> None
 
