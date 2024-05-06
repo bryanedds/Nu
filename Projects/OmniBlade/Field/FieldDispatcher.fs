@@ -26,6 +26,18 @@ type FieldDispatcher () =
         // NOTE: no special conditions in demo.
         song
 
+    static let loadMetadata fieldType =
+        match fieldType with
+        | TombInner ->
+            Metadata.loadMetadataPackage (nameof Castle)
+        | _ -> ()
+
+    static let preloadFields fieldType (field : Field) =
+        match fieldType with
+        | CastleConnector ->
+            for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+        | _ -> ()
+
     static let isIntersectedProp (collider : BodyShapeIndex) (collidee : BodyShapeIndex) world =
         let collideeEntity = collidee.BodyId.BodySource :?> Entity
         if (collider.BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
@@ -104,12 +116,19 @@ type FieldDispatcher () =
                         | (_, _) -> withSignal (FieldCommand.FadeOutSong 30L) field
 
                     // half-way transition (fully blacked out)
-                    elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
+                    elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 2L then
+
+                        // load metadata and pre-generate fields
+                        match destinationData.FieldType with
+                        | TombInner ->
+                            Metadata.loadMetadataPackage (nameof Castle)
+                        | CastleConnector ->
+                            for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+                        | _ -> ()
 
                         // transition field
-                        match destinationData.FieldType with // HACK: pre-generate fields.
-                        | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
-                        | _ -> ()
+                        loadMetadata destinationData.FieldType
+                        preloadFields destinationData.FieldType field 
                         let field = Field.mapFieldType world.UpdateTime (constant fieldTransition.FieldType) field
                         let field = Field.mapAvatar (Avatar.mapDirection (constant fieldTransition.FieldDirection)) field
                         let warpAvatar = WarpAvatar fieldTransition.FieldDestination
@@ -682,7 +701,7 @@ type FieldDispatcher () =
                     | Some transition ->
                         let time = field.FieldTime
                         let localTime = single transition.FieldTransitionTime - single time
-                        let halfTransitionTime = single (dec Constants.Field.TransitionTime) * 0.5f
+                        let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                         let progress =
                             if localTime < halfTransitionTime
                             then localTime / halfTransitionTime
