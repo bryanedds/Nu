@@ -2834,13 +2834,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 let world =
                     Seq.fold (fun world dispatcherName ->
-                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.075f
-                        if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
-                            if not (entity.GetProtected world) then
-                                let world = snapshot world
-                                World.changeEntityDispatcher dispatcherName entity world
-                            else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."; world
-                        else world)
+                        let world =
+                            if ImGui.Selectable (dispatcherName, strEq dispatcherName dispatcherNameCurrent) then
+                                if not (entity.GetProtected world) then
+                                    let world = snapshot world
+                                    World.changeEntityDispatcher dispatcherName entity world
+                                else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."; world
+                            else world
+                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                        world)
                         world dispatcherNames
                 ImGui.EndCombo ()
                 world
@@ -2858,10 +2860,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.BeginCombo ("Facet Name " + string i, facetName, ImGuiComboFlags.HeightLarge) then
                 let facetNameSelectablePicked = tryPickName facetNamesSelectable
                 for facetNameSelectable in facetNamesSelectable do
-                    if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.075f
                     if ImGui.Selectable (facetNameSelectable, strEq facetName NewEntityDispatcherName) then
                         facetName <- facetNameSelectable
                         changed <- true
+                    if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.015f
                 ImGui.EndCombo ()
             if not last && ImGui.IsItemFocused () then FocusedPropertyDescriptorOpt <- Some (facetNamesPropertyDescriptor, entity :> Simulant)
             if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
@@ -3321,9 +3323,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let dispatcherNames = (World.getEntityDispatchers world).Keys
                     let dispatcherNamePicked = tryPickName dispatcherNames
                     for dispatcherName in dispatcherNames do
-                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.075f
-                        if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
-                            NewEntityDispatcherName <- dispatcherName
+                        if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then NewEntityDispatcherName <- dispatcherName
+                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 ImGui.Text "w/ Overlay"
@@ -3333,9 +3334,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.BeginCombo ("##newEntityOverlayName", NewEntityOverlayName, ImGuiComboFlags.HeightLarge) then
                     let overlayNamePicked = tryPickName overlayNames
                     for overlayName in overlayNames do
-                        if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.075f
-                        if ImGui.Selectable (overlayName, strEq overlayName NewEntityOverlayName) then
-                            NewEntityOverlayName <- overlayName
+                        if ImGui.Selectable (overlayName, strEq overlayName NewEntityOverlayName) then NewEntityOverlayName <- overlayName
+                        if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.015f
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity world |> snd else world
@@ -4231,9 +4231,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let dispatcherNames = (World.getGroupDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
-                    if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.075f
-                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewGroupDispatcherName) then
-                        NewGroupDispatcherName <- dispatcherName
+                    if ImGui.Selectable (dispatcherName, strEq dispatcherName NewGroupDispatcherName) then NewGroupDispatcherName <- dispatcherName
+                    if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
                 ImGui.EndCombo ()
             let world =
                 if (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty NewGroupName && Address.validName NewGroupName && not (newGroup.Exists world) then
@@ -4417,13 +4416,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let dispatcherNamePicked = tryPickName dispatcherNames
                     let world =
                         Seq.fold (fun world dispatcherName ->
-                            if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.075f
-                            if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
-                                NewEntityDispatcherName <- dispatcherName
-                                let world = createEntity true false world
-                                ShowEntityContextMenu <- false
-                                world
-                            else world)
+                            let world =
+                                if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then
+                                    NewEntityDispatcherName <- dispatcherName
+                                    let world = createEntity true false world
+                                    ShowEntityContextMenu <- false
+                                    world
+                                else world
+                            if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                            world)
                             world dispatcherNames
                     ImGui.EndCombo ()
                     world
