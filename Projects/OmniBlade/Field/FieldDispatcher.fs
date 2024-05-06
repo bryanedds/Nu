@@ -65,7 +65,7 @@ type FieldDispatcher () =
          Screen.PostUpdateEvent => UpdateEye
          Screen.PostUpdateEvent => UpdateAvatarBodyTracking
          Screen.TimeUpdateEvent => TimeUpdate
-         Screen.SelectEvent => PlayFieldSong
+         Screen.SelectEvent => StartPlaying
          Screen.IncomingStartEvent => ScreenTransitioning true
          Screen.IncomingFinishEvent => ScreenTransitioning false
          Screen.OutgoingStartEvent => ScreenTransitioning true
@@ -579,17 +579,8 @@ type FieldDispatcher () =
             let world = screen.SetField field world
             just world
 
-        | CommencingBattle ->
-            let world = World.publish () screen.CommencingBattleEvent screen world
-            let fade = FadeOutSong 60L
-            let growl = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
-            withSignals [fade; growl] world
-
-        | CommenceBattle (battleData, prizePool) ->
-            let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
-            just world
-
-        | PlayFieldSong ->
+        | StartPlaying ->
+            loadMetadata field.FieldType
             match Data.Value.Fields.TryGetValue field.FieldType with
             | (true, fieldData) ->
                 match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
@@ -630,6 +621,16 @@ type FieldDispatcher () =
 
         | StartQuitting ->
             let world = World.publish () screen.QuitFieldEvent screen world
+            just world
+
+        | CommencingBattle ->
+            let world = World.publish () screen.CommencingBattleEvent screen world
+            let fade = FadeOutSong 60L
+            let growl = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
+            withSignals [fade; growl] world
+
+        | CommenceBattle (battleData, prizePool) ->
+            let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
             just world
 
         | ScheduleSound (delay, volume, sound) ->
