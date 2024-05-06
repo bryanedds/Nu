@@ -4,6 +4,7 @@
 namespace Nu
 open System
 open System.Buffers.Binary
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open TiledSharp
@@ -27,9 +28,8 @@ type Metadata =
 module Metadata =
 
     let mutable private Initialized = false
-    let mutable private Imperative = true
     let mutable private AssetGraphOpt : AssetGraph option = None
-    let mutable private MetadataPackagesLoaded = UMap.makeEmpty<string, UMap<string, DateTimeOffset * string * Metadata>> StringComparer.Ordinal TConfig.Imperative
+    let private MetadataPackagesLoaded = ConcurrentDictionary<string, ConcurrentDictionary<string, DateTimeOffset * string * Metadata>> ()
 
     /// Thread-safe.
     let private tryGenerateRawMetadata (asset : Asset) =
@@ -117,7 +117,7 @@ module Metadata =
         | SongExtension _ -> Some SongMetadata
         | _ -> None
 
-    let private tryGenerateMetadataPackage config packageName assetGraph =
+    let private tryGenerateMetadataPackage packageName assetGraph =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assetsCollected ->
             let package =
@@ -134,26 +134,26 @@ module Metadata =
                 Vsync.Parallel |>
                 Vsync.RunSynchronously |>
                 Array.definitize |>
-                UMap.makeFromSeq HashIdentity.Structural config
+                Array.map KeyValuePair |>
+                fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
             package
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
-            UMap.makeEmpty HashIdentity.Structural config
+            ConcurrentDictionary (-1, Seq.empty, HashIdentity.Structural)
 
     /// Attempt to load the given metadata package.
     let loadMetadataPackage packageName =
         match AssetGraphOpt with
         | Some assetGraph ->
             if  assetGraph.PackageDescriptors.ContainsKey packageName &&
-                not (UMap.containsKey packageName MetadataPackagesLoaded) then
-                let config = if Imperative then TConfig.Imperative else Functional
-                let package = tryGenerateMetadataPackage config packageName assetGraph
-                MetadataPackagesLoaded <- UMap.add packageName package MetadataPackagesLoaded
+                not (MetadataPackagesLoaded.ContainsKey packageName) then
+                let package = tryGenerateMetadataPackage packageName assetGraph
+                MetadataPackagesLoaded.TryAdd (packageName, package) |> ignore<bool>
         | None -> ()
 
     /// Attempt to unload the given metadata package.
     let unloadMetadataPackage packageName =
-        MetadataPackagesLoaded <- UMap.remove packageName MetadataPackagesLoaded
+        MetadataPackagesLoaded.Remove packageName
 
     /// Reload metadata.
     let reloadMetadata () =
@@ -163,8 +163,8 @@ module Metadata =
         | Right assetGraph ->
             for packageEntry in assetGraph.PackageDescriptors do
                 let metadataPackageName = packageEntry.Key
-                match UMap.tryFind metadataPackageName MetadataPackagesLoaded with
-                | Some metadataPackage ->
+                match MetadataPackagesLoaded.TryGetValue metadataPackageName with
+                | (true, metadataPackage) ->
                     match AssetGraph.tryCollectAssetsFromPackage None metadataPackageName assetGraph with
                     | Right assetsCollected ->
 
@@ -172,7 +172,8 @@ module Metadata =
                         let assetsExisting = metadataPackage
                         let assetsToKeep = Dictionary ()
                         for assetEntry in assetsExisting do
-                            let (assetName, (lastWriteTime, filePath, audioAsset)) = assetEntry
+                            let assetName = assetEntry.Key
+                            let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
                             let lastWriteTime' =
                                 try DateTimeOffset (File.GetLastWriteTime filePath)
                                 with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
@@ -197,79 +198,67 @@ module Metadata =
                             | None -> ()
 
                         // insert assets into package
-                        let metadataPackage =
-                            Seq.fold (fun metadataPackage (assetEntry : KeyValuePair<string, _>) ->
-                                let assetName = assetEntry.Key
-                                let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                                UMap.add assetName (lastWriteTime, filePath, audioAsset) metadataPackage)
-                                metadataPackage (Seq.append assetsToKeep assetsLoaded)
+                        for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                            let assetName = assetEntry.Key
+                            let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                            metadataPackage.TryAdd (assetName, (lastWriteTime, filePath, audioAsset)) |> ignore<bool>
 
                         // insert package
-                        MetadataPackagesLoaded <- UMap.add metadataPackageName metadataPackage MetadataPackagesLoaded
+                        MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>
 
                     // handle errors if any
                     | Left error -> Log.info ("Metadata package regeneration failed due to: '" + error)
-                | None -> ()
+                | (false, _) -> ()
         | Left error -> Log.info ("Metadata regeneration failed due to: '" + error)
 
     /// Attempt to get the metadata package containing the given asset, attempt to load it if it isn't already.
-    let tryGetMetadataPackage (assetTag : AssetTag) =
-        match UMap.tryFind assetTag.PackageName MetadataPackagesLoaded with
-        | Some _ as packageOpt -> packageOpt
-        | None ->
+    let private tryGetMetadataPackage (assetTag : AssetTag) =
+        match MetadataPackagesLoaded.TryGetValue assetTag.PackageName with
+        | (true, package) -> Some package
+        | (false, _) ->
             match AssetGraphOpt with
             | Some assetGraph ->
                 if assetGraph.PackageDescriptors.ContainsKey assetTag.PackageName then
                     Log.info ("Loading Metadata package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                    let config = if Imperative then TConfig.Imperative else Functional
-                    let package = tryGenerateMetadataPackage config assetTag.PackageName assetGraph
-                    MetadataPackagesLoaded <- UMap.add assetTag.PackageName package MetadataPackagesLoaded
+                    let package = tryGenerateMetadataPackage assetTag.PackageName assetGraph
+                    MetadataPackagesLoaded.TryAdd (assetTag.PackageName, package) |> ignore<bool>
                     Some package
                 else None
             | None -> None
+
+    /// Get the metadate packages that have been loaded.
+    /// NOTE: this is a potentially expensive call as the tree of ConcurrentDictionaries must be copied to avoid
+    /// invalidating enumeration in a multi-threaded context.
+    let getMetadataPackagesLoaded () =
+        MetadataPackagesLoaded.ToArray () |>
+        Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
 
     /// Determine that a given asset's metadata exists.
     let getMetadataExists (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
         | Some package ->
-            match UMap.tryFind assetTag.AssetName package with
-            | Some (_, _, _) -> true
-            | None -> false
+            match package.TryGetValue assetTag.AssetName with
+            | (true, (_, _, _)) -> true
+            | (false, _) -> false
         | None -> false
 
     /// Attempt to get the file path of the given asset.
     let tryGetFilePath (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
         | Some package ->
-            match UMap.tryFind assetTag.AssetName package with
-            | Some (_, filePath, _) -> Some filePath
-            | None -> None
+            match package.TryGetValue assetTag.AssetName with
+            | (true, (_, filePath, _)) -> Some filePath
+            | (false, _) -> None
         | None -> None
 
     /// Attempt to get the metadata of the given asset.
     let tryGetMetadata (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
         | Some package ->
-            match UMap.tryFind assetTag.AssetName package with
-            | Some (_, _, asset) -> Some asset
-            | None -> None
+            match package.TryGetValue assetTag.AssetName with
+            | (true, (_, _, asset)) -> Some asset
+            | (false, _) -> None
         | None -> None
-
-    /// Get a copy of the loaded metadata packages.
-    let getMetadataPackagesLoaded () =
-        let map =
-            MetadataPackagesLoaded |>
-            UMap.toSeq |>
-            Seq.map (fun (packageName, map) -> (packageName, map |> UMap.toSeq |> Map.ofSeq)) |>
-            Map.ofSeq
-        map
-
-    /// Get a map of all metadata's discovered assets (only those from loaded metadata packages).
-    let getAssetsDiscovered metadata =
-        let sources =
-            getMetadataPackagesLoaded metadata |>
-            Map.map (fun _ metadata -> Map.toKeyList metadata)
-        sources
 
     /// Attempt to get the texture metadata of the given image.
     let tryGetTextureMetadata (image : Image AssetTag) =
@@ -663,9 +652,7 @@ module Metadata =
         tryGetModelNavShape materialIndex animatedModel
 
     /// Initialize metadata to use the given imperative value and asset graph.
-    let init imperative assetGraph =
+    let init assetGraph =
         if not Initialized then
-            Imperative <- imperative
             AssetGraphOpt <- Some assetGraph
-            MetadataPackagesLoaded <- UMap.makeEmpty StringComparer.Ordinal (if imperative then TConfig.Imperative else Functional)
             Initialized <- true

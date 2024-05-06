@@ -349,7 +349,7 @@ module WorldModule3 =
             | Right assetGraph ->
 
                 // initialize metadata and load default package
-                Metadata.init config.Imperative assetGraph
+                Metadata.init assetGraph
                 Metadata.loadMetadataPackage Assets.Default.PackageName
 
                 // make the world's event graph
