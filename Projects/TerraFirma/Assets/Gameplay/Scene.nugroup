@@ -55,8 +55,8 @@
       [Static True]]
      []]
     [Lighting3dConfigDispatcher
-     [[LightingConfig
-       [[LightCutoffMargin 0.333] [LightShadowBiasAcne 2E-07] [LightShadowBiasBleed 0.5] [LightMappingEnabled True] [SsaoEnabled True] [SsaoIntensity 1.333] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2] [SsaoSampleCount 12]]]
+     [[Lighting3dConfig
+       [[LightCutoffMargin 0.333] [ShadowBiasAcne 2E-07] [ShadowBiasBleed 0.5] [SsaoIntensity 1.333] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2]]]
       [MountOpt [Some ^]]
       [Name Lighting3dConfig]]
      []]

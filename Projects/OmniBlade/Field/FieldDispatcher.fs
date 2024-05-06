@@ -220,6 +220,9 @@ type FieldDispatcher () =
             let field = Field.mapScreenTransitioning (constant transitioning) field
             just field
 
+        | FinishQuitting ->
+            just (Field.empty (World.getViewBounds2dAbsolute world))
+
         | TryCommencingBattle (battleType, consequents) ->
             match Map.tryFind battleType Data.Value.Battles with
             | Some battleData ->
@@ -227,9 +230,6 @@ type FieldDispatcher () =
                 let field = Field.commencingBattle battleData prizePool field
                 withSignal CommencingBattle field
             | None -> just field
-
-        | FinishQuitting ->
-            just (Field.empty (World.getViewBounds2dAbsolute world))
 
         | MenuTeamOpen ->
             let state = MenuTeam { TeamIndex = 0; TeamIndices = Map.toKeyList field.Team }

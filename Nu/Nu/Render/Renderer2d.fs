@@ -84,7 +84,7 @@ type TextDescriptor =
       Justification : Justification }
 
 /// Describes a 2d rendering operation.
-type [<ReferenceEquality>] RenderOperation2d =
+type RenderOperation2d =
     | RenderSprite of SpriteDescriptor
     | RenderSprites of SpritesDescriptor
     | RenderSpriteDescriptors of SpriteDescriptors
@@ -95,14 +95,14 @@ type [<ReferenceEquality>] RenderOperation2d =
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
-type [<ReferenceEquality>] LayeredOperation2d =
+type LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : AssetTag
       mutable RenderOperation2d : RenderOperation2d }
 
 /// A message to a 2d rendering subsystem.
-type [<ReferenceEquality>] RenderMessage2d =
+type RenderMessage2d =
     | LayeredOperation2d of LayeredOperation2d
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string

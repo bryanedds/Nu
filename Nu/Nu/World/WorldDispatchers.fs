@@ -349,21 +349,21 @@ type SkyBoxDispatcher () =
 [<AutoOpen>]
 module Lighting3dConfigDispatcherExtensions =
     type Entity with
-        member this.GetLightingConfig world : LightingConfig = this.Get (nameof this.LightingConfig) world
-        member this.SetLightingConfig (value : LightingConfig) world = this.Set (nameof this.LightingConfig) value world
-        member this.LightingConfig = lens (nameof this.LightingConfig) this this.GetLightingConfig this.SetLightingConfig
+        member this.GetLighting3dConfig world : Lighting3dConfig = this.Get (nameof this.Lighting3dConfig) world
+        member this.SetLighting3dConfig (value : Lighting3dConfig) world = this.Set (nameof this.Lighting3dConfig) value world
+        member this.Lighting3dConfig = lens (nameof this.Lighting3dConfig) this this.GetLighting3dConfig this.SetLighting3dConfig
 
 type Lighting3dConfigDispatcher () =
     inherit Entity3dDispatcher (false)
 
     static member Properties =
-        [define Entity.LightingConfig LightingConfig.defaultConfig
+        [define Entity.Lighting3dConfig Lighting3dConfig.defaultConfig
          define Entity.Presence Omnipresent
          define Entity.AlwaysUpdate true]
 
     override this.Update (entity, world) =
-        let lightingConfig = entity.GetLightingConfig world
-        World.enqueueRenderMessage3d (ConfigureLighting lightingConfig) world
+        let config = entity.GetLighting3dConfig world
+        World.enqueueRenderMessage3d (ConfigureLighting3d config) world
         world
 
 /// Gives an entity the base behavior of a 3d light probe.

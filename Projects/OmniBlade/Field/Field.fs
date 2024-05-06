@@ -19,8 +19,8 @@ type FieldMessage =
     | AvatarBodySeparationExplicit of BodySeparationExplicitData
     | AvatarBodySeparationImplicit of BodySeparationImplicitData
     | ScreenTransitioning of bool
-    | TryCommencingBattle of BattleType * Advent Set
     | FinishQuitting
+    | TryCommencingBattle of BattleType * Advent Set
     | MenuTeamOpen
     | MenuTeamAlly of int
     | MenuInventoryOpen

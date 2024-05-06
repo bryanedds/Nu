@@ -213,15 +213,21 @@ DockId=0x00000001,0
 Pos=963,869
 Size=650,211
 Collapsed=0
-DockId=0x00000009,5
+DockId=0x00000009,6
 
 [Window][Interactive]
 Pos=963,869
 Size=650,211
 Collapsed=0
-DockId=0x00000009,4
+DockId=0x00000009,5
 
 [Window][Event Tracing]
+Pos=963,869
+Size=650,211
+Collapsed=0
+DockId=0x00000009,4
+
+[Window][Renderer]
 Pos=963,869
 Size=650,211
 Collapsed=0
@@ -2615,52 +2621,39 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
                     setProperty substance propertyDescriptor simulant world
                 else world
-            | :? LightingConfig as lightingConfig ->
-                let mutable lightingConfig = lightingConfig
-                let mutable lightingChanged = false
-                let mutable lightCutoffMargin = lightingConfig.LightCutoffMargin
-                let mutable lightShadowBiasAcneStr = lightingConfig.LightShadowBiasAcne.ToString "0.00000000"
-                let mutable lightShadowBiasBleed = lightingConfig.LightShadowBiasBleed
-                let mutable lightMappingEnabled = lightingConfig.LightMappingEnabled
-                let mutable ssaoEnabled = lightingConfig.SsaoEnabled
-                let mutable ssaoIntensity = lightingConfig.SsaoIntensity
-                let mutable ssaoBias = lightingConfig.SsaoBias
-                let mutable ssaoRadius = lightingConfig.SsaoRadius
-                let mutable ssaoDistanceMax = lightingConfig.SsaoDistanceMax
-                let mutable ssaoSampleCount = lightingConfig.SsaoSampleCount
-                lightingChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lightingChanged
+            | :? Lighting3dConfig as lighting3dConfig ->
+                let mutable lighting3dChanged = false
+                let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
+                let mutable shadowBiasAcneStr = lighting3dConfig.ShadowBiasAcne.ToString "0.00000000"
+                let mutable shadowBiasBleed = lighting3dConfig.ShadowBiasBleed
+                let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
+                let mutable ssaoBias = lighting3dConfig.SsaoBias
+                let mutable ssaoRadius = lighting3dConfig.SsaoRadius
+                let mutable ssaoDistanceMax = lighting3dConfig.SsaoDistanceMax
+                lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.InputText ("Light Shadow Bias Acne", &lightShadowBiasAcneStr, 4096u) || lightingChanged
+                lighting3dChanged <- ImGui.InputText ("Shadow Bias Acne", &shadowBiasAcneStr, 4096u) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.SliderFloat ("Light Shadow Bias Bleed", &lightShadowBiasBleed, 0.0f, 1.0f) || lightingChanged
+                lighting3dChanged <- ImGui.SliderFloat ("Shadow Bias Bleed", &shadowBiasBleed, 0.0f, 1.0f) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || lightingChanged
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || lightingChanged
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lightingChanged
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lightingChanged
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged
                 focusProperty ()
-                lightingChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lightingChanged
-                focusProperty ()
-                lightingChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lightingChanged
-                focusProperty ()
-                lightingChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || lightingChanged
-                focusProperty ()
-                if lightingChanged then
-                    lightingConfig <-
+                if lighting3dChanged then
+                    let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
-                          LightShadowBiasAcne = match Single.TryParse lightShadowBiasAcneStr with (true, s) -> s | (false, _) -> lightingConfig.LightShadowBiasAcne
-                          LightShadowBiasBleed = lightShadowBiasBleed
-                          LightMappingEnabled = lightMappingEnabled
-                          SsaoEnabled = ssaoEnabled
+                          ShadowBiasAcne = match Single.TryParse shadowBiasAcneStr with (true, s) -> s | (false, _) -> lighting3dConfig.ShadowBiasAcne
+                          ShadowBiasBleed = shadowBiasBleed
                           SsaoIntensity = ssaoIntensity
                           SsaoBias = ssaoBias
                           SsaoRadius = ssaoRadius
-                          SsaoDistanceMax = ssaoDistanceMax
-                          SsaoSampleCount = ssaoSampleCount }
-                    setProperty lightingConfig propertyDescriptor simulant world
+                          SsaoDistanceMax = ssaoDistanceMax }
+                    setProperty lighting3dConfig propertyDescriptor simulant world
                 else world
             | _ ->
                 let mutable combo = false
@@ -3966,6 +3959,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world
         else world
 
+    let private imGuiRendererWindow world =
+        if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
+            let renderer3dConfig = World.getRenderer3dConfig world
+            let mutable renderer3dChanged = false
+            let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
+            let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
+            let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
+            renderer3dChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dChanged
+            renderer3dChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dChanged
+            renderer3dChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dChanged
+            if renderer3dChanged then
+                let renderer3dConfig =
+                    { LightMappingEnabled = lightMappingEnabled
+                      SsaoEnabled = ssaoEnabled
+                      SsaoSampleCount = ssaoSampleCount }
+                World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
+            world
+        else world
+
     let private imGuiEditorConfigWindow () =
         if ImGui.Begin ("Editor", ImGuiWindowFlags.NoNav) then
             ImGui.Text "Transform Snapping"
@@ -4581,6 +4593,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world = imGuiInteractiveWindow world
                         let world = imGuiEventTracingWindow world
                         let world = imGuiAudioPlayerWindow world
+                        let world = imGuiRendererWindow world
                         imGuiEditorConfigWindow ()
                         imGuiAssetViewerWindow ()
                         (entityHierarchyFocused, world)

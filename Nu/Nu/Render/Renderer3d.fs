@@ -308,15 +308,15 @@ type StaticModelSurfaceDescriptor =
       HeightImage : Image AssetTag
       TwoSided : bool }
 
-type [<ReferenceEquality>] CreateUserDefinedStaticModel =
+type CreateUserDefinedStaticModel =
     { StaticModelSurfaceDescriptors : StaticModelSurfaceDescriptor array
       Bounds : Box3
       StaticModel : StaticModel AssetTag }
 
-type [<ReferenceEquality>] DestroyUserDefinedStaticModel =
+type DestroyUserDefinedStaticModel =
     { StaticModel : StaticModel AssetTag }
 
-type [<ReferenceEquality>] RenderSkyBox =
+type RenderSkyBox =
     { AmbientColor : Color
       AmbientBrightness : single
       CubeMapColor : Color
@@ -324,18 +324,18 @@ type [<ReferenceEquality>] RenderSkyBox =
       CubeMap : CubeMap AssetTag
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderLightProbe3d =
+type RenderLightProbe3d =
     { LightProbeId : uint64
       Enabled : bool
       Origin : Vector3
       Bounds : Box3
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderLightMap3d =
+type RenderLightMap3d =
     { LightProbeId : uint64
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderLight3d =
+type RenderLight3d =
     { LightId : uint64
       Origin : Vector3
       Rotation : Quaternion
@@ -349,7 +349,7 @@ type [<ReferenceEquality>] RenderLight3d =
       DesireShadows : bool
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderBillboard =
+type RenderBillboard =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -360,7 +360,7 @@ type [<ReferenceEquality>] RenderBillboard =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderBillboards =
+type RenderBillboards =
     { Absolute : bool
       Billboards : (Matrix4x4 * Presence * Box2 option) SList
       MaterialProperties : MaterialProperties
@@ -369,7 +369,7 @@ type [<ReferenceEquality>] RenderBillboards =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderBillboardParticles =
+type RenderBillboardParticles =
     { Absolute : bool
       Presence : Presence
       MaterialProperties : MaterialProperties
@@ -379,7 +379,7 @@ type [<ReferenceEquality>] RenderBillboardParticles =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderStaticModelSurface =
+type RenderStaticModelSurface =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -391,7 +391,7 @@ type [<ReferenceEquality>] RenderStaticModelSurface =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderStaticModel =
+type RenderStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -401,14 +401,14 @@ type [<ReferenceEquality>] RenderStaticModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderStaticModels =
+type RenderStaticModels =
     { Absolute : bool
       StaticModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       StaticModel : StaticModel AssetTag
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderAnimatedModel =
+type RenderAnimatedModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -418,14 +418,14 @@ type [<ReferenceEquality>] RenderAnimatedModel =
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderAnimatedModels =
+type RenderAnimatedModels =
     { Absolute : bool
       BoneTransforms : Matrix4x4 array
       AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderUserDefinedStaticModel =
+type RenderUserDefinedStaticModel =
     { Absolute : bool
       ModelMatrix : Matrix4x4
       Presence : Presence
@@ -436,39 +436,44 @@ type [<ReferenceEquality>] RenderUserDefinedStaticModel =
       RenderType : RenderType
       RenderPass : RenderPass }
 
-type [<ReferenceEquality>] RenderTerrain =
+type RenderTerrain =
     { Absolute : bool
       Visible : bool
       TerrainDescriptor : TerrainDescriptor
       RenderPass : RenderPass }
 
-/// Configures lighting and ssao.
-type [<ReferenceEquality; SymbolicExpansion>] LightingConfig =
+/// Configures 3d lighting and ssao.
+type [<SymbolicExpansion>] Lighting3dConfig =
     { LightCutoffMargin : single
-      LightShadowBiasAcne : single
-      LightShadowBiasBleed : single
-      LightMappingEnabled : bool
-      SsaoEnabled : bool
+      ShadowBiasAcne : single
+      ShadowBiasBleed : single
       SsaoIntensity : single
       SsaoBias : single
       SsaoRadius : single
-      SsaoDistanceMax : single
-      SsaoSampleCount : int }
+      SsaoDistanceMax : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
-          LightShadowBiasAcne = Constants.Render.LightShadowBiasAcneDefault
-          LightShadowBiasBleed = Constants.Render.LightShadowBiasBleedDefault
-          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
-          SsaoEnabled = Constants.Render.SsaoEnabledDefault
+          ShadowBiasAcne = Constants.Render.ShadowBiasAcneDefault
+          ShadowBiasBleed = Constants.Render.ShadowBiasBleedDefault
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
-          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
+          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault }
+
+/// Configures 3d renderer.
+type [<SymbolicExpansion>] Renderer3dConfig =
+    { LightMappingEnabled : bool
+      SsaoEnabled : bool
+      SsaoSampleCount : int }
+
+    static member defaultConfig =
+        { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+          SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
 /// A message to the 3d renderer.
-type [<ReferenceEquality>] RenderMessage3d =
+type RenderMessage3d =
     | CreateUserDefinedStaticModel of CreateUserDefinedStaticModel
     | DestroyUserDefinedStaticModel of DestroyUserDefinedStaticModel
     | RenderSkyBox of RenderSkyBox
@@ -488,14 +493,15 @@ type [<ReferenceEquality>] RenderMessage3d =
     | RenderAnimatedModels of RenderAnimatedModels
     | RenderCachedAnimatedModel of CachedAnimatedModelMessage
     | RenderTerrain of RenderTerrain
-    | ConfigureLighting of LightingConfig
+    | ConfigureLighting3d of Lighting3dConfig
+    | ConfigureRenderer3d of Renderer3dConfig
     | LoadRenderPackage3d of string
     | UnloadRenderPackage3d of string
     | ReloadRenderAssets3d
 
 /// A sortable light map.
 /// OPTIMIZATION: mutable field for caching distance squared.
-type [<ReferenceEquality>] private SortableLightMap =
+type private SortableLightMap =
     { SortableLightMapEnabled : bool
       SortableLightMapOrigin : Vector3
       SortableLightMapBounds : Box3
@@ -545,7 +551,7 @@ type [<ReferenceEquality>] private SortableLightMap =
 
 /// A sortable light.
 /// OPTIMIZATION: mutable field for caching distance squared.
-type [<ReferenceEquality>] private SortableLight =
+type private SortableLight =
     { SortableLightId : uint64
       SortableLightOrigin : Vector3
       SortableLightRotation : Quaternion
@@ -687,6 +693,7 @@ type [<ReferenceEquality>] private RenderTasks =
           DeferredAnimatedRemovals = List () }
 
     static member clear renderTasks =
+
         renderTasks.SkyBoxes.Clear ()
         renderTasks.LightProbes.Clear ()
         renderTasks.LightMapRenders.Clear ()
@@ -732,6 +739,8 @@ type [<ReferenceEquality>] private RenderTasks =
 
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 type Renderer3d =
+    /// The current renderer configuration.
+    abstract RendererConfig : Renderer3dConfig
     /// Render a frame of the game.
     abstract Render : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
     /// Swap a rendered frame of the game.
@@ -745,6 +754,7 @@ type [<ReferenceEquality>] StubRenderer3d =
         { StubRenderer3d : unit }
 
     interface Renderer3d with
+        member renderer.RendererConfig = Renderer3dConfig.defaultConfig
         member renderer.Render _ _ _ _ _ _ _ _ = ()
         member renderer.Swap () = ()
         member renderer.CleanUp () = ()
@@ -800,7 +810,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterMap : OpenGL.Texture.Texture
           PhysicallyBasedMaterial : OpenGL.PhysicallyBased.PhysicallyBasedMaterial
           LightMaps : Dictionary<uint64, OpenGL.LightMap.LightMap>
-          mutable LightingConfig : LightingConfig
+          mutable LightingConfig : Lighting3dConfig
+          mutable RendererConfig : Renderer3dConfig
           mutable InstanceFields : single array
           mutable UserDefinedStaticModelFields : single array
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
@@ -2464,7 +2475,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let lightMappingTexture =
 
             // but only if needed
-            if renderer.LightingConfig.LightMappingEnabled then
+            if renderer.RendererConfig.LightMappingEnabled then
 
                 // setup light mapping buffer and viewport
                 let (lightMappingTexture, lightMappingRenderbuffer, lightMappingFramebuffer) = renderer.LightMappingBuffers
@@ -2525,7 +2536,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssaoTextureFiltered =
 
             // but only if needed
-            if renderer.LightingConfig.SsaoEnabled then
+            if renderer.RendererConfig.SsaoEnabled then
 
                 // setup unfiltered ssao buffer and viewport
                 let (ssaoTextureUnfiltered, ssaoRenderbuffer, ssaoFramebuffer) = renderer.SsaoBuffersUnfiltered
@@ -2541,7 +2552,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     (viewRelativeArray, rasterProjectionArray,
                      positionTexture, normalPlusTexture,
                      [|Constants.Render.SsaoResolution.X; Constants.Render.SsaoResolution.Y|],
-                     renderer.LightingConfig.SsaoIntensity, renderer.LightingConfig.SsaoBias, renderer.LightingConfig.SsaoRadius, renderer.LightingConfig.SsaoDistanceMax, renderer.LightingConfig.SsaoSampleCount,
+                     renderer.LightingConfig.SsaoIntensity, renderer.LightingConfig.SsaoBias, renderer.LightingConfig.SsaoRadius, renderer.LightingConfig.SsaoDistanceMax, renderer.RendererConfig.SsaoSampleCount,
                      renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredSsaoShader)
                 OpenGL.Hl.Assert ()
 
@@ -2589,7 +2600,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render lighting quad to filter buffer
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
-            (eyeCenter, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.LightShadowBiasAcne, renderer.LightingConfig.LightShadowBiasBleed,
+            (eyeCenter, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
              positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
@@ -2615,7 +2626,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                     true viewAbsoluteArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
-                    eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightShadowBiasAcne renderer.LightingConfig.LightShadowBiasBleed
+                    eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.ShadowBiasAcne renderer.LightingConfig.ShadowBiasBleed
                     renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                     surface renderer.PhysicallyBasedForwardStaticShader renderer
@@ -2632,7 +2643,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SortableLight.sortShadowIndices renderer.ShadowIndices lightIds lightDesireShadows lightsCount
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 true viewRelativeArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
-                eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightShadowBiasAcne renderer.LightingConfig.LightShadowBiasBleed
+                eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.ShadowBiasAcne renderer.LightingConfig.ShadowBiasBleed
                 renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                 surface renderer.PhysicallyBasedForwardStaticShader renderer
@@ -2750,8 +2761,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.categorizeAnimatedModel (camm.CachedAnimatedModelAbsolute, &camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelRenderPass, renderer)
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Absolute, rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
-            | ConfigureLighting lc ->
-                renderer.LightingConfig <- lc
+            | ConfigureLighting3d l3c ->
+                renderer.LightingConfig <- l3c
+            | ConfigureRenderer3d r3c ->
+                renderer.RendererConfig <- r3c
             | LoadRenderPackage3d packageName ->
                 GlRenderer3d.handleLoadRenderPackage packageName renderer
             | UnloadRenderPackage3d packageName ->
@@ -3242,7 +3255,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterMap = environmentFilterMap
               PhysicallyBasedMaterial = physicallyBasedMaterial
               LightMaps = dictPlus HashIdentity.Structural []
-              LightingConfig = LightingConfig.defaultConfig
+              LightingConfig = Lighting3dConfig.defaultConfig
+              RendererConfig = Renderer3dConfig.defaultConfig
               InstanceFields = Array.zeroCreate<single> (Constants.Render.InstanceFieldCount * Constants.Render.InstanceBatchPrealloc)
               UserDefinedStaticModelFields = [||]
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
@@ -3259,6 +3273,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer
 
     interface Renderer3d with
+
+        member renderer.RendererConfig =
+            renderer.RendererConfig
 
         member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize renderMessages =
             OpenGL.Hl.ResetDrawCalls ()
