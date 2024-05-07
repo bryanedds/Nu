@@ -34,7 +34,7 @@ module TemplateFacet =
         // TODO: optionally implement more user-defined properties.
 
     type TemplateFacet () =
-        inherit Facet (false)
+        inherit Facet (false, false, false)
 
         static member Properties =
             [define Entity.Value 1234.5f]

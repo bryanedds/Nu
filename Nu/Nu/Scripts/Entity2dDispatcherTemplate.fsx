@@ -39,7 +39,7 @@ module Template2dDispatcher =
         interface Command
 
     type Template2dDispatcher () =
-        inherit Entity2dDispatcher<TemplateModel, TemplateMessage, TemplateCommand> (false, { StaticImage = Assets.Default.Image })
+        inherit Entity2dDispatcher<TemplateModel, TemplateMessage, TemplateCommand> (false, false, false, { StaticImage = Assets.Default.Image })
 
         static member Facets =
             [typeof<StaticSpriteFacet>]

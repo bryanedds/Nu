@@ -39,7 +39,7 @@ module Template3dDispatcher =
         interface Command
 
     type Template3dDispatcher () =
-        inherit Entity3dDispatcher<TemplateModel, TemplateMessage, TemplateCommand> (false, { StaticModel = Assets.Default.StaticModel })
+        inherit Entity3dDispatcher<TemplateModel, TemplateMessage, TemplateCommand> (false, false, false, { StaticModel = Assets.Default.StaticModel })
 
         static member Facets =
             [typeof<StaticModelFacet>]
