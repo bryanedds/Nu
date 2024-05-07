@@ -231,8 +231,6 @@ module WorldEntityModule =
         member this.LightProbe = if notNull (this :> obj) then lensReadOnly (nameof this.LightProbe) this this.GetLightProbe else Cached.LightProbe
         member this.GetLight world = World.getEntityLight this world
         member this.Light = if notNull (this :> obj) then lensReadOnly (nameof this.Light) this this.GetLight else Cached.Light
-        member this.GetOptimized world = World.getEntityOptimized this world
-        member this.Optimized = if notNull (this :> obj) then lensReadOnly (nameof this.Optimized) this this.GetOptimized else Cached.Optimized
         member this.GetDestroying world = World.getEntityDestroying this world
         member this.Destroying = if notNull (this :> obj) then lensReadOnly (nameof this.Destroying) this this.GetDestroying else Cached.Destroying
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
@@ -318,31 +316,6 @@ module WorldEntityModule =
         member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
-
-        /// The state of an entity.
-        /// The only place this accessor should be used is in performance-sensitive code.
-        /// Otherwise, you should get and set the required entity properties via the Entity interface.
-        /// Do not use this access to add a DesignerProperty to an entity as there may not be a way to update such a
-        /// property when reloading code (https://github.com/bryanedds/Nu/issues/605).
-        member this.State world =
-            let entityState = World.getEntityState this world
-#if DEBUG
-            if World.getImperative world && not entityState.Optimized then
-                failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChangeEvents)."
-#endif
-            entityState
-
-        /// The copied state of an entity.
-        /// The only place this accessor should be used is in performance-sensitive code.
-        /// Otherwise, you should get and set the required entity properties via the Entity interface.
-        member this.StateReadOnly world =
-            world |> World.getEntityState this |> EntityState.copy
-
-        /// Optimize an entity by setting { Imperative = true; Omnipresent = true }.
-        member this.Optimize world =
-            let world = this.SetImperative true world
-            let world = this.SetPresence Omnipresent world
-            world
 
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform byref, world) =

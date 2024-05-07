@@ -1323,13 +1323,13 @@ module WorldModule2 =
                 match transition.DissolveImageOpt with
                 | Some dissolveImage ->
                     let progress =
-                        match (transitionTime , transition.TransitionLifeTime) with
+                        match (transitionTime, transition.TransitionLifeTime) with
                         | (UpdateTime time, UpdateTime lifeTime) ->
                             let localTime = world.UpdateTime - time
-                            single localTime / (single lifeTime + 1.0f)
+                            single localTime / single lifeTime
                         | (ClockTime time, ClockTime lifeTime) ->
                             let localTime = world.ClockTime - time
-                            single localTime / (lifeTime + world.ClockDelta)
+                            single localTime / lifeTime
                         | (_, _) -> failwithumf ()
                     let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                     let color = Color.One.WithA alpha
