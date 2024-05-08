@@ -48,7 +48,7 @@ type CreditsDispatcher () =
 
         | Scroll ->
             let credits = { credits with ScrollPosition = credits.ScrollPosition + v3 0.0f (1.0f / 3.0f) 0.0f }
-            if credits.ScrollPosition.Y > 620.0f
+            if credits.ScrollPosition.Y > 610.0f
             then withSignal (signal QuitCredits) credits
             else just credits
 
