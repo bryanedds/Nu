@@ -57,7 +57,7 @@ type CreditsDispatcher () =
         just world
 
     override this.Content (credits, _) =
-        [Content.group Simulants.CreditsRollingGui.Name []
+        [Content.group Simulants.CreditsGui.Name []
             [Content.staticSprite "Background"
                 [Entity.Size == v3 960.0f 540.0f 0.0f
                  Entity.PerimeterCentered == true

@@ -73,7 +73,6 @@ module Assets =
         let Intro3GroupFilePath = "Assets/Gui/Groups/Intro3.nugroup"
         let Intro4GroupFilePath = "Assets/Gui/Groups/Intro4.nugroup"
         let Intro5GroupFilePath = "Assets/Gui/Groups/Intro5.nugroup"
-        let CreditsGroupFilePath = "Assets/Gui/Groups/Credits.nugroup"
 
     [<RequireQualifiedAccess>]
     module Field =
