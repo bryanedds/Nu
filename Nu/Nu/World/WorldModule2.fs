@@ -201,17 +201,26 @@ module WorldModule2 =
                     | None -> ()
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
-                    // NOTE: we cannot utilize desired screen info here because the semantics of slides work by ignoring it.
-                    if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                    then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                    else world
+                    // slide-specific behavior currently has to ignore desired screen in order to work. However, we
+                    // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
+                    // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
+                    // we use a quick cut to the desired screen in this special-case.
+                    match World.getDesiredScreen world with
+                    | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
+                        World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world
+                    | DesireNone ->
+                        World.selectScreenOpt None world
+                    | _ ->
+                        if World.updateScreenIdling3 transitionTime slide selectedScreen world
+                        then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                        else world
                 | None ->
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if world.Unaccompanied || world.Advancing
-                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world // quick cut
+                            if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
+                            then World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world
+                            else World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                         else world
                     | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     | DesireIgnore -> world

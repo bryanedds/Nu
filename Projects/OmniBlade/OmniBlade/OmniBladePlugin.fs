@@ -15,6 +15,7 @@ type OmniBladePlugin () =
              ("Title", fun world -> Game.SetOmniBlade Title world)
              ("Credits", fun world -> Game.SetOmniBlade Credits world)
              ("Pick", fun world -> Game.SetOmniBlade Pick world)
+             ("Intro", fun world -> Game.SetOmniBlade (Intro Slot1) world)
              ("Gameplay", fun world ->
                 let field = Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) Slot1
                 let world = Simulants.Field.SetField field world
