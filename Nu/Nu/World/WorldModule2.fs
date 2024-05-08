@@ -144,20 +144,20 @@ module WorldModule2 =
             match (transitionTime, transition.TransitionLifeTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime - 2L = lifeTime
+                localTime = lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime - world.ClockDelta * 2.0f >= lifeTime
+                localTime >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
             match (transitionTime, slide.IdlingTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime - 2L = lifeTime
+                localTime = lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime - world.ClockDelta * 2.0f >= lifeTime
+                localTime >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
@@ -201,21 +201,10 @@ module WorldModule2 =
                     | None -> ()
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
-                    match World.getDesiredScreen world with
-                    | Desire desiredScreen ->
-                        if desiredScreen <> selectedScreen then
-                            if world.Unaccompanied || world.Advancing
-                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world // quick cut
-                        else
-                            if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else world
-                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                    | DesireIgnore ->
-                        if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                        then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                        else world
+                    // NOTE: we cannot utilize desired screen info here because the semantics of slides work by ignoring it.
+                    if World.updateScreenIdling3 transitionTime slide selectedScreen world
+                    then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                    else world
                 | None ->
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
@@ -303,8 +292,6 @@ module WorldModule2 =
             | Dead -> world
 
         static member private updateScreenTransition world =
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and an extra frame for the render messages to actually get processed.
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 match selectedScreen.GetTransitionState world with
