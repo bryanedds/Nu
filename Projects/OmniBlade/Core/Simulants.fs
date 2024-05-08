@@ -24,6 +24,11 @@ module Simulants =
     let CreditsGui = Credits / "Gui"
     let CreditsBack = CreditsGui / "Back"
 
+    // credits rolling screen
+    let CreditsRolling = Game / "CreditsRolling"
+    let CreditsRollingGui = Credits / "Gui"
+    let CreditsRollingBack = CreditsGui / "Back"
+
     // pick screen
     let Pick = Game / "Pick"
     let PickGui = Pick / "Gui"

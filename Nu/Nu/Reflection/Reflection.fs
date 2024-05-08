@@ -526,7 +526,7 @@ module Reflection =
             | _ -> failwith ("Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string.")
 
     /// Check for facet compatibility with the target's dispatcher.
-    let isFacetCompatibleWithDispatcher dispatcherMap (facet : 'b) (target : 'a) =
+    let isFacetCompatibleWithDispatcher<'d, 'f, 'a> (dispatcherMap : Map<string, 'd>) (facet : 'f) (target : 'a) =
         let facetType = facet.GetType ()
         let facetTypes = facetType :: getBaseTypesExceptObject facetType
         List.forall
@@ -534,7 +534,7 @@ module Reflection =
             facetTypes
 
     /// Attach intrinsic facets to a target by their names.
-    let attachIntrinsicFacetsViaNames (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
+    let attachIntrinsicFacetsViaNames<'d, 'f, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
         match facetNames with
         | [] -> target // OPTIMIZATION: bail if nothing to do.
         | _ ->
@@ -550,19 +550,21 @@ module Reflection =
             match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
             | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
             | facetsProperty ->
+                let facetsExisting = facetsProperty.GetValue target :?> 'f array
                 Array.iter (fun facet ->
-                    if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
+                    if not (isFacetCompatibleWithDispatcher<'d, 'f, 'a> dispatcherMap facet target)
                     then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
                     else ())
                     facets
+                let facets = Array.append facetsExisting facets
                 facetsProperty.SetValue (target, facets)
                 Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
+    let attachIntrinsicFacets<'d, 'f, 'b, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
-        attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
+        attachIntrinsicFacetsViaNames<'d, 'f, 'a> copyTarget dispatcherMap facetMap instrinsicFacetNames target world
 
     /// Initialize backing data utilized by reflection module.
     let init () =
