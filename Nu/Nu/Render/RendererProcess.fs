@@ -318,40 +318,52 @@ type RendererThread () =
 
                 let window = match window with SglWindow window -> window.SglWindow
 
+                // loads vulkan. NOTE: this is not an actual vulkan function. wrapper features prefixed like this are misleading and should be avoided where practical.
                 let result = vkInitialize ()
-        
+
+                // core vulkan handles
                 let mutable instance = VkInstance ()
                 
-                let mutable propertyCount = 0u
-                let result = vkEnumerateInstanceExtensionProperties (Interop.AsPointer &propertyCount, NativePtr.nullPtr)
-                let mutable properties = Array.zeroCreate<VkExtensionProperties> (int propertyCount)
+                // get available instance layers
+                let mutable layerCount = 0u
+                let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, NativePtr.nullPtr)
+                let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
+                use layersHnd = layers.AsMemory().Pin()
+                let layersNptr = NativePtr.ofVoidPtr<VkLayerProperties> layersHnd.Pointer
+                let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, layersNptr)
 
-                use propertiesHnd = properties.AsMemory().Pin() in
-                let propertiesNptr = NativePtr.ofVoidPtr<VkExtensionProperties> propertiesHnd.Pointer
+                // check if validation layer exists
+                let validationLayer = "VK_LAYER_KHRONOS_validation"
+                let validationLayerExists = Array.exists (fun (x : VkLayerProperties) -> x.GetLayerName () = validationLayer) layers
+                if not validationLayerExists then printfn "Could not find %s. Note for Bryan: this is to be expected as you presumably have not installed the vulkan sdk. I would like you to keep the sdk uninstalled as long as possible so we can see what the difference is. From what I understand, windows users may be able to get by without it, linux not so much. Validation should only matter to nu users if they write their own vulkan code. \n" validationLayer
 
-                let result = vkEnumerateInstanceExtensionProperties (Interop.AsPointer &propertyCount, propertiesNptr)
-                printfn "property count: %s" (propertyCount.ToString ())
-        
+                // get validation layer
+                // TODO: maybe try setting up message callback later?
+                let vlayerPointer = validationLayer.GetUtf8Span().GetPointer() // not sure this is fully kosher, see convoluted message in GetPointer
+                let vlayerArray = [|vlayerPointer|]
+                use vlayerArrayHnd = vlayerArray.AsMemory().Pin() // question: do I need to avoid disposing this until instance creation to keep it safely pinned?
+                let vlayerArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> vlayerArrayHnd.Pointer
+
+                // get sdl extensions
                 let mutable sdlExtensionCount = 0u
-                // null is required to output to count; [||] does not work
                 let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
                 let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
-                printfn "sdl extension count: %s" (sdlExtensionCount.ToString ())
-
                 let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
-
-                for i in [0 .. dec (int sdlExtensionCount)] do
-                    sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
-                
-                let mutable instanceCreateInfo = VkInstanceCreateInfo ()
-                
-                use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin() in
+                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
+                for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
+                use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin()
                 let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
-                    
+
+                // populate createinstance info
+                let mutable instanceCreateInfo = VkInstanceCreateInfo ()
                 instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
                 instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsNptr
+                
+                if validationLayerExists then
+                    instanceCreateInfo.enabledLayerCount <- 1u
+                    instanceCreateInfo.ppEnabledLayerNames <- vlayerArrayNptr
                     
+                // create vulkan instance
                 let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
                 printfn "vkCreateInstance returned %s." (result.ToString ())
 
