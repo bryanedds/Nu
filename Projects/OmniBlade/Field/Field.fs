@@ -102,7 +102,6 @@ module Field =
     type [<ReferenceEquality; SymbolicExpansion>] Field =
         private
             { FieldTime_ : int64
-              FieldType_ : FieldType
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
@@ -128,11 +127,11 @@ module Field =
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               FieldSongTimeOpt_ : int64 option
+              FieldType_ : FieldType
               FieldState_ : FieldState }
 
         (* Local Properties *)
         member this.FieldTime = this.FieldTime_
-        member this.FieldType = this.FieldType_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.AvatarCollidedPropIds = this.AvatarCollidedPropIds_
@@ -156,6 +155,7 @@ module Field =
         member this.ShopOpt = this.ShopOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
+        member this.FieldType = this.FieldType_
         member this.FieldState = this.FieldState_
 
     (* Low-Level Operations *)
@@ -216,7 +216,7 @@ module Field =
                         character
                     | None -> failwith ("Could not find CharacterData for '" + scstring teammate.CharacterType + "'."))
                 party
-        let battle = Battle.makeFromParty battleSpeed inventory party prizePool battleData
+        let battle = Battle.makeFromParty inventory party prizePool battleSpeed battleData
         battle
         
     let rec detokenize (field : Field) (text : string) =
@@ -1253,7 +1253,6 @@ module Field =
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let props = makeProps time fieldType omniSeedState
         { FieldTime_ = 0L
-          FieldType_ = fieldType
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
           Avatar_ = avatar
@@ -1279,11 +1278,11 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
+          FieldType_ = fieldType
           FieldState_ = Playing }
 
     let empty =
         { FieldTime_ = 0L
-          FieldType_ = EmptyField
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty ()
@@ -1309,6 +1308,7 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
+          FieldType_ = EmptyField
           FieldState_ = Quit }
 
     let initial time saveSlot =
