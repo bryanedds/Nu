@@ -113,7 +113,7 @@ type CreditsDispatcher () =
                  Content.text "Sound Works 12" [Entity.Text == "Sound Works 12"; Entity.PerimeterCentered == true]
                  Content.text "Space 7" [Entity.PerimeterCentered == true]
                  Content.text "- Supporters -" [Entity.Text == "- Supporters -"; Entity.PerimeterCentered == true]
-                 Content.text "reinux" [Entity.Text == "reinux"; Entity.PerimeterCentered == true]
+                 Content.text "Rei Miyasaka" [Entity.Text == "Rei Miyasaka"; Entity.PerimeterCentered == true]
                  Content.text "Chris Reynolds" [Entity.Text == "Chris Reynolds"; Entity.PerimeterCentered == true]
                  Content.text "pauloud" [Entity.Text == "pauloud"; Entity.PerimeterCentered == true]
                  Content.text "arsmilitaris" [Entity.Text == "arsmilitaris"; Entity.PerimeterCentered == true]
