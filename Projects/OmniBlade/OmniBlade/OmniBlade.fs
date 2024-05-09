@@ -100,7 +100,7 @@ type OmniBladeDispatcher () =
 
         | ShowFieldInitial ->
             let slot = match omniBlade with Intro slot -> slot | _ -> Slot1
-            let field = Field.initial world.UpdateTime (World.getViewBounds2dAbsolute world) slot
+            let field = Field.initial world.UpdateTime slot
             withSignal (SetField field) Field
 
         | TryLoad saveSlot ->

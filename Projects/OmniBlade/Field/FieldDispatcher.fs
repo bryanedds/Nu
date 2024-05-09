@@ -18,7 +18,7 @@ module FieldExtensions =
         member this.CommenceBattleEvent = Events.CommenceBattleEvent --> this
 
 type FieldDispatcher () =
-    inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (fun world -> Field.empty (World.getViewBounds2dAbsolute world))
+    inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
     // HACK: override songs under special conditions.
     // NOTE: technically this should be data-driven, but it may not worth doing so for this game.
@@ -221,7 +221,7 @@ type FieldDispatcher () =
             just field
 
         | FinishQuitting ->
-            just (Field.empty (World.getViewBounds2dAbsolute world))
+            just Field.empty
 
         | TryCommencingBattle (battleType, consequents) ->
             match Map.tryFind battleType Data.Value.Battles with
@@ -678,7 +678,8 @@ type FieldDispatcher () =
 
              // backdrop sprite
              Content.staticSprite "Backdrop"
-                [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MinValue; Entity.Absolute == true
+                [Entity.Position == v3 -480.0f -270.0f 0.0f; Entity.Size == v3 960.0f 540.0f 0.0f; Entity.Elevation == Single.MinValue
+                 Entity.Absolute == true
                  Entity.StaticImage == Assets.Default.White
                  Entity.Color :=
                     match Data.Value.Fields.TryGetValue field.FieldType with
@@ -688,13 +689,14 @@ type FieldDispatcher () =
              // tint sprite
              if field.Tint.A > 0.0f then
                 Content.staticSprite "Tint"
-                   [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Constants.Field.TintElevation; Entity.Absolute == true
+                   [Entity.Position == v3 -480.0f -270.0f 0.0f; Entity.Size == v3 960.0f 540.0f 0.0f; Entity.Elevation == Constants.Field.TintElevation
                     Entity.StaticImage == Assets.Default.White
                     Entity.Color := field.Tint]
 
              // transition fade sprite
              Content.staticSprite "Fade"
-                [Entity.Perimeter := field.ViewBoundsAbsolute.Box3; Entity.Elevation == Single.MaxValue; Entity.Absolute == true
+                [Entity.Position == v3 -480.0f -270.0f 0.0f; Entity.Size == v3 960.0f 540.0f 0.0f; Entity.Elevation == Single.MaxValue
+                 Entity.Absolute == true
                  Entity.StaticImage == Assets.Default.Black
                  Entity.Visible := Option.isSome field.FieldTransitionOpt
                  Entity.Color :=
