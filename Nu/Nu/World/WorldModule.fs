@@ -567,7 +567,8 @@ module WorldModule =
 
         /// Unsubscribe from an event.
         static member unsubscribe subscriptionId world =
-            let (subscriptions, unsubscriptions) = (World.getSubscriptions world, World.getUnsubscriptions world)
+            let subscriptions = World.getSubscriptions world
+            let unsubscriptions = World.getUnsubscriptions world
             match UMap.tryFind subscriptionId unsubscriptions with
             | Some (eventAddress, _) ->
                 match UMap.tryFind eventAddress subscriptions with
@@ -724,7 +725,7 @@ module WorldModule =
         static member internal getSimulantStateMemberProperties (state : SimulantState) =
             state |>
             getType |>
-            (fun ty -> ty.GetProperties ()) |>
+            (fun ty -> ty.GetProperties true) |>
             Array.map (fun (property : PropertyInfo) -> (property.Name, property.PropertyType, property.GetValue state)) |>
             Array.toList
 

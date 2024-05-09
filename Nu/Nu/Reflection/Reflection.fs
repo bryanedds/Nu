@@ -4,8 +4,10 @@
 namespace Nu
 open System
 open System.Collections
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Reflection
+open FSharp.Reflection
 open Prime
 
 [<RequireQualifiedAccess>]
@@ -19,6 +21,15 @@ module Reflection =
 
     let private PropertyDefinitionsCache =
         Dictionary<Type, PropertyDefinition list> HashIdentity.Structural
+
+    let private ToSymbolMemo =
+        new Dictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
+
+    let private OfSymbolMemo =
+        new Dictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
+
+    let private MemoizableMemo =
+        new ConcurrentDictionary<Type, bool> (HashIdentity.Reference)
 
     /// A dictionary of properties that are never serialized.
     let private NonPersistentPropertyNames =
@@ -73,6 +84,32 @@ module Reflection =
              ("Physical", true)
              ("Optimized", true)]
 
+    let rec private memoizable2 level (ty : Type) =
+        match MemoizableMemo.TryGetValue ty with
+        | (true, result) -> result
+        | (false, _) ->
+            let result =
+                if level = 10 then
+                    false // unmemoizable when > N layers deep (this avoids infinite recursion).
+                elif ty.IsArray then
+                    false // empty arrays are safe, but unfortunately not non-empty arrays
+                elif ty = typeof<string> || ty.IsPrimitive then
+                    true // strings and primitives are safe
+                elif ty.IsValueType then
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> memoizable2 (inc level) fieldInfo.FieldType) fields
+                elif FSharpType.IsRecord ty || FSharpType.IsUnion ty then
+                    let setters = ty.GetFields (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.SetProperty)
+                    if setters.Length = 0 then
+                        let getters = ty.GetProperties (BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.GetProperty)
+                        Array.forall (fun (propertyInfo : PropertyInfo) -> memoizable2 (inc level) propertyInfo.PropertyType) getters
+                    else false
+                else
+                    let fields = ty.GetFields (BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.FlattenHierarchy)
+                    Array.forall (fun (fieldInfo : FieldInfo) -> fieldInfo.IsInitOnly && memoizable2 (inc level) fieldInfo.FieldType) fields
+            MemoizableMemo.TryAdd (ty, result) |> ignore<bool>
+            result
+
     /// Configure a property to be non-persistent.
     let internal initPropertyNonPersistent nonPersistent propertyName =
         NonPersistentPropertyNames.[propertyName] <- nonPersistent
@@ -92,6 +129,17 @@ module Reflection =
         (property.Name = Constants.Engine.NamePropertyName &&
          property.PropertyType = typeof<string> &&
          Gen.isNameGenerated (property.GetValue target :?> string))
+
+    /// Determine whether a type is safely memoizable.
+    /// Thread-safe.
+    /// TODO: consider moving this into Prime once it's well-tested.
+    let memoizable ty = memoizable2 0 ty
+
+    /// Make a symbolic converter that conditionally-memoizing (IE, only memoizes when doing so is safe).
+    let internal makeSymbolicConverterMemo printing designerTypeOpt ty =
+        if memoizable ty
+        then SymbolicConverter (printing, designerTypeOpt, ty, ToSymbolMemo, OfSymbolMemo)
+        else SymbolicConverter (printing, designerTypeOpt, ty)
 
     /// Check that the dispatcher has behavior congruent to the given type.
     let dispatchesAs (dispatcherTargetType : Type) (dispatcher : 'a) =
@@ -235,7 +283,7 @@ module Reflection =
         (propertyName : string)
         (propertySymbol : Symbol) =
         let targetType = target.GetType ()
-        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties ()) then
+        if Array.notExists (fun (property : PropertyInfo) -> property.Name = propertyName) (targetType.GetProperties true) then
             match Map.tryFind propertyName propertyDefinitions with
             | Some propertyDefinition ->
                 let converter = SymbolicConverter (false, None, propertyDefinition.PropertyType)
@@ -285,7 +333,7 @@ module Reflection =
     let tryReadOverlayNameOptToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties ()
+        let targetProperties = targetType.GetProperties true
         let overlayNameOptPropertyOpt =
             Array.tryFind (fun (property : PropertyInfo) ->
                 property.Name = Constants.Engine.OverlayNameOptPropertyName &&
@@ -306,7 +354,7 @@ module Reflection =
     let readFacetNamesToTarget (copyTarget : 'a -> 'a) propertyDescriptors target =
         let target = copyTarget target
         let targetType = target.GetType ()
-        let targetProperties = targetType.GetProperties ()
+        let targetProperties = targetType.GetProperties true
         let facetNamesProperty =
             Array.find (fun (property : PropertyInfo) ->
                 property.Name = Constants.Engine.FacetNamesPropertyName &&
@@ -367,7 +415,7 @@ module Reflection =
     /// Write all of a target's property values to property descriptors.
     let writePropertiesFromTarget shouldWriteProperty propertyDescriptors (target : 'a) =
         let targetType = target.GetType ()
-        let properties = targetType.GetProperties ()
+        let properties = targetType.GetProperties true
         Seq.fold (fun propertyDescriptors (property : PropertyInfo) ->
             match property.GetValue target with
             | :? Xtension as xtension -> writeXtension shouldWriteProperty propertyDescriptors xtension
@@ -405,24 +453,27 @@ module Reflection =
 
     /// Attach properties from the given definitions to a target.
     let attachPropertiesViaDefinitions (copyTarget : 'a -> 'a) definitions target world =
-        let target = copyTarget target
-        let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
-        | null -> failwith "Target does not support Xtensions due to missing Xtension property."
-        | xtensionProperty ->
-            match xtensionProperty.GetValue target with
-            | :? Xtension as xtension ->
-                let mutable xtension = xtension
-                for definition in definitions do
-                    let propertyValue = PropertyExpr.eval definition.PropertyExpr world
-                    match targetType.GetPropertyWritable definition.PropertyName with
-                    | null ->
-                        let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
-                        xtension <- Xtension.attachProperty definition.PropertyName property xtension
-                    | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
-                xtensionProperty.SetValue (target, xtension)
-            | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
-        target
+        match definitions with
+        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | _ ->
+            let target = copyTarget target
+            let targetType = target.GetType ()
+            match targetType.GetPropertyWritable Constants.Engine.XtensionPropertyName with
+            | null -> failwith "Target does not support Xtensions due to missing Xtension property."
+            | xtensionProperty ->
+                match xtensionProperty.GetValue target with
+                | :? Xtension as xtension ->
+                    let mutable xtension = xtension
+                    for definition in definitions do
+                        let propertyValue = PropertyExpr.eval definition.PropertyExpr world
+                        match targetType.GetPropertyWritable definition.PropertyName with
+                        | null ->
+                            let property = { PropertyType = definition.PropertyType; PropertyValue = propertyValue }
+                            xtension <- Xtension.attachProperty definition.PropertyName property xtension
+                        | propertyInfo -> propertyInfo.SetValue (target, propertyValue)
+                    xtensionProperty.SetValue (target, xtension)
+                | _ -> failwith "Target does not support Xtensions due to missing Xtension property."
+            target
 
     /// Detach properties from a target.
     let detachPropertiesViaNames (copyTarget : 'a -> 'a) propertyNames target =
@@ -475,7 +526,7 @@ module Reflection =
             | _ -> failwith ("Static member 'RequiredDispatcherName' for facet '" + facetType.Name + "' is not of type string.")
 
     /// Check for facet compatibility with the target's dispatcher.
-    let isFacetCompatibleWithDispatcher dispatcherMap (facet : 'b) (target : 'a) =
+    let isFacetCompatibleWithDispatcher<'d, 'f, 'a> (dispatcherMap : Map<string, 'd>) (facet : 'f) (target : 'a) =
         let facetType = facet.GetType ()
         let facetTypes = facetType :: getBaseTypesExceptObject facetType
         List.forall
@@ -483,32 +534,37 @@ module Reflection =
             facetTypes
 
     /// Attach intrinsic facets to a target by their names.
-    let attachIntrinsicFacetsViaNames (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
-        let target = copyTarget target
-        let facets =
-            List.map (fun facetName ->
-                match Map.tryFind facetName facetMap with
-                | Some facet -> facet
-                | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
-                facetNames |>
-            List.toArray
-        let targetType = target.GetType ()
-        match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
-        | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
-        | facetsProperty ->
-            Array.iter (fun facet ->
-                if not (isFacetCompatibleWithDispatcher dispatcherMap facet target)
-                then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
-                else ())
-                facets
-            facetsProperty.SetValue (target, facets)
-            Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
+    let attachIntrinsicFacetsViaNames<'d, 'f, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap facetNames target world =
+        match facetNames with
+        | [] -> target // OPTIMIZATION: bail if nothing to do.
+        | _ ->
+            let target = copyTarget target
+            let facets =
+                List.map (fun facetName ->
+                    match Map.tryFind facetName facetMap with
+                    | Some facet -> facet
+                    | None -> failwith ("Could not find facet '" + facetName + "' in facet map."))
+                    facetNames |>
+                List.toArray
+            let targetType = target.GetType ()
+            match targetType.GetPropertyWritable Constants.Engine.FacetsPropertyName with
+            | null -> failwith ("Could not attach facet to type '" + targetType.Name + "'.")
+            | facetsProperty ->
+                let facetsExisting = facetsProperty.GetValue target :?> 'f array
+                Array.iter (fun facet ->
+                    if not (isFacetCompatibleWithDispatcher<'d, 'f, 'a> dispatcherMap facet target)
+                    then failwith ("Facet of type '" + getTypeName facet + "' is not compatible with target '" + scstring target + "'.")
+                    else ())
+                    facets
+                let facets = Array.append facetsExisting facets
+                facetsProperty.SetValue (target, facets)
+                Array.fold (fun target facet -> attachProperties copyTarget facet target world) target facets
 
     /// Attach source's intrinsic facets to a target.
-    let attachIntrinsicFacets (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
+    let attachIntrinsicFacets<'d, 'f, 'b, 'a> (copyTarget : 'a -> 'a) dispatcherMap facetMap (source : 'b) target world =
         let sourceType = source.GetType ()
         let instrinsicFacetNames = getIntrinsicFacetNames sourceType
-        attachIntrinsicFacetsViaNames copyTarget dispatcherMap facetMap instrinsicFacetNames target world
+        attachIntrinsicFacetsViaNames<'d, 'f, 'a> copyTarget dispatcherMap facetMap instrinsicFacetNames target world
 
     /// Initialize backing data utilized by reflection module.
     let init () =

@@ -14,6 +14,7 @@ module Events =
     let ItemSelectEvent = stoa<string> "Item/Select/Event"
     let TargetSelectEvent = stoa<CharacterIndex> "Target/Select/Event"
     let TravelEvent = stoa<Vector2> "Travel/Event"
+    let QuitCreditsEvent = stoa<unit> "Quit/Credits/Event"
     let QuitFieldEvent = stoa<unit> "Quit/Field/Event"
     let CommencingBattleEvent = stoa<unit> "Commencing/Battle/Event"
     let CommenceBattleEvent = stoa<BattleData * PrizePool> "Commence/Battle/Event"

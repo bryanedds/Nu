@@ -14,7 +14,6 @@ void main()
 
 #shader fragment
 #version 410
-#extension GL_ARB_bindless_texture : require
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
@@ -30,15 +29,15 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowBiasAcne;
 uniform float lightShadowBiasBleed;
-layout (bindless_sampler) uniform sampler2D positionTexture;
-layout (bindless_sampler) uniform sampler2D albedoTexture;
-layout (bindless_sampler) uniform sampler2D materialTexture;
-layout (bindless_sampler) uniform sampler2D normalPlusTexture;
-layout (bindless_sampler) uniform sampler2D brdfTexture;
-layout (bindless_sampler) uniform sampler2D irradianceTexture;
-layout (bindless_sampler) uniform sampler2D environmentFilterTexture;
-layout (bindless_sampler) uniform sampler2D ssaoTexture;
-layout (bindless_sampler) uniform sampler2D shadowTextures[SHADOWS_MAX];
+uniform sampler2D positionTexture;
+uniform sampler2D albedoTexture;
+uniform sampler2D materialTexture;
+uniform sampler2D normalPlusTexture;
+uniform sampler2D brdfTexture;
+uniform sampler2D irradianceTexture;
+uniform sampler2D environmentFilterTexture;
+uniform sampler2D ssaoTexture;
+uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
 uniform vec3 lightDirections[LIGHTS_MAX];
 uniform vec3 lightColors[LIGHTS_MAX];

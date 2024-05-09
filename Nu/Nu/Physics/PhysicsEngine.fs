@@ -154,7 +154,7 @@ type HeightMap =
                         for x in 0 .. dec resolutionX do
                             let normalized = heightsNormalized.[y * resolutionX + x]
                             let position = v3 (single x * quadSizeX + terrainPositionX) (normalized * terrainHeight + terrainPositionY) (single y * quadSizeY + terrainPositionZ)
-                            let texCoords = v2 (single x * texelWidth) (single y * texelHeight) * tiles
+                            let texCoords = v2 (single x * texelWidth) (1.0f - single y * texelHeight) * tiles // NOTE: flip y because textures are loaded 'upside-down'
                             struct (position, texCoords)|]
 
                 // fin
@@ -296,8 +296,8 @@ type StaticModelShape =
 
 /// The shape of a physics body in terms of a static model surface.
 type StaticModelSurfaceShape =
-    { SurfaceIndex : int
-      StaticModel : StaticModel AssetTag
+    { StaticModel : StaticModel AssetTag
+      SurfaceIndex : int
       Convex : bool
       TransformOpt : Affine option
       PropertiesOpt : BodyShapeProperties option }

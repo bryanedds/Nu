@@ -84,7 +84,7 @@ type TextDescriptor =
       Justification : Justification }
 
 /// Describes a 2d rendering operation.
-type [<ReferenceEquality>] RenderOperation2d =
+type RenderOperation2d =
     | RenderSprite of SpriteDescriptor
     | RenderSprites of SpritesDescriptor
     | RenderSpriteDescriptors of SpriteDescriptors
@@ -95,14 +95,14 @@ type [<ReferenceEquality>] RenderOperation2d =
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal sprite descriptor caching.
-type [<ReferenceEquality>] LayeredOperation2d =
+type LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
       mutable AssetTag : AssetTag
       mutable RenderOperation2d : RenderOperation2d }
 
 /// A message to a 2d rendering subsystem.
-type [<ReferenceEquality>] RenderMessage2d =
+type RenderMessage2d =
     | LayeredOperation2d of LayeredOperation2d
     | LoadRenderPackage2d of string
     | UnloadRenderPackage2d of string
@@ -710,15 +710,14 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                             // make texture drawable
                             let textTextureMetadata = OpenGL.Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                            let textTextureHandle = OpenGL.Texture.CreateTextureHandle textTextureId
-                            let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId; TextureHandle = textTextureHandle }
+                            let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId }
                             OpenGL.Hl.Assert ()
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices, vao) = renderer.TextQuad
-                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.SpriteShader
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
+                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
+                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
                             OpenGL.Hl.Assert ()
 
                             // destroy texture

@@ -7,7 +7,6 @@ open Nu
 // this represents that state of gameplay simulation.
 type GameplayState =
     | Quit
-    | Quitting
     | Playing
 
 // this is our MMCC model type representing gameplay.
@@ -39,7 +38,6 @@ type GameplayCommand =
     | AttackCharacter of Entity
     | DestroyEnemy of Entity
     | TrackPlayer
-    | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
 // this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
@@ -68,19 +66,17 @@ type GameplayDispatcher () =
 
         match message with
         | StartPlaying ->
-            let gameplay = { gameplay with GameplayState = Playing }
+            let gameplay = Gameplay.initial
             withSignal SetupScene gameplay
 
         | FinishQuitting ->
-            let gameplay = { gameplay with GameplayState = Quit }
+            let gameplay = Gameplay.empty
             just gameplay
 
         | Die deadCharacter ->
             let character = deadCharacter.GetCharacter world
             match character.CharacterType with
-            | Player ->
-                let gameplay = { gameplay with GameplayState = Quitting }
-                withSignal StartQuitting gameplay
+            | Player -> withSignal StartQuitting gameplay
             | Enemy ->
                 let gameplay = { gameplay with Score = gameplay.Score + 100 }
                 withSignal (DestroyEnemy deadCharacter) gameplay
@@ -109,15 +105,15 @@ type GameplayDispatcher () =
                     | InjuryState _ -> just character
                     | _ ->
                         let character = { character with ActionState = InjuryState { InjuryTime = world.UpdateTime }}
-                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
-                        withSignal playSound character
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                        just character
                 else
                     match character.ActionState with
                     | WoundState _ -> just character
                     | _ ->
                         let character = { character with ActionState = WoundState { WoundTime = world.UpdateTime }}
-                        let playSound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gameplay.InjureSound)
-                        withSignal playSound character
+                        World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                        just character
             let world = entity.SetCharacter character world
             withSignals signals world
 
@@ -141,10 +137,6 @@ type GameplayDispatcher () =
             let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
             just world
 
-        | GameplayCommand.PlaySound (delay, volume, sound) ->
-            let world = World.schedule delay (World.playSound volume sound) screen world
-            just world
-
     // here we describe the content of the game including the hud group and the scene group
     override this.Content (gameplay, _) =
 
@@ -164,9 +156,9 @@ type GameplayDispatcher () =
                  Entity.Text == "Quit"
                  Entity.ClickEvent => StartQuitting]]
 
-         // the scene group while playing or quitting
+         // the scene group while playing
          match gameplay.GameplayState with
-         | Playing | Quitting ->
+         | Playing ->
             
             // loads scene from file edited in Gaia
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []

@@ -13,6 +13,6 @@ type BlazeVectorPlugin () =
              ("Title", fun world -> Game.SetBlazeVector Title world)
              ("Credits", fun world -> Game.SetBlazeVector Credits world)
              ("Gameplay", fun world ->
-                let world = Game.SetBlazeVector Gameplay world
                 let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
+                let world = Game.SetBlazeVector Gameplay world
                 world)]

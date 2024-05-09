@@ -26,6 +26,18 @@ type FieldDispatcher () =
         // NOTE: no special conditions in demo.
         song
 
+    static let loadMetadata fieldType =
+        match fieldType with
+        | TombInner ->
+            Metadata.loadMetadataPackage (nameof Castle)
+        | _ -> ()
+
+    static let preloadFields fieldType (field : Field) =
+        match fieldType with
+        | CastleConnector ->
+            for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+        | _ -> ()
+
     static let isIntersectedProp (collider : BodyShapeIndex) (collidee : BodyShapeIndex) world =
         let collideeEntity = collidee.BodyId.BodySource :?> Entity
         if (collider.BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
@@ -53,12 +65,14 @@ type FieldDispatcher () =
          Screen.PostUpdateEvent => UpdateEye
          Screen.PostUpdateEvent => UpdateAvatarBodyTracking
          Screen.TimeUpdateEvent => TimeUpdate
-         Screen.SelectEvent => PlayFieldSong
+         Screen.SelectEvent => StartPlaying
          Screen.IncomingStartEvent => ScreenTransitioning true
          Screen.IncomingFinishEvent => ScreenTransitioning false
          Screen.OutgoingStartEvent => ScreenTransitioning true
          Screen.OutgoingFinishEvent => ScreenTransitioning false
-         match field.FieldState with Battling (battleData, prizePool) -> Screen.DeselectingEvent => CommenceBattle (battleData, prizePool) | _ -> ()
+         match field.FieldState with
+         | Playing -> Screen.DeselectingEvent => FinishQuitting
+         | Battling (battleData, prizePool) -> Screen.DeselectingEvent => CommenceBattle (battleData, prizePool) | _ -> ()
          Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
          Simulants.FieldAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
@@ -102,12 +116,19 @@ type FieldDispatcher () =
                         | (_, _) -> withSignal (FieldCommand.FadeOutSong 30L) field
 
                     // half-way transition (fully blacked out)
-                    elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
+                    elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 2L then
+
+                        // load metadata and pre-generate fields
+                        match destinationData.FieldType with
+                        | TombInner ->
+                            Metadata.loadMetadataPackage (nameof Castle)
+                        | CastleConnector ->
+                            for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
+                        | _ -> ()
 
                         // transition field
-                        match destinationData.FieldType with // HACK: pre-generate fields.
-                        | CastleConnector -> for i in 0 .. 2 do FieldData.tryGetTileMap field.OmniSeedState (Data.Value.Fields.[Castle i]) |> ignore
-                        | _ -> ()
+                        loadMetadata destinationData.FieldType
+                        preloadFields destinationData.FieldType field 
                         let field = Field.mapFieldType world.UpdateTime (constant fieldTransition.FieldType) field
                         let field = Field.mapAvatar (Avatar.mapDirection (constant fieldTransition.FieldDirection)) field
                         let warpAvatar = WarpAvatar fieldTransition.FieldDestination
@@ -199,6 +220,9 @@ type FieldDispatcher () =
             let field = Field.mapScreenTransitioning (constant transitioning) field
             just field
 
+        | FinishQuitting ->
+            just (Field.empty (World.getViewBounds2dAbsolute world))
+
         | TryCommencingBattle (battleType, consequents) ->
             match Map.tryFind battleType Data.Value.Battles with
             | Some battleData ->
@@ -261,7 +285,7 @@ type FieldDispatcher () =
                     let field = match displacedOpt with Some displaced -> Field.mapInventory (Inventory.tryAddItem displaced >> snd) field | None -> field
                     let field = Field.mapTeam (Map.add index teammate) field
                     let field = Field.mapMenu (constant { field.Menu with MenuUseOpt = None }) field
-                    if result then withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
+                    if result then withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.HealSound)) field
                     else just field
                 | None -> just field
             | None -> just field
@@ -348,8 +372,7 @@ type FieldDispatcher () =
             just field
 
         | MenuOptionsQuitConfirm ->
-            let field = Field.quitConfirm field
-            withSignal (FadeOutSong 60L) field
+            withSignals [FadeOutSong 60L; StartQuitting] field
 
         | MenuOptionsQuitCancel ->
             let field = Field.quitCancel field
@@ -425,8 +448,8 @@ type FieldDispatcher () =
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.tryAddItem itemType >> snd | ShopSelling -> Inventory.tryRemoveItem itemType >> snd) field
                         let field = Field.mapInventory (match shop.ShopState with ShopBuying -> Inventory.removeGold shopConfirm.ShopConfirmPrice | ShopSelling -> Inventory.addGold shopConfirm.ShopConfirmPrice) field
                         let field = Field.mapShopOpt (Option.map (fun shop -> { shop with ShopConfirmOpt = None })) field
-                        withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
-                    else withSignal (FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
+                        withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.PurchaseSound)) field
+                    else withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.MistakeSound)) field
                 | None -> just field
             | None -> just field
 
@@ -556,17 +579,8 @@ type FieldDispatcher () =
             let world = screen.SetField field world
             just world
 
-        | CommencingBattle ->
-            let world = World.publish () screen.CommencingBattleEvent screen world
-            let fade = FadeOutSong 60L
-            let growl = FieldCommand.PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
-            withSignals [fade; growl] world
-
-        | CommenceBattle (battleData, prizePool) ->
-            let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
-            just world
-
-        | PlayFieldSong ->
+        | StartPlaying ->
+            loadMetadata field.FieldType
             match Data.Value.Fields.TryGetValue field.FieldType with
             | (true, fieldData) ->
                 match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
@@ -605,16 +619,30 @@ type FieldDispatcher () =
                 | (None, _) -> just world
             | (false, _) -> just world
 
-        | FieldCommand.PlaySound (delay, volume, sound) ->
-            let world = World.schedule delay (World.playSound volume sound) screen world
+        | StartQuitting ->
+            let world = World.publish () screen.QuitFieldEvent screen world
             just world
 
-        | FieldCommand.PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
-            let world = World.playSong fadeIn fadeOut start volume assetTag world
+        | CommencingBattle ->
+            let world = World.publish () screen.CommencingBattleEvent screen world
+            let fade = FadeOutSong 60L
+            let growl = ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.BeastGrowlSound)
+            withSignals [fade; growl] world
+
+        | CommenceBattle (battleData, prizePool) ->
+            let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
             just world
 
-        | FieldCommand.FadeOutSong fade ->
-            let world = World.fadeOutSong fade world
+        | ScheduleSound (delay, volume, sound) ->
+            let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
+            just world
+
+        | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
+            World.playSong fadeIn fadeOut start volume assetTag world
+            just world
+
+        | FadeOutSong fade ->
+            World.fadeOutSong fade world
             just world
 
         | Nop -> just world
@@ -674,7 +702,7 @@ type FieldDispatcher () =
                     | Some transition ->
                         let time = field.FieldTime
                         let localTime = single transition.FieldTransitionTime - single time
-                        let halfTransitionTime = single (dec Constants.Field.TransitionTime) * 0.5f
+                        let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                         let progress =
                             if localTime < halfTransitionTime
                             then localTime / halfTransitionTime
@@ -720,12 +748,12 @@ type FieldDispatcher () =
                        match FieldData.tryGetTileMap field.OmniSeedState fieldData with
                        | Some tileMapChc ->
                            match tileMapChc with
-                           | Choice1Of4 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                           | Choice1Of4 _ -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
                            | Choice2Of4 (_, tileMapFade) -> tileMapFade
-                           | Choice3Of4 (_, _) ->  Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                           | Choice4Of4 _ -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                       | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
-                    | None -> Metadata.getTileMapMetadata Assets.Default.TileMapEmpty |> __c
+                           | Choice3Of4 (_, _) -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
+                           | Choice4Of4 _ -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
+                       | None -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
+                    | None -> (Metadata.getTileMapMetadata Assets.Default.EmptyTileMap).TileMap
                  Entity.TileLayerClearance == 10.0f]
 
              // feeler
@@ -802,7 +830,7 @@ type FieldDispatcher () =
                 // team
                 Content.panel "Team"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
                         match menu.MenuState with
@@ -811,46 +839,45 @@ type FieldDispatcher () =
                         MenuTeamAlly
                      Content.label "Portrait"
                         [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
-                         Entity.LabelImage :=
+                         Entity.BackdropImageOpt :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
                             | Some characterData ->
                                 match characterData.PortraitOpt with
-                                | Some portrait -> portrait
-                                | None -> Assets.Default.ImageEmpty
-                            | None -> Assets.Default.ImageEmpty]
+                                | Some portrait -> Some portrait
+                                | None -> Some Assets.Default.EmptyImage
+                            | None -> Some Assets.Default.EmptyImage]
                      Content.text "CharacterType"
-                        [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
                             | Some characterData -> CharacterType.getName characterData.CharacterType
                             | None -> ""]
                      Content.text "ArchetypeType"
-                        [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate -> getCaseName teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                             | None -> ""]
                      Content.text "Weapon"
-                        [Entity.PositionLocal == v3 444.0f 237.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 444.0f 237.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate -> "Wpn: " + Option.mapOrDefaultValue string "None" teammate.WeaponOpt
                             | None -> ""]
                      Content.text "Armor"
-                        [Entity.PositionLocal == v3 444.0f 207.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 444.0f 207.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate -> "Amr: " + Option.mapOrDefaultValue string "None" teammate.ArmorOpt
                             | None -> ""]
                      Content.text "Accessory"
-                        [Entity.PositionLocal == v3 444.0f 177.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 444.0f 177.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                             | None -> ""]
                      Content.text "Stats"
-                        [Entity.PositionLocal == v3 444.0f -78.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
-                         Entity.Justification == Unjustified true
+                        [Entity.PositionLocal == v3 444.0f -78.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f; Entity.Justification == Unjustified true
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate ->
@@ -861,14 +888,14 @@ type FieldDispatcher () =
                                 "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + string (Algorithms.expPointsForNextLevel teammate.ExpPoints)
                             | None -> ""]
                      Content.text "Gold"
-                        [Entity.PositionLocal == v3 444.0f 9.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 444.0f 9.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Unjustified false
                          Entity.Text := string field.Inventory.Gold + "G"]]
 
              // inventory
              | MenuInventory _ ->
                 Content.panel "Inventory"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuInventorySelect
@@ -891,7 +918,7 @@ type FieldDispatcher () =
              | MenuTechs _ ->
                 Content.panel "Techs"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := match field.Menu.MenuState with MenuTechs techs -> techs.TechIndexOpt.IsNone | _ -> true]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.team (v3 138.0f 417.0f 0.0f) Int32.MaxValue field (fun teammate menu ->
@@ -905,7 +932,7 @@ type FieldDispatcher () =
              | MenuKeyItems _ ->
                 Content.panel "KeyItems"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := Option.isNone field.Menu.MenuUseOpt]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      yield! Content.items (v3 138.0f 417.0f 0.0f) 10 5 field MenuKeyItemsSelect
@@ -928,7 +955,7 @@ type FieldDispatcher () =
              | MenuOptions quitPrompt ->
                 Content.panel "Options"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      if not quitPrompt then
                         Content.text "BattleSpeed"
@@ -1000,7 +1027,7 @@ type FieldDispatcher () =
              | PartyMenuOpened ->
                 Content.panel "PartyMenu"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage]
                     [Content.button "Confirm"
                         [Entity.PositionLocal == v3 810.0f 420.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                          Entity.EnabledLocal := field.PartyMenu.PartyMenuSelections.Length >= 3
@@ -1052,7 +1079,7 @@ type FieldDispatcher () =
              | Some menuUse ->
                 Content.panel "Use"
                     [Entity.Position == v3 -450.0f -216.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 432.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXLImage]
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXLImage]
                     [yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field (fun teammate menu ->
                         match menu.MenuUseOpt with
                         | Some menuUse -> Teammate.canUseItem (snd menuUse.MenuUseSelection) teammate
@@ -1064,13 +1091,13 @@ type FieldDispatcher () =
                          Entity.DownImage == asset "Field" "CloseButtonDown"
                          Entity.ClickEvent => MenuInventoryCancel]
                      Content.text "Line1"
-                        [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.Text := menuUse.MenuUseLine1]
                      Content.text "Line2"
-                        [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.Text := menuUse.MenuUseLine2]
                      Content.text "Line3"
-                        [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.Text := menuUse.MenuUseLine3]]
              | None -> ()
 
@@ -1092,7 +1119,7 @@ type FieldDispatcher () =
                         | (true, tech) ->
                             Content.panel "Tech"
                                 [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
-                                 Entity.LabelImage == Assets.Gui.DialogFatImage]
+                                 Entity.BackdropImageOpt == Some Assets.Gui.DialogFatImage]
                                 [Content.button "Close"
                                     [Entity.PositionLocal == v3 810.0f 162.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                                      Entity.UpImage == asset "Field" "CloseButtonUp"
@@ -1123,7 +1150,7 @@ type FieldDispatcher () =
                 let items = Content.pageItems 8 field
                 Content.panel "Shop"
                     [Entity.Position == v3 -450.0f -255.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 900.0f 510.0f 0.0f
-                     Entity.LabelImage == Assets.Gui.DialogXXLImage
+                     Entity.BackdropImageOpt == Some Assets.Gui.DialogXXLImage
                      Entity.Enabled := Option.isNone shop.ShopConfirmOpt]
                     [yield! Content.items (v3 96.0f 347.0f 0.0f) pageSize rows field ShopSelect
                      Content.button "Buy"
@@ -1177,7 +1204,7 @@ type FieldDispatcher () =
                 | Some shopConfirm ->
                     Content.panel "Dialog"
                        [Entity.Position == v3 -450.0f -128.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 252.0f 0.0f
-                        Entity.LabelImage == Assets.Gui.DialogFatImage]
+                        Entity.BackdropImageOpt == Some Assets.Gui.DialogFatImage]
                        [Content.button "Accept"
                            [Entity.PositionLocal == v3 198.0f 36.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 48.0f 0.0f
                             Entity.Text == "Accept"
@@ -1187,13 +1214,13 @@ type FieldDispatcher () =
                             Entity.Text == "Decline"
                             Entity.ClickEvent => ShopConfirmDecline]
                         Content.text "Offer"
-                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmOffer]
                         Content.text "Line1"
-                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmLine1]
                         Content.text "Line2"
-                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmLine2]]
                 | None -> ()
              | None -> ()]]

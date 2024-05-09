@@ -10,41 +10,53 @@
       [AttenuationQuadratic 0.00028058363]
       [Brightness 12]
       [DesireShadows True]
+      [Light True]
       [LightCutoff 24]
       [LightType DirectionalLight]
       [MountOpt [Some ^]]
       [Name Sun]
-      [Position [12.4 9.7 11.4]]
-      [PositionLocal [11.6 11 12.1]]
+      [Position [0 18 0]]
       [Presence Omnipresent]
-      [Rotation [-0.14231347 0.9163351 -0.08640594 0.3641578]]
+      [Rotation [-0.10395585 -0.0109262 0.10395585 0.9890738]]
       [RotationLocal [-0.14231347 0.9163351 -0.08640594 0.36415777]]
       [Scale [0.9999998 0.99999994 0.9999999]]
-      [ScaleLocal [0.9999999 0.99999994 0.99999994]]]
+      [ScaleLocal [0.9999999 0.99999994 0.99999994]]
+      [Size [0.25 0.25 0.25]]]
      []]
     [SkyBoxDispatcher
-     [[AmbientBrightness 0.3]
+     [[Absolute True]
+      [AmbientBrightness 0.3]
       [AmbientColor [1 0.8901961 0.78431374 1]]
       [MountOpt [Some ^]]
-      [Name SkyBox]]
+      [Name SkyBox]
+      [Presence Omnipresent]
+      [Static True]]
      []]
     [TerrainDispatcher
-     [[MountOpt [Some ^]]
+     [[AlwaysRender True]
+      [MountOpt [Some ^]]
       [Name Terrain]
       [Position [1.3 59.8 -85.3]]
-      [PositionLocal [1.3 59.8 -85.3]]]
+      [PositionLocal [1.3 59.8 -85.3]]
+      [Presence Omnipresent]
+      [Size [512 128 512]]
+      [Static True]]
      []]
     [LightProbe3dDispatcher
-     [[MountOpt [Some ^]]
+     [[LightProbe True]
+      [MountOpt [Some ^]]
       [Name LightProbe3d]
       [Position [12.4 5.7 11.4]]
       [PositionLocal [12.4 5.7 11.4]]
+      [Presence Omnipresent]
       [ProbeBounds
-       [[-21.4 -1.3 -22.8] [63.9 14.1 67.2]]]]
+       [[-21.4 -1.3 -22.8] [63.9 14.1 67.2]]]
+      [Size [0.25 0.25 0.25]]
+      [Static True]]
      []]
     [Lighting3dConfigDispatcher
-     [[LightingConfig
-       [[LightCutoffMargin 0.333] [LightShadowBiasAcne 2E-07] [LightShadowBiasBleed 0.5] [LightMappingEnabled True] [SsaoEnabled True] [SsaoIntensity 1.333] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2] [SsaoSampleCount 12]]]
+     [[Lighting3dConfig
+       [[LightCutoffMargin 0.333] [ShadowBiasAcne 2E-07] [ShadowBiasBleed 0.5] [SsaoIntensity 1.333] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2]]]
       [MountOpt [Some ^]]
       [Name Lighting3dConfig]]
      []]
@@ -964,7 +976,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -986,7 +998,7 @@
             [RigidModelSurfaceDispatcher
              [[BodyShape
                [StaticModelSurfaceShape
-                [0 [Gameplay PalmTree] True None None]]]
+                [[Gameplay PalmTree] 0 True None None]]]
               [Material
                [[AlbedoImageOpt
                  [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1060,7 +1072,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1111,7 +1123,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1165,7 +1177,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1219,7 +1231,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1273,7 +1285,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1327,7 +1339,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -1381,7 +1393,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2392,7 +2404,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2414,7 +2426,7 @@
         [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelSurfaceShape
-            [0 [Gameplay PalmTree] True None None]]]
+            [[Gameplay PalmTree] 0 True None None]]]
           [Material
            [[AlbedoImageOpt
              [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2488,7 +2500,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2539,7 +2551,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2593,7 +2605,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2647,7 +2659,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2701,7 +2713,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2755,7 +2767,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -2809,7 +2821,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -3713,7 +3725,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -3765,7 +3777,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -3817,7 +3829,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -3871,7 +3883,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -3925,7 +3937,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -3979,7 +3991,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -4033,7 +4045,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -4087,7 +4099,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -4975,7 +4987,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5025,7 +5037,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5076,7 +5088,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5130,7 +5142,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5184,7 +5196,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5237,7 +5249,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5291,7 +5303,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -5345,7 +5357,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6224,7 +6236,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6274,7 +6286,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6326,7 +6338,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6380,7 +6392,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6434,7 +6446,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6488,7 +6500,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6542,7 +6554,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]
@@ -6596,7 +6608,7 @@
     [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelSurfaceShape
-        [0 [Gameplay PalmTree] True None None]]]
+        [[Gameplay PalmTree] 0 True None None]]]
       [Material
        [[AlbedoImageOpt
          [Some [Gameplay Palm_Tree_Albedo]]]

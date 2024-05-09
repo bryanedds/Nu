@@ -7,7 +7,7 @@ open Prime
 open Nu
 
 type MetricsEntityDispatcher () =
-    inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, Assets.Default.StaticModel)
+    inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, false, false, Assets.Default.StaticModel)
 
 #if !MMCC
     override this.Update (entity, world) =
@@ -35,7 +35,7 @@ type MyGameDispatcher () =
     override this.Register (game, world) =
         let world = base.Register (game, world)
         let (screen, world) = World.createScreen (Some "Screen") world
-        let (group, world) = World.createGroup (Some "Default") screen world
+        let (group, world) = World.createGroup (Some "Group") screen world
         let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world

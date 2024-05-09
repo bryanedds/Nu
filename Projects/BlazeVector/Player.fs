@@ -30,7 +30,7 @@ module PlayerExtensions =
         member this.Player = this.ModelGeneric<Player> ()
 
 type PlayerDispatcher () =
-    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
+    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
     static let [<Literal>] WalkForce = 700.0f
     static let [<Literal>] FallForce = -2500.0f
@@ -115,7 +115,7 @@ type PlayerDispatcher () =
 
         | Jump ->
             let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (entity.GetBodyId world) world
-            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
             just world
 
         | Shoot ->
@@ -123,10 +123,10 @@ type PlayerDispatcher () =
             let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 0.0f 0.0f) world
             let world = bullet.SetElevation (entity.GetElevation world) world
             let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetBodyId world) world
-            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
             just world
 
         | Die ->
             let world = World.publish entity entity.DieEvent entity world
-            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
             just world

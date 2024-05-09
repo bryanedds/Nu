@@ -161,8 +161,6 @@ module WorldScreenModule =
             World.publishPlus () screen.PostUpdateEvent eventTrace screen false false world
 
         static member internal renderScreen renderPass (screen : Screen) world =
-
-            // render via dispatcher
             let dispatcher = screen.GetDispatcher world
             dispatcher.Render (renderPass, screen, world)
 

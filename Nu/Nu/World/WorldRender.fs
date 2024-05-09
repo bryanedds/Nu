@@ -58,6 +58,10 @@ module WorldRender =
             World.enqueueRenderMessage2d reloadRenderAssetsMessage world
             world
 
+        /// The current configuration of the 3d renderer.
+        static member getRenderer3dConfig world =
+            world.Subsystems.RendererProcess.Renderer3dConfig
+
         /// Enqueue a rendering message to the world.
         static member enqueueRenderMessage3d (message : RenderMessage3d) world =
             (World.getRendererProcess world).EnqueueMessage3d message

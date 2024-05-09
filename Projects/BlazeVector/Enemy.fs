@@ -25,7 +25,7 @@ module EnemyExtensions =
         member this.DieEvent = Events.DieEvent --> this
 
 type EnemyDispatcher () =
-    inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, { Health = 7 })
+    inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, false, false, { Health = 7 })
 
     static let WalkForce = v3 -300.0f -1500.0f 0.0f
 
@@ -69,12 +69,13 @@ type EnemyDispatcher () =
                 else world
             let world =
                 if enemy.Health <= 0 then
-                    let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
                     let world = World.publish entity entity.DieEvent entity world
-                    World.destroyEntity entity world
+                    let world = World.destroyEntity entity world
+                    World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ExplosionSound world
+                    world
                 else world
             just world
 
         | Hit ->
-            let world = World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
+            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
             just world

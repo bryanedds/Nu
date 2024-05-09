@@ -144,20 +144,20 @@ module WorldModule2 =
             match (transitionTime, transition.TransitionLifeTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime - 2L = lifeTime
+                localTime = lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime - world.ClockDelta * 2.0f >= lifeTime
+                localTime >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
             match (transitionTime, slide.IdlingTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime - 2L = lifeTime
+                localTime = lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime - world.ClockDelta * 2.0f >= lifeTime
+                localTime >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
@@ -169,15 +169,15 @@ module WorldModule2 =
                         | UpdateTime time -> time + 1L = world.UpdateTime
                         | ClockTime time -> time + world.ClockDelta = world.ClockTime
                     if firstFrame then
-                        let world =
-                            match (selectedScreen.GetIncoming world).SongOpt with
-                            | Some playSong ->
-                                match World.getCurrentSongOpt world with
-                                | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                                | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
-                            | None -> world
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
-                        World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
+                        let world = World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
+                        match (selectedScreen.GetIncoming world).SongOpt with
+                        | Some playSong ->
+                            match World.getCurrentSongOpt world with
+                            | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                        | None -> ()
+                        world
                     else world
                 match World.getLiveness world with
                 | Live ->
@@ -192,29 +192,25 @@ module WorldModule2 =
         static member private updateScreenIdling transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
-                let world =
-                    if world.Accompanied && world.Halted then // special case to play song when halted in editor
-                        match (selectedScreen.GetIncoming world).SongOpt with
-                        | Some playSong ->
-                            match World.getCurrentSongOpt world with
-                            | Some song when assetEq song.Song playSong.Song -> world // do nothing when song is the same
-                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
-                        | None -> world
-                    else world
+                if world.Accompanied && world.Halted then // special case to play song when halted in editor
+                    match (selectedScreen.GetIncoming world).SongOpt with
+                    | Some playSong ->
+                        match World.getCurrentSongOpt world with
+                        | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
+                        | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                    | None -> ()
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
+                    // slide-specific behavior currently has to ignore desired screen in order to work. However, we
+                    // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
+                    // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
+                    // we use a quick cut to the desired screen in this special-case.
                     match World.getDesiredScreen world with
-                    | Desire desiredScreen ->
-                        if desiredScreen <> selectedScreen then
-                            if world.Unaccompanied || world.Advancing
-                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world // quick cut
-                        else
-                            if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else world
-                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                    | DesireIgnore ->
+                    | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
+                        World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world
+                    | DesireNone ->
+                        World.selectScreenOpt None world
+                    | _ ->
                         if World.updateScreenIdling3 transitionTime slide selectedScreen world
                         then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                         else world
@@ -222,9 +218,9 @@ module WorldModule2 =
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if world.Unaccompanied || world.Advancing
-                            then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
-                            else World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world // quick cut
+                            if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
+                            then World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world
+                            else World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                         else world
                     | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
                     | DesireIgnore -> world
@@ -239,31 +235,30 @@ module WorldModule2 =
                 if firstFrame then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
-                    let world =
-                        match outgoing.SongOpt with
-                        | Some playSong ->
-                            let destinationOpt =
-                                match selectedScreen.GetSlideOpt world with
-                                | Some slide -> Some slide.Destination
-                                | None ->
-                                    match World.getScreenTransitionDestinationOpt world with
-                                    | Some destination -> Some destination
-                                    | None ->
-                                        match World.getDesiredScreen world with
-                                        | Desire destination -> Some destination
-                                        | DesireNone -> None
-                                        | DesireIgnore -> None
-                            match destinationOpt with
-                            | Some destination ->
-                                match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
-                                | (Some song, Some song2) when assetEq song.Song song2.Song -> world // do nothing when song is the same
-                                | (None, None) -> world // do nothing when neither plays a song (allowing manual control)
-                                | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
+                    match outgoing.SongOpt with
+                    | Some playSong ->
+                        let destinationOpt =
+                            match selectedScreen.GetSlideOpt world with
+                            | Some slide -> Some slide.Destination
                             | None ->
-                                match incoming.SongOpt with
-                                | Some _ -> World.fadeOutSong playSong.FadeOutTime world
-                                | None -> world
-                        | None -> world
+                                match World.getScreenTransitionDestinationOpt world with
+                                | Some destination -> Some destination
+                                | None ->
+                                    match World.getDesiredScreen world with
+                                    | Desire destination -> Some destination
+                                    | DesireNone -> None
+                                    | DesireIgnore -> None
+                        match destinationOpt with
+                        | Some destination ->
+                            match (incoming.SongOpt, (destination.GetIncoming world).SongOpt) with
+                            | (Some song, Some song2) when assetEq song.Song song2.Song -> () // do nothing when song is the same
+                            | (None, None) -> () // do nothing when neither plays a song (allowing manual control)
+                            | (_, _) -> World.fadeOutSong playSong.FadeOutTime world // fade out when song is different
+                        | None ->
+                            match incoming.SongOpt with
+                            | Some _ -> World.fadeOutSong playSong.FadeOutTime world
+                            | None -> ()
+                    | None -> ()
                     let eventTrace = EventTrace.debug "World" "updateScreenTransition" "OutgoingStart" EventTrace.empty
                     World.publishPlus () selectedScreen.OutgoingStartEvent eventTrace selectedScreen false false world
                 else world
@@ -306,8 +301,6 @@ module WorldModule2 =
             | Dead -> world
 
         static member private updateScreenTransition world =
-            // NOTE: transitions always take one additional frame because it needs to render frame 0 and frame MAX + 1 for
-            // full opacity if fading and an extra frame for the render messages to actually get processed.
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 match selectedScreen.GetTransitionState world with
@@ -803,7 +796,7 @@ module WorldModule2 =
 
                     // rebuild and reload assets
                     AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory false assetGraph
-                    Metadata.regenerateMetadata ()
+                    Metadata.reloadMetadata ()
                     let world = World.reloadExistingAssets world
                     let world = World.publishPlus () Nu.Game.Handle.AssetsReloadEvent (EventTrace.debug "World" "publishAssetsReload" "" EventTrace.empty) Nu.Game.Handle false false world
                     (Right assetGraph, world)
@@ -1326,13 +1319,13 @@ module WorldModule2 =
                 match transition.DissolveImageOpt with
                 | Some dissolveImage ->
                     let progress =
-                        match (transitionTime , transition.TransitionLifeTime) with
+                        match (transitionTime, transition.TransitionLifeTime) with
                         | (UpdateTime time, UpdateTime lifeTime) ->
                             let localTime = world.UpdateTime - time
-                            single localTime / (single lifeTime + 1.0f)
+                            single localTime / single lifeTime
                         | (ClockTime time, ClockTime lifeTime) ->
                             let localTime = world.ClockTime - time
-                            single localTime / (lifeTime + world.ClockDelta)
+                            single localTime / lifeTime
                         | (_, _) -> failwithumf ()
                     let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                     let color = Color.One.WithA alpha
@@ -1416,7 +1409,7 @@ module WorldModule2 =
                         World.renderGroup renderPass group world
 
                 // render entities
-                world.Timers.RenderEntitiesTimer.Restart ()
+                world.Timers.RenderEntityMessagesTimer.Restart ()
                 if world.Unaccompanied || groupsInvisible.Count = 0 then
                     for element in HashSet3dNormalCached do
                         if element.Visible then
@@ -1433,7 +1426,7 @@ module WorldModule2 =
                     for element in HashSet2dNormalCached do
                         if element.Visible && not (groupsInvisible.Contains element.Entry.Group) then
                             World.renderEntity renderPass element.Entry world
-                world.Timers.RenderEntitiesTimer.Stop ()
+                world.Timers.RenderEntityMessagesTimer.Stop ()
 
                 // fin
                 world
@@ -1566,15 +1559,15 @@ module WorldModule2 =
 
         /// Clean-up the resources held by the world.
         static member cleanUp world =
-            let game = Nu.Game.Handle
-            let world = World.unregisterGame game world
+            world.JobGraph.CleanUp ()
+            let world = World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
 
             // run loop if user-defined run-while predicate passes
-            world.Timers.TotalTimer.Restart ()
+            world.Timers.FrameTimer.Restart ()
             if runWhile world then
 
                 // run user-defined pre-process callbacks
@@ -1657,11 +1650,11 @@ module WorldModule2 =
                                                         | Live ->
 
                                                             // render simulants, skipping culling upon request (like when a light probe needs to be rendered)
-                                                            world.Timers.RenderTimer.Restart ()
+                                                            world.Timers.RenderMessagesTimer.Restart ()
                                                             let lightMapRenderRequested = World.getLightMapRenderRequested world
                                                             let world = World.acknowledgeLightMapRenderRequest world
                                                             let world = World.renderSimulants lightMapRenderRequested world
-                                                            world.Timers.RenderTimer.Stop ()
+                                                            world.Timers.RenderMessagesTimer.Stop ()
                                                             match World.getLiveness world with
                                                             | Live ->
 
@@ -1676,8 +1669,8 @@ module WorldModule2 =
                                                                     else world
                                                                 world.Timers.AudioTimer.Stop ()
 
-                                                                // process frame time recording
-                                                                world.Timers.FrameTime <- world.Timers.FrameTimer.Elapsed
+                                                                // process main thread time recording
+                                                                world.Timers.MainThreadTime <- world.Timers.MainThreadTimer.Elapsed
 
                                                                 // process rendering (1/2)
                                                                 let rendererProcess = World.getRendererProcess world
@@ -1685,12 +1678,12 @@ module WorldModule2 =
 
                                                                 // process frame pacing mechanics
                                                                 let world =
-                                                                    if world.Timers.FrameTimer.IsRunning then
+                                                                    if world.Timers.MainThreadTimer.IsRunning then
 
                                                                         // automatically enable frame pacing when need is detected
                                                                         let world =
                                                                             if not world.FramePacing then
-                                                                                if world.Timers.FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
                                                                                 FramePaceChecks <- inc FramePaceChecks
                                                                                 let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
                                                                                 if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
@@ -1699,8 +1692,8 @@ module WorldModule2 =
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
-                                                                            while world.Timers.FrameTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.FrameTimer.Elapsed.TotalSeconds
+                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
+                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1
@@ -1709,7 +1702,7 @@ module WorldModule2 =
                                                                         // fin
                                                                         world
                                                                     else world
-                                                                world.Timers.FrameTimer.Restart ()
+                                                                world.Timers.MainThreadTimer.Restart ()
 
                                                                 // process additional frame time recording
                                                                 let gcTotalTime = GC.GetTotalPauseDuration ()
@@ -1747,7 +1740,7 @@ module WorldModule2 =
                                                                 let (world : World) = imGuiPostProcess world
 
                                                                 // update time and recur
-                                                                world.Timers.TotalTimer.Stop ()
+                                                                world.Timers.FrameTimer.Stop ()
                                                                 WorldModule.TaskletProcessingStarted <- false
                                                                 let world = World.updateTime world
                                                                 let world =
@@ -1815,11 +1808,11 @@ module EntityDispatcherModule2 =
 
     /// The MMCC dispatcher for entities.
     and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
-        (is2d, perimeterCentered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher (is2d, perimeterCentered, physical)
+        (is2d, perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light)
 
-        new (is2d, perimeterCentered, physical, initial : 'model) =
-            EntityDispatcher<'model, 'message, 'command> (is2d, perimeterCentered, physical, fun _ -> initial)
+        new (is2d, perimeterCentered, physical, lightProbe, light, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, perimeterCentered, physical, lightProbe, light, fun _ -> initial)
 
         /// Get the entity's model.
         member this.GetModel (entity : Entity) world : 'model =
@@ -1942,17 +1935,17 @@ module EntityDispatcherModule2 =
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
-    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, makeInitial)
+    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, lightProbe, light, makeInitial)
 
-        new (centered, physical, initial : 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (centered, physical, fun _ -> initial)
+        new (centered, physical, lightProbe, light, initial : 'model) =
+            Entity2dDispatcher<'model, 'message, 'command> (centered, physical, lightProbe, light, fun _ -> initial)
 
-        new (physical, makeInitial : World -> 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, makeInitial)
+        new (physical, lightProbe, light, makeInitial : World -> 'model) =
+            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light, makeInitial)
 
-        new (physical, initial : 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity2dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault
@@ -1960,7 +1953,7 @@ module EntityDispatcherModule2 =
 
     /// A gui entity dispatcher.
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
@@ -1981,11 +1974,11 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     /// A 3d entity dispatcher.
-    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, makeInitial)
+    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, lightProbe, light, makeInitial)
 
-        new (physical, initial : 'model) =
-            Entity3dDispatcher<'model, 'message, 'command> (physical, fun _ -> initial)
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity3dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.Entity3dSizeDefault]
@@ -1999,7 +1992,7 @@ module EntityDispatcherModule2 =
 
     /// A vui dispatcher (gui in 3d).
     and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, false, false, makeInitial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]

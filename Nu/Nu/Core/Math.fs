@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.ComponentModel
 open System.Globalization
 open System.Numerics
@@ -1106,13 +1107,13 @@ type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
       mutable Scale : Vector3 }
-    
+
     member this.Matrix =
         Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
-    
+
     static member make translation rotation scale =
         { Translation = translation; Rotation = rotation; Scale = scale }
-    
+
     static member makeFromMatrix affineMatrix =
         let mutable scale = v3One
         let mutable rotation = quatIdentity
@@ -1121,18 +1122,43 @@ type [<Struct>] Affine =
             Log.info "Matrix4x4.Decompose failed to find determinant. Using identity instead."
             Affine.Identity
         else Affine.make translation rotation scale
-    
+
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
-    
+
     static member makeRotation translation =
         Affine.make v3Zero translation v3One
-    
+
     static member makeScale scale =
         Affine.make v3Zero quatIdentity scale
-    
+
     static member Identity =
         Affine.make v3Zero quatIdentity v3One
+
+[<RequireQualifiedAccess>]
+module OrderedDictionary =
+
+    /// Make a dictionary with a single entry.
+    let inline singleton (comparer : KeyValuePair<'k, 'v> IEqualityComparer) key value =
+        let dictionary = OrderedDictionary comparer
+        dictionary.Add (key, value)
+        dictionary
+
+    /// Map over an ordered dictionary. A new ordered dictionary is produced.
+    let map (mapper : KeyValuePair<'k, 'v> -> 'v) (dictionary : OrderedDictionary<'k, 'v>) =
+        let result = Dictionary<'k, 'v> dictionary.Comparer
+        for kvp in dictionary do result.Add (kvp.Key, mapper kvp)
+        result
+
+    /// Fold over an ordered dictionary.
+    let fold<'s, 'k, 'v> folder (state : 's) (dictionary : OrderedDictionary<'k, 'v>) =
+        let folder = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt folder
+        let mutable state = state
+        let mutable enr = dictionary.GetEnumerator ()
+        while enr.MoveNext () do
+            let kvp = enr.Current
+            state <- folder.Invoke (state, kvp.Key, kvp.Value)
+        state
 
 /// The flipness of an image.
 type [<Struct>] Flip =

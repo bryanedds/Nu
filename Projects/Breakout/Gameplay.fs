@@ -7,7 +7,6 @@ open Nu
 // this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
-    | Quitting
     | Quit
 
 // the state of our breakout paddle
@@ -77,213 +76,82 @@ type Gameplay =
             Bricks = bricks
             Lives = 3 }
 
-// this is our gameplay MMCC message type.
-type GameplayMessage =
-    | StartPlaying
-    | FinishQuitting
-    | Update
-    | TimeUpdate
-    interface Message
+    // this updates the gameplay model every frame while advancing.
+    static member update gameplay world =
 
-// this is our gameplay MMCC command type.
-type GameplayCommand =
-    | StartQuitting
-    interface Command
+        // update scene only while playing
+        match gameplay.GameplayState with
+        | Playing ->
 
-// this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
-[<AutoOpen>]
-module GameplayExtensions =
-    type Screen with
-        member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
-        member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
-        member this.Gameplay = this.ModelGeneric<Gameplay> ()
-        member this.QuitEvent = Events.QuitEvent --> this
+            // ...and while living and bricks are present
+            if gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
 
-// this is the dispatcher that defines the behavior of the screen where gameplay takes place.
-type GameplayDispatcher () =
-    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
-
-    // here we define the screen's property values and event handling
-    override this.Definitions (_, _) =
-        [Screen.SelectEvent => StartPlaying
-         Screen.DeselectingEvent => FinishQuitting
-         Screen.UpdateEvent => Update
-         Screen.TimeUpdateEvent => TimeUpdate]
-
-    // here we handle the above messages
-    override this.Message (gameplay, message, _, world) =
-
-        match message with
-        | StartPlaying ->
-            let gameplay = Gameplay.initial
-            just gameplay
-
-        | FinishQuitting ->
-            let gameplay = Gameplay.empty
-            just gameplay
-
-        | Update ->
-
-            // update scene only while playing
-            match gameplay.GameplayState with
-            | Playing ->
-
-                // ...and while living and bticks are present
-                if gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
-
-                    // update paddle motion
-                    let gameplay =
-                        if World.isKeyboardKeyDown KeyboardKey.Left world then
-                            let paddle = gameplay.Paddle
-                            let paddle = { paddle with Position = paddle.Position.MapX (fun x -> max -128.0f (x - 4.0f)) }
-                            { gameplay with Paddle = paddle }
-                        elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                            let paddle = gameplay.Paddle
-                            let paddle = { paddle with Position = paddle.Position.MapX (fun x -> min 128.0f (x + 4.0f)) }
-                            { gameplay with Paddle = paddle }
-                        else gameplay
-
-                    // update ball motion against walls
-                    let gameplay =
-                        let ball = gameplay.Ball
-                        let ball = { ball with Position = ball.Position + ball.Velocity }
-                        let ball =
-                            if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f
-                            then { ball with Velocity = ball.Velocity.MapX negate }
-                            else ball
-                        let ball =
-                            if ball.Position.Y >= 172.0f
-                            then { ball with Velocity = ball.Velocity.MapY negate }
-                            else ball
-                        { gameplay with Ball = ball }
-
-                    // update ball motion against paddle
-                    let gameplay =
+                // update paddle motion
+                let gameplay =
+                    if World.isKeyboardKeyDown KeyboardKey.Left world then
                         let paddle = gameplay.Paddle
-                        let ball = gameplay.Ball
-                        let ball =
-                            let perimeter = paddle.Perimeter
-                            if perimeter.Intersects ball.Position
-                            then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
-                            else ball
-                        { gameplay with Ball = ball }
+                        let paddle = { paddle with Position = paddle.Position.MapX (fun x -> max -128.0f (x - 4.0f)) }
+                        { gameplay with Paddle = paddle }
+                    elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                        let paddle = gameplay.Paddle
+                        let paddle = { paddle with Position = paddle.Position.MapX (fun x -> min 128.0f (x + 4.0f)) }
+                        { gameplay with Paddle = paddle }
+                    else gameplay
 
-                    // update ball motion against bricks
-                    let gameplay =
-                        let ball = gameplay.Ball
-                        let bricks =
-                            Map.filter (fun _ (brick : Brick) ->
-                                let perimeter = brick.Perimeter
-                                perimeter.Intersects ball.Position)
-                                gameplay.Bricks
-                        let ball =
-                            if Map.notEmpty bricks then
-                                let brick = Seq.head bricks.Values
-                                { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
-                            else ball
-                        let bricks = Map.removeMany bricks.Keys gameplay.Bricks
-                        { gameplay with Ball = ball; Bricks = bricks }
+                // update ball motion against walls
+                let gameplay =
+                    let ball = gameplay.Ball
+                    let ball = { ball with Position = ball.Position + ball.Velocity }
+                    let ball =
+                        if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f
+                        then { ball with Velocity = ball.Velocity.MapX negate }
+                        else ball
+                    let ball =
+                        if ball.Position.Y >= 172.0f
+                        then { ball with Velocity = ball.Velocity.MapY negate }
+                        else ball
+                    { gameplay with Ball = ball }
 
-                    // update ball death
-                    let gameplay =
-                        if gameplay.Ball.Position.Y < -180.0f then
-                            let gameplay = { gameplay with Lives = dec gameplay.Lives }
-                            let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
-                            gameplay
-                        else gameplay
-                    just gameplay
+                // update ball motion against paddle
+                let gameplay =
+                    let paddle = gameplay.Paddle
+                    let ball = gameplay.Ball
+                    let ball =
+                        let perimeter = paddle.Perimeter
+                        if perimeter.Intersects ball.Position
+                        then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
+                        else ball
+                    { gameplay with Ball = ball }
 
-                // ...otherwise we should start quitting game
-                else withSignal StartQuitting gameplay
+                // update ball motion against bricks
+                let gameplay =
+                    let ball = gameplay.Ball
+                    let bricks =
+                        Map.filter (fun _ (brick : Brick) ->
+                            let perimeter = brick.Perimeter
+                            perimeter.Intersects ball.Position)
+                            gameplay.Bricks
+                    let ball =
+                        if Map.notEmpty bricks then
+                            let brick = Seq.head bricks.Values
+                            { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
+                        else ball
+                    let bricks = Map.removeMany bricks.Keys gameplay.Bricks
+                    { gameplay with Ball = ball; Bricks = bricks }
 
-            // nothing to do
-            | _ -> just gameplay
+                // update ball death
+                let gameplay =
+                    if gameplay.Ball.Position.Y < -180.0f then
+                        let gameplay = { gameplay with Lives = dec gameplay.Lives }
+                        let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
+                        gameplay
+                    else gameplay
 
-        | TimeUpdate ->
-            let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + (let d = world.GameDelta in d.Updates) }
-            just gameplay
+                // gameplay still going
+                Right gameplay
 
-    // here we handle the above commands
-    override this.Command (_, command, screen, world) =
+            // ...otherwise gameplay over
+            else Left gameplay
 
-        match command with
-        | StartQuitting ->
-            let world = World.publish () screen.QuitEvent screen world
-            just world
-
-    // here we describe the content of the game including the hud, the scene, and the player
-    override this.Content (gameplay, _) =
-
-        [// the gui group
-         Content.group Simulants.GameplayGui.Name []
-
-            [// lives
-             Content.text "Lives"
-                [Entity.Position == v3 -240.0f 0.0f 0.0f
-                 Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                 Entity.Text == "Lives"]
-             for i in 0 .. dec gameplay.Lives do
-                Content.staticSprite ("Life+" + string i)
-                    [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
-                     Entity.Size == v3 32.0f 8.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Brick]
-
-             // message
-             Content.text "Message"
-                [Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                 Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
-
-             // quit
-             Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]
-
-         // the scene group while playing
-         match gameplay.GameplayState with
-         | Playing | Quitting ->
-            
-            // loads scene from file edited in Gaia
-            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-
-                [// paddle
-                 Content.staticSprite "Paddle"
-                    [Entity.Position := gameplay.Paddle.Position
-                     Entity.Size == gameplay.Paddle.Size
-                     Entity.StaticImage == Assets.Default.Brick]
-
-                 // left wall
-                 Content.staticSprite "LeftWall"
-                    [Entity.Position == v3 -164.0f 0.0f 0.0f
-                     Entity.Size == v3 8.0f 360.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Black]
-
-                 // right wall
-                 Content.staticSprite "RightWall"
-                    [Entity.Position == v3 164.0f 0.0f 0.0f
-                     Entity.Size == v3 8.0f 360.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Black]
-
-                 // top wall
-                 Content.staticSprite "TopWall"
-                    [Entity.Position == v3 0.0f 176.0f 0.0f
-                     Entity.Size == v3 320.0f 8.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Black]
-
-                 // ball
-                 Content.staticSprite "Ball"
-                    [Entity.Position := gameplay.Ball.Position
-                     Entity.Size == gameplay.Ball.Size
-                     Entity.StaticImage == Assets.Default.Ball]
-
-                 // bricks
-                 for (brickId, brick) in gameplay.Bricks.Pairs do
-                    Content.staticSprite brickId
-                        [Entity.Position == brick.Position
-                         Entity.Size == brick.Size
-                         Entity.Color == brick.Color
-                         Entity.StaticImage == Assets.Default.Brick]]
-
-         // no scene group otherwise
-         | Quit -> ()]
+        // nothing to do
+        | _ -> Right gameplay

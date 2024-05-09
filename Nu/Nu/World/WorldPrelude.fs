@@ -63,6 +63,11 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
+/// The timing with which an effect should be evaluated in a frame.
+type RunMode =
+    | RunEarly
+    | RunLate
+
 /// Configure the construction of 3d navigation meshes.
 type [<SymbolicExpansion>] Nav3dConfig =
     { CellSize : single
@@ -370,12 +375,12 @@ type Timers =
       PreProcessTimer : Stopwatch
       PostProcessTimer : Stopwatch
       RenderGatherTimer : Stopwatch
-      RenderEntitiesTimer : Stopwatch
-      RenderTimer : Stopwatch
+      RenderEntityMessagesTimer : Stopwatch
+      RenderMessagesTimer : Stopwatch
       AudioTimer : Stopwatch
-      TotalTimer : Stopwatch
       FrameTimer : Stopwatch
-      mutable FrameTime : TimeSpan
+      MainThreadTimer : Stopwatch
+      mutable MainThreadTime : TimeSpan
       ImGuiTimer : Stopwatch
       mutable ImGuiTime : TimeSpan
       mutable GcTotalTime : TimeSpan
@@ -407,12 +412,12 @@ type Timers =
           PreProcessTimer = Stopwatch ()
           PostProcessTimer = Stopwatch ()
           RenderGatherTimer = Stopwatch ()
-          RenderEntitiesTimer = Stopwatch ()
-          RenderTimer = Stopwatch ()
+          RenderEntityMessagesTimer = Stopwatch ()
+          RenderMessagesTimer = Stopwatch ()
           AudioTimer = Stopwatch ()
-          TotalTimer = Stopwatch ()
           FrameTimer = Stopwatch ()
-          FrameTime = TimeSpan.Zero
+          MainThreadTimer = Stopwatch ()
+          MainThreadTime = TimeSpan.Zero
           ImGuiTimer = Stopwatch ()
           ImGuiTime = TimeSpan.Zero
           GcTotalTime = gcTime
@@ -539,10 +544,6 @@ module AmbientState =
     /// Place the engine into a state such that the app will exit at the end of the current frame.
     let exit state =
         { state with Liveness = Dead }
-
-    /// Regenerate metadata.
-    let regenerateMetadata () =
-        Metadata.regenerateMetadata ()
 
     /// Get the key-value store with the by map.
     let getKeyValueStoreBy by state =

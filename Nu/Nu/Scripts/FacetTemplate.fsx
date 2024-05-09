@@ -7,8 +7,8 @@
 #r "nuget: DotRecast.Recast.Toolset, 2024.1.3"
 #r "nuget: FParsec, 1.1.1"
 #r "nuget: Twizzle.ImGuizmo.NET, 1.89.4.1"
-#r "nuget: Magick.NET-Q8-x64, 7.5.0.1"
-#r "nuget: Prime, 9.21.1"
+#r "nuget: Magick.NET-Q8-AnyCpu, 13.5.0"
+#r "nuget: Prime, 9.23.0"
 #r "nuget: System.Configuration.ConfigurationManager, 8.0.0"
 #r "nuget: System.Drawing.Common, 8.0.0"
 #r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1/AssimpNet.dll"
@@ -34,7 +34,7 @@ module TemplateFacet =
         // TODO: optionally implement more user-defined properties.
 
     type TemplateFacet () =
-        inherit Facet (false)
+        inherit Facet (false, false, false)
 
         static member Properties =
             [define Entity.Value 1234.5f]

@@ -368,37 +368,20 @@ module Texture =
             Right (metadata, textureId)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
-    /// Attempt to create an opengl representation of a bindless texture handle from an already generated opengl texture.
-    let TryCreateTextureHandle textureId =
-        let textureHandle = Gl.GetTextureHandleARB textureId
-        Hl.Assert () // defensive assertion
-        if textureHandle <> 0UL then
-            Gl.MakeTextureHandleResidentARB textureHandle
-            ValueSome textureHandle
-        else ValueNone
-
-    /// Create an opengl representation of a bindless texture handle from an already generated opengl texture.
-    let CreateTextureHandle textureId =
-        match TryCreateTextureHandle textureId with
-        | ValueSome textureHandle -> textureHandle
-        | ValueNone -> failwith ("Failed to create handle for texture id '" + string textureId + "'.")
-
     /// A texture that's immediately loaded.
     type [<Struct>] EagerTexture =
         { TextureMetadata : TextureMetadata
-          TextureId : uint
-          TextureHandle : uint64 }
+          TextureId : uint }
         member this.Destroy () =
-            Gl.MakeTextureHandleNonResidentARB this.TextureHandle
             Gl.DeleteTextures [|this.TextureId|]
             Hl.Assert ()
 
     /// A texture that can be loaded from another thread.
-    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalId : uint, minimalHandle : uint64, fullMinFilter : TextureMinFilter, fullMagFilter : TextureMagFilter, fullAnisoFilter) =
+    type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalId : uint, fullMinFilter : TextureMinFilter, fullMagFilter : TextureMagFilter, fullAnisoFilter) =
 
         let [<VolatileField>] mutable fullServeAttempted = false
+        let [<VolatileField>] mutable fullServeParameterized = false
         let [<VolatileField>] mutable fullMetadataAndIdOpt = ValueNone
-        let [<VolatileField>] mutable fullHandleOpt = ValueNone
         let [<VolatileField>] mutable destroyed = false
         let destructionLock = obj ()
 
@@ -420,17 +403,8 @@ module Texture =
             if destroyed then failwith "Accessing field of destroyed texture."
             if fullServeAttempted then
                 match fullMetadataAndIdOpt with
-                | ValueSome (_, textureId) -> textureId
-                | ValueNone -> minimalId
-            else minimalId
-
-        member this.TextureHandle =
-            if destroyed then failwith "Accessing field of destroyed texture."
-            if fullServeAttempted then
-                match fullHandleOpt with
-                | ValueNone ->
-                    match fullMetadataAndIdOpt with
-                    | ValueSome (_, textureId) ->
+                | ValueSome (_, textureId) ->
+                    if not fullServeParameterized then
                         Gl.BindTexture (TextureTarget.Texture2d, textureId)
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int fullMinFilter)
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int fullMagFilter)
@@ -439,35 +413,18 @@ module Texture =
                         if fullAnisoFilter then Gl.TexParameter (TextureTarget.Texture2d, LanguagePrimitives.EnumOfValue Gl.TEXTURE_MAX_ANISOTROPY, Constants.Render.TextureAnisotropyMax)
                         Gl.BindTexture (TextureTarget.Texture2d, 0u)
                         Hl.Assert ()
-                        match TryCreateTextureHandle textureId with
-                        | ValueSome fullHandle ->
-                            Hl.Assert ()
-                            fullHandleOpt <- ValueSome fullHandle
-                            fullHandle
-                        | ValueNone ->
-                            Gl.DeleteTextures [|textureId|]
-                            Hl.Assert ()
-                            fullMetadataAndIdOpt <- ValueNone
-                            fullHandleOpt <- ValueNone
-                            Log.warn ("Failed to properly load full texture from '" + filePath + "'.")
-                            minimalHandle
-                    | ValueNone -> minimalHandle
-                | ValueSome fullHandle -> fullHandle
-            else minimalHandle
+                        fullServeParameterized <- true
+                    textureId
+                | ValueNone -> minimalId
+            else minimalId
 
         member this.Destroy () =
             lock destructionLock $ fun () ->
                 if not destroyed then
-                    Gl.MakeTextureHandleNonResidentARB minimalHandle
                     Gl.DeleteTextures [|minimalId|]
                     if fullServeAttempted then
                         match fullMetadataAndIdOpt with
                         | ValueSome (_, fullId) ->
-                            match fullHandleOpt with
-                            | ValueSome fullHandle ->
-                                Gl.MakeTextureHandleNonResidentARB fullHandle
-                                fullHandleOpt <- ValueNone
-                            | ValueNone -> ()
                             Gl.DeleteTextures [|fullId|]
                             fullMetadataAndIdOpt <- ValueNone
                         | ValueNone -> ()
@@ -501,11 +458,6 @@ module Texture =
             | EmptyTexture -> 0u
             | EagerTexture eagerTexture -> eagerTexture.TextureId
             | LazyTexture lazyTexture -> lazyTexture.TextureId
-        member this.TextureHandle =
-            match this with
-            | EmptyTexture -> 0UL
-            | EagerTexture eagerTexture -> eagerTexture.TextureHandle
-            | LazyTexture lazyTexture -> lazyTexture.TextureHandle
         member this.Destroy () =
             match this with
             | EmptyTexture -> ()
@@ -536,13 +488,12 @@ module Texture =
                 // attempt to create texture
                 match TryCreateTextureGl (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath) with
                 | Right (metadata, textureId) ->
-                    let textureHandle = CreateTextureHandle textureId
                     let texture =
                         if desireLazy && PathF.GetExtensionLower filePath = ".dds" then
-                            let lazyTexture = new LazyTexture (filePath, metadata, textureId, textureHandle, minFilter, magFilter, anisoFilter)
+                            let lazyTexture = new LazyTexture (filePath, metadata, textureId, minFilter, magFilter, anisoFilter)
                             lazyTextureQueue.Enqueue lazyTexture
                             LazyTexture lazyTexture
-                        else EagerTexture { TextureMetadata = metadata; TextureId = textureId; TextureHandle = textureHandle }
+                        else EagerTexture { TextureMetadata = metadata; TextureId = textureId }
                     textures.Add (filePath, texture)
                     Right texture
                 | Left error -> Left error

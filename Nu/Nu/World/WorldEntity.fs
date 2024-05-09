@@ -65,9 +65,9 @@ module WorldEntityModule =
         let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable PerimeterCentered = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Static = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable Physical = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable LightProbe = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Light = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable Physical = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Optimized = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Destroying = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable OverlayNameOpt = Unchecked.defaultof<Lens<string option, Entity>>
@@ -225,16 +225,12 @@ module WorldEntityModule =
         member this.GetStatic world = World.getEntityStatic this world
         member this.SetStatic value world = World.setEntityStatic value this world |> snd'
         member this.Static = if notNull (this :> obj) then lens (nameof this.Static) this this.GetStatic this.SetStatic else Cached.Static
-        member this.GetLightProbe world = World.getEntityLightProbe this world
-        member this.SetLightProbe value world = World.setEntityLightProbe value this world |> snd'
-        member this.LightProbe = if notNull (this :> obj) then lens (nameof this.LightProbe) this this.GetLightProbe this.SetLightProbe else Cached.LightProbe
-        member this.GetLight world = World.getEntityLight this world
-        member this.SetLight value world = World.setEntityLight value this world |> snd'
-        member this.Light = if notNull (this :> obj) then lens (nameof this.Light) this this.GetLight this.SetLight else Cached.Light
         member this.GetPhysical world = World.getEntityPhysical this world
         member this.Physical = if notNull (this :> obj) then lensReadOnly (nameof this.Physical) this this.GetPhysical else Cached.Physical
-        member this.GetOptimized world = World.getEntityOptimized this world
-        member this.Optimized = if notNull (this :> obj) then lensReadOnly (nameof this.Optimized) this this.GetOptimized else Cached.Optimized
+        member this.GetLightProbe world = World.getEntityLightProbe this world
+        member this.LightProbe = if notNull (this :> obj) then lensReadOnly (nameof this.LightProbe) this this.GetLightProbe else Cached.LightProbe
+        member this.GetLight world = World.getEntityLight this world
+        member this.Light = if notNull (this :> obj) then lensReadOnly (nameof this.Light) this this.GetLight else Cached.Light
         member this.GetDestroying world = World.getEntityDestroying this world
         member this.Destroying = if notNull (this :> obj) then lensReadOnly (nameof this.Destroying) this this.GetDestroying else Cached.Destroying
         member this.GetOverlayNameOpt world = World.getEntityOverlayNameOpt this world
@@ -300,9 +296,9 @@ module WorldEntityModule =
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.PerimeterCentered <- lens (nameof Cached.PerimeterCentered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Static <- lens (nameof Cached.Static) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.Physical <- lensReadOnly (nameof Cached.Physical) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.LightProbe <- lens (nameof Cached.LightProbe) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Light <- lens (nameof Cached.Light) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.Physical <- lensReadOnly (nameof Cached.Physical) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Optimized <- lensReadOnly (nameof Cached.Optimized) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Destroying <- lensReadOnly (nameof Cached.Destroying) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.OverlayNameOpt <- lensReadOnly (nameof Cached.OverlayNameOpt) Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -320,29 +316,6 @@ module WorldEntityModule =
         member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
-
-        /// The state of an entity.
-        /// The only place this accessor should be used is in performance-sensitive code.
-        /// Otherwise, you should get and set the required entity properties via the Entity interface.
-        member this.State world =
-            let entityState = World.getEntityState this world
-#if DEBUG
-            if World.getImperative world && not entityState.Optimized then
-                failwith "Can get the entity state of an entity only if it is Optimized (Imperative, Omnipresent, and not PublishChangeEvents)."
-#endif
-            entityState
-
-        /// The copied state of an entity.
-        /// The only place this accessor should be used is in performance-sensitive code.
-        /// Otherwise, you should get and set the required entity properties via the Entity interface.
-        member this.StateReadOnly world =
-            world |> World.getEntityState this |> EntityState.copy
-
-        /// Optimize an entity by setting { Imperative = true; Omnipresent = true }.
-        member this.Optimize world =
-            let world = this.SetImperative true world
-            let world = this.SetPresence Omnipresent world
-            world
 
         /// Set the transform of an entity.
         member this.SetTransformByRef (value : Transform byref, world) =
@@ -402,14 +375,6 @@ module WorldEntityModule =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
             let struct (_, _, world) = World.setEntityXtensionPropertyWithoutEvent propertyName property this world
             world
-
-        /// Attach a property.
-        member this.AttachProperty propertyName property world =
-            World.attachEntityProperty propertyName property this world
-
-        /// Detach a property.
-        member this.DetachProperty propertyName world =
-            World.detachEntityProperty propertyName this world
 
         /// Get an entity's sorting priority in 2d.
         member this.GetSortingPriority2d world = World.getEntitySortingPriority2d this world

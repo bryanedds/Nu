@@ -263,7 +263,7 @@ module PropertyDescriptor =
 
     /// Check that an entity contains the given property descriptor.
     let containsPropertyDescriptor<'s when 's :> SimulantState> (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) world =
-        let properties = typeof<'s>.GetProperties ()
+        let properties = typeof<'s>.GetProperties true
         if Seq.exists (fun (property : PropertyInfo) ->
             property.Name = propertyDescriptor.PropertyName &&
             (property.PropertyType = propertyDescriptor.PropertyType || property.PropertyType = typeof<DesignerProperty>))
@@ -299,7 +299,7 @@ module PropertyDescriptor =
         match simulantOpt with
         | Some simulant ->
             // OPTIMIZATION: seqs used for speed.
-            let properties = typeof<'s>.GetProperties ()
+            let properties = typeof<'s>.GetProperties true
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.TransformPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> Constants.Engine.XtensionPropertyName) properties
             let properties = Seq.filter (fun (property : PropertyInfo) -> property.Name <> "Flags") properties

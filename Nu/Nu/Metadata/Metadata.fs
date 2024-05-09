@@ -4,20 +4,23 @@
 namespace Nu
 open System
 open System.Buffers.Binary
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
 open TiledSharp
 open Prime
 
-(* NOTE: The Metadata folder is placed after the subsystems folders in order to prevent subsystems from accessing
-global Metadata from another thread. *)
+/// A tile map's metadata.
+type TileMapMetadata =
+    { TileMapImageAssets : struct (TmxTileset * Image AssetTag) array
+      TileMap : TmxMap }
 
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
 /// memory.
 type Metadata =
     | RawMetadata
     | TextureMetadata of OpenGL.Texture.TextureMetadata
-    | TileMapMetadata of string * struct (TmxTileset * Image AssetTag) array * TmxMap // TODO: create a record for this.
+    | TileMapMetadata of TileMapMetadata
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
@@ -26,8 +29,9 @@ type Metadata =
 [<RequireQualifiedAccess>]
 module Metadata =
 
-    let mutable private MetadataPackages : UMap<string, UMap<string, DateTimeOffset * string * Metadata>> =
-        UMap.makeEmpty StringComparer.Ordinal Imperative
+    let mutable private Initialized = false
+    let mutable private AssetGraphOpt : AssetGraph option = None
+    let private MetadataPackagesLoaded = ConcurrentDictionary<string, ConcurrentDictionary<string, DateTimeOffset * string * Metadata>> ()
 
     /// Thread-safe.
     let private tryGenerateRawMetadata (asset : Asset) =
@@ -78,7 +82,7 @@ module Metadata =
     let private tryGenerateTileMapMetadata (asset : Asset) =
         try let tmxMap = TmxMap (asset.FilePath, true)
             let imageAssets = tmxMap.GetImageAssets asset.AssetTag.PackageName
-            Some (TileMapMetadata (asset.FilePath, imageAssets, tmxMap))
+            Some (TileMapMetadata { TileMapImageAssets = imageAssets; TileMap = tmxMap })
         with exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
             Log.trace errorMessage
@@ -115,7 +119,8 @@ module Metadata =
         | SongExtension _ -> Some SongMetadata
         | _ -> None
 
-    let private tryGenerateMetadataPackage config packageName assetGraph =
+    /// Thread-safe.
+    let private tryGenerateMetadataPackage packageName assetGraph =
         match AssetGraph.tryCollectAssetsFromPackage None packageName assetGraph with
         | Right assetsCollected ->
             let package =
@@ -132,138 +137,143 @@ module Metadata =
                 Vsync.Parallel |>
                 Vsync.RunSynchronously |>
                 Array.definitize |>
-                UMap.makeFromSeq HashIdentity.Structural config
-            (packageName, package)
+                Map.ofArray |>
+                Array.ofSeq |>
+                fun assets -> ConcurrentDictionary (-1, assets, HashIdentity.Structural)
+            package
         | Left error ->
             Log.info ("Could not load asset metadata for package '" + packageName + "' due to: " + error)
-            (packageName, UMap.makeEmpty HashIdentity.Structural config)
+            ConcurrentDictionary (-1, Seq.empty, HashIdentity.Structural)
 
-    /// Generate metadata from the given asset graph.
-    let generateMetadata imperative assetGraph =
-        let config = if imperative then Imperative else Functional
-        let packageNames = AssetGraph.getPackageNames assetGraph
-        for packageName in packageNames do
-            let (packageName, package) = tryGenerateMetadataPackage config packageName assetGraph
-            MetadataPackages <- UMap.add packageName package MetadataPackages
+    /// Attempt to load the given metadata package.
+    /// Thread-safe.
+    let loadMetadataPackage packageName =
+        match AssetGraphOpt with
+        | Some assetGraph ->
+            if  assetGraph.PackageDescriptors.ContainsKey packageName &&
+                not (MetadataPackagesLoaded.ContainsKey packageName) then
+                let package = tryGenerateMetadataPackage packageName assetGraph
+                MetadataPackagesLoaded.TryAdd (packageName, package) |> ignore<bool>
+        | None -> ()
 
-    /// Regenerate metadata.
-    let regenerateMetadata () =
+    /// Attempt to unload the given metadata package.
+    /// Thread-safe.
+    let unloadMetadataPackage packageName =
+        MetadataPackagesLoaded.Remove packageName
+
+    /// Reload metadata.
+    /// Thread-safe.
+    let reloadMetadata () =
 
         // reload outdated metadata from collected package
-        let config = UMap.getConfig MetadataPackages
         match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
         | Right assetGraph ->
-
-            // reload outdated metadata from package
-            for packageEntry in AssetGraph.getPackageDescriptors assetGraph do
+            for packageEntry in assetGraph.PackageDescriptors do
                 let metadataPackageName = packageEntry.Key
-                match AssetGraph.tryCollectAssetsFromPackage None metadataPackageName assetGraph with
-                | Right assetsCollected ->
-                
-                    // find or create metadata package
-                    let metadataPackage =
-                        match UMap.tryFind metadataPackageName MetadataPackages with
-                        | Some metadataPackage -> metadataPackage
-                        | None ->
-                            let metadataPackage = UMap.makeEmpty StringComparer.Ordinal config
-                            MetadataPackages <- UMap.add metadataPackageName metadataPackage MetadataPackages
-                            metadataPackage
+                match MetadataPackagesLoaded.TryGetValue metadataPackageName with
+                | (true, metadataPackage) ->
+                    match AssetGraph.tryCollectAssetsFromPackage None metadataPackageName assetGraph with
+                    | Right assetsCollected ->
 
-                    // categorize existing assets based on the required action
-                    let assetsExisting = metadataPackage
-                    let assetsToKeep = Dictionary ()
-                    for assetEntry in assetsExisting do
-                        let (assetName, (lastWriteTime, filePath, audioAsset)) = assetEntry
-                        let lastWriteTime' =
-                            try DateTimeOffset (File.GetLastWriteTime filePath)
-                            with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        if lastWriteTime >= lastWriteTime' then
-                            assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
-
-                    // categorize assets to load
-                    let assetsToLoad = HashSet ()
-                    for asset in assetsCollected do
-                        if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
-                            assetsToLoad.Add asset |> ignore<bool>
-
-                    // load assets
-                    let assetsLoaded = Dictionary ()
-                    for asset in assetsToLoad do
-                        match tryGenerateAssetMetadata asset with
-                        | Some audioAsset ->
-                            let lastWriteTime =
-                                try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
-                                with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                            assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
-                        | None -> ()
-
-                    // insert assets into package
-                    let metadataPackage =
-                        Seq.fold (fun metadataPackage (assetEntry : KeyValuePair<string, _>) ->
+                        // categorize existing assets based on the required action
+                        let assetsExisting = metadataPackage
+                        let assetsToKeep = Dictionary ()
+                        for assetEntry in assetsExisting do
                             let assetName = assetEntry.Key
                             let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                            UMap.add assetName (lastWriteTime, filePath, audioAsset) metadataPackage)
-                            metadataPackage (Seq.append assetsToKeep assetsLoaded)
+                            let lastWriteTime' =
+                                try DateTimeOffset (File.GetLastWriteTime filePath)
+                                with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                            if lastWriteTime >= lastWriteTime' then
+                                assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
 
-                    // insert package
-                    MetadataPackages <- UMap.add metadataPackageName metadataPackage MetadataPackages
+                        // categorize assets to load
+                        let assetsToLoad = HashSet ()
+                        for asset in assetsCollected do
+                            if not (assetsToKeep.ContainsKey asset.AssetTag.AssetName) then
+                                assetsToLoad.Add asset |> ignore<bool>
 
-                // handle errors
-                | Left error ->
-                    Log.info ("Metadata package regeneration failed due to: '" + error)
-        | Left error ->
-            Log.info ("Metadata regeneration failed due to: '" + error)
+                        // load assets
+                        let assetsLoaded = Dictionary ()
+                        for asset in assetsToLoad do
+                            match tryGenerateAssetMetadata asset with
+                            | Some audioAsset ->
+                                let lastWriteTime =
+                                    try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
+                                    with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
+                                assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
+                            | None -> ()
+
+                        // insert assets into package
+                        for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                            let assetName = assetEntry.Key
+                            let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                            metadataPackage.TryAdd (assetName, (lastWriteTime, filePath, audioAsset)) |> ignore<bool>
+
+                        // insert package
+                        MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>
+
+                    // handle errors if any
+                    | Left error -> Log.info ("Metadata package regeneration failed due to: '" + error)
+                | (false, _) -> ()
+        | Left error -> Log.info ("Metadata regeneration failed due to: '" + error)
+
+    /// Attempt to get the metadata package containing the given asset, attempt to load it if it isn't already.
+    /// Thread-safe.
+    let private tryGetMetadataPackage (assetTag : AssetTag) =
+        match MetadataPackagesLoaded.TryGetValue assetTag.PackageName with
+        | (true, package) -> Some package
+        | (false, _) ->
+            match AssetGraphOpt with
+            | Some assetGraph ->
+                if assetGraph.PackageDescriptors.ContainsKey assetTag.PackageName then
+                    Log.info ("Loading Metadata package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
+                    let package = tryGenerateMetadataPackage assetTag.PackageName assetGraph
+                    MetadataPackagesLoaded.TryAdd (assetTag.PackageName, package) |> ignore<bool>
+                    Some package
+                else None
+            | None -> None
+
+    /// Get the metadate packages that have been loaded.
+    /// NOTE: this is a potentially expensive call as the tree of ConcurrentDictionaries must be copied to avoid
+    /// invalidating enumeration in a multi-threaded context.
+    /// Thread-safe.
+    let getMetadataPackagesLoaded () =
+        MetadataPackagesLoaded.ToArray () |>
+        Array.map (fun packageEntry -> KeyValuePair (packageEntry.Key, packageEntry.Value.ToArray ()))
 
     /// Determine that a given asset's metadata exists.
+    /// Thread-safe.
     let getMetadataExists (assetTag : AssetTag) =
-        match UMap.tryFind assetTag.PackageName MetadataPackages with
+        match tryGetMetadataPackage assetTag with
         | Some package ->
-            match UMap.tryFind assetTag.AssetName package with
-            | Some (_, _, _) -> true
-            | None -> false
+            match package.TryGetValue assetTag.AssetName with
+            | (true, (_, _, _)) -> true
+            | (false, _) -> false
         | None -> false
 
     /// Attempt to get the file path of the given asset.
+    /// Thread-safe.
     let tryGetFilePath (assetTag : AssetTag) =
-        match UMap.tryFind assetTag.PackageName MetadataPackages with
+        match tryGetMetadataPackage assetTag with
         | Some package ->
-            match UMap.tryFind assetTag.AssetName package with
-            | Some (_, filePath, _) -> Some filePath
-            | None -> None
+            match package.TryGetValue assetTag.AssetName with
+            | (true, (_, filePath, _)) -> Some filePath
+            | (false, _) -> None
         | None -> None
 
     /// Attempt to get the metadata of the given asset.
+    /// Thread-safe.
     let tryGetMetadata (assetTag : AssetTag) =
-        match UMap.tryFind assetTag.PackageName MetadataPackages with
+        match tryGetMetadataPackage assetTag with
         | Some package ->
-            match UMap.tryFind assetTag.AssetName package with
-            | Some (_, _, asset) -> Some asset
-            | None -> None
+            match package.TryGetValue assetTag.AssetName with
+            | (true, (_, _, asset)) -> Some asset
+            | (false, _) -> None
         | None -> None
 
-    /// Get a copy of the metadata packages.
-    let getMetadataPackages () =
-        let map =
-            MetadataPackages |>
-            UMap.toSeq |>
-            Seq.map (fun (packageName, map) -> (packageName, map |> UMap.toSeq |> Map.ofSeq)) |>
-            Map.ofSeq
-        map
-
-    /// Attempt to get a copy of a metadata package with the given package name.
-    let tryGetMetadataPackage packageName =
-        match MetadataPackages.TryGetValue packageName with
-        | (true, package) -> Some (package |> UMap.toSeq |> Map.ofSeq)
-        | (false, _) -> None
-
-    /// Get a map of all metadata's discovered assets.
-    let getDiscoveredAssets metadata =
-        let sources =
-            getMetadataPackages metadata |>
-            Map.map (fun _ metadata -> Map.toKeyList metadata)
-        sources
-
     /// Attempt to get the texture metadata of the given image.
+    /// Thread-safe.
     let tryGetTextureMetadata (image : Image AssetTag) =
         match tryGetMetadata image with
         | Some (TextureMetadata metadata) -> Some metadata
@@ -271,40 +281,48 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the texture metadata of the given image (throwing on failure).
+    /// Thread-safe.
     let getTextureMetadata image =
         Option.get (tryGetTextureMetadata image)
 
     /// Attempt to get the texture size of the given image.
+    /// Thread-safe.
     let tryGetTextureSize (image : Image AssetTag) =
         match tryGetTextureMetadata image with
         | Some metadata -> Some (v2i metadata.TextureWidth metadata.TextureHeight)
         | None -> None
 
     /// Forcibly get the texture size of the given image (throwing on failure).
+    /// Thread-safe.
     let getTextureSize image =
         Option.get (tryGetTextureSize image)
 
     /// Attempt to get the texture size of the given image.
+    /// Thread-safe.
     let tryGetTextureSizeF image =
         match tryGetTextureSize image with
         | Some size -> Some (v2 (single size.X) (single size.Y))
         | None -> None
 
     /// Forcibly get the texture size of the given image (throwing on failure).
+    /// Thread-safe.
     let getTextureSizeF image =
         Option.get (tryGetTextureSizeF image)
 
     /// Attempt to get the metadata of the given tile map.
+    /// Thread-safe.
     let tryGetTileMapMetadata (tileMap : TileMap AssetTag) =
         match tryGetMetadata tileMap with
-        | Some (TileMapMetadata (filePath, imageAssets, tmxMap)) -> Some (filePath, imageAssets, tmxMap)
+        | Some (TileMapMetadata tileMapMetadata) -> Some tileMapMetadata
         | None -> None
         | _ -> None
 
     /// Forcibly get the metadata of the given tile map (throwing on failure).
+    /// Thread-safe.
     let getTileMapMetadata tileMap =
         Option.get (tryGetTileMapMetadata tileMap)
 
+    /// Thread-safe.
     let private tryGetModelMetadata model =
         match tryGetMetadata model with
         | Some (StaticModelMetadata model) -> Some model
@@ -312,6 +330,7 @@ module Metadata =
         | None -> None
         | _ -> None
 
+    /// Thread-safe.
     let private tryGetModelAlbedoImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -331,6 +350,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelRoughnessImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -370,6 +390,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelMetallicImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -409,6 +430,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelAmbientOcclusionImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -449,6 +471,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelEmissionImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -478,6 +501,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelNormalImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -507,6 +531,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelHeightImage materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -536,6 +561,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelTwoSided materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -548,6 +574,7 @@ module Metadata =
             | Some _ | None -> None
         | None -> None
 
+    /// Thread-safe.
     let private tryGetModelNavShape materialIndex model =
         match tryGetModelMetadata model with
         | Some modelMetadata ->
@@ -561,6 +588,7 @@ module Metadata =
         | None -> None
 
     /// Attempt to get the metadata of the given static model.
+    /// Thread-safe.
     let tryGetStaticModelMetadata (staticModel : StaticModel AssetTag) =
         match tryGetMetadata staticModel with
         | Some (StaticModelMetadata model) -> Some model
@@ -568,46 +596,57 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the metadata of the given static model (throwing on failure).
+    /// Thread-safe.
     let getStaticModelMetadata staticModel =
         Option.get (tryGetStaticModelMetadata staticModel)
 
     /// Attempt to get the albedo image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelAlbedoImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelAlbedoImage materialIndex staticModel
 
     /// Attempt to get the roughness image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelRoughnessImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelRoughnessImage materialIndex staticModel
 
     /// Attempt to get the metallic image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelMetallicImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelMetallicImage materialIndex staticModel
 
     /// Attempt to get the ambient occlusion image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelAmbientOcclusionImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelAmbientOcclusionImage materialIndex staticModel
 
     /// Attempt to get the emission image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelEmissionImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelEmissionImage materialIndex staticModel
 
     /// Attempt to get the normal image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelNormalImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelNormalImage materialIndex staticModel
 
     /// Attempt to get the height image asset for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelHeightImage materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelHeightImage materialIndex staticModel
 
     /// Attempt to get the two-sided property for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelTwoSided materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelTwoSided materialIndex staticModel
 
     /// Attempt to get the 3d navigation shape for the given material index and static model.
+    /// Thread-safe.
     let tryGetStaticModelNavShape materialIndex (staticModel : StaticModel AssetTag) =
         tryGetModelNavShape materialIndex staticModel
 
     /// Attempt to get the metadata of the given animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelMetadata (animatedModel : AnimatedModel AssetTag) =
         match tryGetMetadata animatedModel with
         | Some (AnimatedModelMetadata model) -> Some model
@@ -615,41 +654,57 @@ module Metadata =
         | _ -> None
 
     /// Forcibly get the metadata of the given animated model (throwing on failure).
+    /// Thread-safe.
     let getAnimatedModelMetadata animatedModel =
         Option.get (tryGetAnimatedModelMetadata animatedModel)
 
     /// Attempt to get the albedo image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelAlbedoImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelAlbedoImage materialIndex animatedModel
 
     /// Attempt to get the roughness image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelRoughnessImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelRoughnessImage materialIndex animatedModel
 
     /// Attempt to get the metallic image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelMetallicImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelMetallicImage materialIndex animatedModel
 
     /// Attempt to get the ambient occlusion image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelAmbientOcclusionImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelAmbientOcclusionImage materialIndex animatedModel
 
     /// Attempt to get the emission image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelEmissionImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelEmissionImage materialIndex animatedModel
 
     /// Attempt to get the normal image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelNormalImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNormalImage materialIndex animatedModel
 
     /// Attempt to get the height image asset for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelHeightImage materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelHeightImage materialIndex animatedModel
 
     /// Attempt to get the two-sided property for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelTwoSided materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelTwoSided materialIndex animatedModel
 
     /// Attempt to get the 3d navigation shape property for the given material index and animated model.
+    /// Thread-safe.
     let tryGetAnimatedModelNavShape materialIndex (animatedModel : AnimatedModel AssetTag) =
         tryGetModelNavShape materialIndex animatedModel
+
+    /// Initialize metadata to use the given imperative value and asset graph.
+    let init assetGraph =
+        if not Initialized then
+            AssetGraphOpt <- Some assetGraph
+            Initialized <- true

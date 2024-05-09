@@ -14,7 +14,7 @@ module CharacterExtensions =
         member this.CharacterPlus = this.ModelGeneric<CharacterPlus> ()
 
 type CharacterDispatcher () =
-    inherit Entity2dDispatcher<CharacterPlus, Message, Command> (true, CharacterPlus.empty)
+    inherit Entity2dDispatcher<CharacterPlus, Message, Command> (true, false, false, CharacterPlus.empty)
 
     static let getAfflictionInsetOpt time (character : Character) =
         if character.Standing then

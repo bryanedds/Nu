@@ -18,6 +18,8 @@ type RendererProcess =
     interface
         /// Start the rendering process.
         abstract Start : ImFontAtlasPtr -> Window option -> unit
+        /// The current configuration of the 3d renderer.
+        abstract Renderer3dConfig : Renderer3dConfig
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         /// Potential fast-path for rendering static models.
@@ -54,54 +56,60 @@ type RendererInline () =
 
         member this.Start fonts windowOpt_ =
             ()
-    //        // assign windowOpt
-    //        windowOpt <- windowOpt_
-    //
-    //        // ensure renderers not already created
-    //        match renderersOpt with
-    //        | None ->
-    //
-    //            // create renderers
-    //            match windowOpt with
-    //            | Some window ->
-    //            
-    //                // create gl context
-    //                let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
-    //                OpenGL.Hl.Assert ()
-    //
-    //                // initialize gl context
-    //                OpenGL.Hl.InitContext ()
-    //                OpenGL.Hl.Assert ()
-    //
-    //                // create 3d renderer
-    //                let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
-    //                OpenGL.Hl.Assert ()
-    //
-    //                // create 2d renderer
-    //                let renderer2d = GlRenderer2d.make window :> Renderer2d
-    //                OpenGL.Hl.Assert ()
-    //
-    //                // create imgui renderer
-    //                let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
-    //                OpenGL.Hl.Assert ()
-    //
-    //                // fin
-    //                renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
-    //
-    //            // create stub renderers
-    //            | None ->
-    //                let renderer3d = StubRenderer3d.make () :> Renderer3d
-    //                let renderer2d = StubRenderer2d.make () :> Renderer2d
-    //                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-    //                renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
-    //                OpenGL.Hl.Assert ()
-    //
-    //            // fin
-    //            started <- true
-    //
-    //        // fail on already created
-    //        | Some _ -> raise (InvalidOperationException "Redundant Start calls.")
-            
+
+            //// assign windowOpt
+            //windowOpt <- windowOpt_
+            //
+            //// ensure renderers not already created
+            //match renderersOpt with
+            //| None ->
+            //
+            //    // create renderers
+            //    match windowOpt with
+            //    | Some window ->
+            //    
+            //        // create gl context
+            //        let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+            //        OpenGL.Hl.Assert ()
+            //
+            //        // initialize gl context
+            //        OpenGL.Hl.InitContext ()
+            //        OpenGL.Hl.Assert ()
+            //
+            //        // create 3d renderer
+            //        let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
+            //        OpenGL.Hl.Assert ()
+            //
+            //        // create 2d renderer
+            //        let renderer2d = GlRenderer2d.make window :> Renderer2d
+            //        OpenGL.Hl.Assert ()
+            //
+            //        // create imgui renderer
+            //        let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+            //        OpenGL.Hl.Assert ()
+            //
+            //        // fin
+            //        renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
+            //
+            //    // create stub renderers
+            //    | None ->
+            //        let renderer3d = StubRenderer3d.make () :> Renderer3d
+            //        let renderer2d = StubRenderer2d.make () :> Renderer2d
+            //        let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
+            //        renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
+            //        OpenGL.Hl.Assert ()
+            //
+            //    // fin
+            //    started <- true
+            //
+            //// fail on already created
+            //| Some _ -> raise (InvalidOperationException "Redundant Start calls.")
+
+        member this.Renderer3dConfig =
+            match renderersOpt with
+            | Some (renderer3d, _, _) -> renderer3d.RendererConfig
+            | None -> Renderer3dConfig.defaultConfig
+
         member this.EnqueueMessage3d message =
             match renderersOpt with
             | Some _ -> ()//messages3d.Add message 
@@ -187,26 +195,27 @@ type RendererInline () =
 /// A threaded render process.
 type RendererThread () =
 
-    let mutable threadOpt = None
+    let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
+    let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let [<VolatileField>] mutable swap = false
-    let mutable messageBufferIndex = 0
+    let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
-    let mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
+    let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let cachedStaticModelMessagesLock = obj ()
     let cachedStaticModelMessages = System.Collections.Generic.Queue ()
-    let mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
+    let [<VolatileField>] mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
     let cachedStaticModelSurfaceMessagesLock = obj ()
     let cachedStaticModelSurfaceMessages = System.Collections.Generic.Queue ()
-    let mutable cachedStaticModelSurfaceMessagesCapacity = Constants.Render.StaticModelSurfaceMessagesPrealloc
+    let [<VolatileField>] mutable cachedStaticModelSurfaceMessagesCapacity = Constants.Render.StaticModelSurfaceMessagesPrealloc
     let cachedAnimatedModelMessagesLock = obj ()
     let cachedAnimatedModelMessages = System.Collections.Generic.Queue ()
-    let mutable cachedAnimatedModelMessagesCapacity = Constants.Render.AnimatedModelMessagesPrealloc
+    let [<VolatileField>] mutable cachedAnimatedModelMessagesCapacity = Constants.Render.AnimatedModelMessagesPrealloc
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->
@@ -419,19 +428,20 @@ type RendererThread () =
                 // begin frame
                 //OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
                 OpenGL.Hl.Assert ()
-                
-            //    // render 3d
-            //    renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
-            //    freeStaticModelMessages messages3d
-            //    freeStaticModelSurfaceMessages messages3d
-            //    freeAnimatedModelMessages messages3d
-            //    OpenGL.Hl.Assert ()
-            //
-            //    // render 2d
-            //    renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
-            //    freeSpriteMessages messages2d
-            //    OpenGL.Hl.Assert ()
-                
+
+                //// render 3d
+                //renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
+                //freeStaticModelMessages messages3d
+                //freeStaticModelSurfaceMessages messages3d
+                //freeAnimatedModelMessages messages3d
+                //renderer3dConfig <- renderer3d.RendererConfig
+                //OpenGL.Hl.Assert ()
+                //
+                //// render 2d
+                //renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
+                //freeSpriteMessages messages2d
+                //OpenGL.Hl.Assert ()
+
                 // render imgui
                 rendererImGui.Render drawData
                 OpenGL.Hl.Assert ()
@@ -458,6 +468,9 @@ type RendererThread () =
         renderer2d.CleanUp ()
 
     interface RendererProcess with
+
+        member this.Renderer3dConfig =
+            renderer3dConfig        
 
         member this.Start fonts windowOpt =
 

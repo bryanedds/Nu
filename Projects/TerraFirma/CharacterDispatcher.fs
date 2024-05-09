@@ -20,7 +20,6 @@ type CharacterCommand =
     | PublishAttacks of Entity Set
     | PublishDie
     | Jump
-    | PlaySound of int64 * single * Sound AssetTag
     interface Command
 
 [<AutoOpen>]
@@ -33,7 +32,7 @@ module CharacterExtensions =
         member this.DieEvent = Events.DieEvent --> this
 
 type CharacterDispatcher (character : Character) =
-    inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, character)
+    inherit Entity3dDispatcher<Character, CharacterMessage, CharacterCommand> (true, false, false, character)
 
     static member Facets =
         [typeof<RigidBodyFacet>]
@@ -83,8 +82,6 @@ type CharacterDispatcher (character : Character) =
         | Update ->
 
             // update character
-            let isKeyboardKeyDown keyboardKey = World.isKeyboardKeyDown keyboardKey world
-            let nav3dFollow a b c d e f g = World.nav3dFollow a b c d e f g entity.Screen world
             let time = world.UpdateTime
             let position = entity.GetPosition world
             let rotation = entity.GetRotation world
@@ -93,12 +90,11 @@ type CharacterDispatcher (character : Character) =
             let bodyId = entity.GetBodyId world
             let grounded = World.getBodyGrounded bodyId world
             let playerPosition = Simulants.GameplayPlayer.GetPosition world
-            let (soundOpt, animations, invisible, attackedCharacters, position, rotation, character) =
-                Character.update isKeyboardKeyDown nav3dFollow time position rotation linearVelocity angularVelocity grounded playerPosition character
+            let (animations, invisible, attackedCharacters, position, rotation, character) =
+                Character.update time position rotation linearVelocity angularVelocity grounded playerPosition character world
 
             // deploy signals from update
-            let signals = match soundOpt with Some sound -> [PlaySound (0L, Constants.Audio.SoundVolumeDefault, sound) :> Signal] | None -> []
-            let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
+            let signals = [UpdateTransform (position, rotation) :> Signal; UpdateAnimations (position, rotation, Array.ofList animations, invisible)]
             let signals = match character.ActionState with WoundState wound when wound.WoundTime = world.UpdateTime - 60L -> PublishDie :> Signal :: signals | _ -> signals
             let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
             withSignals signals character
@@ -178,10 +174,6 @@ type CharacterDispatcher (character : Character) =
         | Jump ->
             let bodyId = entity.GetBodyId world
             let world = World.jumpBody true character.JumpSpeed bodyId world
-            just world
-
-        | CharacterCommand.PlaySound (delay, volume, sound) ->
-            let world = World.schedule delay (World.playSound volume sound) entity world
             just world
 
     override this.RayCast (ray, entity, world) =
