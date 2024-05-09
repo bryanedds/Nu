@@ -334,32 +334,33 @@ type RendererThread () =
                 let mutable instance = VkInstance ()
                 
                 // get available instance layers
-                let mutable layerCount = 0u
-                let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, NativePtr.nullPtr)
-                let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
-                let layersHnd = layers.AsMemory().Pin()
-                let layersNptr = NativePtr.ofVoidPtr<VkLayerProperties> layersHnd.Pointer
-                let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, layersNptr)
+                do  let mutable layerCount = 0u
+                    let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, NativePtr.nullPtr)
+                    let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
+                    use layersHnd = layers.AsMemory().Pin()
+                    let layersNptr = NativePtr.ofVoidPtr<VkLayerProperties> layersHnd.Pointer
+                    let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, layersNptr)
 
-                // check if validation layer exists
-                let validationLayer = "VK_LAYER_KHRONOS_validation"
-                let validationLayerExists = Array.exists (fun (x : VkLayerProperties) -> x.GetLayerName () = validationLayer) layers
-                if not validationLayerExists then printfn "Could not find %s. Note for Bryan: this is to be expected as you presumably have not installed the vulkan sdk. I would like you to keep the sdk uninstalled as long as possible so we can see what the difference is. From what I understand, windows users may be able to get by without it, linux not so much. Validation should only matter to nu users if they write their own vulkan code. \n" validationLayer
+                    // check if validation layer exists
+                    let validationLayer = "VK_LAYER_KHRONOS_validation"
+                    let validationLayerExists = Array.exists (fun (x : VkLayerProperties) -> x.GetLayerName () = validationLayer) layers
+                    if not validationLayerExists then printfn "Could not find %s. Note for Bryan: this is to be expected as you presumably have not installed the vulkan sdk. I would like you to keep the sdk uninstalled as long as possible so we can see what the difference is. From what I understand, windows users may be able to get by without it, linux not so much. Validation should only matter to nu users if they write their own vulkan code. \n" validationLayer
 
-                // get validation layer
-                // TODO: maybe try setting up message callback later?
-                do  use _ = validationLayer.AsMemory().Pin()
-                    let vlayerPointer = validationLayer.GetUtf8Span().GetPointer() // not sure this is fully kosher, see convoluted message in GetPointer
+                    // get validation layer
+                    // TODO: maybe try setting up message callback later?
+                    use _ = validationLayer.AsMemory().Pin()
+                    let vlayerPointer = validationLayer.GetUtf8Span().GetPointer()
                     let vlayerArray = [|vlayerPointer|]
-                    use vlayerArrayHnd = vlayerArray.AsMemory().Pin() // question: do I need to avoid disposing this until instance creation to keep it safely pinned?
+                    use vlayerArrayHnd = vlayerArray.AsMemory().Pin()
                     let vlayerArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> vlayerArrayHnd.Pointer
 
                     // get sdl extensions
                     let mutable sdlExtensionCount = 0u
                     let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
                     let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-                    let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
+                    use _ = sdlExtensionsOut.AsMemory().Pin()
                     let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
+                    let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
                     for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
                     use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin()
                     let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
