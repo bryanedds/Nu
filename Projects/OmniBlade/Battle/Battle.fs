@@ -1684,7 +1684,7 @@ module Battle =
             | Spawn (spawnTypes, messageOpt) ->
                 match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (Spawn (spawnTypes, None)) messageOpt localTime battle with
                 | (true, battle) ->
-                    if localTime = 0L then
+                    if localTime = 1L then // HACK: for some reason we can't get this on frame 0...
                         let battle = spawnEnemies spawnTypes battle
                         just battle
                     elif localTime = Constants.Battle.CharacterMaterializeDuration then
