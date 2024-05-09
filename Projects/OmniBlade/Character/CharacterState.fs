@@ -14,7 +14,6 @@ type [<SymbolicExpansion>] AutoBattle =
 type [<SymbolicExpansion>] CharacterState =
     { ArchetypeType : ArchetypeType
       ExpPoints : int
-      AbsorbCreep : single
       Boss : bool
       WeaponOpt : WeaponType option
       ArmorOpt : ArmorType option
@@ -38,9 +37,9 @@ type [<SymbolicExpansion>] CharacterState =
     member this.TechPointsMax = Algorithms.techPointsMax this.ArmorOpt this.ArchetypeType this.Level
     member this.Power = Algorithms.power this.WeaponOpt this.Statuses this.ArchetypeType this.Level
     member this.Magic isWindOrShadow = Algorithms.magic isWindOrShadow this.WeaponOpt this.Statuses this.ArchetypeType this.Level
-    member this.Shield effectType = Algorithms.shield effectType this.AbsorbCreep this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Shield effectType = Algorithms.shield effectType this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.Defense = Algorithms.defense this.Accessories this.Statuses this.ArchetypeType this.Level
-    member this.Absorb = Algorithms.absorb this.AbsorbCreep this.Accessories this.Statuses this.ArchetypeType this.Level
+    member this.Absorb = Algorithms.absorb this.Accessories this.Statuses this.ArchetypeType this.Level
     member this.AffinityOpt = Algorithms.affinityOpt this.Accessories this.ArchetypeType this.Level
     member this.Immunities = Algorithms.immunities this.Accessories this.ArchetypeType this.Level
     member this.Enchantments = Algorithms.enchantments this.Accessories this.ArchetypeType this.Level
@@ -97,7 +96,6 @@ type [<SymbolicExpansion>] CharacterState =
 
     static member make (characterData : CharacterData) hitPoints techPoints expPoints weaponOpt armorOpt accessories =
         let archetypeType = characterData.ArchetypeType
-        let absorbCreep = characterData.AbsorbCreep
         let boss = characterData.Boss
         let level = Algorithms.expPointsToLevel expPoints
         let enchantments = Algorithms.enchantments accessories archetypeType level
@@ -106,7 +104,6 @@ type [<SymbolicExpansion>] CharacterState =
         let characterState =
             { ArchetypeType = archetypeType
               ExpPoints = expPoints
-              AbsorbCreep = absorbCreep
               Boss = boss
               WeaponOpt = weaponOpt
               ArmorOpt = armorOpt
@@ -128,7 +125,6 @@ type [<SymbolicExpansion>] CharacterState =
         let characterState =
             { ArchetypeType = Apprentice
               ExpPoints = 0
-              AbsorbCreep = 1.0f
               Boss = false
               WeaponOpt = None
               ArmorOpt = None

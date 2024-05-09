@@ -872,7 +872,6 @@ type CharacterData =
     { CharacterType : CharacterType // key
       ArchetypeType : ArchetypeType
       LevelBase : int
-      AbsorbCreep : single
       Boss : bool
       AnimationSheet : Image AssetTag
       PortraitOpt : Image AssetTag option
