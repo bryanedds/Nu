@@ -337,7 +337,7 @@ type RendererThread () =
                 let mutable layerCount = 0u
                 let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, NativePtr.nullPtr)
                 let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
-                use layersHnd = layers.AsMemory().Pin()
+                let layersHnd = layers.AsMemory().Pin()
                 let layersNptr = NativePtr.ofVoidPtr<VkLayerProperties> layersHnd.Pointer
                 let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, layersNptr)
 
@@ -348,34 +348,34 @@ type RendererThread () =
 
                 // get validation layer
                 // TODO: maybe try setting up message callback later?
-                let vlayerPointer = validationLayer.GetUtf8Span().GetPointer() // not sure this is fully kosher, see convoluted message in GetPointer
-                let vlayerArray = [|vlayerPointer|]
-                use vlayerArrayHnd = vlayerArray.AsMemory().Pin() // question: do I need to avoid disposing this until instance creation to keep it safely pinned?
-                let vlayerArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> vlayerArrayHnd.Pointer
+                do  use _ = validationLayer.AsMemory().Pin()
+                    let vlayerPointer = validationLayer.GetUtf8Span().GetPointer() // not sure this is fully kosher, see convoluted message in GetPointer
+                    let vlayerArray = [|vlayerPointer|]
+                    use vlayerArrayHnd = vlayerArray.AsMemory().Pin() // question: do I need to avoid disposing this until instance creation to keep it safely pinned?
+                    let vlayerArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> vlayerArrayHnd.Pointer
 
-                // get sdl extensions
-                let mutable sdlExtensionCount = 0u
-                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
-                let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-                let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
-                let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
-                for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
-                use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin()
-                let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
+                    // get sdl extensions
+                    let mutable sdlExtensionCount = 0u
+                    let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
+                    let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
+                    let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
+                    let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
+                    for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
+                    use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin()
+                    let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
 
-                // populate createinstance info
-                let mutable instanceCreateInfo = VkInstanceCreateInfo ()
-                instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
-                instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsNptr
+                    // populate createinstance info
+                    let mutable instanceCreateInfo = VkInstanceCreateInfo ()
+                    instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
+                    instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsNptr
                 
-                if validationLayerExists then
-                    instanceCreateInfo.enabledLayerCount <- 1u
-                    instanceCreateInfo.ppEnabledLayerNames <- vlayerArrayNptr
+                    if validationLayerExists then
+                        instanceCreateInfo.enabledLayerCount <- 1u
+                        instanceCreateInfo.ppEnabledLayerNames <- vlayerArrayNptr
                     
-                // create vulkan instance
-                let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
-                printfn "vkCreateInstance returned %s." (result.ToString ())
-
+                    // create vulkan instance
+                    let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
+                    printfn "vkCreateInstance returned %s." (result.ToString ())
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
