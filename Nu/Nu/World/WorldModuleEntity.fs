@@ -181,16 +181,16 @@ module WorldModuleEntity =
                         let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged || perimeterCenteredChanged
                         let boundsChanged = perimeterChanged || rotationChanged
                         if boundsChanged then
-                            let world = World.publishEntityChange Constants.Engine.BoundsPropertyName () () publishChangeEvents entity world
+                            let world = World.publishEntityChange Constants.Engine.BoundsPropertyName transformOld.Bounds2d transformNew.Bounds2d publishChangeEvents entity world
                             let world =
                                 if perimeterChanged then
-                                    let world = World.publishEntityChange (nameof transformNew.Perimeter) () () publishChangeEvents entity world
-                                    let world = World.publishEntityChange (nameof transformNew.PerimeterUnscaled) () () publishChangeEvents entity world
-                                    let world = World.publishEntityChange (nameof transformNew.PerimeterCenter) () () publishChangeEvents entity world
-                                    let world = World.publishEntityChange (nameof transformNew.PerimeterBottom) () () publishChangeEvents entity world
-                                    let world = World.publishEntityChange (nameof transformNew.PerimeterBottomLeft) () () publishChangeEvents entity world
-                                    let world = World.publishEntityChange (nameof transformNew.PerimeterMin) () () publishChangeEvents entity world
-                                    let world = World.publishEntityChange (nameof transformNew.PerimeterMax) () () publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.Perimeter) transformOld.Perimeter transformNew.Perimeter publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.PerimeterUnscaled) transformOld.PerimeterUnscaled transformNew.PerimeterUnscaled publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.PerimeterCenter) transformOld.PerimeterCenter transformNew.PerimeterCenter publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.PerimeterBottom) transformOld.PerimeterBottom transformNew.PerimeterBottom publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.PerimeterBottomLeft) transformOld.PerimeterBottomLeft transformNew.PerimeterBottomLeft publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.PerimeterMin) transformOld.PerimeterMin transformNew.PerimeterMin publishChangeEvents entity world
+                                    let world = World.publishEntityChange (nameof transformNew.PerimeterMax) transformOld.PerimeterMax transformNew.PerimeterMax publishChangeEvents entity world
                                     world
                                 else world
                             let world = if positionChanged then World.publishEntityChange (nameof transformNew.Position) transformOld.Position transformNew.Position publishChangeEvents entity world else world
@@ -203,7 +203,7 @@ module WorldModuleEntity =
                     else
                         let boundsChanged = positionChanged || rotationChanged || scaleChanged || offsetChanged || sizeChanged
                         if boundsChanged then
-                            let world = World.publishEntityChange Constants.Engine.BoundsPropertyName () () publishChangeEvents entity world
+                            let world = World.publishEntityChange Constants.Engine.BoundsPropertyName transformOld.Bounds3d transformNew.Bounds3d publishChangeEvents entity world
                             let world = if positionChanged then World.publishEntityChange (nameof transformNew.Position) transformOld.Position transformNew.Position publishChangeEvents entity world else world
                             let world = if scaleChanged then World.publishEntityChange (nameof transformNew.Scale) transformOld.Scale transformNew.Scale publishChangeEvents entity world else world
                             let world = if offsetChanged then World.publishEntityChange (nameof transformNew.Offset) transformOld.Offset transformNew.Offset publishChangeEvents entity world else world

@@ -1338,11 +1338,18 @@ type RigidBodyFacet () =
         then World.localizeBodyShape scalar bodyShape
         else bodyShape
 
+    static let propagatePhysicsPerimeterCenter (entity : Entity) (evt : Event<ChangeData, Entity>) world =
+        if entity.GetPhysicsMotion world <> ManualMotion then
+            let bodyId = entity.GetBodyId world
+            let center = evt.Data.Value :?> Vector3
+            (Cascade, World.setBodyCenter center bodyId world)
+        else (Cascade, world)
+
     static let propagatePhysicsPosition (entity : Entity) (evt : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
-            let position = evt.Data.Value :?> Vector3
-            (Cascade, World.setBodyCenter position bodyId world)
+            let center = evt.Data.Value :?> Vector3
+            (Cascade, World.setBodyCenter center bodyId world)
         else (Cascade, world)
 
     static let propagatePhysicsRotation (entity : Entity) (evt : Event<ChangeData, Entity>) world =
@@ -1398,7 +1405,10 @@ type RigidBodyFacet () =
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
         // OPTIMIZATION: share lambdas to reduce live object count.
         let subIds = Array.init 25 (fun _ -> makeGuid ())
-        let world = World.subscribePlus subIds.[0] (propagatePhysicsPosition entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
+        let world =
+            if entity.GetIs2d world
+            then World.subscribePlus subIds.[0] (propagatePhysicsPerimeterCenter entity) (entity.ChangeEvent (nameof entity.PerimeterCenter)) entity world |> snd
+            else World.subscribePlus subIds.[0] (propagatePhysicsPosition entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
         let world = World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd
