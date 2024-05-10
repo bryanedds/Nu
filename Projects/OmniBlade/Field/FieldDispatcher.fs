@@ -1049,7 +1049,7 @@ type FieldDispatcher () =
                      Content.text "Current"
                         [Entity.PositionLocal == v3 516.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                         Entity.Text == "Current Party"]
+                         Entity.Text == "Current Party:"]
                      for (teamIndex, teammate) in field.Team.Pairs do
                         let w =
                             match field.Menu.MenuState with
