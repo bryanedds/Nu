@@ -1662,7 +1662,7 @@ module Battle =
                 if containsCharacterHealthy observerIndex battle then
                     match updateConsequenceMessageOpt sourceIndex targetIndexOpt observerIndexOpt (Replace (enemyType, None)) messageOpt localTime battle with
                     | (true, battle) ->
-                        if localTime = 0L then
+                        if localTime = 0L then // HACK: for some reason we can't get this on frame 0...
                             let battle = animateCharacter ReadyAnimation observerIndex battle
                             let battle = dematerializeCharacter observerIndex battle
                             just battle
