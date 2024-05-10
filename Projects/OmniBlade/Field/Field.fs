@@ -69,7 +69,7 @@ type FieldCommand =
     | FaceAvatar of Direction
     | StartPlaying
     | StartQuitting
-    | CommencingBattle
+    | CommencingBattle of BattleData
     | CommenceBattle of BattleData * PrizePool
     | ScheduleSound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
@@ -1227,7 +1227,7 @@ module Field =
                     | Left (battleData, field) ->
                         let prizePool = { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
                         let field = commencingBattle battleData prizePool field
-                        (signal CommencingBattle :: signals, field)
+                        (signal (CommencingBattle battleData) :: signals, field)
                     | Right field -> (signals, field)
                 else (signals, field)
 
