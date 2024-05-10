@@ -102,6 +102,7 @@ module Field =
     type [<ReferenceEquality; SymbolicExpansion>] Field =
         private
             { FieldTime_ : int64
+              FieldState_ : FieldState
               SaveSlot_ : SaveSlot
               OmniSeedState_ : OmniSeedState
               Avatar_ : Avatar
@@ -127,11 +128,11 @@ module Field =
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               FieldSongTimeOpt_ : int64 option
-              FieldType_ : FieldType
-              FieldState_ : FieldState }
+              FieldType_ : FieldType }
 
         (* Local Properties *)
         member this.FieldTime = this.FieldTime_
+        member this.FieldState = this.FieldState_
         member this.OmniSeedState = this.OmniSeedState_
         member this.Avatar = this.Avatar_
         member this.AvatarCollidedPropIds = this.AvatarCollidedPropIds_
@@ -156,7 +157,6 @@ module Field =
         member this.DialogOpt = this.DialogOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
         member this.FieldType = this.FieldType_
-        member this.FieldState = this.FieldState_
 
     (* Low-Level Operations *)
 
@@ -1253,6 +1253,7 @@ module Field =
         let omniSeedState = OmniSeedState.makeFromSeedState randSeedState
         let props = makeProps time fieldType omniSeedState
         { FieldTime_ = 0L
+          FieldState_ = Playing
           SaveSlot_ = saveSlot
           OmniSeedState_ = omniSeedState
           Avatar_ = avatar
@@ -1278,11 +1279,11 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
-          FieldType_ = fieldType
-          FieldState_ = Playing }
+          FieldType_ = fieldType }
 
     let empty =
         { FieldTime_ = 0L
+          FieldState_ = Quit
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
           Avatar_ = Avatar.empty ()
@@ -1308,8 +1309,7 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
-          FieldType_ = EmptyField
-          FieldState_ = Quit }
+          FieldType_ = EmptyField }
 
     let initial time saveSlot =
         make time TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial

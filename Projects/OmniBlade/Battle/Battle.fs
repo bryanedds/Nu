@@ -111,6 +111,7 @@ module Battle =
     type [<ReferenceEquality; SymbolicExpansion>] Battle =
         private
             { BattleTime_ : int64
+              BattleState_ : BattleState
               Inventory_ : Inventory
               Characters_ : Map<CharacterIndex, Character>
               PrizePool_ : PrizePool
@@ -122,11 +123,11 @@ module Battle =
               ActionCommands_ : ActionCommand FQueue
               MessageOpt_ : (int64 * int64 * Dialog) option
               DialogOpt_ : Dialog option
-              BattleSpeed_ : BattleSpeed
-              BattleState_ : BattleState }
+              BattleSpeed_ : BattleSpeed }
 
         (* Local Properties *)
         member this.BattleTime = this.BattleTime_
+        member this.BattleState = this.BattleState_
         member this.Running = match this.BattleState with BattleRunning -> true | _ -> false
         member this.Inventory = this.Inventory_
         member this.Characters = this.Characters_
@@ -140,7 +141,6 @@ module Battle =
         member this.MessageOpt = this.MessageOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.BattleSpeed = this.BattleSpeed_
-        member this.BattleState = this.BattleState_
 
     (* Low-Level Operations *)
 
@@ -2050,6 +2050,7 @@ module Battle =
         let tileIndexOffset = battleData.BattleTileIndexOffset
         let tileIndexOffsetRange = battleData.BattleTileIndexOffsetRange
         { BattleTime_ = 0L
+          BattleState_ = BattleReadying 1L
           Inventory_ = inventory
           Characters_ = characters
           PrizePool_ = prizePool
@@ -2061,14 +2062,13 @@ module Battle =
           ActionCommands_ = FQueue.empty
           MessageOpt_ = None
           DialogOpt_ = None
-          BattleSpeed_ = battleSpeed
-          BattleState_ = BattleReadying 1L }
+          BattleSpeed_ = battleSpeed }
 
     let empty =
         match Map.tryFind EmptyBattle Data.Value.Battles with
         | Some battle ->
             { BattleTime_ = 0L
-              BattleSpeed_ = PacedSpeed
+              BattleState_ = BattleConclude
               Inventory_ = Inventory.empty
               Characters_ = Map.empty
               PrizePool_ = PrizePool.empty
@@ -2080,7 +2080,7 @@ module Battle =
               ActionCommands_ = FQueue.empty
               MessageOpt_ = None
               DialogOpt_ = None
-              BattleState_ = BattleConclude }
+              BattleSpeed_ = PacedSpeed }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle

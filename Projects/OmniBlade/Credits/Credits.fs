@@ -37,7 +37,8 @@ type CreditsDispatcher () =
     inherit ScreenDispatcher<Credits, CreditsMessage, CreditsCommand> (Credits.empty)
 
     override this.Definitions (_, _) =
-        [Screen.SelectEvent => StartScrolling
+        [Entity.StaticImage.ChangeEvent => StartScrolling
+         Screen.SelectEvent => StartScrolling
          Screen.UpdateEvent => Scroll]
 
     override this.Message (credits, message, _, _) =

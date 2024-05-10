@@ -69,28 +69,33 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     | UpdateTime of UpdateTime : int64 // in updates
     | ClockTime of ClockTime : single // in seconds
 
+    /// An unary operation on game time.
     static member inline unary op op2 time =
         match time with
         | UpdateTime time -> op time
         | ClockTime time -> op2 time
 
+    /// A binary operation on game time.
     static member inline binary op op2 left right =
         match (left, right) with
         | (UpdateTime leftTime, UpdateTime rightTime) -> op leftTime rightTime
         | (ClockTime leftTime, ClockTime rightTime) -> op2 leftTime rightTime
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
+    /// Ap for game time (as in Haskell Apply).
     static member inline ap op op2 left right =
         match (left, right) with
         | (UpdateTime leftTime, UpdateTime rightTime) -> UpdateTime (op leftTime rightTime)
         | (ClockTime leftTime, ClockTime rightTime) -> ClockTime (op2 leftTime rightTime)
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
+    /// Construct a game time from updates or clock time.
     static member make updateTime clockTime =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime updateTime
         | DynamicFrameRate _ -> ClockTime clockTime
 
+    /// Construct a game time from a number of updates assuming desired frame rate is met.
     static member ofUpdates updates =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate _ -> UpdateTime updates
@@ -161,18 +166,23 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member MinValue = GameTime.make Int64.MinValue Single.MinValue
     static member MaxValue = GameTime.make Int64.MaxValue Single.MaxValue
 
+    /// The total amount of elapsed updates.
     member this.Updates =
         GameTime.toUpdates this
 
+    /// The total amount of elapsed seconds.
     member this.Seconds =
         GameTime.toSeconds this
 
+    /// The total amount of elapsed milliseconds.
     member this.Milliseconds =
         GameTime.toMilliseconds this
 
+    /// Check that the game time reprsents zero time.
     member this.IsZero =
         GameTime.isZero this
 
+    /// Check that the game time reprsents non-zero time.
     member this.NotZero =
         GameTime.notZero this
 
