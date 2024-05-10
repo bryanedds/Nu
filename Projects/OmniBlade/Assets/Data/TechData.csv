@@ -14,10 +14,10 @@ Ice,5,Magical,1.6,False,False,False,[Some Ice],[],[],None,[SingleTarget [EnemyAi
 Snowball,6,Magical,1,False,False,False,[Some Ice],[],[],None,[VerticalTarget 48 [EnemyAim True]],Attacks all enemies on a vertical line with a snowball. Ice-based.
 Cure,3,Magical,3,False,True,False,None,[],[],None,[SingleTarget [AllyAim True]],Heals moderate wounds.
 Empower,3,Magical,1,False,True,False,None,[[Power True False]],[],None,[SingleTarget [AllyAim True]],Buffs the physical power of an ally and heals trivial injuries.
-Aura,5,Magical,1.5,False,True,False,None,[],[],None,[AllTarget [AllyAim True]],Heals moderate wounds on all allies.
+Aura,5,Magical,2,False,True,False,None,[],[],None,[AllTarget [AllyAim True]],Heals moderate wounds on all allies.
 Enlighten,3,Magical,1,False,True,False,None,[[Magic True False]],[],None,[SingleTarget [AllyAim True]],Buffs the magical power of an ally and heals trivial injuries.
-Protect,5,Magical,1.5,False,True,False,None,[[Shield True False]],[],None,[SingleTarget [AllyAim True]],Increases the defenses of an ally and heals minor injuries.
-Purify,5,Magical,1.5,False,True,False,None,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],None,[SingleTarget [AllyAim True]],Removes all status ailments of an ally and heals minor injuries.
+Protect,5,Magical,2,False,True,False,None,[[Shield True False]],[],None,[SingleTarget [AllyAim True]],Increases the defenses of an ally and heals minor injuries.
+Purify,5,Magical,2,False,True,False,None,[],[Poison Silence Sleep Confuse [Time false] [Power False False] [Power False True] [Magic False False] [Magic False True] [Shield False False] [Shield False True]],None,[SingleTarget [AllyAim True]],Removes all status ailments of an ally and heals minor injuries.
 Muddle,2,Magical,0.75,False,False,False,None,[[Magic False False]],[],None,[SingleTarget [EnemyAim True]],Debuffs the magical power of an enemy.
 Weaken,2,Magical,0.75,False,False,False,None,[[Power False False]],[],None,[SingleTarget [EnemyAim True]],Debuffs the physical power of an enemy.
 Slow,4,Magical,0.75,False,False,False,None,[[Time False]],[],None,[SingleTarget [EnemyAim True]],Slows down an enemy.
