@@ -237,7 +237,7 @@ module Character =
                 | Aura -> 1f
                 | Empower -> 0.75f
                 | Enlighten -> 0.75f
-                | Protect -> 0.75f
+                | Protect -> 1.0f
                 | _ -> techData.Scalar
             else techData.Scalar
         let splitScalar =
