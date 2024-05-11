@@ -689,6 +689,7 @@ type FieldDispatcher () =
              if field.Tint.A > 0.0f then
                 Content.staticSprite "Tint"
                    [Entity.Position == v3 -480.0f -270.0f 0.0f; Entity.Size == v3 960.0f 540.0f 0.0f; Entity.Elevation == Constants.Field.TintElevation
+                    Entity.Absolute == true
                     Entity.StaticImage == Assets.Default.White
                     Entity.Color := field.Tint]
 
