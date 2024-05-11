@@ -134,7 +134,7 @@ module WorldModule2 =
                 let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
                 let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
                 world
-
+                
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
                 match transitionType with
@@ -144,20 +144,20 @@ module WorldModule2 =
             match (transitionTime, transition.TransitionLifeTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime = lifeTime
+                localTime - 2L = lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime >= lifeTime
+                localTime - world.ClockDelta * 2.0f >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
             match (transitionTime, slide.IdlingTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime = lifeTime
+                localTime - 2L = lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime >= lifeTime
+                localTime - world.ClockDelta * 2.0f >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =

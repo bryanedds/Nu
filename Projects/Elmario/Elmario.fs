@@ -37,20 +37,20 @@ type ElmarioDispatcher () =
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 let world =
                     if World.getBodyGrounded bodyId world
-                    then World.applyBodyForce (v3 -1600.0f 0.0f 0.0f) v3Zero bodyId world
-                    else World.applyBodyForce (v3 -400.0f 0.0f 0.0f) v3Zero bodyId world
+                    then World.applyBodyForce (v3 -800.0f 0.0f 0.0f) v3Zero bodyId world
+                    else World.applyBodyForce (v3 -200.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
             elif World.isKeyboardKeyDown KeyboardKey.Right world then
                 let world =
                     if World.getBodyGrounded bodyId world
-                    then World.applyBodyForce (v3 1600.0f 0.0f 0.0f) v3Zero bodyId world
-                    else World.applyBodyForce (v3 400.0f 0.0f 0.0f) v3Zero bodyId world
+                    then World.applyBodyForce (v3 800.0f 0.0f 0.0f) v3Zero bodyId world
+                    else World.applyBodyForce (v3 200.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
             else just world
         | Jump ->
             let bodyId = Simulants.Elmario.GetBodyId world
             if world.Advancing && World.getBodyGrounded bodyId world then
-                let world = World.applyBodyLinearImpulse (v3 0.0f 1600.0f 0.0f) v3Zero bodyId world
+                let world = World.applyBodyLinearImpulse (v3 0.0f 800.0f 0.0f) v3Zero bodyId world
                 World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 just world
             else just world
@@ -66,8 +66,10 @@ type ElmarioDispatcher () =
                  Content.block2d "Ground"
                     [Entity.Position == v3 0.0f -128.0f 0.0f
                      Entity.Size == v3 384.0f 32.0f 0.0f
-                     Entity.StaticImage == asset "Gameplay" "TreeTop"]
+                     Entity.StaticImage == asset "Gameplay" "TreeTop"
+                     Entity.Friction == 0.1f]
                  Content.block2d "Rock"
                     [Entity.Position == v3 176.0f -96.0f 0.0f
                      Entity.Size == v3 32.0f 32.0f 0.0f
-                     Entity.StaticImage == asset "Gameplay" "Rock"]]]]
+                     Entity.StaticImage == asset "Gameplay" "Rock"
+                     Entity.Friction == 0.1f]]]]
