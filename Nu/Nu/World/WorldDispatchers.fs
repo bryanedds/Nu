@@ -206,8 +206,7 @@ type Block2dDispatcher () =
          typeof<StaticSpriteFacet>]
 
     static member Properties =
-        [define Entity.Static true
-         define Entity.Color Color.Gray]
+        [define Entity.Static true]
 
 /// Gives an entity the base behavior of a rigid 2d box using dynamic physics.
 type Box2dDispatcher () =
@@ -260,6 +259,7 @@ type Character2dDispatcher () =
          define Entity.CelRun 8
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.BodyType Dynamic
+         define Entity.AngularFactor v3Zero
          define Entity.SleepingAllowed true
          define Entity.GravityOverride (Some (Constants.Physics.GravityDefault * Constants.Engine.Meter2d * 3.0f))
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })

@@ -37,20 +37,20 @@ type ElmarioDispatcher () =
             if World.isKeyboardKeyDown KeyboardKey.Left world then
                 let world =
                     if World.getBodyGrounded bodyId world
-                    then World.applyBodyForce (v3 -800.0f 0.0f 0.0f) v3Zero bodyId world
-                    else World.applyBodyForce (v3 -200.0f 0.0f 0.0f) v3Zero bodyId world
+                    then World.applyBodyForce (v3 -1600.0f 0.0f 0.0f) v3Zero bodyId world
+                    else World.applyBodyForce (v3 -400.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
             elif World.isKeyboardKeyDown KeyboardKey.Right world then
                 let world =
                     if World.getBodyGrounded bodyId world
-                    then World.applyBodyForce (v3 800.0f 0.0f 0.0f) v3Zero bodyId world
-                    else World.applyBodyForce (v3 200.0f 0.0f 0.0f) v3Zero bodyId world
+                    then World.applyBodyForce (v3 1600.0f 0.0f 0.0f) v3Zero bodyId world
+                    else World.applyBodyForce (v3 400.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
             else just world
         | Jump ->
             let bodyId = Simulants.Elmario.GetBodyId world
             if world.Advancing && World.getBodyGrounded bodyId world then
-                let world = World.applyBodyLinearImpulse (v3 0.0f 800.0f 0.0f) v3Zero bodyId world
+                let world = World.applyBodyLinearImpulse (v3 0.0f 1600.0f 0.0f) v3Zero bodyId world
                 World.playSound Constants.Audio.SoundVolumeDefault (asset "Gameplay" "Jump") world
                 just world
             else just world
