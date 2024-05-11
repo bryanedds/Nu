@@ -144,7 +144,7 @@ module WorldModule2 =
             match (transitionTime, transition.TransitionLifeTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime - 2L = lifeTime
+                localTime - 2L >= lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
                 localTime - world.ClockDelta * 2.0f >= lifeTime
@@ -154,7 +154,7 @@ module WorldModule2 =
             match (transitionTime, slide.IdlingTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime - 2L = lifeTime
+                localTime - 2L >= lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
                 localTime - world.ClockDelta * 2.0f >= lifeTime
