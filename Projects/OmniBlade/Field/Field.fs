@@ -509,8 +509,8 @@ module Field =
         { field with SpiritActivity_ = 0.0f; Spirits_ = [||] }
 
     let recruit allyType (field : Field) =
-        let lowestLevelTeammate = field.Team |> Map.toValueList |> Seq.sortBy (fun teammate -> teammate.Level) |> Seq.head
-        let level = max 1 (dec lowestLevelTeammate.Level)
+        let highestLevelTeammate = field.Team |> Map.toValueList |> Seq.sortByDescending (fun teammate -> teammate.Level) |> Seq.head
+        let level = max 1 (dec highestLevelTeammate.Level)
         let index = Map.count field.Team
         let teammate = Teammate.make level index allyType
         mapTeam (Map.add index teammate) field
