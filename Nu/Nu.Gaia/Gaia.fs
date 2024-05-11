@@ -686,6 +686,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             selectScreen screen
             let world = selectGroupInitial screen world
             selectEntityOpt None world
+            FocusedPropertyDescriptorOpt <- None
             (Cascade, world)
         | None -> (Cascade, world) // just keep current group selection and screen if no screen selected
 
