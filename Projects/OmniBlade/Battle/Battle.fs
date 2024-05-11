@@ -1763,7 +1763,7 @@ module Battle =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L then // first frame after transitioning in
             match battle.BattleSongOpt_ with
-            | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, Constants.Audio.SongVolumeDefault, battleSong)) battle
+            | Some battleSong -> withSignal (PlaySong (Constants.Audio.FadeOutTimeDefault, 0L, 0L, Constants.Audio.SongVolumeDefault, battleSong)) battle
             | None -> just battle
         elif localTime >= 30L && localTime < 100L then
             let battle = animateCharactersReady battle

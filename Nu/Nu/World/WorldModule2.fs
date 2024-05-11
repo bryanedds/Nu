@@ -175,7 +175,7 @@ module WorldModule2 =
                         | Some playSong ->
                             match World.getCurrentSongOpt world with
                             | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
-                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                            | _ -> World.playSong playSong.FadeOutTime playSong.FadeInTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
                         | None -> ()
                         world
                     else world
@@ -197,7 +197,7 @@ module WorldModule2 =
                     | Some playSong ->
                         match World.getCurrentSongOpt world with
                         | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
-                        | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                        | _ -> World.playSong playSong.FadeOutTime playSong.FadeInTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->

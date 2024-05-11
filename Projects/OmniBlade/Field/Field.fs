@@ -727,8 +727,8 @@ module Field =
         | Cue.PlaySound (volume, sound) ->
             (Fin, definitions, withSignal (ScheduleSound (0L, volume, sound)) field)
 
-        | Cue.PlaySong (fadeIn, fadeOut, start, volume, song) ->
-            (Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, volume, song)) field)
+        | Cue.PlaySong (fadeOut, fadeIn, start, volume, song) ->
+            (Fin, definitions, withSignal (PlaySong (fadeOut, fadeIn, start, volume, song)) field)
 
         | Cue.FadeOutSong fade ->
             (Fin, definitions, withSignal (FadeOutSong fade) field)

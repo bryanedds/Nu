@@ -10,8 +10,8 @@ open Prime
 
 /// Descrides a song.
 type SongDescriptor =
-    { FadeInTime: GameTime
-      FadeOutTime : GameTime
+    { FadeOutTime : GameTime
+      FadeInTime: GameTime
       StartTime : GameTime
       Volume : single
       Song : Song AssetTag }
@@ -255,10 +255,10 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | MusAsset _ -> Log.info ("Cannot play song asset as sound '" + scstring sound + "'.")
         | None ->
             Log.info ("PlaySoundMessage failed due to unloadable assets for '" + scstring sound + "'.")
-    
+
     static member private handlePlaySong playSongMessage audioPlayer =
         SdlAudioPlayer.playSong playSongMessage audioPlayer
-    
+
     static member private handleFadeOutSong (fadeOutTime : GameTime) =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             if  fadeOutTime <> GameTime.zero &&
@@ -266,7 +266,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 SDL_mixer.Mix_FadeOutMusic (int (fadeOutTime.Seconds * 1000.0f)) |> ignore
             else
                 SDL_mixer.Mix_HaltMusic () |> ignore
-    
+
     static member private handleStopSong =
         if SDL_mixer.Mix_PlayingMusic () = 1 then
             SDL_mixer.Mix_HaltMusic () |> ignore

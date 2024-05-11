@@ -63,9 +63,9 @@ module Assets =
         let AffirmSound = asset<Sound> PackageName "Affirm"
         let MistakeSound = asset<Sound> PackageName "Mistake"
         let SlotSound = asset<Sound> PackageName "Slot"
-        let TitleSong = { FadeInTime = 0L; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Title" }
-        let CreditsSong = { FadeInTime = 0L; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Credits" }
-        let IntroSong = { FadeInTime = 0L; FadeOutTime = 90L; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Intro" }
+        let TitleSong = { FadeOutTime = Constants.Audio.FadeOutTimeDefault; FadeInTime = 0L; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Title" }
+        let CreditsSong = { FadeOutTime = Constants.Audio.FadeOutTimeDefault; FadeInTime = 0L; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Credits" }
+        let IntroSong = { FadeOutTime = 90L; FadeInTime = 0L; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Intro" }
         let TitleGroupFilePath = "Assets/Gui/Groups/Title.nugroup"
         let PickGroupFilePath = "Assets/Gui/Groups/Pick.nugroup"
         let IntroGroupFilePath = "Assets/Gui/Groups/Intro.nugroup"
@@ -156,7 +156,7 @@ module Assets =
         let ReadySound = asset<Sound> PackageName "Ready"
         let BuffSound = asset<Sound> PackageName "Buff"
         let DebuffSound = asset<Sound> PackageName "Debuff"
-        let FieldSong = { FadeInTime = 0L; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Field" }
+        let FieldSong = { FadeOutTime = Constants.Audio.FadeOutTimeDefault; FadeInTime = 0L; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Field" }
 
     [<RequireQualifiedAccess>]
     module Battle =
