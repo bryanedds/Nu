@@ -125,11 +125,11 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
     static member toMilliseconds time =
         GameTime.toSeconds time * 1000.0f
 
-    /// Equality.
+    /// Equate GameTimes.
     static member equals left right =
         GameTime.binary (=) (=) left right
 
-    /// Comparison.
+    /// Compare GameTimes.
     static member compare left right =
         match (left, right) with
         | (UpdateTime leftTime, UpdateTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
