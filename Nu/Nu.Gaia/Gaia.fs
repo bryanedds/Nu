@@ -2089,7 +2089,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                       PartitionType = scvalue partitionTypeStr }
                 setPropertyValue nc propertyDescriptor simulant world
             else world
-        if ImGui.Button "Synchronize Navigation"
+        if ImGui.Button "Rebuild Navigation"
         then synchronizeNav world
         else world
 
@@ -3248,8 +3248,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginMenu "Screen" then
                             let world = if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities world else world
                             let world = if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities world else world
+                            let world = if ImGui.MenuItem ("Rebuild Navigation", "Ctrl+Shift+N") then synchronizeNav world else world
                             let world = if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+L") then rerenderLightMaps world else world
-                            let world = if ImGui.MenuItem ("Synchronize Navigation", "Ctrl+Shift+N") then synchronizeNav world else world
                             ImGui.EndMenu ()
                             world
                         else world
@@ -3424,7 +3424,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         World.synchronizeNav3d SelectedScreen world
                     else world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Synchronize navigation mesh. (Ctrl+Shift+N)"
+                    ImGui.Text "Rebuild navigation mesh. (Ctrl+Shift+N)"
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Relight" then rerenderLightMaps world else world
