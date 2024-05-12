@@ -101,35 +101,42 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
         | StaticFrameRate _ -> UpdateTime updates
         | DynamicFrameRate frameRate -> ClockTime (1.0f / single frameRate * single updates)
 
+    /// Construct a game time from an amount of seconds assuming desired frame rate was met.
     static member ofSeconds seconds =
         match Constants.GameTime.DesiredFrameRate with
         | StaticFrameRate frameRate -> UpdateTime (int64 (single frameRate * seconds))
         | DynamicFrameRate _ -> ClockTime seconds
 
+    /// Get the number of updates assuming desired frame rate is met.
     static member toUpdates time =
         match (Constants.GameTime.DesiredFrameRate, time) with
         | (_, UpdateTime time) -> time
         | (DynamicFrameRate frameRate, ClockTime time) -> int64 (time / (1.0f / single frameRate))
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
+    /// Get the total amount of seconds assuming desired frame rate is met.
     static member toSeconds time =
         match (Constants.GameTime.DesiredFrameRate, time) with
         | (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
         | (_, ClockTime time) -> time
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
+    /// Get the total amount of milliseconds assuming desired frame rate is met.
     static member toMilliseconds time =
         GameTime.toSeconds time * 1000.0f
 
+    /// Equality.
     static member equals left right =
         GameTime.binary (=) (=) left right
 
+    /// Comparison.
     static member compare left right =
         match (left, right) with
         | (UpdateTime leftTime, UpdateTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
         | (ClockTime leftTime, ClockTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
         | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
+    /// The progress of time down a bounded time range.
     static member progress startTime currentTime lifeTime =
         match (startTime, currentTime, lifeTime) with
         | (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime
