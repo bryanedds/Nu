@@ -1,8 +1,13 @@
 # configure Linux for Nu development
 echo Configuring Linux for Nu development...
 
-# configure sdl2 and components
+# configure apt
 sudo apt update
+
+#configure x11 (this seems to be needed when running just Wayland due to issue #810)
+sudo apt-get install libx11-dev
+
+# configure sdl2 and components
 sudo apt install \
   libsdl2-dev libsdl2-2.0-0 \
   libjpeg-dev libwebp-dev libtiff5-dev libsdl2-image-dev libsdl2-image-2.0-0 \
