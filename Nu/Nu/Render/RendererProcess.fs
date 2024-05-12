@@ -331,7 +331,8 @@ type RendererThread () =
                 let result = vkInitialize ()
 
                 // core vulkan handles
-                let mutable instance = VkInstance ()
+                let mutable instance = Unchecked.defaultof<VkInstance>
+                let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
                 
                 // get available instance layers
                 do  let mutable layerCount = 0u
@@ -377,6 +378,27 @@ type RendererThread () =
                     // create vulkan instance
                     let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
                     printfn "vkCreateInstance returned %s." (result.ToString ())
+
+                // TODO: verify validation working
+        
+                vkLoadInstanceOnly (instance)
+                
+                // get available physical devices
+                do  let mutable deviceCount = 0u
+                    let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, NativePtr.nullPtr)
+                    printfn "Vulkan found %i physical devices on your computer." deviceCount
+                    let mutable devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
+                    use devicesHnd = devices.AsMemory().Pin()
+                    let devicesNptr = NativePtr.ofVoidPtr<VkPhysicalDevice> devicesHnd.Pointer
+                    let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, devicesNptr)
+
+                    // select physical device
+                    physicalDevice <- devices[0]
+                    let mutable physicalDeviceProperties = Unchecked.defaultof<VkPhysicalDeviceProperties>
+                    vkGetPhysicalDeviceProperties (physicalDevice, &physicalDeviceProperties)
+                    printfn "Using physical device %s." (physicalDeviceProperties.GetDeviceName ())
+
+                
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
