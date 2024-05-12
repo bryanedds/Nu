@@ -7,7 +7,7 @@ open Prime
 
 /// Data tokens for downstream processing.
 /// NOTE: EffectToken only exists as a way to make effect emitters on emitters work due to issue #141.
-/// NOTE: some case fields are objs because the type information isn't available at the union's definition.
+/// NOTE: some case fields are objs because the type information isn't available at this union's definition.
 type [<ReferenceEquality>] DataToken =
     | SpriteToken of Elevation : single * Horizon : single * Image : AssetTag * SpriteValue : SpriteValue
     | TextToken of Elevation : single * Horizon : single * Font : AssetTag * TextValue : TextValue
