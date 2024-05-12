@@ -225,11 +225,11 @@ module TmxMap =
                             let tileShapeImported = importShape tileShape (v3 0.0f 0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Bottom" ->
-                            let tileShape = BoxShape { Size = v3 1.0f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 1.0f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 0.0f -0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Left" ->
-                            let tileShape = BoxShape { Size = v3 -0.5f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 -0.25f 0.0f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Right" ->
@@ -237,19 +237,19 @@ module TmxMap =
                             let tileShapeImported = importShape tileShape (v3 0.25f 0.0f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopLeft" ->
-                            let tileShape = BoxShape { Size = v3 -0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 -0.25f 0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopRight" ->
-                            let tileShape = BoxShape { Size = v3 0.5f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 0.25f 0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomLeft" ->
-                            let tileShape = BoxShape { Size = v3 -0.5f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 -0.25f -0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomRight" ->
-                            let tileShape = BoxShape { Size = v3 0.5f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 0.25f -0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | _ ->
