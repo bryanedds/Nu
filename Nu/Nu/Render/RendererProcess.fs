@@ -333,6 +333,9 @@ type RendererThread () =
                 // core vulkan handles
                 let mutable instance = Unchecked.defaultof<VkInstance>
                 let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
+                let mutable graphicsQueueFamily = 0u
+                let mutable device = Unchecked.defaultof<VkDevice>
+                let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
                 
                 do
                     // get available instance layers
@@ -382,8 +385,7 @@ type RendererThread () =
 
                     ()
 
-                // TODO: verify validation working
-        
+                // another wrapper only function; loads instance commands
                 vkLoadInstanceOnly (instance)
                 
                 do
@@ -404,7 +406,35 @@ type RendererThread () =
 
                     ()
 
+                do
+                    // get graphics queue family
+                    let mutable queueFamilyCount = 0u
+                    let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, NativePtr.nullPtr)
+                    let mutable queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
+                    use queueFamiliesHnd = queueFamilies.AsMemory().Pin()
+                    let queueFamiliesNptr = NativePtr.ofVoidPtr<VkQueueFamilyProperties> queueFamiliesHnd.Pointer
+                    let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, queueFamiliesNptr)
+                    for i in [0 .. dec (int queueFamilyCount)] do if queueFamilies[i].queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then graphicsQueueFamily <- uint i
+                    
+                    ()
                 
+                // populate queuecreate info
+                let mutable queuePriority = 1.0f
+                let mutable queueCreateInfo = VkDeviceQueueCreateInfo ()
+                queueCreateInfo.queueFamilyIndex <- graphicsQueueFamily
+                queueCreateInfo.queueCount <- 1u
+                queueCreateInfo.pQueuePriorities <- Interop.AsPointer &queuePriority
+
+                // populate createdevice info
+                let mutable deviceFeatures = VkPhysicalDeviceFeatures ()
+                let mutable deviceCreateInfo = VkDeviceCreateInfo ()
+                deviceCreateInfo.pQueueCreateInfos <- Interop.AsPointer &queueCreateInfo
+                deviceCreateInfo.queueCreateInfoCount <- 1u
+                deviceCreateInfo.pEnabledFeatures <- Interop.AsPointer &deviceFeatures
+
+                // create logical device
+                let result = vkCreateDevice (physicalDevice, Interop.AsPointer &deviceCreateInfo, NativePtr.nullPtr, &device)
+                printfn "vkCreateDevice returned %s." (result.ToString ())
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
