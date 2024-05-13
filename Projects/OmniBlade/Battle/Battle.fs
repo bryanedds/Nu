@@ -452,8 +452,8 @@ module Battle =
             characterIndex
             battle
 
-    let mapCharacterBottom updater characterIndex battle =
-        mapCharacter (Character.mapBottom updater) characterIndex battle
+    let mapCharacterPerimeter updater characterIndex battle =
+        mapCharacter (Character.mapPerimeter updater) characterIndex battle
 
     let mapCharacterHitPoints directAction cancelled affectsWounded hitPointsChange characterIndex battle =
         let alliesHealthy = getAlliesHealthy battle
@@ -506,7 +506,7 @@ module Battle =
         match character.AutoBattleOpt with
         | Some autoBattle ->
             let target = getCharacter autoBattle.AutoTarget battle
-            let sourceToTarget = target.Bottom - character.Bottom
+            let sourceToTarget = target.Perimeter.Bottom - character.Perimeter.Bottom
             let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let source = Character.face direction character
             mapCharacter (constant source) characterIndex battle
@@ -1160,7 +1160,7 @@ module Battle =
                                     let effectOpt =
                                         match techType with
                                         | Cyclone ->
-                                            Left (DisplayHop (sourcePerimeter.Bottom, targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3))
+                                            Left (DisplayHop (sourcePerimeter.Bottom, targetPerimeter.BottomOffset3))
                                         | _ when techType.TouchingTech ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
                                             let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
@@ -1387,7 +1387,7 @@ module Battle =
                                     let hopOpt =
                                         match techType with
                                         | Cyclone ->
-                                            Some (targetPerimeter.Bottom + Constants.Battle.CharacterBottomOffset3, sourcePerimeterOriginal.Bottom)
+                                            Some (targetPerimeter.BottomOffset3, sourcePerimeterOriginal.Bottom)
                                         | _ when techType.TouchingTech ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
                                             let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance

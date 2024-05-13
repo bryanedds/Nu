@@ -92,37 +92,26 @@ type SpiritState =
 module Spirit =
 
     type Spirit =
-        private
-            { Perimeter_ : Box3
-              SpiritType_ : SpiritType
-              SpiritState_ : SpiritState }
-
-        (* Perimeter Properties *)
-        member this.Perimeter = this.Perimeter_
-        member this.Center = this.Perimeter_.Center
-        member this.Bottom = this.Perimeter_.Bottom
-        member this.Size = this.Perimeter_.Size
-
-        (* Local Properties *)
-        member this.SpiritType = this.SpiritType_
-        member this.SpiritState = this.SpiritState_
+        { Perimeter : Box3
+          SpiritType : SpiritType
+          SpiritState : SpiritState }
 
         static member update time target (spirit : Spirit) =
-            let (movement, state) = SpiritState.update time spirit.Center target spirit.SpiritState
+            let (movement, state) = SpiritState.update time spirit.Perimeter.Center target spirit.SpiritState
             { spirit with
-                Perimeter_ = spirit.Perimeter_.Translate movement
-                SpiritState_ = state }
+                Perimeter = spirit.Perimeter.Translate movement
+                SpiritState = state }
 
         static member spawn time center spiritType spiritPattern =
             let r = Gen.randomd * Math.PI * 2.0
             let n = v3 (single (cos r)) (single (sin r)) 0.0f
             let p = center + n * Constants.Field.SpiritRadius
             let spiritState = { SpiritMovements = spiritPattern; SpiritMovementIndex = 0; SpiritMovementStart = time; SpiritMovementCachedOpt = None }
-            { Perimeter_ = box3 p Constants.Field.SpiritOrbBlipSize; SpiritType_ = spiritType; SpiritState_ = spiritState }
+            { Perimeter = box3 p Constants.Field.SpiritOrbBlipSize; SpiritType = spiritType; SpiritState = spiritState }
 
         static member make bounds spiritType spiritState =
-            { Perimeter_ = bounds
-              SpiritType_ = spiritType
-              SpiritState_ = spiritState }
+            { Perimeter = bounds
+              SpiritType = spiritType
+              SpiritState = spiritState }
 
 type Spirit = Spirit.Spirit

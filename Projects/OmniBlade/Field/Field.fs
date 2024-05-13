@@ -292,7 +292,7 @@ module Field =
         | Sensor (_, _, _, _, _) -> None
         | Character (_, _, _, isRising, _, _) ->
             if isRising then
-                if prop.Bottom.Y - field.Avatar_.Bottom.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
+                if prop.Perimeter.Bottom.Y - field.Avatar_.Perimeter.Bottom.Y > 40.0f // NOTE: just a bit of hard-coding to ensure player is interacting with the character from the south.
                 then Some "Talk"
                 else None
             else Some "Talk"
@@ -304,7 +304,7 @@ module Field =
     let facingProp propId (field : Field) =
         match field.Props_.TryGetValue propId with
         | (true, prop) ->
-            let v = prop.Bottom - field.Avatar_.Bottom
+            let v = prop.Perimeter.Bottom - field.Avatar_.Perimeter.Bottom
             let direction = Direction.ofVector3 v
             direction <> field.Avatar_.Direction.Opposite
         | (false, _) -> false
@@ -618,7 +618,7 @@ module Field =
 
     let private interactChest itemType chestId battleTypeOpt cue requirements (prop : Prop) (field : Field) =
         if field.Advents_.IsSupersetOf requirements then
-            let field = mapAvatar (Avatar.lookAt prop.Center) field
+            let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = mapAdvents (Set.add (Opened chestId)) field
             let field = mapInventory (Inventory.tryAddItem itemType >> snd) field
             let field =
@@ -628,7 +628,7 @@ module Field =
             let field = mapCue (constant cue) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
         else
-            let field = mapAvatar (Avatar.lookAt prop.Center) field
+            let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
 
@@ -637,12 +637,12 @@ module Field =
         | DoorState false ->
             if  field.Advents_.IsSupersetOf requirements &&
                 Option.mapOrDefaultValue (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory_.Items) true keyItemTypeOpt then
-                let field = mapAvatar (Avatar.lookAt prop.Center) field
+                let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
                 let field = mapCue (constant cue) field
                 let field = mapPropState (constant (DoorState true)) prop.PropId field
                 withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
             else
-                let field = mapAvatar (Avatar.lookAt prop.Center) field
+                let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
                 let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
                 withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
         | _ -> failwithumf ()
@@ -650,22 +650,22 @@ module Field =
     let private interactSwitch cue cue2 onRequirements requirements (prop : Prop) (field : Field) =
         let on = field.Advents_.IsSupersetOf onRequirements
         if field.Advents_.IsSupersetOf requirements then
-            let field = mapAvatar (Avatar.lookAt prop.Center) field
+            let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = mapCue (constant (if on then cue2 else cue)) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
         else
-            let field = mapAvatar (Avatar.lookAt prop.Center) field
+            let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
             let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
 
     let private interactCharacter cue (prop : Prop) (field : Field) =
-        let field = mapAvatar (Avatar.lookAt prop.BottomInset) field
+        let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
         let field = mapCue (constant cue) field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
     let private interactNpc branches requirements (prop : Prop) (field : Field) =
         if field.Advents_.IsSupersetOf requirements then
-            let field = mapAvatar (Avatar.lookAt prop.BottomInset) field
+            let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
             let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
             let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
             let field = mapCue (constant branchCue) field
@@ -673,7 +673,7 @@ module Field =
         else just field
 
     let private interactShopkeep shopType (prop : Prop) (field : Field) =
-        let field = mapAvatar (Avatar.lookAt prop.BottomInset) field
+        let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
         let shop = { ShopType = shopType; ShopState = ShopBuying; ShopPage = 0; ShopConfirmOpt = None }
         let field = mapShopOpt (constant (Some shop)) field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
@@ -919,7 +919,7 @@ module Field =
         | Move (target, destination, moveType) ->
             match target with
             | AvatarTarget ->
-                let cue = MoveState (field.FieldTime_, target, field.Avatar_.Bottom, destination, moveType)
+                let cue = MoveState (field.FieldTime_, target, field.Avatar_.Perimeter.Bottom, destination, moveType)
                 (cue, definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
@@ -945,10 +945,10 @@ module Field =
                 let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
                 let totalTime = int64 (dec stepCount)
                 if localTime < totalTime then
-                    let field = mapAvatar (Avatar.mapBottom ((+) step)) field
+                    let field = mapAvatar (Avatar.mapPerimeter (fun (perimeter : Box3) -> perimeter.WithBottom (perimeter.Bottom + step))) field
                     (cue, definitions, just field)
                 else
-                    let field = mapAvatar (Avatar.mapBottom (constant (origin + translation))) field
+                    let field = mapAvatar (Avatar.mapPerimeter (fun (perimeter : Box3) -> perimeter.WithBottom (perimeter.Bottom + origin + translation))) field
                     (Fin, definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
@@ -1102,12 +1102,12 @@ module Field =
             let field =
                 { field with
                     Spirits_ =
-                        Array.map (Spirit.update field.FieldTime_ field.Avatar_.Center) field.Spirits_ }
+                        Array.map (Spirit.update field.FieldTime_ field.Avatar_.Perimeter.Center) field.Spirits_ }
             let field =
                 { field with
                     Spirits_ =
                         Array.filter (fun (spirit : Spirit) ->
-                            let delta = field.Avatar_.Bottom - spirit.Center
+                            let delta = field.Avatar_.Perimeter.Bottom - spirit.Perimeter.Center
                             let distance = delta.Magnitude
                             distance < Constants.Field.SpiritRadius * 1.25f)
                             field.Spirits }
@@ -1123,16 +1123,16 @@ module Field =
                                 if spiritsNeeded >= Constants.Field.SpiritActivityAggressionThreshold
                                 then SpiritPattern.generate ()
                                 else SpiritPattern.Confused
-                            match FieldData.tryGetSpiritType field.OmniSeedState_ field.Avatar_.Bottom fieldData with
+                            match FieldData.tryGetSpiritType field.OmniSeedState_ field.Avatar_.Perimeter.Bottom fieldData with
                             | Some spiritType ->
                                 let spiritMovement = SpiritPattern.toSpiritMovement spiritPattern
-                                let spirit = Spirit.spawn field.FieldTime_ field.Avatar_.Bottom spiritType spiritMovement
+                                let spirit = Spirit.spawn field.FieldTime_ field.Avatar_.Perimeter.Bottom spiritType spiritMovement
                                 Some spirit
                             | None -> None) |>
                         Array.definitize
                     | (false, _) -> [||]
                 { field with Spirits_ = Array.append field.Spirits_ spiritsSpawned }
-            match Array.tryFind (fun (spirit : Spirit) -> Vector3.Distance (field.Avatar_.LowerCenter, spirit.Bottom) < Constants.Field.SpiritCollisionRadius) field.Spirits_ with
+            match Array.tryFind (fun (spirit : Spirit) -> Vector3.Distance (field.Avatar_.Perimeter.LowerCenter, spirit.Perimeter.Bottom) < Constants.Field.SpiritCollisionRadius) field.Spirits_ with
             | Some spirit ->
                 match Data.Value.Fields.TryGetValue field.FieldType_ with
                 | (true, fieldData) ->

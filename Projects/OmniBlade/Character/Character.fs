@@ -29,25 +29,9 @@ module Character =
 
         (* Perimeter Original Properties *)
         member this.PerimeterOriginal = this.PerimeterOriginal_
-        member this.CenterOriginal = this.PerimeterOriginal_.Center
-        member this.BottomOriginal = this.PerimeterOriginal_.Bottom
-        member this.BottomOriginalOffset = this.BottomOriginal + Constants.Battle.CharacterBottomOffset
-        member this.BottomOriginalOffset2 = this.BottomOriginal + Constants.Battle.CharacterBottomOffset2
-        member this.BottomOriginalOffset3 = this.BottomOriginal + Constants.Battle.CharacterBottomOffset3
-        member this.BottomOriginalOffset4 = this.Bottom + Constants.Battle.CharacterBottomOffset4
-        member this.SizeOriginal = this.PerimeterOriginal_.Size
 
         (* Perimeter Properties *)
         member this.Perimeter = this.Perimeter_
-        member this.Center = this.Perimeter_.Center
-        member this.Bottom = this.Perimeter_.Bottom
-        member this.Size = this.Perimeter_.Size
-
-        (* Helper Properties *)
-        member this.CenterOffset = this.Center + Constants.Battle.CharacterCenterOffset
-        member this.CenterOffset2 = this.Center + Constants.Battle.CharacterCenterOffset2
-        member this.CenterOffset3 = this.Center + Constants.Battle.CharacterCenterOffset3
-        member this.CenterOffset4 = this.Center + Constants.Battle.CharacterCenterOffset4
 
         (* CharacterState Properties *)
         member this.Name = CharacterType.getName this.CharacterType_
@@ -127,7 +111,7 @@ module Character =
         let power = source.Power
         let shield = target.Shield effectType
         let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-        let damage0 = single (power - shield) * defendingScalar |> int |> abs
+        let damage0 = single (power - shield) * defendingScalar |> int |> max 1
         let damage1 =
             match target.Vulnerabilities.TryGetValue VulnerabilityType.Physical with
             | (true, rank) ->
@@ -163,22 +147,22 @@ module Character =
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
-                let v = character.Bottom - source.Bottom
+                let v = character.Perimeter.Bottom - source.Perimeter.Bottom
                 v.Magnitude <= radius) |>
             fun result -> (result, Map.empty)
         | RadialTarget (radius, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
-                let v = character.Bottom - target.Bottom
+                let v = character.Perimeter.Bottom - target.Perimeter.Bottom
                 v.Magnitude <= radius) |>
             fun result -> (result, Map.empty)
         | LineTarget (offset, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
-                let a = character.Bottom - source.Bottom
-                let b = target.Bottom - source.Bottom
+                let a = character.Perimeter.Bottom - source.Perimeter.Bottom
+                let b = target.Perimeter.Bottom - source.Perimeter.Bottom
                 if Vector3.Dot (a, b) > 0.0f then
                     let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
                     let d = r.Magnitude
@@ -189,8 +173,8 @@ module Character =
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
-                let a = character.Bottom - source.Bottom
-                let b = target.Bottom - source.Bottom
+                let a = character.Perimeter.Bottom - source.Perimeter.Bottom
+                let b = target.Perimeter.Bottom - source.Perimeter.Bottom
                 if a.Magnitude <= b.Magnitude then
                     if Vector3.Dot (a, b) > 0.0f then
                         let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
@@ -203,17 +187,17 @@ module Character =
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
-                let x = target.Bottom.X
-                character.Bottom.X >= x - width &&
-                character.Bottom.X <= x + width) |>
+                let x = target.Perimeter.Bottom.X
+                character.Perimeter.Bottom.X >= x - width &&
+                character.Perimeter.Bottom.X <= x + width) |>
             fun result -> (result, Map.empty)
         | HorizontalTarget (width, aimType) ->
             characters |>
             evalAimType aimType target |>
             Map.filter (fun _ character ->
-                let y = target.Bottom.Y
-                character.Bottom.Y >= y - width &&
-                character.Bottom.Y <= y + width) |>
+                let y = target.Perimeter.Bottom.Y
+                character.Perimeter.Bottom.Y >= y - width &&
+                character.Perimeter.Bottom.Y <= y + width) |>
             fun result -> (result, Map.empty)
 
     let evalTechUnary splash (targetCount : int) techData source (target : Character) =
@@ -266,7 +250,7 @@ module Character =
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
             let defendingScalar = if target.Defending then Constants.Battle.DefendingScalar else 1.0f
-            let damage0 = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> abs
+            let damage0 = (single efficacy * affinityScalar * techScalar * splitScalar * splashScalar + specialAddend - single shield) * defendingScalar |> int |> max 1
             let damage1 =
                 match techData.EffectType with
                 | Physical | Magical when techData.AffinityOpt = Some Wind || techData.AffinityOpt = Some Shadow ->
@@ -456,9 +440,6 @@ module Character =
     let mapPerimeter updater (character : Character) =
         { character with Perimeter_ = updater character.Perimeter_ }
 
-    let mapBottom updater (character : Character) =
-        { character with Perimeter_ = character.Bottom |> updater |> character.Perimeter.WithBottom }
-
     let restore (character : Character) =
         { character with CharacterState_ = CharacterState.restore character.CharacterState_ }
 
@@ -564,7 +545,7 @@ module Character =
         // attempt to update character with auto-battle and appropriate facing direction
         match targetOpt with
         | Some (target : Character) ->
-            let sourceToTarget = target.Bottom - source.Bottom
+            let sourceToTarget = target.Perimeter.Bottom - source.Perimeter.Bottom
             let direction = if sourceToTarget.X >= 0.0f then Rightward else Leftward // only two directions in this game
             let animationState = { source.CharacterAnimationState_ with Direction = direction }
             let autoBattle = { AutoTarget = target.CharacterIndex; AutoTechOpt = techOpt; ChargeTech = isChargeTech }

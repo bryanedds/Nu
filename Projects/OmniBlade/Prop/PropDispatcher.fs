@@ -224,7 +224,7 @@ type PropDispatcher () =
                             match directionOpt with
                             | Some direction -> direction
                             | None ->
-                                let delta = propPlus.PointOfInterest - propPlus.Prop.Bottom
+                                let delta = propPlus.PointOfInterest - propPlus.Prop.Perimeter.Bottom
                                 let direction = Direction.ofVector3 delta
                                 if direction <> Upward && delta.Length () <= 288.0f // TODO: make constant.
                                 then direction
@@ -243,7 +243,7 @@ type PropDispatcher () =
                             match directionOpt with
                             | Some direction -> direction
                             | None ->
-                                let delta = propPlus.PointOfInterest - propPlus.Prop.Bottom
+                                let delta = propPlus.PointOfInterest - propPlus.Prop.Perimeter.Bottom
                                 let direction = Direction.ofVector3 delta
                                 if direction <> Upward && delta.Length () <= 360.0f // TODO: make constant.
                                 then direction

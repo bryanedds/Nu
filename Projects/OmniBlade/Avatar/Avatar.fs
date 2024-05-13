@@ -11,59 +11,42 @@ open Nu
 module Avatar =
 
     type [<ReferenceEquality; SymbolicExpansion>] Avatar =
-        private
-            { Perimeter_ : Box3
-              CharacterAnimationState_ : CharacterAnimationState
-              CelSize_ : Vector2 }
-
-        (* Perimeter Properties *)
-        member this.Perimeter = this.Perimeter_
-        member this.Center = this.Perimeter_.Center
-        member this.Bottom = this.Perimeter_.Bottom
-        member this.BottomOffset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
-        member this.Size = this.Perimeter_.Size
-        member this.LowerPerimeter = box3 (this.Perimeter_.Min + v3 (this.Perimeter_.Size.X * 0.25f) 0.0f 0.0f) (this.Perimeter_.Size * 0.5f)
-        member this.LowerCenter = this.LowerPerimeter.Center
+        { Perimeter : Box3
+          CharacterAnimationState : CharacterAnimationState
+          CelSize : Vector2 }
 
         (* Animation Properties *)
-        member this.StartTime = this.CharacterAnimationState_.StartTime
-        member this.AnimationSheet = this.CharacterAnimationState_.AnimationSheet
-        member this.CharacterAnimationType = this.CharacterAnimationState_.CharacterAnimationType
-        member this.Direction = this.CharacterAnimationState_.Direction
-        member this.CelSize = this.CelSize_
+        member this.StartTime = this.CharacterAnimationState.StartTime
+        member this.AnimationSheet = this.CharacterAnimationState.AnimationSheet
+        member this.CharacterAnimationType = this.CharacterAnimationState.CharacterAnimationType
+        member this.Direction = this.CharacterAnimationState.Direction
 
     let getAnimationInset time (avatar : Avatar) =
-        CharacterAnimationState.inset time avatar.CelSize_ avatar.CharacterAnimationState_
+        CharacterAnimationState.inset time avatar.CelSize avatar.CharacterAnimationState
 
     let getAnimationProgressOpt time avatar =
-        CharacterAnimationState.progressOpt time avatar.CharacterAnimationState_
+        CharacterAnimationState.progressOpt time avatar.CharacterAnimationState
 
     let getAnimationFinished time avatar =
-        CharacterAnimationState.getFinished time avatar.CharacterAnimationState_
+        CharacterAnimationState.getFinished time avatar.CharacterAnimationState
 
     let mapPerimeter updater (avatar : Avatar) =
-        let bounds = updater avatar.Perimeter_
+        let bounds = updater avatar.Perimeter
         if bounds =/= avatar.Perimeter
-        then { avatar with Perimeter_ = bounds }
+        then { avatar with Perimeter = bounds }
         else avatar
 
-    let mapCenter updater (avatar : Avatar) =
-        mapPerimeter (fun bounds -> bounds.Center |> updater |> bounds.WithCenter) avatar
-
-    let mapBottom updater (avatar : Avatar) =
-        mapPerimeter (fun bounds -> bounds.Bottom |> updater |> bounds.WithBottom) avatar
-
     let mapCharacterAnimationState updater (avatar : Avatar) =
-        let characterAnimationState = updater avatar.CharacterAnimationState_
-        if characterAnimationState =/= avatar.CharacterAnimationState_
-        then { avatar with CharacterAnimationState_ = characterAnimationState }
+        let characterAnimationState = updater avatar.CharacterAnimationState
+        if characterAnimationState =/= avatar.CharacterAnimationState
+        then { avatar with CharacterAnimationState = characterAnimationState }
         else avatar
 
     let mapDirection updater (avatar : Avatar) =
         mapCharacterAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
 
-    let lookAt bottomOffset (avatar : Avatar) =
-        let delta = bottomOffset - avatar.BottomOffset
+    let lookAt bottomOffset5 (avatar : Avatar) =
+        let delta = bottomOffset5 - avatar.Perimeter.BottomOffset5
         let direction = Direction.ofVector3 delta
         mapDirection (constant direction) avatar
 
@@ -72,22 +55,22 @@ module Avatar =
 
     let make bounds animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; MaterializationOpt = None; Direction = direction }
-        { Perimeter_ = bounds
-          CharacterAnimationState_ = characterAnimationState
-          CelSize_ = Constants.Gameplay.CharacterCelSize }
+        { Perimeter = bounds
+          CharacterAnimationState = characterAnimationState
+          CelSize = Constants.Gameplay.CharacterCelSize }
 
     let empty () =
         let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
-        { Perimeter_ = bounds
-          CharacterAnimationState_ = CharacterAnimationState.empty
-          CelSize_ = Constants.Gameplay.CharacterCelSize }
+        { Perimeter = bounds
+          CharacterAnimationState = CharacterAnimationState.empty
+          CelSize = Constants.Gameplay.CharacterCelSize }
 
     let initial () =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
         let bounds = box3 position Constants.Gameplay.CharacterSize
         let characterAnimationState = CharacterAnimationState.initial
         { empty () with
-            Perimeter_ = bounds
-            CharacterAnimationState_ = characterAnimationState }
+            Perimeter = bounds
+            CharacterAnimationState = characterAnimationState }
 
 type Avatar = Avatar.Avatar

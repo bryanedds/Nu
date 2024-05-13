@@ -30,20 +30,20 @@ type SpiritOrbDispatcher () =
                 | ChestInhabitant chest ->
                     let image = if chest.Opened then Assets.Field.SpiritChestOpenedImage else Assets.Field.SpiritChestClosedImage
                     let color = Color.One.WithA 0.5f
-                    (chest.Center, image, color, ValueNone)
+                    (chest.Perimeter.Center, image, color, ValueNone)
                 | PortalInhabitant portal ->
                     let image = if portal.Active then Assets.Field.SpiritPortalImage else Assets.Default.EmptyImage
                     let color = Color.One.WithA 0.5f
-                    (portal.Center, image, color, ValueNone)
+                    (portal.Perimeter.Center, image, color, ValueNone)
                 | NarrativeInhabitant narrative ->
                     let image = if narrative.Active then Assets.Field.SpiritNarrativeImage else Assets.Default.EmptyImage
                     let color = Color.One.WithA 0.5f
                     let column = time % 48L / 12L
                     let inset = box2 (v2 (7.0f * single column) 0.0f) (v2Dup 7.0f)
-                    (narrative.Center, image, color, ValueSome inset)
+                    (narrative.Perimeter.Center, image, color, ValueSome inset)
                 | SpiritInhabitant spirit ->
                     let color = SpiritType.getColor spirit.SpiritType
-                    (spirit.Center, Assets.Field.SpiritImage, color, ValueNone)
+                    (spirit.Perimeter.Center, Assets.Field.SpiritImage, color, ValueNone)
             let delta = center - avatarLowerCenter
             let distance = delta.Magnitude
             if distance < Constants.Field.SpiritRadius then

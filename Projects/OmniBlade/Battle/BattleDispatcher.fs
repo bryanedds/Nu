@@ -56,7 +56,7 @@ type BattleDispatcher () =
                 match battle.CurrentCommandOpt with
                 | Some command ->
                     let character = command.ActionCommand.SourceIndex
-                    let battle = Battle.mapCharacterBottom (constant rideToken.Position) character battle
+                    let battle = Battle.mapCharacterPerimeter (fun perimeter -> perimeter.WithBottom rideToken.Position) character battle
                     just battle
                 | None -> just battle
             | None -> just battle
@@ -198,7 +198,7 @@ type BattleDispatcher () =
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
                 let (entity, world) = World.createEntity<Effect2dDispatcher> DefaultOverlay None Simulants.BattleScene world
-                let world = entity.SetPosition target.BottomOriginalOffset4 world
+                let world = entity.SetPosition target.PerimeterOriginal.BottomOffset4 world
                 let world = entity.SetElevation Constants.Battle.GuiEffectElevation world
                 let world = entity.SetSelfDestruct true world
                 let world = entity.SetEffectDescriptor (EffectDescriptors.hitPointsChange delta) world
@@ -209,7 +209,7 @@ type BattleDispatcher () =
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
                 let (entity, world) = World.createEntity<Effect2dDispatcher> DefaultOverlay None Simulants.BattleScene world
-                let world = entity.SetPosition target.CenterOffset4 world
+                let world = entity.SetPosition target.Perimeter.CenterOffset4 world
                 let world = entity.SetElevation (Constants.Battle.GuiEffectElevation + 1.0f) world
                 let world = entity.SetSelfDestruct true world
                 let world = entity.SetEffectDescriptor EffectDescriptors.cancel world
@@ -218,43 +218,43 @@ type BattleDispatcher () =
 
         | DisplayCut (delay, light, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over (EffectDescriptors.cut light) screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.cut light) screen world |> just
             | None -> just world
 
         | DisplayCritical (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom (target.Bottom + v3Up * 3.0f)) Over EffectDescriptors.critical screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom (target.Perimeter.Bottom + v3Up * 3.0f)) Over EffectDescriptors.critical screen world |> just
             | None -> just world
 
         | DisplayHeavyCritical (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.heavyCritical screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.heavyCritical screen world |> just
             | None -> just world
 
         | DisplayPoisonCut (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.poisonCut screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.poisonCut screen world |> just
             | None -> just world
 
         | DisplayPowerCut (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.powerCut screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.powerCut screen world |> just
             | None -> just world
 
         | DisplayDispelCut (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.dispelCut screen world |> just
+            | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.dispelCut screen world |> just
             | None -> just world
 
         | DisplayDoubleCut (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.doubleCut screen world |> just
+            | Some target -> displayEffect delay (v3 96.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.doubleCut screen world |> just
             | None -> just world
 
         | DisplaySlashSpike (delay, bottom, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
-                let projection = Vector3.Normalize (target.Bottom - bottom) * single Constants.Render.VirtualResolution.X + target.Bottom
+                let projection = Vector3.Normalize (target.Perimeter.Bottom - bottom) * single Constants.Render.VirtualResolution.X + target.Perimeter.Bottom
                 let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) Over (EffectDescriptors.slashSpike bottom projection) screen world
                 just world
             | None -> just world
@@ -262,49 +262,49 @@ type BattleDispatcher () =
         | DisplaySlashTwister (delay, bottom, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
-                let projection = Vector3.Normalize (target.Bottom - bottom) * single Constants.Render.VirtualResolution.X + target.Bottom
+                let projection = Vector3.Normalize (target.Perimeter.Bottom - bottom) * single Constants.Render.VirtualResolution.X + target.Perimeter.Bottom
                 let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) Over (EffectDescriptors.slashWind bottom projection) screen world
                 just world
             | None -> just world
 
         | DisplayCycloneBlur (delay, targetIndex, radius) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 234.0f 234.0f 0.0f) (Center target.Center) Over (EffectDescriptors.cycloneBlur radius) screen world |> just
+            | Some target -> displayEffect delay (v3 234.0f 234.0f 0.0f) (Center target.Perimeter.Center) Over (EffectDescriptors.cycloneBlur radius) screen world |> just
             | None -> just world
 
         | DisplayBuff (delay, statusType, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) Over (EffectDescriptors.buff statusType) screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.buff statusType) screen world |> just
             | None -> just world
 
         | DisplayDebuff (delay, statusType, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) Over (EffectDescriptors.debuff statusType) screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.debuff statusType) screen world |> just
             | None -> just world
 
         | DisplayImpactSplash (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 192.0f 96.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.impactSplash screen world |> just
+            | Some target -> displayEffect delay (v3 192.0f 96.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.impactSplash screen world |> just
             | None -> just world
 
         | DisplayArcaneCast (delay, sourceIndex) ->
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 120.0f 0.0f)) Over EffectDescriptors.arcaneCast screen world |> just
+            | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Perimeter.Bottom - v3 0.0f 120.0f 0.0f)) Over EffectDescriptors.arcaneCast screen world |> just
             | None -> just world
 
         | DisplayHolyCast (delay, sourceIndex) ->
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.holyCast screen world |> just
+            | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Perimeter.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.holyCast screen world |> just
             | None -> just world
 
         | DisplayDimensionalCast (delay, sourceIndex) ->
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom source.Bottom) Over EffectDescriptors.dimensionalCast screen world |> just
+            | Some source -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom source.Perimeter.Bottom) Over EffectDescriptors.dimensionalCast screen world |> just
             | None -> just world
 
         | DisplayGenericCast (delay, sourceIndex) ->
             match Battle.tryGetCharacter sourceIndex battle with
-            | Some source -> displayEffect delay (v3 98.0f 98.0f 0.0f) (Bottom source.Bottom) Over EffectDescriptors.genericCast screen world |> just
+            | Some source -> displayEffect delay (v3 98.0f 98.0f 0.0f) (Bottom source.Perimeter.Bottom) Over EffectDescriptors.genericCast screen world |> just
             | None -> just world
 
         | DisplayFire (delay, sourceIndex, targetIndex) ->
@@ -312,8 +312,8 @@ type BattleDispatcher () =
             | Some source ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
-                    let descriptor = EffectDescriptors.fire (source.Bottom + v3 80.0f 80.0f 0.0f) (target.Bottom + v3 0.0f 20.0f 0.0f)
-                    let world = displayEffect delay (v3 100.0f 100.0f 0.0f) (Bottom (source.Bottom - v3 0.0f 50.0f 0.0f)) Over descriptor screen world
+                    let descriptor = EffectDescriptors.fire (source.Perimeter.Bottom + v3 80.0f 80.0f 0.0f) (target.Perimeter.Bottom + v3 0.0f 20.0f 0.0f)
+                    let world = displayEffect delay (v3 100.0f 100.0f 0.0f) (Bottom (source.Perimeter.Bottom - v3 0.0f 50.0f 0.0f)) Over descriptor screen world
                     just world
                 | None -> just world
             | None -> just world
@@ -323,40 +323,40 @@ type BattleDispatcher () =
             | Some source ->
                 match Battle.tryGetCharacter targetIndex battle with
                 | Some target ->
-                    let descriptor = EffectDescriptors.flame source.CenterOffset target.CenterOffset
-                    let world = displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom source.Bottom) Over descriptor screen world
+                    let descriptor = EffectDescriptors.flame source.Perimeter.CenterOffset target.Perimeter.CenterOffset
+                    let world = displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom source.Perimeter.Bottom) Over descriptor screen world
                     just world
                 | None -> just world
             | None -> just world
 
         | DisplayIce (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.ice screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.ice screen world |> just
             | None -> just world
 
         | DisplaySnowball (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 432.0f 432.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.snowball screen world |> just
+            | Some target -> displayEffect delay (v3 432.0f 432.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.snowball screen world |> just
             | None -> just world
 
         | DisplayBolt (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 192.0f 758.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.bolt screen world |> just
+            | Some target -> displayEffect delay (v3 192.0f 758.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.bolt screen world |> just
             | None -> just world
 
         | DisplayCure (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.cure screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.cure screen world |> just
             | None -> just world
         
         | DisplayProtect (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.protect screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.protect screen world |> just
             | None -> just world
         
         | DisplayPurify (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.purify screen world |> just
+            | Some target -> displayEffect delay (v3 192.0f 192.0f 0.0f) (Bottom (target.Perimeter.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.purify screen world |> just
             | None -> just world
 
         | DisplayInferno delay ->
@@ -371,7 +371,7 @@ type BattleDispatcher () =
 
         | DisplaySilk (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom target.Bottom) Over EffectDescriptors.silk screen world |> just
+            | Some target -> displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.silk screen world |> just
             | None -> just world
 
     override this.Content (battle, _) =
@@ -424,7 +424,7 @@ type BattleDispatcher () =
                         Content.fillBar ("HealthBar+" + string i)
                             [Entity.MountOpt == None
                              Entity.Size == v3 48.0f 6.0f 0.0f
-                             Entity.PerimeterCenter := character.BottomOriginalOffset
+                             Entity.PerimeterCenter := character.PerimeterOriginal.BottomOffset
                              Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                              Entity.Fill := single character.HitPoints / single character.HitPointsMax
                              Entity.FillInset := 1.0f / 12.0f
@@ -451,7 +451,7 @@ type BattleDispatcher () =
                             Content.fillBar ("TechBar+" + string i)
                                 [Entity.MountOpt == None
                                  Entity.Size == v3 48.0f 6.0f 0.0f
-                                 Entity.PerimeterCenter := character.BottomOriginalOffset2
+                                 Entity.PerimeterCenter := character.PerimeterOriginal.BottomOffset2
                                  Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                  Entity.Fill := single character.TechPoints / single character.TechPointsMax
                                  Entity.FillInset := 1.0f / 12.0f
@@ -473,7 +473,7 @@ type BattleDispatcher () =
                         [match ally.CharacterInputState with
                          | RegularMenu ->
                             Content.entity<RingMenuDispatcher> "RegularMenu"
-                                [Entity.Position := ally.CenterOffset
+                                [Entity.Position := ally.Perimeter.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.Enabled :=
                                     (let allies = battle |> Battle.getAllies |> Map.toValueList
@@ -487,7 +487,7 @@ type BattleDispatcher () =
                                  Entity.CancelEvent => RegularItemCancel index]
                          | ItemMenu ->
                             Content.entity<RingMenuDispatcher> "ConsumableMenu"
-                                [Entity.Position := ally.CenterOffset
+                                [Entity.Position := ally.Perimeter.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.RingMenu :=
                                     (let consumables =
@@ -499,7 +499,7 @@ type BattleDispatcher () =
                                  Entity.CancelEvent => ConsumableItemCancel index]
                          | TechMenu ->
                             Content.entity<RingMenuDispatcher> "TechMenu"
-                                [Entity.Position := ally.CenterOffset
+                                [Entity.Position := ally.Perimeter.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.RingMenu :=
                                     (let techs =
@@ -532,8 +532,8 @@ type BattleDispatcher () =
                                      let reticles =
                                         Map.map (fun _ (c : Character) ->
                                             match c.Stature with
-                                            | BossStature -> c.CenterOffset2
-                                            | _ -> c.CenterOffset)
+                                            | BossStature -> c.Perimeter.CenterOffset2
+                                            | _ -> c.Perimeter.CenterOffset)
                                             characters
                                      reticles)
                                  Entity.TargetSelectEvent =|> fun evt -> ReticlesSelect (index, evt.Data) |> signal

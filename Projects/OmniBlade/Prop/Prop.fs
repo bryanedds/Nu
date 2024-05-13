@@ -16,50 +16,30 @@ type PropState =
 module Prop =
 
     type [<SymbolicExpansion>] Prop =
-        private
-            { Perimeter_ : Box3
-              Elevation_ : single
-              PropData_ : PropData
-              PropState_ : PropState
-              PropId_ : int }
-
-        (* Perimeter Properties *)
-        member this.Perimeter = this.Perimeter_
-        member this.Center = this.Perimeter_.Center
-        member this.Bottom = this.Perimeter_.Bottom
-        member this.BottomInset = this.Perimeter_.Bottom + Constants.Field.CharacterBottomOffset
-        member this.Size = this.Perimeter_.Size
-
-        (* Local Properties *)
-        member this.Elevation = this.Elevation_
-        member this.PropData = this.PropData_
-        member this.PropState = this.PropState_
-        member this.PropId = this.PropId_
+        { Perimeter : Box3
+          Elevation : single
+          PropData : PropData
+          PropState : PropState
+          PropId : int }
 
     let mapPerimeter updater (prop : Prop) =
-        { prop with Perimeter_ = updater prop.Perimeter_ }
-
-    let mapCenter updater (prop : Prop) =
-        { prop with Perimeter_ = prop.Center |> updater |> prop.Perimeter.WithCenter }
-
-    let mapBottom updater (prop : Prop) =
-        { prop with Perimeter_ = prop.Bottom |> updater |> prop.Perimeter.WithBottom }
+        { prop with Perimeter = updater prop.Perimeter }
 
     let mapPropState updater (prop : Prop) =
-        { prop with PropState_ = updater prop.PropState_ }
+        { prop with PropState = updater prop.PropState }
 
     let make bounds elevation propData propState propId =
-        { Perimeter_ = bounds
-          Elevation_ = elevation
-          PropData_ = propData
-          PropState_ = propState
-          PropId_ = propId }
+        { Perimeter = bounds
+          Elevation = elevation
+          PropData = propData
+          PropState = propState
+          PropId = propId }
 
     let empty =
-        { Perimeter_ = box3 v3Zero Constants.Gameplay.TileSize
-          Elevation_ = 0.0f
-          PropData_ = EmptyProp
-          PropState_ = NilState
-          PropId_ = 0 }
+        { Perimeter = box3 v3Zero Constants.Gameplay.TileSize
+          Elevation = 0.0f
+          PropData = EmptyProp
+          PropState = NilState
+          PropId = 0 }
 
 type Prop = Prop.Prop

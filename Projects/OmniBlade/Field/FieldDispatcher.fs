@@ -169,7 +169,7 @@ type FieldDispatcher () =
             // update avatar from transform if warped
             let time = world.UpdateTime
             let avatar = field.Avatar
-            let avatar = Avatar.mapCenter (constant transform.BodyCenter) avatar
+            let avatar = Avatar.mapPerimeter (fun (perimeter : Box3) -> perimeter.WithCenter transform.BodyCenter) avatar
             let avatar =
                 let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
                 let speed = transform.BodyLinearVelocity.Magnitude
@@ -531,7 +531,7 @@ type FieldDispatcher () =
                 World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
                 World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
                 World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
-                let lowerCenter = field.Avatar.LowerCenter
+                let lowerCenter = field.Avatar.Perimeter.LowerCenter
                 let viewport = World.getViewport world
                 let eyeCenter = World.getEye2dCenter world
                 let eyeSize = World.getEye2dSize world
@@ -548,7 +548,7 @@ type FieldDispatcher () =
 
         | UpdateEye ->
             if world.Advancing then
-                let world = World.setEye2dCenter field.Avatar.LowerCenter.V2 world
+                let world = World.setEye2dCenter field.Avatar.Perimeter.LowerCenter.V2 world
                 let tileMapPerimeter2d = (Simulants.FieldTileMap.GetPerimeter world).Box2
                 let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)
                 let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
@@ -661,14 +661,14 @@ type FieldDispatcher () =
              // props
              for (index, prop) in field.Props.Pairs do
                 Content.entity<PropDispatcher> ("Prop+" + string index)
-                    [Entity.PropPlus := PropPlus.make field.FieldTime field.Avatar.Bottom field.Advents prop]
+                    [Entity.PropPlus := PropPlus.make field.FieldTime field.Avatar.Perimeter.Bottom field.Advents prop]
 
              // spirit orb
              if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then
                 Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                     [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                      Entity.SpiritOrb :=
-                        { AvatarLowerCenter = field.Avatar.LowerCenter
+                        { AvatarLowerCenter = field.Avatar.Perimeter.LowerCenter
                           ShowUnopenedChests = Field.getShowUnopenedChests field
                           Chests = Field.getChests field
                           Portals = Field.getNonWarpPortals field
@@ -741,7 +741,7 @@ type FieldDispatcher () =
              Content.tmxMap "TileMapFade"
                 [Entity.Elevation == Constants.Field.BackgroundElevation + 0.5f
                  Entity.Color :=
-                    (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Bottom.Y + Constants.Field.ConnectorFadeYMin) / Constants.Field.ConnectorFadeYMax
+                    (let progress = 1.0f - (Constants.Field.ConnectorFadeYMax - field.Avatar.Perimeter.Bottom.Y + Constants.Field.ConnectorFadeYMin) / Constants.Field.ConnectorFadeYMax
                      let fade = min 1.0f progress
                      Color.One.ScaleA fade)
                  Entity.TmxMap :=
