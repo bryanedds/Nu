@@ -777,7 +777,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private createSnapshot world =
         let world = snapshot world
-        World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
+        World.playSound Constants.Audio.SoundVolumeDefault Assets.Default.Sound world
         world
 
     let private inductEntity atMouse (entity : Entity) world =
