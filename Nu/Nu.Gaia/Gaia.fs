@@ -690,89 +690,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (Cascade, world)
         | None -> (Cascade, world) // just keep current group selection and screen if no screen selected
 
-    let private imGuiRender world =
-
-        // render light probes of the selected group in light box and view frustum
-        let lightBox = World.getLight3dBox world
-        let viewFrustum = World.getEye3dFrustumView world
-        let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
-        let lightProbeModels =
-            entities |>
-            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-            SList.ofSeq
-        if SList.notEmpty lightProbeModels then
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightProbeModels
-                      StaticModel = Assets.Default.LightProbeModel
-                      RenderType = DeferredRenderType
-                      RenderPass = NormalPass })
-                world
-
-        // render lights of the selected group in play
-        let entities = World.getLights3dInBox lightBox (HashSet ()) world
-        let lightModels =
-            entities |>
-            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
-            Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
-            SList.ofSeq
-        if SList.notEmpty lightModels then
-            World.enqueueRenderMessage3d
-                (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightModels
-                      StaticModel = Assets.Default.LightbulbModel
-                      RenderType = DeferredRenderType
-                      RenderPass = NormalPass })
-                world
-
-        // render selection highlights
-        match SelectedEntityOpt with
-        | Some entity when entity.Exists world ->
-            if entity.GetIs2d world then
-                let absolute = entity.GetAbsolute world
-                let bounds = entity.GetBounds world
-                let elevation = Single.MaxValue
-                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
-                let image = Assets.Default.HighlightSprite
-                World.enqueueRenderMessage2d
-                    (LayeredOperation2d
-                        { Elevation = elevation
-                          Horizon = bounds.Bottom.Y
-                          AssetTag = image
-                          RenderOperation2d =
-                            RenderSprite
-                                { Transform = transform
-                                  InsetOpt = ValueNone
-                                  Image = image
-                                  Color = Color.One
-                                  Blend = Transparent
-                                  Emission = Color.Zero
-                                  Flip = FlipNone }})
-                    world
-            else
-                let absolute = entity.GetAbsolute world
-                let bounds = entity.GetBounds world
-                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
-                boundsMatrix.Translation <- bounds.Center
-                World.enqueueRenderMessage3d
-                    (RenderStaticModel
-                        { Absolute = absolute
-                          ModelMatrix = boundsMatrix
-                          Presence = Omnipresent
-                          InsetOpt = None
-                          MaterialProperties = MaterialProperties.defaultProperties
-                          StaticModel = Assets.Default.HighlightModel
-                          RenderType = ForwardRenderType (0.0f, Single.MinValue)
-                          RenderPass = NormalPass })
-                    world
-        | Some _ | None -> ()
-
-        // fin
-        world
-
     (* Editor Command Functions *)
 
     let private createSnapshot world =
@@ -4652,6 +4569,89 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // exception handling dialog
         | Some (exn, worldOld) -> imGuiExceptionDialog exn worldOld world
 
+    let private imGuiRender world =
+
+        // render light probes of the selected group in light box and view frustum
+        let lightBox = World.getLight3dBox world
+        let viewFrustum = World.getEye3dFrustumView world
+        let entities = World.getLightProbes3dInBox lightBox (HashSet ()) world
+        let lightProbeModels =
+            entities |>
+            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
+            Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+            SList.ofSeq
+        if SList.notEmpty lightProbeModels then
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightProbeModels
+                      StaticModel = Assets.Default.LightProbeModel
+                      RenderType = DeferredRenderType
+                      RenderPass = NormalPass })
+                world
+
+        // render lights of the selected group in play
+        let entities = World.getLights3dInBox lightBox (HashSet ()) world
+        let lightModels =
+            entities |>
+            Seq.filter (fun entity -> entity.Group = SelectedGroup && viewFrustum.Intersects (entity.GetBounds world)) |>
+            Seq.map (fun light -> (light.GetAffineMatrix world, Omnipresent, None, MaterialProperties.defaultProperties)) |>
+            SList.ofSeq
+        if SList.notEmpty lightModels then
+            World.enqueueRenderMessage3d
+                (RenderStaticModels
+                    { Absolute = false
+                      StaticModels = lightModels
+                      StaticModel = Assets.Default.LightbulbModel
+                      RenderType = DeferredRenderType
+                      RenderPass = NormalPass })
+                world
+
+        // render selection highlights
+        match SelectedEntityOpt with
+        | Some entity when entity.Exists world ->
+            if entity.GetIs2d world then
+                let absolute = entity.GetAbsolute world
+                let bounds = entity.GetBounds world
+                let elevation = Single.MaxValue
+                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
+                let image = Assets.Default.HighlightSprite
+                World.enqueueRenderMessage2d
+                    (LayeredOperation2d
+                        { Elevation = elevation
+                          Horizon = bounds.Bottom.Y
+                          AssetTag = image
+                          RenderOperation2d =
+                            RenderSprite
+                                { Transform = transform
+                                  InsetOpt = ValueNone
+                                  Image = image
+                                  Color = Color.One
+                                  Blend = Transparent
+                                  Emission = Color.Zero
+                                  Flip = FlipNone }})
+                    world
+            else
+                let absolute = entity.GetAbsolute world
+                let bounds = entity.GetBounds world
+                let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
+                boundsMatrix.Translation <- bounds.Center
+                World.enqueueRenderMessage3d
+                    (RenderStaticModel
+                        { Absolute = absolute
+                          ModelMatrix = boundsMatrix
+                          Presence = Omnipresent
+                          InsetOpt = None
+                          MaterialProperties = MaterialProperties.defaultProperties
+                          StaticModel = Assets.Default.HighlightModel
+                          RenderType = ForwardRenderType (0.0f, Single.MinValue)
+                          RenderPass = NormalPass })
+                    world
+        | Some _ | None -> ()
+
+        // fin
+        world
+
     let private imGuiPostProcess wtemp =
 
         // override local desired eye changes if eye was changed elsewhere
@@ -4715,7 +4715,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'."); ""
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
-        let result = World.runWithCleanUp tautology imGuiPostProcess id imGuiRender imGuiProcess imGuiPostProcess Live true world
+        let result = World.runWithCleanUp tautology id id imGuiRender imGuiProcess imGuiPostProcess Live true world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
         FsiErrorStream.Dispose ()
         FsiInStream.Dispose ()
