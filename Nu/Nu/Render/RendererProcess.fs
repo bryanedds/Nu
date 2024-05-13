@@ -334,8 +334,9 @@ type RendererThread () =
                 let mutable instance = Unchecked.defaultof<VkInstance>
                 let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
                 
-                // get available instance layers
-                do  let mutable layerCount = 0u
+                do
+                    // get available instance layers
+                    let mutable layerCount = 0u
                     let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, NativePtr.nullPtr)
                     let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
                     use layersHnd = layers.AsMemory().Pin()
@@ -379,12 +380,15 @@ type RendererThread () =
                     let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
                     printfn "vkCreateInstance returned %s." (result.ToString ())
 
+                    ()
+
                 // TODO: verify validation working
         
                 vkLoadInstanceOnly (instance)
                 
-                // get available physical devices
-                do  let mutable deviceCount = 0u
+                do
+                    // get available physical devices
+                    let mutable deviceCount = 0u
                     let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, NativePtr.nullPtr)
                     printfn "Vulkan found %i physical devices on your computer." deviceCount
                     let mutable devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
@@ -397,6 +401,8 @@ type RendererThread () =
                     let mutable physicalDeviceProperties = Unchecked.defaultof<VkPhysicalDeviceProperties>
                     vkGetPhysicalDeviceProperties (physicalDevice, &physicalDeviceProperties)
                     printfn "Using physical device %s." (physicalDeviceProperties.GetDeviceName ())
+
+                    ()
 
                 
 
