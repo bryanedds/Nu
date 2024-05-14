@@ -167,7 +167,7 @@ type BattleDispatcher () =
                 just world
             | _ -> just world
 
-        | ScheduleSound (delay, volume, sound) ->
+        | PlaySound (delay, volume, sound) ->
             let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
             just world
 
