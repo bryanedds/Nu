@@ -336,6 +336,7 @@ type RendererThread () =
                 let mutable graphicsQueueFamily = 0u
                 let mutable device = Unchecked.defaultof<VkDevice>
                 let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
+                let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
                 
                 do
                     // get available instance layers
@@ -370,6 +371,12 @@ type RendererThread () =
                     use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin()
                     let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
 
+                    // print sdl extensions
+                    printfn "SDL extensions:"
+                    for i in [0 .. dec (int sdlExtensionCount)] do
+                        let span = Interop.GetUtf8Span sdlExtensions[i]
+                        printfn "%s" (span.GetString ())
+
                     // populate createinstance info
                     let mutable instanceCreateInfo = VkInstanceCreateInfo ()
                     instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
@@ -386,7 +393,11 @@ type RendererThread () =
                     ()
 
                 // another wrapper only function; loads instance commands
-                vkLoadInstanceOnly (instance)
+                vkLoadInstanceOnly instance
+
+                let result = SDL.SDL_Vulkan_CreateSurface (window, instance, Interop.As &surface)
+
+                ()
                 
                 do
                     // get available physical devices
@@ -435,6 +446,12 @@ type RendererThread () =
                 // create logical device
                 let result = vkCreateDevice (physicalDevice, Interop.AsPointer &deviceCreateInfo, NativePtr.nullPtr, &device)
                 printfn "vkCreateDevice returned %s." (result.ToString ())
+
+                // like load instance; vulkan should be fully loaded now!
+                vkLoadDevice device
+                
+                // get graphics queue
+                let result = vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
