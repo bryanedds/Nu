@@ -173,9 +173,9 @@ module Audio =
 
     let [<Literal>] MasterAudioVolumeDefault = 1.0f
     let [<Literal>] MasterSoundVolumeDefault = 1.0f
-    let [<Literal>] MasterSongVolumeDefault = 1.0f
+    let [<Literal>] MasterSongVolumeDefault = 0.5f
     let [<Literal>] SoundVolumeDefault = 1.0f
-    let [<Literal>] SongVolumeDefault = 0.5f
+    let [<Literal>] SongVolumeDefault = 1.0f
     let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
     let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
     let [<Literal>] Frequency = 44100
