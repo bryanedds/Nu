@@ -42,15 +42,6 @@ module Constants =
         let TileCelSize = v2 16.0f 16.0f
         let CharacterSize = v3 144.0f 144.0f 0.0f
         let CharacterCelSize = v2 48.0f 48.0f
-        let CharacterCenterOffset = v3 0.0f -30.0f 0.0f
-        let CharacterCenterOffset2 = v3 0.0f -96.0f 0.0f
-        let CharacterCenterOffset3 = v3 0.0f -36.0f 0.0f
-        let CharacterCenterOffset4 = v3 0.0f 36.0f 0.0f
-        let CharacterBottomOffset = v3 0.0f -7.0f 0.0f
-        let CharacterBottomOffset2 = v3 0.0f -11.0f 0.0f
-        let CharacterBottomOffset3 = v3 0.0f -48.0f 0.0f
-        let CharacterBottomOffset4 = v3 0.0f 30.0f 0.0f
-        let CharacterBottomOffset5 = v3 0.0f 24.0f 0.0f
         let BossSize = v3 324.0f 276.0f 0.0f
         let BossCelSize = v2 108.0f 92.0f
         let DialogSplit = '^'
@@ -159,3 +150,18 @@ module Constants =
         let GuiOutputElevation = 20.0f
         let GuiInputElevation = 30.0f
         let GuiEffectElevation = 40.0f
+
+[<AutoOpen>]
+module Box3Extensions =
+    type Box3 with
+        member this.CenterOffset = this.Center + v3 0.0f -30.0f 0.0f
+        member this.CenterOffset2 = this.Center + v3 0.0f -96.0f 0.0f
+        member this.CenterOffset3 = this.Center + v3 0.0f -36.0f 0.0f
+        member this.CenterOffset4 = this.Center + v3 0.0f 36.0f 0.0f
+        member this.BottomOffset = this.Bottom + v3 0.0f -7.0f 0.0f
+        member this.BottomOffset2 = this.Bottom + v3 0.0f -11.0f 0.0f
+        member this.BottomOffset3 = this.Bottom + v3 0.0f -48.0f 0.0f
+        member this.BottomOffset4 = this.Bottom + v3 0.0f 30.0f 0.0f
+        member this.BottomOffset5 = this.Bottom + v3 0.0f 24.0f 0.0f
+        member this.LowerPerimeter = box3 (this.Min + v3 (this.Size.X * 0.25f) 0.0f 0.0f) (this.Size * 0.5f)
+        member this.LowerCenter = this.LowerPerimeter.Center

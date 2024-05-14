@@ -9,21 +9,6 @@ open TiledSharp
 open Prime
 open Nu
 
-[<AutoOpen>]
-module Box3Extensions =
-    type Box3 with
-        member this.BottomOffset = this.Bottom + Constants.Gameplay.CharacterBottomOffset
-        member this.BottomOffset2 = this.Bottom + Constants.Gameplay.CharacterBottomOffset2
-        member this.BottomOffset3 = this.Bottom + Constants.Gameplay.CharacterBottomOffset3
-        member this.BottomOffset4 = this.Bottom + Constants.Gameplay.CharacterBottomOffset4
-        member this.BottomOffset5 = this.Bottom + Constants.Gameplay.CharacterBottomOffset5
-        member this.CenterOffset = this.Center + Constants.Gameplay.CharacterCenterOffset
-        member this.CenterOffset2 = this.Center + Constants.Gameplay.CharacterCenterOffset2
-        member this.CenterOffset3 = this.Center + Constants.Gameplay.CharacterCenterOffset3
-        member this.CenterOffset4 = this.Center + Constants.Gameplay.CharacterCenterOffset4
-        member this.LowerPerimeter = box3 (this.Min + v3 (this.Size.X * 0.25f) 0.0f 0.0f) (this.Size * 0.5f)
-        member this.LowerCenter = this.LowerPerimeter.Center
-
 type Direction =
     | Upward
     | Rightward
