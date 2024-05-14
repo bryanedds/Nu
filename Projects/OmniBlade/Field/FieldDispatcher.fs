@@ -893,7 +893,7 @@ type FieldDispatcher () =
                                 "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string teammate.TechPointsMax).PadLeft 3 +
                                 "\nPow " + (string teammate.Power).PadLeft 3 +      "   Mag " + (string $ teammate.Magic false).PadLeft 3 +
                                 "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
-                                "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + string (Algorithms.expPointsForNextLevel teammate.ExpPoints)
+                                "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next
                             | None -> ""]
                      Content.text "Gold"
                         [Entity.PositionLocal == v3 444.0f 9.0f 0.0f; Entity.ElevationLocal == 1.0f

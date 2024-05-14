@@ -43,9 +43,7 @@ module Algorithms =
         nextExp
         
     let expPointsRemainingForNextLevel expPoints =
-        match expPointsForNextLevel expPoints with
-        | Int32.MaxValue -> 0
-        | nextExp -> nextExp - expPoints
+        expPointsForNextLevel expPoints - expPoints
 
     let expPointsToTechs expPoints archetypeType =
         match Data.Value.Archetypes.TryGetValue archetypeType with
