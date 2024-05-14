@@ -307,9 +307,9 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             { AudioContext = ()
               AudioPackages = dictPlus StringComparer.Ordinal []
               AudioMessages = List ()
-              MasterAudioVolume = 1.0f
-              MasterSoundVolume = 1.0f
-              MasterSongVolume = 1.0f
+              MasterAudioVolume = Constants.Audio.MasterAudioVolumeDefault
+              MasterSoundVolume = Constants.Audio.MasterSoundVolumeDefault
+              MasterSongVolume = Constants.Audio.MasterSongVolumeDefault
               CurrentSongOpt = None }
         audioPlayer
     
