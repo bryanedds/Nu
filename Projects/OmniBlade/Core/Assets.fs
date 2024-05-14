@@ -138,7 +138,6 @@ module Assets =
         let SwitchUseSound = asset<Sound> PackageName "SwitchUse"
         let SwitchStuckSound = asset<Sound> PackageName "SwitchStuck"
         let SealedSound = asset<Sound> PackageName "Sealed"
-        let WhooshSound = asset<Sound> PackageName "Whoosh"
         let UnsheatheSound = asset<Sound> PackageName "Unsheathe"
         let GrowthSound = asset<Sound> PackageName "Growth"
         let HitSound = asset<Sound> PackageName "Hit"
