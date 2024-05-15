@@ -49,7 +49,10 @@ module WorldImGui =
                     if absolute
                     then start + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                     else start + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-                let stopWindow = if absolute then stop else stop - eyeCenter
+                let stopWindow =
+                    if absolute
+                    then stop + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    else stop + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                 drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
