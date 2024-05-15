@@ -40,7 +40,7 @@ type GameplayCommand =
     | TrackPlayer
     interface Command
 
-// this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
+// this extends the Screen API to expose the Gameplay model as well as the Quit event.
 [<AutoOpen>]
 module Gameplay =
     type Screen with

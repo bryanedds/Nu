@@ -18,7 +18,7 @@ type GameplayCommand =
     | StartQuitting
     interface Command
     
-// this extends the Screen API to expose the Gameplay model as well as the gameplay quit event.
+// this extends the Screen API to expose the Gameplay model as well as the Quit event.
 [<AutoOpen>]
 module GameplayExtensions =
     type Screen with
