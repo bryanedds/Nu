@@ -23,8 +23,8 @@ module WorldImGui =
             for position in positions do
                 let positionWindow =
                     if absolute
-                    then position + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-                    else position + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    then position * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    else position * Constants.Render.VirtualScalar2F - eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                 let color = computeColor position
                 if filled
                 then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
@@ -47,12 +47,12 @@ module WorldImGui =
                 let color = computeColor struct (start, stop)
                 let startWindow =
                     if absolute
-                    then start + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-                    else start + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    then start * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    else start * Constants.Render.VirtualScalar2F - eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                 let stopWindow =
                     if absolute
-                    then stop + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-                    else stop + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    then stop * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    else stop * Constants.Render.VirtualScalar2F - eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                 drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
