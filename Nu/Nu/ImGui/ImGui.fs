@@ -206,8 +206,20 @@ type ImGui (windowWidth : int, windowHeight : int) =
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
+    // TODO: the calling convention here is very inconsistent with Position3dToWindow, so let's see if we can converge them.
+    static member Position2dToWindow (absolute, eyeSize : Vector2, eyeCenter, position) =
+        if absolute
+        then position * Constants.Render.VirtualScalar2F * v2 1.0f -1.0f + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+        else position * Constants.Render.VirtualScalar2F * v2 1.0f -1.0f - eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+
+    // TODO: the calling convention here is very inconsistent with WindowToPosition3d, so let's see if we can converge them.
+    static member WindowToPosition2d (absolute, eyeSize : Vector2, eyeCenter, position) =
+        if absolute
+        then position / Constants.Render.VirtualScalar2F * v2 1.0f -1.0f - eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+        else position / Constants.Render.VirtualScalar2F * v2 1.0f -1.0f + eyeCenter * Constants.Render.VirtualScalar2F - eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
-    static member PositionToWindow (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, position : Vector3) =
+    static member Position3dToWindow (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, position : Vector3) =
 
         // transform the position from world coordinates to clip space coordinates
         let mutable position = Vector4.Transform (Vector4 (position, 1.0f), modelViewProjection)
@@ -222,12 +234,10 @@ type ImGui (windowWidth : int, windowHeight : int) =
         // adjust the position to be relative to the window
         position.X <- position.X + windowPosition.X
         position.Y <- position.Y + windowPosition.Y
-
-        // fin
         v2 position.X position.Y
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
-    static member WindowToPosition (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
+    static member WindowToPosition3d (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
 
         // grab dependencies
         let io = ImGui.GetIO ()
@@ -257,6 +267,4 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
         // calculate the ray direction by normalizing the vector between the ray end and ray origin
         let rayDir = (rayEnd.V3 - rayOrigin.V3).Normalized
-
-        // fin
         (rayOrigin.V3, rayDir)

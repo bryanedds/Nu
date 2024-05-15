@@ -42,8 +42,8 @@ module ImGuizmo =
         for (a, b) in segments do
             match Math.tryUnionSegmentAndFrustum a b eyeFrustum with
             | Some (a, b) ->
-                let aWindow = ImGui.PositionToWindow (windowPosition, windowSize, viewProjection, a)
-                let bWindow = ImGui.PositionToWindow (windowPosition, windowSize, viewProjection, b)
+                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a)
+                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b)
                 let xWindow = box2 v2Zero Constants.Render.Resolution.V2
                 if  xWindow.Contains aWindow <> ContainmentType.Disjoint &&
                     xWindow.Contains bWindow <> ContainmentType.Disjoint then
@@ -56,7 +56,7 @@ module ImGuizmo =
         let mutable hoveringFound = false
         for i in 0 .. dec centers.Length do
             let center = centers.[i]
-            let centerWindow = ImGui.PositionToWindow (windowPosition, windowSize, viewProjection, center)
+            let centerWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, center)
             let mouseAvailable = not io.WantCaptureMouseGlobal
             let mouseWindow = ImGui.GetMousePos ()
             let mouseDelta = mouseWindow - centerWindow
