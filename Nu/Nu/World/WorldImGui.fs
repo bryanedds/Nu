@@ -49,7 +49,7 @@ module WorldImGui =
             World.imGuiSegments2dPlus absolute segments thickness (constant color) world
 
         /// Render a segment via ImGui in the current eye 2d space.
-        static member imGuiSegment3d absolute segment thickness color world =
+        static member imGuiSegment2d absolute segment thickness color world =
             World.imGuiSegments2d absolute (SArray.singleton segment) thickness color world
 
         /// Render circles via ImGui in the current eye 3d space, computing color as specified.
