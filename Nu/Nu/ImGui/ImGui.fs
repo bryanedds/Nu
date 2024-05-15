@@ -206,19 +206,18 @@ type ImGui (windowWidth : int, windowHeight : int) =
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
-    // TODO: the calling convention here is very inconsistent with Position3dToWindow, so let's see if we can converge them.
     static member Position2dToWindow (absolute, eyeSize : Vector2, eyeCenter, position) =
         if absolute
         then position * Constants.Render.VirtualScalar2F * v2 1.0f -1.0f + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
         else position * Constants.Render.VirtualScalar2F * v2 1.0f -1.0f - eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
 
-    // TODO: the calling convention here is very inconsistent with WindowToPosition3d, so let's see if we can converge them.
     static member WindowToPosition2d (absolute, eyeSize : Vector2, eyeCenter, position) =
         if absolute
         then position / Constants.Render.VirtualScalar2F * v2 1.0f -1.0f - eyeSize * 0.5f * Constants.Render.VirtualScalar2F
         else position / Constants.Render.VirtualScalar2F * v2 1.0f -1.0f + eyeCenter * Constants.Render.VirtualScalar2F - eyeSize * 0.5f * Constants.Render.VirtualScalar2F
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
+    // TODO: the calling convention here is very inconsistent with Position2dToWindow, so let's see if we can converge them.
     static member Position3dToWindow (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, position : Vector3) =
 
         // transform the position from world coordinates to clip space coordinates
@@ -237,6 +236,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         v2 position.X position.Y
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
+    // TODO: the calling convention here is very inconsistent with WindowToPosition2d, so let's see if we can converge them.
     static member WindowToPosition3d (windowPosition : Vector2, windowSize : Vector2, model : Matrix4x4, view : Matrix4x4, projection : Matrix4x4) =
 
         // grab dependencies
