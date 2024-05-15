@@ -19,8 +19,12 @@ module WorldImGui =
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let eyeCenter = World.getEye2dCenter world
+            let eyeSize = World.getEye2dSize world
             for position in positions do
-                let positionWindow = if absolute then position else position - eyeCenter
+                let positionWindow =
+                    if absolute
+                    then position + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    else position + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                 let color = computeColor position
                 if filled
                 then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
@@ -38,9 +42,13 @@ module WorldImGui =
         static member imGuiSegments2dPlus absolute (segments : struct (Vector2 * Vector2) seq) thickness (computeColor : struct (Vector2 * Vector2) -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let eyeCenter = World.getEye2dCenter world
+            let eyeSize = World.getEye2dSize world
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = if absolute then start else start - eyeCenter
+                let startWindow =
+                    if absolute
+                    then start + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+                    else start + -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
                 let stopWindow = if absolute then stop else stop - eyeCenter
                 drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 

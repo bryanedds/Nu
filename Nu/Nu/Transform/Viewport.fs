@@ -15,18 +15,18 @@ module Viewport =
         /// Compute the 2d absolute view matrix.
         member this.View2dAbsolute (_ : Vector2, eyeSize : Vector2) =
             let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-            Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
+            Matrix4x4.CreateTranslation translation.V3
 
         /// Compute the 2d relative view matrix.
-        member this.ViewRelative2d (eyeCenter : Vector2, eyeSize : Vector2) =
+        member this.View2dRelative (eyeCenter : Vector2, eyeSize : Vector2) =
             let translation = -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-            Matrix4x4.CreateTranslation (v3 translation.X translation.Y 1.0f)
+            Matrix4x4.CreateTranslation translation.V3
 
         /// Compute a 2d view matrix.
         member this.View2d (absolute, eyeCenter, eyeSize) =
             if absolute
             then this.View2dAbsolute (eyeCenter, eyeSize)
-            else this.ViewRelative2d (eyeCenter, eyeSize)
+            else this.View2dRelative (eyeCenter, eyeSize)
 
         /// Compute the 2d projection matrix.
         member this.Projection2d =
