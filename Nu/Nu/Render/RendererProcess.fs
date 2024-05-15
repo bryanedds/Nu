@@ -336,7 +336,6 @@ type RendererThread () =
                 let mutable graphicsQueueFamily = 0u
                 let mutable device = Unchecked.defaultof<VkDevice>
                 let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
-                let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
                 
                 do
                     // get available instance layers
@@ -395,7 +394,33 @@ type RendererThread () =
                 // another wrapper only function; loads instance commands
                 vkLoadInstanceOnly instance
 
-                let result = SDL.SDL_Vulkan_CreateSurface (window, instance, Interop.As &surface)
+                (*
+                
+                ok, so here's the problem. 
+                
+                SDL_Vulkan_CreateSurface is (allegedly) asking for byref<uint64>. should be simple.
+                Interop.As, which merely wraps System.Runtime.CompilerServices.Unsafe.As, converts byref<'TFrom> to byref<'TTo>. also simple.
+
+                however, the type of <'TTo> that the compiler is demanding is <uint64 ref>. this is not only inconsistent but implies the uint64 value should be on the heap!
+
+                but the *really* bizarre thing is the type of <'TFrom>. if you merely pass the type <VkSurfaceKHR> (e.g. let mutable surface = Unchecked.defaultof<VkSurfaceKHR>),
+                the function compiles but throws:
+
+                System.NullReferenceException: 'Object reference not set to an instance of an object.'
+                Local56 was null.
+
+                the type of <'TFrom> that actually works and makes the function return success is <uint64 -> VkSurfaceKHR> i.e. the friggin constructor function!
+                how the hell does that work?
+
+                incidently there is an unrelated additional anomoly: how is the 'instance' argument passing the type-check?
+                the function is (allegedly) asking for nativeint, not VkInstance.
+
+                *)
+
+                let mutable surface = VkSurfaceKHR // this is the constructor
+                
+                let result = SDL.SDL_Vulkan_CreateSurface (window, instance, Interop.As<uint64 -> VkSurfaceKHR, uint64 ref> &surface)
+                printfn "SDL_Vulkan_CreateSurface returned %s." (result.ToString ())
 
                 ()
                 
