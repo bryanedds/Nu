@@ -1147,7 +1147,7 @@ module FieldData =
 [<RequireQualifiedAccess>]
 module Data =
 
-    type [<ReferenceEquality>] OmniData =
+    type [<NoEquality; NoComparison>] OmniData =
         { Weapons : Map<WeaponType, WeaponData>
           Armors : Map<ArmorType, ArmorData>
           Accessories : Map<AccessoryType, AccessoryData>
