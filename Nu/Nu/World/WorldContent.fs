@@ -211,7 +211,7 @@ module Content =
         else None
 
     /// Synchronize an entity and its contained simulants to the given content.
-    let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
+    let rec internal synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld =/= content then
             let mutable mountOptFound = false
             let world = synchronizeEventSignals contentOld content origin entity world
@@ -248,7 +248,7 @@ module Content =
         else world
 
     /// Synchronize a group and its contained simulants to the given content.
-    let synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
+    let internal synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin group world
             let world = synchronizeEventHandlers contentOld content origin group world
@@ -280,7 +280,7 @@ module Content =
         else world
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
+    let internal synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin screen world
             let world = synchronizeEventHandlers contentOld content origin screen world
@@ -331,7 +331,7 @@ module Content =
         else world
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
+    let internal synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin game world
             let world = synchronizeEventHandlers contentOld content origin game world
