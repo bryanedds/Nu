@@ -145,7 +145,7 @@ type RendererInline () =
             | Some (renderer3d, renderer2d, rendererImGui) ->
                 
                 // begin frame
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
+                OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
                 OpenGL.Hl.Assert ()
 
                 // render 3d
@@ -364,7 +364,7 @@ type RendererThread () =
                 submissionOpt <- None
                 
                 // begin frame
-                OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
+                OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
                 OpenGL.Hl.Assert ()
 
                 // render 3d

@@ -335,10 +335,10 @@ module WorldModule =
             ignore world
             Constants.Render.Viewport
 
-        /// Get the viewport offset by margin when applicable.
-        static member getViewportOffset world =
+        /// Get the offset viewport.
+        static member getOffsetViewport world =
             let windowSize = World.getWindowSize world
-            Constants.Render.ViewportOffset windowSize
+            Constants.Render.OffsetViewport windowSize
 
         static member internal getSymbolicsBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world

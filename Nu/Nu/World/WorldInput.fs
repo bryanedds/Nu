@@ -36,7 +36,7 @@ module WorldInputModule =
         static member getMousePosition world =
             match World.tryGetWindowSize world with
             | Some windowSize ->
-                let marginI = Constants.Render.ViewportMargin windowSize
+                let marginI = Constants.Render.OffsetMargin windowSize
                 let margin = v2 (single marginI.X) (single marginI.Y)
                 MouseState.getPosition () - margin
             | None -> MouseState.getPosition ()

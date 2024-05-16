@@ -2902,7 +2902,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // compute the viewports for the given window size
         let viewport = Constants.Render.Viewport
         let ssaoViewport = Constants.Render.SsaoViewport
-        let viewportOffset = Constants.Render.ViewportOffset windowSize
+        let offsetViewport = Constants.Render.OffsetViewport windowSize
 
         // compute view and projection
         let viewAbsolute = viewport.View3d (true, eyeCenter, eyeRotation)
@@ -2913,7 +2913,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // top-level geometry pass
         let renderPass = NormalPass
         let normalTasks = GlRenderer3d.getRenderTasks renderPass renderer
-        GlRenderer3d.renderGeometry renderPass normalTasks renderer true eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport viewportOffset projection renderbuffer framebuffer
+        GlRenderer3d.renderGeometry renderPass normalTasks renderer true eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
