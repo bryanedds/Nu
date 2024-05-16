@@ -940,6 +940,17 @@ type FieldDispatcher () =
                                          Entity.Elevation == Constants.Field.GuiElevation + 1.0f
                                          Entity.Absolute == true
                                          Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randMap.Segments.[dec Constants.Field.RandMapSize.Y - j].[i])]
+                                if Some index = randMap.OriginOpt then
+                                    Content.staticSprite "AutoOrigin"
+                                        [Entity.Position :=
+                                            index.MapY(fun y -> dec Constants.Field.RandMapSize.Y - y).V3 *
+                                            Constants.Field.AutoTileSize +
+                                            v3 3.0f 3.0f 0.0f +
+                                            mapOffset
+                                         Entity.Size == v3 18.0f 18.0f 0.0f
+                                         Entity.Elevation == Constants.Field.GuiElevation + 2.0f
+                                         Entity.Absolute == true
+                                         Entity.StaticImage == Assets.Field.AutoOriginImage]
                         if field.FieldTime / 20L % 3L <> 0L then
                             Content.staticSprite "AutoAvatar"
                                 [Entity.Position :=
@@ -950,7 +961,7 @@ type FieldDispatcher () =
                                     v3 -7.5f -7.5f 0.0f +
                                     mapOffset
                                  Entity.Size == v3 15.0f 15.0f 0.0f
-                                 Entity.Elevation == Constants.Field.GuiElevation + 2.0f
+                                 Entity.Elevation == Constants.Field.GuiElevation + 3.0f
                                  Entity.Absolute == true
                                  Entity.StaticImage == Assets.Field.AutoAvatarImage]
                         Content.button "AutoBack"

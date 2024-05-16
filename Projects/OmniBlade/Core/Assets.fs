@@ -108,6 +108,7 @@ module Assets =
         let SpiritAvatarImage = asset<Image> PackageName "SpiritAvatar"
         let SpiritOrbImage = asset<Image> PackageName "SpiritOrb"
         let AutoMapImage = asset<Image> PackageName "AutoMap"
+        let AutoOriginImage = asset<Image> PackageName "AutoOrigin"
         let AutoAvatarImage = asset<Image> PackageName "AutoAvatar"
         let WarpAnimationSheet = asset<Image> PackageName "Warp"
         let WindAnimationSheet = asset<Image> PackageName "Wind"
