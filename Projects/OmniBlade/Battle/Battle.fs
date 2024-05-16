@@ -1339,10 +1339,8 @@ module Battle =
                                              PlaySound (30L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)
                                              PlaySound (45L, Constants.Audio.SoundVolumeDefault, Assets.Field.ExplosionSound)]
                                         let displayScatterBolts =
-                                            [DisplayScatterBolt 0L |> signal
-                                             DisplayScatterBolt 15L
-                                             DisplayScatterBolt 30L
-                                             DisplayScatterBolt 45L]
+                                            [for i in 0L .. 15L .. 45L do
+                                                for _ in 0L .. dec 2L do DisplayScatterBolt i |> signal]
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals (playThunders @ displayScatterBolts) battle
                                     | Inferno ->
