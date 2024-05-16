@@ -849,6 +849,7 @@ type FieldDispatcher () =
                         Entity.EnabledLocal := Field.hasAutoMap field
                         Entity.UpImage == asset "Field" "ButtonMapUp"
                         Entity.DownImage == asset "Field" "ButtonMapDown"
+                        Entity.TextColor == Color 0x93544CFFu
                         Entity.Text == "Map"
                         Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                         Entity.ClickEvent => MenuAutoMapOpen]
@@ -952,6 +953,15 @@ type FieldDispatcher () =
                                  Entity.Absolute == true
                                  Entity.StaticImage == Assets.Field.AutoAvatarImage]
                         Content.button "AutoBack"
+                            [Entity.Position == v3 -72.0f 144.0f 0.0f
+                             Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.Elevation == Constants.Field.GuiElevation
+                             Entity.Text == "Back"
+                             Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                             Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
+                             Entity.ClickEvent => MenuTeamOpen]
+                        Content.button "AutoClose"
                             [Entity.Position == v3 -72.0f -192.0f 0.0f
                              Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
