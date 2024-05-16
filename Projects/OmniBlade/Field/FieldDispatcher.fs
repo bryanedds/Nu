@@ -845,7 +845,7 @@ type FieldDispatcher () =
                         | _ -> true)
                         MenuTeamAlly
                      Content.button "AutoMap"
-                       [Entity.PositionLocal == v3 138.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
+                       [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
                         Entity.EnabledLocal := Field.hasAutoMap field
                         Entity.UpImage == Assets.Field.ButtonMapUpImage
                         Entity.DownImage == Assets.Field.ButtonMapDownImage
