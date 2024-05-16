@@ -69,10 +69,10 @@ module Override =
             Constants.Render.VirtualScalar2 <- Vector2i Constants.Render.VirtualScalar
             Constants.Render.VirtualScalar2F <- Constants.Render.VirtualScalar2.V2
             Constants.Render.Resolution <- Constants.Render.VirtualResolution * Constants.Render.VirtualScalar
+            Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
             Constants.Render.ShadowResolution <- Vector2i (512 * Constants.Render.VirtualScalar)
             Constants.Render.SsaoResolution <- Constants.Render.Resolution / Constants.Render.SsaoResolutionDivisor
             Constants.Render.SsaoViewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, Box2i (v2iZero, Constants.Render.SsaoResolution))
-            Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
         with
         | :? ConfigurationErrorsException ->
             Log.info ("Configuration value override failed due to: Could not find App.config file for " + exeFilePath + ".")
