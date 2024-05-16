@@ -12,6 +12,7 @@ open Vortice.Vulkan
 open type Vortice.Vulkan.Vulkan
 open ImGuiNET
 open Prime
+open System.Runtime.InteropServices
 
 /// A renderer process that may or may not be threaded.
 type RendererProcess =
@@ -417,9 +418,8 @@ type RendererThread () =
 
                 *)
 
-                let mutable surface = VkSurfaceKHR // this is the constructor
-                
-                let result = SDL.SDL_Vulkan_CreateSurface (window, instance, Interop.As<uint64 -> VkSurfaceKHR, uint64 ref> &surface)
+                let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
+                let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(Interop.As<VkSurfaceKHR, uint64> &surface))
                 printfn "SDL_Vulkan_CreateSurface returned %s." (result.ToString ())
 
                 ()
