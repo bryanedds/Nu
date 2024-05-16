@@ -123,6 +123,7 @@ module Assets =
         let MaelPortraitImage = asset<Image> PackageName "MaelPortrait"
         let RiainPortraitImage = asset<Image> PackageName "RiainPortrait"
         let PericPortraitImage = asset<Image> PackageName "PericPortrait"
+        let AutoMapSound = asset<Sound> PackageName "AutoMap"
         let StepStairSound = asset<Sound> PackageName "StepStair"
         let StepPlateSound = asset<Sound> PackageName "StepPlate"
         let StepSaveSound = asset<Sound> PackageName "StepSave"

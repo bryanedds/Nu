@@ -23,6 +23,7 @@ type FieldMessage =
     | TryCommencingBattle of BattleType * Advent Set
     | MenuTeamOpen
     | MenuTeamAlly of int
+    | MenuAutoMapOpen
     | MenuInventoryOpen
     | MenuInventoryPageUp
     | MenuInventoryPageDown
@@ -233,6 +234,14 @@ module Field =
         match Array.tryItem recruited Constants.Field.RecruitmentFees with
         | Some recruitmentFee -> recruitmentFee
         | None -> 0
+
+    let hasAutoMap field =
+        match Data.Value.Fields.TryGetValue field.FieldType_ with
+        | (true, fieldData) ->
+            match FieldData.tryGetTileMap field.OmniSeedState_ fieldData with
+            | Some (Choice3Of4 (_, _, _)) -> true
+            | Some _ | None -> false
+        | (false, _) -> false
 
     let getParty field =
         field.Team_ |>

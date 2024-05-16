@@ -235,6 +235,11 @@ type FieldDispatcher () =
             let field = Field.mapMenu (fun menu -> { menu with MenuState = state }) field
             just field
 
+        | MenuAutoMapOpen ->
+            let state = MenuAutoMap
+            let field = Field.mapMenu (fun menu -> { menu with MenuState = state }) field
+            just field
+
         | MenuTeamAlly index ->
             let field =
                 Field.mapMenu (fun menu ->
@@ -664,7 +669,7 @@ type FieldDispatcher () =
                     [Entity.PropPlus := PropPlus.make field.FieldTime field.Avatar.Perimeter.Bottom field.Advents prop]
 
              // spirit orb
-             if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue then
+             if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue && field.Menu.MenuState = MenuClosed then
                 Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                     [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                      Entity.SpiritOrb :=
@@ -825,46 +830,6 @@ type FieldDispatcher () =
                 Constants.Field.GuiElevation PromptLeft PromptRight (Field.detokenize field)
                 (match field.DialogOpt with Some dialog -> Some dialog | None -> None)
 
-             // auto map
-             match Data.Value.Fields.TryGetValue field.FieldType with
-             | (true, fieldData) ->
-                match FieldData.tryGetTileMap field.OmniSeedState fieldData with
-                | Some (Choice3Of4 (randMap, _, _)) ->
-                    let mapSize = Constants.Field.RandMapSize.V3 * Constants.Field.AutoTileSize
-                    let mapOffset = mapSize * -0.5f
-                    Content.staticSprite "AutoMap"
-                        [Entity.Position == v3 -144.0f -144.0f 0.0f
-                         Entity.Size == v3 288.0f 288.0f 0.0f
-                         Entity.Elevation == Constants.Field.GuiElevation
-                         Entity.Absolute == true
-                         Entity.StaticImage == Assets.Field.AutoMapImage]
-                    let autoMap = match field.AutoMaps.TryGetValue field.FieldType with (true, autoMap) -> autoMap | (false, _) -> Set.empty
-                    for i in 0 .. dec Constants.Field.RandMapSize.X do
-                        for j in 0 .. dec Constants.Field.RandMapSize.Y do
-                            let index = v2i i j
-                            if autoMap.Contains index then
-                                Content.staticSprite ("AutoTile+" + scstring index)
-                                    [Entity.Position := index.V3 * Constants.Field.AutoTileSize + mapOffset
-                                     Entity.Size == Constants.Field.AutoTileSize
-                                     Entity.Elevation == Constants.Field.GuiElevation + 1.0f
-                                     Entity.Absolute == true
-                                     Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randMap.Segments.[dec Constants.Field.RandMapSize.Y - j].[i])]
-                    if field.FieldTime / 20L % 3L <> 0L then
-                        Content.staticSprite "AutoAvatar"
-                            [Entity.Position :=
-                                field.Avatar.Perimeter.BottomOffset5 /
-                                Constants.Field.RoomSize.V3 /
-                                Constants.Gameplay.TileSize *
-                                Constants.Field.AutoTileSize +
-                                v3 -7.5f -7.5f 0.0f +
-                                mapOffset
-                             Entity.Size == v3 15.0f 15.0f 0.0f
-                             Entity.Elevation == Constants.Field.GuiElevation + 2.0f
-                             Entity.Absolute == true
-                             Entity.StaticImage == Assets.Field.AutoAvatarImage]
-                | Some _ | None -> ()
-             | (false, _) -> ()
-
              // menu
              match field.Menu.MenuState with
              | MenuTeam menuTeam ->
@@ -879,6 +844,14 @@ type FieldDispatcher () =
                         | MenuTeam team -> team.TeamIndex <> teammate.TeamIndex
                         | _ -> true)
                         MenuTeamAlly
+                     Content.button "AutoMap"
+                       [Entity.PositionLocal == v3 138.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
+                        Entity.EnabledLocal := Field.hasAutoMap field
+                        Entity.UpImage == asset "Field" "ButtonMapUp"
+                        Entity.DownImage == asset "Field" "ButtonMapDown"
+                        Entity.Text == "Map"
+                        Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
+                        Entity.ClickEvent => MenuAutoMapOpen]
                      Content.label "Portrait"
                         [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
                          Entity.BackdropImageOpt :=
@@ -939,6 +912,56 @@ type FieldDispatcher () =
                         [Entity.PositionLocal == v3 444.0f 9.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
                          Entity.Text := string field.Inventory.Gold + "G"]]
+
+             // auto map
+             | MenuAutoMap ->
+                match Data.Value.Fields.TryGetValue field.FieldType with
+                | (true, fieldData) ->
+                    match FieldData.tryGetTileMap field.OmniSeedState fieldData with
+                    | Some (Choice3Of4 (randMap, _, _)) ->
+                        let mapSize = Constants.Field.RandMapSize.V3 * Constants.Field.AutoTileSize
+                        let mapOffset = mapSize * -0.5f
+                        Content.staticSprite "AutoMap"
+                            [Entity.Position == v3 -144.0f -144.0f 0.0f
+                             Entity.Size == v3 288.0f 288.0f 0.0f
+                             Entity.Elevation == Constants.Field.GuiElevation
+                             Entity.Absolute == true
+                             Entity.StaticImage == Assets.Field.AutoMapImage]
+                        let autoMap = match field.AutoMaps.TryGetValue field.FieldType with (true, autoMap) -> autoMap | (false, _) -> Set.empty
+                        for i in 0 .. dec Constants.Field.RandMapSize.X do
+                            for j in 0 .. dec Constants.Field.RandMapSize.Y do
+                                let index = v2i i j
+                                if autoMap.Contains index then
+                                    Content.staticSprite ("AutoTile+" + scstring index)
+                                        [Entity.Position := index.V3 * Constants.Field.AutoTileSize + mapOffset
+                                         Entity.Size == Constants.Field.AutoTileSize
+                                         Entity.Elevation == Constants.Field.GuiElevation + 1.0f
+                                         Entity.Absolute == true
+                                         Entity.StaticImage := asset Assets.Field.PackageName (scstringMemo randMap.Segments.[dec Constants.Field.RandMapSize.Y - j].[i])]
+                        if field.FieldTime / 20L % 3L <> 0L then
+                            Content.staticSprite "AutoAvatar"
+                                [Entity.Position :=
+                                    field.Avatar.Perimeter.BottomOffset5 /
+                                    Constants.Field.RoomSize.V3 /
+                                    Constants.Gameplay.TileSize *
+                                    Constants.Field.AutoTileSize +
+                                    v3 -7.5f -7.5f 0.0f +
+                                    mapOffset
+                                 Entity.Size == v3 15.0f 15.0f 0.0f
+                                 Entity.Elevation == Constants.Field.GuiElevation + 2.0f
+                                 Entity.Absolute == true
+                                 Entity.StaticImage == Assets.Field.AutoAvatarImage]
+                        Content.button "AutoBack"
+                            [Entity.Position == v3 -72.0f -192.0f 0.0f
+                             Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.Elevation == Constants.Field.GuiElevation
+                             Entity.Text == "Close"
+                             Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                             Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
+                             Entity.ClickEvent => MenuClose]
+                    | Some _ | None -> ()
+                | (false, _) -> ()
 
              // inventory
              | MenuInventory _ ->

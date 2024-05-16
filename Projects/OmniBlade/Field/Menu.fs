@@ -93,6 +93,7 @@ type MenuKeyItems =
 
 type MenuState =
     | MenuTeam of MenuTeam
+    | MenuAutoMap
     | MenuInventory of MenuInventory
     | MenuTechs of MenuTechs
     | MenuKeyItems of MenuKeyItems
