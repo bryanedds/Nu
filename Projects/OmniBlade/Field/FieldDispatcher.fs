@@ -847,8 +847,8 @@ type FieldDispatcher () =
                      Content.button "AutoMap"
                        [Entity.PositionLocal == v3 138.0f 12.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
                         Entity.EnabledLocal := Field.hasAutoMap field
-                        Entity.UpImage == Assets.Field.ButtonMapUpImage
-                        Entity.DownImage == Assets.Field.ButtonMapDownImage
+                        Entity.UpImage == Assets.Field.ButtonAutoMapUpImage
+                        Entity.DownImage == Assets.Field.ButtonAutoMapDownImage
                         Entity.TextColor == Color 0x93544CFFu
                         Entity.TextDisabledColor == Color 0x93544CC0u
                         Entity.Text == "Map"
