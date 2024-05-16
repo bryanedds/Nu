@@ -78,6 +78,8 @@ module Assets =
     module Field =
 
         let PackageName = "Field"
+        let ButtonMapUpImage = asset<Image> PackageName "ButtonMapUp"
+        let ButtonMapDownImage = asset<Image> PackageName "ButtonMapDown"
         let WoodenChestOpenedImage = asset<Image> PackageName "WoodenChestOpened"
         let WoodenChestClosedImage = asset<Image> PackageName "WoodenChestClosed"
         let SteelChestOpenedImage = asset<Image> PackageName "SteelChestOpened"

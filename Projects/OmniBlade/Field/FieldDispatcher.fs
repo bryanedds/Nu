@@ -847,8 +847,8 @@ type FieldDispatcher () =
                      Content.button "AutoMap"
                        [Entity.PositionLocal == v3 138.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 252.0f 72.0f 0.0f
                         Entity.EnabledLocal := Field.hasAutoMap field
-                        Entity.UpImage == asset "Field" "ButtonMapUp"
-                        Entity.DownImage == asset "Field" "ButtonMapDown"
+                        Entity.UpImage == Assets.Field.ButtonMapUpImage
+                        Entity.DownImage == Assets.Field.ButtonMapDownImage
                         Entity.TextColor == Color 0x93544CFFu
                         Entity.Text == "Map"
                         Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
@@ -953,21 +953,19 @@ type FieldDispatcher () =
                                  Entity.Absolute == true
                                  Entity.StaticImage == Assets.Field.AutoAvatarImage]
                         Content.button "AutoBack"
-                            [Entity.Position == v3 -72.0f 144.0f 0.0f
-                             Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.Position == v3 -36.0f 144.0f 0.0f
+                             Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
-                             Entity.Text == "Back"
-                             Entity.UpImage == Assets.Gui.ButtonShortUpImage
-                             Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                             Entity.UpImage == asset "Field" "BackButtonUp"
+                             Entity.DownImage == asset "Field" "BackButtonDown"
                              Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                              Entity.ClickEvent => MenuTeamOpen]
                         Content.button "AutoClose"
-                            [Entity.Position == v3 -72.0f -192.0f 0.0f
-                             Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.Position == v3 -36.0f -216.0f 0.0f
+                             Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
-                             Entity.Text == "Close"
-                             Entity.UpImage == Assets.Gui.ButtonShortUpImage
-                             Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                             Entity.UpImage == asset "Field" "CloseButtonUp"
+                             Entity.DownImage == asset "Field" "CloseButtonDown"
                              Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                              Entity.ClickEvent => MenuClose]
                     | Some _ | None -> ()
