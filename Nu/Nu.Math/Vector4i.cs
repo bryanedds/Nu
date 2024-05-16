@@ -503,6 +503,22 @@ namespace Nu
         }
 
         /// <summary>
+        /// Divides the instance by another Vector4i using integer division, floor(a/b).
+        /// </summary>
+        /// <param name="vec">The instance.</param>
+        /// <param name="vec2">The divisor.</param>
+        /// <returns>The result of the calculation.</returns>
+        [Pure]
+        public static Vector4i operator /(Vector4i vec, Vector4i vec2)
+        {
+            vec.X /= vec2.X;
+            vec.Y /= vec2.Y;
+            vec.Z /= vec2.Z;
+            vec.W /= vec2.W;
+            return vec;
+        }
+
+        /// <summary>
         /// Compares two instances for equality.
         /// </summary>
         /// <param name="left">The first instance.</param>

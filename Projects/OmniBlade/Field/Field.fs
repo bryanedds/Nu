@@ -128,6 +128,7 @@ module Field =
               ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               FieldSongTimeOpt_ : int64 option
+              AutoMaps_ : Map<FieldType, Vector2i Set>
               FieldType_ : FieldType }
 
         (* Local Properties *)
@@ -156,6 +157,7 @@ module Field =
         member this.ShopOpt = this.ShopOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
+        member this.AutoMaps = this.AutoMaps_
         member this.FieldType = this.FieldType_
 
     (* Low-Level Operations *)
@@ -1210,11 +1212,27 @@ module Field =
                                 let field = mapCue (constant cue) field
                                 match sensorType with
                                 | AirSensor -> (signals, field)
-                                | HiddenSensor | StepPlateSensor -> (signal (ScheduleSound (0L,  Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
+                                | HiddenSensor | StepPlateSensor -> (signal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
                             else (signals, field))
                             (signals, field) sensors
                     results
                 | Some _ -> (signals, field)
+
+            // update auto maps
+            let field =
+                match Data.Value.Fields.TryGetValue field.FieldType_ with
+                | (true, fieldData) ->
+                    match FieldData.tryGetTileMap field.OmniSeedState_ fieldData with
+                    | Some (Choice3Of4 (_, _, _)) ->
+                        let index = (field.Avatar_.Perimeter.BottomOffset5.V2 / Constants.Field.RoomSize.V2 / Constants.Gameplay.TileSize.V2).V2i
+                        let autoMap = match field.AutoMaps_.TryGetValue fieldData.FieldType with (true, autoMap) -> autoMap | (false, _) -> Set.empty
+                        if  index.X >= 0 && index.X < Constants.Field.RandMapSize.X &&
+                            index.Y >= 0 && index.Y < Constants.Field.RandMapSize.Y then
+                            let autoMap = Set.add index autoMap
+                            { field with AutoMaps_ = Map.add fieldData.FieldType autoMap field.AutoMaps_ }
+                        else field
+                    | Some _ | None -> field
+                | (false, _) -> field
 
             // update spirits
             let (signals : Signal list, field) =
@@ -1279,6 +1297,7 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
+          AutoMaps_ = Map.empty
           FieldType_ = fieldType }
 
     let empty =
@@ -1309,6 +1328,7 @@ module Field =
           ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
+          AutoMaps_ = Map.empty
           FieldType_ = EmptyField }
 
     let initial time saveSlot =

@@ -944,7 +944,7 @@ type FieldData =
 [<RequireQualifiedAccess>]
 module FieldData =
 
-    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, TmxMap * Origin, TmxMap>>
+    let mutable tileMapsMemoized = Map.empty<uint64 * FieldType, Choice<TmxMap, TmxMap * TmxMap, RandMap * TmxMap * Origin, TmxMap>>
     let mutable propObjectsMemoized = Map.empty<uint64 * FieldType, TmxMap * (TmxObjectGroup * TmxObject) list * Origin option>
     let mutable propDescriptorsMemoized = Map.empty<uint64 * FieldType, PropDescriptor list>
 
@@ -982,7 +982,7 @@ module FieldData =
                     let (cursor, randMap, _) = RandMap.makeFromRand walkCount walkLength bias Constants.Field.RandMapSize origin floor rand
                     let fieldName = FieldType.toFieldName fieldData.FieldType
                     let tileMap = RandMap.toTmx fieldName fieldPath origin cursor floor fieldData.UseWindPortal fieldData.UseAlternativeNormalSegments fieldData.UseAlternativeSpecialSegments randMap
-                    Some (Choice3Of4 (tileMap, origin))
+                    Some (Choice3Of4 (randMap, tileMap, origin))
                 | FieldRoom fieldAsset ->
                     match Metadata.tryGetTileMapMetadata fieldAsset with
                     | Some tileMapMetadata -> Some (Choice4Of4 tileMapMetadata.TileMap)
@@ -1014,7 +1014,7 @@ module FieldData =
                             let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
                             (tileMap, propObjects, None)
                         else (tileMap, [], None)
-                    | Choice3Of4 (tileMap, origin) ->
+                    | Choice3Of4 (_, tileMap, origin) ->
                         if tileMap.ObjectGroups.Contains Constants.Field.PropsGroupName then
                             let group = tileMap.ObjectGroups.Item Constants.Field.PropsGroupName
                             let propObjects = enumerable<TmxObject> group.Objects |> Seq.map (fun propObject -> (group, propObject)) |> Seq.toList
@@ -1112,7 +1112,7 @@ module FieldData =
         match tryGetTileMap omniSeedState fieldData with
         | Some tileMapChc ->
             match tileMapChc with
-            | Choice3Of4 (tileMap, origin) ->
+            | Choice3Of4 (_, tileMap, origin) ->
                 match fieldData.FieldTileMap with
                 | FieldRandom (_, _, _, _, _, _) ->
                     let tileMapPerimeter = box3 v3Zero (v3 (single tileMap.Width * single tileMap.TileWidth) (single tileMap.Height * single tileMap.TileHeight) 0.0f)

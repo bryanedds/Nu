@@ -83,6 +83,7 @@ module Constants =
         let SpiritActivityAggressionThreshold = 4
         let SpiritRadius = 90.0f / SpiritOrbRatio
         let SpiritCollisionRadius = 72.0f
+        let AutoTileSize = v3 24.0f 24.0f 0.0f
         let WalkLengthScalar = 0.55f // NOTE: higher is longer distance to stronger spirits.
         let TreasureProbability = 0.667f
         let SpawnRoomPropId = -1 // NOTE: negative prop ids are reserved as hard-coded constants.
