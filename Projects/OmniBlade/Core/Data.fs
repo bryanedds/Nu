@@ -851,10 +851,6 @@ type DoorData =
       OpenImage : Image AssetTag
       ClosedImage : Image AssetTag }
 
-type ShopData =
-    { ShopType : ShopType // key
-      ShopItems : ItemType list }
-
 type BattleData =
     { BattleType : BattleType // key
       BattleAllyPositions : Vector3 list
@@ -1155,7 +1151,6 @@ module Data =
           Techs : Map<TechType, TechData>
           Archetypes : Map<ArchetypeType, ArchetypeData>
           Characters : Map<CharacterType, CharacterData>
-          Shops : Map<ShopType, ShopData>
           Battles : Map<BattleType, BattleData>
           Encounters : Map<EncounterType, EncounterData>
           TechAnimations : Map<TechType, TechAnimationData>
@@ -1180,7 +1175,6 @@ module Data =
               readSheetVsync Assets.Data.TechDataFilePath (fun (data : TechData) -> data.TechType)
               readSheetVsync Assets.Data.ArchetypeDataFilePath (fun (data : ArchetypeData) -> data.ArchetypeType)
               readSheetVsync Assets.Data.CharacterDataFilePath (fun data -> data.CharacterType)
-              readSheetVsync Assets.Data.ShopDataFilePath (fun data -> data.ShopType)
               readSheetVsync Assets.Data.BattleDataFilePath (fun data -> data.BattleType)
               readSheetVsync Assets.Data.EncounterDataFilePath (fun data -> data.EncounterType)
               readSheetVsync Assets.Data.TechAnimationDataFilePath (fun data -> data.TechType)
@@ -1194,12 +1188,11 @@ module Data =
           Techs = cast results.[4]
           Archetypes = cast results.[5]
           Characters = cast results.[6]
-          Shops = cast results.[7]
-          Battles = cast results.[8]
-          Encounters = cast results.[9]
-          TechAnimations = cast results.[10]
-          CharacterAnimations = cast results.[11]
-          Fields = cast results.[12] }
+          Battles = cast results.[7]
+          Encounters = cast results.[8]
+          TechAnimations = cast results.[9]
+          CharacterAnimations = cast results.[10]
+          Fields = cast results.[11] }
 
     let Value =
         readFromFiles ()

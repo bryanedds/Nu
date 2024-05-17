@@ -55,9 +55,8 @@ module FieldContent =
                 | Some shop ->
                     match shop.ShopState with
                     | ShopBuying ->
-                        match Map.tryFind shop.ShopType Data.Value.Shops with
-                        | Some shopData -> pageItems5 pageSize shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopData.ShopItems)
-                        | None -> (false, false, Map.empty)
+                        let shopItems = Shop.getShopBuyItems field.Advents shop
+                        pageItems5 pageSize shop.ShopPage false false (Map.ofListBy (flip Pair.make 1) shopItems)
                     | ShopSelling ->
                         let items = Inventory.getNonKeyItems field.Inventory
                         pageItems5 pageSize shop.ShopPage true true items
