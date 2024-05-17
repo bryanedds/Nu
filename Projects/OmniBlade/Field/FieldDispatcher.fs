@@ -965,7 +965,7 @@ type FieldDispatcher () =
                                  Entity.Absolute == true
                                  Entity.StaticImage == Assets.Field.AutoAvatarImage]
                         Content.button "AutoBack"
-                            [Entity.Position == v3 -36.0f 144.0f 0.0f
+                            [Entity.Position == v3 -78.0f -216.0f 0.0f
                              Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
                              Entity.UpImage == asset "Field" "BackButtonUp"
@@ -973,7 +973,7 @@ type FieldDispatcher () =
                              Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                              Entity.ClickEvent => MenuTeamOpen]
                         Content.button "AutoClose"
-                            [Entity.Position == v3 -36.0f -216.0f 0.0f
+                            [Entity.Position == v3 6.0f -216.0f 0.0f
                              Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
                              Entity.UpImage == asset "Field" "CloseButtonUp"
