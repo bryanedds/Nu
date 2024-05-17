@@ -13,6 +13,7 @@ open type Vortice.Vulkan.Vulkan
 open ImGuiNET
 open Prime
 open System.Runtime.InteropServices
+open System.Collections.Generic
 
 /// A renderer process that may or may not be threaded.
 type RendererProcess =
@@ -335,8 +336,10 @@ type RendererThread () =
                 let mutable instance = Unchecked.defaultof<VkInstance>
                 let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
                 let mutable graphicsQueueFamily = 0u
+                let mutable presentQueueFamily = 0u
                 let mutable device = Unchecked.defaultof<VkDevice>
                 let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
+                let mutable presentQueue = Unchecked.defaultof<VkQueue>
                 
                 do
                     // get available instance layers
@@ -419,40 +422,62 @@ type RendererThread () =
                     ()
 
                 do
-                    // get graphics queue family
+                    // get queue families
                     let mutable queueFamilyCount = 0u
                     let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, NativePtr.nullPtr)
                     let mutable queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
                     use queueFamiliesHnd = queueFamilies.AsMemory().Pin()
                     let queueFamiliesNptr = NativePtr.ofVoidPtr<VkQueueFamilyProperties> queueFamiliesHnd.Pointer
                     let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, queueFamiliesNptr)
-                    for i in [0 .. dec (int queueFamilyCount)] do if queueFamilies[i].queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then graphicsQueueFamily <- uint i
+                    
+                    for i in [0 .. dec (int queueFamilyCount)] do
+                        if queueFamilies[i].queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then graphicsQueueFamily <- uint i
+                        let mutable presentSupport = VkBool32.False
+                        let result = vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, uint i, surface, &presentSupport)
+                        if (presentSupport = VkBool32.True) then presentQueueFamily <- uint i
                     
                     ()
                 
-                // populate queuecreate info
-                let mutable queuePriority = 1.0f
-                let mutable queueCreateInfo = VkDeviceQueueCreateInfo ()
-                queueCreateInfo.queueFamilyIndex <- graphicsQueueFamily
-                queueCreateInfo.queueCount <- 1u
-                queueCreateInfo.pQueuePriorities <- Interop.AsPointer &queuePriority
+                do
+                    // get unique queue family array
+                    let uniqueQueueFamiliesSet = new HashSet<uint> ()
+                    uniqueQueueFamiliesSet.Add graphicsQueueFamily
+                    uniqueQueueFamiliesSet.Add presentQueueFamily
+                    let uniqueQueueFamilies = Array.zeroCreate<uint> uniqueQueueFamiliesSet.Count
+                    uniqueQueueFamiliesSet.CopyTo (uniqueQueueFamilies)
+                    
+                    // populate queue create infos
+                    let mutable queuePriority = 1.0f
+                    let queueCreateInfos = Array.zeroCreate<VkDeviceQueueCreateInfo> uniqueQueueFamilies.Length
+                    use queueCreateInfosHnd = queueCreateInfos.AsMemory().Pin()
+                    let queueCreateInfosNptr = NativePtr.ofVoidPtr<VkDeviceQueueCreateInfo> queueCreateInfosHnd.Pointer
 
-                // populate createdevice info
-                let mutable deviceFeatures = VkPhysicalDeviceFeatures ()
-                let mutable deviceCreateInfo = VkDeviceCreateInfo ()
-                deviceCreateInfo.pQueueCreateInfos <- Interop.AsPointer &queueCreateInfo
-                deviceCreateInfo.queueCreateInfoCount <- 1u
-                deviceCreateInfo.pEnabledFeatures <- Interop.AsPointer &deviceFeatures
+                    for i in [0 .. dec (uniqueQueueFamilies.Length)] do
+                        let mutable queueCreateInfo = VkDeviceQueueCreateInfo ()
+                        queueCreateInfo.queueFamilyIndex <- uniqueQueueFamilies[i]
+                        queueCreateInfo.queueCount <- 1u
+                        queueCreateInfo.pQueuePriorities <- Interop.AsPointer &queuePriority
+                        queueCreateInfos[i] <- queueCreateInfo
+                    
+                    // populate createdevice info
+                    let mutable deviceFeatures = VkPhysicalDeviceFeatures ()
+                    let mutable deviceCreateInfo = VkDeviceCreateInfo ()
+                    deviceCreateInfo.pQueueCreateInfos <- queueCreateInfosNptr
+                    deviceCreateInfo.queueCreateInfoCount <- uint queueCreateInfos.Length
+                    deviceCreateInfo.pEnabledFeatures <- Interop.AsPointer &deviceFeatures
 
-                // create logical device
-                let result = vkCreateDevice (physicalDevice, Interop.AsPointer &deviceCreateInfo, NativePtr.nullPtr, &device)
-                printfn "vkCreateDevice returned %s." (result.ToString ())
+                    // create logical device
+                    let result = vkCreateDevice (physicalDevice, Interop.AsPointer &deviceCreateInfo, NativePtr.nullPtr, &device)
+                    printfn "vkCreateDevice returned %s." (result.ToString ())
+
+                    ()
 
                 // like load instance; vulkan should be fully loaded now!
                 vkLoadDevice device
                 
-                // get graphics queue
+                // get queue handles
                 let result = vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
+                let result = vkGetDeviceQueue (device, presentQueueFamily, 0u, &presentQueue)
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
