@@ -64,6 +64,12 @@ type CreditsDispatcher () =
                  Entity.PerimeterCentered == true
                  Entity.StaticImage == Assets.Default.Black
                  Entity.Absolute == true]
+             Content.button "Quit"
+                [Entity.Position == v3 306.0f -246.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
+                 Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                 Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                 Entity.Text == "Quit"
+                 Entity.ClickEvent => StartQuitting]
              Content.panel "Panel"
                 [Entity.Position := credits.ScrollPosition
                  Entity.Size == v3 0.0f 3000.0f 0.0f
