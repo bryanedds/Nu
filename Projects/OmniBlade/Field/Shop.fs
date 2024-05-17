@@ -87,17 +87,3 @@ type [<SymbolicExpansion>] Shop =
       ShopState : ShopState
       ShopPage : int
       ShopConfirmOpt : ShopConfirm option }
-
-    static member getChemistBuyItems (_ : Advent Set) =
-        [Consumable GreenHerb; Consumable RedHerb; Consumable Remedy
-         Consumable Ether; Consumable HighEther; Consumable Revive]
-
-    static member getArmoryBuyItems (_ : Advent Set) =
-        [Equipment (WeaponType BronzeSword); Equipment (WeaponType BronzeKatana); Equipment (WeaponType BronzeRod); Equipment (WeaponType LightBow)
-         Equipment (ArmorType BronzeMail); Equipment (ArmorType LeatherVest); Equipment (ArmorType LeatherRobe)
-         Equipment (AccessoryType SteelRing)]
-
-    static member getShopBuyItems advents shop =
-        match shop.ShopType with
-        | Chemist -> Shop.getChemistBuyItems advents
-        | Armory -> Shop.getArmoryBuyItems advents

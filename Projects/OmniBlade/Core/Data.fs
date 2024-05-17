@@ -343,6 +343,20 @@ type ShopType =
     | Chemist
     | Armory
 
+    static member getChemistBuyItems (_ : Advent Set) =
+        [Consumable GreenHerb; Consumable RedHerb; Consumable Remedy
+         Consumable Ether; Consumable HighEther; Consumable Revive]
+
+    static member getArmoryBuyItems (_ : Advent Set) =
+        [Equipment (WeaponType BronzeSword); Equipment (WeaponType BronzeKatana); Equipment (WeaponType BronzeRod); Equipment (WeaponType LightBow)
+         Equipment (ArmorType BronzeMail); Equipment (ArmorType LeatherVest); Equipment (ArmorType LeatherRobe)
+         Equipment (AccessoryType SteelRing)]
+
+    static member getShopBuyItems advents shopType =
+        match shopType with
+        | Chemist -> ShopType.getChemistBuyItems advents
+        | Armory -> ShopType.getArmoryBuyItems advents
+
 type ShopkeepAppearanceType =
     | Male
     | Female
