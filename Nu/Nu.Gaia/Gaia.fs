@@ -1554,9 +1554,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.MenuItem "Set as Creation Parent" then
                         NewEntityParentOpt <- SelectedEntityOpt
                         ShowEntityContextMenu <- false
+                let operation = ContextHierarchy { Snapshot = snapshot }
+                let world = World.editGame operation Game world
+                let world = World.editScreen operation SelectedScreen world
+                let world = World.editGroup operation SelectedGroup world
                 let world =
                     match SelectedEntityOpt with
-                    | Some selectedEntity -> World.edit (ContextHierarchy { Snapshot = snapshot }) selectedEntity world
+                    | Some selectedEntity -> World.editEntity operation selectedEntity world
                     | None -> world
                 ImGui.EndPopup ()
                 world
@@ -2908,15 +2912,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let viewport = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
             let projectionMatrix = viewport.Projection3d
             let projection = projectionMatrix.ToArray ()
+            let operation =
+                OverlayViewport
+                    { Snapshot = snapshot
+                      ViewportView = viewport.View3d (false, World.getEye3dCenter world, World.getEye3dRotation world)
+                      ViewportProjection = projectionMatrix
+                      ViewportBounds = box2 v2Zero io.DisplaySize }
+            let world = World.editGame operation Game world
+            let world = World.editScreen operation SelectedScreen world
+            let world = World.editGroup operation SelectedGroup world
             let world =
                 match SelectedEntityOpt with
                 | Some entity when entity.Exists world && entity.GetIs3d world ->
-                    let viewMatrix =
-                        viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
                     let operation =
                         OverlayViewport
                             { Snapshot = snapshot
-                              ViewportView = viewMatrix
+                              ViewportView = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
                               ViewportProjection = projectionMatrix
                               ViewportBounds = box2 v2Zero io.DisplaySize }
                     World.editEntity operation entity world
@@ -4407,10 +4418,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let world = if ImGui.Button "Wipe Propagation Targets" then tryWipePropagationTargets world |> snd else world
             if ImGui.Button "Show in Hierarchy" then ShowSelectedEntity <- true; ShowEntityContextMenu <- false
             if ImGui.Button "Set as Creation Parent" then NewEntityParentOpt <- SelectedEntityOpt; ShowEntityContextMenu <- false
+            let operation = ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }
+            let world = World.editGame operation Game world
+            let world = World.editScreen operation SelectedScreen world
+            let world = World.editGroup operation SelectedGroup world
             let world =
                 match SelectedEntityOpt with
-                | Some selectedEntity ->
-                    World.edit (ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }) selectedEntity world
+                | Some selectedEntity -> World.editEntity operation selectedEntity world
                 | None -> world
             ImGui.End ()
             world
