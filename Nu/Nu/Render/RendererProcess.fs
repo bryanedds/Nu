@@ -459,12 +459,22 @@ type RendererThread () =
                         queueCreateInfo.pQueuePriorities <- Interop.AsPointer &queuePriority
                         queueCreateInfos[i] <- queueCreateInfo
                     
+                    // get swapchain extension
+                    let swapChainName = VK_KHR_SWAPCHAIN_EXTENSION_NAME
+                    use _ = swapChainName.AsMemory().Pin()
+                    let swapChainNamePtr = swapChainName.GetUtf8Span().GetPointer()
+                    let extensionArray = [|swapChainNamePtr|]
+                    use extensionArrayHnd = extensionArray.AsMemory().Pin()
+                    let extensionArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> extensionArrayHnd.Pointer
+                    
                     // populate createdevice info
                     let mutable deviceFeatures = VkPhysicalDeviceFeatures ()
                     let mutable deviceCreateInfo = VkDeviceCreateInfo ()
                     deviceCreateInfo.pQueueCreateInfos <- queueCreateInfosNptr
                     deviceCreateInfo.queueCreateInfoCount <- uint queueCreateInfos.Length
                     deviceCreateInfo.pEnabledFeatures <- Interop.AsPointer &deviceFeatures
+                    deviceCreateInfo.enabledExtensionCount <- 1u
+                    deviceCreateInfo.ppEnabledExtensionNames <- extensionArrayNptr
 
                     // create logical device
                     let result = vkCreateDevice (physicalDevice, Interop.AsPointer &deviceCreateInfo, NativePtr.nullPtr, &device)
@@ -478,6 +488,46 @@ type RendererThread () =
                 // get queue handles
                 let result = vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
                 let result = vkGetDeviceQueue (device, presentQueueFamily, 0u, &presentQueue)
+
+                let mutable swapChain = Unchecked.defaultof<VkSwapchainKHR>
+
+                // get surface capabilities
+                let mutable surfaceCapabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
+                let result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &surfaceCapabilities)
+                
+                do
+                    // populate create swapchain info
+                    let mutable swapChainCreateInfo = VkSwapchainCreateInfoKHR ()
+                    swapChainCreateInfo.surface <- surface
+                    swapChainCreateInfo.minImageCount <- surfaceCapabilities.minImageCount
+                    printfn "min swapchain images: %i" surfaceCapabilities.minImageCount
+                    swapChainCreateInfo.imageFormat <- VK_FORMAT_B8G8R8A8_SRGB
+                    swapChainCreateInfo.imageColorSpace <- VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+                    swapChainCreateInfo.imageExtent <- surfaceCapabilities.currentExtent
+                    swapChainCreateInfo.imageArrayLayers <- 1u
+                    swapChainCreateInfo.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+
+                    let indicesArray = [|graphicsQueueFamily; presentQueueFamily|]
+                    use indicesArrayHnd = indicesArray.AsMemory().Pin()
+                    let indicesArrayNptr = NativePtr.ofVoidPtr<uint32> indicesArrayHnd.Pointer
+
+                    if (graphicsQueueFamily = presentQueueFamily) then
+                        swapChainCreateInfo.imageSharingMode <- VK_SHARING_MODE_EXCLUSIVE
+                        swapChainCreateInfo.queueFamilyIndexCount <- 0u
+                        swapChainCreateInfo.pQueueFamilyIndices <- NativePtr.nullPtr
+                    else
+                        swapChainCreateInfo.imageSharingMode <- VK_SHARING_MODE_CONCURRENT
+                        swapChainCreateInfo.queueFamilyIndexCount <- 2u
+                        swapChainCreateInfo.pQueueFamilyIndices <- indicesArrayNptr
+
+                    swapChainCreateInfo.preTransform <- surfaceCapabilities.currentTransform
+                    swapChainCreateInfo.compositeAlpha <- VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+                    swapChainCreateInfo.presentMode <- VK_PRESENT_MODE_FIFO_KHR
+                    swapChainCreateInfo.clipped <- VkBool32.True
+
+                    // create swapchain
+                    let result = vkCreateSwapchainKHR (device, Interop.AsPointer &swapChainCreateInfo, NativePtr.nullPtr, &swapChain)
+                    printfn "vkCreateSwapchainKHR returned %s." (result.ToString ())
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
