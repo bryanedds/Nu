@@ -2161,6 +2161,12 @@ module GroupDispatcherModule =
         override this.Render (renderPass, group, world) =
             this.Render (this.GetModel group world, renderPass, group, world)
 
+        override this.Edit (operation, group, world) =
+            let model = group.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, group, world)
+            let world = this.SetModel model group world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model group) signal group world) world signals
+
         [<DebuggerHidden>]
         override this.Signal (signalObj : obj, group, world) =
             match signalObj with
@@ -2332,6 +2338,12 @@ module ScreenDispatcherModule =
 
         override this.Render (renderPass, screen, world) =
             this.Render (this.GetModel screen world, renderPass, screen, world)
+
+        override this.Edit (operation, screen, world) =
+            let model = screen.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, screen, world)
+            let world = this.SetModel model screen world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model screen) signal screen world) world signals
 
         [<DebuggerHidden>]
         override this.Signal (signalObj : obj, screen, world) =
@@ -2511,6 +2523,12 @@ module GameDispatcherModule =
 
         override this.Render (renderPass, game, world) =
             this.Render (this.GetModel game world, renderPass, game, world)
+
+        override this.Edit (operation, game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, game, world)
+            let world = this.SetModel model game world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model game) signal game world) world signals
 
         [<DebuggerHidden>]
         override this.Signal (signalObj : obj, game, world) =
