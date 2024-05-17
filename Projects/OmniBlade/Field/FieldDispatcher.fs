@@ -930,11 +930,11 @@ type FieldDispatcher () =
                              Entity.Absolute == true
                              Entity.StaticImage == Assets.Field.AutoMapImage]
                         let autoMap = match field.AutoMaps.TryGetValue field.FieldType with (true, autoMap) -> autoMap | (false, _) -> Set.empty
-                        for i in 0 .. dec Constants.Field.RandMapSize.X do
-                            for j in 0 .. dec Constants.Field.RandMapSize.Y do
+                        for j in 0 .. dec Constants.Field.RandMapSize.Y do
+                            for i in 0 .. dec Constants.Field.RandMapSize.X do
                                 let index = v2i i j
                                 if autoMap.Contains index then
-                                    Content.staticSprite ("AutoTile+" + scstring index)
+                                    Content.staticSprite ("AutoTile+" + scstring index.X + "+" + scstring index.Y)
                                         [Entity.Position := index.V3 * Constants.Field.AutoTileSize + mapOffset
                                          Entity.Size == Constants.Field.AutoTileSize
                                          Entity.Elevation == Constants.Field.GuiElevation + 1.0f
@@ -951,19 +951,19 @@ type FieldDispatcher () =
                                          Entity.Elevation == Constants.Field.GuiElevation + 2.0f
                                          Entity.Absolute == true
                                          Entity.StaticImage == Assets.Field.AutoOriginImage]
-                        if field.FieldTime / 20L % 3L <> 0L then
-                            Content.staticSprite "AutoAvatar"
-                                [Entity.Position :=
-                                    field.Avatar.Perimeter.BottomOffset5 /
-                                    Constants.Field.RoomSize.V3 /
-                                    Constants.Gameplay.TileSize *
-                                    Constants.Field.AutoTileSize +
-                                    v3 -7.5f -7.5f 0.0f +
-                                    mapOffset
-                                 Entity.Size == v3 15.0f 15.0f 0.0f
-                                 Entity.Elevation == Constants.Field.GuiElevation + 3.0f
-                                 Entity.Absolute == true
-                                 Entity.StaticImage == Assets.Field.AutoAvatarImage]
+                        Content.staticSprite "AutoAvatar"
+                            [Entity.Position :=
+                                field.Avatar.Perimeter.BottomOffset5 /
+                                Constants.Field.RoomSize.V3 /
+                                Constants.Gameplay.TileSize *
+                                Constants.Field.AutoTileSize +
+                                v3 -7.5f -7.5f 0.0f +
+                                mapOffset
+                             Entity.Size == v3 15.0f 15.0f 0.0f
+                             Entity.Elevation == Constants.Field.GuiElevation + 3.0f
+                             Entity.Absolute == true
+                             Entity.StaticImage == Assets.Field.AutoAvatarImage
+                             Entity.Visible := field.FieldTime / 20L % 3L <> 0L]
                         Content.button "AutoBack"
                             [Entity.Position == v3 -78.0f -216.0f 0.0f
                              Entity.Size == v3 72.0f 72.0f 0.0f
