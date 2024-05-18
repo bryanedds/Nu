@@ -340,6 +340,12 @@ type RendererThread () =
                 let mutable device = Unchecked.defaultof<VkDevice>
                 let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
                 let mutable presentQueue = Unchecked.defaultof<VkQueue>
+                let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
+                let mutable swapChain = Unchecked.defaultof<VkSwapchainKHR>
+                let mutable swapChainExtent = Unchecked.defaultof<VkExtent2D>
+                let mutable swapChainImageFormat = Unchecked.defaultof<VkFormat>
+                let mutable swapChainImages = Array.empty<VkImage>
+                let mutable swapChainImageViews = Array.empty<VkImageView>
                 
                 do
                     // get available instance layers
@@ -399,7 +405,6 @@ type RendererThread () =
                 vkLoadInstanceOnly instance
 
                 // get surface from sdl
-                let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
                 let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(Interop.As<VkSurfaceKHR, uint64> &surface))
                 printfn "SDL_Vulkan_CreateSurface returned %s." (result.ToString ())
 
@@ -489,11 +494,13 @@ type RendererThread () =
                 let result = vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
                 let result = vkGetDeviceQueue (device, presentQueueFamily, 0u, &presentQueue)
 
-                let mutable swapChain = Unchecked.defaultof<VkSwapchainKHR>
-
                 // get surface capabilities
                 let mutable surfaceCapabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
                 let result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &surfaceCapabilities)
+                
+                // set swapchain extent and format
+                swapChainExtent <- surfaceCapabilities.currentExtent
+                swapChainImageFormat <- VK_FORMAT_B8G8R8A8_SRGB
                 
                 do
                     // populate create swapchain info
@@ -501,9 +508,9 @@ type RendererThread () =
                     swapChainCreateInfo.surface <- surface
                     swapChainCreateInfo.minImageCount <- surfaceCapabilities.minImageCount
                     printfn "min swapchain images: %i" surfaceCapabilities.minImageCount
-                    swapChainCreateInfo.imageFormat <- VK_FORMAT_B8G8R8A8_SRGB
+                    swapChainCreateInfo.imageFormat <- swapChainImageFormat
                     swapChainCreateInfo.imageColorSpace <- VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-                    swapChainCreateInfo.imageExtent <- surfaceCapabilities.currentExtent
+                    swapChainCreateInfo.imageExtent <- swapChainExtent
                     swapChainCreateInfo.imageArrayLayers <- 1u
                     swapChainCreateInfo.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 
@@ -528,6 +535,18 @@ type RendererThread () =
                     // create swapchain
                     let result = vkCreateSwapchainKHR (device, Interop.AsPointer &swapChainCreateInfo, NativePtr.nullPtr, &swapChain)
                     printfn "vkCreateSwapchainKHR returned %s." (result.ToString ())
+
+                do
+                    // get swapchain images
+                    let mutable swapChainImageCount = 0u
+                    let result = vkGetSwapchainImagesKHR (device, swapChain, Interop.AsPointer &swapChainImageCount, NativePtr.nullPtr)
+                    Array.Resize<VkImage> (&swapChainImages, int swapChainImageCount)
+                    use swapChainImagesHnd = swapChainImages.AsMemory().Pin()
+                    let swapChainImagesNptr = NativePtr.ofVoidPtr<VkImage> swapChainImagesHnd.Pointer
+                    let result = vkGetSwapchainImagesKHR (device, swapChain, Interop.AsPointer &swapChainImageCount, swapChainImagesNptr)
+                    printfn "vkGetSwapchainImagesKHR returned %s." (result.ToString ())
+
+                    ()
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
