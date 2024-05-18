@@ -548,6 +548,31 @@ type RendererThread () =
 
                     ()
 
+                do
+                    // setup swapchain image views
+                    Array.Resize<VkImageView> (&swapChainImageViews, swapChainImages.Length)
+                    use _ = swapChainImageViews.AsMemory().Pin()
+
+                    for i in [0 .. dec (swapChainImageViews.Length)] do
+                        let mutable imageViewCreateInfo = VkImageViewCreateInfo ()
+                        imageViewCreateInfo.image <- swapChainImages[i]
+                        imageViewCreateInfo.viewType <- VK_IMAGE_VIEW_TYPE_2D
+                        imageViewCreateInfo.format <- swapChainImageFormat
+                        imageViewCreateInfo.components.r <- VK_COMPONENT_SWIZZLE_IDENTITY
+                        imageViewCreateInfo.components.g <- VK_COMPONENT_SWIZZLE_IDENTITY
+                        imageViewCreateInfo.components.b <- VK_COMPONENT_SWIZZLE_IDENTITY
+                        imageViewCreateInfo.components.a <- VK_COMPONENT_SWIZZLE_IDENTITY
+                        imageViewCreateInfo.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+                        imageViewCreateInfo.subresourceRange.baseMipLevel <- 0u
+                        imageViewCreateInfo.subresourceRange.levelCount <- 1u
+                        imageViewCreateInfo.subresourceRange.baseArrayLayer <- 0u
+                        imageViewCreateInfo.subresourceRange.layerCount <- 1u
+
+                        let result = vkCreateImageView (device, Interop.AsPointer &imageViewCreateInfo, NativePtr.nullPtr, &swapChainImageViews[i])
+                        printfn "vkCreateImageView returned %s." (result.ToString ())
+
+                    ()
+
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
                 OpenGL.Hl.Assert ()
