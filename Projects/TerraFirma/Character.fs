@@ -114,7 +114,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             animations
         | _ -> []
 
-    static member private tryComputeActionAnimation time character world =
+    static member private tryUpdateActionAnimation time character world =
         match character.ActionState with
         | NormalState -> None
         | AttackState attack ->
@@ -248,11 +248,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             { character with ActionState = actionState }
         | WoundState _ -> character
 
-    static member private computeAnimations time position rotation linearVelocity angularVelocity character world =
+    static member private updateAnimations time position rotation linearVelocity angularVelocity character world =
         ignore<Vector3> position
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
         let (animations, invisible) =
-            match Character.tryComputeActionAnimation time character world with
+            match Character.tryUpdateActionAnimation time character world with
             | Some (animation, invisible) -> (animation :: traversalAnimations, invisible)
             | None -> (traversalAnimations, false)
         (animations, invisible)
@@ -308,7 +308,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = Character.updateAction time position rotation playerPosition character
         let character = Character.updateState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        let (animations, invisible) = Character.computeAnimations time position rotation linearVelocity angularVelocity character world
+        let (animations, invisible) = Character.updateAnimations time position rotation linearVelocity angularVelocity character world
         (animations, invisible, attackedCharacters, position, rotation, character)
 
     static member initial characterType =

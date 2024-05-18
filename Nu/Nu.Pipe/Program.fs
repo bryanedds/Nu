@@ -12,7 +12,7 @@ module Program =
         | [|inputDirectory; outputDirectory; refinementDirectory; fullBuildStr|] ->
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
-                let fullBuild = fullBuildStr = scstring true
+                let fullBuild = fullBuildStr = string true
                 AssetGraph.buildAssets inputDirectory outputDirectory refinementDirectory fullBuild assetGraph
                 Constants.Engine.ExitCodeSuccess
             | Left error ->
