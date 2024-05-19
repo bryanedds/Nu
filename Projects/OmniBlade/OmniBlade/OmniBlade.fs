@@ -33,7 +33,7 @@ type OmniBladeCommand =
     | SetField of Field
     | FromFieldToBattle of BattleData * PrizePool
     | FromBattleToField of PrizePool
-    | Update
+    | UpdatePicks
     | Exit
     interface Command
 
@@ -57,8 +57,8 @@ type OmniBladeDispatcher () =
             | Intro _ -> Desire Simulants.Intro
             | Field -> Desire Simulants.Field
             | Battle -> Desire Simulants.Battle
-         Game.UpdateEvent => Update
          if omniBlade = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
+         Simulants.Pick.UpdateEvent => UpdatePicks
          Simulants.TitlePlay.ClickEvent => ShowPick
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitleExit.ClickEvent => Exit
@@ -109,7 +109,9 @@ type OmniBladeDispatcher () =
             withSignal (FromFieldToBattle (battleData, prizePool)) Battle
 
         | ConcludingBattle outcome ->
-            if outcome then just Field else just Title
+            if outcome
+            then just Field
+            else just Title
 
         | ConcludeBattle ->
             let battle = Simulants.Battle.GetBattle world
@@ -144,7 +146,7 @@ type OmniBladeDispatcher () =
             let world = Simulants.Field.SetField field world
             just world
 
-        | Update ->
+        | UpdatePicks ->
 
             // update picks
             let world =
@@ -176,7 +178,7 @@ type OmniBladeDispatcher () =
 
     override this.Content (_, _) =
         [Content.screen<ScreenDispatcher> Simulants.Splash.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []
-         Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
+         Content.screenWithGroupFromFile<TitleDispatcher> Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
          Content.screen<CreditsDispatcher> Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.CreditsSong)) [] []
          Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Intro.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2)) Assets.Gui.IntroGroupFilePath [] []

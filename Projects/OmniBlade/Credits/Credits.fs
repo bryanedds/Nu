@@ -37,8 +37,7 @@ type CreditsDispatcher () =
     inherit ScreenDispatcher<Credits, CreditsMessage, CreditsCommand> (Credits.empty)
 
     override this.Definitions (_, _) =
-        [Entity.StaticImage.ChangeEvent => StartScrolling
-         Screen.SelectEvent => StartScrolling
+        [Screen.SelectEvent => StartScrolling
          Screen.UpdateEvent => Scroll]
 
     override this.Message (credits, message, _, _) =
@@ -130,4 +129,4 @@ type CreditsDispatcher () =
                  Content.text "Separator B 3" []
                  Content.text "Separator B 4" []
                  Content.text "Separator B 5" []
-                 Content.text "Thank you for playing." [Entity.Text == "Thank you for playing."]]]]
+                 Content.text "Thank you for playing." [Entity.Text == "Thank you for playing!"]]]]
