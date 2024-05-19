@@ -64,10 +64,10 @@ type CreditsDispatcher () =
                  Entity.StaticImage == Assets.Default.Black
                  Entity.Absolute == true]
              Content.button "Quit"
-                [Entity.Position == v3 276.0f -258.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 192.0f 48.0f 0.0f
+                [Entity.Position == v3 324.0f -258.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
                  Entity.UpImage == Assets.Gui.ButtonClearUpImage
                  Entity.DownImage == Assets.Gui.ButtonClearDownImage
-                 Entity.TextColor == Color.White.WithA8 (byte 191)
+                 Entity.TextColor == Color.White.WithA8 (byte 127)
                  Entity.Text == "Quit"
                  Entity.ClickEvent => StartQuitting]
              Content.panel "Panel"
