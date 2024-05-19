@@ -637,6 +637,13 @@ type FieldDispatcher () =
             let world = World.publish (battleData, prizePool) screen.CommenceBattleEvent screen world
             just world
 
+        | MenuOptionsToggleFullScreen ->
+            if world.Unaccompanied then
+                match World.tryGetWindowFullScreen world with
+                | Some fullScreen -> just (World.trySetWindowFullScreen (not fullScreen) world)
+                | None -> just world
+            else just world
+
         | ScheduleSound (delay, volume, sound) ->
             let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
             just world
@@ -1075,41 +1082,47 @@ type FieldDispatcher () =
                              Entity.Text == "Swift"
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]
-                        Content.text "Quit Game"
+                        Content.text "Full Screen"
                             [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                             Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
+                             Entity.Text == "Full Screen"]
+                        Content.button "Toggle Full Screen"
+                            [Entity.PositionLocal == v3 408.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                             Entity.UpImage == Assets.Gui.ButtonShortUpImage
+                             Entity.DownImage == Assets.Gui.ButtonShortDownImage
+                             Entity.Text == "Toggle"
+                             Entity.ClickEvent => MenuOptionsToggleFullScreen]
+                        Content.text "Quit Game"
+                            [Entity.PositionLocal == v3 414.0f 192.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Quit Game"]
                         Content.button "Quit"
-                            [Entity.PositionLocal == v3 408.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 408.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Quit"
                              Entity.ClickEvent => MenuOptionsQuitPrompt]
-                        Content.text "TitleAndVersion"
-                            [Entity.PositionLocal == v3 240.0f 120.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 480.0f 48.0f 0.0f
+                        Content.text "About"
+                            [Entity.PositionLocal == v3 320.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 320.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "OmniBlade Demo v0.9.0"]
-                        Content.text "TitleAndVersionInfo"
-                            [Entity.PositionLocal == v3 180.0f 0.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 640.0f 108.0f 0.0f
-                             Entity.Justification == Unjustified true
-                             Entity.Text == "This build of OmniBlade contains only the first few hours of content."]
                      else
-                        Content.text "Confirm Quit:"
+                        Content.text "Confirm Quit"
                             [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Confirm Quit:"]
-                        Content.button "Cancel"
+                             Entity.Text == "Confirm Quit?"]
+                        Content.button "Quit!"
                             [Entity.PositionLocal == v3 252.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Cancel"
-                             Entity.ClickEvent => MenuOptionsQuitCancel]
-                        Content.button "Quit!"
+                             Entity.Text == "Quit!"
+                             Entity.ClickEvent => MenuOptionsQuitConfirm]
+                        Content.button "Cancel"
                             [Entity.PositionLocal == v3 564.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
-                             Entity.Text == "Quit!"
-                             Entity.ClickEvent => MenuOptionsQuitConfirm]]
+                             Entity.Text == "Cancel"
+                             Entity.ClickEvent => MenuOptionsQuitCancel]]
 
              // closed
              | MenuClosed -> ()

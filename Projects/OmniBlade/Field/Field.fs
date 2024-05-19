@@ -72,6 +72,7 @@ type FieldCommand =
     | StartQuitting
     | CommencingBattle of BattleData
     | CommenceBattle of BattleData * PrizePool
+    | MenuOptionsToggleFullScreen
     | ScheduleSound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * single * Song AssetTag
     | FadeOutSong of int64
