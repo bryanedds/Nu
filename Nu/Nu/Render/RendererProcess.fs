@@ -346,6 +346,7 @@ type RendererThread () =
                 let mutable swapChainImageFormat = Unchecked.defaultof<VkFormat>
                 let mutable swapChainImages = Array.empty<VkImage>
                 let mutable swapChainImageViews = Array.empty<VkImageView>
+                let mutable renderPass = Unchecked.defaultof<VkRenderPass>
                 
                 do
                     // get available instance layers
@@ -572,6 +573,44 @@ type RendererThread () =
                         printfn "vkCreateImageView returned %s." (result.ToString ())
 
                     ()
+
+                let mutable colorAttachment = VkAttachmentDescription ()
+                colorAttachment.format <- swapChainImageFormat
+                colorAttachment.samples <- VK_SAMPLE_COUNT_1_BIT
+                colorAttachment.loadOp <- VK_ATTACHMENT_LOAD_OP_CLEAR
+                colorAttachment.storeOp <- VK_ATTACHMENT_STORE_OP_STORE
+                colorAttachment.stencilLoadOp <- VK_ATTACHMENT_LOAD_OP_DONT_CARE
+                colorAttachment.stencilStoreOp <- VK_ATTACHMENT_STORE_OP_DONT_CARE
+                colorAttachment.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+                colorAttachment.finalLayout <- VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+
+                let mutable colorAttachmentRef = VkAttachmentReference ()
+                colorAttachmentRef.attachment <- 0u
+                colorAttachmentRef.layout <- VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+
+                let mutable subpass = VkSubpassDescription ()
+                subpass.pipelineBindPoint <- VK_PIPELINE_BIND_POINT_GRAPHICS
+                subpass.colorAttachmentCount <- 1u
+                subpass.pColorAttachments <- Interop.AsPointer &colorAttachmentRef
+
+                let mutable dependency = VkSubpassDependency ()
+                dependency.srcSubpass <- VK_SUBPASS_EXTERNAL
+                dependency.dstSubpass <- 0u
+                dependency.srcStageMask <- VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                dependency.srcAccessMask <- VK_ACCESS_NONE
+                dependency.dstStageMask <- VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                dependency.dstAccessMask <- VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+
+                let mutable renderPassInfo = VkRenderPassCreateInfo ()
+                renderPassInfo.attachmentCount <- 1u
+                renderPassInfo.pAttachments <- Interop.AsPointer &colorAttachment
+                renderPassInfo.subpassCount <- 1u
+                renderPassInfo.pSubpasses <- Interop.AsPointer &subpass
+                renderPassInfo.dependencyCount <- 1u
+                renderPassInfo.pDependencies <- Interop.AsPointer &dependency
+
+                let result = vkCreateRenderPass (device, Interop.AsPointer &renderPassInfo, NativePtr.nullPtr, &renderPass)
+                printfn "vkCreateRenderPass returned %s." (result.ToString ())
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
