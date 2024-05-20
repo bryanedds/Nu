@@ -156,9 +156,9 @@ module FieldContent =
                 let y =
                     position.Y -
                     single index * (if useSmallButtons then 60.0f else 81.0f) +
-                    if useSmallButtons then 12.0f else 0.0f
+                    if useSmallButtons then 9.0f else 0.0f
                 let w = 336.0f
-                let h = if useSmallButtons then 60.0f else 72.0f
+                let h = if useSmallButtons then 54.0f else 72.0f
                 Content.button techName
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f

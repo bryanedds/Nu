@@ -887,12 +887,12 @@ type FieldDispatcher () =
                      Content.text "WeaponLabel"
                         [Entity.PositionLocal == v3 438.0f 291.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
-                         Entity.Text == "Weap."]
+                         Entity.Text == "Wpn."]
                      Content.button "Weapon"
                         [Entity.PositionLocal == v3 519.0f 285.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
-                         Entity.UpImage == Assets.Gui.ButtonEquipUpImage
-                         Entity.DownImage == Assets.Gui.ButtonEquipDownImage
+                         Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
+                         Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
                          Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -901,12 +901,12 @@ type FieldDispatcher () =
                      Content.text "ArmorLabel"
                         [Entity.PositionLocal == v3 438.0f 234.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
-                         Entity.Text == "Armr."]
+                         Entity.Text == "Amr."]
                      Content.button "Armor"
                         [Entity.PositionLocal == v3 519.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
-                         Entity.UpImage == Assets.Gui.ButtonEquipUpImage
-                         Entity.DownImage == Assets.Gui.ButtonEquipDownImage
+                         Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
+                         Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
                          Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -915,12 +915,12 @@ type FieldDispatcher () =
                      Content.text "AccessoryLabel"
                         [Entity.PositionLocal == v3 438.0f 177.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
-                         Entity.Text == "Accy."]
+                         Entity.Text == "Acc."]
                      Content.button "Accessory"
                         [Entity.PositionLocal == v3 519.0f 171.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
-                         Entity.UpImage == Assets.Gui.ButtonEquipUpImage
-                         Entity.DownImage == Assets.Gui.ButtonEquipDownImage
+                         Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
+                         Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
                          Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -932,11 +932,11 @@ type FieldDispatcher () =
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate ->
-                                "HP  "   + (string teammate.HitPoints).PadLeft 3 +  " /" + (string teammate.HitPointsMax).PadLeft 3 +
-                                "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string teammate.TechPointsMax).PadLeft 3 +
-                                "\nPow " + (string teammate.Power).PadLeft 3 +      "   Mag " + (string $ teammate.Magic false).PadLeft 3 +
-                                "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
-                                "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + (match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next)
+                                "HP   "   + (string teammate.HitPoints).PadRight 4 +  "/ " + (string teammate.HitPointsMax) +
+                                "\nTP   " + (string teammate.TechPoints).PadRight 4 + "/ " + (string teammate.TechPointsMax) +
+                                "\nPow. " + (string teammate.Power).PadRight 4 +      "Mag. " + (string $ teammate.Magic false) +
+                                "\nDef. " + (string teammate.Defense).PadRight 4 +    "Abs. " + (string teammate.Absorb) +
+                                "\nExp. " + (string teammate.ExpPoints).PadRight 3 +  " / " + (match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next)
                             | None -> ""]
                      Content.text "Gold"
                         [Entity.PositionLocal == v3 438.0f 0.0f 0.0f; Entity.ElevationLocal == 1.0f
