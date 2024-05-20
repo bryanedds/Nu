@@ -322,6 +322,28 @@ type RendererThread () =
 
     member private this.Run fonts windowOpt =
 
+        // core vulkan handles
+        let mutable instance = Unchecked.defaultof<VkInstance>
+        let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
+        let mutable graphicsQueueFamily = 0u
+        let mutable presentQueueFamily = 0u
+        let mutable device = Unchecked.defaultof<VkDevice>
+        let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
+        let mutable presentQueue = Unchecked.defaultof<VkQueue>
+        let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
+        let mutable swapChain = Unchecked.defaultof<VkSwapchainKHR>
+        let mutable swapChainExtent = Unchecked.defaultof<VkExtent2D>
+        let mutable swapChainImageFormat = Unchecked.defaultof<VkFormat>
+        let mutable swapChainImages = Array.empty<VkImage>
+        let mutable swapChainImageViews = Array.empty<VkImageView>
+        let mutable renderPass = Unchecked.defaultof<VkRenderPass>
+        let mutable swapChainFramebuffers = Array.empty<VkFramebuffer>
+        let mutable commandPool = Unchecked.defaultof<VkCommandPool>
+        let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
+        let mutable imageAvailableSemaphore = Unchecked.defaultof<VkSemaphore>
+        let mutable renderFinishedSemaphore = Unchecked.defaultof<VkSemaphore>
+        let mutable inFlightFence = Unchecked.defaultof<VkFence>
+        
         // create renderers
         let (renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
@@ -332,24 +354,7 @@ type RendererThread () =
                 // loads vulkan. NOTE: this is not an actual vulkan function. wrapper features prefixed like this are misleading and should be avoided where practical.
                 let result = vkInitialize ()
 
-                // core vulkan handles
-                let mutable instance = Unchecked.defaultof<VkInstance>
-                let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
-                let mutable graphicsQueueFamily = 0u
-                let mutable presentQueueFamily = 0u
-                let mutable device = Unchecked.defaultof<VkDevice>
-                let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
-                let mutable presentQueue = Unchecked.defaultof<VkQueue>
-                let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
-                let mutable swapChain = Unchecked.defaultof<VkSwapchainKHR>
-                let mutable swapChainExtent = Unchecked.defaultof<VkExtent2D>
-                let mutable swapChainImageFormat = Unchecked.defaultof<VkFormat>
-                let mutable swapChainImages = Array.empty<VkImage>
-                let mutable swapChainImageViews = Array.empty<VkImageView>
-                let mutable renderPass = Unchecked.defaultof<VkRenderPass>
-                let mutable swapChainFramebuffers = Array.empty<VkFramebuffer>
-                let mutable commandPool = Unchecked.defaultof<VkCommandPool>
-                let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
+                
                 
                 do
                     // get available instance layers
@@ -650,6 +655,14 @@ type RendererThread () =
                 let result = vkAllocateCommandBuffers (device, Interop.AsPointer &allocInfo, Interop.AsPointer &commandBuffer)
                 printfn "vkAllocateCommandBuffers returned %s." (result.ToString ())
 
+                // setup synchronization primatives
+                let mutable semaphoreInfo = VkSemaphoreCreateInfo ()
+                let mutable fenceInfo = VkFenceCreateInfo ()
+                fenceInfo.flags <- VK_FENCE_CREATE_SIGNALED_BIT
+                let result = vkCreateSemaphore (device, Interop.AsPointer &semaphoreInfo, NativePtr.nullPtr, &imageAvailableSemaphore)
+                let result = vkCreateSemaphore (device, Interop.AsPointer &semaphoreInfo, NativePtr.nullPtr, &renderFinishedSemaphore)
+                let result = vkCreateFence (device, Interop.AsPointer &fenceInfo, NativePtr.nullPtr, &inFlightFence)
+
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
                 OpenGL.Hl.Assert ()
@@ -697,6 +710,8 @@ type RendererThread () =
                 // receie submission
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
+                
+                
                 
                 // begin frame
                 //OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
