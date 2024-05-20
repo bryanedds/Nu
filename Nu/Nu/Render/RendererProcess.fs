@@ -347,6 +347,9 @@ type RendererThread () =
                 let mutable swapChainImages = Array.empty<VkImage>
                 let mutable swapChainImageViews = Array.empty<VkImageView>
                 let mutable renderPass = Unchecked.defaultof<VkRenderPass>
+                let mutable swapChainFramebuffers = Array.empty<VkFramebuffer>
+                let mutable commandPool = Unchecked.defaultof<VkCommandPool>
+                let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
                 
                 do
                     // get available instance layers
@@ -611,6 +614,41 @@ type RendererThread () =
 
                 let result = vkCreateRenderPass (device, Interop.AsPointer &renderPassInfo, NativePtr.nullPtr, &renderPass)
                 printfn "vkCreateRenderPass returned %s." (result.ToString ())
+
+                do
+                    // setup swapchain framebuffers
+                    Array.Resize<VkFramebuffer> (&swapChainFramebuffers, swapChainImageViews.Length)
+                    use _ = swapChainFramebuffers.AsMemory().Pin()
+
+                    for i in [0 .. dec (swapChainImageViews.Length)] do
+                        let mutable imageView = swapChainImageViews[i]
+                        let mutable framebufferInfo = VkFramebufferCreateInfo ()
+                        framebufferInfo.renderPass <- renderPass
+                        framebufferInfo.attachmentCount <- 1u
+                        framebufferInfo.pAttachments <- Interop.AsPointer &imageView
+                        framebufferInfo.width <- swapChainExtent.width
+                        framebufferInfo.height <- swapChainExtent.height
+                        framebufferInfo.layers <- 1u
+
+                        let result = vkCreateFramebuffer (device, Interop.AsPointer &framebufferInfo, NativePtr.nullPtr, &swapChainFramebuffers[i])
+                        printfn "vkCreateFramebuffer returned %s." (result.ToString ())
+
+                    ()
+
+                let mutable poolInfo = VkCommandPoolCreateInfo ()
+                poolInfo.flags <- VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+                poolInfo.queueFamilyIndex <- graphicsQueueFamily
+
+                let result = vkCreateCommandPool (device, Interop.AsPointer &poolInfo, NativePtr.nullPtr, &commandPool)
+                printfn "vkCreateCommandPool returned %s." (result.ToString ())
+
+                let mutable allocInfo = VkCommandBufferAllocateInfo ()
+                allocInfo.commandPool <- commandPool
+                allocInfo.level <- VK_COMMAND_BUFFER_LEVEL_PRIMARY
+                allocInfo.commandBufferCount <- 1u
+
+                let result = vkAllocateCommandBuffers (device, Interop.AsPointer &allocInfo, Interop.AsPointer &commandBuffer)
+                printfn "vkAllocateCommandBuffers returned %s." (result.ToString ())
 
                 // create gl context
                 //let glContext = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
