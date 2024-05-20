@@ -41,7 +41,6 @@ type TitleDispatcher () =
         [Screen.UpdateEvent => Scroll]
 
     override this.Message (title, message, _, _) =
-
         match message with
         | Scroll ->
             let title = { title with TitleTime = inc title.TitleTime }

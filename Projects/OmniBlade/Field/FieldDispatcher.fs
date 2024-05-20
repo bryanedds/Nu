@@ -862,7 +862,7 @@ type FieldDispatcher () =
                         Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                         Entity.ClickEvent => MenuAutoMapOpen]
                      Content.label "Portrait"
-                        [Entity.PositionLocal == v3 438.0f 288.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 192.0f 192.0f 0.0f
+                        [Entity.PositionLocal == v3 438.0f 345.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 144.0f 0.0f
                          Entity.BackdropImageOpt :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
                             | Some characterData ->
@@ -871,42 +871,63 @@ type FieldDispatcher () =
                                 | None -> Some Assets.Default.EmptyImage
                             | None -> Some Assets.Default.EmptyImage]
                      Content.text "CharacterType"
-                        [Entity.PositionLocal == v3 650.0f 372.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 606.0f 414.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
                             | Some characterData -> CharacterType.getName characterData.CharacterType
                             | None -> ""]
                      Content.text "ArchetypeType"
-                        [Entity.PositionLocal == v3 650.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 606.0f 378.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate -> getCaseName teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                             | None -> ""]
-                     Content.text "Weapon"
-                        [Entity.PositionLocal == v3 444.0f 237.0f 0.0f; Entity.ElevationLocal == 1.0f
+                     Content.text "WeaponLabel"
+                        [Entity.PositionLocal == v3 438.0f 291.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
+                         Entity.Text == "Weap."]
+                     Content.button "Weapon"
+                        [Entity.PositionLocal == v3 519.0f 285.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
+                         Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                         Entity.UpImage == Assets.Gui.ButtonEquipUpImage
+                         Entity.DownImage == Assets.Gui.ButtonEquipDownImage
+                         Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> "Wpn: " + Option.mapOrDefaultValue string "None" teammate.WeaponOpt
+                            | Some teammate -> Option.mapOrDefaultValue string "None" teammate.WeaponOpt
                             | None -> ""]
-                     Content.text "Armor"
-                        [Entity.PositionLocal == v3 444.0f 207.0f 0.0f; Entity.ElevationLocal == 1.0f
+                     Content.text "ArmorLabel"
+                        [Entity.PositionLocal == v3 438.0f 234.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
+                         Entity.Text == "Armr."]
+                     Content.button "Armor"
+                        [Entity.PositionLocal == v3 519.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
+                         Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                         Entity.UpImage == Assets.Gui.ButtonEquipUpImage
+                         Entity.DownImage == Assets.Gui.ButtonEquipDownImage
+                         Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> "Amr: " + Option.mapOrDefaultValue string "None" teammate.ArmorOpt
+                            | Some teammate -> Option.mapOrDefaultValue string "None" teammate.ArmorOpt
                             | None -> ""]
-                     Content.text "Accessory"
-                        [Entity.PositionLocal == v3 444.0f 177.0f 0.0f; Entity.ElevationLocal == 1.0f
+                     Content.text "AccessoryLabel"
+                        [Entity.PositionLocal == v3 438.0f 177.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
+                         Entity.Text == "Accy."]
+                     Content.button "Accessory"
+                        [Entity.PositionLocal == v3 519.0f 171.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
+                         Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                         Entity.UpImage == Assets.Gui.ButtonEquipUpImage
+                         Entity.DownImage == Assets.Gui.ButtonEquipDownImage
+                         Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> "Acc: " + Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
+                            | Some teammate -> Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
                             | None -> ""]
                      Content.text "Stats"
-                        [Entity.PositionLocal == v3 444.0f -78.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 256.0f 0.0f
+                        [Entity.PositionLocal == v3 438.0f 32.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 132.0f 0.0f
                          Entity.Justification == Unjustified true
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -915,10 +936,10 @@ type FieldDispatcher () =
                                 "\nTP  " + (string teammate.TechPoints).PadLeft 3 + " /" + (string teammate.TechPointsMax).PadLeft 3 +
                                 "\nPow " + (string teammate.Power).PadLeft 3 +      "   Mag " + (string $ teammate.Magic false).PadLeft 3 +
                                 "\nDef " + (string teammate.Defense).PadLeft 3 +    "   Abs " + (string teammate.Absorb).PadLeft 3 +
-                                "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next
+                                "\nExp " + (string teammate.ExpPoints).PadLeft 3 +  " / " + (match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next)
                             | None -> ""]
                      Content.text "Gold"
-                        [Entity.PositionLocal == v3 444.0f 9.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 438.0f 0.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
                          Entity.Text := string field.Inventory.Gold + "G"]]
 
