@@ -889,7 +889,7 @@ type FieldDispatcher () =
                          Entity.Justification == Unjustified false
                          Entity.Text == "Wpn."]
                      Content.button "Weapon"
-                        [Entity.PositionLocal == v3 519.0f 285.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
+                        [Entity.PositionLocal == v3 513.0f 285.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
                          Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
@@ -903,7 +903,7 @@ type FieldDispatcher () =
                          Entity.Justification == Unjustified false
                          Entity.Text == "Amr."]
                      Content.button "Armor"
-                        [Entity.PositionLocal == v3 519.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
+                        [Entity.PositionLocal == v3 513.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
                          Entity.DownImage == Assets.Gui.ButtonSquishedDownImage
@@ -917,7 +917,7 @@ type FieldDispatcher () =
                          Entity.Justification == Unjustified false
                          Entity.Text == "Acc."]
                      Content.button "Accessory"
-                        [Entity.PositionLocal == v3 519.0f 171.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
+                        [Entity.PositionLocal == v3 513.0f 171.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 54.0f 0.0f
                          Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                          Entity.UpImage == Assets.Gui.ButtonSquishedUpImage
                          Entity.DownImage == Assets.Gui.ButtonSquishedDownImage

@@ -156,7 +156,7 @@ module FieldContent =
                 let y =
                     position.Y -
                     single index * (if useSmallButtons then 60.0f else 81.0f) +
-                    if useSmallButtons then 9.0f else 0.0f
+                    if useSmallButtons then 18.0f else 0.0f
                 let w = 336.0f
                 let h = if useSmallButtons then 54.0f else 72.0f
                 Content.button techName
