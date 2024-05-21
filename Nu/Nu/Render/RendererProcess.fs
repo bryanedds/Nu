@@ -354,8 +354,6 @@ type RendererThread () =
                 // loads vulkan. NOTE: this is not an actual vulkan function. wrapper features prefixed like this are misleading and should be avoided where practical.
                 let result = vkInitialize ()
 
-                
-                
                 do
                     // get available instance layers
                     let mutable layerCount = 0u
@@ -582,6 +580,7 @@ type RendererThread () =
 
                     ()
 
+                // setup renderpass
                 let mutable colorAttachment = VkAttachmentDescription ()
                 colorAttachment.format <- swapChainImageFormat
                 colorAttachment.samples <- VK_SAMPLE_COUNT_1_BIT
@@ -640,6 +639,7 @@ type RendererThread () =
 
                     ()
 
+                // setup command buffer
                 let mutable poolInfo = VkCommandPoolCreateInfo ()
                 poolInfo.flags <- VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
                 poolInfo.queueFamilyIndex <- graphicsQueueFamily
@@ -711,7 +711,60 @@ type RendererThread () =
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
                 
-                
+                // wait for previous cycle to finish
+                let result = vkWaitForFences (device, 1u, Interop.AsPointer &inFlightFence, VkBool32.True, UInt64.MaxValue)
+                let result = vkResetFences (device, 1u, Interop.AsPointer &inFlightFence)
+
+                // acquire image from swapchain to draw onto
+                let mutable imageIndex = 0u
+                let result = vkAcquireNextImageKHR (device, swapChain, UInt64.MaxValue, imageAvailableSemaphore, inFlightFence, &imageIndex)
+
+                // record command buffer
+                let result = vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None)
+
+                let mutable beginInfo = VkCommandBufferBeginInfo ()
+                beginInfo.flags <- VkCommandBufferUsageFlags.None
+                beginInfo.pInheritanceInfo <- NativePtr.nullPtr
+
+                let result = vkBeginCommandBuffer (commandBuffer, Interop.AsPointer &beginInfo)
+
+                let mutable clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)            
+                let mutable renderPassInfo = VkRenderPassBeginInfo ()
+                renderPassInfo.renderPass <- renderPass
+                renderPassInfo.framebuffer <- swapChainFramebuffers[int imageIndex]
+                renderPassInfo.renderArea.offset <- VkOffset2D.Zero
+                renderPassInfo.renderArea.extent <- swapChainExtent
+                renderPassInfo.clearValueCount <- 1u
+                renderPassInfo.pClearValues <- Interop.AsPointer &clearColor
+
+                vkCmdBeginRenderPass (commandBuffer, Interop.AsPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
+                vkCmdSetBlendConstants (commandBuffer, 1.0f, 1.0f, 1.0f, 1.0f)
+                vkCmdEndRenderPass commandBuffer
+                let result = vkEndCommandBuffer commandBuffer
+
+                // submit command buffer
+                let mutable flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                let mutable submitInfo = VkSubmitInfo ()
+                submitInfo.waitSemaphoreCount <- 1u
+                submitInfo.pWaitSemaphores <- Interop.AsPointer &imageAvailableSemaphore
+                submitInfo.pWaitDstStageMask <- Interop.AsPointer &flags // may have to comment out
+                submitInfo.commandBufferCount <- 1u
+                submitInfo.pCommandBuffers <- Interop.AsPointer &commandBuffer
+                submitInfo.signalSemaphoreCount <- 1u
+                submitInfo.pSignalSemaphores <- Interop.AsPointer &renderFinishedSemaphore
+
+                let result = vkQueueSubmit (graphicsQueue, 1u, Interop.AsPointer &submitInfo, inFlightFence)
+
+                // present image back to swapchain to appear on screen
+                let mutable presentInfo = VkPresentInfoKHR ()
+                presentInfo.waitSemaphoreCount <- 1u
+                presentInfo.pWaitSemaphores <- Interop.AsPointer &renderFinishedSemaphore
+                presentInfo.swapchainCount <- 1u
+                presentInfo.pSwapchains <- Interop.AsPointer &swapChain
+                presentInfo.pImageIndices <- Interop.AsPointer &imageIndex
+                presentInfo.pResults <- NativePtr.nullPtr
+
+                let result = vkQueuePresentKHR (presentQueue, Interop.AsPointer &presentInfo)
                 
                 // begin frame
                 //OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
