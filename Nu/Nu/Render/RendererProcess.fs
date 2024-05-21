@@ -717,7 +717,7 @@ type RendererThread () =
 
                 // acquire image from swapchain to draw onto
                 let mutable imageIndex = 0u
-                let result = vkAcquireNextImageKHR (device, swapChain, UInt64.MaxValue, imageAvailableSemaphore, inFlightFence, &imageIndex)
+                let result = vkAcquireNextImageKHR (device, swapChain, UInt64.MaxValue, imageAvailableSemaphore, VkFence.Null, &imageIndex)
 
                 // record command buffer
                 let result = vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None)
@@ -743,11 +743,11 @@ type RendererThread () =
                 let result = vkEndCommandBuffer commandBuffer
 
                 // submit command buffer
-                let mutable flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                let mutable flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT // should this work?
                 let mutable submitInfo = VkSubmitInfo ()
                 submitInfo.waitSemaphoreCount <- 1u
                 submitInfo.pWaitSemaphores <- Interop.AsPointer &imageAvailableSemaphore
-                submitInfo.pWaitDstStageMask <- Interop.AsPointer &flags // may have to comment out
+                submitInfo.pWaitDstStageMask <- Interop.AsPointer &flags
                 submitInfo.commandBufferCount <- 1u
                 submitInfo.pCommandBuffers <- Interop.AsPointer &commandBuffer
                 submitInfo.signalSemaphoreCount <- 1u
