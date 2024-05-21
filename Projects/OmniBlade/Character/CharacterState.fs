@@ -75,14 +75,12 @@ type [<SymbolicExpansion>] CharacterState =
             HitPoints = hitPoints
             Statuses = if hitPoints = 0 then Map.empty else state.Statuses }
 
-    static member updateTechPoints updater state =
-        let techPoints = updater state.TechPoints
+    static member setTechPoints techPoints (state : CharacterState) =
         let techPoints = max 0 techPoints
         let techPoints = min state.TechPointsMax techPoints
         { state with TechPoints = techPoints }
 
-    static member updateExpPoints updater state =
-        let expPoints = updater state.ExpPoints
+    static member setExpPoints expPoints (state : CharacterState) =
         let expPoints = max 0 expPoints
         { state with ExpPoints = expPoints }
 

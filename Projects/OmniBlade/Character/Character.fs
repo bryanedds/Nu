@@ -385,21 +385,20 @@ module Character =
     let burndownStatuses burndownTime character =
         { character with CharacterState_ = CharacterState.burndownStatuses burndownTime character.CharacterState_ }
 
-    let mapCharacterInputState updater character =
-        { character with CharacterInputState_ = updater character.CharacterInputState_ }
+    let setCharacterInputState inputState character =
+        { character with CharacterInputState_ = inputState }
 
-    let mapStatuses updater character =
-        let characterState = { character.CharacterState_ with Statuses = updater character.CharacterState_.Statuses }
+    let setStatuses statuses character =
+        let characterState = { character.CharacterState_ with Statuses = statuses }
         { character with CharacterState_ = characterState }
 
-    let mapVulnerabilities updater character =
-        let characterState = { character.CharacterState_ with Vulnerabilities = updater character.CharacterState_.Vulnerabilities }
+    let setVulnerabilities vulnerabilities character =
+        let characterState = { character.CharacterState_ with Vulnerabilities = vulnerabilities }
         { character with CharacterState_ = characterState }
 
-    let mapHitPoints updater affectWounded alliesHealthy character =
+    let setHitPoints cancel hitPoints affectWounded alliesHealthy character =
         let (cancelled, characterState) =
             if character.CharacterState_.Healthy || affectWounded then
-                let (cancel, hitPoints) = updater character.CharacterState_.HitPoints
                 let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
                 (cancel, characterState)
             else (false, character.CharacterState_)
@@ -419,86 +418,84 @@ module Character =
             else character.ActionTime_
         { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt; ActionTime_ = actionTime }
 
-    let mapTechPoints updater character =
-        { character with CharacterState_ = CharacterState.updateTechPoints updater character.CharacterState_ }
+    let setTechPoints techPoints character =
+        { character with CharacterState_ = CharacterState.setTechPoints techPoints character.CharacterState_ }
 
-    let mapExpPoints updater character =
-        { character with CharacterState_ = CharacterState.updateExpPoints updater character.CharacterState_ }
+    let setExpPoints expPoints character =
+        { character with CharacterState_ = CharacterState.setExpPoints expPoints character.CharacterState_ }
 
-    let mapConjureChargeOpt updater character =
-        { character with ConjureChargeOpt_ = updater character.ConjureChargeOpt_ }
+    let setConjureChargeOpt conjureChargeOpt character =
+        { character with ConjureChargeOpt_ = conjureChargeOpt }
 
-    let mapTechChargeOpt updater character =
-        { character with TechChargeOpt_ = updater character.TechChargeOpt_ }
+    let setTechChargeOpt techChargeOpt character =
+        { character with TechChargeOpt_ = techChargeOpt }
 
-    let mapAutoBattleOpt updater character =
-        { character with AutoBattleOpt_ = updater character.AutoBattleOpt_ }
+    let setAutoBattleOpt autoBattleOpt character =
+        { character with AutoBattleOpt_ = autoBattleOpt }
 
-    let mapActionTime updater character =
-        { character with ActionTime_ = updater character.ActionTime_ }
+    let setActionTime actionTime character =
+        { character with ActionTime_ = actionTime }
 
-    let mapPerimeter updater (character : Character) =
-        { character with Perimeter_ = updater character.Perimeter_ }
+    let setBottom bottom (character : Character) =
+        { character with Perimeter_ = character.Perimeter.WithBottom bottom }
 
     let restore (character : Character) =
         { character with CharacterState_ = CharacterState.restore character.CharacterState_ }
 
     let applyStatusChanges statusesAdded statusesRemoved (character : Character) =
         if character.Healthy then
-            let character =
-                mapStatuses (fun statuses ->
-                    let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.StatusBurndownTime statuses) statuses statusesAdded
-                    let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
-                    statuses)
-                    character
-            mapActionTime (fun actionTime ->
+            let statuses = character.Statuses
+            let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.StatusBurndownTime statuses) statuses statusesAdded
+            let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
+            let character = setStatuses statuses character
+            let actionTime =
                 if  Set.exists (function Time false -> true | _ -> false) statusesAdded &&
-                    actionTime < Constants.Battle.ActionTime then
+                    character.ActionTime_ < Constants.Battle.ActionTime then
                     let slowScalar =
                         if character.Ally then Constants.Battle.ActionTimeSlowScalar
                         elif character.Boss then Constants.Battle.ActionTimeSlowerScalar
                         else Constants.Battle.ActionTimeSlowestScalar
-                    actionTime * slowScalar
-                else actionTime)
-                character
+                    character.ActionTime_ * slowScalar
+                else character.ActionTime_
+            setActionTime actionTime character
         else character
 
     let applyVulnerabilityChanges vulnerabilitiesAdded vulnerabilitiesRemoved (character : Character) =
-        mapVulnerabilities (fun vulnerabilities ->
-            let vulnerabilities = Map.fold (fun vulnerabilities vulnerabilityType vulnerabilityRank -> Map.add vulnerabilityType vulnerabilityRank vulnerabilities) vulnerabilities vulnerabilitiesAdded
-            let vulnerabilities = Set.fold (fun vulnerabilities vulnerabilityType -> Map.remove vulnerabilityType vulnerabilities) vulnerabilities vulnerabilitiesRemoved
-            vulnerabilities)
-            character
+        let vulnerabilities = character.Vulnerabilities
+        let vulnerabilities = Map.fold (fun vulnerabilities vulnerabilityType vulnerabilityRank -> Map.add vulnerabilityType vulnerabilityRank vulnerabilities) vulnerabilities vulnerabilitiesAdded
+        let vulnerabilities = Set.fold (fun vulnerabilities vulnerabilityType -> Map.remove vulnerabilityType vulnerabilities) vulnerabilities vulnerabilitiesRemoved
+        setVulnerabilities vulnerabilities character
 
     let resetConjureCharge character =
-        mapConjureChargeOpt (Option.map (constant -Constants.Battle.ConjureChargeRate)) character
+        let conjureChargeOpt = (Option.map (constant -Constants.Battle.ConjureChargeRate)) character.ConjureChargeOpt_
+        setConjureChargeOpt conjureChargeOpt character
 
-    let updateConjureCharge (character : Character) =
+    let updateConjureCharge character =
         if hasConjureTechs character then
-            match character.ConjureChargeOpt with
+            match character.ConjureChargeOpt_ with
             | Some conjureCharge ->
                 { character with ConjureChargeOpt_ = Some (conjureCharge + Constants.Battle.ConjureChargeRate) }
             | None ->
                 { character with ConjureChargeOpt_ = Some 0 }
         else character
 
-    let resetTechCharge (character : Character) =
-        mapTechChargeOpt
-            (function
-             | Some (_, chargeAmount, _) as chargeTechOpt ->
+    let resetTechCharge character =
+        let techChargeOpt =
+            match character.TechChargeOpt_ with
+            | Some (_, chargeAmount, _) as chargeTechOpt ->
                 if chargeAmount >= Constants.Battle.ChargeMax then
                     let chargeTechs = Algorithms.chargeTechs character.ArchetypeType character.Level
                     chargeTechs |> Gen.randomItemOpt |> Option.map (fun (chargeRate, chargeTech) -> (chargeRate, -chargeRate, chargeTech))
                 else chargeTechOpt
-             | None -> None)
-            character
+            | None -> None
+        setTechChargeOpt techChargeOpt character
 
-    let updateTechCharge (character : Character) =
-        mapTechChargeOpt
-            (function
-             | Some (chargeRate, chargeAmount, techType) -> Some (chargeRate, chargeRate + chargeAmount, techType)
-             | None -> None)
-            character
+    let updateTechCharge character =
+        let techChargeOpt =
+            match character.TechChargeOpt_ with
+            | Some (chargeRate, chargeAmount, techType) -> Some (chargeRate, chargeRate + chargeAmount, techType)
+            | None -> None
+        setTechChargeOpt techChargeOpt character
 
     let autoBattle jinnInParty (alliesHealthy : Map<_, _>) alliesWounded enemiesStanding enemiesSwooning (source : Character) =
 
