@@ -13,6 +13,32 @@ module FieldContent =
     [<RequireQualifiedAccess>]
     module Content =
 
+        let private equipmentItems equipmentType archetypeType (inventory : Inventory) =
+            let filter (equipment, _) =
+                match (equipmentType, equipment) with
+                | (WeaponEquip _, Equipment (WeaponType weaponType)) ->
+                    match Map.tryFind weaponType Data.Value.Weapons with
+                    | Some weaponData ->
+                        match Map.tryFind archetypeType Data.Value.Archetypes with
+                        | Some archetypeData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
+                        | None -> false
+                    | None -> false
+                | (ArmorEquip _, Equipment (ArmorType armorType)) ->
+                    match Map.tryFind armorType Data.Value.Armors with
+                    | Some armorData ->
+                        match Map.tryFind archetypeType Data.Value.Archetypes with
+                        | Some archetypeData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
+                        | None -> false
+                    | None -> false
+                | (AccessoryEquip _, Equipment (AccessoryType _)) -> true
+                | _ -> false
+            inventory.Items |>
+            Map.toArray |>
+            Array.filter filter |>
+            Array.map (function (Equipment _ as equipment, count) -> Some (equipment, count) | _ -> None) |>
+            Array.definitize |>
+            Map.ofArray
+
         let private pageItems5 pageSize pageIndex filter sort (items : Map<ItemType, int>) =
             let items =
                 items |>
@@ -44,6 +70,15 @@ module FieldContent =
 
         let pageItems pageSize (field : Field) =
             match field.Menu.MenuState with
+            | MenuTeam menuTeam ->
+                match menuTeam.TeamEquipOpt with
+                | Some equip ->
+                    match Map.tryFind menuTeam.TeamIndex field.Team with
+                    | Some teammate ->
+                        let items = equipmentItems equip.EquipType teammate.ArchetypeType field.Inventory
+                        pageItems5 pageSize equip.EquipPage false true items
+                    | None -> (false, false, Map.empty)
+                | None -> (false, false, Map.empty)
             | MenuInventory inventory ->
                 let items = Inventory.getNonKeyItems field.Inventory
                 pageItems5 pageSize inventory.InventoryPage false true items

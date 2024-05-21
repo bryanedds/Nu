@@ -129,7 +129,6 @@ type PrizePool =
     static member empty =
         { Consequents = Set.empty; Items = []; Gold = 0; Exp = 0 }
 
-// TODO: make this abstract due to item limit constraints.
 type [<SymbolicExpansion>] Inventory =
     { Items : Map<ItemType, int>
       Gold : int }

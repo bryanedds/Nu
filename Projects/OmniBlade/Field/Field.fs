@@ -23,6 +23,12 @@ type FieldMessage =
     | TryCommencingBattle of BattleType * Advent Set
     | MenuTeamOpen
     | MenuTeamAlly of int
+    | MenuTeamEquip of EquipType
+    | MenuTeamEquipPageUp
+    | MenuTeamEquipPageDown
+    | MenuTeamEquipSelect of int * (ItemType * int Option)
+    | MenuTeamEquipConfirm
+    | MenuTeamEquipCancel
     | MenuAutoMapOpen
     | MenuInventoryOpen
     | MenuInventoryPageUp

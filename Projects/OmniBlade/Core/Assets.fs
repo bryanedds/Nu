@@ -43,6 +43,7 @@ module Assets =
         let DialogThinImage = asset<Image> PackageName "DialogThin"
         let DialogThickImage = asset<Image> PackageName "DialogThick"
         let DialogFatImage = asset<Image> PackageName "DialogFat"
+        let DialogLargeImage = asset<Image> PackageName "DialogLarge"
         let DialogXLImage = asset<Image> PackageName "DialogXL"
         let DialogXXLImage = asset<Image> PackageName "DialogXXL"
         let ButtonUpImage = asset<Image> PackageName "ButtonUp"

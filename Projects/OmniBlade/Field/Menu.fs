@@ -24,20 +24,20 @@ type MenuUse =
         MenuUse.make selection prompt effect ""
 
     static member makeFromWeaponData selection (wd : WeaponData) =
-        let prompt = "Equip " + string wd.WeaponType + " to whom?"
+        let prompt = string wd.WeaponType
         let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
-        let effect = "(Effect: " + wd.Description + ")"
+        let effect = "Effect: " + wd.Description
         MenuUse.make selection prompt stats effect
 
     static member makeFromArmorData selection (ad : ArmorData) =
-        let prompt = "Equip " + string ad.ArmorType + " to whom?"
+        let prompt = string ad.ArmorType
         let stats = "(Edr: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + ")"
-        let effect = "(Effect: " + ad.Description + ")"
+        let effect = "Effect: " + ad.Description
         MenuUse.make selection prompt stats effect
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = "Equip " + string ad.AccessoryType + " to whom?"
-        let effect = "(Effect: " + ad.Description + ")"
+        let prompt = string ad.AccessoryType
+        let effect = "Effect: " + ad.Description
         MenuUse.make selection prompt effect ""
 
     static member tryMakeFromSelection selection =
@@ -62,10 +62,26 @@ type MenuUse =
                 | None -> None
         | KeyItem _ | Stash _ -> None
 
+type EquipType =
+    | WeaponEquip of WeaponType option
+    | ArmorEquip of ArmorType option
+    | AccessoryEquip of AccessoryType option
+
+    member this.ItemName =
+        match this with
+        | WeaponEquip weaponTypeOpt -> weaponTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+        | ArmorEquip armorTypeOpt -> armorTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+        | AccessoryEquip accessoryTypeOpt -> accessoryTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+
+type Equip =
+    { EquipType : EquipType
+      EquipPage : int }
+
 type MenuTeam =
     { TeamIndex : int
-      TeamIndices : int list }
-      
+      TeamIndices : int list
+      TeamEquipOpt : Equip option }
+
     static member tryGetTeammate (team : Map<int, Teammate>) menuTeam =
         Map.tryFind menuTeam.TeamIndex team
 
