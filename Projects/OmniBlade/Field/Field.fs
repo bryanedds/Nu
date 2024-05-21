@@ -439,9 +439,9 @@ module Field =
         | None -> field
 
     let mapAvatar updater field =
-        let avatar = field.Avatar_
-        let avatar = updater avatar
-        if avatar =/= field.Avatar_ then { field with Avatar_ = avatar }
+        let avatar = updater field.Avatar_
+        if avatar =/= field.Avatar_
+        then { field with Avatar_ = avatar }
         else field
 
     let mapAvatarCollidedPropIds updater field =
