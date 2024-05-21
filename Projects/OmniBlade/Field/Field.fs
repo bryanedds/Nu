@@ -124,16 +124,16 @@ module Field =
               Advents_ : Advent Set
               Props_ : Map<int, Prop>
               Inventory_ : Inventory
-              Options_ : Options
               Menu_ : Menu
               PartyMenu_ : PartyMenu
+              ShopOpt_ : Shop option
+              Options_ : Options
               Definitions_ : CueSystem.CueDefinitions
               DefinitionsOriginal_ : CueSystem.CueDefinitions
               Cue_ : CueSystem.Cue
+              Tint_ : Color
               ScreenTransitioning_ : bool
               FieldTransitionOpt_ : FieldTransition option
-              Tint_ : Color
-              ShopOpt_ : Shop option
               DialogOpt_ : Dialog option
               FieldSongTimeOpt_ : int64 option
               AutoMaps_ : Map<FieldType, Vector2i Set>
@@ -153,16 +153,16 @@ module Field =
         member this.Advents = this.Advents_
         member this.Props = this.Props_
         member this.Inventory = this.Inventory_
-        member this.Options = this.Options_
         member this.Menu = this.Menu_
         member this.PartyMenu = this.PartyMenu_
+        member this.ShopOpt = this.ShopOpt_
+        member this.Options = this.Options_
         member this.Definitions = this.Definitions_
         member this.DefinitionsOriginal = this.DefinitionsOriginal_
         member this.Cue = this.Cue_
+        member this.Tint = this.Tint_
         member this.ScreenTransitioning = this.ScreenTransitioning_
         member this.FieldTransitionOpt = this.FieldTransitionOpt_
-        member this.Tint = this.Tint_
-        member this.ShopOpt = this.ShopOpt_
         member this.DialogOpt = this.DialogOpt_
         member this.FieldSongTimeOpt = this.FieldSongTimeOpt_
         member this.AutoMaps = this.AutoMaps_
@@ -426,8 +426,7 @@ module Field =
         | (true, fieldData) -> Option.isSome fieldData.EncounterTypeOpt
         | (false, _) -> false
 
-    let mapFieldType time updater field =
-        let fieldType = updater field.FieldType_
+    let setFieldType time fieldType field =
         match Map.tryFind fieldType Data.Value.Fields with
         | Some fieldData ->
             { field with
@@ -438,9 +437,6 @@ module Field =
                 Props_ = makeProps time fieldType field.OmniSeedState_
                 FieldSongTimeOpt_ = None }
         | None -> field
-
-    let mapFieldState updater field =
-        { field with FieldState_ = updater field.FieldState_ }
 
     let mapAvatar updater field =
         let avatar = field.Avatar_
@@ -469,12 +465,19 @@ module Field =
     let mapTeam updater field =
         { field with Team_ = updater field.Team_ }
 
+    let mapTeammate updater teamIndex field =
+        mapTeam (fun team ->
+            match Map.tryFind teamIndex team with
+            | Some teammate -> Map.add teamIndex (updater teammate) team
+            | None -> team)
+            field
+
     let mapAdvents updater field =
         let advents = updater field.Advents_
         if advents =/= field.Advents_ then { field with Advents_ = advents }
         else field
 
-    let private mapProps updater field =
+    let mapProps updater field =
         { field with Props_ = updater field.Props_ }
 
     let mapProp updater propId field =
@@ -488,38 +491,38 @@ module Field =
     let mapInventory updater field =
         { field with Inventory_ = updater field.Inventory_ }
 
-    let mapOptions updater field =
-        { field with Options_ = updater field.Options_ }
-
     let mapMenu updater field =
         { field with Menu_ = updater field.Menu_ }
 
     let mapPartyMenu updater field =
         { field with PartyMenu_ = updater field.PartyMenu_ }
 
-    let mapDefinitions updater field =
-        { field with Definitions_ = updater field.Definitions_ }
-
-    let mapCue updater field =
-        { field with Cue_ = updater field.Cue_ }
-
-    let mapScreenTransitioning updater field =
-        { field with ScreenTransitioning_ = updater field.ScreenTransitioning_ }
-
-    let mapFieldTransitionOpt updater field =
-        { field with FieldTransitionOpt_ = updater field.FieldTransitionOpt_ }
-
-    let mapTint updater field =
-        { field with Tint_ = updater field.Tint_ }
-
     let mapShopOpt updater field =
         { field with ShopOpt_ = updater field.ShopOpt_ }
 
-    let mapDialogOpt updater field =
-        { field with DialogOpt_ = updater field.DialogOpt_ }
+    let setOptions options field =
+        { field with Options_ = options }
 
-    let mapFieldSongTimeOpt updater field =
-        { field with FieldSongTimeOpt_ = updater field.FieldSongTimeOpt_ }
+    let setDefinitions definitions field =
+        { field with Definitions_ = definitions }
+
+    let setCue cue field =
+        { field with Cue_ = cue }
+
+    let setTint tint field =
+        { field with Tint_ = tint }
+
+    let setScreenTransitioning screenTransitioning field =
+        { field with ScreenTransitioning_ = screenTransitioning }
+
+    let setFieldTransitionOpt transitionOpt field =
+        { field with FieldTransitionOpt_ = transitionOpt }
+
+    let setDialogOpt dialogOpt field =
+        { field with DialogOpt_ = dialogOpt }
+
+    let setFieldSongTimeOpt songTimeOpt field =
+        { field with FieldSongTimeOpt_ = songTimeOpt }
 
     (* Mid-Level Operations *)
 
@@ -547,19 +550,13 @@ module Field =
 
     let synchronizeTeamFromAllies allies field =
         Map.foldi (fun i field _ (ally : Character) ->
-            mapTeam (fun team ->
-                match Map.tryFind i team with
-                | Some teammate ->
-                    let teammate =
-                        { teammate with
-                            HitPoints = ally.HitPoints
-                            TechPoints = ally.TechPoints
-                            ExpPoints = ally.ExpPoints }
-                    Map.add i teammate team
-                | None -> team)
-                field)
-            field
-            allies
+            mapTeammate (fun teammate ->
+                { teammate with
+                    HitPoints = ally.HitPoints
+                    TechPoints = ally.TechPoints
+                    ExpPoints = ally.ExpPoints })
+                i field)
+            field allies
 
     let synchronizeFromBattle consequents battle field =
         let allies = Battle.getAllies battle
@@ -575,7 +572,7 @@ module Field =
 
     let commenceBattle songTime battleData prizePool (field : Field) =
         let battle = makeBattleFromTeam field.Options.BattleSpeed field.Inventory field.Team prizePool battleData
-        let field = mapFieldSongTimeOpt (constant (Some songTime)) field
+        let field = setFieldSongTimeOpt (Some songTime) field
         (battle, field)
 
     let concludeBattle consequents battle field =
@@ -626,10 +623,10 @@ module Field =
     let private interactDialog dialog field =
         match Dialog.tryAdvance (detokenize field) dialog with
         | (true, dialog) ->
-            let field = mapDialogOpt (constant (Some dialog)) field
+            let field = setDialogOpt (Some dialog) field
             just field
         | (false, dialog) ->
-            let field = mapDialogOpt (constant None) field
+            let field = setDialogOpt None field
             match dialog.DialogBattleOpt with
             | Some (battleType, consequence) -> withSignal (TryCommencingBattle (battleType, consequence)) field
             | None -> just field
@@ -641,13 +638,13 @@ module Field =
             let field = mapInventory (Inventory.tryAddItem itemType >> snd) field
             let field =
                 match battleTypeOpt with
-                | Some battleType -> mapDialogOpt (constant (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty))))) field
-                | None -> mapDialogOpt (constant (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!")))) field
-            let field = mapCue (constant cue) field
+                | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
+                | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!"))) field
+            let field = setCue cue field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-            let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
+            let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestLockedSound)) field
 
     let private interactDoor keyItemTypeOpt cue requirements (prop : Prop) (field : Field) =
@@ -656,12 +653,12 @@ module Field =
             if  field.Advents_.IsSupersetOf requirements &&
                 Option.mapOrDefaultValue (fun keyItemType -> Map.containsKey (KeyItem keyItemType) field.Inventory_.Items) true keyItemTypeOpt then
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-                let field = mapCue (constant cue) field
+                let field = setCue cue field
                 let field = mapPropState (constant (DoorState true)) prop.PropId field
                 withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorOpenSound)) field
             else
                 let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-                let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Locked!"))) field
+                let field = setDialogOpt (Some (Dialog.make DialogThin "Locked!")) field
                 withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.DoorLockedSound)) field
         | _ -> failwithumf ()
 
@@ -669,16 +666,16 @@ module Field =
         let on = field.Advents_.IsSupersetOf onRequirements
         if field.Advents_.IsSupersetOf requirements then
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-            let field = mapCue (constant (if on then cue2 else cue)) field
+            let field = setCue (if on then cue2 else cue) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchUseSound)) field
         else
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
-            let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Won't budge!"))) field
+            let field = setDialogOpt (Some (Dialog.make DialogThin "Won't budge!")) field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SwitchStuckSound)) field
 
     let private interactCharacter cue (prop : Prop) (field : Field) =
         let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
-        let field = mapCue (constant cue) field
+        let field = setCue cue field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
     let private interactNpc branches requirements (prop : Prop) (field : Field) =
@@ -686,7 +683,7 @@ module Field =
             let field = mapAvatar (Avatar.lookAt prop.Perimeter.BottomOffset5) field
             let branchesFiltered = branches |> List.choose (fun (branch : CueSystem.CueBranch) -> if field.Advents_.IsSupersetOf branch.Requirements then Some branch.Cue else None) |> List.rev
             let branchCue = match List.tryHead branchesFiltered with Some cue -> cue | None -> CueSystem.Dialog ("...", false)
-            let field = mapCue (constant branchCue) field
+            let field = setCue branchCue field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
         else just field
 
@@ -697,13 +694,13 @@ module Field =
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
     let private interactSeal cue (field : Field) =
-        let field = mapCue (constant cue) field
+        let field = setCue cue field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
 
     let private interactSavePoint (field : Field) =
         let field = restoreTeam field
         save field
-        let field = mapDialogOpt (constant (Some (Dialog.make DialogThin "Recovered strength and saved game."))) field
+        let field = setDialogOpt (Some (Dialog.make DialogThin "Recovered strength and saved game.")) field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.SlotSound)) field
 
     let interact (field : Field) =
@@ -754,7 +751,7 @@ module Field =
         | Face (target, direction) ->
             match target with
             | AvatarTarget ->
-                let field = mapAvatar (Avatar.mapDirection (constant direction)) field
+                let field = mapAvatar (Avatar.setDirection direction) field
                 (Fin, definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
@@ -835,7 +832,7 @@ module Field =
             let localTime = time - startTime
             let progress = single localTime / single length
             let tint = colorStart * (1.0f - progress) + colorStop * progress
-            let field = mapTint (constant tint) field
+            let field = setTint tint field
             if progress >= 1.0f
             then (Fin, definitions, just field)
             else (cue, definitions, just field)
@@ -963,10 +960,14 @@ module Field =
                 let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
                 let totalTime = int64 (dec stepCount)
                 if localTime < totalTime then
-                    let field = mapAvatar (Avatar.mapPerimeter (fun (perimeter : Box3) -> perimeter.WithBottom (perimeter.Bottom + step))) field
+                    let avatar = field.Avatar_
+                    let avatar = { avatar with Perimeter = avatar.Perimeter.WithBottom (avatar.Perimeter.Bottom + step) }
+                    let field = { field with Avatar_ = avatar }
                     (cue, definitions, just field)
                 else
-                    let field = mapAvatar (Avatar.mapPerimeter (fun (perimeter : Box3) -> perimeter.WithBottom (perimeter.Bottom + origin + translation))) field
+                    let avatar = field.Avatar_
+                    let avatar = { avatar with Perimeter = avatar.Perimeter.WithBottom (avatar.Perimeter.Bottom + origin + translation) }
+                    let field = { field with Avatar_ = avatar }
                     (Fin, definitions, just field)
             | CharacterTarget characterType ->
                 let propIdOpt =
@@ -978,17 +979,14 @@ module Field =
                 match propIdOpt with
                 | Some propId ->
                     let time = field.FieldTime_
-                    let prop = getProp propId field
                     let localTime = time - startTime
                     let (step, stepCount) = CueMovement.computeStepAndStepCount translation moveType
                     let finishTime = int64 (dec stepCount)
                     if localTime < finishTime then
-                        let bounds = prop.Perimeter.Translate step
-                        let field = mapProp (Prop.mapPerimeter (constant bounds)) propId field
+                        let field = mapProp (fun prop -> { prop with Perimeter = prop.Perimeter.Translate step }) propId field
                         (cue, definitions, just field)
                     else
-                        let bounds = prop.Perimeter.WithBottom (origin + translation)
-                        let field = mapProp (Prop.mapPerimeter (constant bounds)) propId field
+                        let field = mapProp (fun prop -> { prop with Perimeter = prop.Perimeter.WithBottom (origin + translation) }) propId field
                         (Fin, definitions, just field)
                 | None -> (Fin, definitions, just field)
             | NpcTarget _ | ShopkeepTarget _ | CharacterIndexTarget _ | SpriteTarget _ ->
@@ -1004,7 +1002,7 @@ module Field =
                       FieldDestination = fieldDestination
                       FieldDirection = fieldDirection
                       FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
-                let field = mapFieldTransitionOpt (constant (Some fieldTransition)) field
+                let field = setFieldTransitionOpt (Some fieldTransition) field
                 (WarpState, definitions, just field)
 
         | WarpState ->
@@ -1019,7 +1017,7 @@ module Field =
             | None ->
                 let dialogForm = if isNarration then DialogNarration else DialogThick
                 let dialog = Dialog.make dialogForm text
-                let field = mapDialogOpt (constant (Some dialog)) field
+                let field = setDialogOpt (Some dialog) field
                 (DialogState, definitions, just field)
 
         | DialogState ->
@@ -1033,7 +1031,7 @@ module Field =
                 (cue, definitions, just field)
             | None ->
                 let dialog = Dialog.makePrompt DialogThick text (leftPrompt, rightPrompt)
-                let field = mapDialogOpt (constant (Some dialog)) field
+                let field = setDialogOpt (Some dialog) field
                 (PromptState, definitions, just field)
 
         | PromptState ->
@@ -1184,7 +1182,7 @@ module Field =
                 match field.DialogOpt_ with
                 | Some dialog ->
                     let dialog = Dialog.update (detokenize field) field.FieldTime_ dialog
-                    mapDialogOpt (constant (Some dialog)) field
+                    setDialogOpt (Some dialog) field
                 | None -> field
 
             // update cue
@@ -1193,9 +1191,9 @@ module Field =
             // reset cue definitions if finished
             let field =
                 match cue with
-                | CueSystem.Fin -> mapDefinitions (constant field.DefinitionsOriginal_) field
-                | _ -> mapDefinitions (constant definitions) field
-            let field = mapCue (constant cue) field
+                | CueSystem.Fin -> setDefinitions field.DefinitionsOriginal_ field
+                | _ -> setDefinitions definitions field
+            let field = setCue cue field
 
             // update portal
             let (signals, field) =
@@ -1208,7 +1206,7 @@ module Field =
                               FieldDestination = destination
                               FieldDirection = direction
                               FieldTransitionTime = field.FieldTime_ + Constants.Field.TransitionTime }
-                        let field = mapFieldTransitionOpt (constant (Some transition)) field
+                        let field = setFieldTransitionOpt (Some transition) field
                         let playSound =
                             if isWarp
                             then ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepWarpSound)
@@ -1225,7 +1223,7 @@ module Field =
                     let results =
                         List.fold (fun (signals : Signal list, field : Field) (sensorType, cue, requirements) ->
                             if field.Advents_.IsSupersetOf requirements then
-                                let field = mapCue (constant cue) field
+                                let field = setCue cue field
                                 match sensorType with
                                 | AirSensor -> (signals, field)
                                 | HiddenSensor | StepPlateSensor -> (signal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.StepPlateSound)) :: signals, field)
@@ -1301,16 +1299,16 @@ module Field =
           Advents_ = advents
           Props_ = props
           Inventory_ = inventory
-          Options_ = { BattleSpeed = PacedSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
+          ShopOpt_ = None
+          Options_ = { BattleSpeed = PacedSpeed }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
           Cue_ = CueSystem.Fin
+          Tint_ = Color.Zero
           ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
-          Tint_ = Color.Zero
-          ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
           AutoMaps_ = Map.empty
@@ -1332,16 +1330,16 @@ module Field =
           Advents_ = Advents.empty
           Props_ = Map.empty
           Inventory_ = Inventory.initial
-          Options_ = { BattleSpeed = PacedSpeed }
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
+          ShopOpt_ = None
+          Options_ = { BattleSpeed = PacedSpeed }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
           Cue_ = CueSystem.Fin
+          Tint_ = Color.Zero
           ScreenTransitioning_ = false
           FieldTransitionOpt_ = None
-          Tint_ = Color.Zero
-          ShopOpt_ = None
           DialogOpt_ = None
           FieldSongTimeOpt_ = None
           AutoMaps_ = Map.empty

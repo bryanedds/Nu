@@ -30,25 +30,19 @@ module Avatar =
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.CharacterAnimationState
 
-    let mapPerimeter updater (avatar : Avatar) =
-        let bounds = updater avatar.Perimeter
-        if bounds =/= avatar.Perimeter
-        then { avatar with Perimeter = bounds }
-        else avatar
-
     let mapCharacterAnimationState updater (avatar : Avatar) =
         let characterAnimationState = updater avatar.CharacterAnimationState
         if characterAnimationState =/= avatar.CharacterAnimationState
         then { avatar with CharacterAnimationState = characterAnimationState }
         else avatar
 
-    let mapDirection updater (avatar : Avatar) =
-        mapCharacterAnimationState (fun state -> { state with Direction = updater state.Direction }) avatar
+    let setDirection direction (avatar : Avatar) =
+        mapCharacterAnimationState (fun state -> { state with Direction = direction }) avatar
 
     let lookAt bottomOffset5 (avatar : Avatar) =
         let delta = bottomOffset5 - avatar.Perimeter.BottomOffset5
         let direction = Direction.ofVector3 delta
-        mapDirection (constant direction) avatar
+        setDirection direction avatar
 
     let animate time characterAnimationType avatar =
         mapCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType time characterAnimationType state) avatar

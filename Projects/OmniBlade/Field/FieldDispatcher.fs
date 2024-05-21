@@ -128,8 +128,8 @@ type FieldDispatcher () =
                         // transition field
                         loadMetadata destinationData.FieldType
                         preloadFields destinationData.FieldType field 
-                        let field = Field.mapFieldType world.UpdateTime (constant fieldTransition.FieldType) field
-                        let field = Field.mapAvatar (Avatar.mapDirection (constant fieldTransition.FieldDirection)) field
+                        let field = Field.setFieldType world.UpdateTime fieldTransition.FieldType field
+                        let field = Field.mapAvatar (Avatar.setDirection fieldTransition.FieldDirection) field
                         let warpAvatar = WarpAvatar fieldTransition.FieldDestination
                         let songCmd =
                             match Field.getFieldSongOpt field with
@@ -144,8 +144,8 @@ type FieldDispatcher () =
                     // finish field transition
                     elif time = fieldTransition.FieldTransitionTime then
                         let startTime = field.FieldTime
-                        let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
-                        let field = Field.mapFieldTransitionOpt (constant None) field
+                        let field = Field.setFieldSongTimeOpt (Some startTime) field
+                        let field = Field.setFieldTransitionOpt None field
                         just field
 
                     // intermediate field transition state
@@ -169,13 +169,13 @@ type FieldDispatcher () =
             // update avatar from transform if warped
             let time = world.UpdateTime
             let avatar = field.Avatar
-            let avatar = Avatar.mapPerimeter (fun (perimeter : Box3) -> perimeter.WithCenter transform.BodyCenter) avatar
+            let avatar = { avatar with Perimeter = avatar.Perimeter.WithCenter transform.BodyCenter }
             let avatar =
                 let direction = Direction.ofVector3Biased transform.BodyLinearVelocity
                 let speed = transform.BodyLinearVelocity.Magnitude
                 if speed > Constants.Field.AvatarIdleSpeedMax then
                     if direction <> avatar.Direction || avatar.CharacterAnimationType = IdleAnimation then
-                        let avatar = Avatar.mapDirection (constant direction) avatar
+                        let avatar = Avatar.setDirection direction avatar
                         Avatar.animate time WalkAnimation avatar
                     else avatar
                 else Avatar.animate time IdleAnimation avatar
@@ -216,7 +216,7 @@ type FieldDispatcher () =
             | _ -> just field
 
         | ScreenTransitioning transitioning ->
-            let field = Field.mapScreenTransitioning (constant transitioning) field
+            let field = Field.setScreenTransitioning transitioning field
             just field
 
         | FinishQuitting ->
@@ -360,7 +360,7 @@ type FieldDispatcher () =
                                     | [] -> inventory
                                 let teammate = Teammate.equipAccessoryOpt accessoryTypeOpt teammate
                                 (teammate, inventory)
-                        let field = Field.mapTeam (Map.add teammate.TeamIndex teammate) field
+                        let field = Field.mapTeammate (constant teammate) teammate.TeamIndex field
                         let field = Field.mapInventory (constant inventory) field
                         let field = Field.mapMenu (fun menu -> { menu with MenuState = MenuTeam { menuTeam with TeamEquipOpt = None }}) field
                         just field
@@ -496,7 +496,7 @@ type FieldDispatcher () =
             just field
 
         | MenuOptionsSelectBattleSpeed battleSpeed ->
-            let field = Field.mapOptions (constant { BattleSpeed = battleSpeed }) field
+            let field = Field.setOptions { BattleSpeed = battleSpeed } field
             just field
 
         | MenuOptionsQuitPrompt ->
@@ -598,8 +598,8 @@ type FieldDispatcher () =
             | Some dialog ->
                 match dialog.DialogPromptOpt with
                 | Some ((_, promptCue), _) ->
-                    let field = Field.mapDialogOpt (constant None) field
-                    let field = Field.mapCue (constant promptCue) field
+                    let field = Field.setDialogOpt None field
+                    let field = Field.setCue promptCue field
                     just field
                 | None -> just field
             | None -> just field
@@ -609,8 +609,8 @@ type FieldDispatcher () =
             | Some dialog ->
                 match dialog.DialogPromptOpt with
                 | Some (_, (_, promptCue)) ->
-                    let field = Field.mapDialogOpt (constant None) field
-                    let field = Field.mapCue (constant promptCue) field
+                    let field = Field.setDialogOpt None field
+                    let field = Field.setCue promptCue field
                     just field
                 | None -> just field
             | None -> just field
@@ -706,7 +706,7 @@ type FieldDispatcher () =
             let speed = linearVelocity.Magnitude
             let field =
                 if speed <= Constants.Field.AvatarIdleSpeedMax
-                then Field.mapAvatar (Avatar.mapDirection (constant direction)) field
+                then Field.mapAvatar (Avatar.setDirection direction) field
                 else field
             let world = screen.SetField field world
             just world
@@ -729,7 +729,7 @@ type FieldDispatcher () =
                                 else (0L, time)
                             | None -> (0L, time)
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
-                        let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
+                        let field = Field.setFieldSongTimeOpt (Some startTime) field
                         let world = screen.SetField field world
                         withSignal (FieldCommand.PlaySong (30L, fadeIn, playTime, 0.5f, fieldSong)) world
                     else just world
@@ -745,7 +745,7 @@ type FieldDispatcher () =
                             else (0L, time)
                         | None -> (0L, time)
                     let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
-                    let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
+                    let field = Field.setFieldSongTimeOpt (Some startTime) field
                     let world = screen.SetField field world
                     withSignal (FieldCommand.PlaySong (30L, fadeIn, playTime, 0.5f, fieldSong)) world
                 | (None, _) -> just world

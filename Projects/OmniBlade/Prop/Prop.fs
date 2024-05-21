@@ -22,9 +22,6 @@ module Prop =
           PropState : PropState
           PropId : int }
 
-    let mapPerimeter updater (prop : Prop) =
-        { prop with Perimeter = updater prop.Perimeter }
-
     let mapPropState updater (prop : Prop) =
         { prop with PropState = updater prop.PropState }
 
