@@ -69,10 +69,10 @@ type BattleDispatcher () =
             | Some dialog ->
                 match Dialog.tryAdvance id dialog with
                 | (true, dialog) ->
-                    let battle = Battle.mapDialogOpt (constant (Some dialog)) battle
+                    let battle = { battle with DialogOpt = Some dialog }
                     just battle
                 | (false, _) ->
-                    let battle = Battle.mapDialogOpt (constant None) battle
+                    let battle = { battle with DialogOpt = None }
                     just battle
             | None -> just battle
 
@@ -460,7 +460,7 @@ type BattleDispatcher () =
                                  Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]]
 
          // inputs condition
-         if battle.Running then
+         if battle.BattleState = BattleRunning then
 
             // inputs group
             Content.group Simulants.BattleInputs.Name []
