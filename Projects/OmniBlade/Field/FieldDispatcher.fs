@@ -137,7 +137,7 @@ type FieldDispatcher () =
                                 let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                                 match currentSongOpt with
                                 | Some song when assetEq song fieldSong -> Nop
-                                | _ -> FieldCommand.PlaySong (30L, 0L, 0L, Constants.Audio.SongVolumeDefault, fieldSong)
+                                | _ -> FieldCommand.PlaySong (30L, 0L, 0L, 0.5f, fieldSong)
                             | None -> Nop
                         withSignals [warpAvatar; songCmd] field
 
@@ -731,7 +731,7 @@ type FieldDispatcher () =
                         let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
                         let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
                         let world = screen.SetField field world
-                        withSignal (FieldCommand.PlaySong (30L, fadeIn, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
+                        withSignal (FieldCommand.PlaySong (30L, fadeIn, playTime, 0.5f, fieldSong)) world
                     else just world
                 | (Some fieldSong, None) ->
                     let fieldSong = overrideSong field.FieldType field.Advents fieldSong
@@ -747,7 +747,7 @@ type FieldDispatcher () =
                     let fadeIn = if playTime <> 0L then Constants.Field.FieldSongFadeInTime else 0L
                     let field = Field.mapFieldSongTimeOpt (constant (Some startTime)) field
                     let world = screen.SetField field world
-                    withSignal (FieldCommand.PlaySong (30L, fadeIn, playTime, Constants.Audio.SongVolumeDefault, fieldSong)) world
+                    withSignal (FieldCommand.PlaySong (30L, fadeIn, playTime, 0.5f, fieldSong)) world
                 | (None, _) -> just world
             | (false, _) -> just world
 
