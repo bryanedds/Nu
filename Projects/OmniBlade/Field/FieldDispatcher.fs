@@ -20,8 +20,8 @@ module FieldExtensions =
 type FieldDispatcher () =
     inherit ScreenDispatcher<Field, FieldMessage, FieldCommand> (Field.empty)
 
-        // HACK: override songs under special conditions.
-        // NOTE: technically this should be data-driven, but it may not worth doing so for this game.
+    // HACK: override songs under special conditions.
+    // NOTE: technically this should be data-driven, but it may not worth doing so for this game.
     static let overrideSong (_ : FieldType) (_ : Advent Set) song =
         // NOTE: no special conditions in demo.
         song
