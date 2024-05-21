@@ -63,15 +63,15 @@ type MenuUse =
         | KeyItem _ | Stash _ -> None
 
 type EquipType =
-    | WeaponEquip of WeaponType option
-    | ArmorEquip of ArmorType option
-    | AccessoryEquip of AccessoryType option
+    | EquipWeapon of WeaponType option
+    | EquipArmor of ArmorType option
+    | EquipAccessory of AccessoryType option
 
     member this.ItemName =
         match this with
-        | WeaponEquip weaponTypeOpt -> weaponTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
-        | ArmorEquip armorTypeOpt -> armorTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
-        | AccessoryEquip accessoryTypeOpt -> accessoryTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+        | EquipWeapon weaponTypeOpt -> weaponTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+        | EquipArmor armorTypeOpt -> armorTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+        | EquipAccessory accessoryTypeOpt -> accessoryTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
 
 type Equip =
     { EquipType : EquipType

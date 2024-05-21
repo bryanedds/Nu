@@ -306,9 +306,9 @@ type FieldDispatcher () =
                             | Some equip ->
                                 let equipType =
                                     match equip.EquipType with
-                                    | WeaponEquip _ -> WeaponEquip (Some (match itemType with Equipment (WeaponType weaponType) -> weaponType | _ -> failwithumf ()))
-                                    | ArmorEquip _ -> ArmorEquip (Some (match itemType with Equipment (ArmorType armorType) -> armorType | _ -> failwithumf ()))
-                                    | AccessoryEquip _ -> AccessoryEquip (Some (match itemType with Equipment (AccessoryType accessoryType) -> accessoryType | _ -> failwithumf ()))
+                                    | EquipWeapon _ -> EquipWeapon (Some (match itemType with Equipment (WeaponType weaponType) -> weaponType | _ -> failwithumf ()))
+                                    | EquipArmor _ -> EquipArmor (Some (match itemType with Equipment (ArmorType armorType) -> armorType | _ -> failwithumf ()))
+                                    | EquipAccessory _ -> EquipAccessory (Some (match itemType with Equipment (AccessoryType accessoryType) -> accessoryType | _ -> failwithumf ()))
                                 let equip = { equip with EquipType = equipType }
                                 MenuTeam { menuTeam with TeamEquipOpt = Some equip }
                             | None -> MenuTeam menuTeam
@@ -327,7 +327,7 @@ type FieldDispatcher () =
                         let inventory = field.Inventory
                         let (teammate, inventory) =
                             match equip.EquipType with
-                            | WeaponEquip weaponTypeOpt ->
+                            | EquipWeapon weaponTypeOpt ->
                                 let inventory =
                                     match weaponTypeOpt with
                                     | Some weaponType -> Inventory.tryRemoveItem (Equipment (WeaponType weaponType)) inventory |> snd
@@ -338,7 +338,7 @@ type FieldDispatcher () =
                                     | None -> inventory
                                 let teammate = Teammate.equipWeaponOpt weaponTypeOpt teammate
                                 (teammate, inventory)
-                            | ArmorEquip armorTypeOpt ->
+                            | EquipArmor armorTypeOpt ->
                                 let inventory =
                                     match armorTypeOpt with
                                     | Some armorType -> Inventory.tryRemoveItem (Equipment (ArmorType armorType)) inventory |> snd
@@ -349,7 +349,7 @@ type FieldDispatcher () =
                                     | None -> inventory
                                 let teammate = Teammate.equipArmorOpt armorTypeOpt teammate
                                 (teammate, inventory)
-                            | AccessoryEquip accessoryTypeOpt ->
+                            | EquipAccessory accessoryTypeOpt ->
                                 let inventory =
                                     match accessoryTypeOpt with
                                     | Some accessoryType -> Inventory.tryRemoveItem (Equipment (AccessoryType accessoryType)) inventory |> snd
@@ -1029,7 +1029,7 @@ type FieldDispatcher () =
                             | None -> ""
                          Entity.ClickEvent =>
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> MenuTeamEquip (WeaponEquip teammate.WeaponOpt) :> Signal
+                            | Some teammate -> MenuTeamEquip (EquipWeapon teammate.WeaponOpt) :> Signal
                             | None -> Nop]
                      Content.text "ArmorLabel"
                         [Entity.PositionLocal == v3 438.0f 234.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -1047,7 +1047,7 @@ type FieldDispatcher () =
                             | None -> ""
                          Entity.ClickEvent =>
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> MenuTeamEquip (ArmorEquip teammate.ArmorOpt) :> Signal
+                            | Some teammate -> MenuTeamEquip (EquipArmor teammate.ArmorOpt) :> Signal
                             | None -> Nop]
                      Content.text "AccessoryLabel"
                         [Entity.PositionLocal == v3 438.0f 177.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -1065,7 +1065,7 @@ type FieldDispatcher () =
                             | None -> ""
                          Entity.ClickEvent =>
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> MenuTeamEquip (AccessoryEquip (List.tryHead teammate.Accessories)) :> Signal
+                            | Some teammate -> MenuTeamEquip (EquipAccessory (List.tryHead teammate.Accessories)) :> Signal
                             | None -> Nop]
                      Content.text "Stats"
                         [Entity.PositionLocal == v3 438.0f 32.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 132.0f 0.0f
@@ -1090,9 +1090,9 @@ type FieldDispatcher () =
                     let teammate = field.Team.[menuTeam.TeamIndex]
                     let (changing, currentEquipmentName, teammate', equipTypeStr) =
                         match equip.EquipType with
-                        | WeaponEquip weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map scstringMemo |> Option.defaultValue "None", Teammate.equipWeaponOpt weaponTypeOpt teammate, "Wpn:")
-                        | ArmorEquip armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map scstringMemo |> Option.defaultValue "None", Teammate.equipArmorOpt armorTypeOpt teammate, "Arm:")
-                        | AccessoryEquip accessoryTypeOpt -> (teammate.Accessories <> Option.toList accessoryTypeOpt, teammate.Accessories |> List.map scstringMemo |> flip Seq.headOrDefault "None", Teammate.equipAccessoryOpt accessoryTypeOpt teammate, "Acc:")
+                        | EquipWeapon weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map scstringMemo |> Option.defaultValue "None", Teammate.equipWeaponOpt weaponTypeOpt teammate, "Wpn:")
+                        | EquipArmor armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map scstringMemo |> Option.defaultValue "None", Teammate.equipArmorOpt armorTypeOpt teammate, "Arm:")
+                        | EquipAccessory accessoryTypeOpt -> (teammate.Accessories <> Option.toList accessoryTypeOpt, teammate.Accessories |> List.map scstringMemo |> flip Seq.headOrDefault "None", Teammate.equipAccessoryOpt accessoryTypeOpt teammate, "Acc:")
                     Content.panel "Equip"
                         [Entity.Position == v3 -450.0f -177.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 351.0f 0.0f
                          Entity.BackdropImageOpt == Some Assets.Gui.DialogLargeImage]

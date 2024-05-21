@@ -16,21 +16,21 @@ module FieldContent =
         let private equipmentItems equipmentType archetypeType (inventory : Inventory) =
             let filter (equipment, _) =
                 match (equipmentType, equipment) with
-                | (WeaponEquip _, Equipment (WeaponType weaponType)) ->
+                | (EquipWeapon _, Equipment (WeaponType weaponType)) ->
                     match Map.tryFind weaponType Data.Value.Weapons with
                     | Some weaponData ->
                         match Map.tryFind archetypeType Data.Value.Archetypes with
                         | Some archetypeData -> weaponData.WeaponSubtype = archetypeData.WeaponSubtype
                         | None -> false
                     | None -> false
-                | (ArmorEquip _, Equipment (ArmorType armorType)) ->
+                | (EquipArmor _, Equipment (ArmorType armorType)) ->
                     match Map.tryFind armorType Data.Value.Armors with
                     | Some armorData ->
                         match Map.tryFind archetypeType Data.Value.Archetypes with
                         | Some archetypeData -> armorData.ArmorSubtype = archetypeData.ArmorSubtype
                         | None -> false
                     | None -> false
-                | (AccessoryEquip _, Equipment (AccessoryType _)) -> true
+                | (EquipAccessory _, Equipment (AccessoryType _)) -> true
                 | _ -> false
             inventory.Items |>
             Map.toArray |>
