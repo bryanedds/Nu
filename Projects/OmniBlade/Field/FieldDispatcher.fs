@@ -1108,8 +1108,7 @@ type FieldDispatcher () =
                                     match characterData.PortraitOpt with
                                     | Some portrait -> Some portrait
                                     | None -> Some Assets.Default.EmptyImage
-                                | None -> Some Assets.Default.EmptyImage
-                             Entity.EnabledLocal == false]
+                                | None -> Some Assets.Default.EmptyImage]
                          Content.text "Stats"
                             [Entity.PositionLocal == v3 198.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 144.0f 0.0f
                              Entity.Justification == Unjustified true
