@@ -459,8 +459,8 @@ type BattleDispatcher () =
                                  Entity.BorderImage == Assets.Gui.TechBorderImage
                                  Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]]
 
-         // inputs condition
-         if battle.Running then
+         // inputs when running
+         if battle.BattleState = BattleRunning then
 
             // inputs group
             Content.group Simulants.BattleInputs.Name []
