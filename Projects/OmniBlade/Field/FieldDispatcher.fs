@@ -1131,8 +1131,9 @@ type FieldDispatcher () =
                                 [Entity.PositionLocal == v3 72.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
                                  Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                  Entity.TextMargin == v2 15.0f 0.0f
-                                 Entity.UpImage == asset "Gui" "ButtonLongUp"
-                                 Entity.DownImage == asset "Gui" "ButtonLongDown"
+                                 Entity.UpImage == Assets.Gui.ButtonLongUpImage
+                                 Entity.DownImage == Assets.Gui.ButtonLongDownImage
+                                 Entity.ClickSoundOpt == Some Assets.Field.EquipSound
                                  Entity.Text := equip.EquipType.ItemName
                                  Entity.ClickEvent => MenuTeamEquipConfirm]
                          Content.button "EquipCancel"
