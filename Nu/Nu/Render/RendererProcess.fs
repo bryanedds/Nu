@@ -442,11 +442,31 @@ type RendererThread () =
                     let queueFamiliesNptr = NativePtr.ofVoidPtr<VkQueueFamilyProperties> queueFamiliesHnd.Pointer
                     let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, queueFamiliesNptr)
                     
+                    (* it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
+                       i discovered this by accident because the queue families on my physical device behave exactly the same as the queue families on this one:
+
+                       https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
+
+                       TODO: confirm this isn't specific to vortice vulkan 
+                       in which case it is almost certainly an amd bug.
+                       
+                       general lesson: trust level for vendors is too low for deviation from common practices to be advisable. *)
+
+                    let mutable graphicsQueueFamilyFound = false
+                    let mutable presentQueueFamilyFound = false
+                    
                     for i in [0 .. dec (int queueFamilyCount)] do
-                        if queueFamilies[i].queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then graphicsQueueFamily <- uint i
-                        let mutable presentSupport = VkBool32.False
-                        let result = vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, uint i, surface, &presentSupport)
-                        if (presentSupport = VkBool32.True) then presentQueueFamily <- uint i
+                        if not graphicsQueueFamilyFound then
+                            if queueFamilies[i].queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
+                                graphicsQueueFamily <- uint i
+                                graphicsQueueFamilyFound <- true
+                        
+                        if not presentQueueFamilyFound then
+                            let mutable presentSupport = VkBool32.False
+                            let result = vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, uint i, surface, &presentSupport)
+                            if (presentSupport = VkBool32.True) then
+                                presentQueueFamily <- uint i
+                                presentQueueFamilyFound <- true
                     
                     ()
                 
@@ -728,7 +748,7 @@ type RendererThread () =
 
                 let result = vkBeginCommandBuffer (commandBuffer, Interop.AsPointer &beginInfo)
 
-                let mutable clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)            
+                let mutable clearColor = VkClearValue (0.0f, 1.0f, 0.0f, 1.0f)            
                 let mutable renderPassInfo = VkRenderPassBeginInfo ()
                 renderPassInfo.renderPass <- renderPass
                 renderPassInfo.framebuffer <- swapChainFramebuffers[int imageIndex]
@@ -738,7 +758,6 @@ type RendererThread () =
                 renderPassInfo.pClearValues <- Interop.AsPointer &clearColor
 
                 vkCmdBeginRenderPass (commandBuffer, Interop.AsPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
-                vkCmdSetBlendConstants (commandBuffer, 1.0f, 1.0f, 1.0f, 1.0f)
                 vkCmdEndRenderPass commandBuffer
                 let result = vkEndCommandBuffer commandBuffer
 
