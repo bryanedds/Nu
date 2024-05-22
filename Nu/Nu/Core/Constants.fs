@@ -3,9 +3,9 @@
 
 namespace Nu.Constants
 open System
+open System.Configuration
 open System.Diagnostics
 open System.Numerics
-open System.Configuration
 open Prime
 open Nu
 

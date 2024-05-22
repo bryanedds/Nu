@@ -3,9 +3,9 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Diagnostics
 open Prime
-open System.Collections.Concurrent
 
 [<RequireQualifiedAccess>]
 module Log =
