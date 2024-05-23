@@ -22,6 +22,7 @@ type CharacterDispatcher () =
             let celYOpt =
                 if character.Wounded then None
                 elif Map.containsKey Confuse statuses then Some 3
+                elif Map.containsKey Curse statuses then Some 8
                 elif Map.containsKey Sleep statuses then Some 2
                 elif Map.containsKey Silence statuses then Some 1
                 elif Map.containsKey Poison statuses then Some 0

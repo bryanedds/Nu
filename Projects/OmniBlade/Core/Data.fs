@@ -136,6 +136,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Poison -> true
         | Silence -> true
         | Sleep -> true
+        | Curse -> true
         | Confuse -> true
         | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> true
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> false
@@ -150,6 +151,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
             | Poison -> Gen.random1 2 = 0
             | Silence -> Gen.random1 2 = 0
             | Sleep -> Gen.random1 2 = 0
+            | Curse -> Gen.random1 3 <> 0
             | Confuse -> Gen.random1 3 = 0
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
@@ -171,6 +173,7 @@ type [<CustomEquality; CustomComparison>] StatusType =
             | Poison -> Gen.random1 5 <> 0
             | Silence -> Gen.random1 4 <> 0
             | Sleep -> Gen.random1 3 <> 0
+            | Curse -> Gen.random1 3 <> 0
             | Confuse -> Gen.random1 2 <> 0
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
@@ -191,11 +194,12 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Poison -> 0
         | Silence -> 1
         | Sleep -> 2
-        | Confuse -> 3
-        | Time _ -> 4
-        | Power (_, _) -> 5
-        | Magic (_, _) -> 6
-        | Shield (_, _) -> 7
+        | Curse -> 3
+        | Confuse -> 4
+        | Time _ -> 5
+        | Power (_, _) -> 6
+        | Magic (_, _) -> 7
+        | Shield (_, _) -> 8
 
     static member compare this that =
         compare
