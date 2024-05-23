@@ -1287,7 +1287,7 @@ module Battle =
                                         withSignals [playFlame; displayFlame] battle
                                     | Ice ->
                                         let playIce = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.IceSound)
-                                        let displayIce = DisplayIce (0L, targetIndex)
+                                        let displayIce = DisplayIce (20L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playIce; displayIce] battle
                                     | Snowball ->

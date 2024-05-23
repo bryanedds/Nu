@@ -394,32 +394,15 @@ module EffectDescriptors =
                  AnimatedSprite (Resource (AssetTag.toPair Assets.Battle.FlameAnimationSheet), v2i 64 64, 6, 6, 6L, Once, [||], Nil)) }
 
     let ice =
-        let coverRadius = 50.0f
-        let bombardActivation = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = 10L };{ LogicValue = false; LogicLength = 0L }|])
-        let bombardTravel origin = Positions (Sum, Linear, Once, [|{ TweenValue = origin; TweenLength = 10L };{ TweenValue = v3Zero; TweenLength = 0L }|])
-        let coverTravel =
-            Aspects
-                [|Positions
-                   (Sum, Linear, Loop,
-                    [|{ TweenValue = v3 0.0f -coverRadius 0.0f; TweenLength = 10L }
-                      { TweenValue = v3 coverRadius 0.0f 0.0f; TweenLength = 0L }|])
-                  Positions
-                   (Sum, Random, Loop,
-                    [|{ TweenValue = v3Zero; TweenLength = 80L }
-                      { TweenValue = v3 -coverRadius coverRadius 0.0f; TweenLength = 0L }|])|]
-        let ice = StaticSprite (Resource (AssetTag.toPair Assets.Battle.IceImage), [|Size (v3 192.0f 192.0f 0.0f)|], Nil)
-        let iceBombard origin = Emit (Shift 0.0f, Rate 0.2f, [||], [|bombardTravel origin; bombardActivation|], ice)
-        let iceCover = Emit (Shift 0.0f, Rate 1.0f, [|coverTravel|], [||], ice)
         { EffectName = "Ice"
-          LifeTimeOpt = Some 80L
+          LifeTimeOpt = Some 100L
           Definitions = Map.empty
           Content =
-            Contents
-                (Shift 0.0f,
-                 [|iceCover
-                   iceBombard (v3 -700.0f 0.0f 0.0f)
-                   iceBombard (v3 500.0f 500.0f 0.0f)
-                   iceBombard (v3 500.0f -500.0f 0.0f)|]) }
+            AnimatedSprite
+                (Resource (AssetTag.toPair Assets.Battle.IceAnimationSheet),
+                 v2i 48 48, 20, 20, 5L, Once,
+                 [|Size (v3 144.0f 144.0f 0.0f)|],
+                 Nil) }
 
     let snowball =
         let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L }; { TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
