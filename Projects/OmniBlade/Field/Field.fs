@@ -595,7 +595,7 @@ module Field =
 
     let private computeChecksum (str : string) =
         let mutable checksum = 13L
-        for c in str do checksum <- checksum + (int64 c <<< (int checksum ||| 0xF))
+        for c in str do checksum <- checksum + (int64 c <<< (int checksum % 64))
         checksum
 
     let save field =
