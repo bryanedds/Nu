@@ -352,31 +352,31 @@ module EffectDescriptors =
                      Emit (Shift 0.0f, Rate 1.0f, [|orbitV; positionAdjustY|], [||], StaticSprite (Resource (AssetTag.toPair Assets.Battle.NonLocationGreenImage), [|nonLocationSize; fade|], Nil))|]) }
 
     let fire position position2 =
-        let fireSize = Size (v3 64.0f 64.0f 0.0f)
+        let fireSize = Size (v3 96.0f 96.0f 0.0f)
         let activation timeOn timeOff = Enableds (Equal, Once, [|{ LogicValue = true; LogicLength = timeOn}; { LogicValue = false; LogicLength = timeOff }|])
         let linearTravel position position2 duration = Positions (Set, EaseOut, Once, [|{ TweenValue = position; TweenLength = duration }; { TweenValue = position2; TweenLength = 0L }|])
         let fire playback aspects =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.FireAnimationSheet),
-              v2i 16 16, 4, 4, 3L, playback, aspects, Nil)
+              v2i 32 32, 8, 4, 2L, playback, aspects, Nil)
         let burn =
             AnimatedSprite
              (Resource (AssetTag.toPair Assets.Battle.BurnAnimationSheet),
-              v2i 16 16, 4, 4, 3L, Once, [||], Nil)
+              v2i 32 32, 12, 4, 3L, Once, [||], Nil)
         let fireball travel activation =
             Contents
                 (Shift 0.0f,
                  [|fire Loop [|travel; fireSize; activation|];
                    Emit (Shift 0.0f, Rate 0.3f, [|travel; activation|], [||], fire Once [|fireSize|]) |])
         { EffectName = "Fire"
-          LifeTimeOpt = Some 129L
+          LifeTimeOpt = Some 140L
           Definitions = Map.empty
           Content = 
             Contents
                 (Shift 0.0f,
                  [|fireball (Circle (64.0f, 1.5f, 40L)) (activation 40L 60L)
                    Delay (40L, fireball (Aspects [|linearTravel position position2 20L|]) (activation 20L 40L))
-                   Delay (60L, Emit (Shift 0.0f, Rate 0.1f, [||], [|linearTravel position2 (position2 + (v3 0.0f 72.0f 0.0f)) 20L|], burn))|]) }
+                   Delay (60L, Emit (Shift 0.0f, Rate 0.1f, [||], [|linearTravel position2 (position2 + (v3 0.0f 72.0f 0.0f)) 72L|], burn))|]) }
 
     let flame position position2 =
         { EffectName = "Flame"
