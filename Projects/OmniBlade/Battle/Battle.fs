@@ -1429,7 +1429,7 @@ module Battle =
                                                     resetCharacterInput characterIndex battle
                                                 else battle
                                             let sigs =
-                                                if hitPointsChange <> 0 then
+                                                if hitPointsChange > 0 || techData.Curative then
                                                     let displayHpc = DisplayHitPointsChange (characterIndex, hitPointsChange) |> signal
                                                     displayHpc :: sigs
                                                 else sigs
