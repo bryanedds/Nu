@@ -14,6 +14,7 @@ module Log =
 #if DEBUG
     let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private WarnOnceMessages = ConcurrentDictionary StringComparer.Ordinal
+    let mutable private ErrorOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private DebugOnceMessages = ConcurrentDictionary StringComparer.Ordinal
 #endif
     let mutable private TraceOnceMessages = ConcurrentDictionary StringComparer.Ordinal
@@ -51,6 +52,20 @@ module Log =
     let warnOnce (message : string) =
 #if DEBUG
         if WarnOnceMessages.TryAdd (message, 0) then warn message
+#else
+        ignore message
+#endif
+
+    /// Log an error message with Trace.WriteLine.
+    /// Thread-safe.
+    let error message =
+        remark "Error" message
+
+    /// Log an error message once with Trace.WriteLine.
+    /// Thread-safe.
+    let errorOnce (message : string) =
+#if DEBUG
+        if ErrorOnceMessages.TryAdd (message, 0) then warn message
 #else
         ignore message
 #endif

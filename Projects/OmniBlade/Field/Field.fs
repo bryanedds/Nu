@@ -1375,10 +1375,10 @@ module Field =
                         let field = scvalue<Field> fieldStr
                         let props = makeProps time field.FieldType_ field.OmniSeedState_
                         Some { field with Props_ = props }
-                    else Log.info "Failed to load save file due to invalid checksum."; None
-                else Log.info "Failed to load save file due to unparsable checksum."; None
-            | _ -> Log.info "Failed to load save file due to missing checksum or invalid format."; None
-        with exn -> Log.info ("Failed to load save file due to: " + scstring exn); None
+                    else Log.error "Failed to load save file due to invalid checksum."; None
+                else Log.error "Failed to load save file due to unparsable checksum."; None
+            | _ -> Log.error "Failed to load save file due to missing checksum or invalid format."; None
+        with exn -> Log.error ("Failed to load save file due to: " + scstring exn); None
 
     let loadOrInitial time saveSlot =
         match tryLoad time saveSlot with
