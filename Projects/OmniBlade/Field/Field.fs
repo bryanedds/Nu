@@ -1378,9 +1378,7 @@ module Field =
                     else Log.info "Failed to load save file due to invalid checksum."; None
                 else Log.info "Failed to load save file due to unparsable checksum."; None
             | _ -> Log.info "Failed to load save file due to missing checksum or invalid format."; None
-        with exn ->
-            Log.info ("Failed to load save file due to: " + scstring exn)
-            None
+        with exn -> Log.info ("Failed to load save file due to: " + scstring exn); None
 
     let loadOrInitial time saveSlot =
         match tryLoad time saveSlot with
