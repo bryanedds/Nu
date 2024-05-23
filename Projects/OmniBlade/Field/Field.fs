@@ -170,6 +170,8 @@ module Field =
 
     (* Low-Level Operations *)
 
+    let private checksumToken = "\n[H3cK$uM:"
+
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
         | Sprite (_, image, color, blend, emission, flip, visible) -> SpriteState (image, color, blend, emission, flip, visible)
@@ -591,6 +593,11 @@ module Field =
             Props_ = Map.empty
             FieldSongTimeOpt_ = None }
 
+    let private computeChecksum (str : string) =
+        let mutable checksum = 13L
+        for c in str do checksum <- checksum + (int64 c <<< (int checksum ||| 0xF))
+        checksum
+
     let save field =
         let saveFilePath =
             match field.SaveSlot_ with
@@ -599,8 +606,9 @@ module Field =
             | Slot3 -> Assets.Global.SaveFilePath3
         let fieldSavable = toSavable field
         let fieldSymbol = valueToSymbol fieldSavable
-        let fileStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
-        try File.WriteAllText (saveFilePath, fileStr) with _ -> ()
+        let fieldStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
+        let checksumStr = string (computeChecksum fieldStr)
+        try File.WriteAllText (saveFilePath, fieldStr + checksumToken + checksumStr) with _ -> ()
 
     let truncate field =
         { field with Spirits_ = [||] }
@@ -1357,11 +1365,22 @@ module Field =
                 | Slot1 -> Assets.Global.SaveFilePath1
                 | Slot2 -> Assets.Global.SaveFilePath2
                 | Slot3 -> Assets.Global.SaveFilePath3
-            let fieldStr = File.ReadAllText saveFilePath
-            let field = scvalue<Field> fieldStr
-            let props = makeProps time field.FieldType_ field.OmniSeedState_
-            Some { field with Props_ = props }
-        with _ -> None
+            let fileStr = File.ReadAllText saveFilePath
+            match fileStr.Split checksumToken with
+            | [|fieldStr; checksumStr|] ->
+                let checksumExpected = computeChecksum fieldStr
+                let mutable checksumFound = 0L
+                if Int64.TryParse (checksumStr, &checksumFound) then
+                    if checksumFound = checksumExpected then
+                        let field = scvalue<Field> fieldStr
+                        let props = makeProps time field.FieldType_ field.OmniSeedState_
+                        Some { field with Props_ = props }
+                    else Log.info "Failed to load save file due to invalid checksum."; None
+                else Log.info "Failed to load save file due to unparsable checksum."; None
+            | _ -> Log.info "Failed to load save file due to missing checksum or invalid format."; None
+        with exn ->
+            Log.info ("Failed to load save file due to: " + scstring exn)
+            None
 
     let loadOrInitial time saveSlot =
         match tryLoad time saveSlot with
