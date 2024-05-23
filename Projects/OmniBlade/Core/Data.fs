@@ -121,8 +121,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Poison
     | Silence
     | Sleep
+    | Curse
     | Confuse // NOTE: dummied out. maybe implement in the sequel. effect of disallows enemy use of techs (except charge) and same for player but randomizes attack targets, too).
-    //| Curse - maybe implement in the sequel. effect of 'can't gain HP' in battle.
     //| Blind - maybe implement in the sequel
     //| Provoke of CharacterIndex - maybe implement in the sequel
     | Time of bool // true = Haste, false = Slow

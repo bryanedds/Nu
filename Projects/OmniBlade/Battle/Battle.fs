@@ -393,6 +393,9 @@ module Battle =
     let getCharacterSwooning characterIndex battle =
         (getCharacter characterIndex battle).Swooning
 
+    let getCharacterStatuses characterIndex battle =
+        (getCharacter characterIndex battle).Statuses
+
     let getCharacterPerimeterOriginal characterIndex battle =
         (getCharacter characterIndex battle).PerimeterOriginal
 
@@ -1120,7 +1123,9 @@ module Battle =
                         match Data.Value.Consumables.TryGetValue consumable with
                         | (true, consumableData) ->
                             if consumableData.Curative then
-                                let healing = int consumableData.Scalar
+                                let healing0 = int consumableData.Scalar
+                                let healing1 = if (getCharacterStatuses targetIndex battle).ContainsKey Curse then 0 else healing0
+                                let healing = max 0 healing1
                                 let battle =
                                     if consumableData.Techative
                                     then modifyCharacterTechPoints healing targetIndex battle

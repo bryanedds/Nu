@@ -244,8 +244,9 @@ module Character =
             | Critical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
-            let healing = single efficacy * techScalar * splitScalar * splashScalar |> int |> max 1
-            (target.CharacterIndex, false, false, healing, techData.StatusesAdded, techData.StatusesRemoved)
+            let healing0 = single efficacy * techScalar * splitScalar * splashScalar |> int |> max 1
+            let healing1 = if target.Statuses.ContainsKey Curse then 0 else healing0
+            (target.CharacterIndex, false, false, healing1, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType
