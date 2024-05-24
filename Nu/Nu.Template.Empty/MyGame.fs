@@ -14,7 +14,6 @@ module Simulants =
     let Title = Game / "Title"
     let TitleGui = Title / "Gui"
     let TitleExit = TitleGui / "Exit"
-    let TitleScene = Title / "Scene"
 
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
@@ -46,8 +45,7 @@ type MyGameDispatcher () =
 
     // here we define the game's properties and event handling
     override this.Definitions (myGame, _) =
-        [Game.DesiredScreen := match myGame with Title -> Desire Simulants.Title
-         Simulants.TitleExit.ClickEvent => Exit]
+        [Game.DesiredScreen := match myGame with Title -> Desire Simulants.Title]
 
     // here we handle the above messages
     override this.Message (myGame, message, _, _) =
@@ -67,7 +65,7 @@ type MyGameDispatcher () =
         [Content.screen Simulants.Title.Name Vanilla []
             [Content.group Simulants.TitleGui.Name []
                 [Content.button Simulants.TitleExit.Name
-                    [Entity.Text == "Exit"]]
-             Content.group Simulants.TitleScene.Name []
-                [Content.block2d "SomeBlock"
-                    [Entity.Position == v3 0.0f 64.0f 0.0f]]]]
+                   [Entity.Position == v3 232.0f -144.0f 0.0f
+                    Entity.Elevation == 10.0f
+                    Entity.Text == "Quit"
+                    Entity.ClickEvent => Exit]]]]
