@@ -10,21 +10,19 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // title screen
-    let Title = Game / "Title"
-    let TitleGui = Title / "Gui"
-    let TitleExit = TitleGui / "Exit"
+    // sandbox screen
+    let Sandbox = Game / "Sandbox"
 
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
 type MyGame =
-    | Title
+    | Sandbox
 
 // this is our top-level MMCC message type. The Nil message is just a placeholder message that doesn't do anything.
 type MyGameMessage =
     | Nil
     interface Message
-        
+
 // this is our top-level MMCC command type. Commands are used instead of messages when the world is to be transformed.
 type MyGameCommand =
     | Exit
@@ -41,16 +39,17 @@ module MyGameExtensions =
 // this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
 // them up with events and properties.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (Title)
+    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (Sandbox)
 
     // here we define the game's properties and event handling
     override this.Definitions (myGame, _) =
-        [Game.DesiredScreen := match myGame with Title -> Desire Simulants.Title]
+        [Game.DesiredScreen := match myGame with Sandbox -> Desire Simulants.Sandbox]
 
     // here we handle the above messages
     override this.Message (myGame, message, _, _) =
         match message with
-        | Nil -> just myGame
+        | Nil ->
+            just myGame
 
     // here we handle the above commands
     override this.Command (_, command, _, world) =
@@ -60,12 +59,11 @@ type MyGameDispatcher () =
             then just (World.exit world)
             else just world
 
-    // here we describe the content of the game, including the title screen, a gui group and a scene group.
+    // here we describe the content of the game, including a screen, a group, and a couple example entities.
     override this.Content (_, _) =
-        [Content.screen Simulants.Title.Name Vanilla []
-            [Content.group Simulants.TitleGui.Name []
-                [Content.button Simulants.TitleExit.Name
-                   [Entity.Position == v3 232.0f -144.0f 0.0f
-                    Entity.Elevation == 10.0f
-                    Entity.Text == "Quit"
-                    Entity.ClickEvent => Exit]]]]
+        [Content.screen Simulants.Sandbox.Name Vanilla []
+            [Content.group "Group" []
+                [Content.button "Exit"
+                   [Entity.Text == "Exit"
+                    Entity.ClickEvent => Exit]
+                 Content.skyBox "SkyBox" []]]]

@@ -4025,10 +4025,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // choose a template, ensuring it exists
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
-                let (templateFileName, templateDir) =
+                let (templateFileName, templateDir, editMode) =
                     match NewProjectType with
-                    | "Empty" -> ("Nu.Template.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty"))
-                    | "Game" | _ -> ("Nu.Template.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game"))
+                    | "Empty" -> ("Nu.Template.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty"), "Sandbox")
+                    | "Game" | _ -> ("Nu.Template.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game"), "Title")
                 if Directory.Exists templateDir then
 
                     // attempt to create project files
@@ -4088,7 +4088,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         Log.info ("Project '" + NewProjectName + "'" + "created.")
 
                         // configure editor to open new project then exit
-                        let gaiaState = makeGaiaState newProjectDllPath (Some "Title") true world
+                        let gaiaState = makeGaiaState newProjectDllPath (Some editMode) true world
                         let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                         let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
