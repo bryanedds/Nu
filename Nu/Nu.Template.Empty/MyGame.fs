@@ -64,14 +64,12 @@ type MyGameDispatcher () =
             then just (World.exit world)
             else just world
 
-    // here we describe the content of the game.
+    // here we describe the content of the game, including the title screen, a gui group and a scene group.
     override this.Content (_, _) =
         [Content.screen Simulants.Title.Name Vanilla []
             [Content.group Simulants.TitleGui.Name []
                 [Content.button Simulants.TitleExit.Name
-                    [Entity.Text == "Exit"]
-                 (* insert more gui content here... *)]
+                    [Entity.Text == "Exit"]]
              Content.group Simulants.TitleScene.Name []
                 [Content.block2d "SomeOldBlock"
-                    [Entity.Position == v3 0.0f 64.0f 0.0f]
-                 (* insert more scene content here... *)]]]
+                    [Entity.Position == v3 0.0f 64.0f 0.0f]]]]
