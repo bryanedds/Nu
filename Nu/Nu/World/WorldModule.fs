@@ -672,13 +672,15 @@ module WorldModule =
 
         /// Add a value to the world's key value store.
         static member addKeyedValue<'a> key (value : 'a) world =
+            let previousOpt = World.tryGetKeyedValue key world
             let world = World.mapKeyValueStore (SUMap.add key (value :> obj)) world
-            World.publish true (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+            World.publish { Key = key; PreviousOpt = previousOpt; ValueOpt = Some (value :> obj) } (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
 
         /// Remove a value from the world's key value store.
         static member removeKeyedValue key world =
+            let previousOpt = World.tryGetKeyedValue key world
             let world = World.mapKeyValueStore (SUMap.remove key) world
-            World.publish false (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+            World.publish { Key = key; PreviousOpt = previousOpt; ValueOpt = None } (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
 
         /// Transform a value in the world's key value store if it exists.
         static member mapKeyedValue<'a> (mapper : 'a -> 'a) key world =

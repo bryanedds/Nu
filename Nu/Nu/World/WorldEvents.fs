@@ -6,6 +6,12 @@ open System
 open System.Numerics
 open Prime
 
+/// The data for a change in a simulant.
+type KeyedValueChangeData =
+    { Key : string
+      PreviousOpt : obj option
+      ValueOpt : obj option }
+
 /// The data for a mouse move event.
 type MouseMoveData =
     { Position : Vector2 }
@@ -99,7 +105,7 @@ module Events =
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
     let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
-    let KeyedValueChangeEvent key = rtoa<bool> [|"KeyedValue"; key; "Change"|]
+    let KeyedValueChangeEvent key = rtoa<KeyedValueChangeData> [|"KeyedValue"; key; "Change"; "Event"|]
     let SelectEvent = stoa<unit> "Select/Event"
     let DeselectingEvent = stoa<unit> "Deselecting/Event"
     let IncomingStartEvent = stoa<unit> "Incoming/Start/Event"
