@@ -65,6 +65,7 @@ module Gaia =
     let mutable private OpenProjectEditMode = "Title"
     let mutable private OpenProjectImperativeExecution = false
     let mutable private NewProjectName = "MyGame"
+    let mutable private NewProjectType = "Game"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
     let mutable private NewEntityOverlayName = "(Default Overlay)"
@@ -312,8 +313,8 @@ Collapsed=0
 DockId=0x0000000C,0
 
 [Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
-Pos=661,488
-Size=621,105
+Pos=699,495
+Size=524,138
 Collapsed=0
 
 [Window][Choose a project .dll... *EDITOR RESTART REQUIRED!*]
@@ -3988,37 +3989,54 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiNewProjectDialog world =
 
-        // ensure template directory exists
+        // prompt user to create new project
         let programDir = PathF.GetDirectoryName (Reflection.Assembly.GetEntryAssembly().Location)
-        let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
-        let templateDir = PathF.GetFullPath (programDir + "/../../../../Nu.Template")
-        if Directory.Exists templateDir then
+        let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
+        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+        if ImGui.BeginPopupModal (title, &ShowNewProjectDialog) then
+            ImGui.Text "Project Name"
+            ImGui.SameLine ()
+            ImGui.InputText ("##newProjectName", &NewProjectName, 4096u) |> ignore<bool>
+            NewProjectName <- NewProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
+            ImGui.Text "Project Type"
+            ImGui.SameLine ()
+            if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
+                for projectType in ["Game"; "Empty"] do
+                    if ImGui.Selectable projectType then
+                        NewProjectType <- projectType
+                ImGui.EndCombo ()
+            let projectTypeDescription =
+                match NewProjectType with
+                | "Empty" -> "Create an empty game project. This contains the minimum code needed to experiment with Nu and get to know it on your own terms."
+                | "Game" | _ -> "Create a full game project. This contains the structures and pieces that embody the best practices of Nu usage."
+            ImGui.Separator ()
+            ImGui.TextWrapped ("Description: " + projectTypeDescription)
+            ImGui.Separator ()
+            let templateFileName = "Nu.Template.fsproj"
+            let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
+            let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
+            let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net8.0/" + NewProjectName + ".dll"
+            let newFileName = NewProjectName + ".fsproj"
+            let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
+            let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
+            if not validName then ImGui.Text "Invalid project name!"
+            let validDirectory = not (Directory.Exists newProjectDir)
+            if not validDirectory then ImGui.Text "Project already exists!"
+            if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) then
 
-            // prompt user to create new project
-            let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
-            if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
-            if ImGui.BeginPopupModal (title, &ShowNewProjectDialog) then
-                ImGui.Text "Project Name"
-                ImGui.SameLine ()
-                ImGui.InputText ("##newProjectName", &NewProjectName, 4096u) |> ignore<bool>
-                NewProjectName <- NewProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
-                let templateIdentifier = PathF.Denormalize templateDir // this is what dotnet knows the template as for uninstall...
-                let templateFileName = "Nu.Template.fsproj"
-                let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
-                let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
-                let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net8.0/" + NewProjectName + ".dll"
-                let newFileName = NewProjectName + ".fsproj"
-                let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
-                let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
-                if not validName then ImGui.Text "Invalid project name!"
-                let validDirectory = not (Directory.Exists newProjectDir)
-                if not validDirectory then ImGui.Text "Project already exists!"
-                if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) then
+                // choose a template, ensuring it exists
+                let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
+                let templateDir =
+                    match NewProjectType with
+                    | "Empty" -> PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty")
+                    | "Game" | _ -> PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game")
+                if Directory.Exists templateDir then
 
                     // attempt to create project files
                     try Log.info ("Creating project '" + NewProjectName + "' in '" + projectsDir + "'...")
 
                         // install nu template
+                        let templateIdentifier = PathF.Denormalize templateDir // this is what dotnet knows the template as for uninstall...
                         Directory.SetCurrentDirectory templateDir
                         Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
                         Process.Start("dotnet", "new install ./").WaitForExit()
@@ -4086,18 +4104,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     // log failure
                     with exn -> Log.trace ("Failed to create new project '" + NewProjectName + "' due to: " + scstring exn)
 
-                // escape to cancel
-                if ImGui.IsKeyReleased ImGuiKey.Escape then
+                // template project missing
+                else
+                    Log.trace "Template project is missing; new project cannot be generated."
                     ShowNewProjectDialog <- false
-                    NewProjectName <- "MyGame"
 
-                // fin
-                ImGui.EndPopup ()
+            // escape to cancel
+            if ImGui.IsKeyReleased ImGuiKey.Escape then
+                ShowNewProjectDialog <- false
+                NewProjectName <- "MyGame"
 
-        // template project missing
-        else
-            Log.trace "Template project is missing; new project cannot be generated."
-            ShowNewProjectDialog <- false
+            // fin
+            ImGui.EndPopup ()
 
     let private imGuiOpenProjectDialog world =
 
