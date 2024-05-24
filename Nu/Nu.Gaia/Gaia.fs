@@ -4012,7 +4012,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
             ImGui.Separator ()
-            let templateFileName = "Nu.Template.fsproj"
             let projectsDir = PathF.GetFullPath (programDir + "/../../../../../Projects")
             let newProjectDir = PathF.GetFullPath (projectsDir + "/" + NewProjectName)
             let newProjectDllPath = newProjectDir + "/bin/" + Constants.Gaia.BuildName + "/net8.0/" + NewProjectName + ".dll"
@@ -4026,10 +4025,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // choose a template, ensuring it exists
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
-                let templateDir =
+                let (templateFileName, templateDir) =
                     match NewProjectType with
-                    | "Empty" -> PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty")
-                    | "Game" | _ -> PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game")
+                    | "Empty" -> ("Nu.Template.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty"))
+                    | "Game" | _ -> ("Nu.Template.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game"))
                 if Directory.Exists templateDir then
 
                     // attempt to create project files
