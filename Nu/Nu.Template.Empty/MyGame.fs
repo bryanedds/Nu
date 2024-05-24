@@ -74,4 +74,4 @@ type MyGameDispatcher () =
              Content.group Simulants.TitleScene.Name []
                 [Content.block2d "SomeOldBlock"
                     [Entity.Position == v3 0.0f 64.0f 0.0f]
-                 (* insert more gui content here... *)]]]
+                 (* insert more scene content here... *)]]]
