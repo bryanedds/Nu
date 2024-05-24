@@ -14,13 +14,14 @@ module Simulants =
     let Sandbox = Game / "Sandbox"
     let SandboxGui = Sandbox / "Gui"
     let SandboxExit = SandboxGui / "Exit"
+    let SandboxScene = Sandbox / "Scene"
 
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
 type MyGame =
     | Sandbox
 
-// this is our top-level MMCC message type. The Nil message is just a placeholder that doesn't do anything.
+// this is our top-level MMCC message type. The Nil message is just a placeholder message that doesn't do anything.
 type MyGameMessage =
     | Nil
     interface Message
@@ -63,12 +64,17 @@ type MyGameDispatcher () =
             then just (World.exit world)
             else just world
 
-    // here we describe the content of the game, including all of its screens.
+    // here we describe the content of the game.
     override this.Content (_, _) =
-        [Content.screen Simulants.Sandbox.Name (Dissolve (Constants.Dissolve.Default, None)) []
+        [Content.screen Simulants.Sandbox.Name Vanilla []
             [Content.group Simulants.SandboxGui.Name []
                 [Content.button Simulants.SandboxExit.Name
-                    [Entity.Text == "Exit"]]]]
+                    [Entity.Text == "Exit"]
+                 (* insert more gui content here... *)]
+             Content.group Simulants.SandboxScene.Name []
+                [Content.block2d "SomeOldBlock"
+                    [Entity.Position == v3 0.0f 64.0f 0.0f]
+                 (* insert more gui content here... *)]]]
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
 type MyGamePlugin () =
