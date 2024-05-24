@@ -25,8 +25,8 @@ module WorldModuleEntity =
     let mutable private ChangeEventNamesFree = true
     let private ChangeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
 
-    /// Change Publishing ID.
-    let internal EntityChangeCountsId = Gen.id
+    /// Entity change (publishing) count key.
+    let internal EntityChangeCountsKey = string Gen.id
 
     type World with
 
@@ -94,7 +94,7 @@ module WorldModuleEntity =
 
             // apply publish change events state
             let entityAddress = entity.EntityAddress
-            match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+            match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with
             | (true, entityChangeCounts) -> if UMap.containsKey entityAddress entityChangeCounts then entityState.PublishChangeEvents <- true
             | (false, _) -> ()
 

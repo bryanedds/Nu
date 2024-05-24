@@ -646,7 +646,7 @@ module WorldModule2 =
                             if eventNamesLength >= 6 then
                                 let entityAddress = rtoa (Array.skip 3 eventNames)
                                 let entity = Nu.Entity entityAddress
-                                match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+                                match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with
                                 | (true, entityChangeCounts) ->
                                     match entityChangeCounts.TryGetValue entityAddress with
                                     | (true, entityChangeCount) ->
@@ -661,17 +661,17 @@ module WorldModule2 =
                                                 elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
                                                 else world
                                             else world
-                                        World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                        World.mapKeyValueStore (SUMap.add EntityChangeCountsKey entityChangeCounts) world // no event
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
                                         let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
-                                        World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                        World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
                                     let config = World.getCollectionConfig world
                                     let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
                                     let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
-                                    World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                    World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                             else world
                         if  Array.contains Address.WildcardName eventNames ||
                             Array.contains Address.EllipsisName eventNames then

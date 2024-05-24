@@ -1824,7 +1824,7 @@ and [<AbstractClass>] NuPlugin () =
     default this.Invoke _ _ world = world
 
     /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
+    abstract MakeKeyedValues : World -> ((string * obj) list) * World
     default this.MakeKeyedValues world = ([], world)
 
     /// Attempt to make an emitter of the given name.

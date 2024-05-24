@@ -227,49 +227,6 @@ module WorldModule =
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
-        static member internal getKeyValueStoreBy by world =
-            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
-
-        static member internal getKeyValueStore world =
-            World.getAmbientStateBy AmbientState.getKeyValueStore world
-
-        static member internal setKeyValueStore symbolics world =
-            World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
-
-        static member internal mapKeyValueStore mapper world =
-            World.mapAmbientState (AmbientState.mapKeyValueStore mapper) world
-
-        static member internal tryGetKeyedValueFast<'k, 'v> (key : 'k, world, value : 'v outref) =
-            let ambientState = World.getAmbientState world
-            let kvs = AmbientState.getKeyValueStore ambientState
-            let mutable valueObj = Unchecked.defaultof<obj>
-            if kvs.TryGetValue (key, &valueObj) then
-                value <- valueObj :?> 'v
-                true
-            else false
-
-        /// Attempt to look up a value from the world's key value store.
-        static member tryGetKeyedValue<'k, 'v> (key : 'k) world =
-            match World.getKeyValueStoreBy (SUMap.tryFind (key :> obj)) world with
-            | Some value -> Some (value :?> 'v)
-            | None -> None
-
-        /// Look up a value from the world's key value store, throwing an exception if it is not found.
-        static member getKeyedValue<'k, 'v> (key : 'k) world =
-            World.getKeyValueStoreBy (SUMap.find (key :> obj)) world :?> 'v
-
-        /// Add a value to the world's key value store.
-        static member addKeyedValue<'k, 'v> (key : 'k) (value : 'v) world =
-            World.mapKeyValueStore (SUMap.add (key :> obj) (value :> obj)) world
-
-        /// Remove a value from the world's key value store.
-        static member removeKeyedValue<'k> (key : 'k) world =
-            World.mapKeyValueStore (SUMap.remove (key :> obj)) world
-
-        /// Transform a value in the world's key value store if it exists.
-        static member mapKeyedValue<'k, 'v> (mapper : 'v -> 'v) (key : 'k) world =
-            World.addKeyedValue<'k, 'v> key (mapper (World.getKeyedValue<'k, 'v> key world)) world
-
         static member internal getTasklets world =
             World.getAmbientStateBy AmbientState.getTasklets world
 
@@ -679,6 +636,53 @@ module WorldModule =
         static member sense<'a>
             (callback : Event<'a, Entity> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
             World.sensePlus callback eventAddress subscriber facetName world |> snd
+
+    type World with // KeyValueStore (tho part of AmbientState, must come after EventGraph definitions since it publishes)
+
+        static member internal getKeyValueStore world =
+            World.getAmbientStateBy AmbientState.getKeyValueStore world
+
+        static member internal getKeyValueStoreBy by world =
+            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
+
+        static member internal setKeyValueStore symbolics world =
+            World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
+
+        static member internal mapKeyValueStore mapper world =
+            World.mapAmbientState (AmbientState.mapKeyValueStore mapper) world
+
+        static member internal tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
+            let ambientState = World.getAmbientState world
+            let kvs = AmbientState.getKeyValueStore ambientState
+            let mutable valueObj = Unchecked.defaultof<obj>
+            if kvs.TryGetValue (key, &valueObj) then
+                value <- valueObj :?> 'a
+                true
+            else false
+
+        /// Attempt to look up a value from the world's key value store.
+        static member tryGetKeyedValue<'a> key world =
+            match World.getKeyValueStoreBy (SUMap.tryFind key) world with
+            | Some value -> Some (value :?> 'a)
+            | None -> None
+
+        /// Look up a value from the world's key value store, throwing an exception if it is not found.
+        static member getKeyedValue<'a> key world =
+            World.getKeyValueStoreBy (SUMap.find key) world :?> 'a
+
+        /// Add a value to the world's key value store.
+        static member addKeyedValue<'a> key (value : 'a) world =
+            let world = World.mapKeyValueStore (SUMap.add key (value :> obj)) world
+            World.publish () (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+
+        /// Remove a value from the world's key value store.
+        static member removeKeyedValue key world =
+            let world = World.mapKeyValueStore (SUMap.remove key) world
+            World.publish () (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+
+        /// Transform a value in the world's key value store if it exists.
+        static member mapKeyedValue<'a> (mapper : 'a -> 'a) key world =
+            World.addKeyedValue<'a> key (mapper (World.getKeyedValue<'a> key world)) world
 
     type World with // Plugin
 

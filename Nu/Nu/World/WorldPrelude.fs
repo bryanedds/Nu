@@ -439,7 +439,7 @@ module AmbientState =
               Liveness : Liveness
               UpdateTime : int64
               TickDelta : int64
-              KeyValueStore : SUMap<obj, obj>
+              KeyValueStore : SUMap<string, obj>
               TickTime : int64
               // cache line 2
               TickTimeShavings : int64
@@ -545,13 +545,13 @@ module AmbientState =
     let exit state =
         { state with Liveness = Dead }
 
+    /// Get the key-value store.
+    let getKeyValueStore state =
+        state.KeyValueStore
+
     /// Get the key-value store with the by map.
     let getKeyValueStoreBy by state =
         by state.KeyValueStore
-
-    /// Get the key-value store.
-    let getKeyValueStore state =
-        getKeyValueStoreBy id state
 
     /// Set the key-value store.
     let setKeyValueStore store state =

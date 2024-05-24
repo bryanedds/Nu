@@ -99,6 +99,7 @@ module Events =
     let UpdateEvent = stoa<unit> "Update/Event"
     let PostUpdateEvent = stoa<unit> "PostUpdate/Event"
     let TimeUpdateEvent = stoa<unit> "TimeUpdate/Event"
+    let KeyedValueChangeEvent key = rtoa<unit> [|"KeyedValue"; key; "Change"|]
     let SelectEvent = stoa<unit> "Select/Event"
     let DeselectingEvent = stoa<unit> "Deselecting/Event"
     let IncomingStartEvent = stoa<unit> "Incoming/Start/Event"
