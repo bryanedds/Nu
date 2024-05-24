@@ -1,0 +1,15 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Scene]
+  [Persistent True]
+  [Visible True]]
+ [[SkyBoxDispatcher
+   [[AmbientBrightness 0.5] [Name SkyBox]]
+   []]
+  [Light3dDispatcher
+   [[LightCutoff 8]
+    [LightType DirectionalLight]
+    [Name Light3d]
+    [Position [0 2.5 0]]
+    [Presence Omnipresent]]
+   []]]]
