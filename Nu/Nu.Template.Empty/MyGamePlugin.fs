@@ -9,4 +9,4 @@ type MyGamePlugin () =
     // this exposes different editing modes in the editor
     override this.EditModes =
         Map.ofSeq
-            [("Sandbox", fun world -> Game.SetMyGame Sandbox world)]
+            [("Title", fun world -> Game.SetMyGame Title world)]

@@ -1,6 +1,5 @@
 ﻿namespace MyGame
 open System
-open System.IO
 open System.Numerics
 open Prime
 open Nu
@@ -11,16 +10,16 @@ open Nu
 [<RequireQualifiedAccess>]
 module Simulants =
 
-    // splash screen
-    let Sandbox = Game / "Sandbox"
-    let SandboxGui = Sandbox / "Gui"
-    let SandboxExit = SandboxGui / "Exit"
-    let SandboxScene = Sandbox / "Scene"
+    // title screen
+    let Title = Game / "Title"
+    let TitleGui = Title / "Gui"
+    let TitleExit = TitleGui / "Exit"
+    let TitleScene = Title / "Scene"
 
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
 type MyGame =
-    | Sandbox
+    | Title
 
 // this is our top-level MMCC message type. The Nil message is just a placeholder message that doesn't do anything.
 type MyGameMessage =
@@ -43,14 +42,14 @@ module MyGameExtensions =
 // this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
 // them up with events and properties.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (Sandbox)
+    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (Title)
 
     // here we define the game's properties and event handling
     override this.Definitions (myGame, _) =
         [Game.DesiredScreen :=
             match myGame with
-            | Sandbox -> Desire Simulants.Sandbox
-            Simulants.SandboxExit.ClickEvent => Exit]
+            | Title -> Desire Simulants.Title
+            Simulants.TitleExit.ClickEvent => Exit]
 
     // here we handle the above messages
     override this.Message (myGame, message, _, _) =
@@ -67,12 +66,12 @@ type MyGameDispatcher () =
 
     // here we describe the content of the game.
     override this.Content (_, _) =
-        [Content.screen Simulants.Sandbox.Name Vanilla []
-            [Content.group Simulants.SandboxGui.Name []
-                [Content.button Simulants.SandboxExit.Name
+        [Content.screen Simulants.Title.Name Vanilla []
+            [Content.group Simulants.TitleGui.Name []
+                [Content.button Simulants.TitleExit.Name
                     [Entity.Text == "Exit"]
                  (* insert more gui content here... *)]
-             Content.group Simulants.SandboxScene.Name []
+             Content.group Simulants.TitleScene.Name []
                 [Content.block2d "SomeOldBlock"
                     [Entity.Position == v3 0.0f 64.0f 0.0f]
                  (* insert more gui content here... *)]]]
