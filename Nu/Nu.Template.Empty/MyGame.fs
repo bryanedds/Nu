@@ -46,10 +46,8 @@ type MyGameDispatcher () =
 
     // here we define the game's properties and event handling
     override this.Definitions (myGame, _) =
-        [Game.DesiredScreen :=
-            match myGame with
-            | Title -> Desire Simulants.Title
-            Simulants.TitleExit.ClickEvent => Exit]
+        [Game.DesiredScreen := match myGame with Title -> Desire Simulants.Title
+         Simulants.TitleExit.ClickEvent => Exit]
 
     // here we handle the above messages
     override this.Message (myGame, message, _, _) =
@@ -71,5 +69,5 @@ type MyGameDispatcher () =
                 [Content.button Simulants.TitleExit.Name
                     [Entity.Text == "Exit"]]
              Content.group Simulants.TitleScene.Name []
-                [Content.block2d "SomeOldBlock"
+                [Content.block2d "SomeBlock"
                     [Entity.Position == v3 0.0f 64.0f 0.0f]]]]
