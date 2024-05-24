@@ -37,6 +37,8 @@
 
 	<ItemGroup>
 		<Compile Include="MyGame.fs" />
+		<Compile Include="MyGamePlugin.fs" />
+		<Compile Include="Program.fs" />
 		<None Include="App.config" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
