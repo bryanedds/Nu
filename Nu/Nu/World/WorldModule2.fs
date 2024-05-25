@@ -204,7 +204,7 @@ module WorldModule2 =
                     // slide-specific behavior currently has to ignore desired screen in order to work. However, we
                     // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
                     // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
-                    // we use a quick cut to the desired screen in this special-case.
+                    // we use a quick cut to the desired screen in this special case.
                     match World.getDesiredScreen world with
                     | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
                         World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world

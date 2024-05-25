@@ -1834,7 +1834,7 @@ module WorldModuleEntity =
                         let previous = propertyOld.PropertyValue
                         if property.PropertyValue =/= previous then
                             if entityState.Imperative then
-                                // OPTIMIZATION: special-case for imperative
+                                // OPTIMIZATION: special case for imperative.
                                 propertyOld.PropertyValue <- property.PropertyValue
                                 struct (true, true, previous, world)
                             else
@@ -1846,7 +1846,7 @@ module WorldModuleEntity =
                     let previous = propertyOld.PropertyValue
                     if CoreOperators.(=/=) property.PropertyValue previous then
                         if entityState.Imperative then
-                            // OPTIMIZATION: special-case for imperative
+                            // OPTIMIZATION: special case for imperative.
                             propertyOld.PropertyValue <- property.PropertyValue
                             struct (true, true, previous, world)
                         else
@@ -1918,7 +1918,7 @@ module WorldModuleEntity =
                             if value =/= previous then
                                 changed <- true
                                 if entityState.Imperative then
-                                    // OPTIMIZATION: special-case for imperative
+                                    // OPTIMIZATION: special case for imperative.
                                     propertyOld.PropertyValue <- value
                                     world
                                 else
@@ -1931,7 +1931,7 @@ module WorldModuleEntity =
                         if value =/= previous then
                             changed <- true
                             if entityState.Imperative then
-                                // OPTIMIZATION: special-case for imperative
+                                // OPTIMIZATION: special case for imperative.
                                 propertyOld.PropertyValue <- value
                                 world
                             else
