@@ -348,9 +348,13 @@ module WorldModule3 =
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
             | Right assetGraph ->
 
-                // initialize metadata and load default package
+                // compute initial pacakges
+                let initialPackages = Assets.Default.PackageName :: plugin.InitialPackages
+
+                // initialize metadata and load initial package
                 Metadata.init assetGraph
-                Metadata.loadMetadataPackage Assets.Default.PackageName
+                for package in initialPackages do
+                    Metadata.loadMetadataPackage package
 
                 // make the world's event graph
                 let eventGraph =
@@ -393,7 +397,7 @@ module WorldModule3 =
                     | Some (_, dispatcher) -> dispatcher
                     | None -> GameDispatcher ()
 
-                // make the world's subsystems, loading default packages where applicable
+                // make the world's subsystems, loading initial packages where applicable
                 let imGui = ImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
                 let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
                 let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
@@ -402,13 +406,16 @@ module WorldModule3 =
                     then RendererInline () :> RendererProcess
                     else RendererThread () :> RendererProcess
                 rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps)
-                rendererProcess.EnqueueMessage2d (LoadRenderPackage2d Assets.Default.PackageName)
-                rendererProcess.EnqueueMessage3d (LoadRenderPackage3d Assets.Default.PackageName)
+                for package in initialPackages do
+                    rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
+                for package in initialPackages do
+                    rendererProcess.EnqueueMessage3d (LoadRenderPackage3d package)
                 let audioPlayer =
                     if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO <> 0u
                     then SdlAudioPlayer.make () :> AudioPlayer
                     else StubAudioPlayer.make () :> AudioPlayer
-                audioPlayer.EnqueueMessage (LoadAudioPackageMessage Assets.Default.PackageName)
+                for package in initialPackages do
+                    audioPlayer.EnqueueMessage (LoadAudioPackageMessage package)
                 let symbolics = Symbolics.makeEmpty ()
 
                 // attempt to make the overlayer

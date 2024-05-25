@@ -10,7 +10,7 @@ type OmniBladePlugin () =
     inherit NuPlugin ()
 
     override this.EditModes =
-        Map.ofSeq
+        Map.ofList
             [("Splash", fun world -> Game.SetOmniBlade Splash world)
              ("Title", fun world -> Game.SetOmniBlade Title world)
              ("Credits", fun world -> Game.SetOmniBlade Credits world)
@@ -46,3 +46,6 @@ type OmniBladePlugin () =
                 let world = Simulants.Field.Signal (WarpAvatar field.Avatar.Perimeter.Bottom) world
                 let world = Game.SetOmniBlade Field world
                 world)]
+
+    override this.InitialPackages =
+        [Assets.Gui.PackageName]

@@ -8,7 +8,7 @@ type BlazeVectorPlugin () =
 
     // this exposes different editing modes in the editor
     override this.EditModes =
-        Map.ofSeq
+        Map.ofList
             [("Splash", fun world -> Game.SetBlazeVector Splash world)
              ("Title", fun world -> Game.SetBlazeVector Title world)
              ("Credits", fun world -> Game.SetBlazeVector Credits world)
@@ -16,3 +16,7 @@ type BlazeVectorPlugin () =
                 let world = Simulants.Gameplay.SetGameplay Gameplay.initial world
                 let world = Game.SetBlazeVector Gameplay world
                 world)]
+
+    // this specifies which packages are automatically loaded at game start-up.
+    override this.InitialPackages =
+        [Assets.Gui.PackageName]

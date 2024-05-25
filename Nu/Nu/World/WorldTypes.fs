@@ -1823,6 +1823,11 @@ and [<AbstractClass>] NuPlugin () =
     abstract Invoke : string -> obj list -> World -> World
     default this.Invoke _ _ world = world
 
+    /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
+    /// metadata. The Default package is always included with this.
+    abstract InitialPackages : string list
+    default this.InitialPackages = []
+
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : World -> ((string * obj) list) * World
     default this.MakeKeyedValues world = ([], world)
@@ -1834,16 +1839,6 @@ and [<AbstractClass>] NuPlugin () =
         | "BasicStaticSpriteEmitter" -> Particles.BasicStaticSpriteEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | _ -> None
-
-    /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
-    /// successfully converted.
-    abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World
-    default this.TryConvertEntitiesToScenery _ _ world = world // fail to convert any by default.
-
-    /// Attempt to convert a given scenery entity to a sequence of entities, creating all those that were
-    /// successfully converted.
-    abstract TryConvertSceneryToEntities : Entity -> World -> (Entity seq * World)
-    default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
 
     /// A call-back at the beginning of each frame.
     abstract PreProcess : World -> World
