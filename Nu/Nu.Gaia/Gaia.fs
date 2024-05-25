@@ -65,7 +65,7 @@ module Gaia =
     let mutable private OpenProjectEditMode = "Title"
     let mutable private OpenProjectImperativeExecution = false
     let mutable private NewProjectName = "MyGame"
-    let mutable private NewProjectType = "Game"
+    let mutable private NewProjectType = "Empty"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
     let mutable private NewEntityOverlayName = "(Default Overlay)"
@@ -4007,7 +4007,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "Empty" -> "Create an empty game project. This contains the minimum code needed to experiment with Nu and get to know it on your own terms."
+                | "Empty" -> "Create an empty game project. This contains the minimum code needed to experiment freely with Nu in a sandbox environment."
                 | "Game" | _ -> "Create a full game project. This contains the structures and pieces that embody the best practices of Nu usage."
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)

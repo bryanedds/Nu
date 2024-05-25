@@ -63,7 +63,5 @@ type MyGameDispatcher () =
     override this.Content (_, _) =
         [Content.screen Simulants.Sandbox.Name Vanilla []
             [Content.group "Group" []
-                [Content.button "Exit"
-                   [Entity.Text == "Exit"
-                    Entity.ClickEvent => Exit]
+                [Content.button "Exit" [Entity.Text == "Exit"; Entity.ClickEvent => Exit]
                  Content.skyBox "SkyBox" []]]]
