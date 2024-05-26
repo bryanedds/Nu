@@ -4,23 +4,15 @@ open System.Numerics
 open Prime
 open Nu
 
-// this module provides global handles to the game's key simulants.
-// having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across
-// the code base.
-[<RequireQualifiedAccess>]
-module Simulants =
-
-    // sandbox screen
-    let Sandbox = Game / "Sandbox"
-
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
 type MyGame =
-    | Sandbox
+    { MyGameTime : int64 }
+    static member initial = { MyGameTime = 0L }
 
 // this is our top-level MMCC message type. The Nil message is just a placeholder message that doesn't do anything.
 type MyGameMessage =
-    | Nil
+    | Update
     interface Message
 
 // this is our top-level MMCC command type. Commands are used instead of messages when the world is to be transformed.
@@ -39,16 +31,17 @@ module MyGameExtensions =
 // this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
 // them up with events and properties.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (Sandbox)
+    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (MyGame.initial)
 
     // here we define the game's properties and event handling
-    override this.Definitions (myGame, _) =
-        [Game.DesiredScreen := match myGame with Sandbox -> Desire Simulants.Sandbox]
+    override this.Definitions (_, _) =
+        [Game.UpdateEvent => Update]
 
     // here we handle the above messages
     override this.Message (myGame, message, _, _) =
         match message with
-        | Nil ->
+        | Update ->
+            let myGame = { myGame with MyGameTime = inc myGame.MyGameTime }
             just myGame
 
     // here we handle the above commands
@@ -60,8 +53,14 @@ type MyGameDispatcher () =
             else just world
 
     // here we describe the content of the game, including a screen, a group, and a couple example entities.
-    override this.Content (_, _) =
-        [Content.screen Simulants.Sandbox.Name Vanilla []
+    override this.Content (myGame, _) =
+        [Content.screen "Screen" Vanilla []
             [Content.group "Group" []
-                [Content.button "Exit" [Entity.Text == "Exit"; Entity.ClickEvent => Exit]
-                 Content.skyBox "SkyBox" []]]]
+                [Content.button "Exit"
+                    [Entity.Position == v3 232.0f -144.0f 0.0f
+                     Entity.Elevation == 10.0f
+                     Entity.Text == "Exit"
+                     Entity.ClickEvent => Exit]
+                 Content.staticModel "StaticModel"
+                    [Entity.Position == v3 0.0f 1.0f 0.0f
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> Math.DegreesToRadians)]]]]
