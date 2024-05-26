@@ -2041,7 +2041,9 @@ module EntityPropertyDescriptor =
             propertyName = Constants.Engine.FacetNamesPropertyName ||
             propertyName = Constants.Engine.PropagatedDescriptorOptPropertyName ||
             propertyName = "Rotation" ||
-            propertyName = "RotationLocal" then
+            propertyName = "RotationLocal" ||
+            propertyName = "Light" ||
+            propertyName = "LightProbe" then
             false
         else
             propertyName = "Degrees" ||

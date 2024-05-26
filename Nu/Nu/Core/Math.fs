@@ -1246,7 +1246,7 @@ module Math =
         Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
 
     /// Find the the union of a line segment and a frustum if one exists.
-    let tryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then

@@ -91,14 +91,7 @@ type GameplayDispatcher () =
         [// the gui group
          Content.group Simulants.GameplayGui.Name []
 
-            [// time
-             Content.text Simulants.GameplayTime.Name
-                [Entity.Position == v3 0.0f 150.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                 Entity.Text := string gameplay.GameplayTime]
-
-             // quit
+            [// quit
              Content.button Simulants.GameplayQuit.Name
                 [Entity.Position == v3 232.0f -144.0f 0.0f
                  Entity.Elevation == 10.0f
@@ -107,7 +100,11 @@ type GameplayDispatcher () =
 
          // the scene group while playing
          match gameplay.GameplayState with
-         | Playing -> Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] []
+         | Playing ->
+            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
+                [Content.staticModel "StaticModel"
+                    [Entity.Position == v3 0.0f 1.0f 0.0f
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 0.25f 1.0f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]]
 
          // no scene group otherwise
          | Quit -> ()]
