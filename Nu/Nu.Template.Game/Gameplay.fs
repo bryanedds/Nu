@@ -104,7 +104,7 @@ type GameplayDispatcher () =
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                 [Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 1.0f 0.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 0.25f 1.0f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]]
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 0.5f 1.0f 0.25f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]]
 
          // no scene group otherwise
          | Quit -> ()]
