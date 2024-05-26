@@ -6,10 +6,12 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
+open System.IO
 open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
 open type Vortice.Vulkan.Vulkan
+open Vortice.ShaderCompiler
 open ImGuiNET
 open Prime
 open System.Runtime.InteropServices
@@ -351,6 +353,15 @@ type RendererThread () =
 
                 let window = match window with SglWindow window -> window.SglWindow
 
+                let compileShader shaderPath shaderKind =
+                    use shaderStream = new StreamReader (File.OpenRead shaderPath)
+                    let shaderStr = shaderStream.ReadToEnd ()
+                    use compiler = Compiler ()
+                    use result = compiler.Compile (shaderStr, shaderPath, shaderKind)
+                    if result.Status <> CompilationStatus.Success then printfn "%s" result.ErrorMessage
+                    let shaderCode = result.GetBytecode().ToArray()
+                    shaderCode
+                
                 // loads vulkan. NOTE: this is not an actual vulkan function. wrapper features prefixed like this are misleading and should be avoided where practical.
                 let result = vkInitialize ()
 
