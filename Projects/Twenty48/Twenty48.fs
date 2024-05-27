@@ -32,8 +32,8 @@ module Twenty48Extensions =
         member this.SetTwenty48 value world = this.SetModelGeneric<Twenty48> value world
         member this.Twenty48 = this.ModelGeneric<Twenty48> ()
 
-// this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
-// them up with events and properties.
+// this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
+// bind them up with events and properties.
 type Twenty48Dispatcher () =
     inherit GameDispatcher<Twenty48, Twenty48Message, Twenty48Command> (Splash)
 

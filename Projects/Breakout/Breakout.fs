@@ -32,8 +32,8 @@ module Breakout =
         member this.SetBreakout value world = this.SetModelGeneric<Breakout> value world
         member this.Breakout = this.ModelGeneric<Breakout> ()
 
-// this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
-// them up with events and properties.
+// this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
+// bind them up with events and properties.
 type BreakoutDispatcher () =
     inherit GameDispatcher<Breakout, BreakoutMessage, BreakoutCommand> (Splash)
 

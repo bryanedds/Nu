@@ -31,9 +31,9 @@ module BlazeVectorExtensions =
         member this.GetBlazeVector world = this.GetModelGeneric<BlazeVector> world
         member this.SetBlazeVector value world = this.SetModelGeneric<BlazeVector> value world
         member this.BlazeVector = this.ModelGeneric<BlazeVector> ()
-        
-// this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
-// them up with events and properties.
+
+// this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
+// bind them up with events and properties.
 type BlazeVectorDispatcher () =
     inherit GameDispatcher<BlazeVector, BlazeVectorMessage, BlazeVectorCommand> (Splash)
 

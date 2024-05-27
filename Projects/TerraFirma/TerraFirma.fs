@@ -32,8 +32,8 @@ module TerraFirma =
         member this.SetTerraFirma value world = this.SetModelGeneric<TerraFirma> value world
         member this.TerraFirma = this.ModelGeneric<TerraFirma> ()
 
-// this is the dispatcher customizes the top-level behavior of our game. In here, we create screens as content and bind
-// them up with events and properties.
+// this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
+// bind them up with events and properties.
 type MyGameDispatcher () =
     inherit GameDispatcher<TerraFirma, TerraFirmaMessage, TerraFirmaCommand> (Splash)
 
