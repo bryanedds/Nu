@@ -10,7 +10,7 @@ type MyGame =
     { MyGameTime : int64 }
     static member initial = { MyGameTime = 0L }
 
-// this is our top-level MMCC message type. The Nil message is just a placeholder message that doesn't do anything.
+// this is our top-level MMCC message type.
 type MyGameMessage =
     | Update
     interface Message
