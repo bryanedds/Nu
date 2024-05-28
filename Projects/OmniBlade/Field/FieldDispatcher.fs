@@ -804,7 +804,9 @@ type FieldDispatcher () =
                     [Entity.PropPlus := PropPlus.make field.FieldTime field.Avatar.Perimeter.Bottom field.Advents prop]
 
              // spirit orb
-             if Field.hasEncounters field && CueSystem.Cue.isFin field.Cue && field.Menu.MenuState = MenuClosed then
+             if Field.hasEncounters field &&
+                CueSystem.Cue.isFin field.Cue &&
+                field.Menu.MenuState = MenuClosed then
                 Content.entity<SpiritOrbDispatcher> "SpiritOrb"
                     [Entity.Position == v3 -448.0f 48.0f 0.0f; Entity.Elevation == Constants.Field.SpiritOrbElevation; Entity.Size == v3 192.0f 192.0f 0.0f
                      Entity.SpiritOrb :=
