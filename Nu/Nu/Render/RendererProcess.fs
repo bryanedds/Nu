@@ -339,6 +339,8 @@ type RendererThread () =
         let mutable swapChainImages = Array.empty<VkImage>
         let mutable swapChainImageViews = Array.empty<VkImageView>
         let mutable renderPass = Unchecked.defaultof<VkRenderPass>
+        let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
+        let mutable graphicsPipeline = Unchecked.defaultof<VkPipeline>
         let mutable swapChainFramebuffers = Array.empty<VkFramebuffer>
         let mutable commandPool = Unchecked.defaultof<VkCommandPool>
         let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
@@ -649,6 +651,140 @@ type RendererThread () =
 
                 let result = vkCreateRenderPass (device, Interop.AsPointer &renderPassInfo, NativePtr.nullPtr, &renderPass)
                 printfn "vkCreateRenderPass returned %s." (result.ToString ())
+
+                do
+                    let mutable vertModule = Unchecked.defaultof<VkShaderModule>
+                    let mutable fragModule = Unchecked.defaultof<VkShaderModule>
+                    
+                    let vertShader = compileShader "./shader.vert" ShaderKind.VertexShader
+                    let fragShader = compileShader "./shader.frag" ShaderKind.FragmentShader
+
+                    // using a high level overload here to avoid questions about reinterpret casting and memory alignment
+                    // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
+                    let result = vkCreateShaderModule (device, vertShader, NativePtr.nullPtr, &vertModule)
+                    let result = vkCreateShaderModule (device, fragShader, NativePtr.nullPtr, &fragModule)
+
+                    let nameStr = "main"
+                    use _ = nameStr.AsMemory().Pin()
+                    let nameSpan = Interop.GetUtf8Span nameStr
+                    let nameNptr = nameSpan.GetPointer ()
+
+                    let mutable vertShaderStageInfo = VkPipelineShaderStageCreateInfo ()
+                    vertShaderStageInfo.stage <- VK_SHADER_STAGE_VERTEX_BIT
+                    // what the frak is this thing?!
+                    vertShaderStageInfo.``module`` <- vertModule
+                    vertShaderStageInfo.pName <- nameNptr
+
+                    let mutable fragShaderStageInfo = VkPipelineShaderStageCreateInfo ()
+                    vertShaderStageInfo.stage <- VK_SHADER_STAGE_FRAGMENT_BIT
+                    vertShaderStageInfo.``module`` <- fragModule
+                    vertShaderStageInfo.pName <- nameNptr
+
+                    let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
+                    use stagesHnd = stagesArray.AsMemory().Pin()
+                    let stagesNptr = NativePtr.ofVoidPtr<VkPipelineShaderStageCreateInfo> stagesHnd.Pointer
+
+                    // dynamic state
+                    let mutable dynamicState = VkPipelineDynamicStateCreateInfo ()
+                    dynamicState.dynamicStateCount <- 0u
+                    dynamicState.pDynamicStates <- NativePtr.nullPtr
+                    
+                    // vertex input
+                    let mutable vertexInputInfo = VkPipelineVertexInputStateCreateInfo ()
+                    vertexInputInfo.vertexBindingDescriptionCount <- 0u
+                    vertexInputInfo.pVertexBindingDescriptions <- NativePtr.nullPtr
+                    vertexInputInfo.vertexAttributeDescriptionCount <- 0u
+                    vertexInputInfo.pVertexAttributeDescriptions <- NativePtr.nullPtr
+
+                    // input assembly
+                    let mutable inputAssembly = VkPipelineInputAssemblyStateCreateInfo ()
+                    inputAssembly.topology <- VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                    inputAssembly.primitiveRestartEnable <- VkBool32.False
+
+                    // viewport
+                    let mutable viewport = VkViewport ()
+                    viewport.x <- 0.0f
+                    viewport.y <- 0.0f
+                    viewport.width <- float32 swapChainExtent.width
+                    viewport.height <- float32 swapChainExtent.height
+                    viewport.minDepth <- 0.0f
+                    viewport.maxDepth <- 1.0f
+
+                    // scissor
+                    let mutable scissor = VkRect2D ()
+                    scissor.offset <- VkOffset2D.Zero
+                    scissor.extent <- swapChainExtent
+
+                    // viewport state
+                    let mutable viewportState = VkPipelineViewportStateCreateInfo ()
+                    viewportState.viewportCount <- 1u
+                    viewportState.pViewports <- Interop.AsPointer &viewport
+                    viewportState.scissorCount <- 1u
+                    viewportState.pScissors <- Interop.AsPointer &scissor
+
+                    // rasterizer
+                    let mutable rasterizer = VkPipelineRasterizationStateCreateInfo ()
+                    rasterizer.depthClampEnable <- VkBool32.False
+                    rasterizer.rasterizerDiscardEnable <- VkBool32.False
+                    rasterizer.polygonMode <- VK_POLYGON_MODE_FILL
+                    rasterizer.lineWidth <- 1.0f
+                    rasterizer.cullMode <- VK_CULL_MODE_BACK_BIT
+                    rasterizer.frontFace <- VK_FRONT_FACE_CLOCKWISE
+                    rasterizer.depthBiasEnable <- VkBool32.False
+                    rasterizer.depthBiasConstantFactor <- 0.0f
+                    rasterizer.depthBiasClamp <- 0.0f
+                    rasterizer.depthBiasSlopeFactor <- 0.0f
+
+                    // multisampling
+                    let mutable multisampling = VkPipelineMultisampleStateCreateInfo ()
+                    multisampling.sampleShadingEnable <- VkBool32.False
+                    multisampling.rasterizationSamples <- VK_SAMPLE_COUNT_1_BIT
+                    multisampling.minSampleShading <- 1.0f
+                    multisampling.pSampleMask <- NativePtr.nullPtr
+                    multisampling.alphaToCoverageEnable <- VkBool32.False
+                    multisampling.alphaToOneEnable <- VkBool32.False
+
+                    // color blending
+                    let mutable colorBlendAttachment = VkPipelineColorBlendAttachmentState ()
+                    colorBlendAttachment.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
+                    colorBlendAttachment.blendEnable <- VkBool32.False
+                    colorBlendAttachment.srcColorBlendFactor <- VK_BLEND_FACTOR_ONE
+                    colorBlendAttachment.dstColorBlendFactor <- VK_BLEND_FACTOR_ZERO
+                    colorBlendAttachment.colorBlendOp <- VK_BLEND_OP_ADD
+                    colorBlendAttachment.srcAlphaBlendFactor <- VK_BLEND_FACTOR_ONE
+                    colorBlendAttachment.dstAlphaBlendFactor <- VK_BLEND_FACTOR_ZERO
+                    colorBlendAttachment.alphaBlendOp <- VK_BLEND_OP_ADD
+
+                    let mutable colorBlending = VkPipelineColorBlendStateCreateInfo (colorBlendAttachment)
+
+                    // pipeline layout
+                    let mutable pipelineLayoutInfo = VkPipelineLayoutCreateInfo ()
+                    pipelineLayoutInfo.setLayoutCount <- 0u
+                    pipelineLayoutInfo.pSetLayouts <- NativePtr.nullPtr
+                    pipelineLayoutInfo.pushConstantRangeCount <- 0u
+                    pipelineLayoutInfo.pPushConstantRanges <- NativePtr.nullPtr
+
+                    let result = vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutInfo, NativePtr.nullPtr, &pipelineLayout)
+
+                    let mutable pipelineInfo = VkGraphicsPipelineCreateInfo ()
+                    pipelineInfo.stageCount <- 2u
+                    pipelineInfo.pStages <- stagesNptr
+                    pipelineInfo.pVertexInputState <- Interop.AsPointer &vertexInputInfo
+                    pipelineInfo.pInputAssemblyState <- Interop.AsPointer &inputAssembly
+                    pipelineInfo.pViewportState <- Interop.AsPointer &viewportState
+                    pipelineInfo.pRasterizationState <- Interop.AsPointer &rasterizer
+                    pipelineInfo.pMultisampleState <- Interop.AsPointer &multisampling
+                    pipelineInfo.pDepthStencilState <- NativePtr.nullPtr
+                    pipelineInfo.pColorBlendState <- Interop.AsPointer &colorBlending
+                    pipelineInfo.pDynamicState <- Interop.AsPointer &dynamicState
+                    pipelineInfo.layout <- pipelineLayout
+                    pipelineInfo.renderPass <- renderPass
+                    pipelineInfo.subpass <- 0u
+
+                    let result = vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, Interop.AsPointer &pipelineInfo, NativePtr.nullPtr, Interop.AsPointer &graphicsPipeline)
+                    printfn "vkCreateGraphicsPipelines returned %s." (result.ToString ())
+
+                    ()
 
                 do
                     // setup swapchain framebuffers
