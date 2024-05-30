@@ -1296,7 +1296,7 @@ module Battle =
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playIce; displayIce] battle
                                     | Snowball ->
-                                        let playSnowball = PlaySound (15L, Constants.Audio.SoundVolumeDefault, Assets.Field.SnowballSound)
+                                        let playSnowball = PlaySound (5L, Constants.Audio.SoundVolumeDefault, Assets.Field.SnowballSound)
                                         let displaySnowball = DisplaySnowball (0L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playSnowball; displaySnowball] battle

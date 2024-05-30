@@ -336,7 +336,7 @@ type BattleDispatcher () =
 
         | DisplaySnowball (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 432.0f 432.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.snowball screen world |> just
+            | Some target -> displayEffect delay (v3 288.0f 288.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.snowball screen world |> just
             | None -> just world
 
         | DisplayBolt (delay, targetIndex) ->

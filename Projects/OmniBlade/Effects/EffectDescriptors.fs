@@ -405,20 +405,20 @@ module EffectDescriptors =
                  Nil) }
 
     let snowball =
-        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 800.0f 0.0f; TweenLength = 80L }; { TweenValue = v3 0.0f -800.0f 0.0f; TweenLength = 0L }|])
+        let fall = Positions (Sum, Linear, Once, [|{ TweenValue = v3 0.0f 600.0f 0.0f; TweenLength = 90L }; { TweenValue = v3 0.0f -600.0f 0.0f; TweenLength = 0L }|])
         let rotate =
             Degreeses (Set, Constant, Loop,
-                [|{ TweenValue = v3Zero; TweenLength = 5L }
-                  { TweenValue = v3 0.0f 0.0f 90.0f; TweenLength = 5L }
-                  { TweenValue = v3 0.0f 0.0f 180.0f; TweenLength = 5L }
-                  { TweenValue = v3 0.0f 0.0f 270.0f; TweenLength = 5L }|])
+                [|{ TweenValue = v3Zero; TweenLength = 6L }
+                  { TweenValue = v3 0.0f 0.0f 90.0f; TweenLength = 6L }
+                  { TweenValue = v3 0.0f 0.0f 180.0f; TweenLength = 6L }
+                  { TweenValue = v3 0.0f 0.0f 270.0f; TweenLength = 6L }|])
         { EffectName = "Snowball"
-          LifeTimeOpt = Some 80L
+          LifeTimeOpt = Some 90L
           Definitions = Map.empty
           Content =
               StaticSprite
                (Resource (AssetTag.toPair Assets.Battle.SnowballImage),
-                [|Size (v3 432.0f 432.0f 0.0f); fall; rotate|], Nil) }
+                [|Size (v3 288.0f 288.0f 0.0f); fall; rotate|], Nil) }
 
     let cure =
         let path =
