@@ -1795,7 +1795,7 @@ module Battle =
             just battle
         elif localTime = 66L then
             withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
-        elif localTime = 115L then
+        elif localTime = 114L then
             let battle = setBattleState BattleRunning battle
             let battle = animateAlliesPoised battle
             let battle = populateAlliesConjureCharges battle
