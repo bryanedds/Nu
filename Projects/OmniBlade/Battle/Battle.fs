@@ -308,6 +308,9 @@ module Battle =
     let mapAllies updater battle =
         mapAlliesIf tautology2 updater battle
 
+    let mapAlliesHealthy updater battle =
+        mapAlliesIf (fun _ character -> character.Healthy) updater battle
+
     let mapEnemiesIf pred updater battle =
         mapCharactersIf (fun i c -> pred i c && match i with EnemyIndex _ -> true | _ -> false) updater battle
 
@@ -541,13 +544,19 @@ module Battle =
             characterIndex
             battle
 
-    let animateCharactersReady battle =
-        mapCharactersHealthy (Character.animate battle.BattleTime_ ReadyAnimation) battle
-
     let animateCharactersCelebrate outcome battle =
         if outcome
         then mapAlliesIf (fun _ ally -> ally.Healthy) (Character.animate battle.BattleTime_ CelebrateAnimation) battle
         else mapEnemiesIf (fun _ enemy -> enemy.Healthy) (Character.animate battle.BattleTime_ CelebrateAnimation) battle
+
+    let animateAlliesReady battle =
+        mapAlliesHealthy (Character.animate battle.BattleTime_ ReadyAnimation) battle
+
+    let animateAlliesPoised battle =
+        mapAllies (Character.animate battle.BattleTime_ (PoiseAnimation Poising)) battle
+
+    let animateEnemiesPoised battle =
+        mapEnemies (Character.animate battle.BattleTime_ (PoiseAnimation Poising)) battle
 
     let animateCharactersPoised battle =
         mapCharactersHealthy (fun character ->
@@ -1777,17 +1786,18 @@ module Battle =
     and private updateReadying startTime (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
         if localTime = 0L then // first frame after transitioning in
+            let battle = animateEnemiesPoised battle
             match battle.BattleSongOpt_ with
             | Some battleSong -> withSignal (PlaySong (Constants.Audio.FadeOutTimeDefault, 0L, 0L, 0.5f, battleSong)) battle
             | None -> just battle
-        elif localTime >= 30L && localTime < 100L then
-            let battle = animateCharactersReady battle
-            if localTime = 60L
-            then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
-            else just battle
-        elif localTime = 100L then
+        elif localTime = 36L then
+            let battle = animateAlliesReady battle
+            just battle
+        elif localTime = 66L then
+            withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.UnsheatheSound)) battle
+        elif localTime = 115L then
             let battle = setBattleState BattleRunning battle
-            let battle = animateCharactersPoised battle
+            let battle = animateAlliesPoised battle
             let battle = populateAlliesConjureCharges battle
             let battle = autoBattleEnemies battle
             just battle
