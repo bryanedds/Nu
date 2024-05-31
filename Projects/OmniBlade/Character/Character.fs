@@ -244,9 +244,10 @@ module Character =
             | Critical -> 1.0f
             | _ -> 0.0f
         if techData.Curative then
+            let affectsWounded = techData.TechType = Vita // TODO: pull from tech data.
             let healing0 = single efficacy * techScalar * splitScalar * splashScalar |> int |> max 1
-            let healing1 = if target.Statuses.ContainsKey Curse then 0 else healing0
-            (target.CharacterIndex, false, false, healing1, techData.StatusesAdded, techData.StatusesRemoved)
+            let healing1 = if target.Statuses.ContainsKey StatusType.Curse then 0 else healing0
+            (target.CharacterIndex, false, affectsWounded, healing1, techData.StatusesAdded, techData.StatusesRemoved)
         else
             let cancelled = techData.Cancels && autoTeching target
             let shield = target.Shield techData.EffectType

@@ -289,6 +289,7 @@ type TechType =
     | Enlighten
     | Protect
     | Purify
+    | Vita
     | Weaken
     | Muddle
     | Slow

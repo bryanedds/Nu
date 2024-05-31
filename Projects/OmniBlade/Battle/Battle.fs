@@ -553,7 +553,7 @@ module Battle =
         mapAlliesHealthy (Character.animate battle.BattleTime_ ReadyAnimation) battle
 
     let animateAlliesPoised battle =
-        mapAllies (Character.animate battle.BattleTime_ (PoiseAnimation Poising)) battle
+        mapAlliesHealthy (Character.animate battle.BattleTime_ (PoiseAnimation Poising)) battle
 
     let animateEnemiesPoised battle =
         mapEnemies (Character.animate battle.BattleTime_ (PoiseAnimation Poising)) battle
@@ -1133,7 +1133,7 @@ module Battle =
                         | (true, consumableData) ->
                             if consumableData.Curative then
                                 let healing0 = int consumableData.Scalar
-                                let healing1 = if (getCharacterStatuses targetIndex battle).ContainsKey Curse then 0 else healing0
+                                let healing1 = if (getCharacterStatuses targetIndex battle).ContainsKey StatusType.Curse then 0 else healing0
                                 let healing = max 0 healing1
                                 let battle =
                                     if consumableData.Techative
@@ -1173,8 +1173,8 @@ module Battle =
                 if containsCharacter targetIndex battle then
                     match (Map.tryFind techType Data.Value.Techs, Map.tryFind techType Data.Value.TechAnimations) with
                     | (Some techData, Some techAnimationData) ->
-                        ignore techData // TODO: check for target.IsWounded case if techData is affecting wounded...
-                        if getCharacterHealthy targetIndex battle then
+                        let affectingWounded = techData.TechType = Vita // TODO: pull from tech data.
+                        if affectingWounded || getCharacterHealthy targetIndex battle then
                             let (sigs, battle) =
                                 if localTime = techAnimationData.TechStart then
                                     let sourcePerimeter = getCharacterPerimeter sourceIndex battle
@@ -1214,7 +1214,7 @@ module Battle =
                                         let battle = animateCharacter (PoiseAnimation Poising) sourceIndex battle
                                         withSignal hopEffect battle
                                     | Right chargeEffects ->
-                                        if getCharacterHealthy targetIndex battle then
+                                        if affectingWounded || getCharacterHealthy targetIndex battle then
                                             let battle = animateCharacter (PoiseAnimation Charging) sourceIndex battle
                                             withSignals chargeEffects battle
                                         else just (abortCharacterInteraction sourceIndex battle)
@@ -1334,7 +1334,7 @@ module Battle =
                                         let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
-                                    | Purify ->
+                                    | Purify | Vita -> // HACK: just using purify effect for vita since it's unused in demp.
                                         let displayPurify = DisplayPurify (0L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignal displayPurify battle
@@ -1847,7 +1847,8 @@ module Battle =
                         not (Map.containsKey Sleep source.Statuses) &&
                         (not (Map.containsKey Silence source.Statuses) || // NOTE: silence only blocks non-enemy, non-charge techs.
                          source.Enemy && match source.TechChargeOpt with Some (_, chargeAmount, _) -> chargeAmount >= Constants.Battle.ChargeMax | _ -> false) then
-                        let targetIndexOpt = evalRetarget false targetIndexOpt battle // TODO: consider affecting wounded, such as for Revive tech.
+                        let affectingWounded = techType = Vita // TODO: pull from tech data.
+                        let targetIndexOpt = evalRetarget affectingWounded targetIndexOpt battle
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         setCurrentCommandOpt (Some command) battle
                     else battle
