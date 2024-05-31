@@ -288,8 +288,8 @@ type TechType =
     | Aura
     | Enlighten
     | Protect
-    | Purify
     | Vita
+    | Purify
     | Weaken
     | Muddle
     | Slow

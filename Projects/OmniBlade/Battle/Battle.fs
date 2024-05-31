@@ -1334,7 +1334,7 @@ module Battle =
                                         let displayBuff = DisplayBuff (0L, Shield (true, true), targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignals [playBuff; displayBuff] battle
-                                    | Purify | Vita -> // HACK: just using purify effect for vita since it's unused in demp.
+                                    | Vita | Purify -> // HACK: just using purify effect for vita since it's unused in demp.
                                         let displayPurify = DisplayPurify (0L, targetIndex)
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
                                         withSignal displayPurify battle
