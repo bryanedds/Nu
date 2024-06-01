@@ -920,7 +920,7 @@ type PropData =
     | NpcBranching of NpcType * Direction option * CueSystem.CueBranch list * Advent Set
     | Shopkeep of ShopkeepType * Direction option * ShopType * Advent Set
     | Seal of Color * CueSystem.Cue * Advent Set
-    | Flame of FlameType * bool
+    | Flame of FlameType * bool // TODO: rename this to Torch so it doesn't conflict with tech type.
     | SavePoint
     | ChestSpawn
     | PortalSpawn
