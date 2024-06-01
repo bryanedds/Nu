@@ -112,7 +112,7 @@ type TeammateDispatcher () =
             Assets.Gui.HealthBorderImage
             (color8 (byte 51) (byte 51) (byte 51) (byte 255)) // TODO: use a constant.
             Assets.Default.White
-            ((color8 (byte 74) (byte 91) (byte 169) (byte 255)).WithA8 (byte 131)) // TODO: use a constant.
+            ((color8 (byte 74) (byte 91) (byte 255) (byte 255)).WithA8 (byte 131)) // TODO: use a constant.
             &techPointsTransform
             (1.0f / 12.0f)
             (single character.TechPoints / single character.TechPointsMax)

@@ -443,7 +443,7 @@ type BattleDispatcher () =
                                     then Color.LawnGreen.WithA8 pulseIntensity
                                     else Color.Red.WithA8 (byte 95))
                              Entity.BorderImage == Assets.Gui.HealthBorderImage
-                             Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 191)]
+                             Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 191)] // TODO: use a constant.
 
                      // tech bar
                      for i in 0 .. dec 2 do
@@ -455,9 +455,9 @@ type BattleDispatcher () =
                                  Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                  Entity.Fill := single character.TechPoints / single character.TechPointsMax
                                  Entity.FillInset := 1.0f / 12.0f
-                                 Entity.FillColor == (color8 (byte 74) (byte 91) (byte 169) (byte 127)).WithA8 (byte 95)
+                                 Entity.FillColor == (color8 (byte 74) (byte 91) (byte 255) (byte 127)).WithA8 (byte 95) // TODO: use a constant.
                                  Entity.BorderImage == Assets.Gui.TechBorderImage
-                                 Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]]
+                                 Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]] // TODO: use a constant.
 
          // inputs when running
          if battle.BattleState = BattleRunning then
