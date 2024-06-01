@@ -437,11 +437,11 @@ type BattleDispatcher () =
                                     if autoBattle.AutoTechOpt.IsSome then Color.Red.WithA8 pulseIntensity
                                     elif autoBattle.ChargeTech then Color.Purple.WithA8 pulseIntensity
                                     elif character.Statuses.ContainsKey Poison then Color.LawnGreen.WithA8 pulseIntensity
-                                    else Color.Red.WithA8 (byte 95)
+                                    else Color.Red.WithA8 (byte 127)
                                  | None ->
                                     if character.Statuses.ContainsKey Poison
                                     then Color.LawnGreen.WithA8 pulseIntensity
-                                    else Color.Red.WithA8 (byte 95))
+                                    else Color.Red.WithA8 (byte 127))
                              Entity.BorderImage == Assets.Gui.HealthBorderImage
                              Entity.BorderColor := color8 (byte 60) (byte 60) (byte 60) (byte 191)] // TODO: use a constant.
 
@@ -455,7 +455,7 @@ type BattleDispatcher () =
                                  Entity.Elevation := if i = 0 then Constants.Battle.GuiBackgroundElevation else Constants.Battle.GuiForegroundElevation
                                  Entity.Fill := single character.TechPoints / single character.TechPointsMax
                                  Entity.FillInset := 1.0f / 12.0f
-                                 Entity.FillColor == (color8 (byte 74) (byte 91) (byte 255) (byte 127)).WithA8 (byte 95) // TODO: use a constant.
+                                 Entity.FillColor == color8 (byte 74) (byte 91) (byte 255) (byte 191)// TODO: use a constant.
                                  Entity.BorderImage == Assets.Gui.TechBorderImage
                                  Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]] // TODO: use a constant.
 
