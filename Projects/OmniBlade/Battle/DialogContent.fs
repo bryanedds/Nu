@@ -53,22 +53,6 @@ module DialogContent =
                                      Entity.Justification := justification
                                      Entity.TextMargin == textMargin
                                      Entity.TextColor == Color.Black]
-                     Content.text "DropShadow5"
-                        [Entity.PositionLocal == v3 0.0f -4.0f 0.0f; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
-                         Entity.VisibleLocal := dialog.DialogForm = DialogNarration
-                         Entity.BackdropImageOpt == None
-                         Entity.Text := text
-                         Entity.Justification := justification
-                         Entity.TextMargin == textMargin
-                         Entity.TextColor == Color.Black]
-                     Content.text "DropShadow6"
-                        [Entity.PositionLocal == v3 0.0f -2.0f 0.0f; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
-                         Entity.VisibleLocal := dialog.DialogForm = DialogNarration
-                         Entity.BackdropImageOpt == None
-                         Entity.Text := text
-                         Entity.Justification := justification
-                         Entity.TextMargin == textMargin
-                         Entity.TextColor == Color.Black]
                      Content.button "Left"
                         [Entity.PositionLocal == v3 186.0f 18.0f 0.0f; Entity.Size == v3 192.0f 48.0f 0.0f; Entity.ElevationLocal == 2.0f
                          Entity.VisibleLocal := Option.isSome dialog.DialogPromptOpt && Dialog.isExhausted detokenize dialog
