@@ -42,23 +42,26 @@ module DialogContent =
                      Entity.Text := text
                      Entity.Justification := justification
                      Entity.TextMargin == textMargin]
-                    [Content.text "DropShadow"
-                        [Entity.PositionLocal == v3 -2.0f 0.0f 0.0f; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
+                    [if dialog.DialogForm = DialogNarration then
+                        for x in 2.0f .. 2.0f .. 4.0f do
+                            for y in 2.0f .. 2.0f .. 4.0f do
+                                let offset = v3 -x -y 0.0f
+                                Content.text ("DropShadow" + scstring offset)
+                                    [Entity.PositionLocal == offset; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
+                                     Entity.BackdropImageOpt == None
+                                     Entity.Text := text
+                                     Entity.Justification := justification
+                                     Entity.TextMargin == textMargin
+                                     Entity.TextColor == Color.Black]
+                     Content.text "DropShadow5"
+                        [Entity.PositionLocal == v3 0.0f -4.0f 0.0f; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
                          Entity.VisibleLocal := dialog.DialogForm = DialogNarration
                          Entity.BackdropImageOpt == None
                          Entity.Text := text
                          Entity.Justification := justification
                          Entity.TextMargin == textMargin
                          Entity.TextColor == Color.Black]
-                     Content.text "DropShadow2"
-                        [Entity.PositionLocal == v3 -2.0f -2.0f 0.0f; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
-                         Entity.VisibleLocal := dialog.DialogForm = DialogNarration
-                         Entity.BackdropImageOpt == None
-                         Entity.Text := text
-                         Entity.Justification := justification
-                         Entity.TextMargin == textMargin
-                         Entity.TextColor == Color.Black]
-                     Content.text "DropShadow3"
+                     Content.text "DropShadow6"
                         [Entity.PositionLocal == v3 0.0f -2.0f 0.0f; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
                          Entity.VisibleLocal := dialog.DialogForm = DialogNarration
                          Entity.BackdropImageOpt == None
