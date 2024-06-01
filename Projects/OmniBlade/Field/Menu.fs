@@ -60,7 +60,18 @@ type MenuUse =
                 match Map.tryFind name Data.Value.Accessories with
                 | Some ad -> MenuUse.makeFromAccessoryData selection ad |> Some
                 | None -> None
-        | KeyItem _ | Stash _ -> None
+        | KeyItem keyItem ->
+            let description = // TODO: pull this from key item data.
+                match keyItem with
+                | NonExistentKey -> "No man may hold this."
+                | BrassKey -> "A polished brass key adorned with a lamb's head."
+                | IronKey -> "An slightly rusted iron key adorned with goat horns."
+                | CopperKey -> "A brass key adorned with a green eye."
+                | AluminumKey -> "An cheap-looking key."
+                | PewterKey -> "A weathered key. It looks bent but usabel."
+                | SteelKey -> "A key made of steel adorned with a crown."
+            Some (MenuUse.make selection (scstringMemo keyItem) "(Key Item)" description)
+        | Stash _ -> None
 
 type EquipType =
     | EquipWeapon of WeaponType option

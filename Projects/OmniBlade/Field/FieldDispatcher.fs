@@ -473,7 +473,7 @@ type FieldDispatcher () =
             let field =
                 Field.mapMenu (fun menu ->
                     match menu.MenuState with
-                    | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { KeyItemsPage = max 0 (dec menuKeyItems.KeyItemsPage) }}
+                    | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { menuKeyItems with KeyItemsPage = max 0 (dec menuKeyItems.KeyItemsPage) }}
                     | _ -> menu)
                     field
             just field
@@ -482,12 +482,16 @@ type FieldDispatcher () =
             let field =
                 Field.mapMenu (fun menu ->
                     match menu.MenuState with
-                    | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { KeyItemsPage = inc menuKeyItems.KeyItemsPage }}
+                    | MenuKeyItems menuKeyItems -> { menu with MenuState = MenuKeyItems { menuKeyItems with KeyItemsPage = inc menuKeyItems.KeyItemsPage }}
                     | _ -> menu)
                     field
             just field
 
-        | MenuKeyItemsSelect _ ->
+        | MenuKeyItemsSelect (index, (itemType, _)) ->
+            let field =
+                Field.mapMenu (fun menu ->
+                    { menu with MenuUseOpt = MenuUse.tryMakeFromSelection (index, itemType) })
+                    field
             just field
 
         | MenuOptionsOpen ->

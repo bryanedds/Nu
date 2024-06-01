@@ -166,7 +166,7 @@ module FieldContent =
                 let y = position.Y - single (index % rows) * 81.0f
                 Content.button itemName
                     [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 336.0f 72.0f 0.0f
-                     Entity.EnabledLocal := match itemType with Consumable _ | Equipment _ -> true | KeyItem _ | Stash _ -> false
+                     Entity.EnabledLocal := match itemType with Consumable _ | Equipment _ | KeyItem _ -> true | Stash _ -> false
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f
                      Entity.Text :=
                         match itemCountOpt with

@@ -402,9 +402,6 @@ type EncounterType =
     | Castle2Encounter
     | Castle3Encounter
 
-type LockType =
-    | BrassKey
-
 type ChestType =
     | WoodenChest
     | SteelChest
