@@ -249,33 +249,6 @@ module EffectDescriptors =
                      [|Position (v3 48.0f 0.0f 0.0f); Size (v3 96.0f 96.0f 0.0f); Flip FlipNone|],
                      Nil)|]) }
 
-    let arcaneCast =
-        let fade =
-            Colors
-               (Set, EaseOut, Once,
-                [|{ TweenValue = Color.One; TweenLength = 30L }
-                  { TweenValue = Color.One; TweenLength = 30L }
-                  { TweenValue = Color.One.WithA8 (byte 0); TweenLength = 0L }|])
-        let candle position =
-            AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.CandleAnimationSheet), v2i 16 20, 3, 3, 5L, Loop,
-                 [|Size (v3 48.0f 60.0f 0.0f); position; fade|],
-                 Nil)
-        let staticEffect position degrees =
-            AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.StaticAnimationSheet), v2i 64 64, 5, 5, 3L, Loop,
-                 [|Size (v3 192.0f 192.0f 0.0f); position; degrees; fade|],
-                 Nil)
-        { EffectName = "ArcaneCast"
-          LifeTimeOpt = Some 60L
-          Definitions = Map.empty
-          Content =
-            Contents
-                (Shift 0.0f,
-                 [|candle (Position (v3 -72.0f 0.0f 0.0f))
-                   candle (Position (v3 72.0f 0.0f 0.0f))
-                   staticEffect (Position (v3 0.0f 18.0f 0.0f)) (Degrees (v3 0.0f 0.0f -90.0f))|]) }
-
     let holyCast =
         { EffectName = "HolyCast"
           LifeTimeOpt = Some 36L

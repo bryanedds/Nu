@@ -48,7 +48,6 @@ type BattleCommand =
     | DisplayBuff of int64 * StatusType * CharacterIndex
     | DisplayDebuff of int64 * StatusType * CharacterIndex
     | DisplayImpactSplash of int64 * CharacterIndex
-    | DisplayArcaneCast of int64 * CharacterIndex
     | DisplayHolyCast of int64 * CharacterIndex
     | DisplayDimensionalCast of int64 * CharacterIndex
     | DisplayGenericCast of int64 * CharacterIndex
@@ -1199,7 +1198,7 @@ module Battle =
                                                 Right [signal playCharge; signal displayCast]
                                             | Wizard ->
                                                 let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)
-                                                let displayCast = DisplayArcaneCast (0L, sourceIndex)
+                                                let displayCast = DisplayGenericCast (0L, sourceIndex)
                                                 Right [playCharge; displayCast]
                                             | Conjuror ->
                                                 let playCharge = PlaySound (0L, Constants.Audio.SongVolumeDefault, Assets.Field.ChargeDimensionSound)

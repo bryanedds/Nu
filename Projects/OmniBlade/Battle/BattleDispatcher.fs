@@ -287,11 +287,6 @@ type BattleDispatcher () =
             | Some target -> displayEffect delay (v3 192.0f 96.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.impactSplash screen world |> just
             | None -> just world
 
-        | DisplayArcaneCast (delay, sourceIndex) ->
-            match Battle.tryGetCharacter sourceIndex battle with
-            | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Perimeter.Bottom - v3 0.0f 120.0f 0.0f)) Over EffectDescriptors.arcaneCast screen world |> just
-            | None -> just world
-
         | DisplayHolyCast (delay, sourceIndex) ->
             match Battle.tryGetCharacter sourceIndex battle with
             | Some source -> displayEffect delay (v3 300.0f 300.0f 0.0f) (Bottom (source.Perimeter.Bottom - v3 0.0f 100.0f 0.0f)) Over EffectDescriptors.holyCast screen world |> just
