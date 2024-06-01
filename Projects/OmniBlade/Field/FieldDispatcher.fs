@@ -1445,8 +1445,8 @@ type FieldDispatcher () =
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                              Entity.Text := menuUse.MenuUseLine2]
                          Content.text "Line3"
-                            [Entity.PositionLocal == v3 66.0f 270.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                            [Entity.PositionLocal == v3 66.0f 90.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 810.0f 32.0f 0.0f
+                             Entity.Justification == Unjustified true
                              Entity.Text := menuUse.MenuUseLine3]
                          yield! Content.team (v3 160.0f 183.0f 0.0f) 3 field (fun teammate menu ->
                             match menu.MenuUseOpt with
@@ -1471,8 +1471,8 @@ type FieldDispatcher () =
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                              Entity.Text := menuUse.MenuUseLine2]
                         Content.text "Line3"
-                            [Entity.PositionLocal == v3 66.0f 90.0f 0.0f; Entity.ElevationLocal == 1.0f
-                             Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
+                            [Entity.PositionLocal == v3 66.0f 90.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 810.0f 32.0f 0.0f
+                             Entity.Justification == Unjustified true
                              Entity.Text := menuUse.MenuUseLine3]]
              | None -> ()
 

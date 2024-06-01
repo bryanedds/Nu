@@ -68,7 +68,7 @@ type MenuUse =
                 | IronKey -> "An slightly rusted iron key adorned with goat horns."
                 | CopperKey -> "A brass key adorned with a green eye."
                 | AluminumKey -> "An cheap-looking key."
-                | PewterKey -> "A weathered key. It looks bent but usabel."
+                | PewterKey -> "A weathered key. It looks bent but usable."
                 | SteelKey -> "A key made of steel adorned with a crown."
             Some (MenuUse.make selection (scstringMemo keyItem) "(Key Item)" description)
         | Stash _ -> None
