@@ -43,8 +43,8 @@ module DialogContent =
                      Entity.Justification := justification
                      Entity.TextMargin == textMargin]
                     [if dialog.DialogForm = DialogNarration then
-                        for x in 2.0f .. 2.0f .. 4.0f do
-                            for y in 2.0f .. 2.0f .. 4.0f do
+                        for x in 0.0f .. 2.0f .. 4.0f do
+                            for y in 0.0f .. 2.0f .. 4.0f do
                                 let offset = v3 -x -y 0.0f
                                 Content.text ("DropShadow" + scstring offset)
                                     [Entity.PositionLocal == offset; Entity.Size := perimeter.Size; Entity.ElevationLocal == -0.1f
