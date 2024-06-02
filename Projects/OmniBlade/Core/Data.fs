@@ -635,6 +635,7 @@ module CueSystem =
         | Prompt of string * (string * Cue) * (string * Cue)
         | PromptState
         | Battle of BattleType * Advent Set // TODO: consider using three Cues (start, end, post) in battle rather than advents directly...
+                                            // TODO: add a BattleState that only ends when coming back to field from the battle.
         | If of CuePredicate * Cue * Cue
         | Not of CuePredicate * Cue * Cue
         | Define of string * Cue
