@@ -1048,7 +1048,12 @@ module Field =
             | Some _ -> (cue, definitions, just field)
 
         | Battle (battleType, consequents) ->
-            (Fin, definitions, withSignal (TryCommencingBattle (battleType, consequents)) field)
+            (BattleState, definitions, withSignal (TryCommencingBattle (battleType, consequents)) field)
+
+        | BattleState ->
+            match field.FieldState_ with
+            | Playing -> (Fin, definitions, just field)
+            | _ -> (cue, definitions, just field)
 
         | If (p, c, a) ->
             match p with
