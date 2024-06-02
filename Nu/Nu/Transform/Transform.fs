@@ -89,7 +89,7 @@ type [<NoEquality; NoComparison>] Transform =
         with get () = this.Flags_ &&& PerimeterCenteredMask <> 0u
         and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterCenteredMask else this.Flags_ &&& ~~~PerimeterCenteredMask
 
-    member this.Optimized with get () =
+    member this.Optimized =
         this.Imperative &&
         this.Presence_.OmnipresentType &&
         not this.PublishChangeEvents
