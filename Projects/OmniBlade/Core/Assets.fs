@@ -166,7 +166,6 @@ module Assets =
         let ReadySound = asset<Sound> PackageName "Ready"
         let BuffSound = asset<Sound> PackageName "Buff"
         let DebuffSound = asset<Sound> PackageName "Debuff"
-        let FieldSong = { FadeOutTime = Constants.Audio.FadeOutTimeDefault; FadeInTime = 0L; StartTime = 0L; Volume = Constants.Audio.SongVolumeDefault; Song = asset<Song> PackageName "Field" }
 
     [<RequireQualifiedAccess>]
     module Battle =
@@ -217,3 +216,4 @@ module Assets =
         let ShieldDebuffImage = asset<Image> PackageName "ShieldDebuff"
         let TimeDebuffImage = asset<Image> PackageName "TimeDebuff"
         let FireSpinAnimationSheet = asset<Image> PackageName "FireSpin"
+        let EternalSlumber = asset<Song> PackageName "EternalSlumber"

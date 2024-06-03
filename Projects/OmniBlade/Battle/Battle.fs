@@ -1770,7 +1770,7 @@ module Battle =
                     if List.forall (fun (character : Character) -> character.Wounded) allies then
                         // lost battle
                         let battle = animateCharactersCelebrate false battle
-                        let battle = setBattleState (BattleConcluding (battle.BattleTime_, false)) battle
+                        let battle = setBattleState (BattleResult (battle.BattleTime_, false)) battle
                         let (sigs2, battle) = update battle
                         (sigs @ sigs2, battle)
                     elif List.isEmpty enemies then
@@ -1978,36 +1978,36 @@ module Battle =
 
     and private updateResult startTime outcome (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
-        if localTime = 0L then
-            let alliesLevelingUp =
-                battle |> getAllies |> Map.toValueList |>
-                List.filter (fun ally -> ally.HitPoints > 0) |>
-                List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
-            let textA =
-                match alliesLevelingUp with
-                | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + "!^"
-                | [] -> "Enemies defeated!^"
-            let textB =
-                alliesLevelingUp |>
-                List.choose (fun ally ->
-                    let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool_.Exp ally.ArchetypeType
-                    if Set.notEmpty techs then Some (ally, techs) else None) |>
-                List.map (fun (ally, techs) ->
-                    let text = techs |> Set.toList |> List.map scstring |> String.join ", "
-                    ally.Name + " learned " + text + "!") |>
-                function
-                | _ :: _ as texts -> String.join "\n" texts + "^"
-                | [] -> ""
-            let textC = "Gained " + string battle.PrizePool_.Exp + " Exp!\nGained " + string battle.PrizePool_.Gold + " Gold!"
-            let textD =
-                match battle.PrizePool_.Items with
-                | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
-                | [] -> ""
-            let text = textA + textB + textC + textD
-            let dialog = Dialog.make DialogThick text
-            let battle = setDialogOpt (Some dialog) battle
-            let (sigs, battle) =
-                if outcome then
+        if outcome then
+            if localTime = 0L then
+                let alliesLevelingUp =
+                    battle |> getAllies |> Map.toValueList |>
+                    List.filter (fun ally -> ally.HitPoints > 0) |>
+                    List.filter (fun ally -> Algorithms.expPointsRemainingForNextLevel ally.ExpPoints <= battle.PrizePool.Exp)
+                let textA =
+                    match alliesLevelingUp with
+                    | _ :: _ -> "Level up for " + (alliesLevelingUp |> List.map (fun c -> c.Name) |> String.join ", ") + "!^"
+                    | [] -> "Enemies defeated!^"
+                let textB =
+                    alliesLevelingUp |>
+                    List.choose (fun ally ->
+                        let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool_.Exp ally.ArchetypeType
+                        if Set.notEmpty techs then Some (ally, techs) else None) |>
+                    List.map (fun (ally, techs) ->
+                        let text = techs |> Set.toList |> List.map scstring |> String.join ", "
+                        ally.Name + " learned " + text + "!") |>
+                    function
+                    | _ :: _ as texts -> String.join "\n" texts + "^"
+                    | [] -> ""
+                let textC = "Gained " + string battle.PrizePool_.Exp + " Exp!\nGained " + string battle.PrizePool_.Gold + " Gold!"
+                let textD =
+                    match battle.PrizePool_.Items with
+                    | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
+                    | [] -> ""
+                let text = textA + textB + textC + textD
+                let dialog = Dialog.make DialogThick text
+                let battle = setDialogOpt (Some dialog) battle
+                let (sigs, battle) =
                     let battle = mapAllies (fun ally -> if ally.Healthy then Character.setExpPoints (ally.ExpPoints + battle.PrizePool_.Exp) ally else ally) battle
                     let battle =
                         mapAllies (fun ally ->
@@ -2020,14 +2020,29 @@ module Battle =
                     if List.notEmpty alliesLevelingUp
                     then withSignal (PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.GrowthSound)) battle
                     else just battle
-                else just battle
-            (signal (FadeOutSong 360L) :: sigs, battle)
+                (signal (FadeOutSong 360L) :: sigs, battle)
+            else
+                match battle.DialogOpt_ with
+                | None ->
+                    let battle = setBattleState (BattleConcluding (battle.BattleTime_, outcome)) battle
+                    update battle
+                | Some _ -> just battle
         else
-            match battle.DialogOpt_ with
-            | None ->
-                let battle = setBattleState (BattleConcluding (battle.BattleTime_, outcome)) battle
-                update battle
-            | Some _ -> just battle
+            if localTime = 0L then
+                withSignal (FadeOutSong 240L) battle
+            elif localTime = 240L then
+                let dialog = Dialog.make DialogThin "And so eternal death became his slumber..."
+                let battle = setDialogOpt (Some dialog) battle
+                let playEternalSlumber = PlaySong (60L, 0L, 0L, 0.5f, Assets.Battle.EternalSlumber)
+                withSignal playEternalSlumber battle
+            elif localTime > 240L then
+                match battle.DialogOpt_ with
+                | None ->
+                    let battle = setBattleState (BattleConcluding (battle.BattleTime_, outcome)) battle
+                    let (sigs, battle) = update battle
+                    withSignals (FadeOutSong 60L :: sigs) battle
+                | Some _ -> just battle
+            else just battle
 
     and private updateConcluding startTime (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
