@@ -493,6 +493,22 @@ module EffectDescriptors =
                  [|boltSprite
                    Delay (10L, explosionSprite)|]) }
 
+    let fade incoming idle outgoing (color : Color) =
+        { EffectName = "Fade"
+          LifeTimeOpt = Some (incoming + idle + outgoing)
+          Definitions = Map.empty
+          Content =
+            StaticSprite
+                (Resource Assets.Default.White.Pair,
+                 [|Size (v3 (single Constants.Render.Resolution.X) (single Constants.Render.Resolution.Y) 0.0f)
+                   Colors
+                    (Set, Linear, Once,
+                        [|{ TweenValue = color.WithA 0.0f; TweenLength = incoming }
+                          { TweenValue = color; TweenLength = idle }
+                          { TweenValue = color; TweenLength = outgoing }
+                          { TweenValue = color.WithA 0.0f; TweenLength = 0L }|])|],
+                 Nil) }
+
     let inferno =
         let fireSpinSize = Size (v3 600.0f 600.0f 0.0f)
         let fireSpin aspects =

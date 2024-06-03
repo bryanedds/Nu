@@ -33,6 +33,7 @@ type BattleCommand =
     | FadeOutSong of GameTime
     | DisplayHop of Vector3 * Vector3
     | DisplayCircle of Vector3 * single
+    | DisplayFade of int64 * int64 * int64 * int64 * Color
     | DisplayHitPointsChange of CharacterIndex * int
     | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
@@ -1371,8 +1372,9 @@ module Battle =
                                     | Inferno ->
                                         let playInferno = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.InfernoSound)
                                         let displayInferno = DisplayInferno 0L
+                                        let displayRedFade = DisplayFade (0L, 20L, 40L, 20L, Color (1.0f, 0.0f, 0.0f, 0.3f))
                                         let battle = animateCharacter Cast2Animation sourceIndex battle
-                                        withSignals [playInferno; displayInferno] battle
+                                        withSignals [playInferno; displayRedFade; displayInferno] battle
                                     | Silk ->
                                         let playSilk = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SilkSound)
                                         let displaySilk = DisplaySilk (0L, targetIndex)

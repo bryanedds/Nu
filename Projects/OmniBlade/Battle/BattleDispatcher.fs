@@ -194,6 +194,10 @@ type BattleDispatcher () =
             let world = entity.SetEffectDescriptor descriptor world
             just world
 
+        | DisplayFade (delay, incoming, idle, outgoing, color) ->
+            let world = displayEffect delay v3Zero (Position v3Zero) Over (EffectDescriptors.fade incoming idle outgoing color) screen world
+            just world
+
         | DisplayHitPointsChange (targetIndex, delta) ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
