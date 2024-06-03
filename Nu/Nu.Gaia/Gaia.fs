@@ -543,6 +543,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | [] -> (false, world)
              else (false, world)) with
         | (true, world) ->
+            focusPropertyOpt None world
             PropertyValueStrPrevious <- ""
             selectScreen (World.getSelectedScreen world)
             if not (SelectedGroup.Exists world) || not (SelectedGroup.Selected world) then
@@ -570,6 +571,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | [] -> (false, world)
              else (false, world)) with
         | (true, world) ->
+            focusPropertyOpt None world
             PropertyValueStrPrevious <- ""
             selectScreen (World.getSelectedScreen world)
             if not (SelectedGroup.Exists world) || not (SelectedGroup.Selected world) then
