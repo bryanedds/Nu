@@ -9,7 +9,7 @@
  </layer>
  <layer id="2" name="Ground" width="32" height="32">
   <data encoding="base64" compression="zlib">
-   eJxzYmJgcGZmYHABYg8gdqIz3wUq5srM0OAyAHw3NLfRm++KEG8AiRHDrwLiSqgZ2PikmEeN+PSgQP9o/JMe/8h8Dwr10zu/UyP+YekdF38kxT+l/KEY/6P5f2Tn/9H4H1z5f7T+H9nxP5r/R+N/NP6HZvwDAMZ9XRI=
+   eJxzYmJgcGZmYHABYg8gdqIz3wUq5srM0OAyAHw3NLfRm++KEG8AiRHDrwLiSqgZ2PikmEeN+PSgQP9o/JMe/8h8Dwr10zu/UyP+YekdF38kxT+l/KEY/6P5f2Tn/9H4H1z5f7T+H43/0fgfufE/Wv4P3fgHANkpXRc=
   </data>
  </layer>
  <layer id="4" name="Flooring" width="32" height="32">
