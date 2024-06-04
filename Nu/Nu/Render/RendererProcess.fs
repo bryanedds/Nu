@@ -896,7 +896,7 @@ type RendererThread () =
 
                 let result = vkBeginCommandBuffer (commandBuffer, Interop.AsPointer &beginInfo)
 
-                let mutable clearColor = VkClearValue (0.0f, 1.0f, 0.0f, 1.0f)            
+                let mutable clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)            
                 let mutable renderPassInfo = VkRenderPassBeginInfo ()
                 renderPassInfo.renderPass <- renderPass
                 renderPassInfo.framebuffer <- swapChainFramebuffers[int imageIndex]
@@ -906,7 +906,10 @@ type RendererThread () =
                 renderPassInfo.pClearValues <- Interop.AsPointer &clearColor
 
                 vkCmdBeginRenderPass (commandBuffer, Interop.AsPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
+                vkCmdBindPipeline (commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline)
+                vkCmdDraw (commandBuffer, 3u, 1u, 0u, 0u)
                 vkCmdEndRenderPass commandBuffer
+
                 let result = vkEndCommandBuffer commandBuffer
 
                 // submit command buffer
