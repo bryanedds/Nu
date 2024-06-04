@@ -656,21 +656,17 @@ type RendererThread () =
                     let mutable vertModule = Unchecked.defaultof<VkShaderModule>
                     let mutable fragModule = Unchecked.defaultof<VkShaderModule>
                     
-                    //let vertShader = compileShader "./shader.vert" ShaderKind.VertexShader
-                    //let fragShader = compileShader "./shader.frag" ShaderKind.FragmentShader
+                    let vertShader = compileShader "./shader.vert" ShaderKind.VertexShader
+                    let fragShader = compileShader "./shader.frag" ShaderKind.FragmentShader
 
-                    let vertShader = File.ReadAllBytes "./vert.spv"
-                    let fragShader = File.ReadAllBytes "./frag.spv"
+                    // toggle to skip compiling
+                    //let vertShader = File.ReadAllBytes "./vert.spv"
+                    //let fragShader = File.ReadAllBytes "./frag.spv"
 
                     // using a high level overload here to avoid questions about reinterpret casting and memory alignment
                     // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
                     let result = vkCreateShaderModule (device, vertShader, NativePtr.nullPtr, &vertModule)
                     let result = vkCreateShaderModule (device, fragShader, NativePtr.nullPtr, &fragModule)
-
-                    let nameStr = "main"
-                    use _ = nameStr.AsMemory().Pin()
-                    let nameSpan = Interop.GetUtf8Span nameStr
-                    let nameNptr = nameSpan.GetPointer ()
 
                     use entryPoint = new VkString "main"
 
