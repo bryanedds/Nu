@@ -681,9 +681,9 @@ type RendererThread () =
                     vertShaderStageInfo.pName <- entryPoint
 
                     let mutable fragShaderStageInfo = VkPipelineShaderStageCreateInfo ()
-                    vertShaderStageInfo.stage <- VK_SHADER_STAGE_FRAGMENT_BIT
-                    vertShaderStageInfo.``module`` <- fragModule
-                    vertShaderStageInfo.pName <- entryPoint
+                    fragShaderStageInfo.stage <- VK_SHADER_STAGE_FRAGMENT_BIT
+                    fragShaderStageInfo.``module`` <- fragModule
+                    fragShaderStageInfo.pName <- entryPoint
 
                     let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
                     use stagesHnd = stagesArray.AsMemory().Pin()
