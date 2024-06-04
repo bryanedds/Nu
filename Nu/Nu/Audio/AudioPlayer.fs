@@ -285,7 +285,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         | FadeOutSongMessage fadeOutTime -> SdlAudioPlayer.handleFadeOutSong fadeOutTime
         | StopSongMessage -> SdlAudioPlayer.handleStopSong
         | ReloadAudioAssetsMessage -> SdlAudioPlayer.handleReloadAudioAssets audioPlayer
-    
+
     static member private handleAudioMessages audioMessages audioPlayer =
         for audioMessage in audioMessages do
             SdlAudioPlayer.handleAudioMessage audioMessage audioPlayer
@@ -294,11 +294,11 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         match audioPlayer.CurrentSongOpt with
         | Some (currentSong, _) -> SDL_mixer.Mix_VolumeMusic (int (currentSong.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
         | None -> ()
-    
+
     static member private tryUpdateCurrentSong audioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 0 then
             audioPlayer.CurrentSongOpt <- None
-    
+
     /// Make a NuAudioPlayer.
     static member make () =
         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
@@ -317,17 +317,17 @@ type [<ReferenceEquality>] SdlAudioPlayer =
     
         member audioPlayer.MasterAudioVolume
             with get () = audioPlayer.MasterAudioVolume
-            and  set volume =
+            and set volume =
                 audioPlayer.MasterAudioVolume <- volume
                 SdlAudioPlayer.tryUpdateCurrentSongVolume audioPlayer
 
         member audioPlayer.MasterSoundVolume
             with get () = audioPlayer.MasterSoundVolume
-            and  set volume = audioPlayer.MasterSoundVolume <- volume
+            and set volume = audioPlayer.MasterSoundVolume <- volume
 
         member audioPlayer.MasterSongVolume
             with get () = audioPlayer.MasterSongVolume
-            and  set volume =
+            and set volume =
                 audioPlayer.MasterSongVolume <- volume
                 SdlAudioPlayer.tryUpdateCurrentSongVolume audioPlayer
 

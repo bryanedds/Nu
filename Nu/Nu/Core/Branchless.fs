@@ -7,7 +7,6 @@ open System
 
 /// Provides operators for branchless programming.
 /// NOTE: implemented in terms of a static class to enable overloading.
-/// TODO: consider moving into Prime.
 type [<AbstractClass; Sealed>] Branchless () =
 
     /// Reinterpret cast a value from 'a to 'b.
