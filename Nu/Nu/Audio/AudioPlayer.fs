@@ -10,8 +10,8 @@ open Prime
 
 /// Descrides a song.
 type SongDescriptor =
-    { FadeOutTime : GameTime
-      FadeInTime: GameTime
+    { FadeInTime: GameTime
+      FadeOutTime : GameTime
       StartTime : GameTime
       Volume : single
       Song : Song AssetTag }

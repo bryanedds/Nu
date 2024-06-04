@@ -1789,7 +1789,7 @@ module Battle =
         if localTime = 0L then // first frame after transitioning in
             let battle = animateEnemiesPoised battle
             match battle.BattleSongOpt_ with
-            | Some battleSong -> withSignal (PlaySong (Constants.Audio.FadeOutTimeDefault, 0L, 0L, 0.5f, battleSong)) battle
+            | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, 0.5f, battleSong)) battle
             | None -> just battle
         elif localTime = 36L then
             let battle = animateAlliesReady battle
