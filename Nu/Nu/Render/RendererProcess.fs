@@ -656,8 +656,11 @@ type RendererThread () =
                     let mutable vertModule = Unchecked.defaultof<VkShaderModule>
                     let mutable fragModule = Unchecked.defaultof<VkShaderModule>
                     
-                    let vertShader = compileShader "./shader.vert" ShaderKind.VertexShader
-                    let fragShader = compileShader "./shader.frag" ShaderKind.FragmentShader
+                    //let vertShader = compileShader "./shader.vert" ShaderKind.VertexShader
+                    //let fragShader = compileShader "./shader.frag" ShaderKind.FragmentShader
+
+                    let vertShader = File.ReadAllBytes "./vert.spv"
+                    let fragShader = File.ReadAllBytes "./frag.spv"
 
                     // using a high level overload here to avoid questions about reinterpret casting and memory alignment
                     // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules
@@ -669,16 +672,18 @@ type RendererThread () =
                     let nameSpan = Interop.GetUtf8Span nameStr
                     let nameNptr = nameSpan.GetPointer ()
 
+                    use entryPoint = new VkString "main"
+
                     let mutable vertShaderStageInfo = VkPipelineShaderStageCreateInfo ()
                     vertShaderStageInfo.stage <- VK_SHADER_STAGE_VERTEX_BIT
                     // what the frak is this thing?!
                     vertShaderStageInfo.``module`` <- vertModule
-                    vertShaderStageInfo.pName <- nameNptr
+                    vertShaderStageInfo.pName <- entryPoint
 
                     let mutable fragShaderStageInfo = VkPipelineShaderStageCreateInfo ()
                     vertShaderStageInfo.stage <- VK_SHADER_STAGE_FRAGMENT_BIT
                     vertShaderStageInfo.``module`` <- fragModule
-                    vertShaderStageInfo.pName <- nameNptr
+                    vertShaderStageInfo.pName <- entryPoint
 
                     let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
                     use stagesHnd = stagesArray.AsMemory().Pin()
