@@ -366,9 +366,9 @@ and GameDispatcher () =
     abstract Signal : obj * Game * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Game * World -> 'a option
+    default this.TryGetFallbackModel (_, _) = None
 
     /// Attempt to synchronize the content of a game.
     abstract TrySynchronize : bool * Game * World -> World
@@ -418,9 +418,9 @@ and ScreenDispatcher () =
     abstract Signal : obj * Screen * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Screen * World -> 'a option
+    default this.TryGetFallbackModel (_, _) = None
 
     /// Attempt to synchronize the content of a screen.
     abstract TrySynchronize : bool * Screen * World -> World
@@ -470,9 +470,9 @@ and GroupDispatcher () =
     abstract Signal : obj * Group * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Group * World -> 'a option
+    default this.TryGetFallbackModel (_, _) = None
 
     /// Attempt to synchronize the content of a group.
     abstract TrySynchronize : bool * Group * World -> World
@@ -555,9 +555,9 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     abstract Signal : obj * Entity * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Entity * World -> 'a option
+    default this.TryGetFallbackModel (_, _) = None
 
     /// Attempt to synchronize content of an entity.
     abstract TrySynchronize : bool * Entity * World -> World

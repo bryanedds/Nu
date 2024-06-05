@@ -36,6 +36,11 @@ module CreditsExtensions =
 type CreditsDispatcher () =
     inherit ScreenDispatcher<Credits, CreditsMessage, CreditsCommand> (Credits.empty)
 
+    override this.GetFallbackModel (screen, world) =
+        if screen.Selected world
+        then Credits.initial
+        else Credits.empty
+
     override this.Definitions (_, _) =
         [Screen.SelectEvent => StartScrolling
          Screen.UpdateEvent => Scroll]

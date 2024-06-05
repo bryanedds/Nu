@@ -286,8 +286,8 @@ module WorldModuleEntity =
                     entityState.Model.DesignerValue <- model
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing entity model to new type. Falling back on initial model value."
-                    match entityState.Dispatcher.TryGetInitialModel<'a> world with
+                    Log.debugOnce "Could not convert existing entity model value to new type; using fallback model value instead."
+                    match entityState.Dispatcher.TryGetFallbackModel<'a> (entity, world) with
                     | None -> failwithnie ()
                     | Some value -> value
 

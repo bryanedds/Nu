@@ -125,8 +125,8 @@ module WorldModuleScreen =
                     screenState.Model.DesignerValue <- model
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing screen model to new type. Falling back on initial model value."
-                    match screenState.Dispatcher.TryGetInitialModel<'a> world with
+                    Log.debugOnce "Could not convert existing screen model value to new type; using fallback model value instead."
+                    match screenState.Dispatcher.TryGetFallbackModel<'a> (screen, world) with
                     | None -> failwithnie ()
                     | Some value -> value
 

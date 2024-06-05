@@ -57,6 +57,11 @@ type FieldDispatcher () =
             true
         else false
 
+    override this.GetFallbackModel (screen, world) =
+        if screen.Selected world
+        then Field.initial world.UpdateTime Slot1
+        else Field.empty
+
     override this.Definitions (field, _) =
         [Screen.UpdateEvent => Update
          Screen.UpdateEvent => ProcessKeyInput

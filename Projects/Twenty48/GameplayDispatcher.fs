@@ -31,6 +31,12 @@ module GameplayExtensions =
 type GameplayDispatcher () =
     inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
 
+    // here we define the screen's fallback model depending on whether screen is selected
+    override this.GetFallbackModel (screen, world) =
+        if screen.Selected world
+        then Gameplay.initial
+        else Gameplay.empty
+
     // here we define the screen's property values and event handling
     override this.Definitions (_, _) =
         [Screen.SelectEvent => StartPlaying
