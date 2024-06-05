@@ -35,7 +35,7 @@ type Brick =
     static member make position =
         { Position = position
           Size = v3 64.0f 16.0f 0.0f
-          Color = Color (Gen.randomf1 0.5f + 0.5f, Gen.randomf1 0.5f + 0.5f, Gen.randomf1 0.5f + 0.5f, 1.0f) }
+          Color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f }
 
 // this is our MMCC model type representing gameplay.
 // this model representation uses update time, that is, time based on number of engine updates.
@@ -227,7 +227,7 @@ type GameplayDispatcher () =
                 [Entity.Position == v3 -240.0f 0.0f 0.0f
                  Entity.Text == "Lives"]
              for i in 0 .. dec gameplay.Lives do
-                Content.staticSprite ("Live+" + string i)
+                Content.staticSprite ("Life+" + string i)
                     [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
                      Entity.Size == v3 32.0f 8.0f 0.0f
                      Entity.StaticImage == Assets.Default.Brick]
