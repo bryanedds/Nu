@@ -59,7 +59,7 @@ module Gaia =
     let mutable private DragEntityState = DragEntityInactive
     let mutable private DragEyeState = DragEyeInactive
     let mutable private SelectedScreen = Game / "Screen" // TODO: see if this is necessary or if we can just use World.getSelectedScreen.
-    let mutable private SelectedGroup = SelectedScreen / "Group"
+    let mutable private SelectedGroup = SelectedScreen / "Group" // use the default group
     let mutable private SelectedEntityOpt = Option<Entity>.None
     let mutable private OpenProjectFilePath = null // this will be initialized on start
     let mutable private OpenProjectEditMode = "Title"
@@ -681,13 +681,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else (Cascade, world)
 
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleData, Game>) world =
-        match evt.Data with
-        | RegisterData simulant ->
-            match simulant with
-            | :? Group as group when group.Selected world && group.Name = "Scene" ->
-                selectGroup group // select newly created Scene group since it's more likely to be the group the user wants to edit.
-            | _ -> ()
-        | _ -> ()
+        let world =
+            match evt.Data with
+            | RegisterData simulant ->
+                match simulant with
+                | :? Group as group when group.Selected world && group.Name = "Scene" ->
+                    selectGroup group // select newly created Scene group since it's more likely to be the group the user wants to edit.
+                    world
+                | _ -> world
+            | UnregisteringData simulant ->
+                if SelectedGroup :> Simulant = simulant then
+                    let groups = World.getGroups SelectedScreen world
+                    if Seq.isEmpty groups then
+                        let (group, world) = World.createGroup (Some "Group") SelectedScreen world // create default group if no group remains
+                        SelectedGroup <- group
+                        world
+                    else
+                        SelectedGroup <- Seq.head groups
+                        world
+                else world
+            | _ -> world
         (Cascade, world)
 
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) world =
