@@ -18,9 +18,6 @@ type Paddle =
         { Position = v3 0.0f -160.0f 0.0f
           Size = v3 64f 16.0f 0.0f }
 
-    member this.Perimeter =
-        box3 (this.Position - this.Size * 0.5f) this.Size
-
 // the state of our breakout ball
 type Ball =
     { Position : Vector3
@@ -37,9 +34,6 @@ type Brick =
     { Position : Vector3
       Size : Vector3
       Color : Color }
-
-    member this.Perimeter =
-        box3 (this.Position - this.Size * 0.5f) this.Size
 
     static member make position =
         { Position = position
@@ -117,7 +111,7 @@ type Gameplay =
                     let paddle = gameplay.Paddle
                     let ball = gameplay.Ball
                     let ball =
-                        let perimeter = paddle.Perimeter
+                        let perimeter = box3 (paddle.Position - paddle.Size * 0.5f) paddle.Size
                         if perimeter.Intersects ball.Position
                         then { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
                         else ball
@@ -128,7 +122,7 @@ type Gameplay =
                     let ball = gameplay.Ball
                     let bricks =
                         Map.filter (fun _ (brick : Brick) ->
-                            let perimeter = brick.Perimeter
+                            let perimeter = box3 (brick.Position - brick.Size * 0.5f) brick.Size
                             perimeter.Intersects ball.Position)
                             gameplay.Bricks
                     let ball =
