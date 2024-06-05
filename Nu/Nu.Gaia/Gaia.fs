@@ -3627,56 +3627,60 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.Text ":"
                     ImGui.SameLine ()
                     ImGui.Text (Reflection.getSimplifiedTypeNameHack propertyDescriptor.PropertyType)
-                    let propertyValueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
-                    let mutable propertyValueStr = PrettyPrinter.prettyPrintSymbol propertyValueSymbol PrettyPrinter.defaultPrinter
-                    let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
-                    if  isPropertyAssetTag then
-                        ImGui.SameLine ()
-                        if ImGui.Button "Pick" then searchAssetViewer ()
-                    let world =
-                        if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
-                            propertyDescriptor.PropertyType = typeof<string Set> then
-                            ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 131072u, v2 -1.0f -1.0f) && propertyValueStr <> PropertyValueStrPrevious then
-                            let pasts = Pasts
-                            let world =
-                                try let propertyValueEscaped = propertyValueStr
-                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                    let propertyValueTruncated = converter.ConvertFromString propertyValueUnescaped
-                                    let propertyValue =
-                                        if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                                            match World.tryUntruncateModel propertyValueTruncated simulant world with
-                                            | Some truncatedValue -> truncatedValue
-                                            | None -> propertyValueTruncated
-                                        else propertyValueTruncated
-                                    setPropertyValue propertyValue propertyDescriptor simulant world
-                                with _ ->
-                                    Pasts <- pasts
-                                    world
-                            PropertyValueStrPrevious <- propertyValueStr
-                            world
+                    try let propertyValueSymbol = converter.ConvertTo (propertyValue, typeof<Symbol>) :?> Symbol
+                        let mutable propertyValueStr = PrettyPrinter.prettyPrintSymbol propertyValueSymbol PrettyPrinter.defaultPrinter
+                        let isPropertyAssetTag = propertyDescriptor.PropertyType.IsGenericType && propertyDescriptor.PropertyType.GetGenericTypeDefinition () = typedefof<_ AssetTag>
+                        if  isPropertyAssetTag then
+                            ImGui.SameLine ()
+                            if ImGui.Button "Pick" then searchAssetViewer ()
+                        let world =
+                            if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
+                                propertyDescriptor.PropertyType = typeof<string Set> then
+                                ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                world
+                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 131072u, v2 -1.0f -1.0f) && propertyValueStr <> PropertyValueStrPrevious then
+                                let pasts = Pasts
+                                let world =
+                                    try let propertyValueEscaped = propertyValueStr
+                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                        let propertyValueTruncated = converter.ConvertFromString propertyValueUnescaped
+                                        let propertyValue =
+                                            if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                                match World.tryUntruncateModel propertyValueTruncated simulant world with
+                                                | Some truncatedValue -> truncatedValue
+                                                | None -> propertyValueTruncated
+                                            else propertyValueTruncated
+                                        setPropertyValue propertyValue propertyDescriptor simulant world
+                                    with _ ->
+                                        Pasts <- pasts
+                                        world
+                                PropertyValueStrPrevious <- propertyValueStr
+                                world
+                            else world
+                        if isPropertyAssetTag then
+                            if ImGui.BeginDragDropTarget () then
+                                let world =
+                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                        match DragDropPayloadOpt with
+                                        | Some payload ->
+                                            let pasts = Pasts
+                                            try let propertyValueEscaped = payload
+                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                setPropertyValue propertyValue propertyDescriptor simulant world
+                                            with _ ->
+                                                Pasts <- pasts
+                                                world
+                                        | None -> world
+                                    else world
+                                ImGui.EndDragDropTarget ()
+                                world
+                            else world
                         else world
-                    if isPropertyAssetTag then
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyValueEscaped = payload
-                                            let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                            let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                            setPropertyValue propertyValue propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    else world
+                    with :? TargetException as exn ->
+                        PropertyFocusedOpt <- None
+                        Log.warn ("Encountered undesired exception due to likely logic problem in Nu: " + scstring exn)
+                        world
                 | Some _ | None -> world
             ImGui.End ()
             world

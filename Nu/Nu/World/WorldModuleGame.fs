@@ -64,6 +64,7 @@ module WorldModuleGame =
             | null -> null :> obj :?> 'a
             | modelObj ->
                 try let model = modelObj |> valueToSymbol |> symbolToValue
+                    gameState.Model.DesignerType <- typeof<'a>
                     gameState.Model.DesignerValue <- model
                     model
                 with _ ->

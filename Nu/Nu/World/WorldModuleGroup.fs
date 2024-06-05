@@ -125,6 +125,7 @@ module WorldModuleGroup =
             | null -> null :> obj :?> 'a
             | modelObj ->
                 try let model = modelObj |> valueToSymbol |> symbolToValue
+                    groupState.Model.DesignerType <- typeof<'a>
                     groupState.Model.DesignerValue <- model
                     model
                 with _ ->

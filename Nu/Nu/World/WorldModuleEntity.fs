@@ -283,6 +283,7 @@ module WorldModuleEntity =
             | null -> null :> obj :?> 'a
             | modelObj ->
                 try let model = modelObj |> valueToSymbol |> symbolToValue
+                    entityState.Model.DesignerType <- typeof<'a>
                     entityState.Model.DesignerValue <- model
                     model
                 with _ ->

@@ -1850,6 +1850,7 @@ module EntityDispatcherModule2 =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
@@ -2172,6 +2173,7 @@ module GroupDispatcherModule =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
@@ -2354,6 +2356,7 @@ module ScreenDispatcherModule =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
@@ -2543,6 +2546,7 @@ module GameDispatcherModule =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->

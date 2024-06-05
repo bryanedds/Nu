@@ -122,6 +122,7 @@ module WorldModuleScreen =
             | null -> null :> obj :?> 'a
             | modelObj ->
                 try let model = modelObj |> valueToSymbol |> symbolToValue
+                    screenState.Model.DesignerType <- typeof<'a>
                     screenState.Model.DesignerValue <- model
                     model
                 with _ ->
