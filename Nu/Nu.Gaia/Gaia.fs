@@ -4036,8 +4036,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
                 let (templateFileName, templateDir, editMode) =
                     match NewProjectType with
-                    | "Empty" -> ("Nu.Template.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty"), "") // no edit modes
-                    | "Game" | _ -> ("Nu.Template.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game"), "Title") // assume Title mode
+                    | "Empty" -> ("Nu.Template.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty"), "Initial")
+                    | "Game" | _ -> ("Nu.Template.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game"), "Title")
                 if Directory.Exists templateDir then
 
                     // attempt to create project files
