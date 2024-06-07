@@ -40,9 +40,7 @@ type Brick =
 // this is our MMCC model type representing gameplay.
 // this model representation uses update time, that is, time based on number of engine updates.
 // if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
-// you could use `GameplayTime : single` instead. If you're going to use Split MMCC instead of Pure MMCC, you won't
-// need this field at all and should remove it, using world.UpdateTime or world.ClockTime instead (see
-// https://github.com/bryanedds/Nu/wiki/Pure-MMCC-vs.-Split-MMCC)
+// you could use `GameplayTime : single` instead.
 type [<SymbolicExpansion>] Gameplay =
     { GameplayTime : int64
       GameplayState : GameplayState
