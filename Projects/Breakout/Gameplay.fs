@@ -50,8 +50,8 @@ type [<SymbolicExpansion>] Gameplay =
       Paddle : Paddle
       Ball : Ball
       Bricks : Map<string, Brick>
-      Lives : int
-      Score : int }
+      Score : int
+      Lives : int }
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
     static member empty =
@@ -60,22 +60,23 @@ type [<SymbolicExpansion>] Gameplay =
           Paddle = Paddle.initial
           Ball = Ball.initial
           Bricks = Map.empty
-          Lives = 3
-          Score = 0 }
+          Score = 0
+          Lives = 0 }
 
     // this represents the gameplay model in its initial state, such as when gameplay starts.
     static member initial =
         let bricks =
-            Map.ofSeq
+            Map.ofList
                 [for i in 0 .. dec 5 do
                     for j in 0 .. dec 6 do
                         (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))]
         { Gameplay.empty with
             GameplayState = Playing
-            Bricks = bricks }
+            Bricks = bricks
+            Lives = 3 }
 
     static member update gameplay world =
-        match GameplayState.Playing with
+        match gameplay.GameplayState with
         | Playing when gameplay.Lives > 0 && gameplay.Bricks.Count > 0 ->
 
             // update paddle
@@ -111,7 +112,7 @@ type [<SymbolicExpansion>] Gameplay =
                     else ball
                 { gameplay with Ball = ball }
 
-            // update ball motion against paddle
+            // update ball interaction with paddle
             let gameplay =
                 let paddle = gameplay.Paddle
                 let ball = gameplay.Ball
@@ -123,22 +124,22 @@ type [<SymbolicExpansion>] Gameplay =
                     else ball
                 { gameplay with Ball = ball }
 
-            // update ball motion against bricks
+            // update ball interaction with bricks
             let gameplay =
                 let ball = gameplay.Ball
-                let bricks =
+                let bricksIntersected =
                     Map.filter (fun _ (brick : Brick) ->
                         let perimeter = box3 (brick.Position - brick.Size * 0.5f) brick.Size
                         perimeter.Intersects ball.PositionNext)
                         gameplay.Bricks
                 let ball =
-                    if Map.notEmpty bricks then
+                    if Map.notEmpty bricksIntersected then
                         World.playSound 0.5f Assets.Default.Sound world
-                        let brick = Seq.head bricks.Values
+                        let brick = Seq.head bricksIntersected.Values
                         { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
                     else ball
-                let scoring = Map.count bricks * 100
-                let bricks = Map.removeMany bricks.Keys gameplay.Bricks
+                let scoring = Map.count bricksIntersected * 100
+                let bricks = Map.removeMany bricksIntersected.Keys gameplay.Bricks
                 let gameplay = { gameplay with Ball = ball; Bricks = bricks; Score = gameplay.Score + scoring }
                 gameplay
 
@@ -229,7 +230,12 @@ type GameplayDispatcher () =
         [// the gui group
          Content.group Simulants.GameplayGui.Name []
 
-            [// lives
+            [// score
+             Content.text "Score"
+                [Entity.Position == v3 248.0f 136.0f 0.0f
+                 Entity.Text := "Score: " + string gameplay.Score]
+
+             // lives
              Content.text "Lives"
                 [Entity.Position == v3 -240.0f 0.0f 0.0f
                  Entity.Text == "Lives"]
@@ -239,14 +245,9 @@ type GameplayDispatcher () =
                      Entity.Size == v3 32.0f 8.0f 0.0f
                      Entity.StaticImage == Assets.Default.Paddle]
 
-             // score
-             Content.text "Score"
-                [Entity.Position == v3 248.0f 136.0f 0.0f
-                 Entity.Text := "Score: " + string gameplay.Score]
-
              // message
              Content.text "Message"
-                [Entity.Text := if gameplay.Lives = 0 then "Game Over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
+                [Entity.Text := if gameplay.Lives = 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
              
              // quit
              Content.button Simulants.GameplayQuit.Name
@@ -282,11 +283,11 @@ type GameplayDispatcher () =
                     [Entity.Position == v3 0.0f 176.0f 0.0f
                      Entity.Size == v3 320.0f 8.0f 0.0f
                      Entity.StaticImage == Assets.Default.Black]
-                 for (brickId, brick) in gameplay.Bricks.Pairs do
-                    Content.staticSprite brickId
+                 for (brickName, brick) in gameplay.Bricks.Pairs do
+                    Content.staticSprite brickName
                         [Entity.Position == brick.Position
                          Entity.Size == brick.Size
-                         Entity.Color == brick.Color
+                         Entity.Color := brick.Color
                          Entity.StaticImage == Assets.Default.Brick]]
 
          // no scene group otherwise
