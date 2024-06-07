@@ -6,6 +6,9 @@ open Nu
 
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
+// this model representation uses update time, that is, time based on number of engine updates.
+// if you wish to use clock time instead (https://github.com/bryanedds/Nu/wiki/GameTime-and-its-Polymorphic-Nature),
+// you could use `MyGameTime : single`.
 type MyGame =
     { MyGameTime : int64 }
     static member initial = { MyGameTime = 0L }
