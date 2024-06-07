@@ -230,7 +230,7 @@ type GameplayDispatcher () =
                 Content.staticSprite ("Life+" + string i)
                     [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
                      Entity.Size == v3 32.0f 8.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Brick]
+                     Entity.StaticImage == Assets.Default.Paddle]
 
              // score
              Content.text "Score"
@@ -258,7 +258,7 @@ type GameplayDispatcher () =
                  Content.staticSprite "Paddle"
                     [Entity.Position := gameplay.Paddle.Position
                      Entity.Size == gameplay.Paddle.Size
-                     Entity.StaticImage == Assets.Default.Brick]
+                     Entity.StaticImage == Assets.Default.Paddle]
                  Content.staticSprite "Ball"
                     [Entity.Position := gameplay.Ball.Position
                      Entity.Size == gameplay.Ball.Size
