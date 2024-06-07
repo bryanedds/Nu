@@ -22,6 +22,9 @@ type Ball =
       Size : Vector3
       Velocity : Vector3 }
 
+    member this.PositionNext =
+        this.Position + this.Velocity
+
     static member initial =
         { Position = v3 0.0f 48.0f 0.0f
           Size = v3 8.0f 8.0f 0.0f
@@ -86,17 +89,23 @@ type [<SymbolicExpansion>] Gameplay =
                     else paddle
                 { gameplay with Paddle = paddle }
 
-            // update ball motion against walls
+            // update ball motion
             let gameplay =
                 let ball = gameplay.Ball
-                let ball = { ball with Position = ball.Position + ball.Velocity }
+                let ball = { ball with Position = ball.PositionNext }
+                { gameplay with Ball = ball }
+
+            // update ball interaction with walls
+            let gameplay =
+                let ball = gameplay.Ball
                 let ball =
-                    if ball.Position.X <= -160.0f || ball.Position.X >= 160.0f then 
+                    if  ball.PositionNext.X <= -160.0f ||
+                        ball.PositionNext.X >= 160.0f then 
                         World.playSound 0.5f Assets.Default.Sound world
                         { ball with Velocity = ball.Velocity.MapX negate }
                     else ball
                 let ball =
-                    if ball.Position.Y >= 172.0f then
+                    if ball.PositionNext.Y >= 172.0f then
                         World.playSound 0.5f Assets.Default.Sound world
                         { ball with Velocity = ball.Velocity.MapY negate }
                     else ball
@@ -108,7 +117,7 @@ type [<SymbolicExpansion>] Gameplay =
                 let ball = gameplay.Ball
                 let ball =
                     let perimeter = box3 (paddle.Position - paddle.Size * 0.5f) paddle.Size
-                    if perimeter.Intersects ball.Position then
+                    if perimeter.Intersects ball.PositionNext then
                         World.playSound 0.5f Assets.Default.Sound world
                         { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
                     else ball
@@ -120,7 +129,7 @@ type [<SymbolicExpansion>] Gameplay =
                 let bricks =
                     Map.filter (fun _ (brick : Brick) ->
                         let perimeter = box3 (brick.Position - brick.Size * 0.5f) brick.Size
-                        perimeter.Intersects ball.Position)
+                        perimeter.Intersects ball.PositionNext)
                         gameplay.Bricks
                 let ball =
                     if Map.notEmpty bricks then
@@ -135,7 +144,7 @@ type [<SymbolicExpansion>] Gameplay =
 
             // update ball death
             let gameplay =
-                if gameplay.Ball.Position.Y < -180.0f then
+                if gameplay.Ball.PositionNext.Y < -180.0f then
                     let gameplay = { gameplay with Lives = dec gameplay.Lives }
                     let gameplay = if gameplay.Lives > 0 then { gameplay with Ball = Ball.initial } else gameplay
                     gameplay
