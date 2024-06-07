@@ -234,7 +234,7 @@ type [<NoEquality; NoComparison>] Transform =
                 let mutable maxZ = Single.MinValue
                 for i in 0 .. 8 - 1 do
                     let mutable corner = NativePtr.get corners i
-                    corner <- Vector3.Transform (corner + pivot, rotation) - pivot
+                    corner <- (corner + pivot).Transform rotation - pivot
                     minX <- Operators.min minX corner.X
                     minY <- Operators.min minY corner.Y
                     minZ <- Operators.min minZ corner.Z
@@ -274,7 +274,7 @@ type [<NoEquality; NoComparison>] Transform =
             let mutable maxZ = Single.MinValue
             for i in 0 .. 8 - 1 do
                 let mutable corner = NativePtr.get corners i
-                corner <- Vector3.Transform (corner - this.Position_, rotation) + this.Position_
+                corner <- (corner - this.Position_).Transform rotation + this.Position_
                 minX <- Operators.min minX corner.X
                 minY <- Operators.min minY corner.Y
                 minZ <- Operators.min minZ corner.Z

@@ -440,7 +440,7 @@ module EffectSystem =
         match aspect with
         | Position position -> slice.Position <- slice.Position + position; slice
         | PositionLocal positionLocal ->
-            let oriented = Vector3.Transform (positionLocal, slice.Angles.RollPitchYaw)
+            let oriented = positionLocal.Transform slice.Angles.RollPitchYaw
             let translated = slice.Position + oriented
             slice.Position <- translated
             slice
@@ -475,7 +475,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let oriented = Vector3.Transform (tweened, slice.Angles.RollPitchYaw)
+                let oriented = tweened.Transform slice.Angles.RollPitchYaw
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position oriented applicator
                 slice.Position <- applied
             slice

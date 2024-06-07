@@ -977,7 +977,7 @@ module WorldModuleEntity =
                         match Option.bind (tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let affineMatrix = World.getEntityAffineMatrix mount world
-                            Vector3.Transform (value, affineMatrix)
+                            value.Transform affineMatrix
                         | _ -> value
                     entityState.Position <- position
                     let world = if entityState.Mounted then World.propagateEntityAffineMatrix entity world else world
@@ -1017,7 +1017,7 @@ module WorldModuleEntity =
                         match Option.bind (tryResolve entity) entityState.MountOpt with
                         | Some mount when World.getEntityExists mount world ->
                             let affineMatrix = World.getEntityAffineMatrix mount world
-                            Vector3.Transform (value, affineMatrix)
+                            value.Transform affineMatrix
                         | _ -> value
 
                     // update property

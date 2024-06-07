@@ -400,7 +400,7 @@ module WorldScreenModule =
                                 | Some (bounds' : Box3) -> boundsOpt <- Some (bounds'.Combine bounds)
                                 if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
                                     for v in geometry.Vertices do
-                                        let v' = Vector3.Transform (v, affineMatrix)
+                                        let v' = v.Transform affineMatrix
                                         v'.X; v'.Y; v'.Z|]
 
                     // compute indices
@@ -584,7 +584,7 @@ module WorldScreenModule =
             let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
             let navRotation =
                 if navAngularVelocityY > turnSpeed then
-                    let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
+                    let sign = (rotation.Forward.Cross navRotation.Forward).Y
                     rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
                 else navRotation
             let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward

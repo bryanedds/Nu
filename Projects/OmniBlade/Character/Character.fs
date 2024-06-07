@@ -163,8 +163,8 @@ module Character =
             Map.filter (fun _ character ->
                 let a = character.Perimeter.Bottom - source.Perimeter.Bottom
                 let b = target.Perimeter.Bottom - source.Perimeter.Bottom
-                if Vector3.Dot (a, b) > 0.0f then
-                    let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
+                if a.Dot b > 0.0f then
+                    let r = a - a.Dot b / b.Dot b * b // vector rejection
                     let d = r.Magnitude
                     d <= offset 
                 else false) |>
@@ -176,8 +176,8 @@ module Character =
                 let a = character.Perimeter.Bottom - source.Perimeter.Bottom
                 let b = target.Perimeter.Bottom - source.Perimeter.Bottom
                 if a.Magnitude <= b.Magnitude then
-                    if Vector3.Dot (a, b) > 0.0f then
-                        let r = a - (Vector3.Dot (a, b) / Vector3.Dot (b, b)) * b // vector rejection
+                    if a.Dot b > 0.0f then
+                        let r = a - a.Dot b / b.Dot b * b // vector rejection
                         let d = r.Magnitude
                         d <= offset
                     else false

@@ -218,7 +218,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity pointsShape.TransformOpt
         let vertices = Array.zeroCreate pointsShape.Points.Length
         for i in 0 .. dec pointsShape.Points.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (pointsShape.Points.[i], transform))
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (pointsShape.Points.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -236,7 +236,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity geometryShape.TransformOpt
         let vertices = Array.zeroCreate geometryShape.Vertices.Length
         for i in 0 .. dec geometryShape.Vertices.Length do
-            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (Vector3.Transform (geometryShape.Vertices.[i], transform))
+            vertices.[i] <- PhysicsEngine2d.toPhysicsV2 (geometryShape.Vertices.[i].Transform transform)
         let density =
             match bodyProperties.Substance with
             | Density density -> density
@@ -586,7 +586,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             List.filter (fun normal ->
-                let theta = Vector2.Dot (normal.V2, Vector2.UnitY) |> acos |> abs
+                let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
                 theta < Constants.Physics.GroundAngleMax)
                 ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
 

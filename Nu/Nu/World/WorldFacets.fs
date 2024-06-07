@@ -2605,7 +2605,7 @@ type StaticModelFacet () =
                         raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                         Seq.map snd' |>
                         Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                        Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrix)) |>
+                        Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
                         Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                         Seq.toArray
                     else [||])
@@ -2825,7 +2825,7 @@ type AnimatedModelFacet () =
                         raySurface.Intersects (geometry.Indices, geometry.Vertices) |>
                         Seq.map snd' |>
                         Seq.map (fun intersectionEntity -> rayEntity.Origin + rayEntity.Direction * intersectionEntity) |>
-                        Seq.map (fun pointEntity -> Vector3.Transform (pointEntity, affineMatrix)) |>
+                        Seq.map (fun pointEntity -> pointEntity.Transform affineMatrix) |>
                         Seq.map (fun point -> (point - ray.Origin).Magnitude) |>
                         Seq.toArray
                     else [||])

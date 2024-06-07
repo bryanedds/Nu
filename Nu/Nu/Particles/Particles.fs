@@ -219,7 +219,7 @@ module Transformer =
                 let distanceSquared = distanceDelta.MagnitudeSquared
                 let radiusSquared = radius * radius
                 if distanceSquared < radiusSquared then
-                    let normal = Vector3.Normalize (center - positionNext)
+                    let normal = (center - positionNext).Normalized
                     let reflectedVelocity = Vector3.Reflect (body.LinearVelocity, normal)
                     body.LinearVelocity <- reflectedVelocity * body.Restitution
                 i <- inc i
@@ -232,7 +232,7 @@ module Transformer =
                 let distanceDelta = positionNext - box.Center
                 if box.Intersects positionNext then
                     let speed = body.LinearVelocity.Magnitude
-                    let distanceNormalized = Vector3.Normalize distanceDelta
+                    let distanceNormalized = distanceDelta.Normalized
                     body.LinearVelocity <- speed * distanceNormalized * body.Restitution
                 i <- inc i
         | Constraints constraints ->

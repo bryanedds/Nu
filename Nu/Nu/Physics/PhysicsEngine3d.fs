@@ -325,9 +325,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     match staticModelShape.TransformOpt with
                     | Some transform ->
                         Affine.make
-                            (Vector3.Transform (transform.Translation, surface.SurfaceMatrix))
+                            (transform.Translation.Transform surface.SurfaceMatrix)
                             (transform.Rotation * surface.SurfaceMatrix.Rotation)
-                            (Vector3.Transform (transform.Scale, surface.SurfaceMatrix))
+                            (transform.Scale.Transform surface.SurfaceMatrix)
                     | None -> Affine.makeFromMatrix surface.SurfaceMatrix
                 let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
                 PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine)
@@ -910,7 +910,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
                 // create ground collision entry for body0 if needed
                 normal <- -normal
-                let theta = Vector3.Dot (normal, Vector3.UnitY) |> acos |> abs
+                let theta = normal.Dot Vector3.UnitY |> acos |> abs
                 if theta < Constants.Physics.GroundAngleMax then
                     match physicsEngine.CollisionsGround.TryGetValue body0Source with
                     | (true, collisions) -> collisions.Add normal

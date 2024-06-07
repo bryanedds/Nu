@@ -61,19 +61,19 @@ type SpiritState =
         match spiritState.SpiritMovements.[spiritState.SpiritMovementIndex] with
         | Creep ->
             let v = target - position
-            let n = Vector3.Normalize v
+            let n = v.Normalized
             let m = n * Constants.Field.SpiritWalkSpeed
             (m, spiritState)
         | Chase ->
             let v = target - position
-            let n = Vector3.Normalize v
+            let n = v.Normalized
             let m = n * Constants.Field.SpiritRunSpeed
             (m, spiritState)
         | Scatter ->
             match spiritState.SpiritMovementCachedOpt with
             | None ->
                 let v = target - position
-                let n = Vector3.Normalize v
+                let n = v.Normalized
                 let m = n * Constants.Field.SpiritWalkSpeed
                 let spiritState = { spiritState with SpiritMovementCachedOpt = Some m }
                 (m, spiritState)

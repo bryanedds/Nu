@@ -258,7 +258,7 @@ type BattleDispatcher () =
         | DisplaySlashSpike (delay, bottom, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
-                let projection = Vector3.Normalize (target.Perimeter.Bottom - bottom) * single Constants.Render.VirtualResolution.X + target.Perimeter.Bottom
+                let projection = (target.Perimeter.Bottom - bottom).Normalized * single Constants.Render.VirtualResolution.X + target.Perimeter.Bottom
                 let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) Over (EffectDescriptors.slashSpike bottom projection) screen world
                 just world
             | None -> just world
@@ -266,7 +266,7 @@ type BattleDispatcher () =
         | DisplaySlashTwister (delay, bottom, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
             | Some target ->
-                let projection = Vector3.Normalize (target.Perimeter.Bottom - bottom) * single Constants.Render.VirtualResolution.X + target.Perimeter.Bottom
+                let projection = (target.Perimeter.Bottom - bottom).Normalized * single Constants.Render.VirtualResolution.X + target.Perimeter.Bottom
                 let world = displayEffect delay (v3 96.0f 96.0f 0.0f) (Bottom bottom) Over (EffectDescriptors.slashWind bottom projection) screen world
                 just world
             | None -> just world

@@ -45,11 +45,11 @@ module Viewport =
 
         /// Compute the absolute 2d position from the given relative 3d position.
         member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion, resolution : Vector2i) =
-            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let projection = this.Projection3d
             let viewProjection : Matrix4x4 = view * projection
-            let positionViewProjection = Vector4.Transform (Vector4 (position, 1.0f), viewProjection)
+            let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
             let positionNdc = positionViewProjection.V3 / positionViewProjection.W
             let position2d = v3 (positionNdc.X * single (resolution.X / 2)) (positionNdc.Y * single (resolution.Y / 2)) positionNdc.Z
             position2d
@@ -57,16 +57,16 @@ module Viewport =
         /// Compute the relative 3d ray from the given absolute 2d position.
         /// TODO: also implement Position2dToPosition3d.
         member this.Position2dToRay3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolution : Vector2i) =
-            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
-            let eyeRotationInverse = Quaternion.Inverse eyeRotation
+            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
+            let eyeRotationInverse = eyeRotation.Inverted
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let projection = this.Projection3d
             let viewProjectionInverse = (view * projection).Inverted
             let positionNdc = v3 (position.X / single (resolution.X * 2)) (position.Y / single (resolution.Y * 2)) 0.0f
-            let positionViewProjection = Vector4.Transform (positionNdc, viewProjectionInverse)
+            let positionViewProjection = positionNdc.Transform viewProjectionInverse
             let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
-            let position3d = (Vector4.Transform (positionView, Matrix4x4.CreateFromQuaternion eyeRotationInverse)).V3
-            let rayDirection = Vector3.Normalize (position3d - eyeCenter)
+            let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotationInverse)).V3
+            let rayDirection = (position3d - eyeCenter).Normalized
             let ray = Ray3 (eyeCenter, rayDirection)
             ray
 
@@ -83,7 +83,7 @@ module Viewport =
                 if absolute
                 then Matrix4x4.Identity
                 else Matrix4x4.CreateTranslation eyeCenter.V3
-            (Vector3.Transform (mouseScreen.V3, view)).V2
+            (mouseScreen.V3.Transform view).V2
 
         /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
         member this.MouseToEntity2d (absolute, mousePosition, entityPosition, entitySize) =
@@ -96,7 +96,7 @@ module Viewport =
 
         /// Compute the 3d relative view matrix.
         member this.ViewRelative3d (eyeCenter : Vector3, eyeRotation : Quaternion) =
-            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
             Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
 
         /// Compute a 3d view matrix.
@@ -121,7 +121,7 @@ module Viewport =
 
         /// Compute a 3d view frustum.
         member this.Frustum (eyeCenter, eyeRotation : Quaternion) =
-            let eyeTarget = eyeCenter + Vector3.Transform (v3Forward, eyeRotation)
+            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
             let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
             let projection = this.Projection3d
             let viewProjection = view * projection
@@ -138,4 +138,4 @@ module Viewport =
             let viewProjection = this.ViewProjection3d (absolute, v3Zero, eyeRotation)
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
-            ray (near + eyeCenter) (Vector3.Normalize (far - near))
+            ray (near + eyeCenter) (far - near).Normalized

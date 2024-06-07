@@ -809,7 +809,7 @@ module WorldEntityModule =
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            | PasteAtLook -> eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * distance
+                            | PasteAtLook -> eyeCenter + v3Forward.Transform eyeRotation * distance
                             | PasteAt position -> position
                         match positionSnapEir with
                         | Right positionSnap -> (position, Some positionSnap)

@@ -221,7 +221,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
     static member Position3dToWindow (windowPosition : Vector2, windowSize : Vector2, modelViewProjection : Matrix4x4, position : Vector3) =
 
         // transform the position from world coordinates to clip space coordinates
-        let mutable position = Vector4.Transform (Vector4 (position, 1.0f), modelViewProjection)
+        let mutable position = (Vector4 (position, 1.0f)).Transform modelViewProjection
         position <- position * (0.5f / position.W)
 
         // transform the position from normalized device coordinates to window coordinates
@@ -247,8 +247,8 @@ type ImGui (windowWidth : int, windowHeight : int) =
         let mouseYNdc = (1.0f - ((io.MousePos.Y - windowPosition.Y) / windowSize.Y)) * 2.0f - 1.0f
 
         // transform near and far positions of the clip space to world coordinates
-        let nearPos = Vector4.Transform (v4 0.0f 0.0f 1.0f 1.0f, projection)
-        let farPos = Vector4.Transform (v4 0.0f 0.0f 2.0f 1.0f, projection)
+        let nearPos = (v4 0.0f 0.0f 1.0f 1.0f).Transform projection
+        let farPos = (v4 0.0f 0.0f 2.0f 1.0f).Transform projection
 
         // determine if the near and far planes are reversed
         let reversed = nearPos.Z / nearPos.W > farPos.Z / farPos.W
@@ -258,11 +258,11 @@ type ImGui (windowWidth : int, windowHeight : int) =
 
         // calculate the ray origin in world coordinates by transforming the normalized device coordinates
         let modelViewProjectionInverse = (model * view * projection).Inverted
-        let mutable rayOrigin = Vector4.Transform (v4 mouseXNdc mouseYNdc zNear 1.0f, modelViewProjectionInverse)
+        let mutable rayOrigin = (v4 mouseXNdc mouseYNdc zNear 1.0f).Transform modelViewProjectionInverse
         rayOrigin <- rayOrigin * (1.0f / rayOrigin.W)
 
         // calculate the ray end in world coordinates by transforming the normalized device coordinates
-        let mutable rayEnd = Vector4.Transform (v4 mouseXNdc mouseYNdc zFar 1.0f, modelViewProjectionInverse)
+        let mutable rayEnd = (v4 mouseXNdc mouseYNdc zFar 1.0f).Transform modelViewProjectionInverse
         rayEnd <- rayEnd * (1.0f / rayEnd.W)
 
         // calculate the ray direction by normalizing the vector between the ray end and ray origin

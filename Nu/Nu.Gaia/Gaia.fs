@@ -752,7 +752,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
                     elif not (entity.GetAbsolute world) then
-                        eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * NewEntityDistance
+                        eyeCenter + v3Forward.Transform eyeRotation * NewEntityDistance
                     else v3Zero
                 let attributes = entity.GetAttributesInferred world
                 entityTransform.Position <- entityPosition
@@ -1349,7 +1349,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let world =
                                 match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                                 | Some parent ->
-                                    let entityPositionLocal = Vector3.Transform (entityPositionConstrained, (parent.GetAffineMatrix world).Inverted)
+                                    let entityPositionLocal = entityPositionConstrained.Transform (parent.GetAffineMatrix world).Inverted
                                     entity.SetPositionLocal entityPositionLocal world
                                 | None -> entity.SetPosition entityPositionConstrained world
                             let world =
@@ -1432,23 +1432,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 0.025f
                 else 0.05f
             if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + Vector3.Transform (v3Forward, rotation) * moveSpeed
+                DesiredEye3dCenter <- position + v3Forward.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + Vector3.Transform (v3Back, rotation) * moveSpeed
+                DesiredEye3dCenter <- position + v3Back.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + Vector3.Transform (v3Left, rotation) * moveSpeed
+                DesiredEye3dCenter <- position + v3Left.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + Vector3.Transform (v3Right, rotation) * moveSpeed
+                DesiredEye3dCenter <- position + v3Right.Transform rotation * moveSpeed
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Up) < 0.99f then DesiredEye3dRotation <- rotation'
+                if rotation'.Forward.Dot v3Up < 0.99f then DesiredEye3dRotation <- rotation'
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.DownArrow else ImGuiKey.Q) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Left, turnSpeed)
-                if Vector3.Dot (rotation'.Forward, v3Down) < 0.99f then DesiredEye3dRotation <- rotation'
+                if rotation'.Forward.Dot v3Down < 0.99f then DesiredEye3dRotation <- rotation'
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- position + Vector3.Transform (v3Up, rotation) * moveSpeed
+                DesiredEye3dCenter <- position + v3Up.Transform rotation * moveSpeed
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- position + Vector3.Transform (v3Down, rotation) * moveSpeed
+                DesiredEye3dCenter <- position + v3Down.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
                 DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
             if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
@@ -1532,7 +1532,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     DesiredEye2dCenter <- (entity.GetPerimeterCenter world).V2
                 else
                     let eyeRotation = World.getEye3dRotation world
-                    let eyeCenterOffset = Vector3.Transform (v3Back * NewEntityDistance, eyeRotation)
+                    let eyeCenterOffset = (v3Back * NewEntityDistance).Transform eyeRotation
                     DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
         let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         let mutable openPopupContextItemWhenUnselected = false
@@ -3068,7 +3068,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 match Option.bind (tryResolve entity) (entity.GetMountOpt world) with
                                 | Some mount ->
                                     let mountAffineMatrixInverse = (mount.GetAffineMatrix world).Inverted
-                                    let positionLocal = Vector3.Transform (position, mountAffineMatrixInverse)
+                                    let positionLocal = position.Transform mountAffineMatrixInverse
                                     let mountRotationInverse = (mount.GetRotation world).Inverted
                                     let rotationLocal = mountRotationInverse * rotation
                                     let rollPitchYawLocal = rotationLocal.RollPitchYaw

@@ -852,11 +852,11 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // from tangent-space vector to world-space sample vector
         let up = if abs n.Z < 0.999f then v3Back else v3Right
-        let tangent = Vector3.Normalize (Vector3.Cross (up, n))
-        let bitangent = Vector3.Cross (n, tangent)
+        let tangent = (up.Cross n).Normalized
+        let bitangent = n.Cross tangent
 
         // importance sample
-        Vector3.Normalize (tangent * h.X + bitangent * h.Y + n * h.Z)
+        (tangent * h.X + bitangent * h.Y + n * h.Z).Normalized
 
     static member private geometrySchlickGGX (nDotV : single) (roughness : single) =
         let a = roughness
@@ -881,11 +881,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         for i in 0 .. dec samples do
             let xi = GlRenderer3d.hammersley i samples
             let h = GlRenderer3d.importanceSampleGGX xi roughness n
-            let l = Vector3.Normalize (2.0f * Vector3.Dot (v, h) * h - v)
+            let l = (2.0f * v.Dot h * h - v).Normalized
             let nol = max l.Z 0.0f
             let noh = max h.Z 0.0f
-            let voh = max (Vector3.Dot (v, h)) 0.0f
-            let nov = max (Vector3.Dot (n, v)) 0.0f
+            let voh = max (v.Dot h) 0.0f
+            let nov = max (n.Dot v) 0.0f
             if nol > 0.0f then
                 let g = GlRenderer3d.geometrySmith roughness nov nol
                 let gVis = (g * voh) / (noh * nov)
@@ -1314,7 +1314,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         Vector3.Cross (sw - v, s - v) +
                         Vector3.Cross (w - v,  sw - v) +
                         Vector3.Cross (n - v,  w - v)
-                    let normal = normalSum |> Vector3.Normalize
+                    let normal = normalSum.Normalized
                     normal
                 else v3Up|]
 
@@ -1519,8 +1519,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ShadowPass (_, _, _, _) -> Matrix4x4.CreateFromQuaternion -lookRotation
             | _ ->
                 if orientUp then
-                    let lookForward = (Vector3.Transform (v3Forward, lookRotation)).WithY 0.0f
-                    let billboardAngle = if Vector3.Dot (lookForward, v3Right) >= 0.0f then -lookForward.AngleBetween v3Forward else lookForward.AngleBetween v3Forward
+                    let lookForward = (v3Forward.Transform lookRotation).WithY 0.0f
+                    let billboardAngle = if lookForward.Dot v3Right >= 0.0f then -lookForward.AngleBetween v3Forward else lookForward.AngleBetween v3Forward
                     Matrix4x4.CreateFromQuaternion (Quaternion.CreateFromAxisAngle (v3Up, billboardAngle))
                 else Matrix4x4.CreateFromQuaternion -lookRotation
         let mutable affineRotation = model
@@ -2907,7 +2907,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // compute view and projection
         let viewAbsolute = viewport.View3d (true, eyeCenter, eyeRotation)
         let viewRelative = viewport.View3d (false, eyeCenter, eyeRotation)
-        let viewSkyBox = Matrix4x4.CreateFromQuaternion (Quaternion.Inverse eyeRotation)
+        let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
         let projection = viewport.Projection3d
 
         // top-level geometry pass
