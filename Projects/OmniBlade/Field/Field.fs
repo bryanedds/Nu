@@ -170,7 +170,7 @@ module Field =
 
     (* Low-Level Operations *)
 
-    let private checksumToken = "\n[H3cK$uM:"
+    let private checksumToken = "\n[H3CK$UM:"
 
     let private makePropState time propDescriptor =
         match propDescriptor.PropData with
