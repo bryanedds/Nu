@@ -26,6 +26,7 @@ module Vector2 =
         member this.MapY mapper = Vector2 (this.X, mapper this.Y)
         member this.WithX x = Vector2 (x, this.Y)
         member this.WithY y = Vector2 (this.X, y)
+        member this.Dot that = Vector2.Dot (this, that)
         member this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
         member this.AngleBetween (that : Vector2) =
@@ -108,6 +109,8 @@ module Vector3 =
         member this.WithX x = Vector3 (x, this.Y, this.Z)
         member this.WithY y = Vector3 (this.X, y, this.Z)
         member this.WithZ z = Vector3 (this.X, this.Y, z)
+        member this.Dot that = Vector3.Dot (this, that)
+        member this.Cross that = Vector3.Cross (this, that)
         member this.RollPitchYaw = Math.RollPitchYaw &this
 
         /// Compute angle between vectors.
@@ -235,6 +238,7 @@ module Vector4 =
         member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
         member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
         member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+        member this.Dot that = Vector4.Dot (this, that)
 
         static member Pow (a : Vector4, b : Vector4) =
             Vector4
