@@ -36,7 +36,7 @@ module CreditsExtensions =
 type CreditsDispatcher () =
     inherit ScreenDispatcher<Credits, CreditsMessage, CreditsCommand> (Credits.empty)
 
-    override this.GetFallbackModel (screen, world) =
+    override this.GetFallbackModel (_, screen, world) =
         if screen.Selected world
         then Credits.initial
         else Credits.empty

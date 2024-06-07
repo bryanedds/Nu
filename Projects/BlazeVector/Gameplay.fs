@@ -55,7 +55,7 @@ type GameplayDispatcher () =
     static let [<Literal>] SectionCount = 12
 
     // here we define the screen's fallback model depending on whether screen is selected
-    override this.GetFallbackModel (screen, world) =
+    override this.GetFallbackModel (_, screen, world) =
         if screen.Selected world
         then Gameplay.initial
         else Gameplay.empty

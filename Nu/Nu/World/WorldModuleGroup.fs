@@ -124,15 +124,17 @@ module WorldModuleGroup =
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
             | modelObj ->
-                try let model = modelObj |> valueToSymbol |> symbolToValue
-                    groupState.Model.DesignerType <- typeof<'a>
-                    groupState.Model.DesignerValue <- model
+                let modelSymbol = valueToSymbol modelObj
+                try let model = symbolToValue modelSymbol
+                    groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing group model value to new type; using fallback model value instead."
-                    match groupState.Dispatcher.TryGetFallbackModel<'a> (group, world) with
+                    Log.warn "Could not convert existing group model value to new type; using fallback model value instead."
+                    match groupState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, group, world) with
                     | None -> failwithnie ()
-                    | Some value -> value
+                    | Some model ->
+                        groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
+                        model
 
         static member internal setGroupModelGeneric<'a> initializing (value : 'a) group world =
             let groupState = World.getGroupState group world

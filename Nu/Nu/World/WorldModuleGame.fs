@@ -63,15 +63,17 @@ module WorldModuleGame =
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
             | modelObj ->
-                try let model = modelObj |> valueToSymbol |> symbolToValue
-                    gameState.Model.DesignerType <- typeof<'a>
-                    gameState.Model.DesignerValue <- model
+                let modelSymbol = valueToSymbol modelObj
+                try let model = symbolToValue modelSymbol
+                    gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing game model value to new type; using fallback model value instead."
-                    match gameState.Dispatcher.TryGetFallbackModel<'a> (game, world) with
+                    Log.warn "Could not convert existing game model value to new type; using fallback model value instead."
+                    match gameState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, game, world) with
                     | None -> failwithnie ()
-                    | Some value -> value
+                    | Some model ->
+                        gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
+                        model
 
         static member internal setGameModelGeneric<'a> initializing (value : 'a) (game : Game) world =
             let gameState = World.getGameState game world

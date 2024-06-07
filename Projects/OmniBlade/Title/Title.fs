@@ -37,7 +37,7 @@ type TitleDispatcher () =
         let scroll = progress * single Constants.Render.VirtualResolution.X
         v3 (offsetX - scroll) offsetY 0.0f
 
-    override this.GetFallbackModel (screen, world) =
+    override this.GetFallbackModel (_, screen, world) =
         if not (screen.Selected world)
         then Title.initial
         else Title.empty

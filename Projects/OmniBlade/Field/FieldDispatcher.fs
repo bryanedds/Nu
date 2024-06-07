@@ -57,8 +57,8 @@ type FieldDispatcher () =
             true
         else false
 
-    override this.GetFallbackModel (screen, world) =
-        if screen.Selected world
+    override this.GetFallbackModel (_, screen, world) =
+        if screen.Selected world || Simulants.Battle.Selected world
         then Field.initial world.UpdateTime Slot1
         else Field.empty
 
