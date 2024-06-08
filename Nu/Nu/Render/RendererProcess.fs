@@ -17,6 +17,23 @@ open Prime
 open System.Runtime.InteropServices
 open System.Collections.Generic
 
+// experimental abstraction of memory pinning and native pointer
+type ArrayPin<'a when 'a: unmanaged> private (handle : Buffers.MemoryHandle, pointer : nativeptr<'a>) =
+
+    let handle = handle
+    let pointer = pointer
+
+    member private this.Handle = handle
+    member this.Pointer = pointer
+
+    new (array : 'a array) =
+        let handle = array.AsMemory().Pin()
+        let pointer = NativePtr.ofVoidPtr<'a> handle.Pointer
+        new ArrayPin<'a> (handle, pointer)
+
+    interface IDisposable with
+        member this.Dispose() = this.Handle.Dispose()
+
 /// A renderer process that may or may not be threaded.
 type RendererProcess =
     interface
@@ -372,9 +389,8 @@ type RendererThread () =
                     let mutable layerCount = 0u
                     let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, NativePtr.nullPtr)
                     let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
-                    use layersHnd = layers.AsMemory().Pin()
-                    let layersNptr = NativePtr.ofVoidPtr<VkLayerProperties> layersHnd.Pointer
-                    let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, layersNptr)
+                    use layersWrap = ArrayPin layers
+                    let result = vkEnumerateInstanceLayerProperties (Interop.AsPointer &layerCount, layersWrap.Pointer)
 
                     // check if validation layer exists
                     let validationLayer = "VK_LAYER_KHRONOS_validation"
@@ -382,23 +398,17 @@ type RendererThread () =
                     if not validationLayerExists then printfn "Could not find %s. Note for Bryan: this is to be expected as you presumably have not installed the vulkan sdk. I would like you to keep the sdk uninstalled as long as possible so we can see what the difference is. From what I understand, windows users may be able to get by without it, linux not so much. Validation should only matter to nu users if they write their own vulkan code. \n" validationLayer
 
                     // get validation layer
-                    // TODO: maybe try setting up message callback later?
-                    use _ = validationLayer.AsMemory().Pin()
-                    let vlayerPointer = validationLayer.GetUtf8Span().GetPointer()
-                    let vlayerArray = [|vlayerPointer|]
-                    use vlayerArrayHnd = vlayerArray.AsMemory().Pin()
-                    let vlayerArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> vlayerArrayHnd.Pointer
+                    let vlayerArray = [|validationLayer|]
+                    use vlayerArrayWrap = VkStringArray vlayerArray
 
                     // get sdl extensions
                     let mutable sdlExtensionCount = 0u
                     let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
                     let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
-                    use _ = sdlExtensionsOut.AsMemory().Pin()
                     let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
                     let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
                     for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
-                    use sdlExtensionsHnd = sdlExtensions.AsMemory().Pin()
-                    let sdlExtensionsNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> sdlExtensionsHnd.Pointer
+                    use sdlExtensionsWrap = ArrayPin sdlExtensions
 
                     // print sdl extensions
                     printfn "SDL extensions:"
@@ -409,11 +419,11 @@ type RendererThread () =
                     // populate createinstance info
                     let mutable instanceCreateInfo = VkInstanceCreateInfo ()
                     instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
-                    instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsNptr
+                    instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsWrap.Pointer
                 
                     if validationLayerExists then
                         instanceCreateInfo.enabledLayerCount <- 1u
-                        instanceCreateInfo.ppEnabledLayerNames <- vlayerArrayNptr
+                        instanceCreateInfo.ppEnabledLayerNames <- vlayerArrayWrap
                     
                     // create vulkan instance
                     let result = vkCreateInstance (Interop.AsPointer &instanceCreateInfo, NativePtr.nullPtr, &instance)
@@ -434,9 +444,8 @@ type RendererThread () =
                     let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, NativePtr.nullPtr)
                     printfn "Vulkan found %i physical devices on your computer." deviceCount
                     let mutable devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
-                    use devicesHnd = devices.AsMemory().Pin()
-                    let devicesNptr = NativePtr.ofVoidPtr<VkPhysicalDevice> devicesHnd.Pointer
-                    let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, devicesNptr)
+                    use devicesWrap = ArrayPin devices
+                    let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, devicesWrap.Pointer)
 
                     // select physical device
                     physicalDevice <- devices[0]
@@ -451,9 +460,8 @@ type RendererThread () =
                     let mutable queueFamilyCount = 0u
                     let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, NativePtr.nullPtr)
                     let mutable queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
-                    use queueFamiliesHnd = queueFamilies.AsMemory().Pin()
-                    let queueFamiliesNptr = NativePtr.ofVoidPtr<VkQueueFamilyProperties> queueFamiliesHnd.Pointer
-                    let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, queueFamiliesNptr)
+                    use queueFamiliesWrap = ArrayPin queueFamilies
+                    let result = vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, Interop.AsPointer &queueFamilyCount, queueFamiliesWrap.Pointer)
                     
                     (* it is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
                        i discovered this by accident because the queue families on my physical device behave exactly the same as the queue families on this one:
@@ -494,8 +502,7 @@ type RendererThread () =
                     // populate queue create infos
                     let mutable queuePriority = 1.0f
                     let queueCreateInfos = Array.zeroCreate<VkDeviceQueueCreateInfo> uniqueQueueFamilies.Length
-                    use queueCreateInfosHnd = queueCreateInfos.AsMemory().Pin()
-                    let queueCreateInfosNptr = NativePtr.ofVoidPtr<VkDeviceQueueCreateInfo> queueCreateInfosHnd.Pointer
+                    use queueCreateInfosWrap = ArrayPin queueCreateInfos
 
                     for i in [0 .. dec (uniqueQueueFamilies.Length)] do
                         let mutable queueCreateInfo = VkDeviceQueueCreateInfo ()
@@ -505,21 +512,17 @@ type RendererThread () =
                         queueCreateInfos[i] <- queueCreateInfo
                     
                     // get swapchain extension
-                    let swapChainName = VK_KHR_SWAPCHAIN_EXTENSION_NAME
-                    use _ = swapChainName.AsMemory().Pin()
-                    let swapChainNamePtr = swapChainName.GetUtf8Span().GetPointer()
-                    let extensionArray = [|swapChainNamePtr|]
-                    use extensionArrayHnd = extensionArray.AsMemory().Pin()
-                    let extensionArrayNptr = NativePtr.ofVoidPtr<nativeptr<sbyte>> extensionArrayHnd.Pointer
+                    let extensionArray = [|VK_KHR_SWAPCHAIN_EXTENSION_NAME|]
+                    use extensionArrayWrap = VkStringArray extensionArray
                     
                     // populate createdevice info
                     let mutable deviceFeatures = VkPhysicalDeviceFeatures ()
                     let mutable deviceCreateInfo = VkDeviceCreateInfo ()
-                    deviceCreateInfo.pQueueCreateInfos <- queueCreateInfosNptr
+                    deviceCreateInfo.pQueueCreateInfos <- queueCreateInfosWrap.Pointer
                     deviceCreateInfo.queueCreateInfoCount <- uint queueCreateInfos.Length
                     deviceCreateInfo.pEnabledFeatures <- Interop.AsPointer &deviceFeatures
                     deviceCreateInfo.enabledExtensionCount <- 1u
-                    deviceCreateInfo.ppEnabledExtensionNames <- extensionArrayNptr
+                    deviceCreateInfo.ppEnabledExtensionNames <- extensionArrayWrap
 
                     // create logical device
                     let result = vkCreateDevice (physicalDevice, Interop.AsPointer &deviceCreateInfo, NativePtr.nullPtr, &device)
@@ -555,8 +558,7 @@ type RendererThread () =
                     swapChainCreateInfo.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 
                     let indicesArray = [|graphicsQueueFamily; presentQueueFamily|]
-                    use indicesArrayHnd = indicesArray.AsMemory().Pin()
-                    let indicesArrayNptr = NativePtr.ofVoidPtr<uint32> indicesArrayHnd.Pointer
+                    use indicesArrayWrap = ArrayPin indicesArray
 
                     if (graphicsQueueFamily = presentQueueFamily) then
                         swapChainCreateInfo.imageSharingMode <- VK_SHARING_MODE_EXCLUSIVE
@@ -565,7 +567,7 @@ type RendererThread () =
                     else
                         swapChainCreateInfo.imageSharingMode <- VK_SHARING_MODE_CONCURRENT
                         swapChainCreateInfo.queueFamilyIndexCount <- 2u
-                        swapChainCreateInfo.pQueueFamilyIndices <- indicesArrayNptr
+                        swapChainCreateInfo.pQueueFamilyIndices <- indicesArrayWrap.Pointer
 
                     swapChainCreateInfo.preTransform <- surfaceCapabilities.currentTransform
                     swapChainCreateInfo.compositeAlpha <- VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
@@ -581,9 +583,8 @@ type RendererThread () =
                     let mutable swapChainImageCount = 0u
                     let result = vkGetSwapchainImagesKHR (device, swapChain, Interop.AsPointer &swapChainImageCount, NativePtr.nullPtr)
                     Array.Resize<VkImage> (&swapChainImages, int swapChainImageCount)
-                    use swapChainImagesHnd = swapChainImages.AsMemory().Pin()
-                    let swapChainImagesNptr = NativePtr.ofVoidPtr<VkImage> swapChainImagesHnd.Pointer
-                    let result = vkGetSwapchainImagesKHR (device, swapChain, Interop.AsPointer &swapChainImageCount, swapChainImagesNptr)
+                    use swapChainImagesWrap = ArrayPin swapChainImages
+                    let result = vkGetSwapchainImagesKHR (device, swapChain, Interop.AsPointer &swapChainImageCount, swapChainImagesWrap.Pointer)
                     printfn "vkGetSwapchainImagesKHR returned %s." (result.ToString ())
 
                     ()
@@ -591,7 +592,6 @@ type RendererThread () =
                 do
                     // setup swapchain image views
                     Array.Resize<VkImageView> (&swapChainImageViews, swapChainImages.Length)
-                    use _ = swapChainImageViews.AsMemory().Pin()
 
                     for i in [0 .. dec (swapChainImageViews.Length)] do
                         let mutable imageViewCreateInfo = VkImageViewCreateInfo ()
@@ -682,8 +682,7 @@ type RendererThread () =
                     fragShaderStageInfo.pName <- entryPoint
 
                     let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
-                    use stagesHnd = stagesArray.AsMemory().Pin()
-                    let stagesNptr = NativePtr.ofVoidPtr<VkPipelineShaderStageCreateInfo> stagesHnd.Pointer
+                    use stagesArrayWrap = ArrayPin stagesArray
 
                     // dynamic state
                     let mutable dynamicState = VkPipelineDynamicStateCreateInfo ()
@@ -769,7 +768,7 @@ type RendererThread () =
 
                     let mutable pipelineInfo = VkGraphicsPipelineCreateInfo ()
                     pipelineInfo.stageCount <- 2u
-                    pipelineInfo.pStages <- stagesNptr
+                    pipelineInfo.pStages <- stagesArrayWrap.Pointer
                     pipelineInfo.pVertexInputState <- Interop.AsPointer &vertexInputInfo
                     pipelineInfo.pInputAssemblyState <- Interop.AsPointer &inputAssembly
                     pipelineInfo.pViewportState <- Interop.AsPointer &viewportState
@@ -790,7 +789,6 @@ type RendererThread () =
                 do
                     // setup swapchain framebuffers
                     Array.Resize<VkFramebuffer> (&swapChainFramebuffers, swapChainImageViews.Length)
-                    use _ = swapChainFramebuffers.AsMemory().Pin()
 
                     for i in [0 .. dec (swapChainImageViews.Length)] do
                         let mutable imageView = swapChainImageViews[i]
