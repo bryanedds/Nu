@@ -26,14 +26,14 @@ type MenuUse =
     static member makeFromWeaponData selection (wd : WeaponData) =
         let prompt = string wd.WeaponType
         let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
-        let effect = "Effect: " + wd.Description
-        MenuUse.make selection prompt stats effect
+        let description = "Description: " + wd.Description
+        MenuUse.make selection prompt stats description
 
     static member makeFromArmorData selection (ad : ArmorData) =
         let prompt = string ad.ArmorType
         let stats = "(Edr: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + ")"
-        let effect = "Effect: " + ad.Description
-        MenuUse.make selection prompt stats effect
+        let description = "Description: " + ad.Description
+        MenuUse.make selection prompt stats description
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
         let prompt = string ad.AccessoryType
