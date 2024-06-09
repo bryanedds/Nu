@@ -167,9 +167,9 @@ module WorldModuleEntity =
 
         static member internal publishTransformEvents (transformOld : Transform byref, transformNew : Transform byref, is2d, publishChangeEvents, entity : Entity, world) =
             if publishChangeEvents then
-                let positionChanged = v3NeqApprox transformNew.Position transformOld.Position
-                let rotationChanged = quatNeqApprox transformNew.Rotation transformOld.Rotation
-                let scaleChanged = v3NeqApprox transformNew.Scale transformOld.Scale
+                let positionChanged = v3Neq transformNew.Position transformOld.Position
+                let rotationChanged = quatNeq transformNew.Rotation transformOld.Rotation
+                let scaleChanged = v3NeqApprox transformNew.Scale transformOld.Scale 0.0001f // NOTE: just guessing at epsilon...
                 let offsetChanged = v3Neq transformNew.Offset transformOld.Offset
                 let sizeChanged = v3Neq transformNew.Size transformOld.Size
                 let elevationChanged = transformNew.Elevation <> transformOld.Elevation
