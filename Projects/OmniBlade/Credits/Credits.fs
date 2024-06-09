@@ -8,13 +8,17 @@ open Prime
 open Nu
 
 type Credits =
-    { ScrollPosition : Vector3 }
+    { ScrollPosition : Vector3
+      QuitVisible : bool }
 
     static member empty =
-        { ScrollPosition = v3Zero }
+        { ScrollPosition = v3Zero
+          QuitVisible = false }
 
-    static member initial =
-        { Credits.empty with ScrollPosition = v3 -72.0f -1800.0f 0.0f }
+    static member make quitVisible =
+        { Credits.empty with
+            ScrollPosition = v3 -72.0f -1800.0f 0.0f
+            QuitVisible = quitVisible }
 
 type CreditsMessage =
     | StartScrolling
@@ -38,7 +42,7 @@ type CreditsDispatcher () =
 
     override this.GetFallbackModel (_, screen, world) =
         if screen.Selected world
-        then Credits.initial
+        then Credits.make true
         else Credits.empty
 
     override this.Definitions (_, _) =
@@ -49,7 +53,8 @@ type CreditsDispatcher () =
 
         match message with
         | StartScrolling ->
-            just Credits.initial
+            let credits = { credits with ScrollPosition = v3 -72.0f -1800.0f 0.0f }
+            just credits
 
         | Scroll ->
             let credits = { credits with ScrollPosition = credits.ScrollPosition + v3 0.0f (1.0f / 3.0f) 0.0f }
