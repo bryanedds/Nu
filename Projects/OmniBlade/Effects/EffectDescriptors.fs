@@ -414,7 +414,7 @@ module EffectDescriptors =
         { EffectName = "Cure"
           LifeTimeOpt = Some 100L
           Definitions = Map.empty
-          Content = Emit (Shift 0.0f, Rate 0.4f, [|path|], [||], sparkle) }
+          Content = Emit (Shift 0.0f, Rate 0.3f, [|path|], [||], sparkle) }
 
     let protect =
         let protection aspects = StaticSprite (Resource (AssetTag.toPair Assets.Battle.ProtectSphereImage), aspects, Nil)
