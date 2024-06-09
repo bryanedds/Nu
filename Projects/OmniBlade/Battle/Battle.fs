@@ -1877,7 +1877,8 @@ module Battle =
     and private updateNoNextCommand battle =
         let (allySignalsRev, battle) =
             Map.fold (fun (signals : Signal list, battle) allyIndex (ally : Character) ->
-                if  ally.ActionTime >= Constants.Battle.ActionTime &&
+                if  ally.Healthy &&
+                    ally.ActionTime >= Constants.Battle.ActionTime &&
                     ally.CharacterInputState = NoInput then
                     let battle = setCharacterInputState RegularMenu allyIndex battle
                     let playReadySound = PlaySound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ReadySound)
