@@ -1156,14 +1156,14 @@ type FieldDispatcher () =
                          Content.button "PageUp"
                             [Entity.PositionLocal == v3 462.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == "<"
-                             Entity.VisibleLocal := Content.pageItems 4 field |> a__
+                             Entity.VisibleLocal := Content.pageItems 3 field |> a__
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => MenuTeamEquipPageUp]
                          Content.button "PageDown"
                             [Entity.PositionLocal == v3 726.0f 15.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Text == ">"
-                             Entity.VisibleLocal := Content.pageItems 4 field |> _b_
+                             Entity.VisibleLocal := Content.pageItems 3 field |> _b_
                              Entity.UpImage == Assets.Gui.ButtonSmallUpImage
                              Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                              Entity.ClickEvent => MenuTeamEquipPageDown]]

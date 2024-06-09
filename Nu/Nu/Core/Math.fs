@@ -15,9 +15,11 @@ module Vector2 =
 
     type Vector2 with
 
+        member inline this.V3 = Vector3 (this.X, this.Y, 0.0f)
+        member inline this.V4 = Vector4 (this.X, this.Y, 0.0f, 0.0f)
         member inline this.V2i = Vector2i (int this.X, int this.Y)
         member inline this.V3i = Vector3i (int this.X, int this.Y, 0)
-        member inline this.V3 = Vector3 (this.X, this.Y, 0.0f)
+        member inline this.V4i = Vector4i (int this.X, int this.Y, 0, 0)
         member inline this.Normalized = Vector2.Normalize this
         member inline this.Magnitude = this.Length ()
         member inline this.MagnitudeSquared = this.LengthSquared ()
@@ -99,9 +101,11 @@ module Vector3 =
 
     type Vector3 with
 
-        member inline this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
-        member inline this.V2i = Vector2i (int this.X, int this.Y)
         member inline this.V2 = Vector2 (this.X, this.Y)
+        member inline this.V4 = Vector4 (this.X, this.Y, 0.0f, 0.0f)
+        member inline this.V2i = Vector2i (int this.X, int this.Y)
+        member inline this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
+        member inline this.V4i = Vector4i (int this.X, int this.Y, int this.Z, 0)
         member inline this.Normalized = Vector3.Normalize this
         member inline this.Magnitude = this.Length ()
         member inline this.MagnitudeSquared = this.LengthSquared ()
@@ -228,8 +232,8 @@ module Vector4 =
     type Vector4 with
 
         member inline this.V2 = Vector2 (this.X, this.Y)
-        member inline this.V2i = Vector2i (int this.X, int this.Y)
         member inline this.V3 = Vector3 (this.X, this.Y, this.Z)
+        member inline this.V2i = Vector2i (int this.X, int this.Y)
         member inline this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
         member inline this.V4i = Vector4i (int this.X, int this.Y, int this.Z, int this.W)
         member inline this.Magnitude = this.Length ()
@@ -318,7 +322,9 @@ module Vector2i =
 
         member this.V2 = Vector2 (single this.X, single this.Y)
         member this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
+        member this.V4 = Vector4 (single this.X, single this.Y, 0.0f, 0.0f)
         member this.V3i = Vector3i (this.X, this.Y, 0)
+        member this.V4i = Vector4i (this.X, this.Y, 0, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
@@ -380,9 +386,11 @@ module Vector3i =
 
     type Vector3i with
 
-        member inline this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
         member inline this.V2 = Vector2 (single this.X, single this.Y)
+        member inline this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
+        member inline this.V4 = Vector4 (single this.X, single this.Y, single this.Z, 0.0f)
         member inline this.V2i = Vector2i (this.X, this.Y)
+        member inline this.V4i = Vector4i (this.X, this.Y, 0, 0)
         member inline this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
         member inline this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
         member inline this.MapZ mapper = Vector3i (this.X, this.Y, mapper this.Z)
@@ -450,10 +458,10 @@ module Vector4i =
     type Vector4i with
     
         member inline this.V2 = Vector2 (single this.X, single this.Y)
-        member inline this.V2i = Vector2i (this.X, this.Y)
         member inline this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
-        member inline this.V3i = Vector3i (this.X, this.Y, this.Z)
         member inline this.V4 = Vector4 (single this.X, single this.Y, single this.Z, single this.W)
+        member inline this.V2i = Vector2i (this.X, this.Y)
+        member inline this.V3i = Vector3i (this.X, this.Y, this.Z)
         member inline this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
         member inline this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
         member inline this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
