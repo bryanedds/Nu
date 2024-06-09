@@ -157,7 +157,7 @@ module Box3Extensions =
     type Box3 with
         member this.CenterOffset = this.Center + v3 0.0f -30.0f 0.0f
         member this.CenterOffset2 = this.Center + v3 0.0f -96.0f 0.0f
-        member this.CenterOffset3 = this.Center + v3 0.0f -36.0f 0.0f
+        member this.CenterOffset3 = this.Center + v3 0.0f -42.0f 0.0f
         member this.CenterOffset4 = this.Center + v3 0.0f 36.0f 0.0f
         member this.BottomOffset = this.Bottom + v3 0.0f -6.0f 0.0f
         member this.BottomOffset2 = this.Bottom + v3 0.0f -10.0f 0.0f
