@@ -31,16 +31,22 @@ type [<SymbolicExpansion>] Teammate =
     member this.Absorb = Algorithms.absorb this.Accessories Map.empty this.ArchetypeType this.Level // no statuses outside battle
     member this.Techs = Algorithms.techs this.ArchetypeType this.Level
 
+    static member ceilingPoints (teammate : Teammate) =
+        { teammate with
+            HitPoints = min teammate.HitPoints teammate.HitPointsMax
+            TechPoints = min teammate.TechPoints teammate.TechPointsMax }
+
     static member equipWeaponOpt weaponTypeOpt (teammate : Teammate) =
-        { teammate with WeaponOpt = weaponTypeOpt }
+        let teammate = { teammate with WeaponOpt = weaponTypeOpt }
+        Teammate.ceilingPoints teammate
 
     static member equipArmorOpt armorTypeOpt (teammate : Teammate) =
         let teammate = { teammate with ArmorOpt = armorTypeOpt }
-        let teammate = { teammate with HitPoints = min teammate.HitPoints teammate.HitPointsMax; TechPoints = min teammate.TechPoints teammate.HitPointsMax }
-        teammate
+        Teammate.ceilingPoints teammate
 
     static member equipAccessoryOpt accessoryTypeOpt (teammate : Teammate) =
-        { teammate with Accessories = Option.toList accessoryTypeOpt }
+        let teammate = { teammate with Accessories = Option.toList accessoryTypeOpt }
+        Teammate.ceilingPoints teammate
 
     static member canUseItem itemType teammate =
         match Map.tryFind teammate.CharacterType Data.Value.Characters with
