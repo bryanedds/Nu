@@ -78,6 +78,7 @@ type CreditsDispatcher () =
                  Entity.UpImage == Assets.Gui.ButtonClearUpImage
                  Entity.DownImage == Assets.Gui.ButtonClearDownImage
                  Entity.TextColor == Color.White.WithA8 (byte 127)
+                 Entity.Visible := credits.QuitVisible
                  Entity.Text == "Quit"
                  Entity.ClickEvent => StartQuitting]
              Content.panel "Panel"
