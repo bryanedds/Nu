@@ -331,7 +331,7 @@
  </tile>
  <tile id="1330">
   <properties>
-   <property name="C" value="Top"/>
+   <property name="C" value=""/>
   </properties>
  </tile>
  <tile id="1383">
