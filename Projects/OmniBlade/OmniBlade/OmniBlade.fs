@@ -33,6 +33,7 @@ type OmniBladeCommand =
     | SetField of Field
     | FromFieldToBattle of BattleData * PrizePool
     | FromBattleToField of PrizePool
+    | ConcludeCredits
     | UpdatePicks
     | Exit
     interface Command
@@ -71,6 +72,7 @@ type OmniBladeDispatcher () =
          Simulants.PickLoadGame3.ClickEvent => TryLoad Slot3
          Simulants.PickBack.ClickEvent => ShowTitle
          Simulants.Intro5.DeselectingEvent => ShowFieldInitial
+         Simulants.Credits.DeselectingEvent => ConcludeCredits
          Simulants.Field.QuitFieldEvent => ShowTitle
          Simulants.Field.CommencingBattleEvent => CommencingBattle
          Simulants.Field.CommenceBattleEvent =|> fun evt -> CommenceBattle evt.Data
@@ -144,6 +146,10 @@ type OmniBladeDispatcher () =
             let field = Field.concludeBattle prizePool.Consequents battle field
             let world = Simulants.Battle.SetBattle Battle.empty world
             let world = Simulants.Field.SetField field world
+            just world
+
+        | ConcludeCredits ->
+            let world = Simulants.Credits.SetCredits (Credits.make true) world
             just world
 
         | UpdatePicks ->
