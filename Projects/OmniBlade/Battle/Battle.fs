@@ -302,6 +302,13 @@ module Battle =
     let mapCharactersWounded updater battle =
         mapCharactersIf (fun _ character -> character.Wounded) updater battle
 
+    let foldCharactersIf predicate folder battle =
+        let filtered = Map.filter (fun key value -> predicate key value) (getCharacters battle)
+        Seq.fold (fun battle (characterIndex, character) -> folder battle characterIndex character) battle filtered.Pairs
+
+    let foldCharacters folder battle =
+        foldCharactersIf tautology2 folder battle
+
     let mapAlliesIf pred updater battle =
         mapCharactersIf (fun i c -> pred i c && match i with AllyIndex _ -> true | _ -> false) updater battle
 
@@ -311,11 +318,17 @@ module Battle =
     let mapAlliesHealthy updater battle =
         mapAlliesIf (fun _ character -> character.Healthy) updater battle
 
+    let foldAllies folder battle =
+        foldCharactersIf (fun index _ -> index.Ally) folder battle
+
     let mapEnemiesIf pred updater battle =
         mapCharactersIf (fun i c -> pred i c && match i with EnemyIndex _ -> true | _ -> false) updater battle
 
     let mapEnemies updater battle =
         mapEnemiesIf tautology2 updater battle
+
+    let foldEnemies folder battle =
+        foldCharactersIf (fun index _ -> index.Enemy) folder battle
 
     let private finalizeMaterializations battle =
         mapCharacters (fun character ->
@@ -1743,18 +1756,33 @@ module Battle =
             let character = getCharacter targetIndex battle
             let (sigs, battle) =
                 if character.Ally then
-                    match character.CharacterAnimationType with
-                    | DamageAnimation ->
-                        if Character.getAnimationFinished battle.BattleTime_ character then
+                    let battle =
+                        match character.CharacterAnimationType with
+                        | DamageAnimation ->
+                            if Character.getAnimationFinished battle.BattleTime_ character then
+                                let battle = animateCharacterWound targetIndex battle
+                                let battle = setCurrentCommandOpt None battle
+                                battle
+                            else battle
+                        | PoiseAnimation _ -> // allies don't have a wound animation state but rather return to poise state
                             let battle = animateCharacterWound targetIndex battle
                             let battle = setCurrentCommandOpt None battle
-                            just battle
-                        else just battle
-                    | PoiseAnimation _ -> // allies don't have a wound animation state but rather return to poise state
-                        let battle = animateCharacterWound targetIndex battle
-                        let battle = setCurrentCommandOpt None battle
-                        just battle
-                    | _ -> failwithumf ()
+                            battle
+                        | _ -> failwithumf ()
+                    let battle =
+                        foldEnemies (fun battle _ enemy ->
+                            match enemy.AutoBattleOpt with
+                            | Some autoBattle when autoBattle.AutoTarget = targetIndex ->
+                                match Gen.randomItemOpt (Map.toList (Map.remove targetIndex (getAlliesHealthy battle))) with
+                                | Some (allyIndex, ally) ->
+                                    let battle = retargetCharacter enemy.CharacterIndex allyIndex battle
+                                    if enemy.PerimeterOriginal.Bottom.X < ally.PerimeterOriginal.Bottom.X then faceCharacter Rightward enemy.CharacterIndex battle
+                                    elif enemy.PerimeterOriginal.Bottom.X > ally.PerimeterOriginal.Bottom.X then faceCharacter Leftward enemy.CharacterIndex battle
+                                    else battle
+                                | None -> battle
+                            | Some _ | None -> battle)
+                            battle
+                    just battle
                 else
                     match character.CharacterAnimationType with
                     | DamageAnimation ->
