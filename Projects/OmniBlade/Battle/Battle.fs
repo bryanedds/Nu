@@ -1011,14 +1011,17 @@ module Battle =
                     let (i, j) = (Gen.random1 w, Gen.random1 h)
                     let position = v3 (origin.X + single i * tile.X) (origin.Y + single j * tile.Y) 0.0f
                     let bottom = position + v3 72.0f 0.f 0.0f // HACK: assume spawning character has 144.0f width since we only spawn non-large enemies in the game anyway.
-                    let bottomsAndStatures = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> (enemy.PerimeterOriginal.Bottom, enemy.Stature))
+                    let bottomsCentersAndStatures =
+                        getEnemies battle |>
+                        Map.toValueArray |>
+                        Array.map (fun (enemy : Character) -> (enemy.PerimeterOriginal.Bottom, enemy.PerimeterOriginal.CenterOffset2, enemy.Stature))
                     let notOnSides = i <> 0 && i <> w - 1
                     let notOverlapping =
-                        Array.notExists (fun (bottom', stature) ->
+                        Array.notExists (fun (bottom', center, stature) ->
                             match stature with // HACK: this is kind of some bullshit code to make sure spawned enemies don't overlap too closely.
                             | SmallStature | NormalStature| LargeStature -> Vector3.Distance (bottom, bottom') < tile.X * 1.5f
-                            | BossStature -> Vector3.Distance (bottom, bottom') < tile.X * 3.0f)
-                            bottomsAndStatures
+                            | BossStature -> Vector3.Distance (bottom, center) < tile.X * 2.5f)
+                            bottomsCentersAndStatures
                     if notOnSides && notOverlapping then
                         let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
                         let enemyPosition = Option.defaultValue position spawnType.PositionOpt
