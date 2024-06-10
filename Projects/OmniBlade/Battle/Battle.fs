@@ -1016,8 +1016,8 @@ module Battle =
                     let notOverlapping =
                         Array.notExists (fun (bottom', stature) ->
                             match stature with // HACK: this is kind of some bullshit code to make sure spawned enemies don't overlap too closely.
-                            | SmallStature | NormalStature -> Vector3.Distance (bottom, bottom') < tile.X * 1.5f
-                            | LargeStature | BossStature -> Vector3.Distance (bottom, bottom') < tile.X * 3.0f)
+                            | SmallStature | NormalStature| LargeStature -> Vector3.Distance (bottom, bottom') < tile.X * 1.5f
+                            | BossStature -> Vector3.Distance (bottom, bottom') < tile.X * 3.0f)
                             bottomsAndStatures
                     if notOnSides && notOverlapping then
                         let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
