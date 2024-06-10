@@ -196,7 +196,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             let fileFirstNameLength = String.length fileFirstName
             let fontSizeDefault =
                 if fileFirstNameLength >= 3 then
-                    let fontSizeText = fileFirstName.Substring(fileFirstNameLength - 3, 3)
+                    let fontSizeText = fileFirstName.Substring (fileFirstNameLength - 3, 3)
                     match Int32.TryParse fontSizeText with
                     | (true, fontSize) -> fontSize
                     | (false, _) -> Constants.Render.FontSizeDefault

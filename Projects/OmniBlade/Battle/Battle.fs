@@ -1007,13 +1007,18 @@ module Battle =
                 let mutable battle = battle
                 let mutable spawned = false
                 let mutable tries = 0
-                while not spawned && tries < 100 do
+                while not spawned && tries < 256 do
                     let (i, j) = (Gen.random1 w, Gen.random1 h)
                     let position = v3 (origin.X + single i * tile.X) (origin.Y + single j * tile.Y) 0.0f
-                    let bottom = position + v3 72.0f 0.f 0.0f // HACK: assume spawning character has 144.0f width.
-                    let bottoms = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> enemy.PerimeterOriginal.Bottom)
+                    let bottom = position + v3 72.0f 0.f 0.0f // HACK: assume spawning character has 144.0f width since we only spawn non-large enemies in the game anyway.
+                    let bottomsAndStatures = battle |> getEnemies |> Map.toValueArray |> Array.map (fun (enemy : Character) -> (enemy.PerimeterOriginal.Bottom, enemy.Stature))
                     let notOnSides = i <> 0 && i <> w - 1
-                    let notOverlapping = Array.notExists (fun bottom' -> Vector3.Distance (bottom, bottom') < tile.X * 1.5f) bottoms
+                    let notOverlapping =
+                        Array.notExists (fun (bottom', stature) ->
+                            match stature with // HACK: this is kind of some bullshit code to make sure spawned enemies don't overlap too closely.
+                            | SmallStature | NormalStature -> Vector3.Distance (bottom, bottom') < tile.X * 1.5f
+                            | LargeStature | BossStature -> Vector3.Distance (bottom, bottom') < tile.X * 3.0f)
+                            bottomsAndStatures
                     if notOnSides && notOverlapping then
                         let enemyIndex = Option.mapOrDefaultValue EnemyIndex (nextEnemyIndex battle) spawnType.EnemyIndexOpt
                         let enemyPosition = Option.defaultValue position spawnType.PositionOpt
