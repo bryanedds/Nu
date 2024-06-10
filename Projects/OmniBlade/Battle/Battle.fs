@@ -2068,10 +2068,8 @@ module Battle =
             if localTime = 0L then
                 withSignal (FadeOutSong 240L) battle
             elif localTime = 240L then
-                let dialogStr =
-                    match getAllyIndices battle with
-                    | [_] -> "And so eternal death became his slumber..."
-                    | _ -> "And so eternal death became their slumber..."
+                let referentStr = match getAllyIndices battle with [_] -> "his" | _ -> "their"
+                let dialogStr = "And so eternal death became " + referentStr + " slumber..."
                 let dialog = Dialog.make DialogThin dialogStr
                 let battle = setDialogOpt (Some dialog) battle
                 let playEternalSlumber = PlaySong (60L, 0L, 0L, 0.5f, Assets.Battle.EternalSlumber)
