@@ -15,7 +15,6 @@ module Reflection =
 
     let mutable private Initialized = false
 
-    /// A dictionary of all loaded assemblies.
     let private AssembliesLoaded =
         Dictionary<string, Assembly> StringComparer.Ordinal
 
