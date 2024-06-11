@@ -290,8 +290,8 @@ module Battle =
         getAlliesWounded battle |>
         Map.toKeyList
 
-    let mapCharactersIf predicate updater (battle : Battle) =
-        { battle with Characters_ = Map.map (fun i c -> if predicate i c then updater c else c) battle.Characters_ }
+    let mapCharactersIf pred updater (battle : Battle) =
+        { battle with Characters_ = Map.map (fun i c -> if pred i c then updater c else c) battle.Characters_ }
 
     let mapCharacters updater battle =
         mapCharactersIf tautology2 updater battle
@@ -302,8 +302,8 @@ module Battle =
     let mapCharactersWounded updater battle =
         mapCharactersIf (fun _ character -> character.Wounded) updater battle
 
-    let foldCharactersIf predicate folder battle =
-        let filtered = Map.filter (fun key value -> predicate key value) (getCharacters battle)
+    let foldCharactersIf pred folder battle =
+        let filtered = Map.filter (fun key value -> pred key value) (getCharacters battle)
         Seq.fold (fun battle (characterIndex, character) -> folder battle characterIndex character) battle filtered.Pairs
 
     let foldCharacters folder battle =

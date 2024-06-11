@@ -431,7 +431,7 @@ module Texture =
                         fullServeAttempted <- false
                     destroyed <- true
 
-        (* Server API - only the client may call this! *)
+        (* Server API - only the server may call this! *)
 
         member internal this.TryServe () =
             lock destructionLock $ fun () ->
