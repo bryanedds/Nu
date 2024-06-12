@@ -1102,7 +1102,7 @@ type FieldDispatcher () =
                     let (changing, currentEquipmentName, teammate', equipTypeStr) =
                         match equip.EquipType with
                         | EquipWeapon weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map _.Name |> Option.defaultValue "None", Teammate.equipWeaponOpt weaponTypeOpt teammate, "Wpn:")
-                        | EquipArmor armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map _.Name |> Option.defaultValue "None", Teammate.equipArmorOpt armorTypeOpt teammate, "Arm:")
+                        | EquipArmor armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map _.Name |> Option.defaultValue "None", Teammate.equipArmorOpt armorTypeOpt teammate, "Amr:")
                         | EquipAccessory accessoryTypeOpt -> (teammate.Accessories <> Option.toList accessoryTypeOpt, teammate.Accessories |> List.map _.Name |> flip Seq.headOrDefault "None", Teammate.equipAccessoryOpt accessoryTypeOpt teammate, "Acc:")
                     Content.panel "Equip"
                         [Entity.Position == v3 -450.0f -177.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 351.0f 0.0f
