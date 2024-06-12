@@ -11,6 +11,7 @@ open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
 open type Vortice.Vulkan.Vulkan
+open type Vortice.Vulkan.Vma
 open Vortice.ShaderCompiler
 open ImGuiNET
 open Prime
@@ -347,6 +348,9 @@ type RendererThread () =
         let mutable graphicsQueueFamily = 0u
         let mutable presentQueueFamily = 0u
         let mutable device = Unchecked.defaultof<VkDevice>
+        let mutable allocator = Unchecked.defaultof<VmaAllocator>
+        let mutable allocation = Unchecked.defaultof<VmaAllocation>
+        let mutable testBuffer = Unchecked.defaultof<VkBuffer>
         let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
         let mutable presentQueue = Unchecked.defaultof<VkQueue>
         let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
@@ -532,6 +536,24 @@ type RendererThread () =
 
                 // like load instance; vulkan should be fully loaded now!
                 vkLoadDevice device
+
+                // create vma allocator
+                let mutable allocatorCreateInfo = VmaAllocatorCreateInfo ()
+                allocatorCreateInfo.physicalDevice <- physicalDevice
+                allocatorCreateInfo.device <- device
+                allocatorCreateInfo.instance <- instance
+
+                let result = vmaCreateAllocator (Interop.AsPointer &allocatorCreateInfo, &allocator)
+
+                // create test vma buffer
+                let mutable bufferInfo = VkBufferCreateInfo ()
+                bufferInfo.size <- 65536UL
+                bufferInfo.usage <- VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ||| VK_BUFFER_USAGE_TRANSFER_DST_BIT
+
+                let mutable allocInfo = VmaAllocationCreateInfo ()
+                allocInfo.usage <- VmaMemoryUsage.Auto
+
+                let result = vmaCreateBuffer (allocator, Interop.AsPointer &bufferInfo, Interop.AsPointer &allocInfo, Interop.AsPointer &testBuffer, Interop.AsPointer &allocation, NativePtr.nullPtr)
                 
                 // get queue handles
                 let result = vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
