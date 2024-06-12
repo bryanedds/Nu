@@ -13,7 +13,7 @@ type Credits =
 
     static member empty =
         { ScrollPosition = v3Zero
-          QuitVisible = false }
+          QuitVisible = true }
 
     static member make quitVisible =
         { Credits.empty with
