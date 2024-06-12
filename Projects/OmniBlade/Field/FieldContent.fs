@@ -186,7 +186,6 @@ module FieldContent =
                 | _ -> Map.empty
             let useSmallButtons = techs.Count > 6
             [for (index, tech) in techs.Pairs do
-                let techName = scstringMemo tech
                 let x = position.X
                 let y =
                     position.Y -
@@ -194,10 +193,10 @@ module FieldContent =
                     if useSmallButtons then 18.0f else 0.0f
                 let w = 336.0f
                 let h = if useSmallButtons then 54.0f else 72.0f
-                Content.button techName
+                Content.button (scstringMemo tech)
                     [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle); Entity.TextMargin == v2 16.0f 0.0f
-                     Entity.Text := techName
+                     Entity.Text := tech.Name
                      Entity.UpImage := if useSmallButtons then Assets.Gui.ButtonSquishedUpImage else Assets.Gui.ButtonLongUpImage
                      Entity.DownImage := if useSmallButtons then Assets.Gui.ButtonSquishedDownImage else Assets.Gui.ButtonLongDownImage
                      Entity.ClickEvent => fieldMsg index]]

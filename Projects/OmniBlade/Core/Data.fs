@@ -3,8 +3,8 @@
 
 namespace OmniBlade
 open System
-open System.Numerics
 open System.IO
+open System.Numerics
 open TiledSharp
 open Prime
 open Nu
@@ -299,7 +299,7 @@ type TechType =
     | Silk
 
     member this.Name =
-        scstringMemo this
+        (scstringMemo this).Words
 
     // TODO: put this in TechData.
     member this.ConjureTech =
@@ -344,7 +344,7 @@ type ArchetypeType =
     | Arachnos
 
     member this.Name =
-        scstringMemo this
+        (scstringMemo this).Words
 
     member this.AttackTouchingArchetype =
         match this with
@@ -517,7 +517,7 @@ type AllyType =
     | Peric
 
     member this.Name =
-        scstringMemo this
+        (scstringMemo this).Words
 
 type EnemyType =
     | DebugGoblin
@@ -536,7 +536,7 @@ type EnemyType =
     | Kyla
 
     member this.Name =
-        scstringMemo this
+        (scstringMemo this).Words
 
 type CharacterType =
     | Ally of AllyType

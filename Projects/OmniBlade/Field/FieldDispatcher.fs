@@ -1036,7 +1036,7 @@ type FieldDispatcher () =
                          Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> Option.mapOrDefaultValue string "None" teammate.WeaponOpt
+                            | Some teammate -> Option.mapOrDefaultValue (fun (w : WeaponType) -> w.Name) "None" teammate.WeaponOpt
                             | None -> ""
                          Entity.ClickEvent =>
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -1054,7 +1054,7 @@ type FieldDispatcher () =
                          Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> Option.mapOrDefaultValue string "None" teammate.ArmorOpt
+                            | Some teammate -> Option.mapOrDefaultValue (fun (a : ArmorType) -> a.Name) "None" teammate.ArmorOpt
                             | None -> ""
                          Entity.ClickEvent =>
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -1072,7 +1072,7 @@ type FieldDispatcher () =
                          Entity.TextMargin == v2 15.0f 0.0f
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> Option.mapOrDefaultValue string "None" (List.tryHead teammate.Accessories)
+                            | Some teammate -> Option.mapOrDefaultValue (fun (a : AccessoryType) -> a.Name) "None" (List.tryHead teammate.Accessories)
                             | None -> ""
                          Entity.ClickEvent =>
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -1101,9 +1101,9 @@ type FieldDispatcher () =
                     let teammate = field.Team.[menuTeam.TeamIndex]
                     let (changing, currentEquipmentName, teammate', equipTypeStr) =
                         match equip.EquipType with
-                        | EquipWeapon weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map scstringMemo |> Option.defaultValue "None", Teammate.equipWeaponOpt weaponTypeOpt teammate, "Wpn:")
-                        | EquipArmor armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map scstringMemo |> Option.defaultValue "None", Teammate.equipArmorOpt armorTypeOpt teammate, "Arm:")
-                        | EquipAccessory accessoryTypeOpt -> (teammate.Accessories <> Option.toList accessoryTypeOpt, teammate.Accessories |> List.map scstringMemo |> flip Seq.headOrDefault "None", Teammate.equipAccessoryOpt accessoryTypeOpt teammate, "Acc:")
+                        | EquipWeapon weaponTypeOpt -> (teammate.WeaponOpt <> weaponTypeOpt, teammate.WeaponOpt |> Option.map _.Name |> Option.defaultValue "None", Teammate.equipWeaponOpt weaponTypeOpt teammate, "Wpn:")
+                        | EquipArmor armorTypeOpt -> (teammate.ArmorOpt <> armorTypeOpt, teammate.ArmorOpt |> Option.map _.Name |> Option.defaultValue "None", Teammate.equipArmorOpt armorTypeOpt teammate, "Arm:")
+                        | EquipAccessory accessoryTypeOpt -> (teammate.Accessories <> Option.toList accessoryTypeOpt, teammate.Accessories |> List.map _.Name |> flip Seq.headOrDefault "None", Teammate.equipAccessoryOpt accessoryTypeOpt teammate, "Acc:")
                     Content.panel "Equip"
                         [Entity.Position == v3 -450.0f -177.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation + 10.0f; Entity.Size == v3 900.0f 351.0f 0.0f
                          Entity.BackdropImageOpt == Some Assets.Gui.DialogLargeImage]

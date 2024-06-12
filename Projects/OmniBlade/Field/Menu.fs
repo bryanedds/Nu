@@ -19,24 +19,24 @@ type MenuUse =
           MenuUseLine3 = line3 }
 
     static member makeFromConsumableData selection (cd : ConsumableData) =
-        let prompt = "Use " + string cd.ConsumableType + " on whom?"
+        let prompt = "Use " + cd.ConsumableType.Name + " on whom?"
         let effect = "Effect: " + cd.Description
         MenuUse.make selection prompt effect ""
 
     static member makeFromWeaponData selection (wd : WeaponData) =
-        let prompt = string wd.WeaponType
+        let prompt = wd.WeaponType.Name
         let stats = "(Pow: " + string wd.PowerBase + " | Mag: " + string wd.MagicBase + ")"
         let description = "Description: " + wd.Description
         MenuUse.make selection prompt stats description
 
     static member makeFromArmorData selection (ad : ArmorData) =
-        let prompt = string ad.ArmorType
+        let prompt = ad.ArmorType.Name
         let stats = "(Edr: " + string ad.EnduranceBaseDisplay + " | Mnd: " + string ad.MindBaseDisplay + ")"
         let description = "Description: " + ad.Description
         MenuUse.make selection prompt stats description
 
     static member makeFromAccessoryData selection (ad : AccessoryData) =
-        let prompt = string ad.AccessoryType
+        let prompt = ad.AccessoryType.Name
         let effect = "Effect: " + ad.Description
         MenuUse.make selection prompt effect ""
 
@@ -70,7 +70,7 @@ type MenuUse =
                 | AluminumKey -> "An cheap-looking key."
                 | PewterKey -> "A weathered key. It looks bent but usable."
                 | SteelKey -> "A key made of steel adorned with a crown."
-            Some (MenuUse.make selection (scstringMemo keyItem) "(Key Item)" description)
+            Some (MenuUse.make selection keyItem.Name "(Key Item)" description)
         | Stash _ -> None
 
 type EquipType =
@@ -80,9 +80,9 @@ type EquipType =
 
     member this.ItemName =
         match this with
-        | EquipWeapon weaponTypeOpt -> weaponTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
-        | EquipArmor armorTypeOpt -> armorTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
-        | EquipAccessory accessoryTypeOpt -> accessoryTypeOpt |> Option.map scstringMemo |> Option.defaultValue "None"
+        | EquipWeapon weaponTypeOpt -> weaponTypeOpt |> Option.map _.Name |> Option.defaultValue "None"
+        | EquipArmor armorTypeOpt -> armorTypeOpt |> Option.map _.Name |> Option.defaultValue "None"
+        | EquipAccessory accessoryTypeOpt -> accessoryTypeOpt |> Option.map _.Name |> Option.defaultValue "None"
 
 type Equip =
     { EquipType : EquipType
