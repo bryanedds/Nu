@@ -406,10 +406,10 @@ type BattleDispatcher () =
                 | BattleResult (concludeTime, outcome) when not outcome ->
                     let localTime = battle.BattleTime - concludeTime
                     let progress =
-                       if localTime < 420L then
+                       if localTime < 360L then
                            0.0f
-                       elif localTime < 660L then
-                           let fadeTime = localTime - 420L
+                       elif localTime < 600L then
+                           let fadeTime = localTime - 360L
                            single fadeTime / single 240L
                        else 1.0f
                     Some progress
