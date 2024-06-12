@@ -516,6 +516,9 @@ type AllyType =
     | Riain
     | Peric
 
+    member this.Name =
+        scstringMemo this
+
 type EnemyType =
     | DebugGoblin
     | DarkBat
@@ -532,14 +535,17 @@ type EnemyType =
     | AraneaImplicitum
     | Kyla
 
+    member this.Name =
+        scstringMemo this
+
 type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
 
     member this.Name =
         match this with
-        | Ally ty -> string ty
-        | Enemy ty -> string ty
+        | Ally ty -> ty.Name
+        | Enemy ty -> ty.Name
 
 type SpawnEffectType =
     | Materialize

@@ -24,6 +24,9 @@ type WeaponType =
     | Claws
     | Fangs
 
+    member this.Name =
+        scstringMemo this
+
 type ArmorType =
     | TinMail
     | BronzeMail
@@ -43,6 +46,9 @@ type ArmorType =
     | ToughHide
     | StoneHide
 
+    member this.Name =
+        scstringMemo this
+
 type AccessoryType =
 
     // defensive
@@ -53,6 +59,9 @@ type AccessoryType =
     | SnakeCharm
     | SilverRing
     | SilverWatch
+
+    member this.Name =
+        scstringMemo this
 
 type WeaponSubtype =
     | Melee
@@ -82,6 +91,9 @@ type ConsumableType =
     | TurboEther
     | Revive
 
+    member this.Name =
+        scstringMemo this
+
 type KeyItemType =
     | NonExistentKey // for locks that can never be opened
     | BrassKey
@@ -91,6 +103,9 @@ type KeyItemType =
     | PewterKey
     | SteelKey
 
+    member this.Name =
+        scstringMemo this
+
 type ItemType =
     | Consumable of ConsumableType
     | Equipment of EquipmentType
@@ -99,13 +114,13 @@ type ItemType =
 
     member this.Name =
         match this with
-        | Consumable ty -> scstringMemo ty
+        | Consumable ty -> ty.Name
         | Equipment ty ->
             match ty with
-            | WeaponType ty -> scstringMemo ty
-            | ArmorType ty -> scstringMemo ty
-            | AccessoryType ty -> scstringMemo ty
-        | KeyItem ty -> scstringMemo ty
+            | WeaponType ty -> ty.Name
+            | ArmorType ty -> ty.Name
+            | AccessoryType ty -> ty.Name
+        | KeyItem ty -> ty.Name
         | Stash gold -> string gold + "G"
 
     static member sortItems items =
