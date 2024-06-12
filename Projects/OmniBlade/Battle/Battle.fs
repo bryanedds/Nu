@@ -2039,7 +2039,7 @@ module Battle =
                 let textC = "Gained " + string battle.PrizePool_.Exp + " Exp!\nGained " + string battle.PrizePool_.Gold + " Gold!"
                 let textD =
                     match battle.PrizePool_.Items with
-                    | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> ItemType.getName i) |> String.join ", ") + "!"
+                    | _ :: _ as items -> "^Found " + (items |> List.map (fun i -> i.Name) |> String.join ", ") + "!"
                     | [] -> ""
                 let text = textA + textB + textC + textD
                 let dialog = Dialog.make DialogThick text

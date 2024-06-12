@@ -97,10 +97,14 @@ type ItemType =
     | KeyItem of KeyItemType
     | Stash of int
 
-    static member getName item =
-        match item with
+    member this.Name =
+        match this with
         | Consumable ty -> scstringMemo ty
-        | Equipment ty -> match ty with WeaponType ty -> scstringMemo ty | ArmorType ty -> scstringMemo ty | AccessoryType ty -> scstringMemo ty
+        | Equipment ty ->
+            match ty with
+            | WeaponType ty -> scstringMemo ty
+            | ArmorType ty -> scstringMemo ty
+            | AccessoryType ty -> scstringMemo ty
         | KeyItem ty -> scstringMemo ty
         | Stash gold -> string gold + "G"
 

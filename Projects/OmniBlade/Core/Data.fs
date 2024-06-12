@@ -298,6 +298,9 @@ type TechType =
     | Inferno
     | Silk
 
+    member this.Name =
+        scstringMemo this
+
     // TODO: put this in TechData.
     member this.ConjureTech =
         match this with
@@ -339,6 +342,10 @@ type ArchetypeType =
     | Minotaur
     | Armoros
     | Arachnos
+
+    member this.Name =
+        scstringMemo this
+
     member this.AttackTouchingArchetype =
         match this with
         | Cleric -> false
@@ -529,8 +536,8 @@ type CharacterType =
     | Ally of AllyType
     | Enemy of EnemyType
 
-    static member getName characterType =
-        match characterType with
+    member this.Name =
+        match this with
         | Ally ty -> string ty
         | Enemy ty -> string ty
 

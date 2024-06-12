@@ -34,7 +34,7 @@ module Character =
         member this.Perimeter = this.Perimeter_
 
         (* CharacterState Properties *)
-        member this.Name = CharacterType.getName this.CharacterType_
+        member this.Name = this.CharacterType_.Name
         member this.CharacterIndex = this.CharacterIndex_
         member this.PartyIndex = match this.CharacterIndex with AllyIndex index | EnemyIndex index -> index
         member this.CharacterType = this.CharacterType_

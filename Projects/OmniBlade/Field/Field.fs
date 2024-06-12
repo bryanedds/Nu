@@ -646,8 +646,8 @@ module Field =
             let field = mapInventory (Inventory.tryAddItem itemType >> snd) field
             let field =
                 match battleTypeOpt with
-                | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + ItemType.getName itemType + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
-                | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + ItemType.getName itemType + "!"))) field
+                | Some battleType -> setDialogOpt (Some (Dialog.makePlus DialogThin ("Found " + itemType.Name + "!^But something approaches!") None (Some (battleType, Set.empty)))) field
+                | None -> setDialogOpt (Some (Dialog.make DialogThin ("Found " + itemType.Name + "!"))) field
             let field = setCue cue field
             withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.ChestOpenSound)) field
         else

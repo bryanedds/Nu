@@ -18,7 +18,7 @@ type [<SymbolicExpansion>] Teammate =
       ArmorOpt : ArmorType option
       Accessories : AccessoryType list }
 
-    member this.Name = CharacterType.getName this.CharacterType
+    member this.Name = this.CharacterType.Name
     member this.Level = Algorithms.expPointsToLevel this.ExpPoints
     member this.Healthy = this.HitPoints > 0
     member this.Wounded = this.HitPoints <= 0

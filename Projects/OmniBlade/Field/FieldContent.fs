@@ -161,7 +161,7 @@ module FieldContent =
             [for entry in items do
                 let index = entry.Key
                 let (_, (itemType, itemCountOpt)) as page = entry.Value
-                let itemName = ItemType.getName itemType
+                let itemName = itemType.Name
                 let x = if index < rows then position.X else position.X + 375.0f
                 let y = position.Y - single (index % rows) * 81.0f
                 Content.button itemName

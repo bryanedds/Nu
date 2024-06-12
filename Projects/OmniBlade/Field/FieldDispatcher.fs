@@ -1015,14 +1015,14 @@ type FieldDispatcher () =
                          Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
-                            | Some characterData -> CharacterType.getName characterData.CharacterType
+                            | Some characterData -> characterData.CharacterType.Name
                             | None -> ""]
                      Content.text "ArchetypeType"
                         [Entity.PositionLocal == v3 606.0f 378.0f 0.0f; Entity.ElevationLocal == 1.0f
                          Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
-                            | Some teammate -> getCaseName teammate.ArchetypeType + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
+                            | Some teammate -> teammate.ArchetypeType.Name + " Lv." + string (Algorithms.expPointsToLevel teammate.ExpPoints)
                             | None -> ""]
                      Content.text "WeaponLabel"
                         [Entity.PositionLocal == v3 438.0f 291.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -1406,7 +1406,7 @@ type FieldDispatcher () =
                         Content.button ("Teammate+" + string teamIndex)
                             [Entity.PositionLocal == v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
                              Entity.EnabledLocal := enabled
-                             Entity.Text := CharacterType.getName teammate.CharacterType
+                             Entity.Text := teammate.CharacterType.Name
                              Entity.UpImage == Assets.Gui.ButtonBigUpImage
                              Entity.DownImage == Assets.Gui.ButtonBigDownImage
                              Entity.ClickEvent => PartyMenuSelect teamIndex]
@@ -1422,7 +1422,7 @@ type FieldDispatcher () =
                         let y = 339.0f - single i * 81.0f
                         Content.button ("Selected+" + string teamIndex)
                             [Entity.PositionLocal := v3 x y 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 w h 0.0f
-                             Entity.Text := CharacterType.getName teammate.CharacterType
+                             Entity.Text := teammate.CharacterType.Name
                              Entity.UpImage == Assets.Gui.ButtonBigUpImage
                              Entity.DownImage == Assets.Gui.ButtonBigDownImage
                              Entity.ClickEvent => PartyMenuDeselect teamIndex]]
@@ -1508,7 +1508,7 @@ type FieldDispatcher () =
                                  Content.text "Line1"
                                     [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
                                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
-                                     Entity.Text := getCaseName tech.TechType]
+                                     Entity.Text := tech.TechType.Name]
                                  Content.text "Line2"
                                     [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f
                                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
