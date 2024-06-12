@@ -4023,7 +4023,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Text "Project Name"
             ImGui.SameLine ()
             ImGui.InputText ("##newProjectName", &NewProjectName, 4096u) |> ignore<bool>
-            NewProjectName <- NewProjectName.Replace(" ", "").Replace("\t", "").Replace(".", "")
+            NewProjectName <- NewProjectName.Replace("\t", "").Replace(".", "")
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
