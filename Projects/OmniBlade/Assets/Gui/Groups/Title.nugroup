@@ -6,11 +6,10 @@
  [[TextDispatcher
    [[Light False]
     [LightProbe False]
-    [Model ["System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e" OmniBlade]]
     [Name Title]
     [Position [-96 39 0]]
     [Size [192 48 0]]
-    [Text OmniBlade]
+    [Text "Omni Blade"]
     [TextColor [1 1 1 0.7529412]]]
    []]
   [ButtonDispatcher
