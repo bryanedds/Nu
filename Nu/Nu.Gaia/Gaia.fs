@@ -64,7 +64,7 @@ module Gaia =
     let mutable private OpenProjectFilePath = null // this will be initialized on start
     let mutable private OpenProjectEditMode = "Title"
     let mutable private OpenProjectImperativeExecution = false
-    let mutable private NewProjectName = "MyGame"
+    let mutable private NewProjectName = "My Game"
     let mutable private NewProjectType = "Empty"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
@@ -4124,7 +4124,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                         // close dialog
                         ShowNewProjectDialog <- false
-                        NewProjectName <- "MyGame"
+                        NewProjectName <- "My Game"
 
                     // log failure
                     with exn -> Log.trace ("Failed to create new project '" + NewProjectName + "' due to: " + scstring exn)
@@ -4137,7 +4137,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // escape to cancel
             if ImGui.IsKeyReleased ImGuiKey.Escape then
                 ShowNewProjectDialog <- false
-                NewProjectName <- "MyGame"
+                NewProjectName <- "My Game"
 
             // fin
             ImGui.EndPopup ()

@@ -105,7 +105,7 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
         Directory.SetCurrentDirectory AppContext.BaseDirectory
         Nu.init ()
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Metrics" }
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
 #if FUNCTIONAL
         let worldConfig = { WorldConfig.defaultConfig with Imperative = false; SdlConfig = sdlConfig }
