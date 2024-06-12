@@ -2070,7 +2070,7 @@ module Battle =
             elif localTime = 240L then
                 let referentStr = match getAllyIndices battle with [_] -> "his" | _ -> "their"
                 let dialogStr = "And so eternal death became " + referentStr + " slumber..."
-                let dialog = Dialog.make DialogThin dialogStr
+                let dialog = Dialog.make DialogNarration dialogStr
                 let battle = setDialogOpt (Some dialog) battle
                 let playEternalSlumber = PlaySong (60L, 0L, 0L, 0.5f, Assets.Battle.EternalSlumber)
                 withSignal playEternalSlumber battle

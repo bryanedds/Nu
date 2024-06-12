@@ -400,6 +400,30 @@ type BattleDispatcher () =
                 (Constants.Battle.GuiOutputElevation) Nop Nop id
                 (match battle.DialogOpt with Some dialog -> Some dialog | None -> None)
 
+             // death fade
+             let deathFadeOpt =
+                match battle.BattleState with
+                | BattleResult (concludeTime, outcome) when not outcome ->
+                    let localTime = battle.BattleTime - concludeTime
+                    let progress =
+                       if localTime < 420L then
+                           0.0f
+                       elif localTime < 660L then
+                           let fadeTime = localTime - 420L
+                           single fadeTime / single 240L
+                       else 1.0f
+                    Some progress
+                | BattleConcluding (_, outcome) when not outcome -> Some 1.0f
+                | _ -> None
+             match deathFadeOpt with
+             | Some deathFade ->
+                Content.staticSprite "DeathFade"
+                    [Entity.Position == v3 -480.0f -270.0f 0.0f; Entity.Size == v3 960.0f 540.0f 0.0f; Entity.Elevation == Constants.Battle.DeathFadeElevation
+                     Entity.Absolute == true
+                     Entity.StaticImage == Assets.Default.Black
+                     Entity.Color := Color.Black.WithA deathFade]
+             | None -> ()
+
              // dialog interact button
              Content.button "DialogInteract"
                 [Entity.Position == v3 248.0f -240.0f 0.0f; Entity.Elevation == Constants.Field.GuiElevation; Entity.Size == v3 144.0f 48.0f 0.0f
