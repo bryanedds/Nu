@@ -13,7 +13,7 @@ module Program =
         Nu.init ()
         let sdlWindowConfig =
             { SdlWindowConfig.defaultConfig with
-                WindowTitle = "OmniBlade"
+                WindowTitle = "Omni Blade"
 #if DEBUG
                 WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 #else
