@@ -14,7 +14,7 @@ module Program =
         Nu.init ()
 
         // this specifies the window configuration used to display the game
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Twenty48" }
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Twenty 48" }
         
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
