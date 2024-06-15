@@ -1910,9 +1910,7 @@ module Battle =
                     setCurrentCommandOpt (Some command) battle
             let battle = setActionCommands futureCommands battle
             update battle
-        | None ->
-            Log.debug ("Unexpected inability to execute action command: " + scstring nextCommand + ". Discarding and continuing.")
-            update battle
+        | None -> battle // invalidated command; skip
 
     and private updateNoNextCommand battle =
         let (allySignalsRev, battle) =
