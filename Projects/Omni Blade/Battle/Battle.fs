@@ -1910,7 +1910,7 @@ module Battle =
                     setCurrentCommandOpt (Some command) battle
             let battle = setActionCommands futureCommands battle
             update battle
-        | None -> just battle // invalidated command; skip
+        | None -> update battle // invalidated command; discard
 
     and private updateNoNextCommand battle =
         let (allySignalsRev, battle) =
