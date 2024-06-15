@@ -1859,56 +1859,60 @@ module Battle =
         let sourceIndex = command.ActionCommand.SourceIndex
         let targetIndexOpt = command.ActionCommand.TargetIndexOpt
         let observerIndexOpt = command.ActionCommand.ObserverIndexOpt
-        let source = getCharacter sourceIndex battle
-        let battle =
-            match command.ActionCommand.Action with
-            | Attack | Defend ->
-                if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
-                    let targetIndexOpt = evalRetarget false targetIndexOpt battle
-                    let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
-                    setCurrentCommandOpt (Some command) battle
-                else battle
-            | Consume consumableType ->
-                match Data.Value.Consumables.TryGetValue consumableType with
-                | (true, consumable) ->
+        match tryGetCharacter sourceIndex battle with
+        | Some source ->
+            let battle =
+                match command.ActionCommand.Action with
+                | Attack | Defend ->
                     if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
-                        let targetIndexOpt = evalRetarget consumable.Revive targetIndexOpt battle
+                        let targetIndexOpt = evalRetarget false targetIndexOpt battle
                         let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
                         setCurrentCommandOpt (Some command) battle
                     else battle
-                | (false, _) -> battle
-            | Tech techType ->
-                match Data.Value.Techs.TryGetValue techType with
-                | (true, _) ->
-                    if  source.Healthy &&
-                        not (Map.containsKey Sleep source.Statuses) &&
-                        (not (Map.containsKey Silence source.Statuses) || // NOTE: silence only blocks non-enemy, non-charge techs.
-                         source.Enemy && match source.TechChargeOpt with Some (_, chargeAmount, _) -> chargeAmount >= Constants.Battle.ChargeMax | _ -> false) then
-                        let affectingWounded = techType = Vita // TODO: pull from tech data.
-                        let targetIndexOpt = evalRetarget affectingWounded targetIndexOpt battle
-                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
-                        setCurrentCommandOpt (Some command) battle
-                    else battle
-                | (false, _) -> battle
-            | Consequence consequence ->
-                match observerIndexOpt with
-                | Some observerIndex ->
-                    let observerOpt = tryGetCharacter observerIndex battle
-                    match (consequence, observerOpt) with
-                    | (Spawn _, _) ->
-                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
-                        setCurrentCommandOpt (Some command) battle
-                    | (_, Some observer) when observer.Healthy ->
-                        let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
-                        setCurrentCommandOpt (Some command) battle
-                    | (_, _) -> battle
-                | None -> battle
-            | ActionType.Message (_, _) ->
-                setCurrentCommandOpt (Some command) battle
-            | Wound ->
-                setCurrentCommandOpt (Some command) battle
-        let battle = setActionCommands futureCommands battle
-        update battle
+                | Consume consumableType ->
+                    match Data.Value.Consumables.TryGetValue consumableType with
+                    | (true, consumable) ->
+                        if source.Healthy && not (Map.containsKey Sleep source.Statuses) then
+                            let targetIndexOpt = evalRetarget consumable.Revive targetIndexOpt battle
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                            setCurrentCommandOpt (Some command) battle
+                        else battle
+                    | (false, _) -> battle
+                | Tech techType ->
+                    match Data.Value.Techs.TryGetValue techType with
+                    | (true, _) ->
+                        if  source.Healthy &&
+                            not (Map.containsKey Sleep source.Statuses) &&
+                            (not (Map.containsKey Silence source.Statuses) || // NOTE: silence only blocks non-enemy, non-charge techs.
+                             source.Enemy && match source.TechChargeOpt with Some (_, chargeAmount, _) -> chargeAmount >= Constants.Battle.ChargeMax | _ -> false) then
+                            let affectingWounded = techType = Vita // TODO: pull from tech data.
+                            let targetIndexOpt = evalRetarget affectingWounded targetIndexOpt battle
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                            setCurrentCommandOpt (Some command) battle
+                        else battle
+                    | (false, _) -> battle
+                | Consequence consequence ->
+                    match observerIndexOpt with
+                    | Some observerIndex ->
+                        let observerOpt = tryGetCharacter observerIndex battle
+                        match (consequence, observerOpt) with
+                        | (Spawn _, _) ->
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                            setCurrentCommandOpt (Some command) battle
+                        | (_, Some observer) when observer.Healthy ->
+                            let command = { command with ActionCommand = { command.ActionCommand with TargetIndexOpt = targetIndexOpt }}
+                            setCurrentCommandOpt (Some command) battle
+                        | (_, _) -> battle
+                    | None -> battle
+                | ActionType.Message (_, _) ->
+                    setCurrentCommandOpt (Some command) battle
+                | Wound ->
+                    setCurrentCommandOpt (Some command) battle
+            let battle = setActionCommands futureCommands battle
+            update battle
+        | None ->
+            Log.debug ("Unexpected inability to execute action command: " + scstring nextCommand + ". Discarding and continuing.")
+            update battle
 
     and private updateNoNextCommand battle =
         let (allySignalsRev, battle) =
