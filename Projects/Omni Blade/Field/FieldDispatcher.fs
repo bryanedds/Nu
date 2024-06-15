@@ -120,7 +120,7 @@ type FieldDispatcher () =
                         | (_, _) -> withSignal (FieldCommand.FadeOutSong 30L) field
 
                     // half-way transition (fully blacked out)
-                    elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 2L then
+                    elif time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime / 2L + 1L then
 
                         // load metadata and pre-generate fields
                         match destinationData.FieldType with
