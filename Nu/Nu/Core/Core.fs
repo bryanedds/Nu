@@ -33,10 +33,10 @@ module CoreOperators =
     /// Same as the ($) operator found in Prime, but placed here to expose it directly from Nu.
     let inline ($) f g = f g
 
-    /// Test for object equality, always testing reference equality first.
+    /// Test for object equality.
     /// Same as the (===) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (===) (a : obj) (b : obj) = objEq a b
 
-    /// Test for object inequality, always testing reference inequality first.
+    /// Test for object inequality.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
