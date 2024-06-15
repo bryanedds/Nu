@@ -185,7 +185,7 @@ type OmniBladeDispatcher () =
     override this.Content (_, _) =
         [Content.screen<ScreenDispatcher> Simulants.Splash.Name (Slide (Constants.Gui.Dissolve, Constants.Gui.Splash, None, Simulants.Title)) [] []
          Content.screenWithGroupFromFile<TitleDispatcher> Simulants.Title.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.TitleSong)) Assets.Gui.TitleGroupFilePath [] []
-         Content.screen<CreditsDispatcher> Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, Some Assets.Gui.CreditsSong)) [] []
+         Content.screen<CreditsDispatcher> Simulants.Credits.Name (Dissolve (Constants.Gui.Dissolve, None)) [] []
          Content.screenWithGroupFromFile Simulants.Pick.Name (Dissolve ({ Constants.Gui.Dissolve with OutgoingTime = 90L }, Some Assets.Gui.TitleSong)) Assets.Gui.PickGroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Intro.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro2)) Assets.Gui.IntroGroupFilePath [] []
          Content.screenWithGroupFromFile Simulants.Intro2.Name (Slide (Constants.Intro.Dissolve, Constants.Intro.Splash, Some Assets.Gui.IntroSong, Simulants.Intro3)) Assets.Gui.Intro2GroupFilePath [] []

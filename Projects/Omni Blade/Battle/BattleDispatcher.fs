@@ -171,8 +171,8 @@ type BattleDispatcher () =
             let world = World.schedule delay (fun world -> World.playSound volume sound world; world) screen world
             just world
 
-        | PlaySong (fadeIn, fadeOut, start, volume, assetTag) ->
-            World.playSong fadeIn fadeOut start volume assetTag world
+        | PlaySong (fadeIn, fadeOut, start, volume, repeatLimitOpt, assetTag) ->
+            World.playSong fadeIn fadeOut start volume repeatLimitOpt assetTag world
             just world
 
         | FadeOutSong fade ->

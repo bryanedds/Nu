@@ -49,16 +49,24 @@ type CreditsDispatcher () =
         [Screen.SelectEvent => StartScrolling
          Screen.UpdateEvent => Scroll]
 
-    override this.Message (credits, message, _, _) =
+    override this.Message (credits, message, _, world) =
 
         match message with
         | StartScrolling ->
+            World.playSong
+                Assets.Gui.CreditsSong.FadeInTime
+                Assets.Gui.CreditsSong.FadeOutTime
+                Assets.Gui.CreditsSong.StartTime
+                Assets.Gui.CreditsSong.Volume
+                Assets.Gui.CreditsSong.RepeatLimitOpt
+                Assets.Gui.CreditsSong.Song
+                world
             let credits = { credits with ScrollPosition = v3 -72.0f -1800.0f 0.0f }
             just credits
 
         | Scroll ->
             let credits = { credits with ScrollPosition = credits.ScrollPosition + v3 0.0f (1.0f / 3.0f) 0.0f }
-            if credits.ScrollPosition.Y > 605.0f
+            if credits.ScrollPosition.Y >= 605.0f
             then withSignal (signal StartQuitting) credits
             else just credits
 
@@ -86,50 +94,45 @@ type CreditsDispatcher () =
                  Entity.Size == v3 0.0f 3000.0f 0.0f
                  Entity.Layout == Flow (FlowDownward, FlowUnlimited)
                  Entity.PerimeterCentered == true]
-                [Content.text "OmniBlade" [Entity.Text == "OmniBlade"]
+                [Content.text "- Omni Blade -" [Entity.Text == "- Omni Blade -"]
                  Content.text "Separator A" []
                  Content.text "Separator A 2" []
                  Content.text "Separator A 3" []
                  Content.text "Separator A 4" []
-                 Content.text "Separator A 5" []
                  Content.text "- Direction & Design -" [Entity.Text == "- Direction & Design -"]
                  Content.text "Bryan Edds" [Entity.Text == "Bryan Edds"]
                  Content.text "Space" []
-                 Content.text "- Engine Programming -" [Entity.Text == "- Engine Programming -"]
+                 Content.text "- Engine & Game Programming -" [Entity.Text == "- Engine & Game Programming -"]
                  Content.text "Bryan Edds 2" [Entity.Text == "Bryan Edds"]
                  Content.text "Dean J. Lee" [Entity.Text == "Dean J. Lee"]
                  Content.text "Space 2" []
-                 Content.text "- Game Programming -" [Entity.Text == "- Game Programming -"]
-                 Content.text "Bryan Edds 3" [Entity.Text == "Bryan Edds"]
-                 Content.text "Space 3" []
-                 Content.text "- Effects Programming -" [Entity.Text == "- Effects Programming -"]
-                 Content.text "Bryan Edds 4" [Entity.Text == "Bryan Edds"]
-                 Content.text "Dean J. Lee 2" [Entity.Text == "Dean J. Lee"]
-                 Content.text "Space 4" []
                  Content.text "- Art -" [Entity.Text == "- Art -"]
                  Content.text "Ansimuz" [Entity.Text == "Ansimuz"]
-                 Content.text "CreativeKind" [Entity.Text == "CreativeKind"]
-                 Content.text "FinalBossBlues" [Entity.Text == "FinalBossBlues"]
+                 Content.text "Creative Kind" [Entity.Text == "Creative Kind"]
+                 Content.text "Final Boss Blues" [Entity.Text == "Final Boss Blues"]
                  Content.text "Narehop" [Entity.Text == "Narehop"]
                  Content.text "Pimen Art" [Entity.Text == "Pimen Art"]
-                 Content.text "Selier the Shaper" [Entity.Text == "Selier the Shaper"]
+                 Content.text "Seliel the Shaper" [Entity.Text == "Seliel the Shaper"]
                  Content.text "Szadi Art" [Entity.Text == "Szadi Art"]
-                 Content.text "Space 5" []
+                 Content.text "Space 3" []
                  Content.text "- Music -" [Entity.Text == "- Music -"]
                  Content.text "Clement Panchout" [Entity.Text == "Clement Panchout"]
                  Content.text "Drass Ray - Jacob Mann" [Entity.Text == "Drass Ray - Jacob Mann"]
                  Content.text "JP Soundworks" [Entity.Text == "JP Soundworks"]
                  Content.text "Owl Theory Music" [Entity.Text == "Owl Theory Music"]
                  Content.text "Pdk Music" [Entity.Text == "Pdk Music"]
-                 Content.text "PeriTune" [Entity.Text == "PeriTune"]
+                 Content.text "Peri Tune" [Entity.Text == "Peri Tune"]
                  Content.text "Suat" [Entity.Text == "Suat"]
                  Content.text "Thomas Brunet" [Entity.Text == "Thomas Brunet"]
-                 Content.text "Space 6" []
+                 Content.text "Space 4" []
                  Content.text "- Sound -" [Entity.Text == "- Sound -"]
                  Content.text "Kronbits" [Entity.Text == "Kronbits"]
-                 Content.text "Simon 13" [Entity.Text == "Simon 13"]
+                 Content.text "Simon 1366" [Entity.Text == "Simon 1366"]
                  Content.text "Sound Works 12" [Entity.Text == "Sound Works 12"]
-                 Content.text "Space 7" []
+                 Content.text "Space 5" []
+                 Content.text "- Testing -" [Entity.Text == "- Testing -"]
+                 Content.text "Chosen Wolf" [Entity.Text == "Chosen Wolf"]
+                 Content.text "Space 6" []
                  Content.text "- Supporters -" [Entity.Text == "- Supporters -"]
                  Content.text "Rei Miyasaka" [Entity.Text == "Rei Miyasaka"]
                  Content.text "pauloud" [Entity.Text == "pauloud"]
@@ -141,4 +144,10 @@ type CreditsDispatcher () =
                  Content.text "Separator B 3" []
                  Content.text "Separator B 4" []
                  Content.text "Separator B 5" []
-                 Content.text "Thank you for playing." [Entity.Text == "Thank you for playing!"]]]]
+                 Content.text "Separator B 6" []
+                 Content.text "Separator B 7" []
+                 Content.text "Separator B 8" []
+                 Content.text "Separator B 9" []
+                 Content.text "Separator B 10" []
+                 Content.text "Separator B 11" []
+                 Content.text "Thank you for playing." [Entity.Text == "Thank you for playing."]]]]

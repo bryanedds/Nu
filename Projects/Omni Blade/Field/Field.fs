@@ -80,7 +80,7 @@ type FieldCommand =
     | CommenceBattle of BattleData * PrizePool
     | MenuOptionsToggleFullScreen
     | ScheduleSound of int64 * single * Sound AssetTag
-    | PlaySong of int64 * int64 * int64 * single * Song AssetTag
+    | PlaySong of int64 * int64 * int64 * single * uint option * Song AssetTag
     | FadeOutSong of int64
     | Nop
     interface Command
@@ -751,7 +751,8 @@ module Field =
             (Fin, definitions, withSignal (ScheduleSound (0L, volume, sound)) field)
 
         | Cue.PlaySong (fadeIn, fadeOut, start, volume, song) ->
-            (Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, volume, song)) field)
+            // TODO: update this cue and all data to include repeat limit opt.
+            (Fin, definitions, withSignal (PlaySong (fadeIn, fadeOut, start, volume, None, song)) field)
 
         | Cue.FadeOutSong fade ->
             (Fin, definitions, withSignal (FadeOutSong fade) field)

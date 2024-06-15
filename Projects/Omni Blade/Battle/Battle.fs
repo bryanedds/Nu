@@ -29,7 +29,7 @@ type BattleCommand =
     | Concluding
     | Conclude
     | PlaySound of int64 * single * Sound AssetTag
-    | PlaySong of GameTime * GameTime * GameTime * single * Song AssetTag
+    | PlaySong of GameTime * GameTime * GameTime * single * uint option * Song AssetTag
     | FadeOutSong of GameTime
     | DisplayHop of Vector3 * Vector3
     | DisplayCircle of Vector3 * single
@@ -1825,7 +1825,7 @@ module Battle =
         if localTime = 0L then // first frame after transitioning in
             let battle = animateEnemiesPoised battle
             match battle.BattleSongOpt_ with
-            | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, 0.5f, battleSong)) battle
+            | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, 0.5f, None, battleSong)) battle
             | None -> just battle
         elif localTime = 36L then
             let battle = animateAlliesReady battle
@@ -2072,7 +2072,7 @@ module Battle =
                 let dialogStr = "And so eternal death became " + referentStr + " slumber..."
                 let dialog = Dialog.make DialogNarration dialogStr
                 let battle = setDialogOpt (Some dialog) battle
-                let playEternalSlumber = PlaySong (60L, 0L, 0L, 0.5f, Assets.Battle.EternalSlumber)
+                let playEternalSlumber = PlaySong (60L, 0L, 0L, 0.5f, None, Assets.Battle.EternalSlumber)
                 withSignal playEternalSlumber battle
             elif localTime > 270L then
                 match battle.DialogOpt_ with

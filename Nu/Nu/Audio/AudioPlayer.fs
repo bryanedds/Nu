@@ -10,10 +10,11 @@ open Prime
 
 /// Descrides a song.
 type SongDescriptor =
-    { FadeInTime: GameTime
+    { FadeInTime : GameTime
       FadeOutTime : GameTime
       StartTime : GameTime
       Volume : single
+      RepeatLimitOpt : uint option
       Song : Song AssetTag }
 
 /// Describes a sound.
@@ -217,12 +218,13 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             | WavAsset _ ->
                 Log.info ("Cannot play wav file as song '" + scstring song + "'.")
             | MusAsset musAsset ->
+                let loops = match playSongMessage.RepeatLimitOpt with Some repeatLimit -> max 0 (int repeatLimit) | None -> -1
                 SDL_mixer.Mix_HaltMusic () |> ignore // NOTE: have to stop current song in case it is still fading out, causing the next song not to play.
                 SDL_mixer.Mix_VolumeMusic (int (playSongMessage.Volume * audioPlayer.MasterAudioVolume * audioPlayer.MasterSongVolume * single SDL_mixer.MIX_MAX_VOLUME)) |> ignore
-                match SDL_mixer.Mix_FadeInMusicPos (musAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime.Seconds) with
+                match SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), double playSongMessage.StartTime.Seconds) with
                 | -1 ->
                     // HACK: start time exceeded length of track, so starting over.
-                    SDL_mixer.Mix_FadeInMusicPos (musAsset, -1, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
+                    SDL_mixer.Mix_FadeInMusicPos (musAsset, loops, int (max Constants.Audio.FadeInSecondsMin playSongMessage.FadeInTime.Seconds * 1000.0f), 0.0) |> ignore
                 | _ -> ()
                 audioPlayer.CurrentSongOpt <- Some (playSongMessage, musAsset)
         | None ->
