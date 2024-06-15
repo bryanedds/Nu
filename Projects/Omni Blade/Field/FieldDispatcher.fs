@@ -857,8 +857,8 @@ type FieldDispatcher () =
                         let localTime = single transition.FieldTransitionTime - single time
                         let halfTransitionTime = single Constants.Field.TransitionTime * 0.5f
                         let progress =
-                            if localTime < halfTransitionTime
-                            then localTime / halfTransitionTime
+                            if localTime < halfTransitionTime then localTime / halfTransitionTime
+                            elif localTime = dec halfTransitionTime || localTime = inc halfTransitionTime then 1.0f
                             else 1.0f - (localTime - halfTransitionTime) / halfTransitionTime
                         Color.Black.WithA progress
                     | None -> Color.Zero]
