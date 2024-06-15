@@ -102,6 +102,11 @@ module WorldModuleGame =
             let gameState = { gameState with Content = value}
             World.setGameState gameState game world
 
+        static member internal notifyGameModelChange game world =
+            let gameState = World.getGameState game world
+            let world = gameState.Dispatcher.TrySynchronize (false, game, world)
+            World.publishGameChange Constants.Engine.ModelPropertyName gameState.Model.DesignerValue gameState.Model.DesignerValue game world
+
         static member internal getGameSelectedScreenOpt game world =
             (World.getGameState game world).SelectedScreenOpt
 

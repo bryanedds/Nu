@@ -324,6 +324,13 @@ module WorldModuleEntity =
                 let entityState = { entityState with Content = value }
                 World.setEntityState entityState entity world
 
+        static member internal notifyEntityModelChange entity world =
+            let entityState = World.getEntityState entity world
+            let world = entityState.Dispatcher.TrySynchronize (false, entity, world)
+            let entityState = World.getEntityState entity world // fresh entity state since synchronization could have invalidated existing copy
+            let publishChangeEvents = entityState.PublishChangeEvents
+            World.publishEntityChange Constants.Engine.ModelPropertyName entityState.Model.DesignerValue entityState.Model.DesignerValue publishChangeEvents entity world
+
         static member internal getEntityDispatcher entity world = (World.getEntityState entity world).Dispatcher
         static member internal getEntityFacets entity world = (World.getEntityState entity world).Facets
         static member internal getEntityPerimeterCenter entity world = (World.getEntityState entity world).Transform.PerimeterCenter

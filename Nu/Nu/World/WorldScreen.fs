@@ -128,6 +128,9 @@ module WorldScreenModule =
         /// Send a signal to a screen.
         member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
 
+        /// Notify the engine that a screen's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
+        member this.NotifyModelChange world = World.notifyScreenModelChange this world
+
     type World with
 
         static member internal preUpdateScreen (screen : Screen) world =

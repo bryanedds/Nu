@@ -548,6 +548,9 @@ module WorldEntityModule =
         /// Send a signal to an entity.
         member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 
+        /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
+        member this.NotifyModelChange world = World.notifyEntityModelChange this world
+
     type World with
 
         static member internal renderEntity renderPass (entity : Entity) world =
