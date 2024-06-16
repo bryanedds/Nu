@@ -66,8 +66,8 @@ module WorldAudio =
             audioPlayer.MasterSongVolume <- volume
 
         /// Send a message to the audio system to play a song.
-        static member playSong fadeInTime fadeOutTime startTime volume repeatLimitOpt song world =
-            let playSongMessage = PlaySongMessage { FadeInTime = fadeInTime; FadeOutTime = fadeOutTime; StartTime = startTime; Volume = volume; RepeatLimitOpt = repeatLimitOpt; Song = song }
+        static member playSong fadeInTime fadeOutTime startTime repeatLimitOpt volume song world =
+            let playSongMessage = PlaySongMessage { FadeInTime = fadeInTime; FadeOutTime = fadeOutTime; StartTime = startTime; RepeatLimitOpt = repeatLimitOpt; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
         /// Send a message to the audio system to play a sound.

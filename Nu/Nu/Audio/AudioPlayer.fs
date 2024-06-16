@@ -13,8 +13,8 @@ type SongDescriptor =
     { FadeInTime : GameTime
       FadeOutTime : GameTime
       StartTime : GameTime
-      Volume : single
       RepeatLimitOpt : uint option
+      Volume : single
       Song : Song AssetTag }
 
 /// Describes a sound.

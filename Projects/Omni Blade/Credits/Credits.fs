@@ -57,8 +57,8 @@ type CreditsDispatcher () =
                 Assets.Gui.CreditsSong.FadeInTime
                 Assets.Gui.CreditsSong.FadeOutTime
                 Assets.Gui.CreditsSong.StartTime
-                Assets.Gui.CreditsSong.Volume
                 Assets.Gui.CreditsSong.RepeatLimitOpt
+                Assets.Gui.CreditsSong.Volume
                 Assets.Gui.CreditsSong.Song
                 world
             let credits = { credits with ScrollPosition = v3 -72.0f -1800.0f 0.0f }
@@ -66,7 +66,7 @@ type CreditsDispatcher () =
 
         | Scroll ->
             let credits = { credits with ScrollPosition = credits.ScrollPosition + v3 0.0f (1.0f / 3.0f) 0.0f }
-            if credits.ScrollPosition.Y >= 605.0f
+            if credits.ScrollPosition.Y >= 620.0f
             then withSignal (signal StartQuitting) credits
             else just credits
 
