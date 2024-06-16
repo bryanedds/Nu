@@ -154,11 +154,6 @@ module WorldModuleGroup =
             let screenState = { screenState with Content = value }
             World.setGroupState screenState group world
 
-        static member internal notifyGroupModelChange group world =
-            let groupState = World.getGroupState group world
-            let world = groupState.Dispatcher.TrySynchronize (false, group, world)
-            World.publishGroupChange Constants.Engine.ModelPropertyName groupState.Model.DesignerValue groupState.Model.DesignerValue group world
-
         static member internal setGroupVisible value group world =
             let groupState = World.getGroupState group world
             let previous = groupState.Visible
@@ -336,6 +331,11 @@ module WorldModuleGroup =
         static member internal viewGroupProperties group world =
             let state = World.getGroupState group world
             World.viewSimulantStateProperties state
+
+        static member notifyGroupModelChange group world =
+            let groupState = World.getGroupState group world
+            let world = groupState.Dispatcher.TrySynchronize (false, group, world)
+            World.publishGroupChange Constants.Engine.ModelPropertyName groupState.Model.DesignerValue groupState.Model.DesignerValue group world
 
     /// Initialize property getters.
     let private initGetters () =

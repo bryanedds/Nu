@@ -151,11 +151,6 @@ module WorldModuleScreen =
             let screenState = { screenState with Content = value }
             World.setScreenState screenState screen world
 
-        static member internal notifyScreenModelChange screen world =
-            let screenState = World.getScreenState screen world
-            let world = screenState.Dispatcher.TrySynchronize (false, screen, world)
-            World.publishScreenChange Constants.Engine.ModelPropertyName screenState.Model.DesignerValue screenState.Model.DesignerValue screen world
-
         static member internal setScreenTransitionState value screen world =
             let screenState = World.getScreenState screen world
             let previous = screenState.TransitionState
@@ -361,6 +356,11 @@ module WorldModuleScreen =
         static member internal viewScreenProperties screen world =
             let state = World.getScreenState screen world
             World.viewSimulantStateProperties state
+
+        static member notifyScreenModelChange screen world =
+            let screenState = World.getScreenState screen world
+            let world = screenState.Dispatcher.TrySynchronize (false, screen, world)
+            World.publishScreenChange Constants.Engine.ModelPropertyName screenState.Model.DesignerValue screenState.Model.DesignerValue screen world
 
     /// Initialize property getters.
     let private initGetters () =
