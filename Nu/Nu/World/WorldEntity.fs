@@ -542,9 +542,6 @@ module WorldEntityModule =
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Get an entity's change event address.
-        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.EntityAddress
-
         /// Send a signal to an entity.
         member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 

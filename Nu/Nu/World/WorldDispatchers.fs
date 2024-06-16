@@ -435,9 +435,9 @@ type RigidModelDispatcher () =
         [define Entity.BodyShape (StaticModelShape { StaticModel = Assets.Default.StaticModel; Convex = true; TransformOpt = None; PropertiesOpt = None })]
 
     override this.Register (entity, world) =
-        let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
-        let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
-        let world = World.monitor updateNavShape (entity.GetChangeEvent (nameof entity.BodyType)) entity world
+        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
+        let world = World.monitor updateNavShape entity.BodyType.ChangeEvent entity world
         world
 
 /// Gives an entity the base behavior of an indexed static model.
@@ -471,9 +471,9 @@ type RigidModelSurfaceDispatcher () =
         [define Entity.BodyShape (StaticModelSurfaceShape { StaticModel = Assets.Default.StaticModel; SurfaceIndex = 0; Convex = true; TransformOpt = None; PropertiesOpt = None })]
 
     override this.Register (entity, world) =
-        let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.StaticModel)) entity world
-        let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.SurfaceIndex)) entity world
-        let world = World.monitor updateBodyShape (entity.GetChangeEvent (nameof entity.BodyShape)) entity world
+        let world = World.monitor updateBodyShape entity.StaticModel.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.SurfaceIndex.ChangeEvent entity world
+        let world = World.monitor updateBodyShape entity.BodyShape.ChangeEvent entity world
         world
 
 /// Gives an entity the base behavior of basic static billboard emitter.

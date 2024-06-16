@@ -91,9 +91,6 @@ module WorldGroupModule =
         /// Check that a group dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Get a group's change event address.
-        member this.GetChangeEvent propertyName = this.ChangeEvent propertyName
-
         /// Send a signal to a group.
         member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
 

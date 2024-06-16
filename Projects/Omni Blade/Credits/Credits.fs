@@ -70,7 +70,8 @@ type CreditsDispatcher () =
             then withSignal (signal StartQuitting) credits
             else just credits
 
-    override this.Command (_, _, screen, world) =
+    override this.Command (_, StartQuitting, screen, world) =
+        World.fadeOutSong 60L world
         let world = World.publish () screen.QuitCreditsEvent screen world
         just world
 

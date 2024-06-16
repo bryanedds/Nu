@@ -122,9 +122,6 @@ module WorldScreenModule =
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Get a screen's change event address.
-        member this.GetChangeEvent propertyName = this.ChangeEvent propertyName
-
         /// Send a signal to a screen.
         member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
 
