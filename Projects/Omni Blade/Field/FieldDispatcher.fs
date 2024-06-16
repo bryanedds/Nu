@@ -40,7 +40,7 @@ type FieldDispatcher () =
     static let isIntersectedProp (collider : BodyShapeIndex) (collidee : BodyShapeIndex) world =
         let collideeEntity = collidee.BodyId.BodySource :?> Entity
         if (collider.BodyShapeIndex = Constants.Field.AvatarCollisionShapeIndex &&
-            collideeEntity.Exists world &&
+            collideeEntity.GetExists world &&
             collideeEntity.Is<PropDispatcher> world &&
             match (collideeEntity.GetPropPlus world).Prop.PropData with
             | Portal _ -> true
@@ -48,7 +48,7 @@ type FieldDispatcher () =
             | _ -> false) then
             true
         elif (collider.BodyShapeIndex = Constants.Field.AvatarSensorShapeIndex &&
-              collideeEntity.Exists world &&
+              collideeEntity.GetExists world &&
               collideeEntity.Is<PropDispatcher> world &&
               match (collideeEntity.GetPropPlus world).Prop.PropData with
               | Portal _ -> false
@@ -58,7 +58,7 @@ type FieldDispatcher () =
         else false
 
     override this.GetFallbackModel (_, screen, world) =
-        if screen.Selected world || Simulants.Battle.Selected world
+        if screen.GetSelected world || Simulants.Battle.GetSelected world
         then Field.initial world.UpdateTime Slot1
         else Field.empty
 

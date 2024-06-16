@@ -398,14 +398,14 @@ module WorldEntityModule =
         member this.GetInView3d world = World.getEntityInView3d this world
 
         /// Check that an entity is selected.
-        member this.Selected world =
+        member this.GetSelected world =
             let gameState = World.getGameState Game.Handle world
             match gameState.SelectedScreenOpt with
             | Some screen when this.Screen.Name = screen.Name -> true
             | _ -> false
 
         /// Check that an entity exists in the world.
-        member this.Exists world = World.getEntityExists this world
+        member this.GetExists world = World.getEntityExists this world
 
         /// Check if an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world
@@ -417,7 +417,7 @@ module WorldEntityModule =
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
-                if mountOld.Exists world && mountNew.Exists world then
+                if mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
@@ -435,7 +435,7 @@ module WorldEntityModule =
                     world
                 else world
             | (Some mountOld, None) ->
-                if mountOld.Exists world then
+                if mountOld.GetExists world then
                     let world = this.SetMountOpt value world
                     let position = this.GetPosition world
                     let rotation = this.GetRotation world
@@ -454,7 +454,7 @@ module WorldEntityModule =
                     world
                 else world
             | (None, Some mountNew) ->
-                if mountNew.Exists world then
+                if mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
@@ -476,7 +476,7 @@ module WorldEntityModule =
         /// Check whether the entity's mount exists.
         member this.MountExists world =
             match Option.bind (tryResolve this) (this.GetMountOpt world) with
-            | Some mount -> mount.Exists world
+            | Some mount -> mount.GetExists world
             | None -> false
 
         /// Check than an entity has any other entitiese mounted on it.
@@ -827,7 +827,7 @@ module WorldEntityModule =
                     if tryForwardPropagationSource && not cut then
                         match entity.GetPropagationSourceOpt world with
                         | None ->
-                            if entitySource.Exists world
+                            if entitySource.GetExists world
                             then entity.SetPropagationSourceOpt (Some entitySource) world
                             else world
                         | Some _ -> world
@@ -840,9 +840,9 @@ module WorldEntityModule =
                 let world =
                     getDescendantPairs entitySource entity world |>
                     List.fold (fun world (descendantSource, descendentEntity) ->
-                        if descendentEntity.Exists world then
+                        if descendentEntity.GetExists world then
                             let world = World.setEntityPropagatedDescriptorOpt None descendentEntity world |> snd'
-                            if descendantSource.Exists world && World.hasPropagationTargets descendantSource world
+                            if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
                             then World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> snd'
                             else world
                         else world)

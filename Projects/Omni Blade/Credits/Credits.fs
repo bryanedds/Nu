@@ -41,7 +41,7 @@ type CreditsDispatcher () =
     inherit ScreenDispatcher<Credits, CreditsMessage, CreditsCommand> (Credits.empty)
 
     override this.GetFallbackModel (_, screen, world) =
-        if screen.Selected world
+        if screen.GetSelected world
         then Credits.make true
         else Credits.empty
 

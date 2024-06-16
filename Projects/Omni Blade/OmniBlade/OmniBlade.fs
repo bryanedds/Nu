@@ -156,7 +156,7 @@ type OmniBladeDispatcher () =
 
             // update picks
             let world =
-                if Simulants.Pick.Selected world then
+                if Simulants.Pick.GetSelected world then
                     let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
                     let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
                     let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world

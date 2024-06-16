@@ -3115,7 +3115,7 @@ type FollowerFacet () =
         if following then
             let targetOpt = entity.GetFollowTargetOpt world
             match targetOpt with
-            | Some target when target.Exists world ->
+            | Some target when target.GetExists world ->
                 let moveSpeed = entity.GetFollowMoveSpeed world * (let gd = world.GameDelta in gd.Seconds)
                 let turnSpeed = entity.GetFollowTurnSpeed world * (let gd = world.GameDelta in gd.Seconds)
                 let distanceMinOpt = entity.GetFollowDistanceMinOpt world

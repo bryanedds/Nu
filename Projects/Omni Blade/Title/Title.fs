@@ -37,7 +37,7 @@ type TitleDispatcher () =
         v3 (offsetX - scroll) offsetY 0.0f
 
     override this.GetFallbackModel (_, screen, world) =
-        if not (screen.Selected world)
+        if not (screen.GetSelected world)
         then Title.initial
         else Title.empty
 

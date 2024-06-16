@@ -237,7 +237,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) || entity.GetDestroying world
+                            if not (entity.GetExists world) || entity.GetDestroying world
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
@@ -267,7 +267,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) || entity.GetDestroying world then
+                            if not (entity.GetExists world) || entity.GetDestroying world then
                                 match entityContent.EntityFilePathOpt with
                                 | Some entityFilePath -> World.readEntityFromFile entityFilePath (Some entity.Name) entity.Parent world |> snd
                                 | None -> World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
@@ -318,7 +318,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (group : Group, groupContent : GroupContent) ->
                         let world =
-                            if not (group.Exists world) || group.GetDestroying world then
+                            if not (group.GetExists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
                                 | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                                 | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
@@ -348,7 +348,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
-                            if not (screen.Exists world) || screen.GetDestroying world
+                            if not (screen.GetExists world) || screen.GetDestroying world
                             then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
                             else world
                         let world = World.setScreenProtected true screen world |> snd'

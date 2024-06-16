@@ -95,7 +95,7 @@ module WorldModule2 =
         /// out via another screen.
         static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> Some (selectedScreen.Idling world)
+            | Some selectedScreen -> Some (selectedScreen.GetIdling world)
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
@@ -432,7 +432,7 @@ module WorldModule2 =
                 if considerUsingCurrentEntityAsPropagationSource then
                     match currentEntityOpt with
                     | Some currentEntity ->
-                        if currentEntity.Exists world && World.hasPropagationTargets currentEntity world
+                        if currentEntity.GetExists world && World.hasPropagationTargets currentEntity world
                         then { propagatedDescriptor with EntityProperties = Map.add Constants.Engine.PropagationSourceOptPropertyName (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
                         else propagatedDescriptor
                     | None -> propagatedDescriptor
@@ -529,7 +529,7 @@ module WorldModule2 =
                                     match nameSymbol with
                                     | Atom (name, _) | Text (name, _) ->
                                         let currentEntity = currentEntity / name
-                                        if currentEntity.Exists world
+                                        if currentEntity.GetExists world
                                         then Some currentEntity
                                         else None
                                     | _ -> None
@@ -602,13 +602,13 @@ module WorldModule2 =
             // propagate sourced ancestor entities
             seq {
                 for target in World.getPropagationTargets entity world do
-                    if target.Exists world then
+                    if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
-                            if ancestor.Exists world && World.hasPropagationTargets ancestor world then
+                            if ancestor.GetExists world && World.hasPropagationTargets ancestor world then
                                 ancestor } |>
             Set.ofSeq |>
             Set.fold (fun world ancestor ->
-                if ancestor.Exists world && World.hasPropagationTargets ancestor world
+                if ancestor.GetExists world && World.hasPropagationTargets ancestor world
                 then World.propagateEntityStructure ancestor world
                 else world)
                 world
@@ -671,7 +671,7 @@ module WorldModule2 =
                                             then UMap.remove entityAddress entityChangeCounts
                                             else UMap.add entityAddress entityChangeCount entityChangeCounts
                                         let world =
-                                            if entity.Exists world then
+                                            if entity.GetExists world then
                                                 if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd'
                                                 elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
                                                 else world
@@ -679,13 +679,13 @@ module WorldModule2 =
                                         World.mapKeyValueStore (SUMap.add EntityChangeCountsKey entityChangeCounts) world // no event
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
-                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                        let world = if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                         World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
                                     let config = World.getCollectionConfig world
                                     let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
-                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                    let world = if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                     World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                             else world
                         if  Array.contains Address.WildcardName eventNames ||
@@ -857,10 +857,10 @@ module WorldModule2 =
             | Some screen ->
                 let groups = World.getGroups screen world
                 Seq.fold (fun world (group : Group) ->
-                    if group.Exists world then
+                    if group.GetExists world then
                         let entities = World.getEntities group world
                         Seq.fold (fun world (entity : Entity) ->
-                            if entity.Exists world
+                            if entity.GetExists world
                             then World.registerEntityPhysics entity world
                             else world)
                             world entities
@@ -1024,7 +1024,7 @@ module WorldModule2 =
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match bodyCollisionMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.Selected world then
+                        if entity.GetExists world && entity.GetSelected world then
                             let collisionData =
                                 { BodyShapeCollider = bodyCollisionMessage.BodyShapeSource
                                   BodyShapeCollidee = bodyCollisionMessage.BodyShapeSource2
@@ -1037,7 +1037,7 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     match bodySeparationMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.Selected world then
+                        if entity.GetExists world && entity.GetSelected world then
                             let explicit =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
                                   BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
@@ -1050,7 +1050,7 @@ module WorldModule2 =
                     let bodyId = bodyTransformMessage.BodyId
                     match bodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.Selected world then
+                        if entity.GetExists world && entity.GetSelected world then
                             let center = bodyTransformMessage.Center
                             if not (Single.IsNaN center.X) then
                                 let rotation = bodyTransformMessage.Rotation
@@ -1766,7 +1766,7 @@ module WorldModule2 =
                                                                             let world = World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
                                                                             let groups = World.getGroups selectedScreen world
                                                                             Seq.fold (fun world (group : Group) ->
-                                                                                if group.Exists world
+                                                                                if group.GetExists world
                                                                                 then World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                                 else world)
                                                                                 world groups
