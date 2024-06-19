@@ -155,6 +155,7 @@ module Assets =
         let ChargeHolySound = asset<Sound> PackageName "ChargeHoly"
         let ChargeDimensionSound = asset<Sound> PackageName "ChargeDimension"
         let SlashSound = asset<Sound> PackageName "Slash"
+        let DispelSlashSound = asset<Sound> PackageName "DispelSlash"
         let TwisterSound = asset<Sound> PackageName "Twister"
         let IceSound = asset<Sound> PackageName "Ice"
         let SnowballSound = asset<Sound> PackageName "Snowball"
