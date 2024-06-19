@@ -75,9 +75,9 @@ type Layering =
     | Over
 
 type BattleSpeed =
-    | SwiftSpeed
-    | PacedSpeed
     | WaitSpeed
+    | PacedSpeed
+    | SwiftSpeed
 
 type BattleState =
     | BattleReadying of int64
@@ -1976,9 +1976,9 @@ module Battle =
                     let anyAlliesInputting = getAlliesHealthy battle |> Map.toValueList |> List.exists (fun ally -> ally.CharacterInputState <> CharacterInputState.NoInput)
                     if anyAlliesInputting then
                         match battle.BattleSpeed_ with
-                        | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
-                        | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
                         | WaitSpeed -> 0.0f
+                        | PacedSpeed -> actionTimeDelta * Constants.Battle.PacedSpeedScalar
+                        | SwiftSpeed -> actionTimeDelta * Constants.Battle.SwiftSpeedScalar
                     else actionTimeDelta * 1.0f
                 let poisoning =
                     let actionTime = character.ActionTime + actionTimeDelta
@@ -2176,7 +2176,7 @@ module Battle =
               ActionCommands_ = FQueue.empty
               MessageOpt_ = None
               DialogOpt_ = None
-              BattleSpeed_ = PacedSpeed }
+              BattleSpeed_ = WaitSpeed }
         | None -> failwith "Expected data for DebugBattle to be available."
 
 type Battle = Battle.Battle

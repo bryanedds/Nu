@@ -1316,7 +1316,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
-          Options_ = { BattleSpeed = PacedSpeed }
+          Options_ = { BattleSpeed = WaitSpeed }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
           Cue_ = CueSystem.Fin
@@ -1347,7 +1347,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
-          Options_ = { BattleSpeed = PacedSpeed }
+          Options_ = { BattleSpeed = WaitSpeed }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
           Cue_ = CueSystem.Fin
