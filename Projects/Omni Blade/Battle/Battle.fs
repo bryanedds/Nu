@@ -2033,7 +2033,7 @@ module Battle =
                         let techs = Algorithms.expPointsToTechs3 ally.ExpPoints battle.PrizePool_.Exp ally.ArchetypeType
                         if Set.notEmpty techs then Some (ally, techs) else None) |>
                     List.map (fun (ally, techs) ->
-                        let text = techs |> Set.toList |> List.map scstring |> String.join ", "
+                        let text = techs |> Set.toList |> List.map _.Name |> String.join ", "
                         ally.Name + " learned " + text + "!") |>
                     function
                     | _ :: _ as texts -> String.join "\n" texts + "^"
