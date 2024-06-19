@@ -3,7 +3,7 @@
  <properties>
   <property name="Image" value="[Field TombOuter]"/>
  </properties>
- <image source="../../../../../../OmniBlade/Projects/OmniBlade/Assets/Field/TileMaps/TombOuter.png" width="1536" height="768"/>
+ <image source="TombOuter.png" width="1536" height="768"/>
  <tile id="18">
   <properties>
    <property name="C" value=""/>

@@ -34,12 +34,12 @@
     <property name="I" value="[Portal AirPortal South Downward TombInner South]"/>
    </properties>
   </object>
-  <object id="6" gid="443" x="192" y="3456" width="144" height="144">
+  <object id="6" gid="443" x="624" y="3312" width="144" height="144">
    <properties>
     <property name="I" value="[Shopkeep SchaalShopkeep None Chemist]"/>
    </properties>
   </object>
-  <object id="7" gid="443" x="624" y="3312" width="144" height="144">
+  <object id="7" gid="443" x="192" y="3456" width="144" height="144">
    <properties>
     <property name="I" value="[Shopkeep RobehnShopkeep None Armory]"/>
    </properties>
@@ -62,7 +62,7 @@ Travel together... $FEE gold...?&quot; [&quot;Yes&quot; [Recruit Riain]] [&quot;
   </object>
   <object id="12" gid="443" x="1056" y="624" width="144" height="144">
    <properties>
-    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;My shadow technique can cut through metal... But it will cost you $FEE gold...&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Fin]]]"/>
+    <property name="I" value="[Npc ShadeNpc None [Prompt &quot;My shadow technique can cut through metal... But it will cost you $FEE gold.&quot; [&quot;Yes&quot; [Recruit Shade]] [&quot;No&quot; Fin]]]"/>
    </properties>
   </object>
   <object id="13" gid="443" x="3168" y="3408" width="144" height="144">

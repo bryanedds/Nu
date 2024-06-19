@@ -277,7 +277,7 @@ type TechType =
     | CriticalSlash
     | PoisonCut
     | PowerCut
-    | DispelCut
+    | DispelSlash
     | DoubleCut
     | Fire
     | Flame
@@ -314,7 +314,6 @@ type TechType =
         | HeavyCritical
         | PoisonCut
         | PowerCut
-        | DispelCut
         | DoubleCut -> true
         | _ -> false
 

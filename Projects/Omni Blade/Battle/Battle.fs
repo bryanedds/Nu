@@ -1208,6 +1208,12 @@ module Battle =
                                         match techType with
                                         | Cyclone ->
                                             Left (DisplayHop (sourcePerimeter.Bottom, targetPerimeter.BottomOffset3))
+                                        | DispelSlash ->
+                                            // HACK: special cases since they're not considered touching since it would touch multiple enemies.
+                                            // NOTE: we actually cannot combine these cases with the following case because F# incorrectly generates the code for the match condition.
+                                            let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
+                                            let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
+                                            Left (DisplayHop (sourcePerimeter.Bottom, hopStop))
                                         | _ when techType.TouchingTech ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeter.Bottom.X) 0.0f 0.0f)
                                             let hopStop = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
@@ -1297,12 +1303,12 @@ module Battle =
                                         let powerCut = DisplayPowerCut (20L, targetIndex)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals [playHit; displayCut; powerCut] battle
-                                    | DispelCut ->
+                                    | DispelSlash ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
-                                        let dispelCut = DisplayDispelCut (25L, targetIndex)
+                                        let dispelCuts = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayDispelCut (25L, targetIndex) |> signal)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
-                                        withSignals [playHit; displayCut; dispelCut] battle
+                                        withSignals (playHit :: displayCut :: dispelCuts) battle
                                     | DoubleCut ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
                                         let playHit2 = PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
@@ -1434,6 +1440,12 @@ module Battle =
                                         match techType with
                                         | Cyclone ->
                                             Some (targetPerimeter.BottomOffset3, sourcePerimeterOriginal.Bottom)
+                                        | DispelSlash ->
+                                            // HACK: special cases since they're not considered touching since it would touch multiple enemies.
+                                            // NOTE: we actually cannot combine these cases with the following case because F# incorrectly generates the code for the match condition.
+                                            let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
+                                            let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
+                                            Some (hopStart, sourcePerimeterOriginal.Bottom)
                                         | _ when techType.TouchingTech ->
                                             let hopDirection = Direction.ofVector3 (v3 (targetPerimeter.Bottom.X - sourcePerimeterOriginal.Bottom.X) 0.0f 0.0f)
                                             let hopStart = targetPerimeter.Bottom - Direction.toVector3 hopDirection * Constants.Battle.StrikingDistance
