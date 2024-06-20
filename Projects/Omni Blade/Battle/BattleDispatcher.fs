@@ -79,20 +79,20 @@ type BattleDispatcher () =
         | RegularItemSelect (characterIndex, regularStr) ->
             let battle =
                 match regularStr with
-                | "Attack" ->
+                | nameof Attack ->
                     battle |>
                     Battle.setCharacterInputState (AimReticles (regularStr, EnemyAim true)) characterIndex |>
                     Battle.undefendCharacter characterIndex
-                | "Defend" ->
+                | nameof Defend ->
                     let battle = Battle.setCharacterInputState NoInput characterIndex battle
                     let command = ActionCommand.make Defend characterIndex None None
                     let battle = Battle.appendActionCommand command battle
                     battle
-                | "Tech" ->
+                | nameof Tech ->
                     battle |>
                     Battle.setCharacterInputState TechMenu characterIndex |>
                     Battle.undefendCharacter characterIndex
-                | "Consumable" ->
+                | nameof Consumable ->
                     battle |>
                     Battle.setCharacterInputState ItemMenu characterIndex |>
                     Battle.undefendCharacter characterIndex
@@ -484,14 +484,10 @@ type BattleDispatcher () =
                                  Entity.BorderImage == Assets.Gui.TechBorderImage
                                  Entity.BorderColor == color8 (byte 60) (byte 60) (byte 60) (byte 191)]]] // TODO: use a constant.
 
-         // inputs when running
+         // inputs group
          if battle.BattleState = BattleRunning then
-
-            // inputs group
             Content.group Simulants.BattleInputs.Name []
-
-                [// inputs
-                 for (index, ally) in (Battle.getCharactersHealthy battle).Pairs do
+                [for (index, ally) in (Battle.getCharactersHealthy battle).Pairs do
 
                     // input
                     Content.composite (CharacterIndex.toEntityName index + "+Input") []
@@ -507,6 +503,7 @@ type BattleDispatcher () =
                                  Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; Cancellable = false }
                                  Entity.ItemSelectEvent =|> fun evt -> RegularItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => RegularItemCancel index]
+
                          | ItemMenu ->
                             let consumables =
                                 battle.Inventory |>
@@ -518,6 +515,7 @@ type BattleDispatcher () =
                                  Entity.RingMenu := { Items = consumables; Cancellable = true }
                                  Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => ConsumableItemCancel index]
+
                          | TechMenu ->
                             let techs =
                                 Map.ofSeqBy (fun tech ->
@@ -540,16 +538,17 @@ type BattleDispatcher () =
                                  Entity.RingMenu := { Items = techs; Cancellable = true }
                                  Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => TechItemCancel index]
+
                          | AimReticles (actionStr, aimType) ->
-                            if actionStr <> nameof Attack then
-                                Content.text "Info"
-                                    [Entity.Size == v3 540.0f 81.0f 0.0f
-                                     Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 18.0f 0.0f
-                                     Entity.Elevation == Constants.Battle.GuiInputElevation
-                                     Entity.BackdropImageOpt == Some Assets.Battle.InfoImage
-                                     Entity.Color == Color.White.WithA 0.8f
-                                     Entity.Text := actionStr.Words
-                                     Entity.TextColor == Color.White.WithA 0.8f]
+                            Content.text "Info"
+                                [Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 18.0f 0.0f
+                                 Entity.Size == v3 540.0f 81.0f 0.0f
+                                 Entity.Elevation == Constants.Battle.GuiInputElevation
+                                 Entity.VisibleLocal := actionStr <> nameof Attack
+                                 Entity.BackdropImageOpt == Some Assets.Battle.InfoImage
+                                 Entity.Color == Color.White.WithA 0.8f
+                                 Entity.Text := actionStr.Words
+                                 Entity.TextColor == Color.White.WithA 0.8f]
                             Content.entity<ReticlesDispatcher> "Reticles"
                                 [Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.Reticles :=
@@ -560,4 +559,5 @@ type BattleDispatcher () =
                                         | _ -> target.Perimeter.CenterOffset)
                                  Entity.TargetSelectEvent =|> fun evt -> ReticlesSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => ReticlesCancel index]
+
                          | NoInput -> ()]]]
