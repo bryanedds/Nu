@@ -1084,11 +1084,11 @@ type FieldDispatcher () =
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
                             | Some teammate ->
-                                "HP   "   + (string teammate.HitPoints).PadRight 4 +  "/ " + (string teammate.HitPointsMax) +
-                                "\nTP   " + (string teammate.TechPoints).PadRight 4 + "/ " + (string teammate.TechPointsMax) +
-                                "\nPow. " + (string teammate.Power).PadRight 4 +      "Mag. " + (string $ teammate.Magic false) +
-                                "\nDef. " + (string teammate.Defense).PadRight 4 +    "Abs. " + (string teammate.Absorb) +
-                                "\nExp. " + (string teammate.ExpPoints).PadRight 3 +  " / " + (match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next)
+                                "HP   "   + (string teammate.HitPoints).PadRight 4 +  "/ " +    string teammate.HitPointsMax +
+                                "\nTP   " + (string teammate.TechPoints).PadRight 4 + "/ " +    string teammate.TechPointsMax +
+                                "\nPow. " + (string teammate.Power).PadRight 4 +      "Mag. " + string (teammate.Magic false) +
+                                "\nDef. " + (string teammate.Defense).PadRight 4 +    "Abs. " + string teammate.Absorb +
+                                "\nExp. " + (string teammate.ExpPoints).PadRight 3 +  " / " +   match Algorithms.expPointsForNextLevel teammate.ExpPoints with Int32.MaxValue -> "MAX" | next -> string next
                             | None -> ""]
                      Content.text "Gold"
                         [Entity.PositionLocal == v3 438.0f 0.0f 0.0f; Entity.ElevationLocal == 1.0f
@@ -1126,12 +1126,12 @@ type FieldDispatcher () =
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
                                 | Some teammate ->
-                                    "HP   "   + (string teammate.HitPointsMax).PadRight 4 +     (if teammate.HitPointsMax <> teammate'.HitPointsMax then "> " + (string teammate'.HitPointsMax) else "") +
-                                    "\nTP   " + (string teammate.TechPointsMax).PadRight 4 +    (if teammate.TechPointsMax <> teammate'.TechPointsMax then "> " + (string teammate'.TechPointsMax) else "") +
-                                    "\nPow. " + (string teammate.Power).PadRight 4 +            (if teammate.Power <> teammate'.Power then "> " + (string teammate'.Power) else "") +
-                                    "\nMag. " + (string $ teammate.Magic false).PadRight 4 +    (if teammate.Magic false <> teammate'.Magic false then "> " + (string $ teammate'.Magic false) else "") +
-                                    "\nDef. " + (string teammate.Defense).PadRight 4 +          (if teammate.Defense <> teammate'.Defense then "> " + (string teammate'.Defense) else "") +
-                                    "\nAbs. " + (string teammate.Absorb).PadRight 4 +           (if teammate.Absorb <> teammate'.Absorb then "> " + (string teammate'.Absorb) else "")
+                                    "HP   "   + (string teammate.HitPointsMax).PadRight 4 +     (if teammate.HitPointsMax <> teammate'.HitPointsMax then "> " +     string teammate'.HitPointsMax else "") +
+                                    "\nTP   " + (string teammate.TechPointsMax).PadRight 4 +    (if teammate.TechPointsMax <> teammate'.TechPointsMax then "> " +   string teammate'.TechPointsMax else "") +
+                                    "\nPow. " + (string teammate.Power).PadRight 4 +            (if teammate.Power <> teammate'.Power then "> " +                   string teammate'.Power else "") +
+                                    "\nMag. " + (string $ teammate.Magic false).PadRight 4 +    (if teammate.Magic false <> teammate'.Magic false then "> " +       string (teammate'.Magic false) else "") +
+                                    "\nDef. " + (string teammate.Defense).PadRight 4 +          (if teammate.Defense <> teammate'.Defense then "> " +               string teammate'.Defense else "") +
+                                    "\nAbs. " + (string teammate.Absorb).PadRight 4 +           (if teammate.Absorb <> teammate'.Absorb then "> " +                 string teammate'.Absorb else "")
                                 | None -> ""]
                          if changing then
                             Content.text "EquipLabel"
