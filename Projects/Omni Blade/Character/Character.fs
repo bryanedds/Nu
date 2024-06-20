@@ -455,7 +455,13 @@ module Character =
         if character.Healthy then
             let statuses = character.Statuses
             let statuses = Set.fold (fun statuses status -> Map.add status Constants.Battle.StatusBurndownTime statuses) statuses statusesAdded
-            let statuses = Set.fold (fun statuses status -> Map.remove status statuses) statuses statusesRemoved
+            let statuses =
+                Set.fold (fun statuses status ->
+                    match Map.tryFindKey (StatusType.same status >> constant) statuses with // NOTE: being extra specific here since StatusType equality ignore fields.
+                    | Some _ -> Map.remove status statuses
+                    | None -> statuses)
+                    statuses
+                    statusesRemoved
             let character = setStatuses statuses character
             let actionTime =
                 if  Set.exists (function Time false -> true | _ -> false) statusesAdded &&

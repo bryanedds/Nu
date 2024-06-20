@@ -130,9 +130,22 @@ type [<CustomEquality; CustomComparison>] StatusType =
     | Magic of bool * bool // true = Up, false = Down; true = 2, false = 1
     | Shield of bool * bool // true = Up, false = Down; true = 2, false = 1
 
+    static member same status status2 =
+        match (status, status2) with
+        | (Poison, Poison) -> true
+        | (Silence, Silence) -> true
+        | (Sleep, Sleep) -> true
+        | (Curse, Curse) -> true
+        | (Confuse, Confuse) -> true
+        | (Time b, Time b2) -> b = b2
+        | (Power (b, b2), Power (b3, b4)) -> b = b3 && b2 = b4
+        | (Magic (b, b2), Magic (b3, b4)) -> b = b3 && b2 = b4
+        | (Shield (b, b2), Shield (b3, b4)) -> b = b3 && b2 = b4
+        | (_, _) -> false
+
     // TODO: make this a property.
-    static member debuff this =
-        match this with
+    static member debuff status =
+        match status with
         | Poison -> true
         | Silence -> true
         | Sleep -> true
@@ -142,12 +155,12 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> false
 
     // TODO: make this a property.
-    static member buff this =
-        not (StatusType.debuff this)
+    static member buff status =
+        not (StatusType.debuff status)
 
-    static member randomizeWeak (vulnerabilities : Vulnerabilities) this =
+    static member randomizeWeak (vulnerabilities : Vulnerabilities) status =
         let result0 =
-            match this with
+            match status with
             | Poison -> Gen.random1 2 = 0
             | Silence -> Gen.random1 2 = 0
             | Sleep -> Gen.random1 2 = 0
@@ -156,8 +169,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 2 = 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
         let result =
-            if StatusType.debuff this then
-                match vulnerabilities.TryGetValue (Status this) with
+            if StatusType.debuff status then
+                match vulnerabilities.TryGetValue (Status status) with
                 | (true, rank) ->
                     match rank with
                     | Vulnerable -> result0 || Gen.randomb
@@ -167,9 +180,9 @@ type [<CustomEquality; CustomComparison>] StatusType =
             else result0
         result
 
-    static member randomizeStrong (vulnerabilities : Vulnerabilities) this =
+    static member randomizeStrong (vulnerabilities : Vulnerabilities) status =
         let result0 =
-            match this with
+            match status with
             | Poison -> Gen.random1 5 <> 0
             | Silence -> Gen.random1 4 <> 0
             | Sleep -> Gen.random1 3 <> 0
@@ -178,8 +191,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
             | Time false | Power (false, _) | Magic (false, _) | Shield (false, _) -> Gen.random1 5 <> 0
             | Time true | Power (true, _) | Magic (true, _) | Shield (true, _) -> true
         let result =
-            if StatusType.debuff this then
-                match vulnerabilities.TryGetValue (Status this) with
+            if StatusType.debuff status then
+                match vulnerabilities.TryGetValue (Status status) with
                 | (true, rank) ->
                     match rank with
                     | Vulnerable -> result0 || Gen.randomb
@@ -189,8 +202,8 @@ type [<CustomEquality; CustomComparison>] StatusType =
             else result0
         result
 
-    static member enumerate this =
-        match this with
+    static member enumerate status =
+        match status with
         | Poison -> 0
         | Silence -> 1
         | Sleep -> 2
@@ -201,10 +214,10 @@ type [<CustomEquality; CustomComparison>] StatusType =
         | Magic (_, _) -> 7
         | Shield (_, _) -> 8
 
-    static member compare this that =
+    static member compare status status2 =
         compare
-            (StatusType.enumerate this)
-            (StatusType.enumerate that)
+            (StatusType.enumerate status)
+            (StatusType.enumerate status2)
 
     interface StatusType IComparable with
         member this.CompareTo that =
