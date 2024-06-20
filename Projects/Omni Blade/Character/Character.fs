@@ -120,7 +120,11 @@ module Character =
                 | Resistant -> damage0 / 2
                 | Invulnerable -> 0
             | (false, _) -> damage0
-        let damage = damage1 |> max 1
+        let damage2 =
+            if source.CharacterType = Enemy BlueGoblin // HACK: blue goblins can't attack for more than 2 damage.
+            then min 2 damage1
+            else damage1
+        let damage = damage2 |> max 1
         damage
 
     let evalAimType aimType (target : Character) (characters : Map<CharacterIndex, Character>) =
