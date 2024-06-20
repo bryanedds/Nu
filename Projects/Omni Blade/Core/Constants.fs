@@ -96,9 +96,9 @@ module Constants =
         let ForegroundElevation = 0.0f
         let EffectElevation = 10.0f
         let SpiritOrbElevation = 20.0f
-        let TintElevation = 25.0f
-        let GuiElevation = 30.0f
-        let GuiEffectElevation = 40.0f
+        let TintElevation = 30.0f
+        let GuiElevation = 40.0f
+        let GuiEffectElevation = 60.0f
         let FieldSongFadeInTime = 60L
 
     [<RequireQualifiedAccess>]
@@ -148,10 +148,10 @@ module Constants =
         let ForegroundElevation = 0.0f
         let GuiForegroundElevation = 5.0f
         let EffectElevationOver = 10.0f
-        let DeathFadeElevation = 15.0f
-        let GuiOutputElevation = 20.0f
-        let GuiInputElevation = 30.0f
-        let GuiEffectElevation = 40.0f
+        let DeathFadeElevation = 20.0f
+        let GuiOutputElevation = 30.0f
+        let GuiInputElevation = 40.0f
+        let GuiEffectElevation = 50.0f
 
 [<AutoOpen>]
 module Box3Extensions =

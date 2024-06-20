@@ -550,7 +550,7 @@ type BattleDispatcher () =
                                 Content.text "Info"
                                     [Entity.MountOpt == None
                                      Entity.Perimeter == box3 (v3 -270.0f 159.0f 0.0f) (v3 540.0f 81.0f 0.0f)
-                                     Entity.Elevation == Constants.Battle.GuiInputElevation
+                                     Entity.Elevation == Constants.Battle.GuiOutputElevation - 1.0f
                                      Entity.BackdropImageOpt == Some Assets.Battle.InfoImage
                                      Entity.Color == Color.White.WithA 0.8f
                                      Entity.Text := actionStr.Words
