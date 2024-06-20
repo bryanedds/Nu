@@ -501,48 +501,43 @@ type BattleDispatcher () =
                                 [Entity.Position := ally.Perimeter.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.Enabled :=
-                                    (let allies = battle |> Battle.getAllies |> Map.toValueList
-                                     let alliesPastRegularMenu =
-                                        Seq.notExists (fun (ally : Character) ->
-                                            match ally.CharacterInputState with NoInput | RegularMenu -> false | _ -> true)
-                                            allies
-                                     alliesPastRegularMenu)
+                                    Battle.getAllies battle |>
+                                    Map.toValueList |>
+                                    Seq.notExists (fun (ally : Character) -> match ally.CharacterInputState with NoInput | RegularMenu -> false | _ -> true)
                                  Entity.RingMenu == { Items = Map.ofList [("Attack", (0, true)); ("Tech", (1, true)); ("Consumable", (2, true)); ("Defend", (3, true))]; Cancellable = false }
                                  Entity.ItemSelectEvent =|> fun evt -> RegularItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => RegularItemCancel index]
                          | ItemMenu ->
+                            let consumables =
+                                battle.Inventory |>
+                                Inventory.getConsumables |>
+                                Map.ofSeqBy (fun kvp -> (getCaseName kvp.Key, (getCaseTag kvp.Key, true)))
                             Content.entity<RingMenuDispatcher> "ConsumableMenu"
                                 [Entity.Position := ally.Perimeter.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
-                                 Entity.RingMenu :=
-                                    (let consumables =
-                                        battle.Inventory |>
-                                        Inventory.getConsumables |>
-                                        Map.ofSeqBy (fun kvp -> (getCaseName kvp.Key, (getCaseTag kvp.Key, true)))
-                                     { Items = consumables; Cancellable = true })
+                                 Entity.RingMenu := { Items = consumables; Cancellable = true }
                                  Entity.ItemSelectEvent =|> fun evt -> ConsumableItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => ConsumableItemCancel index]
                          | TechMenu ->
+                            let techs =
+                                Map.ofSeqBy (fun tech ->
+                                    let affordable =
+                                        match Map.tryFind tech Data.Value.Techs with
+                                        | Some techData -> techData.TechCost <= ally.TechPoints && not (Map.containsKey Silence ally.Statuses)
+                                        | None -> false
+                                    let castable =
+                                        if tech.ConjureTech then
+                                            match ally.ConjureChargeOpt with
+                                            | Some conjureCharge -> conjureCharge >= Constants.Battle.ChargeMax
+                                            | None -> true
+                                        else true
+                                    let usable = affordable && castable
+                                    (getCaseName tech, (getCaseTag tech, usable)))
+                                    ally.Techs
                             Content.entity<RingMenuDispatcher> "TechMenu"
                                 [Entity.Position := ally.Perimeter.CenterOffset
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
-                                 Entity.RingMenu :=
-                                    (let techs =
-                                        ally.Techs |>
-                                        Map.ofSeqBy (fun tech ->
-                                            let affordable =
-                                                match Map.tryFind tech Data.Value.Techs with
-                                                | Some techData -> techData.TechCost <= ally.TechPoints && not (Map.containsKey Silence ally.Statuses)
-                                                | None -> false
-                                            let castable =
-                                                if tech.ConjureTech then
-                                                    match ally.ConjureChargeOpt with
-                                                    | Some conjureCharge -> conjureCharge >= Constants.Battle.ChargeMax
-                                                    | None -> true
-                                                else true
-                                            let usable = affordable && castable
-                                            (getCaseName tech, (getCaseTag tech, usable)))
-                                     { Items = techs; Cancellable = true })
+                                 Entity.RingMenu := { Items = techs; Cancellable = true }
                                  Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => TechItemCancel index]
                          | AimReticles (actionStr, aimType) ->
