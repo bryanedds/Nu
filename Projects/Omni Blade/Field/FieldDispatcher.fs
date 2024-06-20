@@ -1329,17 +1329,17 @@ type FieldDispatcher () =
                              Entity.Text == "Swift"
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]
-                        Content.text "Full Screen"
+                        Content.text "FullScreen"
                             [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Full Screen"]
-                        Content.button "Toggle Full Screen"
+                        Content.button "ToggleFullScreen"
                             [Entity.PositionLocal == v3 408.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Toggle"
                              Entity.ClickEvent => MenuOptionsToggleFullScreen]
-                        Content.text "Quit Game"
+                        Content.text "QuitGame"
                             [Entity.PositionLocal == v3 414.0f 192.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Quit Game"]
