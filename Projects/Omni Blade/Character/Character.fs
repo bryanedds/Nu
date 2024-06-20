@@ -375,10 +375,10 @@ module Character =
 
     let getActionTypeOpt character =
         match character.CharacterInputState_ with
-        | AimReticles (item, _) ->
+        | AimReticles (actionStr, _) ->
             let actionType =
-                if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Consume (scvalue item)
-                elif typeof<TechType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = item) then Tech (scvalue item)
+                if typeof<ConsumableType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = actionStr) then Consume (scvalue actionStr)
+                elif typeof<TechType> |> FSharpType.GetUnionCases |> Array.exists (fun case -> case.Name = actionStr) then Tech (scvalue actionStr)
                 else Attack
             Some actionType
         | _ -> None

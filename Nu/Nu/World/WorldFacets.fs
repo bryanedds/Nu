@@ -490,7 +490,8 @@ type BackdroppableFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.DisabledColor Constants.Gui.DisabledColor
+        [define Entity.Color Color.One
+         define Entity.DisabledColor Constants.Gui.DisabledColor
          define Entity.BackdropImageOpt None]
 
     override this.Render (_, entity, world) =
@@ -507,7 +508,7 @@ type BackdroppableFacet () =
                         { Transform = spriteTransform
                           InsetOpt = ValueNone
                           Image = spriteImage
-                          Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+                          Color = if transform.Enabled then entity.GetColor world else entity.GetDisabledColor world
                           Blend = Transparent
                           Emission = Color.Zero
                           Flip = FlipNone }}

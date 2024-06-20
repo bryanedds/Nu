@@ -76,12 +76,12 @@ type BattleDispatcher () =
                     just battle
             | None -> just battle
 
-        | RegularItemSelect (characterIndex, item) ->
+        | RegularItemSelect (characterIndex, regularStr) ->
             let battle =
-                match item with
+                match regularStr with
                 | "Attack" ->
                     battle |>
-                    Battle.setCharacterInputState (AimReticles (item, EnemyAim true)) characterIndex |>
+                    Battle.setCharacterInputState (AimReticles (regularStr, EnemyAim true)) characterIndex |>
                     Battle.undefendCharacter characterIndex
                 | "Defend" ->
                     let battle = Battle.setCharacterInputState NoInput characterIndex battle
@@ -103,28 +103,26 @@ type BattleDispatcher () =
             let battle = Battle.setCharacterInputState RegularMenu characterIndex battle
             just battle
 
-        | ConsumableItemSelect (characterIndex, item) ->
-            let consumableType =
-                scvalue<ConsumableType> item
+        | ConsumableItemSelect (characterIndex, consumableStr) ->
+            let consumableType = scvalue<ConsumableType> consumableStr
             let aimType =
                 match Data.Value.Consumables.TryGetValue consumableType with
                 | (true, consumableData) -> consumableData.AimType
                 | (false, _) -> NoAim
-            let battle = Battle.setCharacterInputState (AimReticles (item, aimType)) characterIndex battle
+            let battle = Battle.setCharacterInputState (AimReticles (consumableStr, aimType)) characterIndex battle
             just battle
 
         | ConsumableItemCancel characterIndex ->
             let battle = Battle.setCharacterInputState RegularMenu characterIndex battle
             just battle
 
-        | TechItemSelect (characterIndex, item) ->
-            let techType =
-                scvalue<TechType> item
+        | TechItemSelect (characterIndex, techStr) ->
+            let techType = scvalue<TechType> techStr
             let aimType =
                 match Data.Value.Techs.TryGetValue techType with
                 | (true, techData) -> techData.AimType
                 | (false, _) -> NoAim
-            let battle = Battle.setCharacterInputState (AimReticles (item, aimType)) characterIndex battle
+            let battle = Battle.setCharacterInputState (AimReticles (techStr, aimType)) characterIndex battle
             just battle
 
         | TechItemCancel characterIndex ->
@@ -548,21 +546,25 @@ type BattleDispatcher () =
                                  Entity.ItemSelectEvent =|> fun evt -> TechItemSelect (index, evt.Data) |> signal
                                  Entity.CancelEvent => TechItemCancel index]
                          | AimReticles _ ->
-                            Content.entity<ReticlesDispatcher> "Reticles"
-                                [Entity.Elevation == Constants.Battle.GuiInputElevation
-                                 Entity.Reticles :=
-                                    (let aimType =
-                                        match Battle.tryGetCharacter index battle with
-                                        | Some character -> character.CharacterInputState.AimType
-                                        | None -> NoAim
-                                     let characters = Battle.getTargets aimType battle
-                                     let reticles =
-                                        Map.map (fun _ (c : Character) ->
-                                            match c.Stature with
-                                            | BossStature -> c.Perimeter.CenterOffset2
-                                            | _ -> c.Perimeter.CenterOffset)
-                                            characters
-                                     reticles)
-                                 Entity.TargetSelectEvent =|> fun evt -> ReticlesSelect (index, evt.Data) |> signal
-                                 Entity.CancelEvent => ReticlesCancel index]
+                            match ally.CharacterInputState with
+                            | AimReticles (actionStr, aimType) ->
+                                Content.text "Info"
+                                    [Entity.MountOpt == None
+                                     Entity.Perimeter == box3 (v3 -270.0f 159.0f 0.0f) (v3 540.0f 81.0f 0.0f)
+                                     Entity.Elevation == Constants.Battle.GuiInputElevation
+                                     Entity.BackdropImageOpt == Some Assets.Battle.InfoImage
+                                     Entity.Color == Color.White.WithA 0.8f
+                                     Entity.Text := actionStr.Words
+                                     Entity.Visible := actionStr <> nameof Attack]
+                                Content.entity<ReticlesDispatcher> "Reticles"
+                                    [Entity.Elevation == Constants.Battle.GuiInputElevation
+                                     Entity.Reticles :=
+                                        Battle.getTargets aimType battle |>
+                                        Map.map (fun _ (target : Character) ->
+                                            match target.Stature with
+                                            | BossStature -> target.Perimeter.CenterOffset2
+                                            | _ -> target.Perimeter.CenterOffset)
+                                     Entity.TargetSelectEvent =|> fun evt -> ReticlesSelect (index, evt.Data) |> signal
+                                     Entity.CancelEvent => ReticlesCancel index]
+                            | _ -> ()
                          | NoInput -> ()]]]

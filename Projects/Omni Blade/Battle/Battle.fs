@@ -1305,9 +1305,9 @@ module Battle =
                                         withSignals [playHit; displayCut; powerCut] battle
                                     | DispelSlash ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.HitSound)
-                                        let playDispelSlash = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Field.DispelSlashSound)
+                                        let playDispelSlash = PlaySound (20L, Constants.Audio.SoundVolumeDefault, Assets.Field.DispelSlashSound)
                                         let displayCut = DisplayCut (20L, false, targetIndex)
-                                        let dispelCuts = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayDispelCut (0L, targetIndex) |> signal)
+                                        let dispelCuts = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayDispelCut (10L, targetIndex) |> signal)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
                                         withSignals (playHit :: playDispelSlash :: displayCut :: dispelCuts) battle
                                     | DoubleCut ->
