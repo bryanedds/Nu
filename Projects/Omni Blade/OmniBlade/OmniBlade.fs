@@ -30,11 +30,12 @@ type OmniBladeMessage =
     interface Message
 
 type OmniBladeCommand =
+    | UpdateFullScreen of KeyboardKeyData
+    | UpdatePicks
     | SetField of Field
     | FromFieldToBattle of BattleData * PrizePool
     | FromBattleToField of PrizePool
     | ConcludeCredits
-    | UpdatePicks
     | Exit
     interface Command
 
@@ -58,6 +59,7 @@ type OmniBladeDispatcher () =
             | Intro _ -> Desire Simulants.Intro
             | Field -> Desire Simulants.Field
             | Battle -> Desire Simulants.Battle
+         Game.KeyboardKeyDownEvent =|> fun evt -> UpdateFullScreen evt.Data
          if omniBlade = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.Pick.UpdateEvent => UpdatePicks
          Simulants.TitlePlay.ClickEvent => ShowPick
@@ -127,6 +129,26 @@ type OmniBladeDispatcher () =
     override this.Command (_, command, _, world) =
 
         match command with
+        | UpdateFullScreen keyboardKeyData ->
+            let world =
+                if keyboardKeyData.KeyboardKey = KeyboardKey.Enter && World.isKeyboardAltDown world && world.Unaccompanied then
+                    match World.tryGetWindowFullScreen world with
+                    | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
+                    | None -> world
+                else world
+            just world
+
+        | UpdatePicks ->
+            if Simulants.Pick.GetSelected world then
+                let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
+                let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
+                let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
+                let world = Simulants.PickLoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
+                let world = Simulants.PickLoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
+                let world = Simulants.PickLoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                just world
+            else just world
+
         | SetField field ->
             let world = Simulants.Field.SetField field world
             just world
@@ -150,31 +172,6 @@ type OmniBladeDispatcher () =
 
         | ConcludeCredits ->
             let world = Simulants.Credits.SetCredits (Credits.make true) world
-            just world
-
-        | UpdatePicks ->
-
-            // update picks
-            let world =
-                if Simulants.Pick.GetSelected world then
-                    let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
-                    let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
-                    let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
-                    let world = Simulants.PickLoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
-                    let world = Simulants.PickLoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
-                    let world = Simulants.PickLoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
-                    world
-                else world
-
-            // update full screen toggle
-            let world =
-                if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.Enter world && world.Unaccompanied then
-                    match World.tryGetWindowFullScreen world with
-                    | Some fullScreen -> World.trySetWindowFullScreen (not fullScreen) world
-                    | None -> world
-                else world
-
-            // fin
             just world
 
         | Exit ->
