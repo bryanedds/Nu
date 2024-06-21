@@ -14,12 +14,14 @@ module Viewport =
 
         /// Compute the 2d absolute view matrix.
         member this.View2dAbsolute (_ : Vector2, eyeSize : Vector2) =
-            let translation = eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+            let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+            let translation = eyeSize * 0.5f * virtualScalar
             Matrix4x4.CreateTranslation translation.V3
 
         /// Compute the 2d relative view matrix.
         member this.View2dRelative (eyeCenter : Vector2, eyeSize : Vector2) =
-            let translation = -eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+            let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+            let translation = -eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
             Matrix4x4.CreateTranslation translation.V3
 
         /// Compute a 2d view matrix.

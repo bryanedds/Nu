@@ -66,8 +66,6 @@ module Override =
                 | _ -> ()
             Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior
             Constants.Render.FarPlaneDistanceOmnipresent <- Constants.Render.FarPlaneDistanceImposter
-            Constants.Render.VirtualScalar2 <- Vector2i Constants.Render.VirtualScalar
-            Constants.Render.VirtualScalar2F <- Constants.Render.VirtualScalar2.V2
             Constants.Render.Resolution <- Constants.Render.VirtualResolution * Constants.Render.VirtualScalar
             Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
             Constants.Render.ShadowResolution <- Vector2i (512 * Constants.Render.VirtualScalar)

@@ -207,14 +207,16 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
     static member Position2dToWindow (absolute, eyeSize : Vector2, eyeCenter, position) =
+        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
         if absolute
-        then position * Constants.Render.VirtualScalar2F * v2 1.0f -1.0f + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-        else position * Constants.Render.VirtualScalar2F * v2 1.0f -1.0f - eyeCenter * Constants.Render.VirtualScalar2F + eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+        then position * virtualScalar * v2 1.0f -1.0f + eyeSize * 0.5f * virtualScalar
+        else position * virtualScalar * v2 1.0f -1.0f - eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
 
     static member WindowToPosition2d (absolute, eyeSize : Vector2, eyeCenter, position) =
+        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
         if absolute
-        then position / Constants.Render.VirtualScalar2F * v2 1.0f -1.0f - eyeSize * 0.5f * Constants.Render.VirtualScalar2F
-        else position / Constants.Render.VirtualScalar2F * v2 1.0f -1.0f + eyeCenter * Constants.Render.VirtualScalar2F - eyeSize * 0.5f * Constants.Render.VirtualScalar2F
+        then position / virtualScalar * v2 1.0f -1.0f - eyeSize * 0.5f * virtualScalar
+        else position / virtualScalar * v2 1.0f -1.0f + eyeCenter * virtualScalar - eyeSize * 0.5f * virtualScalar
 
     // OPTIMIZATION: requiring window position and size to be passed in so that expensive calls to them not need be repeatedly made.
     // TODO: the calling convention here is very inconsistent with Position2dToWindow, so let's see if we can converge them.
