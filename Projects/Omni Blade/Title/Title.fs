@@ -52,8 +52,9 @@ type TitleDispatcher () =
 
     override this.Content (title, _) =
         [Content.group Simulants.TitleScene.Name []
-            [Content.staticSprite "TitleForeground" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll 1.2f false title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleForeground2" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll 1.2f true title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
+            [let foregroundScrollSpeed = if Constants.Render.VirtualScalar = 1 then 1.5f else 1.2f // HACK: get rid of aliasing when VirtualScalar = 1.
+             Content.staticSprite "TitleForeground" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll foregroundScrollSpeed false title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleForeground2" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll foregroundScrollSpeed true title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
              Content.staticSprite "TitleGround" [Entity.StaticImage == asset "Gui" "TitleGround"; Entity.Position := scroll 1.0f false title; Entity.Elevation == -2.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
              Content.staticSprite "TitleGround2" [Entity.StaticImage == asset "Gui" "TitleGround"; Entity.Position := scroll 1.0f true title; Entity.Elevation == -2.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
              Content.staticSprite "TitleForest" [Entity.StaticImage == asset "Gui" "TitleForest"; Entity.Position := scroll 0.4f false title; Entity.Elevation == -3.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
