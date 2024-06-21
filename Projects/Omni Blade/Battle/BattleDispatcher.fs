@@ -541,7 +541,7 @@ type BattleDispatcher () =
 
                          | AimReticles (actionStr, aimType) ->
                             Content.text "Info"
-                                [Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 18.0f 0.0f
+                                [Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 15.0f 0.0f
                                  Entity.Size == v3 540.0f 81.0f 0.0f
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.VisibleLocal := actionStr <> nameof Attack
