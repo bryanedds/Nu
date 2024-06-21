@@ -76,7 +76,7 @@ module SdlDeps =
         | Some (SglWindow window) ->
             let flags =
                 if fullScreen
-                then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN
+                then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP
                 else 0u
             SDL.SDL_SetWindowFullscreen (window.SglWindow, flags) |> ignore
         | _ -> ()
