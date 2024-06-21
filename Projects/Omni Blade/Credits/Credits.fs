@@ -93,8 +93,8 @@ type CreditsDispatcher () =
              Content.panel "Panel"
                 [Entity.Position := credits.ScrollPosition
                  Entity.Size == v3 0.0f 3000.0f 0.0f
-                 Entity.Layout == Flow (FlowDownward, FlowUnlimited)
-                 Entity.PerimeterCentered == true]
+                 Entity.PerimeterCentered == true
+                 Entity.Layout == Flow (FlowDownward, FlowUnlimited)]
                 [Content.text "OmniBlade" [Entity.Text == "Omni Blade"]
                  Content.text "SeparatorA" []
                  Content.text "SeparatorA2" []

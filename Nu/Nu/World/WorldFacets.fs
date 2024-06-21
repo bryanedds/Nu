@@ -1969,7 +1969,10 @@ type LayoutFacet () =
                         gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
                     | Manual -> world
                 world
-        else world
+        else
+            match entity.GetLayout world with
+            | Manual -> world
+            | _ -> Log.warnOnce "Layouts are not supported for uncentered entities."; world
 
     static let handleLayout evt world =
         let entity = evt.Subscriber : Entity
