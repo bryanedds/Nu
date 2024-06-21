@@ -1352,19 +1352,19 @@ type FieldDispatcher () =
                         Content.text "About"
                             [Entity.PositionLocal == v3 320.0f 24.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 320.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Omni Blade Demo v0.9.2"]
+                             Entity.Text == "Omni Blade Demo v0.9.3"]
                      else
-                        Content.text "Confirm Quit"
+                        Content.text "QuitConfirmation"
                             [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Confirm Quit?"]
-                        Content.button "Quit!"
+                        Content.button "QuitConfirm"
                             [Entity.PositionLocal == v3 252.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
                              Entity.Text == "Quit!"
                              Entity.ClickEvent => MenuOptionsQuitConfirm]
-                        Content.button "Cancel"
+                        Content.button "QuitCancel"
                             [Entity.PositionLocal == v3 564.0f 252.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 144.0f 48.0f 0.0f
                              Entity.UpImage == Assets.Gui.ButtonShortUpImage
                              Entity.DownImage == Assets.Gui.ButtonShortDownImage
