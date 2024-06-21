@@ -9,6 +9,7 @@ type GameplayState =
     | Playing
     | Quit
 
+// the user-controlled paddle.
 type Paddle =
     { Position : Vector3
       Size : Vector3 }
@@ -17,6 +18,7 @@ type Paddle =
         { Position = v3 0.0f -160.0f 0.0f
           Size = v3 64.0f 16.0f 0.0f }
 
+// the block-breaking ball.
 type Ball =
     { Position : Vector3
       Size : Vector3
@@ -30,6 +32,7 @@ type Ball =
           Size = v3 8.0f 8.0f 0.0f
           Velocity = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * 4.0f }
 
+// the bricks to break out of.
 type Brick =
     { Position : Vector3
       Size : Vector3
@@ -51,7 +54,7 @@ type [<SymbolicExpansion>] Gameplay =
       Score : int
       Lives : int }
 
-    // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
+    // this represents the gameplay model in a vacant state, such as when the gameplay screen is not selected.
     static member empty =
         { GameplayTime = 0L
           GameplayState = Quit
@@ -73,6 +76,7 @@ type [<SymbolicExpansion>] Gameplay =
             Bricks = bricks
             Lives = 3 }
 
+    // this updates the gameplay model every frame that gameplay is active.
     static member update gameplay world =
         match gameplay.GameplayState with
         | Playing when gameplay.Lives > 0 && gameplay.Bricks.Count > 0 ->
