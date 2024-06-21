@@ -602,7 +602,7 @@ module AmbientState =
 
     /// Attempt to check that the window is in a full screen state.
     let tryGetWindowFullScreen state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =

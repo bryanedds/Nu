@@ -17,7 +17,7 @@ module Program =
 #if DEBUG
                 WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 #else
-                WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL ||| SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN }
+                WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL ||| SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP }
 #endif
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
