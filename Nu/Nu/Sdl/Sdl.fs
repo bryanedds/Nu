@@ -108,6 +108,8 @@ module SdlDeps =
     let tryMake sdlConfig =
         match attemptPerformSdlInit
             (fun () ->
+                SDL.SDL_SetHint (SDL.SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1") |> ignore<SDL.SDL_bool>
+                SDL.SDL_SetHint (SDL.SDL_HINT_WINDOWS_NO_CLOSE_ON_ALT_F4, "1") |> ignore<SDL.SDL_bool>
                 let initConfig =
                     SDL.SDL_INIT_TIMER |||
                     SDL.SDL_INIT_AUDIO |||
