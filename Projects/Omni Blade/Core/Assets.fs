@@ -198,7 +198,6 @@ module Assets =
         let TimeDebuffImage = asset<Image> PackageName "TimeDebuff"
         let FireSpinAnimationSheet = asset<Image> PackageName "FireSpin"
         let EternalSlumber = asset<Song> PackageName "EternalSlumber"
-        let BeastGrowlSound = asset<Sound> PackageName "BeastGrowl"
         let BeastDeathSound = asset<Sound> PackageName "BeastDeath"
         let HealSound = asset<Sound> PackageName "Heal"
         let CureSound = asset<Sound> PackageName "Cure"
