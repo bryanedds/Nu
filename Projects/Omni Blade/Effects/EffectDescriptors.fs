@@ -128,12 +128,12 @@ module EffectDescriptors =
 
     let dispelCut =
         { EffectName = "DispelCut"
-          LifeTimeOpt = Some 40L
+          LifeTimeOpt = Some 32L
           Definitions = Map.empty
           Content =
             AnimatedSprite
                 (Resource (AssetTag.toPair Assets.Battle.DispelCutAnimationSheet),
-                 v2i 64 64, 8, 8, 5L, Once,
+                 v2i 48 48, 8, 8, 4L, Once,
                  [|Size (v3 192.0f 192.0f 0.0f)|],
                  Nil) }
 
