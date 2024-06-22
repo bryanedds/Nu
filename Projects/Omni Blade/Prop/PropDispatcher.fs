@@ -55,7 +55,7 @@ type PropDispatcher () =
                 | None -> BoxShape { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
             | Seal (_, _, requirements) ->
                 if propPlus.Advents.IsSupersetOf requirements
-                then BoxShape { Size = v3 1.0f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                then BoxShape { Size = v3 1.0f 0.5f 0.0f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f -0.25f 0.0f)); PropertiesOpt = None }
                 else EmptyShape
             | Character (_, _, _, _, _, requirements) ->
                 if propPlus.Advents.IsSupersetOf requirements
