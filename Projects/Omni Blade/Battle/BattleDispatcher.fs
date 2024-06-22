@@ -549,7 +549,8 @@ type BattleDispatcher () =
                                  Entity.BackdropImageOpt := Some (if infoText.Length <= 14 then Assets.Battle.InfoShortImage else Assets.Battle.InfoLongImage) // never more than 16 characters
                                  Entity.Color == Color.White.WithA 0.8f
                                  Entity.Text := infoText
-                                 Entity.TextColor == Color.White.WithA 0.7f]
+                                 Entity.TextColor == Color.White.WithA 0.7f
+                                 Entity.TextOffset == v2 2.0f -1.5f]
                             Content.entity<ReticlesDispatcher> "Reticles"
                                 [Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.Reticles :=
