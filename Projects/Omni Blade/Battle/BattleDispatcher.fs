@@ -548,7 +548,7 @@ type BattleDispatcher () =
                                  Entity.BackdropImageOpt == Some Assets.Battle.InfoImage
                                  Entity.Color == Color.White.WithA 0.8f
                                  Entity.Text := actionStr.Words
-                                 Entity.TextColor == Color.White.WithA 0.8f]
+                                 Entity.TextColor == Color.White.WithA 0.7f]
                             Content.entity<ReticlesDispatcher> "Reticles"
                                 [Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.Reticles :=
