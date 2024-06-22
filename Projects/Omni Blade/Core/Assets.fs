@@ -151,7 +151,8 @@ module Assets =
     module Battle =
 
         let PackageName = "Battle"
-        let InfoImage = asset<Image> PackageName "Info"
+        let InfoShortImage = asset<Image> PackageName "InfoShort"
+        let InfoLongImage = asset<Image> PackageName "InfoLong"
         let CancelImage = asset<Image> PackageName "Cancel"
         let CutImage = asset<Image> PackageName "Cut"
         let LightCutImage = asset<Image> PackageName "LightCut"

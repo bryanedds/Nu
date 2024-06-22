@@ -540,14 +540,15 @@ type BattleDispatcher () =
                                  Entity.CancelEvent => TechItemCancel index]
 
                          | AimReticles (actionStr, aimType) ->
+                            let infoText = actionStr.Words
                             Content.text "Info"
                                 [Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 15.0f 0.0f
                                  Entity.Size == v3 540.0f 81.0f 0.0f
                                  Entity.Elevation == Constants.Battle.GuiInputElevation
                                  Entity.VisibleLocal := actionStr <> nameof Attack
-                                 Entity.BackdropImageOpt == Some Assets.Battle.InfoImage
+                                 Entity.BackdropImageOpt := Some (if infoText.Length <= 14 then Assets.Battle.InfoShortImage else Assets.Battle.InfoLongImage) // never more than 16 characters
                                  Entity.Color == Color.White.WithA 0.8f
-                                 Entity.Text := actionStr.Words
+                                 Entity.Text := infoText
                                  Entity.TextColor == Color.White.WithA 0.7f]
                             Content.entity<ReticlesDispatcher> "Reticles"
                                 [Entity.Elevation == Constants.Battle.GuiInputElevation
