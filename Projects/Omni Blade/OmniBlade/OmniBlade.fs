@@ -140,12 +140,12 @@ type OmniBladeDispatcher () =
 
         | UpdatePicks ->
             if Simulants.Pick.GetSelected world then
-                let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.Global.SaveFilePath1)) world
-                let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.Global.SaveFilePath2)) world
-                let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.Global.SaveFilePath3)) world
-                let world = Simulants.PickLoadGame1.SetVisible (File.Exists Assets.Global.SaveFilePath1) world
-                let world = Simulants.PickLoadGame2.SetVisible (File.Exists Assets.Global.SaveFilePath2) world
-                let world = Simulants.PickLoadGame3.SetVisible (File.Exists Assets.Global.SaveFilePath3) world
+                let world = Simulants.PickNewGame1.SetVisible (not (File.Exists Assets.User.SaveFilePath1)) world
+                let world = Simulants.PickNewGame2.SetVisible (not (File.Exists Assets.User.SaveFilePath2)) world
+                let world = Simulants.PickNewGame3.SetVisible (not (File.Exists Assets.User.SaveFilePath3)) world
+                let world = Simulants.PickLoadGame1.SetVisible (File.Exists Assets.User.SaveFilePath1) world
+                let world = Simulants.PickLoadGame2.SetVisible (File.Exists Assets.User.SaveFilePath2) world
+                let world = Simulants.PickLoadGame3.SetVisible (File.Exists Assets.User.SaveFilePath3) world
                 just world
             else just world
 

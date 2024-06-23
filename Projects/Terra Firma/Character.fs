@@ -286,7 +286,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 else (false, character)
 
             // attacking
-            elif keyboardKeyData.KeyboardKey = KeyboardKey.Rshift && not keyboardKeyData.Repeated then
+            elif keyboardKeyData.KeyboardKey = KeyboardKey.RShift && not keyboardKeyData.Repeated then
                 let character =
                     match character.ActionState with
                     | NormalState ->

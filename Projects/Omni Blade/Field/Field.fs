@@ -601,9 +601,9 @@ module Field =
     let save field =
         let saveFilePath =
             match field.SaveSlot_ with
-            | Slot1 -> Assets.Global.SaveFilePath1
-            | Slot2 -> Assets.Global.SaveFilePath2
-            | Slot3 -> Assets.Global.SaveFilePath3
+            | Slot1 -> Assets.User.SaveFilePath1
+            | Slot2 -> Assets.User.SaveFilePath2
+            | Slot3 -> Assets.User.SaveFilePath3
         let fieldSavable = toSavable field
         let fieldSymbol = valueToSymbol fieldSavable
         let fieldStr = PrettyPrinter.prettyPrintSymbol fieldSymbol PrettyPrinter.defaultPrinter
@@ -1368,9 +1368,9 @@ module Field =
     let tryLoad time saveSlot =
         try let saveFilePath =
                 match saveSlot with
-                | Slot1 -> Assets.Global.SaveFilePath1
-                | Slot2 -> Assets.Global.SaveFilePath2
-                | Slot3 -> Assets.Global.SaveFilePath3
+                | Slot1 -> Assets.User.SaveFilePath1
+                | Slot2 -> Assets.User.SaveFilePath2
+                | Slot3 -> Assets.User.SaveFilePath3
             let fileStr = File.ReadAllText saveFilePath
             match fileStr.Split checksumToken with
             | [|fieldStr; checksumStr|] ->
