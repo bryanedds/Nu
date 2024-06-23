@@ -83,7 +83,6 @@ let generateBindingsCode codesStr =
     "\n" +
     "namespace Nu\n" +
     "open System\n" +
-    "open Prime\n" +
     "\n" +
     "type KeyboardKey =\n" +
     codesStr +
@@ -96,4 +95,4 @@ do
         enumEntries |>
         enumEntriesToCode |>
         generateBindingsCode
-    File.WriteAllText ("../../../Sdl/SdlInputBindings.fs", code)
+    File.WriteAllText ("../../Sdl/SdlInputBindings.fs", code)
