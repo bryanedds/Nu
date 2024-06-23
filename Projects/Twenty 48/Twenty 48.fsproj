@@ -44,13 +44,13 @@
 		<Compile Include="Twenty48.fs" />
 		<Compile Include="Twenty48Plugin.fs" />
 		<Compile Include="Program.fs" />
-		<None Include="App.config" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Overlayer.nuol">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</Content>
+		<None Include="App.config" />
 	</ItemGroup>
 
 	<ItemGroup>
