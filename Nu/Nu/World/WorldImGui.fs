@@ -83,7 +83,7 @@ module WorldImGui =
             World.imGuiCircles3d absolute (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiSegments3dPlus absolute (segments : struct (Vector3 * Vector3) seq) thickness (computeColor : struct (Vector3 * Vector3) -> Color) world =
+        static member imGuiSegments3dPlus absolute (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
@@ -95,7 +95,7 @@ module WorldImGui =
             let projection = viewport.Projection3d
             let viewProjection = view * projection
             for segment in segments do
-                match Math.TryUnionSegmentAndFrustum (fst' segment) (snd' segment) eyeFrustum with
+                match Math.TryUnionSegmentAndFrustum segment.A segment.B eyeFrustum with
                 | Some (start, stop) ->
                     let color = computeColor segment
                     let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)

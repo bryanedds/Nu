@@ -1110,16 +1110,43 @@ module Plane3 =
     type Plane3 with
 
         /// Attempt to find the intersection of the given ray with the plane.
-        /// TODO: move this to Ray3.cs.
-        member this.Intersection (ray : Ray3) =
-            ray.Intersection this
+        member this.Intersection (ray : Ray3) = ray.Intersection this
+
+[<AutoOpen>]
+module Segment2 =
+
+    let inline segment2 (a : Vector2) (b : Vector2) = Segment2 (a, b)
+    let inline segment2Eq (left : Segment2) (right : Segment2) = left.Equals right
+    let inline segment2Neq (left : Segment2) (right : Segment2) = not (left.Equals right)
+
+    type Segment2 with
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
+
+[<AutoOpen>]
+module Segment3 =
+
+    let inline segment3 (a : Vector3) (b : Vector3) = Segment3 (a, b)
+    let inline segment3Eq (left : Segment3) (right : Segment3) = left.Equals right
+    let inline segment3Neq (left : Segment3) (right : Segment3) = not (left.Equals right)
+
+    type Segment3 with
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
+
+[<AutoOpen>]
+module Ray2 =
+
+    let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
+    let inline ray2Eq (left : Ray2) (right : Ray2) = left.Equals right
+    let inline ray2Neq (left : Ray2) (right : Ray2) = not (left.Equals right)
 
 [<AutoOpen>]
 module Ray3 =
 
-    let inline ray (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
-    let inline rayEq (left : Ray3) (right : Ray3) = left.Equals right
-    let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
+    let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
+    let inline ray3Eq (left : Ray3) (right : Ray3) = left.Equals right
+    let inline ray3Neq (left : Ray3) (right : Ray3) = not (left.Equals right)
 
 /// Composition of individual affine matrix components.
 type [<Struct>] Affine =

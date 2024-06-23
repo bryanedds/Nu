@@ -140,9 +140,9 @@ type NavBuilderResultData =
       NavPoints : Vector3 array
       NavEdgesMinY : single
       NavEdgesMaxY : single
-      NavInteriorEdges : struct (Vector3 * Vector3) array
-      NavExteriorEdges : struct (Vector3 * Vector3) array }
-      
+      NavInteriorEdges : Segment3 array
+      NavExteriorEdges : Segment3 array }
+
     /// Make from an RcBuilderResult.
     static member make (builderResult : RcBuilderResult) =
 
@@ -190,7 +190,7 @@ type NavBuilderResultData =
                                     dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
                                     dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
                                     dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                            struct (start, stop)
+                            segment3 start stop
                         kp <- k
                         k <- inc k|]
 
@@ -224,7 +224,7 @@ type NavBuilderResultData =
                             if edgesMaxY < start.Y then edgesMaxY <- start.Y
                             if edgesMinY > stop.Y then edgesMinY <- stop.Y
                             if edgesMaxY < stop.Y then edgesMaxY <- stop.Y
-                            struct (start, stop)
+                            segment3 start stop
                         kp <- k
                         k <- inc k|]
 

@@ -623,10 +623,10 @@ type Nav3dConfigDispatcher () =
             let nav3d = World.getScreenNav3d entity.Screen world
             match nav3d.Nav3dMeshOpt with
             | Some (nbrData, _, _) ->
-            
+
                 // edge color compute lambda
-                let computeEdgeColor (edge : struct (Vector3 * Vector3)) =
-                    let middleY = (fst' edge).Y + (snd' edge).Y * 0.5f
+                let computeEdgeColor (edge : Segment3) =
+                    let middleY = edge.A.Y + edge.B.Y * 0.5f
                     let height = Math.Lerp (0.0f, 1.0f, (middleY - nbrData.NavEdgesMinY) / (nbrData.NavEdgesMaxY - nbrData.NavEdgesMinY))
                     Color (1.0f, 1.0f - height, height, 1.0f)
 
