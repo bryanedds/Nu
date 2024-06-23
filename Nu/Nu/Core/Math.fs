@@ -1099,6 +1099,47 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
+// TODO: create symbolic converter for Segment2.
+[<AutoOpen>]
+module Segment2 =
+
+    let inline segment2 (a : Vector2) (b : Vector2) = Segment2 (a, b)
+    let inline segment2Eq (left : Segment2) (right : Segment2) = left.Equals right
+    let inline segment2Neq (left : Segment2) (right : Segment2) = not (left.Equals right)
+
+    type Segment2 with
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
+
+// TODO: create symbolic converter for Segment3.
+[<AutoOpen>]
+module Segment3 =
+
+    let inline segment3 (a : Vector3) (b : Vector3) = Segment3 (a, b)
+    let inline segment3Eq (left : Segment3) (right : Segment3) = left.Equals right
+    let inline segment3Neq (left : Segment3) (right : Segment3) = not (left.Equals right)
+
+    type Segment3 with
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
+
+// TODO: create symbolic converter for Ray2.
+[<AutoOpen>]
+module Ray2 =
+
+    let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
+    let inline ray2Eq (left : Ray2) (right : Ray2) = left.Equals right
+    let inline ray2Neq (left : Ray2) (right : Ray2) = not (left.Equals right)
+
+// TODO: create symbolic converter for Ray3.
+[<AutoOpen>]
+module Ray3 =
+
+    let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
+    let inline ray3Eq (left : Ray3) (right : Ray3) = left.Equals right
+    let inline ray3Neq (left : Ray3) (right : Ray3) = not (left.Equals right)
+
+// TODO: create symbolic converter for Plane3.
 [<AutoOpen>]
 module Plane3 =
 
@@ -1112,54 +1153,21 @@ module Plane3 =
         /// Attempt to find the intersection of the given ray with the plane.
         member this.Intersection (ray : Ray3) = ray.Intersection this
 
-[<AutoOpen>]
-module Segment2 =
-
-    let inline segment2 (a : Vector2) (b : Vector2) = Segment2 (a, b)
-    let inline segment2Eq (left : Segment2) (right : Segment2) = left.Equals right
-    let inline segment2Neq (left : Segment2) (right : Segment2) = not (left.Equals right)
-
-    type Segment2 with
-        member this.Magnitude = this.Length ()
-        member this.MagnitudeSquared = this.LengthSquared ()
-
-[<AutoOpen>]
-module Segment3 =
-
-    let inline segment3 (a : Vector3) (b : Vector3) = Segment3 (a, b)
-    let inline segment3Eq (left : Segment3) (right : Segment3) = left.Equals right
-    let inline segment3Neq (left : Segment3) (right : Segment3) = not (left.Equals right)
-
-    type Segment3 with
-        member this.Magnitude = this.Length ()
-        member this.MagnitudeSquared = this.LengthSquared ()
-
-[<AutoOpen>]
-module Ray2 =
-
-    let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
-    let inline ray2Eq (left : Ray2) (right : Ray2) = left.Equals right
-    let inline ray2Neq (left : Ray2) (right : Ray2) = not (left.Equals right)
-
-[<AutoOpen>]
-module Ray3 =
-
-    let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
-    let inline ray3Eq (left : Ray3) (right : Ray3) = left.Equals right
-    let inline ray3Neq (left : Ray3) (right : Ray3) = not (left.Equals right)
-
-/// Composition of individual affine matrix components.
+/// Lossless composition of individual affine matrix components.
 type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
       mutable Scale : Vector3 }
 
+    /// Create an affine matrix (lossy).
     member this.Matrix =
         Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
 
+    /// Create from components (lossless).
     static member make translation rotation scale =
         { Translation = translation; Rotation = rotation; Scale = scale }
 
+    /// Create from affine matrix value (lossy).
     static member makeFromMatrix affineMatrix =
         let mutable scale = v3One
         let mutable rotation = quatIdentity
@@ -1169,15 +1177,19 @@ type [<Struct>] Affine =
             Affine.Identity
         else Affine.make translation rotation scale
 
+    /// Create from a translation value (lossless).
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
 
+    /// Create from a rotation value (lossless).
     static member makeRotation translation =
         Affine.make v3Zero translation v3One
 
+    /// Create from a scale value (lossless).
     static member makeScale scale =
         Affine.make v3Zero quatIdentity scale
 
+    /// The identity affine value (lossless).
     static member Identity =
         Affine.make v3Zero quatIdentity v3One
 
