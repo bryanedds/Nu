@@ -93,13 +93,13 @@ module EffectDescriptors =
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }
 
-    let heavyCritical =
-        { EffectName = "HeavyCritical"
+    let powerCritical =
+        { EffectName = "PowerCritical"
           LifeTimeOpt = Some 42L
           Definitions = Map.empty
           Content =
             AnimatedSprite
-                (Resource (AssetTag.toPair Assets.Battle.HeavyCriticalAnimationSheet),
+                (Resource (AssetTag.toPair Assets.Battle.PowerCriticalAnimationSheet),
                  v2i 32 32, 14, 14, 3L, Once,
                  [|Size (v3 96.0f 96.0f 0.0f)|],
                  Nil) }

@@ -228,9 +228,9 @@ type BattleDispatcher () =
             | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom (target.Perimeter.Bottom + v3Up * 3.0f)) Over EffectDescriptors.critical screen world |> just
             | None -> just world
 
-        | DisplayHeavyCritical (delay, targetIndex) ->
+        | DisplayPowerCritical (delay, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.heavyCritical screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.powerCritical screen world |> just
             | None -> just world
 
         | DisplayPoisonCut (delay, targetIndex) ->
@@ -544,7 +544,7 @@ type BattleDispatcher () =
                             Content.text "Info"
                                 [Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 15.0f 0.0f
                                  Entity.Size == v3 540.0f 81.0f 0.0f
-                                 Entity.Elevation == Constants.Battle.GuiInputElevation
+                                 Entity.Elevation == Constants.Battle.GuiBackgroundElevation
                                  Entity.VisibleLocal := actionStr <> nameof Attack
                                  Entity.BackdropImageOpt := Some (if infoText.Length <= 14 then Assets.Battle.InfoShortImage else Assets.Battle.InfoLongImage) // never more than 16 characters
                                  Entity.Color == Color.White.WithA 0.8f

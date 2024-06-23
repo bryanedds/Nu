@@ -38,7 +38,7 @@ type BattleCommand =
     | DisplayCancel of CharacterIndex
     | DisplayCut of int64 * bool * CharacterIndex
     | DisplayCritical of int64 * CharacterIndex
-    | DisplayHeavyCritical of int64 * CharacterIndex
+    | DisplayPowerCritical of int64 * CharacterIndex
     | DisplayPoisonCut of int64 * CharacterIndex
     | DisplayPowerCut of int64 * CharacterIndex
     | DisplayDispelCut of int64 * CharacterIndex
@@ -1261,13 +1261,13 @@ module Battle =
                                         let impactSplashes = evalTech sourceIndex targetIndex techType battle |> Triple.thd |> Map.toKeyList |> List.map (fun targetIndex -> DisplayImpactSplash (70L, targetIndex) |> signal)
                                         let battle = animateCharacter SlashAnimation sourceIndex battle
                                         withSignals (playSlash :: playHit :: slashSpike :: impactSplashes) battle
-                                    | HeavyCritical ->
+                                    | PowerCritical ->
                                         let playHit = PlaySound (10L, Constants.Audio.SoundVolumeDefault, Assets.Battle.HitSound)
-                                        let heavyCritical = DisplayHeavyCritical (10L, targetIndex)
+                                        let powerCritical = DisplayPowerCritical (10L, targetIndex)
                                         let displayCut = DisplayCut (20L, true, targetIndex)
                                         let impactSplash = DisplayImpactSplash (34L, targetIndex)
                                         let battle = animateCharacter AttackAnimation sourceIndex battle
-                                        withSignals [playHit; heavyCritical; displayCut; impactSplash] battle
+                                        withSignals [playHit; powerCritical; displayCut; impactSplash] battle
                                     | Cyclone ->
                                         let radius = 64.0f
                                         let perimeter = getCharacterPerimeter sourceIndex battle

@@ -1,7 +1,7 @@
 Type,TechCost,EffectType,Scalar,Split,Curative,Cancels,AffinityType,StatusesAdded,StatusesRemoved,SpawnOpt,TargetType,Description
 Critical,1,Magical,1.45,False,False,True,[Some Wind],[],[],None,[SingleTarget [EnemyAim True]],A slightly more powerful attack that can cancel enemy techs. Wind-based.
 Slash,2,Magical,1.45,False,False,False,[Some Wind],[],[],None,[LineTarget 66 [EnemyAim True]],Attacks all enemies on a line. Wind-based.
-HeavyCritical,4,Magical,1.9,False,False,True,[Some Wind],[],[],None,[SingleTarget [EnemyAim True]],An even more powerful attack that can cancel enemy techs. Wind-based.
+PowerCritical,4,Magical,1.9,False,False,True,[Some Wind],[],[],None,[SingleTarget [EnemyAim True]],An even more powerful attack that can cancel enemy techs. Wind-based.
 Cyclone,4,Magical,1.45,False,False,False,[Some Wind],[],[],None,[RadialTarget 165 [EnemyAim True]],Attacks an enemy and all nearby enemies. Wind-based.
 CriticalSlash,6,Magical,1.65,False,False,True,[Some Wind],[],[],None,[LineTarget 66 [EnemyAim True]],"Attacks all enemies on a line, canceling all of their techs. Wind-based."
 PoisonCut,2,Magical,1.3,False,False,False,[Some Shadow],[Poison],[],None,[SingleTarget [EnemyAim True]],A slightly more powerful attack that can poison an enemy. Shadow-based.

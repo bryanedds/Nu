@@ -285,7 +285,7 @@ type TargetType =
 type TechType =
     | Critical
     | Slash
-    | HeavyCritical
+    | PowerCritical
     | Cyclone
     | CriticalSlash
     | PoisonCut
@@ -324,7 +324,7 @@ type TechType =
     member this.TouchingTech =
         match this with
         | Critical
-        | HeavyCritical
+        | PowerCritical
         | PoisonCut
         | PowerCut
         | DoubleCut -> true
