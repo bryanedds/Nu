@@ -9,7 +9,7 @@ open Nu
 module Assets =
 
     // these are assets from the Gui package. Note that we don't actually have any assets here yet, but they can be
-    // added to the exsting package at your leisure!
+    // added to the existing package at your leisure!
     [<RequireQualifiedAccess>]
     module Gui =
 
