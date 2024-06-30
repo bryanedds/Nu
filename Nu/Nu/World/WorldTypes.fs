@@ -1819,14 +1819,14 @@ and [<AbstractClass>] NuPlugin () =
     abstract EditModes : Map<string, World -> World>
     default this.EditModes = Map.empty
 
+    /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
+    /// metadata. The Default package is always included.
+    abstract InitialPackages : string list
+    default this.InitialPackages = []
+
     /// Invoke a user-defined callback.
     abstract Invoke : string -> obj list -> World -> World
     default this.Invoke _ _ world = world
-
-    /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
-    /// metadata. The Default package is always included with this.
-    abstract InitialPackages : string list
-    default this.InitialPackages = []
 
     /// Make a list of keyed values to hook into the engine.
     abstract MakeKeyedValues : World -> ((string * obj) list) * World
