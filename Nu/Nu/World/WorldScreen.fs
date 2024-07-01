@@ -580,16 +580,16 @@ module WorldScreenModule =
         /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
             let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-            let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
             let navRotation =
-                if navAngularVelocityY > turnSpeed then
+                if navAngleBetween > turnSpeed then
                     let sign = (rotation.Forward.Cross navRotation.Forward).Y
                     rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
                 else navRotation
-            let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-            let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-            let navAngularVelocity = v3Up * navAngularVelocityY
+            let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+            let navAngularVelocity = if Single.IsNaN navAngleBetweenOpt then v3Zero else v3 0.0f (navAngleBetweenOpt * navSign) 0.0f
             (navRotation, navAngularVelocity)
 
         /// Compute navigation information that results in following the given destination.

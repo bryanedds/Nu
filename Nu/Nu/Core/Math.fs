@@ -34,16 +34,19 @@ module Vector2 =
         member inline this.Transform (q : Quaternion) = Vector2.Transform (this, q)
         member inline this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
+        /// Compute angle between vectors.
         member this.AngleBetween (that : Vector2) =
             let a = this.Normalized
             let b = that.Normalized
             acos (Vector2.Dot (a, b))
 
+        /// Compute power of vector components.
         static member Pow (a : Vector2, b : Vector2) =
             Vector2
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)))
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector2, b : Vector2) =
             Vector2
                 (a.X % b.X,
