@@ -962,7 +962,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let sign = if v3Up.Dot (forward.Cross character.Rotation.Forward) < 0.0f then 1.0f else -1.0f
                 let angularVelocityYOpt = forward.AngleBetween character.Rotation.Forward
                 character.LinearVelocity <- center - character.Center
-                character.AngularVelocity <- if Single.IsNaN angularVelocityYOpt then v3 0.0f (angularVelocityYOpt * sign) 0.0f else v3Zero
+                character.AngularVelocity <- if Single.IsNaN angularVelocityYOpt then v3Zero else v3 0.0f (angularVelocityYOpt * sign) 0.0f
                 character.Center <- center
                 character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =
