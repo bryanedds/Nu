@@ -958,9 +958,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let character = characterEntry.Value
             if character.Ghost.IsActive then
                 let center = character.Ghost.WorldTransform.Translation
+                let forward = character.Ghost.WorldTransform.Rotation.Forward
+                let sign = if v3Up.Dot (forward.Cross character.Rotation.Forward) < 0.0f then 1.0f else -1.0f
                 character.LinearVelocity <- center - character.Center
-                character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward
-                if Single.IsNaN character.AngularVelocity.X then character.AngularVelocity <- v3Zero // TODO: see if we can avoid NaN in the first place.
+                character.AngularVelocity <- v3 0.0f (forward.AngleBetween character.Rotation.Forward * sign) 0.0f
+                if Single.IsNaN character.AngularVelocity.Y then character.AngularVelocity.Y <- 0.0f // TODO: see if we can avoid NaN in the first place.
                 character.Center <- center
                 character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =
