@@ -104,12 +104,12 @@ type [<SymbolicExpansion>] Gameplay =
                 let ball =
                     if  ball.PositionNext.X <= -160.0f ||
                         ball.PositionNext.X >= 160.0f then 
-                        World.playSound 0.5f Assets.Default.Sound world
+                        World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
                         { ball with Velocity = ball.Velocity.MapX negate }
                     else ball
                 let ball =
                     if ball.PositionNext.Y >= 172.0f then
-                        World.playSound 0.5f Assets.Default.Sound world
+                        World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
                         { ball with Velocity = ball.Velocity.MapY negate }
                     else ball
                 { gameplay with Ball = ball }
@@ -121,7 +121,7 @@ type [<SymbolicExpansion>] Gameplay =
                 let ball =
                     let perimeter = box3 (paddle.Position - paddle.Size * 0.5f) paddle.Size
                     if perimeter.Intersects ball.PositionNext then
-                        World.playSound 0.5f Assets.Default.Sound world
+                        World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
                         { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
                     else ball
                 { gameplay with Ball = ball }
@@ -136,7 +136,7 @@ type [<SymbolicExpansion>] Gameplay =
                         gameplay.Bricks
                 let ball =
                     if Map.notEmpty bricksIntersected then
-                        World.playSound 0.5f Assets.Default.Sound world
+                        World.playSound Constants.Audio.SongVolumeDefault Assets.Default.Sound world
                         let brick = Seq.head bricksIntersected.Values
                         { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
                     else ball
