@@ -448,11 +448,16 @@ module WorldModule3 =
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member run worldConfig plugin =
+        static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
-                | Right world -> World.runWithCleanUp tautology id id id id id Live true world
+                | Right world -> World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess Live true world
                 | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
             | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
+
+        /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
+        /// termination.
+        static member run worldConfig plugin =
+            World.runPlus tautology id id id id id worldConfig plugin
