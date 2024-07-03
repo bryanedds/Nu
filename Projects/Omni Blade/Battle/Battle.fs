@@ -1816,7 +1816,7 @@ module Battle =
                 | None ->
                     let allies = battle |> getAllies |> Map.toValueList
                     let enemies = battle |> getEnemies |> Map.toValueList
-                    if List.forall (fun (character : Character) -> character.Wounded) allies then
+                    if List.forall (fun (ally : Character) -> ally.CharacterAnimationType = WoundAnimation) allies then
                         // lost battle
                         let battle = animateCharactersCelebrate false battle
                         let battle = setBattleState (BattleResult (battle.BattleTime_, false)) battle
@@ -2081,15 +2081,15 @@ module Battle =
                 | Some _ -> just battle
         else
             if localTime = 0L then
-                withSignal (FadeOutSong 270L) battle
-            elif localTime = 270L then
+                withSignal (FadeOutSong 200L) battle
+            elif localTime = 200L then
                 let referentStr = match getAllyIndices battle with [_] -> "his" | _ -> "their"
                 let dialogStr = "And so eternal death became " + referentStr + " slumber..."
                 let dialog = Dialog.make DialogNarration dialogStr
                 let battle = setDialogOpt (Some dialog) battle
                 let playEternalSlumber = PlaySong (60L, 0L, 0L, None, 0.5f, Assets.Battle.EternalSlumber)
                 withSignal playEternalSlumber battle
-            elif localTime > 270L then
+            elif localTime > 200L then
                 match battle.DialogOpt_ with
                 | None ->
                     let battle = setBattleState (BattleConcluding (battle.BattleTime_, outcome)) battle
