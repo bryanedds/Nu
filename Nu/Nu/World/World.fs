@@ -205,6 +205,7 @@ module WorldModule3 =
         static member updateLateBindings (assemblies : Assembly array) world =
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
+            world.WorldExtension.Plugin.CleanUp ()
             let pluginType =
                 assemblies |>
                 Array.map (fun assembly -> assembly.GetTypes ()) |>

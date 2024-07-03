@@ -1824,6 +1824,10 @@ and [<AbstractClass>] NuPlugin () =
     abstract InitialPackages : string list
     default this.InitialPackages = []
 
+    /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
+    abstract CleanUp : unit -> unit
+    default this.CleanUp () = ()
+
     /// Invoke a user-defined callback.
     abstract Invoke : string -> obj list -> World -> World
     default this.Invoke _ _ world = world

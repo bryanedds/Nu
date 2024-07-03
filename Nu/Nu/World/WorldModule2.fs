@@ -1577,6 +1577,7 @@ module WorldModule2 =
             world.JobGraph.CleanUp ()
             let world = World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
+            world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
