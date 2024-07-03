@@ -673,6 +673,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         OpenProjectEditMode <- ProjectEditMode
         OpenProjectImperativeExecution <- world.Imperative
 
+    let private resolveAssemblyAt (dirPath : string) (args : ResolveEventArgs) =
+        let assemblyName = AssemblyName args.Name
+        let assemblyFilePath = dirPath + "/" + assemblyName.Name + ".dll"
+        if File.Exists assemblyFilePath
+        then Assembly.LoadFrom assemblyFilePath
+        else null
+
     (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
@@ -1182,12 +1189,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     Left ()
             else Right None
         match filePathAndDirNameAndTypesOpt with
-        | Right (Some (filePath, dirName, types)) ->
+        | Right (Some (filePath, dirPath, types)) ->
             let pluginTypeOpt = Array.tryFind (fun (ty : Type) -> ty.IsSubclassOf typeof<NuPlugin>) types
             match pluginTypeOpt with
             | Some ty ->
+                AppDomain.CurrentDomain.add_AssemblyResolve (ResolveEventHandler (constant (resolveAssemblyAt dirPath)))
                 let plugin = Activator.CreateInstance ty :?> NuPlugin
-                Right (Some (filePath, dirName, plugin))
+                Right (Some (filePath, dirPath, plugin))
             | None ->
                 Directory.SetCurrentDirectory gaiaDir
                 Left ()
