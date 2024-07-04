@@ -49,6 +49,11 @@ module OmniBladeExtensions =
 type OmniBladeDispatcher () =
     inherit GameDispatcher<OmniBlade, OmniBladeMessage, OmniBladeCommand> (Splash)
 
+    override this.Register (game, world) =
+        let world = base.Register (game, world)
+        World.setMasterSongVolume 0.5f world
+        world
+
     override this.Definitions (omniBlade, _) =
         [Game.DesiredScreen :=
             match omniBlade with
