@@ -51,7 +51,7 @@ type OmniBladeDispatcher () =
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
-        World.setMasterSongVolume 0.5f world
+        World.setMasterSongVolume 0.6f world
         world
 
     override this.Definitions (omniBlade, _) =
