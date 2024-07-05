@@ -88,6 +88,7 @@ module Gaia =
     (* Configuration States *)
 
     let mutable private FullScreen = false
+    let mutable private GameCaptureMode = false
     let mutable private EditWhileAdvancing = false
     let mutable private Snaps2dSelected = true
     let mutable private Snaps2d = Constants.Gaia.Snaps2dDefault
@@ -1477,6 +1478,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then FullScreen <- not FullScreen; world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then GameCaptureMode <- not GameCaptureMode; world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowNewGroupDialog <- true; world
@@ -3159,14 +3161,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         else world
 
     let private imGuiFullScreenWindow () =
-        if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
-            ImGui.Text "Full Screen (F11)"
-            ImGui.SameLine ()
-            ImGui.Checkbox ("##fullScreen", &FullScreen) |> ignore<bool>
-            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                ImGui.Text "Toggle full screen view (F11 to toggle)."
-                ImGui.EndTooltip ()
-            ImGui.End ()
+        if not GameCaptureMode then
+            if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
+                ImGui.Text "Full Screen (F11)"
+                ImGui.SameLine ()
+                ImGui.Checkbox ("##fullScreen", &FullScreen) |> ignore<bool>
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle full screen view (F11 to toggle)."
+                    ImGui.EndTooltip ()
+                ImGui.End ()
 
     let private imGuiMainMenuWindow world =
         
