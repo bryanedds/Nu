@@ -3169,6 +3169,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
+                ImGui.Checkbox ("##gameCaptureMode", &GameCaptureMode) |> ignore<bool>
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle game capture view (F12 to toggle)."
+                    ImGui.EndTooltip ()
                 ImGui.End ()
 
     let private imGuiMainMenuWindow world =
