@@ -255,7 +255,7 @@ DockId=0x00000009,0
 
 [Window][Full Screen Enabled]
 Pos=20,23
-Size=176,76
+Size=176,77
 Collapsed=0
 
 [Window][Message!]
