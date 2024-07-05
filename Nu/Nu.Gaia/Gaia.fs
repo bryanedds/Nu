@@ -255,7 +255,7 @@ DockId=0x00000009,0
 
 [Window][Full Screen Enabled]
 Pos=20,23
-Size=162,78
+Size=176,76
 Collapsed=0
 
 [Window][Message!]
@@ -3169,7 +3169,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
-                ImGui.Text "Capture Mode (F11)"
+                ImGui.Text "Capture Mode (F12)"
                 ImGui.SameLine ()
                 ImGui.Checkbox ("##captureMode", &CaptureMode) |> ignore<bool>
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
