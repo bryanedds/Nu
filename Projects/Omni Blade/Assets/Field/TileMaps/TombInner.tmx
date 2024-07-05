@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="8" nextobjectid="45">
+<map version="1.10" tiledversion="1.10.1" orientation="orthogonal" renderorder="right-down" width="64" height="64" tilewidth="48" tileheight="48" infinite="0" nextlayerid="8" nextobjectid="47">
  <tileset firstgid="1" source="TombInner.tsx"/>
  <layer id="6" name="Basement" width="64" height="64">
   <data encoding="base64" compression="zlib">
@@ -13,12 +13,12 @@
  </layer>
  <layer id="5" name="Flooring" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   eJzt2tsNgCAMAEDi/iuqq/hvTERBkHI3AYS+0pASQDzb0vsEdaxB7nEnynvBWc3Y3uUJP6JuA0C+q76plwIjU8OIQixDW09yrlZ+2qnCN/RQAEYxy5+bUeTMEK3mDPMMpcQQzMN+6T2zGAAAQLkDHDYSYQ==
+   eJzt2tsNgCAMAEDi/iuqq/hvTIRYUcrdBBD6SkMpAPlsy9cniLEmucedLO8FZ5GxvcsTfkTdBoB6V31TLwVGpoaRhViGvlpyLio/7VThHXooAKOY5c/NKGpmiF5zhnmGp8TQfOwYaGUOAQAAIMIBvUwSYQ==
   </data>
  </layer>
  <layer id="1" name="Furnishing" width="64" height="64">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <layer id="4" name="Ceiling" width="64" height="64">
@@ -72,12 +72,12 @@
     <property name="I" value="[Seal [0.625 0.53 0 0.5] [Dialog &quot;Sealed...&quot;] [LakeSealed]]"/>
    </properties>
   </object>
-  <object id="13" gid="235" x="1248" y="2400" width="48" height="48">
+  <object id="13" gid="235" x="1296" y="2304" width="48" height="48">
    <properties>
     <property name="I" value="[Flame SmallFlame]"/>
    </properties>
   </object>
-  <object id="14" gid="235" x="1968" y="2448" width="48" height="48">
+  <object id="14" gid="235" x="1920" y="2400" width="48" height="48">
    <properties>
     <property name="I" value="[Flame SmallFlame]"/>
    </properties>
@@ -190,6 +190,16 @@
   <object id="19" gid="235" x="864" y="1152" width="96" height="96">
    <properties>
     <property name="I" value="[Seal [0.8 0.8 0.5 0.5] [Dialog &quot;Sealed...&quot;] [FactorySealed]]"/>
+   </properties>
+  </object>
+  <object id="45" gid="235" x="2016" y="2640" width="48" height="48">
+   <properties>
+    <property name="I" value="[Flame SmallFlame]"/>
+   </properties>
+  </object>
+  <object id="46" gid="235" x="1248" y="2592" width="48" height="48">
+   <properties>
+    <property name="I" value="[Flame SmallFlame]"/>
    </properties>
   </object>
  </objectgroup>
