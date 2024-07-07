@@ -1377,7 +1377,13 @@ module Field =
                 let checksumExpected = computeChecksum fieldStr
                 let mutable checksumFound = 0L
                 if Int64.TryParse (checksumStr, &checksumFound) then
-                    if checksumFound = checksumExpected then
+                    let saveValidated =
+#if !DEBUG
+                        checksumFound = checksumExpected
+#else
+                        ignore checksumExpected; true
+#endif
+                    if saveValidated then
                         let field = scvalue<Field> fieldStr
                         let props = makeProps time field.FieldType_ field.OmniSeedState_
                         Some { field with Props_ = props }
