@@ -276,12 +276,12 @@ type BattleDispatcher () =
 
         | DisplayBuff (delay, statusType, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.buff statusType) screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 44.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.buff statusType) screen world |> just
             | None -> just world
 
         | DisplayDebuff (delay, statusType, targetIndex) ->
             match Battle.tryGetCharacter targetIndex battle with
-            | Some target -> displayEffect delay (v3 48.0f 48.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.debuff statusType) screen world |> just
+            | Some target -> displayEffect delay (v3 48.0f 44.0f 0.0f) (Bottom target.Perimeter.Bottom) Over (EffectDescriptors.debuff statusType) screen world |> just
             | None -> just world
 
         | DisplayImpactSplash (delay, targetIndex) ->
