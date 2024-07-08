@@ -322,7 +322,8 @@ type BattleDispatcher () =
                 | Some target ->
                     let (sourcePosition, targetPosition) =
                         match source.Stature with
-                        | SmallStature | NormalStature | LargeStature -> (source.Perimeter.CenterOffset, target.Perimeter.CenterOffset)
+                        | SmallStature | NormalStature -> (source.Perimeter.CenterOffset, target.Perimeter.CenterOffset)
+                        | LargeStature -> (source.Perimeter.CenterOffset5, target.Perimeter.CenterOffset)
                         | BossStature -> (source.Perimeter.CenterOffset3, target.Perimeter.CenterOffset3)
                     let descriptor = EffectDescriptors.flame sourcePosition targetPosition
                     let world = displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom source.Perimeter.Bottom) Over descriptor screen world
