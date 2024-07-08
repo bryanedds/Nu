@@ -669,10 +669,10 @@ module Battle =
                         match source.AutoBattleOpt with
                         | Some autoBattle -> Some { autoBattle with AutoTarget = targetIndex }
                         | None -> None
-                    let character = Character.setAutoBattleOpt autoBattleOpt source
+                    let source = Character.setAutoBattleOpt autoBattleOpt source
                     if source.PerimeterOriginal.Bottom.X < target.PerimeterOriginal.Bottom.X then Character.face Rightward source
                     elif source.PerimeterOriginal.Bottom.X > target.PerimeterOriginal.Bottom.X then Character.face Leftward source
-                    else character
+                    else source
                 else source)
                 sourceIndex
                 battle
