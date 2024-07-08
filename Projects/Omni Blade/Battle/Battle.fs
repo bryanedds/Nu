@@ -669,7 +669,10 @@ module Battle =
                         match source.AutoBattleOpt with
                         | Some autoBattle -> Some { autoBattle with AutoTarget = targetIndex }
                         | None -> None
-                    Character.setAutoBattleOpt autoBattleOpt source
+                    let character = Character.setAutoBattleOpt autoBattleOpt source
+                    if source.PerimeterOriginal.Bottom.X < target.PerimeterOriginal.Bottom.X then Character.face Rightward source
+                    elif source.PerimeterOriginal.Bottom.X > target.PerimeterOriginal.Bottom.X then Character.face Leftward source
+                    else character
                 else source)
                 sourceIndex
                 battle
@@ -1787,11 +1790,7 @@ module Battle =
                             match enemy.AutoBattleOpt with
                             | Some autoBattle when autoBattle.AutoTarget = targetIndex ->
                                 match Gen.randomItemOpt (Map.toList (Map.remove targetIndex (getAlliesHealthy battle))) with
-                                | Some (allyIndex, ally) ->
-                                    let battle = retargetCharacter enemy.CharacterIndex allyIndex battle
-                                    if enemy.PerimeterOriginal.Bottom.X < ally.PerimeterOriginal.Bottom.X then faceCharacter Rightward enemy.CharacterIndex battle
-                                    elif enemy.PerimeterOriginal.Bottom.X > ally.PerimeterOriginal.Bottom.X then faceCharacter Leftward enemy.CharacterIndex battle
-                                    else battle
+                                | Some (allyIndex, _) -> retargetCharacter enemy.CharacterIndex allyIndex battle
                                 | None -> battle
                             | Some _ | None -> battle)
                             battle
