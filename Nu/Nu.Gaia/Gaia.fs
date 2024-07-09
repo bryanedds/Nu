@@ -3820,6 +3820,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let world = snapshot world
                     let initialEntry = FsiSession.DynamicAssemblies.Length = 0
                     if initialEntry then
+
+                        // run initialization script
                         let projectDllPathValid = File.Exists ProjectDllPath
                         let initial =
                             "#r \"System.Configuration.ConfigurationManager.dll\"\n" +
@@ -3849,10 +3851,16 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             "open System.Numerics\n" +
                             "open Prime\n" +
                             "open Nu\n" +
-                            "open Nu.Gaia\n" +
-                            (if projectDllPathValid then "open " + PathF.GetFileNameWithoutExtension ProjectDllPath + "\n" else "")
+                            "open Nu.Gaia"
                         try FsiSession.EvalInteraction initial
-                        with _ -> ()
+                        with exn -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
+
+                        // attempt to open namespace derived from project name
+                        if projectDllPathValid then
+                            let namespaceName = PathF.GetFileNameWithoutExtension (ProjectDllPath.Replace (" ", ""))
+                            try FsiSession.EvalInteraction ("open " + namespaceName)
+                            with _ -> ()
+
                     let world =
                         try if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
                             if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
