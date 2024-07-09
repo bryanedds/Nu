@@ -123,6 +123,7 @@ type CreditsDispatcher () =
                  Content.text "OwlTheoryMusic" [Entity.Text == "Owl Theory Music"]
                  Content.text "PdkMusic" [Entity.Text == "Pdk Music"]
                  Content.text "PeriTune" [Entity.Text == "Peri Tune"]
+                 Content.text "PjotrKolster" [Entity.Text == "Pjotr Kolster"]
                  Content.text "Suat" [Entity.Text == "Suat"]
                  Content.text "ThomasBrunet" [Entity.Text == "Thomas Brunet"]
                  Content.text "Space4" []
@@ -150,5 +151,4 @@ type CreditsDispatcher () =
                  Content.text "SeparatorB8" []
                  Content.text "SeparatorB9" []
                  Content.text "SeparatorB10" []
-                 Content.text "SeparatorB11" []
                  Content.text "ThankYouForPlaying." [Entity.Text == "Thank you for playing."]]]]
