@@ -1752,14 +1752,6 @@ and [<ReferenceEquality>] World =
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState
 
-    /// Get the tick delta as a number of environment ticks.
-    member this.TickDelta =
-        AmbientState.getTickDelta this.AmbientState
-
-    /// Get the tick time as a number of environment ticks.
-    member this.TickTime =
-        AmbientState.getTickTime this.AmbientState
-
     /// Get the amount of clock time that has transpired between this and the previous frame.
     member this.ClockDelta =
         AmbientState.getClockDelta this.AmbientState
@@ -1767,6 +1759,14 @@ and [<ReferenceEquality>] World =
     /// Get the clock time as of when the current frame began.
     member this.ClockTime =
         AmbientState.getClockTime this.AmbientState
+
+    /// Get the tick delta as a number of environment ticks.
+    member this.TickDelta =
+        AmbientState.getTickDelta this.AmbientState
+
+    /// Get the tick time as a number of environment ticks.
+    member this.TickTime =
+        AmbientState.getTickTime this.AmbientState
 
     /// Get the polymorphic engine time delta.
     member this.GameDelta =
