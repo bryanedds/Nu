@@ -731,7 +731,8 @@ module Battle =
 
     let rec private evalAttackAffectType affectType (source : Character) (target : Character) (observer : Character) battle =
         match affectType with
-        | Physical | Touching -> source.ArchetypeType.AttackTouchingArchetype
+        | Physical -> true
+        | Touching -> source.ArchetypeType.AttackTouchingArchetype
         | Magical | Affinity _ | Item | OrbEmptied | OrbFilled | Cancelled | Uncancelled | Buffed | Debuffed -> false
         | Wounded -> target.Wounded
         | Random chance -> Gen.randomf < chance
