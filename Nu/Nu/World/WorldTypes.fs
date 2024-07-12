@@ -113,7 +113,7 @@ and SnapshotType =
         | ReloadCode -> (scstringMemo this).Spaced
         | Advance -> (scstringMemo this).Spaced
         | Halt -> (scstringMemo this).Spaced
-        | UserDefinedSnapshot (_, text) -> text
+        | UserDefinedSnapshot (_, label) -> label
 
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.
