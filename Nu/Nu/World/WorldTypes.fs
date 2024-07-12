@@ -68,7 +68,7 @@ and SnapshotType =
     | RenameGroup
     | OpenGroup
     | CloseGroup
-    | ChangeProperty of string * Simulant
+    | ChangeProperty of string
     | Evaluate of string
     | RestorePoint
     | RencenterInProbeBounds
