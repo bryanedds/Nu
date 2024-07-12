@@ -3,20 +3,8 @@
 
 namespace OmniBlade
 open System
-open System.Text.RegularExpressions
 open Prime
 open Nu
-
-// TODO: see if we can move this into Nu?
-[<AutoOpen>]
-module StringExtensions =
-    let regex = Regex "([A-Z][a-z]+)"
-    type String with
-        member this.Words =
-            regex.Matches this |>
-            Seq.map cast<Match> |>
-            Seq.map _.Value |>
-            String.join " "
 
 type WeaponType =
     | Bare
@@ -37,7 +25,7 @@ type WeaponType =
     | Fangs
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type ArmorType =
     | TinMail
@@ -59,7 +47,7 @@ type ArmorType =
     | StoneHide
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type AccessoryType =
 
@@ -73,7 +61,7 @@ type AccessoryType =
     | SilverWatch
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type WeaponSubtype =
     | Melee
@@ -104,7 +92,7 @@ type ConsumableType =
     | Revive
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type KeyItemType =
     | NonExistentKey // for locks that can never be opened
@@ -116,7 +104,7 @@ type KeyItemType =
     | SteelKey
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type ItemType =
     | Consumable of ConsumableType

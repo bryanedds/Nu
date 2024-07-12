@@ -3592,20 +3592,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let world = if ImGui.Button "Redo" && List.notEmpty Futures then tryRedo world |> snd else world
             if ImGui.BeginListBox ("##history", v2 -1.0f -1.0f) then
                 for (snapshotType, _) in List.rev Pasts do
-                    let snapshotTypeStr = scstring snapshotType
-                    ImGui.Button snapshotTypeStr |> ignore<bool>
+                    let snapshotLabel = snapshotType.Label
+                    ImGui.Button snapshotLabel |> ignore<bool>
                     if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                        ImGui.Text snapshotTypeStr
+                        ImGui.Text snapshotLabel
                         ImGui.EndTooltip ()
                 ImGui.SeparatorText "<Present>"
                 if TimelineChanged then
                     ImGui.SetScrollHereY 0.5f
                     TimelineChanged <- false
                 for (snapshotType, _) in Futures do
-                    let snapshotTypeStr = scstring snapshotType
-                    ImGui.Button snapshotTypeStr |> ignore<bool>
+                    let snapshotLabel = snapshotType.Label
+                    ImGui.Button snapshotLabel |> ignore<bool>
                     if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                        ImGui.Text snapshotTypeStr
+                        ImGui.Text snapshotLabel
                         ImGui.EndTooltip ()
             ImGui.End ()
             world

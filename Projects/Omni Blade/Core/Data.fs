@@ -312,7 +312,7 @@ type TechType =
     | Silk
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
     // TODO: put this in TechData.
     member this.ConjureTech =
@@ -356,7 +356,7 @@ type ArchetypeType =
     | Arachnos
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
     member this.AttackTouchingArchetype =
         match this with
@@ -529,7 +529,7 @@ type AllyType =
     | Peric
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type EnemyType =
     | DebugGoblin
@@ -548,7 +548,7 @@ type EnemyType =
     | Kyla
 
     member this.Name =
-        (scstringMemo this).Words
+        (scstringMemo this).Spaced
 
 type CharacterType =
     | Ally of AllyType

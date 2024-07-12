@@ -541,7 +541,7 @@ type BattleDispatcher () =
                                  Entity.CancelEvent => TechItemCancel index]
 
                          | AimReticles (actionStr, aimType) ->
-                            let infoText = actionStr.Words
+                            let infoText = actionStr.Spaced
                             Content.text "Info"
                                 [Entity.PositionLocal := ally.Perimeter.Center + v3 -270.0f 15.0f 0.0f
                                  Entity.Size == v3 540.0f 81.0f 0.0f

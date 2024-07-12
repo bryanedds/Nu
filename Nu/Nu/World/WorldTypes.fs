@@ -78,7 +78,42 @@ and SnapshotType =
     | ReloadCode
     | Advance
     | Halt
-    | UserDefined of Image AssetTag * string
+    | UserDefinedSnapshot of Image AssetTag * string // a user-defined type of snapshot
+
+    member this.Label =
+        match this with
+        | RerenderLightMap -> (scstringMemo this).Spaced
+        | WipePropagationTargets -> (scstringMemo this).Spaced
+        | TranslateEntity -> (scstringMemo this).Spaced
+        | RotateEntity -> (scstringMemo this).Spaced
+        | ScaleEntity -> (scstringMemo this).Spaced
+        | AutoBoundsEntity -> (scstringMemo this).Spaced
+        | PropagateEntity -> (scstringMemo this).Spaced
+        | ReorderEntities -> (scstringMemo this).Spaced
+        | SetEntityFrozen frozen -> if frozen then "Freeze Entity" else "Thaw Entity"
+        | SetEntityFamilyStatic static_ -> if static_ then "Staticize Entity Family" else "Dynamize Entity Family"
+        | ChangeEntityDispatcher -> (scstringMemo this).Spaced
+        | RenameEntity -> (scstringMemo this).Spaced
+        | CreateEntity -> (scstringMemo this).Spaced
+        | DeleteEntity -> (scstringMemo this).Spaced
+        | CutEntity -> (scstringMemo this).Spaced
+        | PasteEntity -> (scstringMemo this).Spaced
+        | LoadEntity -> (scstringMemo this).Spaced
+        | DuplicateEntity -> (scstringMemo this).Spaced
+        | RenameGroup -> (scstringMemo this).Spaced
+        | OpenGroup -> (scstringMemo this).Spaced
+        | CloseGroup -> (scstringMemo this).Spaced
+        | ChangeProperty propertyName -> "Change Property " + propertyName
+        | Evaluate _ -> "Evaluate F# Expression"
+        | RestorePoint -> (scstringMemo this).Spaced
+        | RencenterInProbeBounds -> (scstringMemo this).Spaced
+        | ResetProbeBounds -> (scstringMemo this).Spaced
+        | SynchronizeNav -> (scstringMemo this).Spaced
+        | SetEditMode -> (scstringMemo this).Spaced
+        | ReloadCode -> (scstringMemo this).Spaced
+        | Advance -> (scstringMemo this).Spaced
+        | Halt -> (scstringMemo this).Spaced
+        | UserDefinedSnapshot (_, text) -> text
 
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.
