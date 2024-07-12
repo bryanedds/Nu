@@ -44,6 +44,7 @@ module Gaia =
 
     let mutable private Pasts = [] : (SnapshotType * World) list
     let mutable private Futures = [] : (SnapshotType * World) list
+    let mutable private TimelineChanged = false
     let mutable private ManipulationActive = false
     let mutable private ManipulationOperation = OPERATION.TRANSLATE
     let mutable private ExpandEntityHierarchy = false
@@ -438,6 +439,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private snapshot snapshotType world =
         Pasts <- (snapshotType, world) :: Pasts
         Futures <- []
+        TimelineChanged <- true
         world
 
     let private makeGaiaState projectDllPath editModeOpt freshlyLoaded world : GaiaState =
@@ -461,7 +463,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Left (error, world) -> MessageBoxOpt <- Some error; world
 
     let private setPropertyValueIgnoreError (value : obj) propertyDescriptor simulant world =
-        let world = snapshot (ChangeProperty (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType, simulant)) world
+        let world = snapshot (ChangeProperty (propertyDescriptor.PropertyName, simulant)) world
         match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
         | Right world -> world
         | Left (_, world) -> world
@@ -470,7 +472,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let world =
             if  not (ImGui.IsMouseDragging ImGuiMouseButton.Left) ||
                 not (ImGui.IsMouseDraggingContinued ImGuiMouseButton.Left) then
-                snapshot (ChangeProperty (propertyDescriptor.PropertyName, propertyDescriptor.PropertyType, simulant)) world
+                snapshot (ChangeProperty (propertyDescriptor.PropertyName, simulant)) world
             else world
         setPropertyValueWithoutUndo value propertyDescriptor simulant world
 
@@ -548,6 +550,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let world = World.switch (snd past)
                     Pasts <- pasts'
                     Futures <- future :: Futures
+                    TimelineChanged <- true
                     (true, world)
                 | [] -> (false, world)
              else (false, world)) with
@@ -576,6 +579,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let world = World.switch (snd future)
                     Pasts <- past :: Pasts
                     Futures <- futures'
+                    TimelineChanged <- true
                     (true, world)
                 | [] -> (false, world)
              else (false, world)) with
@@ -1663,7 +1667,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let next = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                                 let previousOpt = World.tryGetPreviousEntity next world
                                 let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                                if not ((scstringMemo  parentOpt).Contains (scstringMemo sourceEntity)) then
+                                if not ((scstringMemo parentOpt).Contains (scstringMemo sourceEntity)) then
                                     let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
                                     let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> SelectedGroup / sourceEntity.Name
                                     if sourceEntity'.GetExists world then
@@ -2999,7 +3003,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                              &lightProbeBounds)
                     match manipulationResult with
                     | ImGuiEditActive started ->
-                        let world = if started then snapshot (ChangeProperty (nameof Entity.ProbeBounds, typeof<Box3>, entity)) world else world
+                        let world = if started then snapshot (ChangeProperty (nameof Entity.ProbeBounds, entity)) world else world
                         entity.SetProbeBounds lightProbeBounds world
                     | ImGuiEditInactive -> world
                 | Some _ | None -> world
@@ -3581,22 +3585,31 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // allow defocus of entity hierarchy
         else (false, world)
 
-    let private imGuiTimelineWindow () =
+    let private imGuiTimelineWindow world =
         if ImGui.Begin ("Timeline", ImGuiWindowFlags.NoNav) then
-            for (snapshotType, _) in List.rev Pasts do
-                let snapshotTypeStr = scstringMemo snapshotType
-                ImGui.Button snapshotTypeStr |> ignore<bool>
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text snapshotTypeStr
-                    ImGui.EndTooltip ()
-            ImGui.SeparatorText "<Present>"
-            for (snapshotType, _) in Futures do
-                let snapshotTypeStr = scstringMemo snapshotType
-                ImGui.Button snapshotTypeStr |> ignore<bool>
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text snapshotTypeStr
-                    ImGui.EndTooltip ()
+            let world = if ImGui.Button "Undo" && List.notEmpty Pasts then tryUndo world |> snd else world
+            ImGui.SameLine ()
+            let world = if ImGui.Button "Redo" && List.notEmpty Futures then tryRedo world |> snd else world
+            if ImGui.BeginListBox ("##history", v2 -1.0f -1.0f) then
+                for (snapshotType, _) in List.rev Pasts do
+                    let snapshotTypeStr = scstring snapshotType
+                    ImGui.Button snapshotTypeStr |> ignore<bool>
+                    if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                        ImGui.Text snapshotTypeStr
+                        ImGui.EndTooltip ()
+                ImGui.SeparatorText "<Present>"
+                if TimelineChanged then
+                    ImGui.SetScrollHereY 0.5f
+                    TimelineChanged <- false
+                for (snapshotType, _) in Futures do
+                    let snapshotTypeStr = scstring snapshotType
+                    ImGui.Button snapshotTypeStr |> ignore<bool>
+                    if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                        ImGui.Text snapshotTypeStr
+                        ImGui.EndTooltip ()
             ImGui.End ()
+            world
+        else world
 
     let private imGuiGamePropertiesWindow world =
         if ImGui.Begin ("Game Properties", ImGuiWindowFlags.NoNav) then
@@ -3708,9 +3721,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world =
                             if  propertyDescriptor.PropertyName = Constants.Engine.FacetNamesPropertyName &&
                                 propertyDescriptor.PropertyType = typeof<string Set> then
-                                ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                                ImGui.InputTextMultiline ("##propertyValueStr", &propertyValueStr, 4096u, v2 -1.0f -1.0f, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                                 world
-                            elif ImGui.InputTextMultiline ("##propertyValuePretty", &propertyValueStr, 131072u, v2 -1.0f -1.0f) && propertyValueStr <> PropertyValueStrPrevious then
+                            elif ImGui.InputTextMultiline ("##propertyValueStr", &propertyValueStr, 131072u, v2 -1.0f -1.0f) && propertyValueStr <> PropertyValueStrPrevious then
                                 let pasts = Pasts
                                 let world =
                                     try let propertyValueEscaped = propertyValueStr
@@ -4647,7 +4660,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let (entityHierarchyFocused, world) = imGuiHierarchyWindow world
                         ExpandEntityHierarchy <- false
                         CollapseEntityHierarchy <- false
-                        imGuiTimelineWindow ()
+                        let world = imGuiTimelineWindow world
                         let world = imGuiGamePropertiesWindow world 
                         let world = imGuiScreenPropertiesWindow world 
                         let world = imGuiGroupPropertiesWindow world 
