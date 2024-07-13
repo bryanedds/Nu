@@ -693,6 +693,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         then Assembly.LoadFrom assemblyFilePath
         else null
 
+    let scanAndNullifyFields (root : obj) (targetType : Type) =
+        let bindingFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance
+        let visited = HashSet ()
+        let rec scan (obj : obj) =
+            if notNull obj then
+                let objType = obj.GetType ()
+                if not objType.IsValueType && (try not (visited.Contains(obj)) with _ -> false) then
+                    visited.Add obj |> ignore
+                    let fields = objType.GetFields bindingFlags
+                    for field in fields do
+                        if not field.FieldType.IsValueType && targetType = field.FieldType 
+                        then field.SetValue (obj, null)
+                        else
+                            let fieldValue = field.GetValue obj
+                            scan fieldValue
+        scan root
+
     (* Nu Event Handling Functions *)
 
     let private handleNuMouseButton (_ : Event<MouseButtonData, Game>) world =
@@ -1099,6 +1116,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'.")
                     world
                 | fsprojFilePaths ->
+
+                    // generate code reload fsx file string
                     let fsprojFilePath = fsprojFilePaths.[0]
                     Log.info ("Inspecting code for F# project '" + fsprojFilePath + "'...")
                     let fsprojFileLines = File.ReadAllLines fsprojFilePath
@@ -1142,9 +1161,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#r \"../../../" + filePath + "\"") fsprojDllFilePaths) + "\n" +
                         String.Join ("\n", fsprojProjectLines) + "\n" +
                         String.Join ("\n", Array.map (fun (filePath : string) -> "#load \"../../../" + filePath + "\"") fsprojFsFilePaths)
-                    Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
+
+                    // dispose of existing fsi eval session
                     (FsiSession :> IDisposable).Dispose ()
+
+                    // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda its also roots.
+                    let mutable fsiDynamicCompiler = FsiSession.GetType().GetField("fsiDynamicCompiler", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
+                    scanAndNullifyFields (fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(fsiDynamicCompiler)) typeof<Shell.FsiEvaluationSession>
+                    fsiDynamicCompiler <- null
+                    
+                    // HACK: same as above, but for another place.
+                    let mutable tcConfigB = FsiSession.GetType().GetField("tcConfigB", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
+                    scanAndNullifyFields (tcConfigB.GetType().GetField("tryGetMetadataSnapshot@", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(tcConfigB)) typeof<Shell.FsiEvaluationSession>
+                    tcConfigB <- null
+
+                    // HACK: manually clear fsi eval session since it has such a massive object footprint
+                    FsiSession <- Unchecked.defaultof<_>
+                    GC.Collect ()
+
+                    // notify user fsi session has been reset
                     InteractiveOutputStr <- "(fsi session reset)"
+
+                    // create a new session for code reload
+                    Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
                     let world =
                         try FsiSession.EvalInteraction fsxFileString
