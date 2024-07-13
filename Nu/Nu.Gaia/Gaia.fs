@@ -1167,12 +1167,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                     // HACK: fix a memory leak caused by FsiEvaluationSession hanging around in a lambda its also roots.
                     let mutable fsiDynamicCompiler = FsiSession.GetType().GetField("fsiDynamicCompiler", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
-                    scanAndNullifyFields (fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(fsiDynamicCompiler)) typeof<Shell.FsiEvaluationSession>
+                    fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(fsiDynamicCompiler, null)
                     fsiDynamicCompiler <- null
                     
                     // HACK: same as above, but for another place.
                     let mutable tcConfigB = FsiSession.GetType().GetField("tcConfigB", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
-                    scanAndNullifyFields (tcConfigB.GetType().GetField("tryGetMetadataSnapshot@", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(tcConfigB)) typeof<Shell.FsiEvaluationSession>
+                    tcConfigB.GetType().GetField("tryGetMetadataSnapshot@", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(tcConfigB, null)
                     tcConfigB <- null
 
                     // HACK: manually clear fsi eval session since it has such a massive object footprint
