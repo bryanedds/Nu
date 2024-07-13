@@ -693,7 +693,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         then Assembly.LoadFrom assemblyFilePath
         else null
 
-    let scanAndNullifyFields (root : obj) (targetType : Type) =
+    // NOTE: this function isn't used, but it is kept around as it's a good tool to surface memory leaks deep in large libs like FSI.
+    let private scanAndNullifyFields (root : obj) (targetType : Type) =
         let bindingFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance
         let visited = HashSet ()
         let rec scan (obj : obj) =
@@ -4332,11 +4333,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiNewGroupDialog world =
         let title = "Create a group..."
-        if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
+        let opening = not (ImGui.IsPopupOpen title)
+        if opening then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowNewGroupDialog) then
             ImGui.Text "Group Name:"
             ImGui.SameLine ()
-            ImGui.SetKeyboardFocusHere ()
+            if opening then ImGui.SetKeyboardFocusHere ()
             ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &NewGroupName, 4096u) |> ignore<bool>
             let newGroup = SelectedScreen / NewGroupName
             if ImGui.BeginCombo ("##newGroupDispatcherName", NewGroupDispatcherName, ImGuiComboFlags.HeightLarge) then
