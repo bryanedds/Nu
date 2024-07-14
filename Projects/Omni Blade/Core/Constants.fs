@@ -61,13 +61,8 @@ module Constants =
         let RoomSize = v2iDup 32
         let AvatarCollisionShapeIndex = 0
         let AvatarSensorShapeIndex = 1
-#if DEV
-        let AvatarWalkForce = 60000.0f
-        let AvatarWalkForceMouse = 66000.0f
-#else
         let AvatarWalkForce = 20000.0f
         let AvatarWalkForceMouse = 22000.0f
-#endif
         let AvatarIdleSpeedMax = 5.0f
         let SpiritMovementDuration = 60L
         let SpiritWalkSpeed = 2.75f
