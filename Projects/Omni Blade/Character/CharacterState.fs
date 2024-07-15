@@ -67,8 +67,8 @@ type [<SymbolicExpansion>] CharacterState =
                 state.Statuses
         { state with Statuses = statuses }
 
-    static member updateHitPoints updater (state : CharacterState) =
-        let hitPoints = updater state.HitPoints
+    static member transformHitPoints transformer (state : CharacterState) =
+        let hitPoints = transformer state.HitPoints
         let hitPoints = max 0 hitPoints
         let hitPoints = min state.HitPointsMax hitPoints
         { state with

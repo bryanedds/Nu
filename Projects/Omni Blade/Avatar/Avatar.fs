@@ -30,8 +30,8 @@ module Avatar =
     let getAnimationFinished time avatar =
         CharacterAnimationState.getFinished time avatar.CharacterAnimationState
 
-    let mapCharacterAnimationState updater (avatar : Avatar) =
-        let characterAnimationState = updater avatar.CharacterAnimationState
+    let mapCharacterAnimationState mapper (avatar : Avatar) =
+        let characterAnimationState = mapper avatar.CharacterAnimationState
         if characterAnimationState =/= avatar.CharacterAnimationState
         then { avatar with CharacterAnimationState = characterAnimationState }
         else avatar

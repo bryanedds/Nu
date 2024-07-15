@@ -49,6 +49,8 @@ type FieldMessage =
     | MenuOptionsQuitPrompt
     | MenuOptionsQuitConfirm
     | MenuOptionsQuitCancel
+    | MenuOptionsSongVolumeDown
+    | MenuOptionsSongVolumeUp
     | MenuClose
     | PartyMenuOpen
     | PartyMenuSelect of int
@@ -78,6 +80,7 @@ type FieldCommand =
     | StartQuitting
     | CommencingBattle of BattleData
     | CommenceBattle of BattleData * PrizePool
+    | CommenceEnding
     | MenuOptionsToggleFullScreen
     | ScheduleSound of int64 * single * Sound AssetTag
     | PlaySong of int64 * int64 * int64 * uint option * single * Song AssetTag
@@ -91,7 +94,8 @@ type SaveSlot =
     | Slot3
 
 type [<SymbolicExpansion>] Options =
-    { BattleSpeed : BattleSpeed }
+    { BattleSpeed : BattleSpeed
+      SongVolume : single }
 
 type FieldState =
     | Playing
@@ -440,70 +444,70 @@ module Field =
                 FieldSongTimeOpt_ = None }
         | None -> field
 
-    let mapAvatar updater field =
-        let avatar = updater field.Avatar_
+    let mapAvatar mapper field =
+        let avatar = mapper field.Avatar_
         if avatar =/= field.Avatar_
         then { field with Avatar_ = avatar }
         else field
 
-    let mapAvatarCollidedPropIds updater field =
-        let propIds = updater field.AvatarCollidedPropIds_
+    let mapAvatarCollidedPropIds mapper field =
+        let propIds = mapper field.AvatarCollidedPropIds_
         if propIds =/= field.AvatarCollidedPropIds_
         then { field with AvatarCollidedPropIds_ = propIds }
         else field
 
-    let mapAvatarSeparatedPropIds updater field =
-        let propIds = updater field.AvatarSeparatedPropIds_
+    let mapAvatarSeparatedPropIds mapper field =
+        let propIds = mapper field.AvatarSeparatedPropIds_
         if propIds =/= field.AvatarSeparatedPropIds_
         then { field with AvatarSeparatedPropIds_ = propIds }
         else field
 
-    let mapAvatarIntersectedPropIds updater field =
-        let propIds = updater field.AvatarIntersectedPropIds_
+    let mapAvatarIntersectedPropIds mapper field =
+        let propIds = mapper field.AvatarIntersectedPropIds_
         if propIds =/= field.AvatarIntersectedPropIds_
         then { field with AvatarIntersectedPropIds_ = propIds }
         else field
 
-    let mapTeam updater field =
-        { field with Team_ = updater field.Team_ }
+    let mapTeam mapper field =
+        { field with Team_ = mapper field.Team_ }
 
-    let mapTeammate updater teamIndex field =
+    let mapTeammate mapper teamIndex field =
         mapTeam (fun team ->
             match Map.tryFind teamIndex team with
-            | Some teammate -> Map.add teamIndex (updater teammate) team
+            | Some teammate -> Map.add teamIndex (mapper teammate) team
             | None -> team)
             field
 
-    let mapAdvents updater field =
-        let advents = updater field.Advents_
+    let mapAdvents mapper field =
+        let advents = mapper field.Advents_
         if advents =/= field.Advents_ then { field with Advents_ = advents }
         else field
 
-    let mapProps updater field =
-        { field with Props_ = updater field.Props_ }
+    let mapProps mapper field =
+        { field with Props_ = mapper field.Props_ }
 
-    let mapProp updater propId field =
+    let mapProp mapper propId field =
         match Map.tryFind propId field.Props_ with
-        | Some prop -> mapProps (Map.add propId (updater prop)) field
+        | Some prop -> mapProps (Map.add propId (mapper prop)) field
         | None -> field
     
-    let mapPropState updater propId field =
-        mapProp (Prop.mapPropState updater) propId field
+    let mapPropState mapper propId field =
+        mapProp (Prop.mapPropState mapper) propId field
 
-    let mapInventory updater field =
-        { field with Inventory_ = updater field.Inventory_ }
+    let mapInventory mapper field =
+        { field with Inventory_ = mapper field.Inventory_ }
 
-    let mapMenu updater field =
-        { field with Menu_ = updater field.Menu_ }
+    let mapMenu mapper field =
+        { field with Menu_ = mapper field.Menu_ }
 
-    let mapPartyMenu updater field =
-        { field with PartyMenu_ = updater field.PartyMenu_ }
+    let mapPartyMenu mapper field =
+        { field with PartyMenu_ = mapper field.PartyMenu_ }
 
-    let mapShopOpt updater field =
-        { field with ShopOpt_ = updater field.ShopOpt_ }
+    let mapShopOpt mapper field =
+        { field with ShopOpt_ = mapper field.ShopOpt_ }
 
-    let setOptions options field =
-        { field with Options_ = options }
+    let mapOptions mapper field =
+        { field with Options_ = mapper field.Options_ }
 
     let setDefinitions definitions field =
         { field with Definitions_ = definitions }
@@ -1316,7 +1320,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
-          Options_ = { BattleSpeed = WaitSpeed }
+          Options_ = { BattleSpeed = WaitSpeed; SongVolume = Constants.Gameplay.SongVolumeDefault }
           Definitions_ = definitions
           DefinitionsOriginal_ = definitions
           Cue_ = CueSystem.Fin
@@ -1347,7 +1351,7 @@ module Field =
           Menu_ = { MenuState = MenuClosed; MenuUseOpt = None }
           PartyMenu_ = { PartyMenuState = PartyMenuClosed; PartyMenuSelections = [] }
           ShopOpt_ = None
-          Options_ = { BattleSpeed = WaitSpeed }
+          Options_ = { BattleSpeed = WaitSpeed; SongVolume = Constants.Gameplay.SongVolumeDefault }
           Definitions_ = Map.empty
           DefinitionsOriginal_ = Map.empty
           Cue_ = CueSystem.Fin

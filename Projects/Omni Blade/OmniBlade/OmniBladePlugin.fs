@@ -6,7 +6,7 @@ open System
 open Prime
 open Nu
 
-type OmniBladePlugin () =
+type [<Sealed>] OmniBladePlugin () =
     inherit NuPlugin ()
 
     override this.EditModes =

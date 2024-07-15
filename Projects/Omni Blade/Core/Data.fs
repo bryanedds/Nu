@@ -396,7 +396,7 @@ type FieldType =
 
     member this.Connector =
         match this with
-        | CastleConnector
+        | CastleConnector -> true
         | _ -> false
 
     static member toFieldName (fieldType : FieldType) =
@@ -1113,7 +1113,7 @@ module FieldData =
                     let (probability, rand) = Rand.nextSingleUnder 1.0f rand
                     if probability < Constants.Field.TreasureProbability then
                         let (id, rand) = let (i, rand) = Rand.nextInt rand in let (j, rand) = Rand.nextInt rand in (Gen.idFromInts i j, rand)
-                        let chestType = match fieldData.FieldType with Castle _ -> WoodenChest | _ -> SteelChest
+                        let chestType = WoodenChest
                         let chestSpawned = { chestSpawn with PropData = Chest (chestType, treasure, id, None, CueSystem.Fin, Set.empty) }
 #if DEV
                         let mapSize =

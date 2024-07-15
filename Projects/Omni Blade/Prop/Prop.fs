@@ -22,8 +22,8 @@ module Prop =
           PropState : PropState
           PropId : int }
 
-    let mapPropState updater (prop : Prop) =
-        { prop with PropState = updater prop.PropState }
+    let mapPropState mapper (prop : Prop) =
+        { prop with PropState = mapper prop.PropState }
 
     let make bounds elevation propData propState propId =
         { Perimeter = bounds

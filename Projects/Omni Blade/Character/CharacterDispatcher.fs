@@ -66,83 +66,83 @@ type CharacterDispatcher () =
          Entity.Perimeter := character.Perimeter
          Entity.Elevation == Constants.Battle.ForegroundElevation]
 
-    override this.Render (characterPlus, _, entity, world) =
-        let time = characterPlus.UpdateTime
-        let character = characterPlus.Character
-        if entity.GetVisible world then
-            let mutable transform = entity.GetTransform world
-            let perimeter = transform.Perimeter
-            World.enqueueLayeredOperation2d
-                { Elevation = transform.Elevation
-                  Horizon = transform.Horizon
-                  AssetTag = character.AnimationSheet
-                  RenderOperation2d =
-                    RenderSprite
-                        { Transform = transform
-                          InsetOpt = ValueSome (Character.getAnimationInset time character)
-                          Image = character.AnimationSheet
-                          Color = Character.getAnimationColor time character
-                          Blend = Transparent
-                          Emission = Character.getAnimationEmission time character
-                          Flip = FlipNone }}
-                world
-            match getAfflictionInsetOpt time character with
-            | Some afflictionInset ->
-                let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
-                let afflictionPosition =
-                    match character.Stature with
-                    | SmallStature | NormalStature ->
-                        perimeter.Min + perimeter.Size - Constants.Battle.AfflictionSize
-                    | LargeStature ->
-                        perimeter.Min + perimeter.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
-                    | BossStature ->
+        override this.Render (characterPlus, _, entity, world) =
+            let time = characterPlus.UpdateTime
+            let character = characterPlus.Character
+            if entity.GetVisible world then
+                let mutable transform = entity.GetTransform world
+                let perimeter = transform.Perimeter
+                World.enqueueLayeredOperation2d
+                    { Elevation = transform.Elevation
+                      Horizon = transform.Horizon
+                      AssetTag = character.AnimationSheet
+                      RenderOperation2d =
+                        RenderSprite
+                            { Transform = transform
+                              InsetOpt = ValueSome (Character.getAnimationInset time character)
+                              Image = character.AnimationSheet
+                              Color = Character.getAnimationColor time character
+                              Blend = Transparent
+                              Emission = Character.getAnimationEmission time character
+                              Flip = FlipNone }}
+                    world
+                match getAfflictionInsetOpt time character with
+                | Some afflictionInset ->
+                    let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
+                    let afflictionPosition =
+                        match character.Stature with
+                        | SmallStature | NormalStature ->
+                            perimeter.Min + perimeter.Size - Constants.Battle.AfflictionSize
+                        | LargeStature ->
+                            perimeter.Min + perimeter.Size - Constants.Battle.AfflictionSize.MapY((*) 0.5f)
+                        | BossStature ->
                         perimeter.Min + perimeter.Size - Constants.Battle.AfflictionSize.MapX((*) 2.0f).MapY((*) 1.75f)
-                let mutable afflictionTransform = Transform.makeDefault false
-                afflictionTransform.Position <- afflictionPosition
-                afflictionTransform.Size <- Constants.Battle.AfflictionSize
-                afflictionTransform.Elevation <- transform.Elevation + 0.1f
-                World.enqueueLayeredOperation2d
-                    { Elevation = afflictionTransform.Elevation
-                      Horizon = afflictionTransform.Horizon
-                      AssetTag = afflictionImage
-                      RenderOperation2d =
-                        RenderSprite
-                            { Transform = afflictionTransform
-                              InsetOpt = ValueSome afflictionInset
-                              Image = afflictionImage
-                              Color = Color.One
-                              Blend = Transparent
-                              Emission = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            | None -> ()
-            match getChargeOrbInsetOpt time character with
-            | Some chargeOrbInset ->
-                let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
-                let chargeOrbPosition =
-                    match character.Stature with
-                    | SmallStature | NormalStature ->
-                        perimeter.Min + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
-                    | LargeStature ->
-                        perimeter.Min + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
-                    | BossStature ->
+                    let mutable afflictionTransform = Transform.makeDefault false
+                    afflictionTransform.Position <- afflictionPosition
+                    afflictionTransform.Size <- Constants.Battle.AfflictionSize
+                    afflictionTransform.Elevation <- transform.Elevation + 0.1f
+                    World.enqueueLayeredOperation2d
+                        { Elevation = afflictionTransform.Elevation
+                          Horizon = afflictionTransform.Horizon
+                          AssetTag = afflictionImage
+                          RenderOperation2d =
+                            RenderSprite
+                                { Transform = afflictionTransform
+                                  InsetOpt = ValueSome afflictionInset
+                                  Image = afflictionImage
+                                  Color = Color.One
+                                  Blend = Transparent
+                                  Emission = Color.Zero
+                                  Flip = FlipNone }}
+                        world
+                | None -> ()
+                match getChargeOrbInsetOpt time character with
+                | Some chargeOrbInset ->
+                    let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
+                    let chargeOrbPosition =
+                        match character.Stature with
+                        | SmallStature | NormalStature ->
+                            perimeter.Min + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f)
+                        | LargeStature ->
+                            perimeter.Min + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 1.5f).MapY((*) 0.5f)
+                        | BossStature ->
                         perimeter.Min + perimeter.Size - Constants.Battle.ChargeOrbSize.MapX((*) 2.5f).MapY((*) 1.75f)
-                let mutable chargeOrbTransform = Transform.makeDefault false
-                chargeOrbTransform.Position <- chargeOrbPosition
-                chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
-                chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
-                World.enqueueLayeredOperation2d
-                    { Elevation = chargeOrbTransform.Elevation
-                      Horizon = chargeOrbTransform.Horizon
-                      AssetTag = chargeOrbImage
-                      RenderOperation2d =
-                        RenderSprite
-                            { Transform = chargeOrbTransform
-                              InsetOpt = ValueSome chargeOrbInset
-                              Image = chargeOrbImage
-                              Color = Color.One
-                              Blend = Transparent
-                              Emission = Color.Zero
-                              Flip = FlipNone }}
-                    world
-            | None -> ()
+                    let mutable chargeOrbTransform = Transform.makeDefault false
+                    chargeOrbTransform.Position <- chargeOrbPosition
+                    chargeOrbTransform.Size <- Constants.Battle.ChargeOrbSize
+                    chargeOrbTransform.Elevation <- transform.Elevation + 0.1f
+                    World.enqueueLayeredOperation2d
+                        { Elevation = chargeOrbTransform.Elevation
+                          Horizon = chargeOrbTransform.Horizon
+                          AssetTag = chargeOrbImage
+                          RenderOperation2d =
+                            RenderSprite
+                                { Transform = chargeOrbTransform
+                                  InsetOpt = ValueSome chargeOrbInset
+                                  Image = chargeOrbImage
+                                  Color = Color.One
+                                  Blend = Transparent
+                                  Emission = Color.Zero
+                                  Flip = FlipNone }}
+                        world
+                | None -> ()

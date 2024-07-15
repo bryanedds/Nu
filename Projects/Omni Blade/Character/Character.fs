@@ -412,7 +412,7 @@ module Character =
     let setHitPoints cancel hitPoints affectWounded alliesHealthy character =
         let (cancelled, characterState) =
             if character.CharacterState_.Healthy || affectWounded then
-                let characterState = CharacterState.updateHitPoints (constant hitPoints) character.CharacterState_
+                let characterState = CharacterState.transformHitPoints (constant hitPoints) character.CharacterState_
                 (cancel, characterState)
             else (false, character.CharacterState_)
         let (cancelled, autoBattleOpt) =

@@ -51,7 +51,7 @@ type OmniBladeDispatcher () =
 
     override this.Register (game, world) =
         let world = base.Register (game, world)
-        World.setMasterSongVolume 0.6f world
+        World.setMasterSongVolume Constants.Gameplay.SongVolumeDefault world
         world
 
     override this.Definitions (omniBlade, _) =
@@ -104,18 +104,21 @@ type OmniBladeDispatcher () =
         | ShowFieldInitial ->
             let slot = match omniBlade with Intro slot -> slot | _ -> Slot1
             let field = Field.initial world.UpdateTime slot
+            World.setMasterSongVolume field.Options.SongVolume world
             withSignal (SetField field) Field
 
         | TryLoad saveSlot ->
             match Field.tryLoad world.UpdateTime saveSlot with
-            | Some loaded -> withSignal (SetField loaded) Field
+            | Some field ->
+                World.setMasterSongVolume field.Options.SongVolume world
+                withSignal (SetField field) Field
             | None -> just omniBlade
 
         | CommencingBattle ->
             just Battle
 
         | CommenceBattle (battleData, prizePool) ->
-            withSignal (FromFieldToBattle (battleData, prizePool)) Battle
+            withSignal (FromFieldToBattle (battleData, prizePool)) Battle    
 
         | ConcludingBattle outcome ->
             if outcome

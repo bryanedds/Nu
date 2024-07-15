@@ -51,6 +51,7 @@ module Constants =
         let CueRunSpeed = 2.0f
         let CueMoseySpeed = 0.5f
         let CueCrawlSpeed = 0.25f
+        let SongVolumeDefault = 0.6f
 
     [<RequireQualifiedAccess>]
     module Field =
