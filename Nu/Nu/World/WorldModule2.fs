@@ -1235,12 +1235,12 @@ module WorldModule2 =
 
             // pre-update screen if any
             world.Timers.PreUpdateScreensTimer.Restart ()
-            let world = Option.fold (fun world screen -> if advancing then World.preUpdateScreen screen world else world) world screenOpt
+            let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.preUpdateScreen screen world else world) world screenOpt
             world.Timers.PreUpdateScreensTimer.Stop ()
 
             // pre-update groups
             world.Timers.PreUpdateGroupsTimer.Restart ()
-            let world = Seq.fold (fun world group -> if advancing then World.preUpdateGroup group world else world) world groups
+            let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.preUpdateGroup group world else world) world groups
             world.Timers.PreUpdateGroupsTimer.Stop ()
 
             // fin
@@ -1265,28 +1265,28 @@ module WorldModule2 =
                 world.Timers.UpdateGameTimer.Restart ()
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
-            
+
                 // update screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world screen -> if advancing then World.updateScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world group -> if advancing then World.updateGroup group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.updateGroup group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 let world =
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                        if element.Entry.GetExists world && (element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world))
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet3dNormalCached
                 let world =
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                        if element.Entry.GetExists world && (element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world))
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet2dNormalCached
@@ -1317,12 +1317,12 @@ module WorldModule2 =
 
             // post-update screen if any
             world.Timers.PostUpdateScreensTimer.Restart ()
-            let world = Option.fold (fun world screen -> if advancing then World.postUpdateScreen screen world else world) world screenOpt
+            let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.postUpdateScreen screen world else world) world screenOpt
             world.Timers.PostUpdateScreensTimer.Stop ()
 
             // post-update groups
             world.Timers.PostUpdateGroupsTimer.Restart ()
-            let world = Seq.fold (fun world group -> if advancing then World.postUpdateGroup group world else world) world groups
+            let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.postUpdateGroup group world else world) world groups
             world.Timers.PostUpdateGroupsTimer.Stop ()
 
             // fin
