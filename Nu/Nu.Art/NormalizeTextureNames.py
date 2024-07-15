@@ -16,26 +16,36 @@ for obj in bpy.context.scene.objects:
                             old_file_name = os.path.basename(node.image.filepath.replace("//", ""))
                             old_file_path = os.getcwd() + "\\textures\\" + old_file_name
 
-                            # new file path
+                            # albeda
                             new_file_name = old_file_name
                             new_file_name = new_file_name.replace("BaseColor.png", "Albedo.png")
                             new_file_name = new_file_name.replace("BaseColor.jpg", "Albedo.jpg")
                             new_file_name = new_file_name.replace("Color.jpg", "Albedo.jpg")
                             new_file_name = new_file_name.replace("Diffuse.jpg", "Albedo.jpg")
                             new_file_name = new_file_name.replace("diff_2k.jpg", "Albedo.jpg")
+
+                            # normal
                             new_file_name = new_file_name.replace("NormalGL.jpg", "Normal.jpg")
                             new_file_name = new_file_name.replace("NormalDX.jpg", "Normal.jpg")
                             new_file_name = new_file_name.replace("normal.jpg", "Normal.jpg")
                             new_file_name = new_file_name.replace("nor_2k.jpg", "Normal.jpg")
                             new_file_name = new_file_name.replace("nor_gl_2k.jpg", "Normal.jpg")
+
+                            # roughness
                             new_file_name = new_file_name.replace("roughness.jpg", "Roughness.jpg")
                             new_file_name = new_file_name.replace("rough_2k.jpg", "Roughness.jpg")
                             new_file_name = new_file_name.replace("spec_2k.jpg", "Roughness.jpg")
+
+                            # metallic
                             new_file_name = new_file_name.replace("Metalness.jpg", "Metallic.jpg")
+
+                            # ambient occlusion
                             new_file_name = new_file_name.replace("AO.png", "AmbientOcclusion.png")
                             new_file_name = new_file_name.replace("AO.jpg", "AmbientOcclusion.jpg")
                             new_file_name = new_file_name.replace("ao.jpg", "AmbientOcclusion.jpg")
                             new_file_name = new_file_name.replace("ao_2k.jpg", "AmbientOcclusion.jpg")
+
+                            # user-defined
                             new_file_name = new_file_name.replace("plant_22.png", "PlantAlbedo.png")
                             new_file_name = new_file_name.replace("SHC art.jpg", "ShcArtaAlbedo.jpg")
                             new_file_name = new_file_name.replace("SHC art 2.jpg", "ShcArt2Albedo.jpg")
@@ -44,6 +54,8 @@ for obj in bpy.context.scene.objects:
                             new_file_name = new_file_name.replace("Ultrawide screen.jpg", "UltrawideScreenAlbedo.jpg")
                             new_file_name = new_file_name.replace("pc hardware.jpg", "PcHardwareAlbedo.jpg")
                             new_file_name = new_file_name.replace("cylces10.jpg", "Cycles10Albedo.jpg")
+
+                            # new file path
                             new_file_path = os.getcwd() + "\\textures\\" + new_file_name
 
                             # rename the image if changed
