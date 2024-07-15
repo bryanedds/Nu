@@ -1187,7 +1187,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     Log.info ("Compiling code via generated F# script:\n" + fsxFileString)
                     FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
                     let world =
-                        try FsiSession.EvalInteraction fsxFileString
+                        match FsiSession.EvalInteractionNonThrowing fsxFileString with
+                        | (Choice1Of2 _, _) ->
                             let errorStr = string FsiErrorStream
                             if errorStr.Length > 0
                             then Log.info ("Code compiled with the following warnings (these may disable debugging of reloaded code):\n" + errorStr)
@@ -1197,7 +1198,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let world = World.updateLateBindings FsiSession.DynamicAssemblies world // replace references to old types
                             Log.info "Code updated."
                             world
-                        with _ ->
+                        | (Choice2Of2 _, _) ->
                             let errorStr = string FsiErrorStream
                             Log.info ("Failed to compile code due to (see full output in the console):\n" + errorStr)
                             World.switch worldOld
@@ -3945,27 +3946,28 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             "open Prime\n" +
                             "open Nu\n" +
                             "open Nu.Gaia"
-                        try FsiSession.EvalInteraction initial
-                        with exn -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
+                        match FsiSession.EvalInteractionNonThrowing initial with
+                        | (Choice1Of2 _, _) -> ()
+                        | (Choice2Of2 exn, _) -> Log.error ("Could not initialize fsi eval due to: " + scstring exn)
 
                         // attempt to open namespace derived from project name
                         if projectDllPathValid then
                             let namespaceName = PathF.GetFileNameWithoutExtension (ProjectDllPath.Replace (" ", ""))
-                            try FsiSession.EvalInteraction ("open " + namespaceName)
-                            with _ -> ()
+                            FsiSession.EvalInteractionNonThrowing ("open " + namespaceName) |> ignore<Choice<_, _> * _>
 
                     let world =
-                        try if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
-                            if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
-                            if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
-                            if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
-                            if InteractiveInputStr.Contains (nameof SelectedGroup) then FsiSession.AddBoundValue (nameof SelectedGroup, SelectedGroup)
-                            if InteractiveInputStr.Contains (nameof SelectedEntityOpt) then
-                                if SelectedEntityOpt.IsNone // HACK: 1/2: workaround for binding a null value with AddBoundValue.
-                                then FsiSession.EvalInteraction "let selectedEntityOpt = Option<Entity>.None;;"
-                                else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
-                            if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
-                            FsiSession.EvalInteraction (InteractiveInputStr + ";;")
+                        if InteractiveInputStr.Contains (nameof TargetDir) then FsiSession.AddBoundValue (nameof TargetDir, TargetDir)
+                        if InteractiveInputStr.Contains (nameof ProjectDllPath) then FsiSession.AddBoundValue (nameof ProjectDllPath, ProjectDllPath)
+                        if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
+                        if InteractiveInputStr.Contains (nameof SelectedScreen) then FsiSession.AddBoundValue (nameof SelectedScreen, SelectedScreen)
+                        if InteractiveInputStr.Contains (nameof SelectedGroup) then FsiSession.AddBoundValue (nameof SelectedGroup, SelectedGroup)
+                        if InteractiveInputStr.Contains (nameof SelectedEntityOpt) then
+                            if SelectedEntityOpt.IsNone // HACK: 1/2: workaround for binding a null value with AddBoundValue.
+                            then FsiSession.EvalInteractionNonThrowing "let selectedEntityOpt = Option<Entity>.None;;" |> ignore<Choice<_, _> * _>
+                            else FsiSession.AddBoundValue (nameof SelectedEntityOpt, SelectedEntityOpt)
+                        if InteractiveInputStr.Contains (nameof world) then FsiSession.AddBoundValue (nameof world, world)
+                        match FsiSession.EvalInteractionNonThrowing (InteractiveInputStr + ";;") with
+                        | (Choice1Of2 _, _) ->
                             let errorStr = string FsiErrorStream
                             let outStr = string FsiOutStream
                             let outStr =
@@ -3990,8 +3992,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | Some wtemp when wtemp.Value.ReflectionType = typeof<World> ->
                                     wtemp.Value.ReflectionValue :?> World
                                 | Some _ | None -> world
-                        with _ ->
-                            InteractiveOutputStr <- InteractiveOutputStr + string FsiErrorStream
+                        | (Choice2Of2 _, diags) ->
+                            let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
+                            InteractiveOutputStr <- InteractiveOutputStr + Environment.NewLine + diagsStr
                             world
                     InteractiveOutputStr <-
                         InteractiveOutputStr.Split Environment.NewLine |>
