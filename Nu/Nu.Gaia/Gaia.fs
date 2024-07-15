@@ -3844,55 +3844,54 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Text (string (OpenGL.Hl.GetDrawInstanceCount ()))
 
             // frame timing plot
-            if world.Advancing then
-                GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
-                GcTimings.Dequeue () |> ignore<single>
-                MiscTimings.Enqueue
-                    (single
-                        (world.Timers.InputTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.AudioTimer.Elapsed.TotalMilliseconds))
-                MiscTimings.Dequeue () |> ignore<single>
-                PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last MiscTimings)
-                PhysicsTimings.Dequeue () |> ignore<single>
-                UpdateTimings.Enqueue
-                    (single
-                        (world.Timers.PreProcessTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.UpdateTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.PerProcessTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.TaskletsTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.DestructionTimer.Elapsed.TotalMilliseconds +
-                         world.Timers.PostProcessTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
-                UpdateTimings.Dequeue () |> ignore<single>
-                RenderMessagesTimings.Enqueue (single world.Timers.RenderMessagesTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
-                RenderMessagesTimings.Dequeue () |> ignore<single>
-                ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last RenderMessagesTimings)
-                ImGuiTimings.Dequeue () |> ignore<single>
-                MainThreadTimings.Enqueue (single world.Timers.MainThreadTime.TotalMilliseconds)
-                MainThreadTimings.Dequeue () |> ignore<single>
-                FrameTimings.Enqueue (single world.Timers.FrameTimer.Elapsed.TotalMilliseconds)
-                FrameTimings.Dequeue () |> ignore<single>
+            GcTimings.Enqueue (single world.Timers.GcFrameTime.TotalMilliseconds)
+            GcTimings.Dequeue () |> ignore<single>
+            MiscTimings.Enqueue
+                (single
+                    (world.Timers.InputTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.AudioTimer.Elapsed.TotalMilliseconds))
+            MiscTimings.Dequeue () |> ignore<single>
+            PhysicsTimings.Enqueue (single world.Timers.PhysicsTimer.Elapsed.TotalMilliseconds + Seq.last MiscTimings)
+            PhysicsTimings.Dequeue () |> ignore<single>
+            UpdateTimings.Enqueue
+                (single
+                    (world.Timers.PreProcessTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PreUpdateTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.UpdateTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PostUpdateTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PerProcessTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.TaskletsTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.DestructionTimer.Elapsed.TotalMilliseconds +
+                     world.Timers.PostProcessTimer.Elapsed.TotalMilliseconds) + Seq.last PhysicsTimings)
+            UpdateTimings.Dequeue () |> ignore<single>
+            RenderMessagesTimings.Enqueue (single world.Timers.RenderMessagesTimer.Elapsed.TotalMilliseconds + Seq.last UpdateTimings)
+            RenderMessagesTimings.Dequeue () |> ignore<single>
+            ImGuiTimings.Enqueue (single world.Timers.ImGuiTimer.Elapsed.TotalMilliseconds + Seq.last RenderMessagesTimings)
+            ImGuiTimings.Dequeue () |> ignore<single>
+            MainThreadTimings.Enqueue (single world.Timers.MainThreadTime.TotalMilliseconds)
+            MainThreadTimings.Dequeue () |> ignore<single>
+            FrameTimings.Enqueue (single world.Timers.FrameTimer.Elapsed.TotalMilliseconds)
+            FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
                 ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 35.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
-                GcTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotShaded ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
-                MiscTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Misc Time", &TimingsArray.[0], TimingsArray.Length)
-                PhysicsTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Physics Time", &TimingsArray.[0], TimingsArray.Length)
-                UpdateTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
-                RenderMessagesTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Render Msgs", &TimingsArray.[0], TimingsArray.Length)
-                ImGuiTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
-                MainThreadTimings.CopyTo (TimingsArray, 0)
-                ImPlot.PlotLine ("Main Thread", &TimingsArray.[0], TimingsArray.Length)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
+                MainThreadTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Main Thread", &TimingsArray.[0], TimingsArray.Length)
+                ImGuiTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("ImGui Time", &TimingsArray.[0], TimingsArray.Length)
+                RenderMessagesTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Render Msgs", &TimingsArray.[0], TimingsArray.Length)
+                UpdateTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Update Time", &TimingsArray.[0], TimingsArray.Length)
+                PhysicsTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Physics Time", &TimingsArray.[0], TimingsArray.Length)
+                MiscTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotLine ("Misc Time", &TimingsArray.[0], TimingsArray.Length)
+                GcTimings.CopyTo (TimingsArray, 0)
+                ImPlot.PlotShaded ("Gc Time", &TimingsArray.[0], TimingsArray.Length)
                 ImPlot.EndPlot ()
             ImGui.End ()
             world
