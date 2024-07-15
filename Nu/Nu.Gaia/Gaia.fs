@@ -3437,10 +3437,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let world =
                                     if ImGui.Selectable (editModeName, strEq editModeName ProjectEditMode) then
                                         ProjectEditMode <- editModeName
-                                        let world = snapshot (SetEditMode 1) world // snapshot before mode change
+                                        let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = snapshot (SetEditMode 2) world // snapshot before after change
+                                        let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world
                                 if editModeName = ProjectEditMode then ImGui.SetItemDefaultFocus ()
