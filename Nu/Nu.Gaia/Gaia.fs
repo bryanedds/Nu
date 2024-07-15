@@ -1497,7 +1497,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let moveSpeed =
                 if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 5.0f
                 elif ImGui.IsEnterDown () then 0.5f
-                elif ImGui.IsShiftDown () then 0.036f
+                elif ImGui.IsShiftDown () then 0.035f
                 else 0.12f
             let turnSpeed =
                 if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 0.025f
@@ -3291,7 +3291,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let world = if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities world else world
                             let world = if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities world else world
                             let world = if ImGui.MenuItem ("Rebuild Navigation", "Ctrl+Shift+N") then synchronizeNav world else world
-                            let world = if ImGui.MenuItem ("Re-render Light Maps", "Ctrl+Shift+L") then rerenderLightMaps world else world
+                            let world = if ImGui.MenuItem ("Rerender Light Maps", "Ctrl+Shift+L") then rerenderLightMaps world else world
                             ImGui.EndMenu ()
                             world
                         else world
@@ -3471,7 +3471,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Relight" then rerenderLightMaps world else world
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Re-render all light maps. (Ctrl+Shift+L)"
+                    ImGui.Text "Rerender all light maps. (Ctrl+Shift+L)"
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 ImGui.Text "|"
