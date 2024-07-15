@@ -74,7 +74,7 @@ and SnapshotType =
     | RencenterInProbeBounds
     | ResetProbeBounds
     | SynchronizeNav
-    | SetEditMode
+    | SetEditMode of int
     | ReloadCode
     | Advance
     | Halt
@@ -109,7 +109,7 @@ and SnapshotType =
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
         | ResetProbeBounds -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
-        | SetEditMode -> (scstringMemo this).Spaced
+        | SetEditMode i -> (scstringMemo this).Spaced + "(" + string i + " of 2)"
         | ReloadCode -> (scstringMemo this).Spaced
         | Advance -> (scstringMemo this).Spaced
         | Halt -> (scstringMemo this).Spaced

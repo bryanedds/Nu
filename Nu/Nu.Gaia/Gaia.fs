@@ -1583,17 +1583,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if not filtering then
             if ExpandEntityHierarchy then ImGui.SetNextItemOpen true
             if CollapseEntityHierarchy then ImGui.SetNextItemOpen false
-        match SelectedEntityOpt with
-        | Some selectedEntity when selectedEntity.GetExists world && ShowSelectedEntity ->
-            let relation = relate entity selectedEntity
-            if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
-                relation.Links.Length > 0 then
-                ImGui.SetNextItemOpen true
-        | Some _ | None -> ()
+        if ShowSelectedEntity then
+            match SelectedEntityOpt with
+            | Some selectedEntity when selectedEntity.GetExists world ->
+                let relation = relate entity selectedEntity
+                if  Array.notExists (fun t -> t = Parent || t = Current) relation.Links &&
+                    relation.Links.Length > 0 then
+                    ImGui.SetNextItemOpen true
+            | Some _ | None -> ()
         let expanded = ImGui.TreeNodeEx (entity.Name, treeNodeFlags)
         if ShowSelectedEntity && Some entity = SelectedEntityOpt then
             ImGui.SetScrollHereY 0.5f
-        ShowSelectedEntity <- false
         if ImGui.IsKeyPressed ImGuiKey.Space && ImGui.IsItemFocused () && ImGui.IsWindowFocused () then
             selectEntityOpt (Some entity) world
         if ImGui.IsMouseReleased ImGuiMouseButton.Left && ImGui.IsItemHovered () then
@@ -3437,10 +3437,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let world =
                                     if ImGui.Selectable (editModeName, strEq editModeName ProjectEditMode) then
                                         ProjectEditMode <- editModeName
-                                        let world = snapshot SetEditMode world // snapshot before mode change
+                                        let world = snapshot (SetEditMode 1) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = snapshot SetEditMode world // snapshot before after change
+                                        let world = snapshot (SetEditMode 2) world // snapshot before after change
                                         world
                                     else world
                                 if editModeName = ProjectEditMode then ImGui.SetItemDefaultFocus ()
@@ -3618,6 +3618,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 Array.sortBy fst |>
                 Array.map snd |>
                 Array.fold (fun world entity -> imGuiEntityHierarchy entity world) world
+
+            // finish entity showing
+            ShowSelectedEntity <- false
 
             // fin
             ImGui.End ()
