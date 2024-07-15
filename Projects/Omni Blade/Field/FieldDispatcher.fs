@@ -521,6 +521,7 @@ type FieldDispatcher () =
         | MenuOptionsQuitPrompt ->
             let field = Field.quitPrompt field
             just field
+
         | MenuOptionsQuitConfirm ->
             withSignals [FadeOutSong 60L; StartQuitting] field
 
