@@ -1280,13 +1280,13 @@ module WorldModule2 =
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 let world =
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Entry.GetExists world && (element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world))
+                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet3dNormalCached
                 let world =
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Entry.GetExists world && (element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world))
+                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet2dNormalCached
