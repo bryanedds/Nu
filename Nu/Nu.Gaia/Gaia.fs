@@ -1497,7 +1497,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let moveSpeed =
                 if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 5.0f
                 elif ImGui.IsEnterDown () then 0.5f
-                elif ImGui.IsShiftDown () then 0.02f
+                elif ImGui.IsShiftDown () then 0.036f
                 else 0.12f
             let turnSpeed =
                 if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 0.025f
