@@ -2697,7 +2697,12 @@ module PhysicallyBased =
 
     /// Destroy physically-based model resources.
     let DestroyPhysicallyBasedModel (model : PhysicallyBasedModel) =
-        for surface in model.Surfaces do
+        let surfacesUnique = // NOTE: models deduplicate underlying geometry, so we make sure to only release each vao once.
+            model.Surfaces |>
+            Array.groupBy (fun surface -> surface.PhysicallyBasedGeometry.PhysicallyBasedVao) |>
+            Array.map snd |>
+            Array.map Array.head
+        for surface in surfacesUnique do
             DestroyPhysicallyBasedGeometry surface.PhysicallyBasedGeometry
 
     /// Memoizes physically-based scene loads.
