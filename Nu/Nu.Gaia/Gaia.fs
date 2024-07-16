@@ -116,7 +116,6 @@ module Gaia =
 
     (* Metrics States *)
 
-    let mutable private GcTimingPrevious = 0.0
     let private TimingCapacity = 200
     let private TimingsArray = Array.zeroCreate<single> TimingCapacity
     let private GcTimings = Queue (Array.zeroCreate<single> TimingCapacity)
