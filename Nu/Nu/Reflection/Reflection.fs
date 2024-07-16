@@ -81,6 +81,8 @@ module Reflection =
              ("Is2d", true)
              ("Is3d", true)
              ("Physical", true)
+             ("Physical", true)
+             ("LightProbe", true)
              ("Optimized", true)]
 
     let rec private memoizable2 level (ty : Type) =
