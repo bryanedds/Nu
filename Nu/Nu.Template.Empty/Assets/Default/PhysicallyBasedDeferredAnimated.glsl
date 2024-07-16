@@ -133,9 +133,8 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo, discarding on zero alpha
+    // compute albedo
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties
