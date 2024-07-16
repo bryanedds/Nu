@@ -2423,7 +2423,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                batchPhase viewAbsoluteArray geometryProjectionArray [||] entry.Value
+                batchPhase viewRelativeArray geometryProjectionArray [||] entry.Value
                 entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
