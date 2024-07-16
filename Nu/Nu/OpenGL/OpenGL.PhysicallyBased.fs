@@ -1675,13 +1675,13 @@ module PhysicallyBased =
           ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedDeferredLightingShader = shader }
 
-    /// Create the shaders for physically-based shadow rendering.
-    let CreatePhysicallyBasedShadowShaders (shaderStaticShadowFilePath, shaderAnimatedShadowFilePath, shaderTerrainShadowFilePath) =
-        let shaderStaticShadow = CreatePhysicallyBasedShader shaderStaticShadowFilePath
+    /// Create the shaders for physically-based depth rendering (such as for occlusion or shadow rendering).
+    let CreatePhysicallyBasedDepthShaders (shaderStaticDepthFilePath, shaderAnimatedDepthFilePath, shaderTerrainDepthFilePath) =
+        let shaderStaticShadow = CreatePhysicallyBasedShader shaderStaticDepthFilePath
         Hl.Assert ()
-        let shaderAnimatedShadow = CreatePhysicallyBasedShader shaderAnimatedShadowFilePath
+        let shaderAnimatedShadow = CreatePhysicallyBasedShader shaderAnimatedDepthFilePath
         Hl.Assert ()
-        let shaderTerrainShadow = CreatePhysicallyBasedTerrainShader shaderTerrainShadowFilePath
+        let shaderTerrainShadow = CreatePhysicallyBasedTerrainShader shaderTerrainDepthFilePath
         (shaderStaticShadow, shaderAnimatedShadow, shaderTerrainShadow)
 
     /// Create the shaders for physically-based deferred rendering.
@@ -1813,8 +1813,8 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
 
-    /// Draw a batch of physically-based surfaces' shadows.
-    let DrawPhysicallyBasedShadowSurfaces
+    /// Draw a batch of physically-based depth surfaces.
+    let DrawPhysicallyBasedDepthSurfaces
         (batchPhase : BatchPhase,
          view : single array,
          projection : single array,
