@@ -21,5 +21,14 @@ void main()
 
 void main()
 {
-    // nothing to do.
+    // discard if depth out of range
+    float depthCutoff = heightPlusOut.z;
+    if (depthCutoff >= 0.0)
+    {
+        if (gl_FragCoord.z / gl_FragCoord.w > depthCutoff) discard;
+    }
+    else
+    {
+        if (gl_FragCoord.z / gl_FragCoord.w <= -depthCutoff) discard;
+    }
 }
