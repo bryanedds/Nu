@@ -1822,7 +1822,13 @@ module PhysicallyBased =
          surfacesCount : int,
          instanceFields : single array,
          geometry : PhysicallyBasedGeometry,
+         material : PhysicallyBasedMaterial,
          shader : PhysicallyBasedShader) =
+
+        // setup dynamic state
+        if not material.TwoSided then
+            Gl.Enable EnableCap.CullFace
+        Hl.Assert ()
 
         // start batch
         if batchPhase.Starting then
