@@ -25,8 +25,8 @@ void main()
 
     // compute output values
     vec4 positionBlended = boneBlended * vec4(position, 1.0);
-    vec4 positionIntermediate = model * positionBlended;
-    gl_Position = projection * view * positionIntermediate;
+    vec4 positionWorld = model * positionBlended;
+    gl_Position = projection * view * positionWorld;
 }
 
 #shader fragment
