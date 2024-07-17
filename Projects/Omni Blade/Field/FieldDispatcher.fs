@@ -1383,7 +1383,7 @@ type FieldDispatcher () =
                         Content.text "About"
                             [Entity.PositionLocal == v3 320.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 320.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                             Entity.Text == "Omni Blade v0.9.7"]
+                             Entity.Text == "Omni Blade v1.0.0"]
                      else
                         Content.text "QuitConfirmation"
                             [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
