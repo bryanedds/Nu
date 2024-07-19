@@ -1491,16 +1491,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private updateEyeTravel world =
         if canEditWithKeyboard world then
+            let delta = world.DateDelta
+            let seconds = single delta.TotalSeconds
             let position = World.getEye3dCenter world
             let rotation = World.getEye3dRotation world
             let moveSpeed =
-                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 5.0f
-                elif ImGui.IsEnterDown () then 0.5f
-                elif ImGui.IsShiftDown () then 0.035f
-                else 0.12f
+                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 300.0f * seconds
+                elif ImGui.IsEnterDown () then 30.0f * seconds
+                elif ImGui.IsShiftDown () then 2.1f * seconds
+                else 7.2f * seconds
             let turnSpeed =
-                if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 0.025f
-                else 0.05f
+                if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
+                else 3.0f * seconds
             if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () then
                 DesiredEye3dCenter <- position + v3Forward.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () then
