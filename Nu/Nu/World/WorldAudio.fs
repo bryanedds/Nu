@@ -25,16 +25,6 @@ module WorldAudio =
             let audioPlayer = World.getAudioPlayer world
             for message in messages do audioPlayer.EnqueueMessage message
 
-        /// Get the currently playing song, if any.
-        static member getCurrentSongOpt world =
-            let audioPlayer = World.getAudioPlayer world
-            audioPlayer.CurrentSongOpt
-            
-        /// Get the currently playing song's position or 0.0.
-        static member getCurrentSongPosition world =
-            let audioPlayer = World.getAudioPlayer world
-            audioPlayer.CurrentSongPosition
-
         /// Get the master volume.
         static member getMasterAudioVolume world =
             let audioPlayer = World.getAudioPlayer world
@@ -64,6 +54,26 @@ module WorldAudio =
         static member setMasterSongVolume volume world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.MasterSongVolume <- volume
+
+        /// Get the currently playing song, if any.
+        static member getCurrentSongOpt world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.CurrentSongOpt
+            
+        /// Get the currently playing song's position or 0.0.
+        static member getCurrentSongPosition world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.CurrentSongPosition
+
+        /// Whether the a song is currently playing and fading in.
+        static member getFadingInSong world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.FadingIn
+
+        /// Whether the a song is currently playing and fading out.
+        static member getFadingOutSong world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.FadingOut
 
         /// Send a message to the audio system to play a song.
         static member playSong fadeInTime fadeOutTime startTime repeatLimitOpt volume song world =

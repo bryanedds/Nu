@@ -33,6 +33,9 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
         member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
+        member this.GetRequestedSong world = World.getScreenRequestedSong this world
+        member this.SetRequestedSong value world = World.setScreenRequestedSong value this world |> snd'
+        member this.RequestedSong = lens (nameof this.RequestedSong) this this.GetRequestedSong this.SetRequestedSong
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
@@ -140,7 +143,19 @@ module WorldScreenModule =
             let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
             World.publishPlus () screen.PreUpdateEvent eventTrace screen false false world
 
-        static member internal updateScreen (screen : Screen) world =
+        static member internal updateScreen getCurrentSongOpt getFadingOut playSong fadeOutSong stopSong (screen : Screen) world =
+
+            // update requested song
+            match World.getScreenRequestedSong screen world with
+            | Request song ->
+                match getCurrentSongOpt world with
+                | Some current ->
+                    // TODO: also be able to change song volume if song request with a different volume comes in.
+                    if assetNeq current.Song song.Song then playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+                | None -> playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+            | RequestFadeOut fadeOutTime -> if not (getFadingOut world) then fadeOutSong fadeOutTime world
+            | RequestNone -> stopSong world
+            | RequestIgnore -> ()
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world

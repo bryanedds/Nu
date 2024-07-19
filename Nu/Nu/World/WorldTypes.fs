@@ -359,6 +359,13 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | :? SortPriority as that -> (this :> SortPriority IComparable).CompareTo that
             | _ -> failwithumf ()
 
+/// Specified the requested song, if any, or whether to ignore song request functionality altogether.
+and RequestedSong =
+    | Request of SongDescriptor
+    | RequestFadeOut of GameTime
+    | RequestNone
+    | RequestIgnore
+
 /// Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
 and DesiredScreen =
     | Desire of Screen
@@ -955,6 +962,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       TransitionState : TransitionState
       Incoming : Transition
       Outgoing : Transition
+      RequestedSong : RequestedSong
       SlideOpt : Slide option
       Nav3d : Nav3d
       Protected : bool
@@ -1004,6 +1012,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
+          RequestedSong = RequestIgnore
           SlideOpt = None
           Nav3d = Nav3d.make ()
           Protected = false

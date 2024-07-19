@@ -55,6 +55,10 @@ type AudioPlayer =
     abstract CurrentSongOpt : SongDescriptor option
     /// Get the current song's position or 0 if one isn't playing.
     abstract CurrentSongPosition : double
+    /// Whether a song is currently playing and fading in.
+    abstract FadingIn : bool
+    /// Whether a song is currently playing and fading out.
+    abstract FadingOut : bool
     /// 'Play' the audio system. Must be called once per frame.
     abstract Play : AudioMessage List -> unit
 
@@ -64,15 +68,17 @@ type [<ReferenceEquality>] StubAudioPlayer =
         { StubAudioPlayer : unit }
     
     interface AudioPlayer with
+        member audioPlayer.MasterAudioVolume with get () = 1.0f and set _ = ()
+        member audioPlayer.MasterSoundVolume with get () = 1.0f and set _ = ()
+        member audioPlayer.MasterSongVolume with get () = 1.0f and set _ = ()
         member audioPlayer.PopMessages () = List ()
         member audioPlayer.ClearMessages () = ()
         member audioPlayer.EnqueueMessage _ = ()
         member audioPlayer.CurrentSongOpt = None
         member audioPlayer.CurrentSongPosition = 0.0
+        member audioPlayer.FadingIn = false
+        member audioPlayer.FadingOut = false
         member audioPlayer.Play _ = ()
-        member audioPlayer.MasterAudioVolume with get () = 1.0f and set _ = ()
-        member audioPlayer.MasterSoundVolume with get () = 1.0f and set _ = ()
-        member audioPlayer.MasterSongVolume with get () = 1.0f and set _ = ()
 
     static member make () =
         { StubAudioPlayer = () }
@@ -301,6 +307,12 @@ type [<ReferenceEquality>] SdlAudioPlayer =
         if SDL_mixer.Mix_PlayingMusic () = 0 then
             audioPlayer.CurrentSongOpt <- None
 
+    static member private getFadingIn () =
+        SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_IN
+
+    static member private getFadingOut () =
+        SDL_mixer.Mix_FadingMusic () = SDL_mixer.Mix_Fading.MIX_FADING_OUT
+
     /// Make a NuAudioPlayer.
     static member make () =
         if SDL.SDL_WasInit SDL.SDL_INIT_AUDIO = 0u then
@@ -351,6 +363,12 @@ type [<ReferenceEquality>] SdlAudioPlayer =
             match audioPlayer.CurrentSongOpt with
             | Some (_, musAsset) -> ignore musAsset; failwithnie () // SDL_mixer.Mix_GetMusicPosition musAsset
             | None -> failwithnie () // 0.0
+
+        member audioPlayer.FadingIn =
+            SdlAudioPlayer.getFadingIn ()
+
+        member audioPlayer.FadingOut =
+            SdlAudioPlayer.getFadingOut ()
 
         member audioPlayer.Play audioMessages =
             SdlAudioPlayer.handleAudioMessages audioMessages audioPlayer

@@ -1268,7 +1268,7 @@ module WorldModule2 =
 
                 // update screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen World.getCurrentSongOpt World.getFadingOutSong World.playSong World.fadeOutSong World.stopSong screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
