@@ -1699,7 +1699,7 @@ module WorldModule2 =
                                                                         // automatically enable frame pacing when need is detected
                                                                         let world =
                                                                             if not world.FramePacing then
-                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
                                                                                 FramePaceChecks <- inc FramePaceChecks
                                                                                 let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
                                                                                 if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
@@ -1708,8 +1708,8 @@ module WorldModule2 =
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
-                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
+                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < GameTime.DesiredFrameTimeMinimum do
+                                                                                let timeToSleep = GameTime.DesiredFrameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1

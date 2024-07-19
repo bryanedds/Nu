@@ -20,7 +20,6 @@ module GameTime =
 
     let [<Uniform>] mutable DesiredFrameRate = match ConfigurationManager.AppSettings.["DesiredFrameRate"] with null -> StaticFrameRate 60L | desiredFrameRate -> scvalue<FrameRate> desiredFrameRate
     let [<Literal>] DesiredFrameTimeSlop = 0.0005
-    let [<Uniform>] DesiredFrameTimeMinimum = match DesiredFrameRate with StaticFrameRate frameRate -> 1.0 / double frameRate - DesiredFrameTimeSlop | DynamicFrameRate frameRate -> 1.0 / double frameRate - DesiredFrameTimeSlop
 
 namespace Nu
 open System
@@ -65,6 +64,13 @@ type GameTimeConverter () =
 and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeConverter>)>] GameTime =
     | UpdateTime of UpdateTime : int64 // in updates
     | ClockTime of ClockTime : single // in seconds
+
+    /// The minimum desired frame time.
+    /// TODO: put this in World API instead?
+    static member DesiredFrameTimeMinimum =
+        match Constants.GameTime.DesiredFrameRate with
+        | StaticFrameRate frameRate -> 1.0 / double frameRate - Constants.GameTime.DesiredFrameTimeSlop
+        | DynamicFrameRate frameRate -> 1.0 / double frameRate - Constants.GameTime.DesiredFrameTimeSlop
 
     /// An unary operation on game time.
     static member inline unary op op2 time =
