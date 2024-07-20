@@ -18,13 +18,13 @@ type JumpState =
 
 type AttackState =
     { AttackTime : int64
-      AttackedCharacters : Entity Set
-      FollowUpBuffered : bool }
+      FollowUpBuffered : bool
+      AttackedCharacters : Entity Set }
 
     static member make time =
         { AttackTime = time
-          AttackedCharacters = Set.empty
-          FollowUpBuffered = false }
+          FollowUpBuffered = false
+          AttackedCharacters = Set.empty }
 
 type InjuryState =
     { InjuryTime : int64 }
