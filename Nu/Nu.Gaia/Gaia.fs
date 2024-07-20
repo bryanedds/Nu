@@ -462,16 +462,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | Left (error, world) -> MessageBoxOpt <- Some error; world
 
     let private setPropertyValueIgnoreError (value : obj) propertyDescriptor simulant world =
-        let world = snapshot (ChangeProperty propertyDescriptor.PropertyName) world
+        let world = snapshot (ChangeProperty (None, propertyDescriptor.PropertyName)) world
         match SimulantPropertyDescriptor.trySetValue value propertyDescriptor simulant world with
         | Right world -> world
         | Left (_, world) -> world
 
     let private setPropertyValue (value : obj) propertyDescriptor simulant world =
+        let skipSnapshot =
+            match Pasts with
+            | (ChangeProperty (mouseLeftIdOpt, _), _) :: _ -> mouseLeftIdOpt = Some ImGui.MouseLeftId
+            | _ -> false
         let world =
-            if  not (ImGui.IsMouseDragging ImGuiMouseButton.Left) ||
-                not (ImGui.IsMouseDraggingContinued ImGuiMouseButton.Left) then
-                snapshot (ChangeProperty propertyDescriptor.PropertyName) world
+            if not skipSnapshot
+            then snapshot (ChangeProperty (Some ImGui.MouseLeftId, propertyDescriptor.PropertyName)) world
             else world
         setPropertyValueWithoutUndo value propertyDescriptor simulant world
 
@@ -3045,7 +3048,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                              &lightProbeBounds)
                     match manipulationResult with
                     | ImGuiEditActive started ->
-                        let world = if started then snapshot (ChangeProperty (nameof Entity.ProbeBounds)) world else world
+                        let world = if started then snapshot (ChangeProperty (None, nameof Entity.ProbeBounds)) world else world
                         entity.SetProbeBounds lightProbeBounds world
                     | ImGuiEditInactive -> world
                 | Some _ | None -> world

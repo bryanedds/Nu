@@ -19,11 +19,7 @@ type ImGuiEditResult =
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port.
 type ImGui (windowWidth : int, windowHeight : int) =
 
-    static let mutable MouseDraggingStarted =
-        [|false; false; false|]
-
-    static let mutable MouseDraggingContinued =
-        [|false; false; false|]
+    static let mutable MouseLeftIdInternal = 0L
 
     let charsPressed =
         List<char> ()
@@ -101,6 +97,9 @@ type ImGui (windowWidth : int, windowHeight : int) =
         // configure styling theme to nu
         ImGui.StyleColorsNu ()
 
+    static member MouseLeftId =
+        MouseLeftIdInternal
+
     member this.Fonts =
         let io = ImGui.GetIO ()
         io.Fonts
@@ -116,13 +115,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         ImGui.NewFrame ()
         ImGuiIOPtr.BeginFrame ()
         ImGuizmo.BeginFrame ()
-        for i in 0 .. dec 3 do
-            if ImGui.IsMouseDragging (LanguagePrimitives.EnumOfValue i) then
-                if not MouseDraggingStarted.[i] then MouseDraggingStarted.[i] <- true
-                else MouseDraggingContinued.[i] <- true
-            else
-                MouseDraggingStarted.[i] <- false
-                MouseDraggingContinued.[i] <- false
+        if ImGui.IsMouseClicked ImGuiMouseButton.Left then MouseLeftIdInternal <- inc MouseLeftIdInternal
 
     member this.EndFrame () =
         () // nothing to do
@@ -167,9 +160,6 @@ type ImGui (windowWidth : int, windowHeight : int) =
         colors.[int ImGuiCol.MenuBarBg] <- v4 0.0f 0.0f 0.0f 0.5f
         colors.[int ImGuiCol.TitleBg] <- v4 0.0f 0.0f 0.0f 0.5f
         colors.[int ImGuiCol.WindowBg] <- v4 0.0f 0.0f 0.0f 0.333f
-
-    static member IsMouseDraggingContinued (mouseButton : ImGuiMouseButton) =
-        MouseDraggingContinued.[int mouseButton]
 
     static member IsKeyUp key =
         not (ImGui.IsKeyDown key)

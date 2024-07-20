@@ -68,7 +68,7 @@ and SnapshotType =
     | RenameGroup
     | OpenGroup
     | CloseGroup
-    | ChangeProperty of string
+    | ChangeProperty of int64 option * string
     | Evaluate of string
     | RestorePoint
     | RencenterInProbeBounds
@@ -103,7 +103,7 @@ and SnapshotType =
         | RenameGroup -> (scstringMemo this).Spaced
         | OpenGroup -> (scstringMemo this).Spaced
         | CloseGroup -> (scstringMemo this).Spaced
-        | ChangeProperty propertyName -> "Change Property " + propertyName
+        | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
         | Evaluate _ -> "Evaluate F# Expression"
         | RestorePoint -> (scstringMemo this).Spaced
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
