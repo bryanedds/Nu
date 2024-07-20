@@ -125,122 +125,124 @@ void main()
 {
     // retrieve normal value first, allowing for early-out
     vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-    if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-
-    // retrieve remaining data from geometry buffers
-    vec3 position = texture(positionTexture, texCoordsOut).xyz;
-    vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
-    vec4 material = texture(materialTexture, texCoordsOut);
-
-    // retrieve data from intermediate buffers
-    vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
-    vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
-    float ssao = texture(ssaoTexture, texCoordsOut).r;
-
-    // compute materials
-    float roughness = material.r;
-    float metallic = material.g;
-    float ambientOcclusion = material.b * ssao;
-    vec3 emission = vec3(material.a);
-
-    // compute lightAccum term
-    vec3 v = normalize(eyeCenter - position);
-    vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
-    vec3 lightAccum = vec3(0.0);
-    for (int i = 0; i < lightsCount; ++i)
+    if (normal != vec3(1.0)) // when geometry pixel was written (IE, normal is not equal to the buffer clearing color of white)
     {
-        // per-light radiance
-        vec3 l, h, radiance;
-        if (lightDirectionals[i] == 0)
-        {
-            vec3 d = lightOrigins[i] - position;
-            l = normalize(d);
-            h = normalize(v + l);
-            float distanceSquared = dot(d, d);
-            float distance = sqrt(distanceSquared);
-            float cutoff = lightCutoffs[i];
-            float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
-            float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
-            float angle = acos(dot(l, -lightDirections[i]));
-            float halfConeInner = lightConeInners[i] * 0.5;
-            float halfConeOuter = lightConeOuters[i] * 0.5;
-            float halfConeDelta = halfConeOuter - halfConeInner;
-            float halfConeBetween = angle - halfConeInner;
-            float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
-            float intensity = attenuation * halfConeScalar;
-            radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
-        }
-        else
-        {
-            l = -lightDirections[i];
-            h = normalize(v + l);
-            radiance = lightColors[i] * lightBrightnesses[i];
-        }
+        // retrieve remaining data from geometry buffers
+        vec3 position = texture(positionTexture, texCoordsOut).xyz;
+        vec3 albedo = texture(albedoTexture, texCoordsOut).rgb;
+        vec4 material = texture(materialTexture, texCoordsOut);
 
-        // shadow scalar
-        int shadowIndex = lightShadowIndices[i];
-        float shadowScalar = 1.0;
-        if (shadowIndex >= 0)
+        // retrieve data from intermediate buffers
+        vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
+        vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
+        float ssao = texture(ssaoTexture, texCoordsOut).r;
+
+        // compute materials
+        float roughness = material.r;
+        float metallic = material.g;
+        float ambientOcclusion = material.b * ssao;
+        vec3 emission = vec3(material.a);
+
+        // compute lightAccum term
+        vec3 v = normalize(eyeCenter - position);
+        vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
+        vec3 lightAccum = vec3(0.0);
+        for (int i = 0; i < lightsCount; ++i)
         {
-            vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
-            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+            // per-light radiance
+            vec3 l, h, radiance;
+            if (lightDirectionals[i] == 0)
             {
-                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, lightShadowBiasAcne, lightShadowBiasBleed);
-                if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
+                vec3 d = lightOrigins[i] - position;
+                l = normalize(d);
+                h = normalize(v + l);
+                float distanceSquared = dot(d, d);
+                float distance = sqrt(distanceSquared);
+                float cutoff = lightCutoffs[i];
+                float cutoffScalar = 1.0 - smoothstep(cutoff * (1.0 - lightCutoffMargin), cutoff, distance);
+                float attenuation = 1.0 / (ATTENUATION_CONSTANT + lightAttenuationLinears[i] * distance + lightAttenuationQuadratics[i] * distanceSquared);
+                float angle = acos(dot(l, -lightDirections[i]));
+                float halfConeInner = lightConeInners[i] * 0.5;
+                float halfConeOuter = lightConeOuters[i] * 0.5;
+                float halfConeDelta = halfConeOuter - halfConeInner;
+                float halfConeBetween = angle - halfConeInner;
+                float halfConeScalar = clamp(1.0 - halfConeBetween / halfConeDelta, 0.0, 1.0);
+                float intensity = attenuation * halfConeScalar;
+                radiance = lightColors[i] * lightBrightnesses[i] * intensity * cutoffScalar;
             }
+            else
+            {
+                l = -lightDirections[i];
+                h = normalize(v + l);
+                radiance = lightColors[i] * lightBrightnesses[i];
+            }
+
+            // shadow scalar
+            int shadowIndex = lightShadowIndices[i];
+            float shadowScalar = 1.0;
+            if (shadowIndex >= 0)
+            {
+                vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
+                vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+                vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+                float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+                if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+                {
+                    shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, lightShadowBiasAcne, lightShadowBiasBleed);
+                    if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
+                }
+            }
+
+            // cook-torrance brdf
+            float ndf = distributionGGX(normal, h, roughness);
+            float g = geometrySchlick(normal, v, l, roughness);
+            vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
+
+            // compute specularity
+            vec3 numerator = ndf * g * f;
+            float denominator = 4.0 * max(dot(normal, v), 0.0) * max(dot(normal, l), 0.0) + 0.0001; // add epsilon to prevent division by zero
+            vec3 specular = numerator / denominator;
+
+            // compute diffusion
+            vec3 kS = f;
+            vec3 kD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;
+
+            // compute light scalar
+            float nDotL = max(dot(normal, l), 0.0);
+
+            // add to outgoing lightAccum
+            lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
         }
 
-        // cook-torrance brdf
-        float ndf = distributionGGX(normal, h, roughness);
-        float g = geometrySchlick(normal, v, l, roughness);
-        vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
+        // compute light ambient terms
+        // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
+        // TODO: use a better means of computing specular occlusion as this one isn't very effective.
+        vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
+        vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
 
-        // compute specularity
-        vec3 numerator = ndf * g * f;
-        float denominator = 4.0 * max(dot(normal, v), 0.0) * max(dot(normal, l), 0.0) + 0.0001; // add epsilon to prevent division by zero
-        vec3 specular = numerator / denominator;
-
-        // compute diffusion
+        // compute diffuse term
+        vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
         vec3 kS = f;
-        vec3 kD = vec3(1.0) - kS;
+        vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
+        vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
 
-        // compute light scalar
-        float nDotL = max(dot(normal, l), 0.0);
+        // compute specular term
+        vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
+        vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
-        // add to outgoing lightAccum
-        lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
+        // compute ambient term
+        vec3 ambient = diffuse + specular;
+
+        // compute color w/ tone mapping, gamma correction, and emission
+        vec3 color = lightAccum + ambient;
+        color = color / (color + vec3(1.0));
+        color = pow(color, vec3(1.0 / GAMMA));
+        color = color + emission * albedo.rgb;
+
+        // write
+        frag = vec4(color, 1.0);
     }
-
-    // compute light ambient terms
-    // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
-    // TODO: use a better means of computing specular occlusion as this one isn't very effective.
-    vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
-    vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
-
-    // compute diffuse term
-    vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
-    vec3 kS = f;
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
-    vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
-
-    // compute specular term
-    vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-    vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
-
-    // compute ambient term
-    vec3 ambient = diffuse + specular;
-
-    // compute color w/ tone mapping, gamma correction, and emission
-    vec3 color = lightAccum + ambient;
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / GAMMA));
-    color = color + emission * albedo.rgb;
-
-    // write
-    frag = vec4(color, 1.0);
+    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white lighting
 }

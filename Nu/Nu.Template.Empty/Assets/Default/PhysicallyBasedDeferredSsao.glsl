@@ -94,63 +94,65 @@ void main()
 {
     // retrieve normal value first, allowing for early-out
     vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-    if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-
-    // retrieve remaining data from geometry buffers
-    vec3 position = texture(positionTexture, texCoordsOut).xyz;
-
-    // pre-compute resolution inverse
-    vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
-
-    // ensure sample count is in range and pre-compute sample count inverse
-    int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
-    float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
-
-    // contrive sampling rotation
-    float samplingAngle = randomAngle();
-    mat3 samplingRotation =
-        mat3(
-            cos(samplingAngle), -sin(samplingAngle), 0.0,
-            sin(samplingAngle), cos(samplingAngle), 0.0,
-            0.0, 0.0, 1.0);
-
-    // compute screen space ambient occlusion
-    float ssao = 0.0;
-    vec3 positionView = (view * vec4(position, 1.0)).xyz;
-    vec3 normalView = mat3(view) * normal;
-    for (int i = 0; i < ssaoSampleCountCeil; ++i)
+    if (normal != vec3(1.0)) // when geometry pixel was written (IE, normal is not equal to the buffer clearing color of white)
     {
-        // compute sampling direction in view space
-        vec3 samplingDirectionView = samplingRotation * SSAO_SAMPLING_DIRECTIONS[i];
-        samplingDirectionView *= ssaoRadius; // scale by radius
-        samplingDirectionView *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
-        samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
+        // retrieve remaining data from geometry buffers
+        vec3 position = texture(positionTexture, texCoordsOut).xyz;
 
-        // compute position and sampling position in screen space along with distance from origin
-        vec2 positionScreen = gl_FragCoord.xy * ssaoResolutionInverse;
-        vec3 samplingPositionView = positionView + samplingDirectionView;
-        vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
-        vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
-        float distanceScreen = length(samplingPositionScreen - positionScreen);
+        // pre-compute resolution inverse
+        vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
 
-        // ensure we're not sampling too far from origin and thus blowing the texture cache and that we're not using
-        // empty space as indicated by normal sample
-        if (distanceScreen < ssaoDistanceMax && texture(normalPlusTexture, samplingPositionScreen).xyz != vec3(1.0))
+        // ensure sample count is in range and pre-compute sample count inverse
+        int ssaoSampleCountCeil = max(0, min(SSAO_SAMPLES_MAX, ssaoSampleCount));
+        float ssaoSampleCountInverse = 1.0 / float(ssaoSampleCountCeil);
+
+        // contrive sampling rotation
+        float samplingAngle = randomAngle();
+        mat3 samplingRotation =
+            mat3(
+                cos(samplingAngle), -sin(samplingAngle), 0.0,
+                sin(samplingAngle), cos(samplingAngle), 0.0,
+                0.0, 0.0, 1.0);
+
+        // compute screen space ambient occlusion
+        float ssao = 0.0;
+        vec3 positionView = (view * vec4(position, 1.0)).xyz;
+        vec3 normalView = mat3(view) * normal;
+        for (int i = 0; i < ssaoSampleCountCeil; ++i)
         {
-            // sample position in view space
-            vec3 samplePosition = texture(positionTexture, samplingPositionScreen).xyz;
-            vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
+            // compute sampling direction in view space
+            vec3 samplingDirectionView = samplingRotation * SSAO_SAMPLING_DIRECTIONS[i];
+            samplingDirectionView *= ssaoRadius; // scale by radius
+            samplingDirectionView *= mix(ssaoSampleCountInverse, 1.0f, i * ssaoSampleCountInverse); // linearly increase sampling distance from origin
+            samplingDirectionView = dot(samplingDirectionView, normalView) > 0.0f ? samplingDirectionView : -samplingDirectionView; // only sampling upper hemisphere
 
-            // perform range check and accumulate if occluded
-            float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
-            ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
+            // compute position and sampling position in screen space along with distance from origin
+            vec2 positionScreen = gl_FragCoord.xy * ssaoResolutionInverse;
+            vec3 samplingPositionView = positionView + samplingDirectionView;
+            vec4 samplingPositionClip = projection * vec4(samplingPositionView, 1.0);
+            vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
+            float distanceScreen = length(samplingPositionScreen - positionScreen);
+
+            // ensure we're not sampling too far from origin and thus blowing the texture cache and that we're not using
+            // empty space as indicated by normal sample
+            if (distanceScreen < ssaoDistanceMax && texture(normalPlusTexture, samplingPositionScreen).xyz != vec3(1.0))
+            {
+                // sample position in view space
+                vec3 samplePosition = texture(positionTexture, samplingPositionScreen).xyz;
+                vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
+
+                // perform range check and accumulate if occluded
+                float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));
+                ssao += samplePositionView.z >= samplingPositionView.z + ssaoBias ? rangeCheck : 0.0;
+            }
         }
-    }
-    ssao *= ssaoSampleCountInverse;
-    ssao *= ssaoIntensity;
-    ssao = 1.0 - ssao;
-    ssao = max(0.0, ssao);
+        ssao *= ssaoSampleCountInverse;
+        ssao *= ssaoIntensity;
+        ssao = 1.0 - ssao;
+        ssao = max(0.0, ssao);
 
-    // write
-    frag = ssao;
+        // write
+        frag = ssao;
+    }
+    else frag = 1.0; // no occlusion
 }
