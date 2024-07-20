@@ -66,12 +66,12 @@ module WorldAudio =
             audioPlayer.CurrentSongPosition
 
         /// Whether the a song is currently playing and fading in.
-        static member getFadingInSong world =
+        static member getSongFadingIn world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.FadingIn
 
         /// Whether the a song is currently playing and fading out.
-        static member getFadingOutSong world =
+        static member getSongFadingOut world =
             let audioPlayer = World.getAudioPlayer world
             audioPlayer.FadingOut
 

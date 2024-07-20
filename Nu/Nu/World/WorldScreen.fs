@@ -143,19 +143,7 @@ module WorldScreenModule =
             let eventTrace = EventTrace.debug "World" "preUpdateScreen" "" EventTrace.empty
             World.publishPlus () screen.PreUpdateEvent eventTrace screen false false world
 
-        static member internal updateScreen getCurrentSongOpt getFadingOut playSong fadeOutSong stopSong (screen : Screen) world =
-
-            // update requested song
-            match World.getScreenRequestedSong screen world with
-            | Request song ->
-                match getCurrentSongOpt world with
-                | Some current ->
-                    // TODO: also be able to change song volume if song request with a different volume comes in.
-                    if assetNeq current.Song song.Song then playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
-                | None -> playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
-            | RequestFadeOut fadeOutTime -> if not (getFadingOut world) then fadeOutSong fadeOutTime world
-            | RequestNone -> stopSong world
-            | RequestIgnore -> ()
+        static member internal updateScreen (screen : Screen) world =
 
             // update via dispatcher
             let dispatcher = World.getScreenDispatcher screen world

@@ -311,6 +311,22 @@ module WorldModule2 =
                 else world
             | Dead -> world
 
+        static member private updateScreenRequestedSong world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match World.getScreenRequestedSong selectedScreen world with
+                | Request song ->
+                    match World.getCurrentSongOpt world with
+                    | Some current ->
+                        if  assetNeq current.Song song.Song ||
+                            current.Volume <> song.Volume then
+                            World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+                    | None -> World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+                | RequestFadeOut fadeOutTime -> if not (World.getSongFadingOut world) then World.fadeOutSong fadeOutTime world
+                | RequestNone -> World.stopSong world
+                | RequestIgnore -> ()
+            | None -> ()
+
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
@@ -1268,7 +1284,7 @@ module WorldModule2 =
 
                 // update screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen World.getCurrentSongOpt World.getFadingOutSong World.playSong World.fadeOutSong World.stopSong screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
@@ -1598,6 +1614,9 @@ module WorldModule2 =
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
+
+                        // 
+                        World.updateScreenRequestedSong world
 
                         // process HID inputs
                         world.Timers.InputTimer.Restart ()
