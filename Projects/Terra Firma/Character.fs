@@ -123,19 +123,18 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             | 7L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.SlashSound world
             | 67L -> World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.Slash2Sound world
             | _ -> ()
-            let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
-            let animationName = if localTime <= 55 then "Armature|AttackVertical" else "Armature|AttackHorizontal"
-            let animation = Animation.once animationStartTime None animationName
+            let (animationTime, animationName) =
+                if localTime <= 55L
+                then (attack.AttackTime, "Armature|AttackVertical")
+                else (attack.AttackTime + 55L, "Armature|AttackHorizontal")
+            let animation = Animation.once animationTime None animationName
             Some (animation, false)
         | InjuryState injury ->
-            let localTime = time - injury.InjuryTime
-            let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
-            let animation = Animation.once animationStartTime None "Armature|WalkBack"
+            let animation = Animation.once injury.InjuryTime None "Armature|WalkBack"
             Some (animation, false)
         | WoundState wound ->
             let localTime = time - wound.WoundTime
-            let animationStartTime = GameTime.ofUpdates (time - localTime % 55L)
-            let animation = Animation.loop animationStartTime None "Armature|WalkBack"
+            let animation = Animation.loop wound.WoundTime None "Armature|WalkBack"
             let invisible = localTime / 5L % 2L = 0L
             Some (animation, invisible)
 
