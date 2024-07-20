@@ -233,7 +233,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | AttackState attack ->
             let actionState =
                 let localTime = time - attack.AttackTime
-                if localTime < 55 || localTime < 110 && attack.FollowUpBuffered
+                if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
                 then AttackState attack
                 else NormalState
             { character with ActionState = actionState }
