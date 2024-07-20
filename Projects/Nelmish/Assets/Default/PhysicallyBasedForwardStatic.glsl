@@ -222,17 +222,6 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void main()
 {
-    // discard if depth out of range
-    float depthCutoff = heightPlusOut.z;
-    if (depthCutoff >= 0.0)
-    {
-        if (gl_FragCoord.z / gl_FragCoord.w > depthCutoff) discard;
-    }
-    else
-    {
-        if (gl_FragCoord.z / gl_FragCoord.w <= -depthCutoff) discard;
-    }
-
     // compute basic fragment data
     vec3 position = positionOut.xyz;
     vec3 normal = normalize(normalOut);
@@ -261,7 +250,6 @@ void main()
     vec4 albedo;
     albedo.rgb = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
     albedo.a = albedoSample.a * albedoOut.a;
-    if (albedo.a == 0.0f) discard;
     float opaqueDistance = heightPlusOut.w;
     albedo.a = mix(albedo.a, 1.0, smoothstep(opaqueDistance * 0.667, opaqueDistance, distance));
 

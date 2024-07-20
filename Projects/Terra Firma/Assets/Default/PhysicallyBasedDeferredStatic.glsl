@@ -82,17 +82,6 @@ layout (location = 3) out vec4 normalPlus;
 
 void main()
 {
-    // discard if depth out of range
-    float depthCutoff = heightPlusOut.z;
-    if (depthCutoff >= 0.0)
-    {
-        if (gl_FragCoord.z / gl_FragCoord.w > depthCutoff) discard;
-    }
-    else
-    {
-        if (gl_FragCoord.z / gl_FragCoord.w <= -depthCutoff) discard;
-    }
-
     // forward position
     position = positionOut;
 
@@ -117,7 +106,6 @@ void main()
 
     // compute albedo, discarding on zero alpha
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties

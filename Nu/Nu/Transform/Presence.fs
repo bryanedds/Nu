@@ -20,6 +20,8 @@ type Presence =
     member this.ExteriorType = match this with Exterior -> true | _ -> false
     member this.ImposterType = match this with Imposter -> true | _ -> false
     member this.OmnipresentType = match this with Omnipresent -> true | _ -> false
+
+    // TODO: see if we can use this to set up rendering stencil planes (presence would also have to become a key in batching if it isn't already).
     member this.DepthCutoff =
         match this with
         | Omnipresent -> Constants.Render.FarPlaneDistanceOmnipresent
