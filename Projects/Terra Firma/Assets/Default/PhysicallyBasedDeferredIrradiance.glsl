@@ -16,7 +16,7 @@ void main()
 #version 410
 
 const float PI = 3.141592654;
-const int LIGHT_MAPS_MAX = 24;
+const int LIGHT_MAPS_MAX = 27;
 
 uniform sampler2D positionTexture;
 uniform sampler2D normalPlusTexture;
