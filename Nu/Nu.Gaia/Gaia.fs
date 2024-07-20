@@ -4841,7 +4841,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           InsetOpt = None
                           MaterialProperties = MaterialProperties.defaultProperties
                           StaticModel = Assets.Default.HighlightModel
-                          RenderType = ForwardRenderType (0.0f, Single.MinValue)
+                          RenderType = ForwardRenderType (0.0f, Single.MaxValue)
                           RenderPass = NormalPass })
                     world
         | Some _ | None -> ()
