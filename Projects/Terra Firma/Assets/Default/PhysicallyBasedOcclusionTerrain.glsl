@@ -18,5 +18,5 @@ void main()
 
 void main()
 {
-	// nothing to do since terrain doesn't discard when out of range
+	// nothing to do
 }

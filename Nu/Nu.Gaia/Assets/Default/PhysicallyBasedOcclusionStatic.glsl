@@ -21,5 +21,5 @@ void main()
 
 void main()
 {
-    // nothing to do.
+    // nothing to do
 }
