@@ -777,6 +777,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedShadowStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
+          PhysicallyBasedOcclusionStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          PhysicallyBasedOcclusionAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
+          PhysicallyBasedOcclusionTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           PhysicallyBasedDeferredStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
@@ -1846,7 +1849,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         forwardSurfacesSortBuffer.Sort forwardSurfacesComparer
         forwardSurfacesSortBuffer
 
-    static member private renderPhysicallyBasedShadowSurfaces
+    static member private renderPhysicallyBasedDepthSurfaces
         batchPhase viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
@@ -1862,9 +1865,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
 
         // draw surfaces
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedShadowSurfaces
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDepthSurfaces
             (batchPhase, viewArray, projectionArray, bonesArray, parameters.Count,
-             renderer.InstanceFields, surface.PhysicallyBasedGeometry, shader)
+             renderer.InstanceFields, surface.PhysicallyBasedGeometry, surface.SurfaceMaterial, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
         batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List)
@@ -2225,7 +2228,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     match renderTasks.DeferredStaticAbsolute.Count with
                     | 1 -> SingletonPhase
                     | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-                GlRenderer3d.renderPhysicallyBasedShadowSurfaces
+                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     batchPhase lightViewAbsoluteArray lightProjectionArray [||] entry.Value
                     entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
@@ -2240,7 +2243,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderTasks.DeferredStaticRelative.Count with
                 | 1 -> SingletonPhase
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-            GlRenderer3d.renderPhysicallyBasedShadowSurfaces
+            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightViewRelativeArray lightProjectionArray [||] entry.Value
                 entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
@@ -2252,7 +2255,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let surfaceKey = entry.Key
                 let parameters = entry.Value
                 let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-                GlRenderer3d.renderPhysicallyBasedShadowSurfaces
+                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightViewAbsoluteArray lightProjectionArray bonesArray parameters
                     surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
@@ -2262,7 +2265,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let surfaceKey = entry.Key
             let parameters = entry.Value
             let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-            GlRenderer3d.renderPhysicallyBasedShadowSurfaces
+            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightViewRelativeArray lightProjectionArray bonesArray parameters
                 surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
@@ -2279,14 +2282,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         // forward render static surface shadows w/ absolute transforms to filter buffer if in top level render
         if topLevelRender then
             for struct (model, presence, texCoordsOffset, properties, surface) in renderTasks.ForwardStaticAbsoluteSorted do
-                GlRenderer3d.renderPhysicallyBasedShadowSurfaces
+                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightViewAbsoluteArray lightProjectionArray [||] (List ([struct (model, presence, texCoordsOffset, properties)]))
                     surface renderer.PhysicallyBasedShadowStaticShader renderer
                 OpenGL.Hl.Assert ()
 
         // forward render static surface shadows w/ relative transforms to filter buffer
         for struct (model, presence, texCoordsOffset, properties, surface) in renderTasks.ForwardStaticRelativeSorted do
-            GlRenderer3d.renderPhysicallyBasedShadowSurfaces
+            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightViewRelativeArray lightProjectionArray [||] (List ([struct (model, presence, texCoordsOffset, properties)]))
                 surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
@@ -2410,7 +2413,36 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
-        // deferred render static surfaces w/ absolute transforms if in top level render
+        // render static surface occlusions w/ relative transforms
+        let mutable enr = renderTasks.DeferredStaticRelative.GetEnumerator ()
+        let mutable i = 0
+        while enr.MoveNext () do
+            let entry = enr.Current
+            let batchPhase =
+                match renderTasks.DeferredStaticRelative.Count with
+                | 1 -> SingletonPhase
+                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
+            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
+                batchPhase viewRelativeArray geometryProjectionArray [||] entry.Value
+                entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
+            OpenGL.Hl.Assert ()
+            i <- inc i
+
+        // render animated surface occlusions w/ relative transforms
+        for entry in renderTasks.DeferredAnimatedRelative do
+            let surfaceKey = entry.Key
+            let parameters = entry.Value
+            let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
+            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
+                SingletonPhase viewRelativeArray geometryProjectionArray bonesArray parameters
+                surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
+            OpenGL.Hl.Assert ()
+
+        // attempt to render terrain occlusions w/ relative transforms
+        for (descriptor, geometry) in renderTasks.DeferredTerrainsRelative do
+            GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
+
+        // render static surfaces deferred w/ absolute transforms if in top level render
         if topLevelRender then
             let mutable enr = renderTasks.DeferredStaticAbsolute.GetEnumerator ()
             let mutable i = 0
@@ -2426,7 +2458,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Hl.Assert ()
                 i <- inc i
 
-        // deferred render static surfaces w/ relative transforms
+        // render static surfaces deferred w/ relative transforms
         let mutable enr = renderTasks.DeferredStaticRelative.GetEnumerator ()
         let mutable i = 0
         while enr.MoveNext () do
@@ -2441,7 +2473,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // deferred render animated surfaces w/ absolute transforms if in top level render
+        // render animated surfaces deferred w/ absolute transforms if in top level render
         if topLevelRender then
             for entry in renderTasks.DeferredAnimatedAbsolute do
                 let surfaceKey = entry.Key
@@ -2452,7 +2484,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
-        // deferred render animated surfaces w/ relative transforms
+        // render animated surfaces deferred w/ relative transforms
         for entry in renderTasks.DeferredAnimatedRelative do
             let surfaceKey = entry.Key
             let parameters = entry.Value
@@ -2462,12 +2494,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                 surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
-        // attempt to deferred render terrains w/ absolute transforms if in top level render
+        // attempt to render terrains deferred w/ absolute transforms if in top level render
         if topLevelRender then
             for (descriptor, geometry) in renderTasks.DeferredTerrainsAbsolute do
                 GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedDeferredTerrainShader renderer
 
-        // attempt to deferred render terrains w/ relative transforms
+        // attempt to render terrains deferred w/ relative transforms
         for (descriptor, geometry) in renderTasks.DeferredTerrainsRelative do
             GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedDeferredTerrainShader renderer
 
@@ -2976,10 +3008,18 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create shadow shaders
         let (shadowStaticShader, shadowAnimatedShader, shadowTerrainShader) =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedShadowShaders
+            OpenGL.PhysicallyBased.CreatePhysicallyBasedDepthShaders
                 (Constants.Paths.PhysicallyBasedShadowStaticShaderFilePath,
                  Constants.Paths.PhysicallyBasedShadowAnimatedShaderFilePath,
                  Constants.Paths.PhysicallyBasedShadowTerrainShaderFilePath)
+        OpenGL.Hl.Assert ()
+
+        // create occlusion shaders
+        let (occlusionStaticShader, occlusionAnimatedShader, occlusionTerrainShader) =
+            OpenGL.PhysicallyBased.CreatePhysicallyBasedDepthShaders
+                (Constants.Paths.PhysicallyBasedOcclusionStaticShaderFilePath,
+                 Constants.Paths.PhysicallyBasedOcclusionAnimatedShaderFilePath,
+                 Constants.Paths.PhysicallyBasedOcclusionTerrainShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
@@ -3222,6 +3262,9 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedShadowStaticShader = shadowStaticShader
               PhysicallyBasedShadowAnimatedShader = shadowAnimatedShader
               PhysicallyBasedShadowTerrainShader = shadowTerrainShader
+              PhysicallyBasedOcclusionStaticShader = occlusionStaticShader
+              PhysicallyBasedOcclusionAnimatedShader = occlusionAnimatedShader
+              PhysicallyBasedOcclusionTerrainShader = occlusionTerrainShader
               PhysicallyBasedDeferredStaticShader = deferredStaticShader
               PhysicallyBasedDeferredAnimatedShader = deferredAnimatedShader
               PhysicallyBasedDeferredTerrainShader = deferredTerrainShader
