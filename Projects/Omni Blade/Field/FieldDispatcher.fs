@@ -107,7 +107,7 @@ type FieldDispatcher () =
 
                     // start field transition
                     let time = field.FieldTime
-                    let currentSongOpt = world |> World.getCurrentSongOpt |> Option.map (fun song -> song.Song)
+                    let currentSongOpt = world |> World.getSongOpt |> Option.map (fun song -> song.Song)
                     if time = fieldTransition.FieldTransitionTime - Constants.Field.TransitionTime then
 
                         // attempt to look up destination song
@@ -734,7 +734,7 @@ type FieldDispatcher () =
             loadMetadata field.FieldType
             match Data.Value.Fields.TryGetValue field.FieldType with
             | (true, fieldData) ->
-                match (fieldData.FieldSongOpt, World.getCurrentSongOpt world) with
+                match (fieldData.FieldSongOpt, World.getSongOpt world) with
                 | (Some fieldSong, Some currentSong) ->
                     let fieldSong = overrideSong field.FieldType field.Advents fieldSong
                     if not (AssetTag.equals fieldSong currentSong.Song) then

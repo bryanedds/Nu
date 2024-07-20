@@ -169,7 +169,7 @@ module WorldModule2 =
                         let world = World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
                         match (selectedScreen.GetIncoming world).SongOpt with
                         | Some playSong ->
-                            match World.getCurrentSongOpt world with
+                            match World.getSongOpt world with
                             | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
                             | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                         | None -> ()
@@ -191,7 +191,7 @@ module WorldModule2 =
                 if world.Accompanied && world.Halted then // special case to play song when halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
-                        match World.getCurrentSongOpt world with
+                        match World.getSongOpt world with
                         | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
                         | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
@@ -316,11 +316,16 @@ module WorldModule2 =
             | Some selectedScreen ->
                 match World.getScreenRequestedSong selectedScreen world with
                 | Request song ->
-                    match World.getCurrentSongOpt world with
+                    match World.getSongOpt world with
                     | Some current ->
-                        if  assetNeq current.Song song.Song ||
-                            current.Volume <> song.Volume then
+                        if  current.FadeInTime <> song.FadeInTime ||
+                            current.FadeOutTime <> song.FadeOutTime ||
+                            current.StartTime <> song.StartTime ||
+                            current.RepeatLimitOpt <> song.RepeatLimitOpt ||
+                            assetNeq current.Song song.Song then
                             World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+                        elif current.Volume <> song.Volume then
+                            World.setSongVolume song.Volume world
                     | None -> World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
                 | RequestFadeOut fadeOutTime -> if not (World.getSongFadingOut world) then World.fadeOutSong fadeOutTime world
                 | RequestNone -> World.stopSong world

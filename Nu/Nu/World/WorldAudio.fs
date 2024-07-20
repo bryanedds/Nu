@@ -56,34 +56,44 @@ module WorldAudio =
             audioPlayer.MasterSongVolume <- volume
 
         /// Get the currently playing song, if any.
-        static member getCurrentSongOpt world =
+        static member getSongOpt world =
             let audioPlayer = World.getAudioPlayer world
-            audioPlayer.CurrentSongOpt
+            audioPlayer.SongOpt
             
         /// Get the currently playing song's position or 0.0.
-        static member getCurrentSongPosition world =
+        static member getSongPosition world =
             let audioPlayer = World.getAudioPlayer world
-            audioPlayer.CurrentSongPosition
+            audioPlayer.SongPosition
+            
+        /// Get the currently playing song's volume or 0.0f.
+        static member getSongVolume world =
+            let audioPlayer = World.getAudioPlayer world
+            audioPlayer.SongVolume
 
         /// Whether the a song is currently playing and fading in.
         static member getSongFadingIn world =
             let audioPlayer = World.getAudioPlayer world
-            audioPlayer.FadingIn
+            audioPlayer.SongFadingIn
 
         /// Whether the a song is currently playing and fading out.
         static member getSongFadingOut world =
             let audioPlayer = World.getAudioPlayer world
-            audioPlayer.FadingOut
+            audioPlayer.SongFadingOut
+
+        /// Send a message to the audio system to play a sound.
+        static member playSound volume sound world =
+            let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
+            World.enqueueAudioMessage playSoundMessage world
 
         /// Send a message to the audio system to play a song.
         static member playSong fadeInTime fadeOutTime startTime repeatLimitOpt volume song world =
             let playSongMessage = PlaySongMessage { FadeInTime = fadeInTime; FadeOutTime = fadeOutTime; StartTime = startTime; RepeatLimitOpt = repeatLimitOpt; Volume = volume; Song = song }
             World.enqueueAudioMessage playSongMessage world
 
-        /// Send a message to the audio system to play a sound.
-        static member playSound volume sound world =
-            let playSoundMessage = PlaySoundMessage { Sound = sound; Volume = volume }
-            World.enqueueAudioMessage playSoundMessage world
+        /// Send a message to the audio system to set the volume of any current song.
+        static member setSongVolume volume world =
+            let setSongVolumeMessage = SetSongVolumeMessage volume
+            World.enqueueAudioMessage setSongVolumeMessage world
 
         /// Send a message to the audio system to fade out any current song.
         static member fadeOutSong fadeOutTime world =
