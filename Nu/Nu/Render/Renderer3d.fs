@@ -2738,7 +2738,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     /// Render 3d surfaces.
     static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
-        // categorize messages
+        // process messages, categorizing those that can be acted on later in this function
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
