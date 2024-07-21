@@ -139,6 +139,7 @@ module Render =
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 512
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
+    let [<Literal>] AnimatedModelOcclusionPrePassEnabledDefault = false
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] ShadowBiasAcneDefault = 0.0000002f

@@ -463,12 +463,14 @@ type [<SymbolicExpansion>] Lighting3dConfig =
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
-    { LightMappingEnabled : bool
+    { AnimatedModelOcclusionPrePassEnabled : bool
+      LightMappingEnabled : bool
       SsaoEnabled : bool
       SsaoSampleCount : int }
 
     static member defaultConfig =
-        { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+        { AnimatedModelOcclusionPrePassEnabled = Constants.Render.AnimatedModelOcclusionPrePassEnabledDefault
+          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
 
@@ -2444,26 +2446,29 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
             i <- inc i
 
-        // render animated surface occlusions w/ absolute transforms if in top level render
-        if topLevelRender then
-            for entry in renderTasks.DeferredAnimatedAbsolute do
+        // render animated model occlusions if needed
+        if renderer.RendererConfig.AnimatedModelOcclusionPrePassEnabled then
+
+            // render animated surface occlusions w/ absolute transforms if in top level render
+            if topLevelRender then
+                for entry in renderTasks.DeferredAnimatedAbsolute do
+                    let surfaceKey = entry.Key
+                    let parameters = entry.Value
+                    let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
+                    GlRenderer3d.renderPhysicallyBasedDepthSurfaces
+                        SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray parameters
+                        surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
+                    OpenGL.Hl.Assert ()
+
+            // render animated surface occlusions w/ relative transforms
+            for entry in renderTasks.DeferredAnimatedRelative do
                 let surfaceKey = entry.Key
                 let parameters = entry.Value
                 let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray parameters
+                    SingletonPhase viewRelativeArray geometryProjectionArray bonesArray parameters
                     surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
                 OpenGL.Hl.Assert ()
-
-        // render animated surface occlusions w/ relative transforms
-        for entry in renderTasks.DeferredAnimatedRelative do
-            let surfaceKey = entry.Key
-            let parameters = entry.Value
-            let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                SingletonPhase viewRelativeArray geometryProjectionArray bonesArray parameters
-                surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
-            OpenGL.Hl.Assert ()
 
         // attempt to render terrain occlusions w/ absolute transforms if in top level render
         if topLevelRender then
