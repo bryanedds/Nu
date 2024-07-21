@@ -372,6 +372,7 @@ module TmxMap =
                         let tiles = SList.make ()
                         let mutable xS = 0.0f
                         let mutable xO = r.X
+                        xO <- xO + 0.0001f |> floor // NOTE: attempts to fix #832. Alternatively, we could instead do + 0.5f |> floor on xI.
                         while xO < r2.X + tileSize.X do
                             let xI = int (xO / tileSize.X)
                             if xO >= 0.0f && xI >= 0 then
