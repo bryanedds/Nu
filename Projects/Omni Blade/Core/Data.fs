@@ -1170,9 +1170,9 @@ module FieldData =
                     let battleIndex = int (5.0f / distanceFromOriginMax * distanceFromOrigin)
                     match battleIndex with
                     | 0 -> Some WeakSpirit
-                    | 1 -> if Gen.random1 3 <> 0 then Some WeakSpirit else Some NormalSpirit
+                    | 1 -> if Gen.randomb then Some WeakSpirit else Some NormalSpirit
                     | 2 -> Some NormalSpirit
-                    | 3 -> if Gen.random1 3 <> 0 then Some NormalSpirit else Some StrongSpirit
+                    | 3 -> if Gen.randomb then Some NormalSpirit else Some StrongSpirit
                     | _ -> Some StrongSpirit
                 | FieldStatic _ | FieldConnector _ | FieldRoom _ -> None
             | Choice4Of4 _ ->
