@@ -1512,11 +1512,11 @@
    [[RigidModelSurfaceDispatcher
      [[Material
        [[AlbedoImageOpt
-         [Some [Gameplay Slab_Albedo]]]
+         [Some [Default LightProbeModelAlbedo]]]
         [RoughnessImageOpt
-         [Some [Default MaterialRoughness]]]
+         [Some [Default LightProbeModelRoughness]]]
         [MetallicImageOpt
-         [Some [Default MaterialMetallic]]]
+         [Some [Default LightProbeModelMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
@@ -2019,25 +2019,6 @@
       [RotationLocal [0 -0.67559016 0 0.7372774]]
       [Scale [0.9999999 1 0.9999999]]
       [ScaleLocal [0.9999999 1 0.9999999]]
-      [Size [4.0000005 0.9294096 1.7338116]]
-      [Static True]
-      [StaticModel [Gameplay Barrier]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
-      [MountOpt [Some ^]]
-      [Name Barrier-0017]
-      [NavShape StaticModelNavShape]
-      [Offset [0.110984206 0.46470478 0.8669058]]
-      [Position [7.8 1.64 6.8]]
-      [PositionLocal [7.8 0 6.8]]
-      [Presence Omnipresent]
-      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
-      [Rotation [0 0.9063078 0 -0.42261824]]
-      [RotationLocal [0 0.9063078 0 -0.42261827]]
-      [Scale [1.0000001 1 1.0000001]]
       [Size [4.0000005 0.9294096 1.7338116]]
       [Static True]
       [StaticModel [Gameplay Barrier]]]

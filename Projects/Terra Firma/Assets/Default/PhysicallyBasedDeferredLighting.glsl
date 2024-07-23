@@ -240,9 +240,9 @@ void main()
         float specularWeight = 0.0;
 
         // uniform values
-        float reflectionFineness = 0.37;
+        float reflectionFineness = 0.34;
         float reflectionDepthMax = 24.0;
-        float reflectionDistanceMax = 24.0;
+        float reflectionDistanceMax = 32.0;
         int reflectionStepsMax = 320;
         int reflectionRefinements = 9;
         float reflectionSurfaceSlopeMax = 0.1;
