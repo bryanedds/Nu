@@ -230,19 +230,14 @@ void main()
         kD *= 1.0 - metallic;
         vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
 
-        // compute specular term
+        // compute specular term from light map
         vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
         vec3 specularSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specular = environmentFilter * specularSubterm * lightAmbientSpecular;
+        vec3 specularLM = environmentFilter * specularSubterm * lightAmbientSpecular;
 
-        // compute ambient term
-        vec3 ambient = diffuse + specular;
-
-        // compute color w/ tone mapping, gamma correction, and emission
-        vec3 color = lightAccum + ambient;
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0 / GAMMA));
-        color = color + emission * albedo.rgb;
+        // compute specular term and weight from screen-space
+        vec3 specularSS = vec3(0.0);
+        float specularWeight = 0.0;
 
         // uniform values
         float reflectionFineness = 0.37;
@@ -285,7 +280,7 @@ void main()
 
             // initialize current fragment
             vec2 currentFrag = startFrag;
-            vec4 currentUV = vec4(currentFrag / texSize, 0.0, 0.0);
+            vec2 currentUV = currentFrag / texSize;
             vec4 currentPositionView = positionView;
 
             // compute fragment step amount
@@ -306,14 +301,14 @@ void main()
             {
                 // step fragment
                 currentFrag += stepAmount;
-                currentUV.xy = currentFrag / texSize;
+                currentUV = currentFrag / texSize;
 
                 // determine whether we're on geometry (not sky box)
-                vec4 currentPosition = texture(positionTexture, currentUV.xy);
+                vec4 currentPosition = texture(positionTexture, currentUV);
                 if (currentPosition.w == 1.0)
                 {
                     // determine whether we hit geometry within acceptable thickness
-                    currentPositionView = view * texture(positionTexture, currentUV.xy);
+                    currentPositionView = view * texture(positionTexture, currentUV);
                     search1 = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizonal, shouldMarchHorizontal), 0.0, 1.0);
                     currentDistanceView = startView.z * stopView.z / mix(stopView.z, startView.z, search1); // uses perspective correct interpolation for depth
                     currentDepthView = currentDistanceView - currentPositionView.z;
@@ -337,14 +332,14 @@ void main()
                 {
                     // refine fragment
                     currentFrag = mix(startFrag, stopFrag, search1);
-                    currentUV.xy = currentFrag / texSize;
+                    currentUV = currentFrag / texSize;
 
                     // determine whether we're on geometry (not sky box)
-                    vec4 currentPosition = texture(positionTexture, currentUV.xy);
+                    vec4 currentPosition = texture(positionTexture, currentUV);
                     if (currentPosition.w == 1.0)
                     {
                         // determine whether we hit geometry within acceptable thickness
-                        currentPositionView = view * texture(positionTexture, currentUV.xy);
+                        currentPositionView = view * texture(positionTexture, currentUV);
                         currentDistanceView = startView.z * stopView.z / mix(stopView.z, startView.z, search1); // uses perspective correct interpolation for depth
                         currentDepthView = currentDistanceView - currentPositionView.z;
                         if (currentDepthView < 0.0 && currentDepthView > -reflectionRayThickness)
@@ -362,30 +357,39 @@ void main()
                 }
             }
 
-            // compute specular approximation
-            float specularApprox = (1.0 - roughness); // TODO: figure out how to make this the proper specularity.
-            currentUV.b = specularApprox;
+            // compute specular power
+            float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
 
-            // compute ssr visibility
-            float visibility =
+            // compute specular weight in favor of screen-space reflection
+            specularWeight =
                 hit1 * // filter out when refinement hit not found
-                specularApprox * // filter out as specularity descreases
+                specularPower * // filter out as specularity descreases
                 (1.0 - surfaceSlope) * // filter out as slope increases
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, max(dot(-positionViewNormal, reflectionView), 0.0))) * // filter out as reflection angles toward eye
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
                 smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                 smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
-            visibility = clamp(visibility, 0.0, 1.0);
-            currentUV.a = visibility;
+            specularWeight = clamp(specularWeight, 0.0, 1.0);
 
-            // write ssr and color composision
-            //if (hit0 == 0.0) frag = vec4(1.0, 0.0, 0.0, 0.0);
-            //else if (hit1 == 0.0) frag = vec4(0.0, 0.0, 1.0, 0.0);
-            //else
-            frag = texture(albedoTexture, currentUV.xy) * currentUV.a + vec4(color, 1.0) * (1.0 - currentUV.a);
+            // compute specular color
+            specularSS = vec3(texture(albedoTexture, currentUV) * specularPower);
         }
-        else frag = vec4(color, 1.0); // write color
+
+        // compute specular term
+        vec3 specular = (1.0 - specularWeight) * specularLM + specularWeight * specularSS;
+
+        // compute ambient term
+        vec3 ambient = diffuse + specular;
+
+        // compute color w/ tone mapping, gamma correction, and emission
+        vec3 color = lightAccum + ambient;
+        color = color / (color + vec3(1.0));
+        color = pow(color, vec3(1.0 / GAMMA));
+        color = color + emission * albedo.rgb;
+
+        // write color
+        frag = vec4(color, 1.0);
     }
     else frag = vec4(0.0); // write zero
 }
