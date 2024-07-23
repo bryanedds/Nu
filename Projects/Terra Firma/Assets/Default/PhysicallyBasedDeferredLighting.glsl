@@ -244,24 +244,27 @@ void main()
         color = pow(color, vec3(1.0 / GAMMA));
         color = color + emission * albedo.rgb;
 
-        // apply screen-space reflection when surface slope isn't too great
-        float reflectionFineness = 0.2;
+        // uniform values
+        float reflectionFineness = 0.37;
         float reflectionRayThickness = 0.5;
-        float reflectionDistanceMax = 64;
-        float reflectionDepthMax = 4096.0;
+        float reflectionDistanceMax = 24.0;
+        float reflectionDepthMax = 24.0;
         float reflectionSurfaceSlopeMax = 0.1;
         float reflectionEdgeCutoffHorizontal = 0.05;
         float reflectionEdgeCutoffVertical = 0.25;
-        int reflectionStepsMax = 256;
-        int reflectionRefinements = 5;
+        float reflectionFilterFalloff = 0.25;
+        int reflectionStepsMax = 320;
+        int reflectionRefinements = 9;
         reflectionFineness = clamp(reflectionFineness, 0.0, 1.0); // clamp user-defined values
+
+        // apply screen-space reflection fragment when isn't too deep and surface slope isn't too great
+        mat3 view3 = mat3(view);
+        vec4 positionView = view * position;
         float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-        if (surfaceSlope <= reflectionSurfaceSlopeMax)
+        if (positionView.z > -reflectionDepthMax && surfaceSlope <= reflectionSurfaceSlopeMax)
         {
             // compute view values
-            mat3 view3 = mat3(view);
             vec2 texSize = textureSize(positionTexture, 0).xy;
-            vec4 positionView = view * position;
             vec3 positionViewNormal = normalize(positionView.xyz);
             vec3 normalView = normalize(view3 * normal);
             vec3 reflectionView = reflect(positionViewNormal, normalView);
@@ -368,8 +371,9 @@ void main()
                 hit1 * // filter out when refinement hit not found
                 specularAvg * // filter out as specularity descreases
                 (1.0 - surfaceSlope) * // filter out as slope increases
-                (1.0 - max(dot(-positionViewNormal, reflectionView), 0.0)) * // filter out as reflection angles toward eye
-                (1.0 - clamp(length(currentPositionView - positionView) / reflectionDistanceMax, 0, 1)) * // filter out as reflection point reaches max distance
+                (1.0 - smoothstep(reflectionFilterFalloff, 1.0, max(dot(-positionViewNormal, reflectionView), 0.0))) * // filter out as reflection angles toward eye
+                (1.0 - smoothstep(reflectionFilterFalloff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                (1.0 - smoothstep(reflectionFilterFalloff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
                 smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                 smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
             visibility = clamp(visibility, 0.0, 1.0);
