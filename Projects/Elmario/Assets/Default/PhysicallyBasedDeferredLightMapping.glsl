@@ -63,14 +63,14 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
 
 void main()
 {
-    // retrieve normal value first, allowing for early-out
-    vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
-    vec3 normal = normalPlus.xyz;
-    bool ignoreLightMaps = normalPlus.w == 1.0;
-    if (normal != vec3(1.0)) // when geometry pixel was written (IE, normal is not equal to the buffer clearing color of white)
+    // ensure position was written
+    vec4 position = texture(positionTexture, texCoordsOut);
+    if (position.w == 1.0)
     {
         // retrieve remaining data from geometry buffers
-        vec3 position = texture(positionTexture, texCoordsOut).xyz;
+        vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
+        vec3 normal = normalPlus.xyz;
+        bool ignoreLightMaps = normalPlus.w == 1.0;
 
         // compute nearest light map indices
         int lm1 = -1;
@@ -81,9 +81,9 @@ void main()
         {
             for (int i = 0; i < lightMapsCount; ++i)
             {
-                if (inBounds(position, lightMapMins[i], lightMapSizes[i]))
+                if (inBounds(position.xyz, lightMapMins[i], lightMapSizes[i]))
                 {
-                    vec3 delta = lightMapOrigins[i] - position;
+                    vec3 delta = lightMapOrigins[i] - position.xyz;
                     float distanceSquared = dot(delta, delta);
                     if (distanceSquared < lm1DistanceSquared)
                     {
@@ -104,7 +104,7 @@ void main()
         // compute light map blending ratio
         float ratio =
             lm1 != -1 && lm2 != -1 ?
-            computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position, normal) :
+            computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal) :
             0.0f;
 
         // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping

@@ -92,12 +92,12 @@ float randomAngle()
 
 void main()
 {
-    // retrieve normal value first, allowing for early-out
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-    if (normal != vec3(1.0)) // when geometry pixel was written (IE, normal is not equal to the buffer clearing color of white)
+    // ensure position was written
+    vec4 position = texture(positionTexture, texCoordsOut);
+    if (position.w == 1.0)
     {
         // retrieve remaining data from geometry buffers
-        vec3 position = texture(positionTexture, texCoordsOut).xyz;
+        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
         // pre-compute resolution inverse
         vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
@@ -116,7 +116,7 @@ void main()
 
         // compute screen space ambient occlusion
         float ssao = 0.0;
-        vec3 positionView = (view * vec4(position, 1.0)).xyz;
+        vec3 positionView = (view * position).xyz;
         vec3 normalView = mat3(view) * normal;
         for (int i = 0; i < ssaoSampleCountCeil; ++i)
         {

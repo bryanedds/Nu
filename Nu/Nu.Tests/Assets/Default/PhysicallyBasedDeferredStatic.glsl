@@ -82,8 +82,9 @@ layout (location = 3) out vec4 normalPlus;
 
 void main()
 {
-    // forward position
-    position = positionOut;
+    // forward position, marking w for written
+    position.xyz = positionOut.xyz;
+    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);

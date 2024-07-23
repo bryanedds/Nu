@@ -48,13 +48,13 @@ vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapM
 
 void main()
 {
-    // retrieve normal and height values first, allowing for early-out
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-    if (normal != vec3(1.0)) // when geometry pixel was written (IE, normal is not equal to the buffer clearing color of white)
+    // ensure position was written
+    vec4 position = texture(positionTexture, texCoordsOut);
+    if (position.w == 1.0)
     {
         // retrieve remaining data from geometry buffers
-        vec3 position = texture(positionTexture, texCoordsOut).xyz;
         float roughness = texture(materialTexture, texCoordsOut).r;
+        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
         // retrieve light mapping data
         vec4 lmData = texture(lightMappingTexture, texCoordsOut);
@@ -63,7 +63,7 @@ void main()
         float lmRatio = lmData.b;
 
         // compute environment filter term
-        vec3 v = normalize(eyeCenter - position);
+        vec3 v = normalize(eyeCenter - position.xyz);
         vec3 environmentFilter = vec3(0.0);
         if (lm1 == -1 && lm2 == -1)
         {
@@ -72,14 +72,14 @@ void main()
         }
         else if (lm2 == -1)
         {
-            vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
+            vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
             environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
         }
         else
         {
             // compute blended environment filter
-            vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
-            vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position, normal);
+            vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
+            vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal);
             vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
             vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
             environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);

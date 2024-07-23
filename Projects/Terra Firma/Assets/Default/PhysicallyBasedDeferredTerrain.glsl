@@ -95,8 +95,9 @@ void main()
     // ensure layers count is in range
     float layersCountCeil = max(min(layersCount, TERRAIN_LAYERS_MAX), 0);
 
-    // forward position
-    position = positionOut;
+    // forward position, marking w for written
+    position.xyz = positionOut.xyz;
+    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);

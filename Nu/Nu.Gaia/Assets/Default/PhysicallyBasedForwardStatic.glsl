@@ -223,13 +223,13 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void main()
 {
     // compute basic fragment data
-    vec3 position = positionOut.xyz;
+    vec4 position = positionOut;
     vec3 normal = normalize(normalOut);
-    float distance = length(position - eyeCenter);
+    float distance = length(position.xyz - eyeCenter);
 
     // compute spatial converters
-    vec3 q1 = dFdx(position);
-    vec3 q2 = dFdy(position);
+    vec3 q1 = dFdx(positionOut.xyz);
+    vec3 q2 = dFdy(positionOut.xyz);
     vec2 st1 = dFdx(texCoordsOut);
     vec2 st2 = dFdy(texCoordsOut);
     vec3 tangent = normalize(q1 * st2.t - q2 * st1.t);
@@ -239,7 +239,7 @@ void main()
 
     // compute tex coords in parallax occlusion space
     vec3 eyeCenterTangent = toTangent * eyeCenter;
-    vec3 positionTangent = toTangent * position;
+    vec3 positionTangent = toTangent * position.xyz;
     vec3 toEyeTangent = normalize(eyeCenterTangent - positionTangent);
     float height = texture(heightTexture, texCoordsOut).x * heightPlusOut.x;
     vec2 parallax = toEyeTangent.xy * height;
@@ -264,7 +264,7 @@ void main()
 
     // compute lightAccum term
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
-    vec3 v = normalize(eyeCenter - position);
+    vec3 v = normalize(eyeCenter - position.xyz);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
@@ -273,7 +273,7 @@ void main()
         vec3 l, h, radiance;
         if (lightDirectionals[i] == 0)
         {
-            vec3 d = lightOrigins[i] - position;
+            vec3 d = lightOrigins[i] - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
@@ -302,7 +302,7 @@ void main()
         float shadowScalar = 1.0;
         if (shadowIndex >= 0)
         {
-            vec4 positionShadow = shadowMatrices[shadowIndex] * vec4(position, 1.0);
+            vec4 positionShadow = shadowMatrices[shadowIndex] * position;
             vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
@@ -338,8 +338,8 @@ void main()
     // determine light map indices, including their validity
     int lm1 = lightMapsCount > 0 && !ignoreLightMaps ? 0 : -1;
     int lm2 = lightMapsCount > 1 && !ignoreLightMaps ? 1 : -1;
-    if (lm1 != -1 && !inBounds(position, lightMapMins[lm1], lightMapSizes[lm1])) { lm1 = lm2; lm2 = -1; }
-    if (lm2 != -1 && !inBounds(position, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
+    if (lm1 != -1 && !inBounds(position.xyz, lightMapMins[lm1], lightMapSizes[lm1])) { lm1 = lm2; lm2 = -1; }
+    if (lm2 != -1 && !inBounds(position.xyz, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
     // compute irradiance and environment filter terms
     vec3 irradiance = vec3(0.0);
@@ -353,13 +353,13 @@ void main()
     else if (lm2 == -1)
     {
         irradiance = texture(irradianceMaps[lm1], n).rgb;
-        vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, n);
+        vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
         environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
     }
     else
     {
         // compute blending
-        float ratio = computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position, n);
+        float ratio = computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, n);
 
         // compute blended irradiance
         vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
@@ -367,8 +367,8 @@ void main()
         irradiance = mix(irradiance1, irradiance2, ratio);
 
         // compute blended environment filter
-        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, n);
-        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position, n);
+        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
+        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, n);
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
