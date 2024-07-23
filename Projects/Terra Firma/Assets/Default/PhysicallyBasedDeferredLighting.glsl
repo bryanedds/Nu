@@ -247,7 +247,7 @@ void main()
         int reflectionRefinements = 9;
         float reflectionSurfaceSlopeMax = 0.1;
         float reflectionRayThickness = 0.5;
-        float reflectionFilterCutoff = 0.25;
+        float reflectionFilterCutoff = 0.8;
         float reflectionEdgeCutoffHorizontal = 0.05;
         float reflectionEdgeCutoffVertical = 0.2;
         reflectionFineness = clamp(reflectionFineness, 0.0, 1.0); // clamp user-defined values
