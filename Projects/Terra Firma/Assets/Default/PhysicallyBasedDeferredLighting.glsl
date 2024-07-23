@@ -376,9 +376,9 @@ void main()
             currentUV.a = visibility;
 
             // write ssr and color composision
-            if (hit0 == 0.0) frag = vec4(1.0, 0.0, 0.0, 0.0);
-            else if (hit1 == 0.0) frag = vec4(0.0, 0.0, 1.0, 0.0);
-            else
+            //if (hit0 == 0.0) frag = vec4(1.0, 0.0, 0.0, 0.0);
+            //else if (hit1 == 0.0) frag = vec4(0.0, 0.0, 1.0, 0.0);
+            //else
             frag = texture(albedoTexture, currentUV.xy) * currentUV.a + vec4(color, 1.0) * (1.0 - currentUV.a);
         }
         else frag = vec4(color, 1.0); // write color
