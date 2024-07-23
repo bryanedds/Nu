@@ -252,7 +252,7 @@ void main()
         int reflectionRefinements = 5;
         float reflectionSurfaceSlopeMax = 0.1;
         float reflectionRayThickness = 0.5;
-        float reflectionFilterFalloff = 0.25;
+        float reflectionFilterCutoff = 0.25;
         float reflectionEdgeCutoffHorizontal = 0.05;
         float reflectionEdgeCutoffVertical = 0.25;
         reflectionFineness = clamp(reflectionFineness, 0.0, 1.0); // clamp user-defined values
@@ -371,9 +371,9 @@ void main()
                 hit1 * // filter out when refinement hit not found
                 specularAvg * // filter out as specularity descreases
                 (1.0 - surfaceSlope) * // filter out as slope increases
-                (1.0 - smoothstep(reflectionFilterFalloff, 1.0, max(dot(-positionViewNormal, reflectionView), 0.0))) * // filter out as reflection angles toward eye
-                (1.0 - smoothstep(reflectionFilterFalloff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
-                (1.0 - smoothstep(reflectionFilterFalloff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
+                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, max(dot(-positionViewNormal, reflectionView), 0.0))) * // filter out as reflection angles toward eye
+                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
                 smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                 smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
             visibility = clamp(visibility, 0.0, 1.0);
