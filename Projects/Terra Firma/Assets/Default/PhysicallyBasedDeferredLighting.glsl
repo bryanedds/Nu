@@ -357,13 +357,9 @@ void main()
                 }
             }
 
-            // compute specular power
-            float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
-
             // compute specular weight in favor of screen-space reflection
             specularWeight =
                 hit1 * // filter out when refinement hit not found
-                specularPower * // filter out as specularity descreases
                 (1.0 - surfaceSlope) * // filter out as slope increases
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, max(dot(-positionViewNormal, reflectionView), 0.0))) * // filter out as reflection angles toward eye
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
@@ -373,7 +369,8 @@ void main()
             specularWeight = clamp(specularWeight, 0.0, 1.0);
 
             // compute specular color
-            specularSS = vec3(texture(albedoTexture, currentUV) * specularPower);
+            float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
+            specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
         }
 
         // compute specular term
