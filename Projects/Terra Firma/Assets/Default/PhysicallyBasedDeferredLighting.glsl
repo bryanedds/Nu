@@ -249,7 +249,7 @@ void main()
         float reflectionDepthMax = 24.0;
         float reflectionDistanceMax = 24.0;
         int reflectionStepsMax = 320;
-        int reflectionRefinements = 5;
+        int reflectionRefinements = 9;
         float reflectionSurfaceSlopeMax = 0.1;
         float reflectionRayThickness = 0.5;
         float reflectionFilterCutoff = 0.25;
@@ -362,14 +362,14 @@ void main()
                 }
             }
 
-            // compute specular average
-            float specularAvg = (specularSubterm.r + specularSubterm.g + specularSubterm.b) / 3.0; // TODO: figure out how to make this the proper specularity.
-            currentUV.b = specularAvg;
+            // compute specular approximation
+            float specularApprox = (1.0 - roughness); // TODO: figure out how to make this the proper specularity.
+            currentUV.b = specularApprox;
 
             // compute ssr visibility
             float visibility =
                 hit1 * // filter out when refinement hit not found
-                specularAvg * // filter out as specularity descreases
+                specularApprox * // filter out as specularity descreases
                 (1.0 - surfaceSlope) * // filter out as slope increases
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, max(dot(-positionViewNormal, reflectionView), 0.0))) * // filter out as reflection angles toward eye
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
