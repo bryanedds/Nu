@@ -254,14 +254,14 @@ void main()
         float reflectionEdgeCutoffVertical = 0.25;
         float reflectionFilterFalloff = 0.25;
         int reflectionStepsMax = 320;
-        int reflectionRefinements = 9;
+        int reflectionRefinements = 5;
         reflectionFineness = clamp(reflectionFineness, 0.0, 1.0); // clamp user-defined values
 
         // apply screen-space reflection fragment when isn't too deep and surface slope isn't too great
         mat3 view3 = mat3(view);
         vec4 positionView = view * position;
         float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-        if (positionView.z > -reflectionDepthMax && surfaceSlope <= reflectionSurfaceSlopeMax)
+        if (positionView.z >= -reflectionDepthMax && surfaceSlope <= reflectionSurfaceSlopeMax)
         {
             // compute view values
             vec2 texSize = textureSize(positionTexture, 0).xy;
