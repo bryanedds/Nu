@@ -245,16 +245,16 @@ void main()
         color = color + emission * albedo.rgb;
 
         // uniform values
-        float reflectionRayThickness = 0.5;
         float reflectionFineness = 0.37;
-        float reflectionDistanceMax = 24.0;
         float reflectionDepthMax = 24.0;
+        float reflectionDistanceMax = 24.0;
         int reflectionStepsMax = 320;
         int reflectionRefinements = 5;
+        float reflectionSurfaceSlopeMax = 0.1;
+        float reflectionRayThickness = 0.5;
+        float reflectionFilterFalloff = 0.25;
         float reflectionEdgeCutoffHorizontal = 0.05;
         float reflectionEdgeCutoffVertical = 0.25;
-        float reflectionFilterFalloff = 0.25;
-        float reflectionSurfaceSlopeMax = 0.1;
         reflectionFineness = clamp(reflectionFineness, 0.0, 1.0); // clamp user-defined values
 
         // apply screen-space reflection fragment when isn't too deep and surface slope isn't too great
