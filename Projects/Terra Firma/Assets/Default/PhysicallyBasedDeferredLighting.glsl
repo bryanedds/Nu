@@ -123,6 +123,57 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+const float step = 0.1;
+const float minRayStep = 0.1;
+const float maxSteps = 30;
+const int numBinarySearchSteps = 5;
+const float reflectionSpecularFalloffExponent = 3.0;
+
+vec3 BinarySearch(inout vec3 dir, inout vec3 hitCoord, inout float dDepth)
+{
+    float depth;
+    vec4 projectedCoord;
+    for (int i = 0; i < numBinarySearchSteps; i++)
+    {
+        projectedCoord = projection * vec4(hitCoord, 1.0);
+        projectedCoord.xy /= projectedCoord.w;
+        projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+        depth = (view * texture(positionTexture, projectedCoord.xy)).z;
+        dDepth = hitCoord.z - depth;
+        dir *= 0.5;
+        if (dDepth > 0.0) hitCoord += dir;
+        else hitCoord -= dir;
+    }
+
+    projectedCoord = projection * vec4(hitCoord, 1.0);
+    projectedCoord.xy /= projectedCoord.w;
+    projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+    return vec3(projectedCoord.xy, depth);
+}
+
+vec4 RayMarch(vec3 dir, inout vec3 hitCoord, out float dDepth)
+{
+    dir *= step;
+    float depth;
+    vec4 projectedCoord;
+    for (int i = 0; i < maxSteps; ++i)
+    {
+        hitCoord += dir;
+        projectedCoord = projection * vec4(hitCoord, 1.0);
+        projectedCoord.xy /= projectedCoord.w;
+        projectedCoord.xy = projectedCoord.xy * 0.5 + 0.5;
+        depth = (view * texture(positionTexture, projectedCoord.xy)).z;
+        if (depth < 1000.0) continue;
+
+        dDepth = hitCoord.z - depth;
+        if ((dir.z - dDepth) < 1.2)
+            if (dDepth <= 0.0)
+                return vec4(BinarySearch(dir, hitCoord, dDepth), 1.0);
+    }
+
+    return vec4(projectedCoord.xy, depth, 0.0);
+}
+
 void main()
 {
     // ensure position was written
@@ -235,6 +286,25 @@ void main()
         vec3 specularSubterm = f * environmentBrdf.x + environmentBrdf.y;
         vec3 specularLM = environmentFilter * specularSubterm * lightAmbientSpecular;
 
+        // compute specular term from screen space
+        const float reflectionSurfaceSlopeMax = 0.1;
+        vec3 specularSS = vec3(0.0);
+        float specularWeight = 0.0;
+        float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
+        if (surfaceSlope <= reflectionSurfaceSlopeMax)
+        {
+            vec4 viewPos = view * position;
+            vec3 viewNormal = mat3(view) * normal;
+            vec3 reflected = normalize(reflect(normalize(viewPos.xyz), normalize(viewNormal)));
+            vec3 hitPos = viewPos.xyz;
+            float dDepth = 0.0;
+            vec3 direction = reflected * max(minRayStep, -viewPos.z);
+            vec4 coords = RayMarch(direction, hitPos, dDepth);
+            specularSS = texture(albedoTexture, coords.xy).rgb;
+            specularWeight = coords.w == 0.0 ? 1.0 : 0.0;
+        }
+
+        /*
         // compute specular term and weight from screen-space
         vec3 specularSS = vec3(0.0);
         float specularWeight = 0.0;
@@ -383,6 +453,7 @@ void main()
                 specularWeight = clamp(specularWeight, 0.0, 1.0);
             }
         }
+        */
 
         // compute specular term
         vec3 specular = (1.0 - specularWeight) * specularLM + specularWeight * specularSS;
