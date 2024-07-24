@@ -360,17 +360,17 @@ void main()
 
             // compute screen-space specular color and weight
             float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
-            //if (hit0 == 0)
-            //{
-            //    specularSS = vec3(1.0, 0.0, 0.0) * specularPower;
-            //    specularWeight = 1.0;
-            //}
-            //else if (hit1 == 0)
-            //{
-            //    specularSS = vec3(0.0, 0.0, 1.0) * specularPower;
-            //    specularWeight = 1.0;
-            //}
-            //else
+            if (hit0 == 0)
+            {
+                specularSS = vec3(1.0, 0.0, 0.0) * specularPower;
+                specularWeight = 1.0;
+            }
+            else if (hit1 == 0)
+            {
+                specularSS = vec3(0.0, 0.0, 1.0) * specularPower;
+                specularWeight = 1.0;
+            }
+            else
             {
                 specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
                 vec3 eyeForward = vec3(view[0][2], view[1][2], view[2][2]);
