@@ -244,7 +244,7 @@ void main()
         float reflectionDepthMax = 24.0;
         float reflectionDistanceMax = 24.0;
         int reflectionStepsMax = 320;
-        int reflectionRefinements = 9;
+        int reflectionRefinements = 11;
         float reflectionSurfaceSlopeMax = 0.1;
         float reflectionRayThickness = 0.5;
         float reflectionFilterCutoff = 0.8;
