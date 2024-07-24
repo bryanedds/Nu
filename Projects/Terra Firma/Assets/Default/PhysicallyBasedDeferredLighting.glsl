@@ -127,7 +127,6 @@ const float step = 0.1;
 const float minRayStep = 0.1;
 const float maxSteps = 30;
 const int numBinarySearchSteps = 5;
-const float reflectionSpecularFalloffExponent = 3.0;
 
 vec3 BinarySearch(inout vec3 dir, inout vec3 hitCoord, inout float dDepth)
 {
