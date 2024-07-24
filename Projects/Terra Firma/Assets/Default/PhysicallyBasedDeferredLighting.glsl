@@ -244,7 +244,7 @@ void main()
         float reflectionDepthMax = 24.0;
         float reflectionDistanceMax = 24.0;
         int reflectionStepsMax = 320;
-        int reflectionRefinements = 11;
+        int reflectionRefinements = 10;
         float reflectionSurfaceSlopeMax = 0.1;
         float reflectionRayThickness = 0.5;
         float reflectionFilterCutoff = 0.8;
@@ -346,7 +346,7 @@ void main()
                         {
                             hit1 = 1;
                             search1 = search0 + (search1 - search0) * 0.5;
-                            continue;
+                            break;
                         }
                     }
 
