@@ -311,9 +311,9 @@ void main()
                     // determine whether we hit geometry within acceptable thickness
                     currentPositionView = view * texture(positionTexture, currentUV);
                     search1 = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizonal, shouldMarchHorizontal), 0.0, 1.0);
-                    currentDistanceView = startView.z * stopView.z / mix(stopView.z, startView.z, search1); // uses perspective correct interpolation for depth
-                    currentDepthView = currentDistanceView - currentPositionView.z;
-                    if (currentDepthView <= 0.0 && currentDepthView >= -reflectionRayThicknessMarch)
+                    currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
+                    currentDepthView = currentDistanceView - -currentPositionView.z;
+                    if (currentDepthView >= 0.0 && currentDepthView <= reflectionRayThicknessMarch)
                     {
                         hit0 = 1;
                         break;
@@ -341,9 +341,9 @@ void main()
                     {
                         // determine whether we hit geometry within acceptable thickness
                         currentPositionView = view * texture(positionTexture, currentUV);
-                        currentDistanceView = startView.z * stopView.z / mix(stopView.z, startView.z, search1); // uses perspective correct interpolation for depth
-                        currentDepthView = currentDistanceView - currentPositionView.z;
-                        if (currentDepthView <= 0.0 && currentDepthView >= -reflectionRayThicknessRefinement)
+                        currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
+                        currentDepthView = currentDistanceView - -currentPositionView.z;
+                        if (currentDepthView >= 0.0 && currentDepthView <= reflectionRayThicknessRefinement)
                         {
                             hit1 = 1;
                             search1 = search0 + (search1 - search0) * 0.5;
