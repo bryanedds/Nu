@@ -298,7 +298,7 @@ void main()
             float search1 = 0.0;
             float currentDistanceView = 0.0;
             float currentDepthView = 0.0;
-            for (int i = 0; i < min(int(stepLength), reflectionStepsMax); ++i)
+            for (int i = 0; i < int(stepLength) && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
             {
                 // step fragment
                 currentFrag += stepAmount;
@@ -347,7 +347,7 @@ void main()
                         {
                             hit1 = 1;
                             search1 = search0 + (search1 - search0) * 0.5;
-                            continue;
+                            break;
                         }
                     }
 
