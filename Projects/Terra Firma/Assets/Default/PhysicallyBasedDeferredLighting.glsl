@@ -373,10 +373,9 @@ void main()
             //else
             {
                 specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
-                vec3 eyeForward = vec3(view[0][2], view[1][2], view[2][2]);
                 specularWeight =
                     hit1 * // filter out when refinement hit not found
-                    (1.0 - smoothstep(0.0, 0.5, abs(dot(eyeForward, vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
+                    //(1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
                     (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
                     (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                     smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
