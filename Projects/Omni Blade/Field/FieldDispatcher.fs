@@ -1187,6 +1187,11 @@ type FieldDispatcher () =
                     | Some (Choice3Of4 (randMap, _, _)) ->
                         let mapSize = Constants.Field.RandMapSize.V3 * Constants.Field.AutoTileSize
                         let mapOffset = mapSize * -0.5f
+                        Content.text "TreasuresLeft"
+                            [Entity.Position == v3 0.0f 132.0f 0.0f
+                             Entity.Size == v3 0.0f 48.0f 0.0f
+                             Entity.Elevation == Constants.Field.GuiElevation
+                             Entity.Text := field |> Field.getChests |> Array.filter (not << _.Opened) |> Array.length |> fun count -> "Treasures Left: " + string count]
                         Content.staticSprite "AutoMap"
                             [Entity.Position == v3 -144.0f -144.0f 0.0f
                              Entity.Size == v3 288.0f 288.0f 0.0f
