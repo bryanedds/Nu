@@ -652,16 +652,16 @@ type FieldDispatcher () =
                 Option.isNone field.FieldTransitionOpt &&
                 not (Simulants.FieldFeeler.GetTouched world) then
                 let force = v3Zero
-                let force = if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
-                let force = if World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
-                let force = if World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
-                let force = if World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
+                let force = if World.isKeyboardKeyDown KeyboardKey.Right world then v3 Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
+                let force = if World.isKeyboardKeyDown KeyboardKey.Left world then v3 -Constants.Field.AvatarWalkForce 0.0f 0.0f + force else force
+                let force = if World.isKeyboardKeyDown KeyboardKey.Up world then v3 0.0f Constants.Field.AvatarWalkForce 0.0f + force else force
+                let force = if World.isKeyboardKeyDown KeyboardKey.Down world then v3 0.0f -Constants.Field.AvatarWalkForce 0.0f + force else force
                 let moveAvatar = MoveAvatar force
                 let directionOpt =
-                    if World.isKeyboardKeyDown KeyboardKey.Right world || World.isKeyboardKeyDown KeyboardKey.D world then Some Rightward
-                    elif World.isKeyboardKeyDown KeyboardKey.Left world || World.isKeyboardKeyDown KeyboardKey.A world then Some Leftward
-                    elif World.isKeyboardKeyDown KeyboardKey.Up world || World.isKeyboardKeyDown KeyboardKey.W world then Some Upward
-                    elif World.isKeyboardKeyDown KeyboardKey.Down world || World.isKeyboardKeyDown KeyboardKey.S world then Some Downward
+                    if World.isKeyboardKeyDown KeyboardKey.Right world then Some Rightward
+                    elif World.isKeyboardKeyDown KeyboardKey.Left world then Some Leftward
+                    elif World.isKeyboardKeyDown KeyboardKey.Up world then Some Upward
+                    elif World.isKeyboardKeyDown KeyboardKey.Down world then Some Downward
                     else None
                 let faceAvatar =
                     match directionOpt with
@@ -679,10 +679,10 @@ type FieldDispatcher () =
                 Option.isNone field.DialogOpt &&
                 Option.isNone field.ShopOpt &&
                 Option.isNone field.FieldTransitionOpt &&
-                World.isKeyboardKeyUp KeyboardKey.Right world && World.isKeyboardKeyUp KeyboardKey.D world &&
-                World.isKeyboardKeyUp KeyboardKey.Left world && World.isKeyboardKeyUp KeyboardKey.A world &&
-                World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
-                World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
+                World.isKeyboardKeyUp KeyboardKey.Right world &&
+                World.isKeyboardKeyUp KeyboardKey.Left world &&
+                World.isKeyboardKeyUp KeyboardKey.Up world &&
+                World.isKeyboardKeyUp KeyboardKey.Down world then
                 let lowerCenter = field.Avatar.Perimeter.LowerCenter
                 let viewport = World.getViewport world
                 let eyeCenter = World.getEye2dCenter world
