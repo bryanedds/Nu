@@ -135,7 +135,7 @@ type OmniBladeDispatcher () =
                 else just Title
             | _ -> just omniBlade
 
-    override this.Command (omniBlade, command, _, world) =
+    override this.Command (_, command, _, world) =
 
         match command with
         | UpdateFullScreen keyboardKeyData ->
