@@ -1456,6 +1456,16 @@ module Battle =
                                     let source = getCharacter sourceIndex battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
+                                            let battle = // HACK: handle special case of retargeting to source if cancelled while targeting friendly character.
+                                                if cancelled then
+                                                    let character = getCharacter characterIndex battle
+                                                    match character.AutoBattleOpt with
+                                                    | Some autoBattle ->
+                                                        if battle |> getFriendlies characterIndex.Ally |> Map.containsKey autoBattle.AutoTarget
+                                                        then retargetCharacter targetIndex sourceIndex battle
+                                                        else battle
+                                                    | None -> battle
+                                                else battle
                                             let battle = modifyCharacterHitPoints true cancelled affectsWounded hitPointsChange characterIndex battle
                                             let vulnerabilities = getCharacterVulnerabilities characterIndex battle
                                             let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong vulnerabilities else StatusType.randomizeWeak vulnerabilities
