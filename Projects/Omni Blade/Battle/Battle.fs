@@ -1142,7 +1142,7 @@ module Battle =
                 if containsCharacter targetIndex battle then
                     match localTime with
                     | 0L ->
-                        if getCharacterHealthy targetIndex battle || consumable = Revive then // HACK: should really be checked ConsumableData.
+                        if getCharacterHealthy targetIndex battle || consumable = Revive then // TODO: pull from from ConsumableData.
                             let sourcePerimeter = getCharacterPerimeter sourceIndex battle
                             let targetPerimeter = getCharacterPerimeter targetIndex battle
                             let battle =
@@ -1428,15 +1428,6 @@ module Battle =
                                         match spawnOpt with
                                         | Some spawn -> spawnEnemies spawn battle
                                         | _ -> battle
-                                    withSignals sigs battle
-                                elif localTime = techAnimationData.AffectingStop then
-                                    let results = evalTech sourceIndex targetIndex techType battle |> Triple.thd
-                                    let (battle, sigs) =
-                                        Map.fold (fun (battle, sigs) _ (_, _, _, _, _) ->
-                                            // TODO: emission effect
-                                            (battle, sigs))
-                                            (battle, [])
-                                            results
                                     withSignals sigs battle
                                 elif localTime = techAnimationData.TechingStop then
                                     let sourcePerimeterOriginal = getCharacterPerimeterOriginal sourceIndex battle
@@ -1835,7 +1826,7 @@ module Battle =
 
     and private updateReadying startTime (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
-        if localTime = 0L then // first frame after transitioning in
+        if localTime = 0L then
             let battle = animateEnemiesPoised battle
             match battle.BattleSongOpt_ with
             | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, None, 0.5f, battleSong)) battle
