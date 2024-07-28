@@ -17,10 +17,10 @@ module DialogContent =
              | Some dialog ->
                 let perimeter =
                     match dialog.DialogForm with
-                    | DialogShort -> box3 (v3 -270.0f 159.0f 0.0f) (v3 540.0f 81.0f 0.0f)
-                    | DialogThin -> box3 (v3 -432.0f 159.0f 0.0f) (v3 864.0f 81.0f 0.0f)
-                    | DialogThick -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
-                    | DialogNarration -> box3 (v3 -432.0f 78.0f 0.0f) (v3 864.0f 174.0f 0.0f)
+                    | DialogShort -> box3 (v3 -270.0f 162.0f 0.0f) (v3 540.0f 81.0f 0.0f)
+                    | DialogThin -> box3 (v3 -432.0f 162.0f 0.0f) (v3 864.0f 81.0f 0.0f)
+                    | DialogThick -> box3 (v3 -432.0f 81.0f 0.0f) (v3 864.0f 174.0f 0.0f)
+                    | DialogNarration -> box3 (v3 -432.0f 81.0f 0.0f) (v3 864.0f 174.0f 0.0f)
                 let backdropImageOpt =
                     match dialog.DialogForm with
                     | DialogShort -> Some Assets.Gui.DialogShortImage
