@@ -1187,6 +1187,24 @@ type FieldDispatcher () =
                     | Some (Choice3Of4 (randMap, _, _)) ->
                         let mapSize = Constants.Field.RandMapSize.V3 * Constants.Field.AutoTileSize
                         let mapOffset = mapSize * -0.5f
+                        let treasuresLeftPosition = v3 0.0f 126.0f 0.0f
+                        let treasuresLeftSize = v3 0.0f 48.0f 0.0f
+                        let treasuresLeftText = field |> Field.getChests |> Array.filter (not << _.Opened) |> Array.length |> fun count -> "Treasures Left: " + string count
+                        Content.text "TreasuresLeft"
+                            [Entity.Position == treasuresLeftPosition
+                             Entity.Size == treasuresLeftSize
+                             Entity.Elevation == Constants.Field.GuiElevation
+                             Entity.Text := treasuresLeftText]
+                        for x in 2.0f .. 2.0f .. 4.0f do
+                            for y in 2.0f .. 2.0f .. 4.0f do
+                                let offset = v3 -x -y 0.0f
+                                Content.text ("TreasuresLeftDropShadow+" + scstring offset)
+                                    [Entity.Position == treasuresLeftPosition + offset
+                                     Entity.Size == treasuresLeftSize
+                                     Entity.Elevation == Constants.Field.GuiElevation - 0.1f
+                                     Entity.BackdropImageOpt == None
+                                     Entity.Text := treasuresLeftText
+                                     Entity.TextColor == Color.Black]
                         Content.staticSprite "AutoMap"
                             [Entity.Position == v3 -144.0f -144.0f 0.0f
                              Entity.Size == v3 288.0f 288.0f 0.0f
@@ -1229,7 +1247,7 @@ type FieldDispatcher () =
                              Entity.StaticImage == Assets.Field.AutoAvatarImage
                              Entity.Visible := field.FieldTime / 20L % 3L <> 0L]
                         Content.button "AutoBack"
-                            [Entity.Position == v3 -78.0f -216.0f 0.0f
+                            [Entity.Position == v3 -78.0f -213.0f 0.0f
                              Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
                              Entity.UpImage == asset "Field" "BackButtonUp"
@@ -1237,7 +1255,7 @@ type FieldDispatcher () =
                              Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                              Entity.ClickEvent => MenuTeamOpen]
                         Content.button "AutoClose"
-                            [Entity.Position == v3 6.0f -216.0f 0.0f
+                            [Entity.Position == v3 6.0f -213.0f 0.0f
                              Entity.Size == v3 72.0f 72.0f 0.0f
                              Entity.Elevation == Constants.Field.GuiElevation
                              Entity.UpImage == asset "Field" "CloseButtonUp"

@@ -409,28 +409,6 @@ module Character =
         let characterState = { character.CharacterState_ with Vulnerabilities = vulnerabilities }
         { character with CharacterState_ = characterState }
 
-    let setHitPoints cancel hitPoints affectWounded alliesHealthy character =
-        let (cancelled, characterState) =
-            if character.CharacterState_.Healthy || affectWounded then
-                let characterState = CharacterState.transformHitPoints (constant hitPoints) character.CharacterState_
-                (cancel, characterState)
-            else (false, character.CharacterState_)
-        let (cancelled, autoBattleOpt) =
-            match character.AutoBattleOpt_ with
-            | Some autoBattle when cancelled && not autoBattle.ChargeTech -> // cannot cancel charge tech
-                match autoBattle.AutoTarget with
-                | AllyIndex _ as ally -> (true, Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false })
-                | EnemyIndex _ ->
-                    match Gen.randomKeyOpt alliesHealthy with
-                    | Some ally -> (true, Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false })
-                    | None -> (true, None)
-            | autoBattleOpt -> (false, autoBattleOpt) // use existing state if not cancelled
-        let actionTime =
-            if cancelled
-            then max Constants.Battle.ActionTimeCancelMinimum (character.ActionTime_ - Constants.Battle.ActionTimeCancelReduction)
-            else character.ActionTime_
-        { character with CharacterState_ = characterState; AutoBattleOpt_ = autoBattleOpt; ActionTime_ = actionTime }
-
     let setTechPoints techPoints character =
         { character with CharacterState_ = CharacterState.setTechPoints techPoints character.CharacterState_ }
 
@@ -602,6 +580,38 @@ module Character =
         let characterState = character.CharacterState_
         let characterState = { characterState with Interactions = [] }
         { character with CharacterState_ = characterState }
+
+    let modifyHitPoints affectWounded cancelOpt hitPoints character =
+        let (cancelOpt, character) =
+            if character.CharacterState_.Healthy || affectWounded then
+                let characterState = CharacterState.transformHitPoints (constant hitPoints) character.CharacterState_
+                let character = { character with CharacterState_ = characterState }
+                (cancelOpt, character)
+            else (None, character)
+        let (cancelled, character) =
+            match (cancelOpt, character.AutoBattleOpt_) with
+            | (Some (sourceBottom : Vector3, sourceIndex), Some autoBattle) when not autoBattle.ChargeTech -> // cannot cancel charge tech
+                match autoBattle.AutoTarget with
+                | AllyIndex _ as ally ->
+                    let character = { character with AutoBattleOpt_ = Some { AutoTarget = ally; AutoTechOpt = None; ChargeTech = false }}
+                    (true, character)
+                | EnemyIndex _ ->
+                    let character =
+                        if autoBattle.AutoTarget.Enemy then
+                            let character = { character with AutoBattleOpt_ = Some { AutoTarget = sourceIndex; AutoTechOpt = None; ChargeTech = false }}
+                            if character.PerimeterOriginal.Bottom.X < sourceBottom.X then face Rightward character
+                            elif character.PerimeterOriginal.Bottom.X > sourceBottom.X then face Leftward character
+                            else character
+                        else character
+                    (true, character)
+            | (_, _) -> (false, character)
+        let character =
+            let actionTime =
+                if cancelled
+                then max Constants.Battle.ActionTimeCancelMinimum (character.ActionTime_ - Constants.Battle.ActionTimeCancelReduction)
+                else character.ActionTime_
+            { character with ActionTime_ = actionTime }
+        character
 
     let make bounds characterIndex characterType boss animationSheet celSize direction (characterState : CharacterState) chargeTechOpt actionTime =
         let animationType = if characterState.Healthy then IdleAnimation else WoundAnimation

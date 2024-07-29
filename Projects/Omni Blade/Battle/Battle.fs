@@ -476,10 +476,9 @@ module Battle =
     let setCharacterBottom bottom characterIndex battle =
         mapCharacter (Character.setBottom bottom) characterIndex battle
 
-    let modifyCharacterHitPoints directAction cancelled affectsWounded hitPointsChange characterIndex battle =
-        let alliesHealthy = getAlliesHealthy battle
+    let modifyCharacterHitPoints directAction affectsWounded cancelDataOpt hitPointsChange characterIndex battle =
         let character = getCharacter characterIndex battle
-        let character = Character.setHitPoints cancelled (character.HitPoints + hitPointsChange) affectsWounded alliesHealthy character
+        let character = Character.modifyHitPoints affectsWounded cancelDataOpt (character.HitPoints + hitPointsChange) character
         let character = if directAction then Character.setStatuses (Map.remove Sleep character.Statuses) character else character
         mapCharacter (constant character) characterIndex battle
 
@@ -1083,7 +1082,7 @@ module Battle =
                         else just (abortCharacterInteraction sourceIndex battle)
                     | 15L ->
                         let damage = evalAttack EffectType.Physical sourceIndex targetIndex battle
-                        let battle = modifyCharacterHitPoints true false false -damage targetIndex battle
+                        let battle = modifyCharacterHitPoints true false None -damage targetIndex battle
                         let battle = animateCharacter DamageAnimation targetIndex battle
                         let battle =
                             if getCharacterWounded targetIndex battle then
@@ -1142,7 +1141,7 @@ module Battle =
                 if containsCharacter targetIndex battle then
                     match localTime with
                     | 0L ->
-                        if getCharacterHealthy targetIndex battle || consumable = Revive then // HACK: should really be checked ConsumableData.
+                        if getCharacterHealthy targetIndex battle || consumable = Revive then // TODO: pull from from ConsumableData.
                             let sourcePerimeter = getCharacterPerimeter sourceIndex battle
                             let targetPerimeter = getCharacterPerimeter targetIndex battle
                             let battle =
@@ -1163,7 +1162,7 @@ module Battle =
                                 let battle =
                                     if consumableData.Techative
                                     then modifyCharacterTechPoints healing targetIndex battle
-                                    else modifyCharacterHitPoints true false consumableData.Revive healing targetIndex battle
+                                    else modifyCharacterHitPoints true consumableData.Revive None healing targetIndex battle
                                 let battle = applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
                                 let battle = animateCharacter SpinAnimation targetIndex battle
                                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
@@ -1429,15 +1428,6 @@ module Battle =
                                         | Some spawn -> spawnEnemies spawn battle
                                         | _ -> battle
                                     withSignals sigs battle
-                                elif localTime = techAnimationData.AffectingStop then
-                                    let results = evalTech sourceIndex targetIndex techType battle |> Triple.thd
-                                    let (battle, sigs) =
-                                        Map.fold (fun (battle, sigs) _ (_, _, _, _, _) ->
-                                            // TODO: emission effect
-                                            (battle, sigs))
-                                            (battle, [])
-                                            results
-                                    withSignals sigs battle
                                 elif localTime = techAnimationData.TechingStop then
                                     let sourcePerimeterOriginal = getCharacterPerimeterOriginal sourceIndex battle
                                     let targetPerimeter = getCharacterPerimeter targetIndex battle
@@ -1465,7 +1455,8 @@ module Battle =
                                     let source = getCharacter sourceIndex battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
-                                            let battle = modifyCharacterHitPoints true cancelled affectsWounded hitPointsChange characterIndex battle
+                                            let cancelDataOpt = if cancelled then Some (source.PerimeterOriginal.Bottom, sourceIndex) else None
+                                            let battle = modifyCharacterHitPoints true affectsWounded cancelDataOpt hitPointsChange characterIndex battle
                                             let vulnerabilities = getCharacterVulnerabilities characterIndex battle
                                             let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong vulnerabilities else StatusType.randomizeWeak vulnerabilities
                                             let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
@@ -1835,7 +1826,7 @@ module Battle =
 
     and private updateReadying startTime (battle : Battle) =
         let localTime = battle.BattleTime_ - startTime
-        if localTime = 0L then // first frame after transitioning in
+        if localTime = 0L then
             let battle = animateEnemiesPoised battle
             match battle.BattleSongOpt_ with
             | Some battleSong -> withSignal (PlaySong (0L, Constants.Audio.FadeOutTimeDefault, 0L, None, 0.5f, battleSong)) battle
@@ -2000,8 +1991,7 @@ module Battle =
                             elif character.Boss then Constants.Battle.PoisonDrainRateSlow
                             else Constants.Battle.PoisonDrainRateFast
                         let damage = single character.HitPointsMax * poisonDrainRate |> max 1.0f |> int
-                        let alliesHealthy = getAlliesHealthy battle
-                        Character.setHitPoints false (max 1 (character.HitPoints - damage)) false alliesHealthy character
+                        Character.modifyHitPoints false None (max 1 (character.HitPoints - damage)) character
                     else character
                 let character =
                     if character.Healthy && Character.readyForAutoBattle character then
