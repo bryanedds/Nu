@@ -143,7 +143,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
     mat3 view3 = mat3(view);
     vec4 positionView = view * position;
     float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-    if (-positionView.z <= reflectionDepthMax && surfaceSlope <= reflectionSurfaceSlopeMax)
+    if (positionView.z <= reflectionDepthMax && surfaceSlope <= reflectionSurfaceSlopeMax)
     {
         // compute view values
         vec2 texSize = textureSize(positionTexture, 0).xy;
@@ -197,8 +197,8 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                 // determine whether we hit geometry within acceptable thickness
                 currentPositionView = view * texture(positionTexture, currentUV);
                 search1 = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizonal, shouldMarchHorizontal), 0.0, 1.0);
-                currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
-                currentDepthView = currentDistanceView - -currentPositionView.z;
+                currentDistanceView = startView.z * stopView.z / mix(stopView.z, startView.z, search1); // uses perspective correct interpolation for depth
+                currentDepthView = currentDistanceView - currentPositionView.z;
                 if (currentDepthView >= 0.0 && currentDepthView <= reflectionRayThicknessMarch)
                 {
                     hit0 = 1;
@@ -227,8 +227,8 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                 {
                     // determine whether we hit geometry within acceptable thickness
                     currentPositionView = view * texture(positionTexture, currentUV);
-                    currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
-                    currentDepthView = currentDistanceView - -currentPositionView.z;
+                    currentDistanceView = startView.z * stopView.z / mix(stopView.z, startView.z, search1); // uses perspective correct interpolation for depth
+                    currentDepthView = currentDistanceView - currentPositionView.z;
                     if (currentDepthView >= 0.0 && currentDepthView <= reflectionRayThicknessRefinement)
                     {
                         hit1 = 1;
@@ -262,7 +262,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
             specularWeight =
                 hit1 * // filter out when refinement hit not found
                 //(1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
-                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
+                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / reflectionDepthMax)) * // filter out as fragment reaches max depth
                 (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                 smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                 smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
