@@ -435,8 +435,8 @@ type TextFacet () =
          define Entity.FontStyling Set.empty
          define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
          define Entity.TextMargin v2Zero
-         define Entity.TextColor Color.Black
-         define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
+         define Entity.TextColor Color.White
+         define Entity.TextDisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
          define Entity.TextOffset v2Zero
          define Entity.TextShift 0.5f]
 
