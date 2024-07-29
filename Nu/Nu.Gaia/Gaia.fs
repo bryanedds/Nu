@@ -1200,9 +1200,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let world = World.updateLateBindings FsiSession.DynamicAssemblies world // replace references to old types
                             Log.info "Code updated."
                             world
-                        | (Choice2Of2 _, _) ->
-                            let errorStr = string FsiErrorStream
-                            Log.info ("Failed to compile code due to (see full output in the console):\n" + errorStr)
+                        | (Choice2Of2 _, diags) ->
+                            let diagsStr = diags |> Array.map _.Message |> String.join Environment.NewLine
+                            Log.error ("Failed to compile code due to (see full output in the console):\n" + diagsStr)
                             World.switch worldOld
                     FsiErrorStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
