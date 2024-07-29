@@ -714,14 +714,15 @@ type [<ReferenceEquality>] GlRenderer2d =
 
                             // make texture drawable
                             let textTextureMetadata = OpenGL.Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                            let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId }
+                            let textTextureHandle = OpenGL.Texture.CreateTextureHandle textTextureId
+                            let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId; TextureHandle = textTextureHandle }
                             OpenGL.Hl.Assert ()
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices, vao) = renderer.TextQuad
-                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
+                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader) = renderer.SpriteShader
+                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, texUniform, shader)
                             OpenGL.Hl.Assert ()
 
                             // destroy texture
