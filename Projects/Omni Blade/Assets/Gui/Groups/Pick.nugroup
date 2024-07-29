@@ -3,7 +3,14 @@
   [Name Gui]
   [Persistent True]
   [Visible True]]
- [[ButtonDispatcher
+ [[StaticSpriteDispatcher
+   [[Elevation -1]
+    [Name StaticSprite-0001]
+    [Position [-480 -270 0]]
+    [Size [960 540 0]]
+    [StaticImage [Default White]]]
+   []]
+  [ButtonDispatcher
    [[Name Back]
     [Position [-96 -192 0]]
     [Size [192 48 0]]
