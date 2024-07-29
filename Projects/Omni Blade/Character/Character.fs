@@ -599,8 +599,8 @@ module Character =
                     let character =
                         if autoBattle.AutoTarget.Enemy then
                             let character = { character with AutoBattleOpt_ = Some { AutoTarget = sourceIndex; AutoTechOpt = None; ChargeTech = false }}
-                            if sourceBottom.X < character.PerimeterOriginal.Bottom.X then face Rightward character
-                            elif sourceBottom.X > character.PerimeterOriginal.Bottom.X then face Leftward character
+                            if character.PerimeterOriginal.Bottom.X < sourceBottom.X then face Rightward character
+                            elif character.PerimeterOriginal.Bottom.X > sourceBottom.X then face Leftward character
                             else character
                         else character
                     (true, character)
