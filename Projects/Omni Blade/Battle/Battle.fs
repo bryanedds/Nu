@@ -476,10 +476,9 @@ module Battle =
     let setCharacterBottom bottom characterIndex battle =
         mapCharacter (Character.setBottom bottom) characterIndex battle
 
-    let modifyCharacterHitPoints directAction cancelled affectsWounded hitPointsChange characterIndex battle =
-        let alliesHealthy = getAlliesHealthy battle
+    let modifyCharacterHitPoints directAction affectsWounded cancelDataOpt hitPointsChange characterIndex battle =
         let character = getCharacter characterIndex battle
-        let character = Character.setHitPoints cancelled (character.HitPoints + hitPointsChange) affectsWounded alliesHealthy character
+        let character = Character.modifyHitPoints affectsWounded cancelDataOpt (character.HitPoints + hitPointsChange) character
         let character = if directAction then Character.setStatuses (Map.remove Sleep character.Statuses) character else character
         mapCharacter (constant character) characterIndex battle
 
@@ -1083,7 +1082,7 @@ module Battle =
                         else just (abortCharacterInteraction sourceIndex battle)
                     | 15L ->
                         let damage = evalAttack EffectType.Physical sourceIndex targetIndex battle
-                        let battle = modifyCharacterHitPoints true false false -damage targetIndex battle
+                        let battle = modifyCharacterHitPoints true false None -damage targetIndex battle
                         let battle = animateCharacter DamageAnimation targetIndex battle
                         let battle =
                             if getCharacterWounded targetIndex battle then
@@ -1163,7 +1162,7 @@ module Battle =
                                 let battle =
                                     if consumableData.Techative
                                     then modifyCharacterTechPoints healing targetIndex battle
-                                    else modifyCharacterHitPoints true false consumableData.Revive healing targetIndex battle
+                                    else modifyCharacterHitPoints true consumableData.Revive None healing targetIndex battle
                                 let battle = applyCharacterStatuses consumableData.StatusesAdded consumableData.StatusesRemoved targetIndex battle
                                 let battle = animateCharacter SpinAnimation targetIndex battle
                                 let displayHitPointsChange = DisplayHitPointsChange (targetIndex, healing)
@@ -1456,17 +1455,8 @@ module Battle =
                                     let source = getCharacter sourceIndex battle
                                     let (battle, sigs) =
                                         Map.fold (fun (battle, sigs) characterIndex (cancelled, affectsWounded, hitPointsChange, added, removed) ->
-                                            let battle = // HACK: handle special case of retargeting to source if cancelled while targeting friendly character.
-                                                if cancelled then
-                                                    let character = getCharacter characterIndex battle
-                                                    match character.AutoBattleOpt with
-                                                    | Some autoBattle ->
-                                                        if battle |> getFriendlies characterIndex.Ally |> Map.containsKey autoBattle.AutoTarget
-                                                        then retargetCharacter targetIndex sourceIndex battle
-                                                        else battle
-                                                    | None -> battle
-                                                else battle
-                                            let battle = modifyCharacterHitPoints true cancelled affectsWounded hitPointsChange characterIndex battle
+                                            let cancelDataOpt = if cancelled then Some (source.PerimeterOriginal.Bottom, sourceIndex) else None
+                                            let battle = modifyCharacterHitPoints true affectsWounded cancelDataOpt hitPointsChange characterIndex battle
                                             let vulnerabilities = getCharacterVulnerabilities characterIndex battle
                                             let randomizer = if sourceIndex.Ally then StatusType.randomizeStrong vulnerabilities else StatusType.randomizeWeak vulnerabilities
                                             let added = added |> Set.toSeq |> Seq.filter randomizer |> Set.ofSeq
@@ -2001,8 +1991,7 @@ module Battle =
                             elif character.Boss then Constants.Battle.PoisonDrainRateSlow
                             else Constants.Battle.PoisonDrainRateFast
                         let damage = single character.HitPointsMax * poisonDrainRate |> max 1.0f |> int
-                        let alliesHealthy = getAlliesHealthy battle
-                        Character.setHitPoints false (max 1 (character.HitPoints - damage)) false alliesHealthy character
+                        Character.modifyHitPoints false None (max 1 (character.HitPoints - damage)) character
                     else character
                 let character =
                     if character.Healthy && Character.readyForAutoBattle character then
