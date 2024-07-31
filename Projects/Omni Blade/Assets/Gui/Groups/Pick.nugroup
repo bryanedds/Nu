@@ -4,9 +4,11 @@
   [Persistent True]
   [Visible True]]
  [[StaticSpriteDispatcher
-   [[Elevation -1]
-    [Name StaticSprite-0001]
+   [[Absolute True]
+    [Elevation -1]
+    [Name Backdrop]
     [Position [-480 -270 0]]
+    [Presence Omnipresent]
     [Size [960 540 0]]
     [StaticImage [Default White]]]
    []]
