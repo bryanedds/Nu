@@ -1185,7 +1185,7 @@ type FieldDispatcher () =
                              Entity.DownImage == Assets.Gui.ButtonTinyDownImage
                              Entity.ClickEvent => MenuTeamEquipMenuUseOpen]
                          Content.label "Portrait"
-                            [Entity.PositionLocal == v3 36.0f 132.0f 0.0f; Entity.ElevationLocal == 0.5f; Entity.Size == v3 144.0f 144.0f 0.0f
+                            [Entity.PositionLocal == v3 36.0f 129.0f 0.0f; Entity.ElevationLocal == 0.5f; Entity.Size == v3 144.0f 144.0f 0.0f
                              Entity.BackdropImageOpt :=
                                 match MenuTeam.tryGetCharacterData field.Team menuTeam with
                                 | Some characterData ->
@@ -1194,7 +1194,7 @@ type FieldDispatcher () =
                                     | None -> Some Assets.Default.EmptyImage
                                 | None -> Some Assets.Default.EmptyImage]
                          Content.text "Stats"
-                            [Entity.PositionLocal == v3 192.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 144.0f 0.0f
+                            [Entity.PositionLocal == v3 192.0f 129.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 144.0f 0.0f
                              Entity.Justification == Unjustified true
                              Entity.Text :=
                                 match MenuTeam.tryGetTeammate field.Team menuTeam with
