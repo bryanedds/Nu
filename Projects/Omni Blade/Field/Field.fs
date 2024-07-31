@@ -24,6 +24,8 @@ type FieldMessage =
     | MenuTeamOpen
     | MenuTeamAlly of int
     | MenuTeamEquip of EquipType
+    | MenuTeamEquipMenuUseOpen
+    | MenuTeamEquipMenuUseClose
     | MenuTeamEquipPageUp
     | MenuTeamEquipPageDown
     | MenuTeamEquipSelect of int * (ItemType * int Option)

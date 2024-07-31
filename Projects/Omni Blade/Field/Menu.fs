@@ -6,6 +6,7 @@ open System
 open Prime
 open Nu
 
+/// TODO: rename this to something more general since this is also used for current equip info display.
 type MenuUse =
     { MenuUseSelection : int * ItemType
       MenuUseLine1 : string
@@ -86,7 +87,8 @@ type EquipType =
 
 type Equip =
     { EquipType : EquipType
-      EquipPage : int }
+      EquipPage : int
+      EquipMenuUseOpt : MenuUse option }
 
 type MenuTeam =
     { TeamIndex : int
