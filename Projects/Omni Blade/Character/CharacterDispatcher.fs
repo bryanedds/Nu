@@ -67,9 +67,13 @@ type CharacterDispatcher () =
          Entity.Elevation == Constants.Battle.ForegroundElevation]
 
     override this.Render (characterPlus, _, entity, world) =
+
+        // render when visible
         let time = characterPlus.UpdateTime
         let character = characterPlus.Character
         if entity.GetVisible world then
+
+            // render character
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter
             World.enqueueLayeredOperation2d
@@ -86,6 +90,8 @@ type CharacterDispatcher () =
                           Emission = Character.getAnimationEmission time character
                           Flip = FlipNone }}
                 world
+
+            // render affliction (if any)
             match getAfflictionInsetOpt time character with
             | Some afflictionInset ->
                 let afflictionImage = Assets.Battle.AfflictionsAnimationSheet
@@ -116,6 +122,8 @@ type CharacterDispatcher () =
                               Flip = FlipNone }}
                     world
             | None -> ()
+
+            // render orb (if any)
             match getChargeOrbInsetOpt time character with
             | Some chargeOrbInset ->
                 let chargeOrbImage = Assets.Battle.ChargeOrbAnimationSheet
