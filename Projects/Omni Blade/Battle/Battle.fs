@@ -178,7 +178,7 @@ module Battle =
         battle.Characters_
 
     let getCharactersIf pred battle =
-        battle.Characters_|>
+        battle.Characters_ |>
         Map.filter pred
 
     let getCharactersHealthy battle =
