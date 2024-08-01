@@ -858,8 +858,8 @@ module Battle =
             | OrbFilled -> false
             | Cancelled -> cancelled
             | Uncancelled -> not cancelled && Option.isSome target.AutoBattleOpt
-            | Debuffed -> Seq.exists StatusType.debuff statusesAdded
-            | Buffed -> Seq.exists StatusType.buff statusesAdded
+            | Debuffed -> Seq.exists (fun (s : StatusType) -> s.Debuff) statusesAdded
+            | Buffed -> Seq.exists (fun (s : StatusType) -> s.Buff) statusesAdded
             | Wounded -> target.Wounded
             | Random chance -> Gen.randomf < chance
             | HitPointsLessThanOrEqual ceiling -> target.Healthy && single target.HitPoints / single target.HitPointsMax <= ceiling

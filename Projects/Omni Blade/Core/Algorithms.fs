@@ -94,13 +94,11 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.AffinityOpt
             | None -> None
-        List.fold
-            (fun affinityOpt accessoryType ->
-                match Map.tryFind accessoryType Data.Value.Accessories with
-                | Some accessoryData -> match accessoryData.AffinityOpt with Some _ as opt -> opt | None -> affinityOpt
-                | None -> affinityOpt)
-            affinityOpt
-            accessories
+        List.fold (fun affinityOpt accessoryType ->
+            match Map.tryFind accessoryType Data.Value.Accessories with
+            | Some accessoryData -> match accessoryData.AffinityOpt with Some _ as opt -> opt | None -> affinityOpt
+            | None -> affinityOpt)
+            affinityOpt accessories
 
     let immunities accessories archetypeType (level : int) =
         ignore level
@@ -108,30 +106,26 @@ module Algorithms =
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Immunities
             | None -> Set.empty
-        List.fold
-            (fun immunities accessoryType ->
-                match Map.tryFind accessoryType Data.Value.Accessories with
-                | Some accessoryData -> Set.union accessoryData.Immunities immunities
-                | None -> immunities)
-            immunities
-            accessories
+        List.fold (fun immunities accessoryType ->
+            match Map.tryFind accessoryType Data.Value.Accessories with
+            | Some accessoryData -> Set.union accessoryData.Immunities immunities
+            | None -> immunities)
+            immunities accessories
 
     let enchantments accessories (archetypeType : ArchetypeType) (level : int) =
         ignore archetypeType
         ignore level
-        List.fold
-            (fun enchantments accessoryType ->
-                match Map.tryFind accessoryType Data.Value.Accessories with
-                | Some accessoryData -> Set.union accessoryData.Enchantments enchantments
-                | None -> enchantments)
-            Set.empty
-            accessories
+        List.fold (fun enchantments accessoryType ->
+            match Map.tryFind accessoryType Data.Value.Accessories with
+            | Some accessoryData -> Set.union accessoryData.Enchantments enchantments
+            | None -> enchantments)
+            Set.empty accessories
 
     let power weaponOpt statuses archetypeType level =
         let powerBuff =
             statuses |>
             Map.tryFindKey (function Power (_, _) -> constant true | _ -> constant false) |>
-            Option.mapOrDefaultValue (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+            Option.mapOrDefaultValue (function Power (false, false) -> 0.5f | Power (false, true) -> 0.25f | Power (true, false) -> 1.5f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let strength = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Strength
@@ -150,11 +144,11 @@ module Algorithms =
             if isWindOrShadow then // wind and shadow are affected by power buffs
                 statuses |>
                 Map.tryFindKey (function Power (_, _) -> constant true | _ -> constant false) |>
-                Option.mapOrDefaultValue (function Power (false, false) -> 0.667f | Power (false, true) -> 0.333f | Power (true, false) -> 1.333f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+                Option.mapOrDefaultValue (function Power (false, false) -> 0.5f | Power (false, true) -> 0.25f | Power (true, false) -> 1.5f | Power (true, true) -> 2.0f | _ -> 1.0f) 1.0f
             else
                 statuses |>
                 Map.tryFindKey (function Magic (_, _) -> constant true | _ -> constant false) |>
-                Option.mapOrDefaultValue (function Magic (false, false) -> 0.667f | Magic (false, true) -> 0.333f | Magic (true, false) -> 1.333f | Magic (true, true) -> 2.0f | _ -> 1.0f) 1.0f
+                Option.mapOrDefaultValue (function Magic (false, false) -> 0.5f | Magic (false, true) -> 0.25f | Magic (true, false) -> 1.5f | Magic (true, true) -> 2.0f | _ -> 1.0f) 1.0f
         let intelligence = 
             match Map.tryFind archetypeType Data.Value.Archetypes with
             | Some archetypeData -> archetypeData.Intelligence
@@ -178,13 +172,11 @@ module Algorithms =
             | Some archetypeData -> (archetypeData.Defense, archetypeData.Absorb)
             | None -> (1.0f, 1.0f)
         let shieldBase =
-            List.fold
-                (fun shieldBase accessoryType ->
-                    match Map.tryFind accessoryType Data.Value.Accessories with
-                    | Some accessoryData -> single accessoryData.ShieldBase + shieldBase
-                    | None -> shieldBase)
-                0.0f
-                accessories
+            List.fold (fun shieldBase accessoryType ->
+                match Map.tryFind accessoryType Data.Value.Accessories with
+                | Some accessoryData -> single accessoryData.ShieldBase + shieldBase
+                | None -> shieldBase)
+                0.0f accessories
         let scalar = match effectType with Physical -> defense * 0.5f | Magical -> absorb * 0.5f
         (shieldBase + single level) * shieldBuff * scalar |> int |> max 0
 

@@ -54,9 +54,9 @@ type [<SymbolicExpansion>] CharacterState =
 
     static member burndownStatuses burndown state =
         let statuses =
-            Map.fold (fun statuses status burndown2 ->
+            Map.fold (fun statuses (status : StatusType) burndown2 ->
                 let burndownScalar = // boss debuffs burndown twice as fast
-                    if state.Boss && StatusType.debuff status
+                    if state.Boss && status.Debuff
                     then 2.0f
                     else 1.0f
                 let burndown3 = burndown2 - burndown * burndownScalar
