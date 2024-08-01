@@ -377,7 +377,7 @@ type BattleDispatcher () =
             | Some target -> displayEffect delay (v3 144.0f 144.0f 0.0f) (Bottom target.Perimeter.Bottom) Over EffectDescriptors.silk screen world |> just
             | None -> just world
 
-        override this.Content (battle, _) =
+    override this.Content (battle, _) =
 
         [// scene group
          Content.group Simulants.BattleScene.Name []
