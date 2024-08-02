@@ -1512,14 +1512,15 @@
    [[RigidModelSurfaceDispatcher
      [[Material
        [[AlbedoImageOpt
-         [Some [Default LightProbeModelAlbedo]]]
+         [Some [Gameplay Slab_Albedo]]]
         [RoughnessImageOpt
-         [Some [Default LightProbeModelRoughness]]]
+         [Some [Default MaterialRoughness]]]
         [MetallicImageOpt
-         [Some [Default LightProbeModelMetallic]]]
+         [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt None]
+        [NormalImageOpt
+         [Some [Gameplay Slab_Normal]]]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties

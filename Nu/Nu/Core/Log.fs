@@ -70,7 +70,7 @@ module Log =
         ignore message
 #endif
 
-    /// Log a debug message with Debug.Fail and call to info.
+    /// Log a debug message with Debug.Fail.
     /// Thread-safe.
     let debug (message : string) =
 #if DEBUG
@@ -79,7 +79,7 @@ module Log =
         ignore message
 #endif
 
-    /// Log a debug message once with Debug.Fail and call to info.
+    /// Log a debug message once with Debug.Fail.
     /// Thread-safe.
     let debugOnce (message : string) =
 #if DEBUG
@@ -97,15 +97,20 @@ module Log =
         (predicate, message) |> ignore
 #endif
 
-    /// Log a trace message using Trace.Fail and call to info.
+    /// Log a trace message using Trace.TraceError.
     /// Thread-safe.
     let trace message =
-        Trace.Fail (getDateTimeNowStr () + "|Trace|" + message)
+        Trace.TraceError (getDateTimeNowStr () + "|Trace|" + message)
 
-    /// Log a trace message once with Trace.Fail and call to info.
+    /// Log a trace message once with Trace.Fail.
     /// Thread-safe.
     let traceOnce (message : string) =
         if TraceOnceMessages.TryAdd (message, 0) then trace message
+
+    /// Log a failure message using Trace.Fail.
+    /// Thread-safe.
+    let fail message =
+        Trace.Fail (getDateTimeNowStr () + "|Trace|" + message)
 
     /// Conditional trace message call where condition is eagerly evaluted.
     /// Thread-safe.

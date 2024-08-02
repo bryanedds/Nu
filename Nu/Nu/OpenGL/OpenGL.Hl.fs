@@ -86,7 +86,7 @@ module Hl =
             not (version.StartsWith "4.5") &&
             not (version.StartsWith "4.6") &&
             not (version.StartsWith "5.0") (* heaven forbid... *) then
-            Log.trace "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
+            Log.fail "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
         glContext
 
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
