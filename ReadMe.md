@@ -7,6 +7,7 @@ Big Update!!!
 ![image](https://github.com/user-attachments/assets/a3f53f64-1b29-47fe-92ab-3ceec0726d2e)
 
 **Live Game Programming and Engine Support on Discord**
+
 [Join our discord!](https://discord.gg/BN79RxYAjD)
 
 So... just what is the **Nu Game Engine**?
