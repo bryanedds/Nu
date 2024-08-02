@@ -6,9 +6,7 @@ Big Update!!!
 **Omni Blade**, the first commercial game built with Nu, is **available on Steam TOMORROW** here - https://store.steampowered.com/app/3089800/Omni_Blade
 ![image](https://github.com/user-attachments/assets/a3f53f64-1b29-47fe-92ab-3ceec0726d2e)
 
-**Live Game Programming and Engine Support on Discord**
-
-[Join our discord!](https://discord.gg/BN79RxYAjD)
+**Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
 
 So... just what is the **Nu Game Engine**?
 
