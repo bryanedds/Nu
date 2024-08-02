@@ -36,7 +36,7 @@ module Hl =
         if AssertEnabled then
             let error = Gl.GetError ()
             if error <> ErrorCode.NoError then
-                Log.debug ("OpenGL assertion failed due to: " + string error)
+                Log.error ("OpenGL assertion failed due to: " + string error)
         a
 
 #if DEBUG
@@ -47,7 +47,7 @@ module Hl =
             let messageBytes = Array.zeroCreate<byte> length
             Marshal.Copy (message, messageBytes, 0, length)
             let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
-            Log.debug messageStr
+            Log.error messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DebugSeverityLow
         | DebugSeverity.DontCare
@@ -120,7 +120,7 @@ module Hl =
 
         // assert that anisotropic texture filter is available
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
-            Log.trace "Anisotropic texture filtering required to properly run Nu."
+            Log.warn "Anisotropic texture filtering required to properly run Nu."
 
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =

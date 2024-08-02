@@ -1116,7 +1116,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] ->
-                    Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'.")
+                    Log.error ("Unable to find fsproj file in '" + workingDirPath + "'.")
                     world
                 | fsprojFilePaths ->
 
@@ -1208,7 +1208,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     world
             with exn ->
-                Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
+                Log.error ("Failed to inspect for F# code due to: " + scstring exn)
                 World.switch worldOld
         else
             MessageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
@@ -1279,7 +1279,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (gaiaState, ".", gaiaPlugin)
         | Left () ->
             if not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) then
-                Log.trace ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
+                Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
     let private tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
@@ -4034,7 +4034,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
             let world =
                 if ImGui.Checkbox ("Trace Events", &traceEvents)
-                then World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) world
+                then World.setEventTracerOpt (if traceEvents then Some (Log.custom "Event") else None) world
                 else world
             let eventFilter = World.getEventFilter world
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
@@ -4265,18 +4265,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                             Directory.SetCurrentDirectory gaiaDirectory
                             ShowRestartDialog <- true
-                        with _ -> Log.trace "Could not save gaia state and open new project."
+                        with _ -> Log.error "Could not save gaia state and open new project."
 
                         // close dialog
                         ShowNewProjectDialog <- false
                         NewProjectName <- "My Game"
 
                     // log failure
-                    with exn -> Log.trace ("Failed to create new project '" + NewProjectName + "' due to: " + scstring exn)
+                    with exn -> Log.error ("Failed to create new project '" + NewProjectName + "' due to: " + scstring exn)
 
                 // template project missing
                 else
-                    Log.trace "Template project is missing; new project cannot be generated."
+                    Log.error "Template project is missing; new project cannot be generated."
                     ShowNewProjectDialog <- false
 
             // escape to cancel
@@ -4491,7 +4491,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                     try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                         Directory.SetCurrentDirectory gaiaDirectory
-                    with _ -> Log.trace "Could not save gaia state."
+                    with _ -> Log.error "Could not save gaia state."
                     World.exit world
                 else world
             ImGui.SameLine ()
@@ -4963,5 +4963,5 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world
-            | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
-        | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
+            | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
+        | Left error -> Log.error error; Constants.Engine.ExitCodeFailure

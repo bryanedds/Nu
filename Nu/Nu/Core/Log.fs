@@ -15,23 +15,16 @@ module Log =
     let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private WarnOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private ErrorOnceMessages = ConcurrentDictionary StringComparer.Ordinal
-    let mutable private DebugOnceMessages = ConcurrentDictionary StringComparer.Ordinal
 #endif
-    let mutable private TraceOnceMessages = ConcurrentDictionary StringComparer.Ordinal
 
     let private getDateTimeNowStr () =
         let now = DateTimeOffset.Now
         now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
 
-    /// Log a remark with a custom header with Trace.WriteLine.
-    /// Thread-safe.
-    let remark header message =
-        Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
-
-    /// Log a purely informational message with Trace.WriteLine.
+    /// Log a purely informational message with Trace.TraceInformation.
     /// Thread-safe.
     let info message =
-        remark "Info" message
+        Trace.TraceInformation (getDateTimeNowStr () + "|Info|" + message)
 
     /// Log a purely informational message once with Trace.WriteLine.
     /// Thread-safe.
@@ -42,10 +35,10 @@ module Log =
         ignore message
 #endif
 
-    /// Log a warning message with Trace.WriteLine.
+    /// Log a warning message with Trace.TraceWarning.
     /// Thread-safe.
     let warn message =
-        remark "Warning" message
+        Trace.TraceWarning (getDateTimeNowStr () + "|Warning|" + message)
 
     /// Log a warning message once with Trace.WriteLine.
     /// Thread-safe.
@@ -56,10 +49,10 @@ module Log =
         ignore message
 #endif
 
-    /// Log an error message with Trace.WriteLine.
+    /// Log an error message with Trace.TraceError.
     /// Thread-safe.
     let error message =
-        remark "Error" message
+        Trace.TraceError (getDateTimeNowStr () + "|Error|" + message)
 
     /// Log an error message once with Trace.WriteLine.
     /// Thread-safe.
@@ -70,52 +63,15 @@ module Log =
         ignore message
 #endif
 
-    /// Log a debug message with Debug.Fail.
-    /// Thread-safe.
-    let debug (message : string) =
-#if DEBUG
-        Debug.Fail (getDateTimeNowStr () + "|Debug|" + message)
-#else
-        ignore message
-#endif
-
-    /// Log a debug message once with Debug.Fail.
-    /// Thread-safe.
-    let debugOnce (message : string) =
-#if DEBUG
-        if DebugOnceMessages.TryAdd (message, 0) then debug message
-#else
-        ignore message
-#endif
-
-    /// Conditional debug message call where condition is lazily evaluated.
-    /// Thread-safe.
-    let debugIf (predicate : unit -> bool) (message : string) =
-#if DEBUG
-        if predicate () then debug message
-#else
-        (predicate, message) |> ignore
-#endif
-
-    /// Log a trace message using Trace.TraceError.
-    /// Thread-safe.
-    let trace message =
-        Trace.TraceError (getDateTimeNowStr () + "|Trace|" + message)
-
-    /// Log a trace message once with Trace.Fail.
-    /// Thread-safe.
-    let traceOnce (message : string) =
-        if TraceOnceMessages.TryAdd (message, 0) then trace message
-
     /// Log a failure message using Trace.Fail.
     /// Thread-safe.
     let fail message =
-        Trace.Fail (getDateTimeNowStr () + "|Trace|" + message)
+        Trace.Fail (getDateTimeNowStr () + "|Fatal|" + message)
 
-    /// Conditional trace message call where condition is eagerly evaluted.
+    /// Log an custom log type with Trace.TraceInformation.
     /// Thread-safe.
-    let traceIf bl message =
-        if bl then trace message
+    let custom header message =
+        Trace.TraceInformation (getDateTimeNowStr () + "|" + header + "|" + message)
 
     /// Initialize logging.
     let init (fileNameOpt : string option) =

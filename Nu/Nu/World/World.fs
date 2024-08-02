@@ -298,7 +298,7 @@ module WorldModule3 =
             // make the world's event delegate
             let eventGraph =
                 let eventTracing = Constants.Engine.EventTracing
-                let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None // NOTE: lambda expression is duplicated in multiple places...
+                let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None // NOTE: lambda expression is duplicated in multiple places...
                 let eventFilter = Constants.Engine.EventFilter
                 let globalSimulantGeneralized = { GsgAddress = atoa Game.GameAddress }
                 let eventConfig = if config.Imperative then Imperative else Functional
@@ -360,7 +360,7 @@ module WorldModule3 =
                 // make the world's event graph
                 let eventGraph =
                     let eventTracing = Constants.Engine.EventTracing
-                    let eventTracerOpt = if eventTracing then Some (Log.remark "Event") else None
+                    let eventTracerOpt = if eventTracing then Some (Log.custom "Event") else None
                     let eventFilter = Constants.Engine.EventFilter
                     let globalSimulant = Game
                     let globalSimulantGeneralized = { GsgAddress = atoa globalSimulant.GameAddress }
@@ -455,8 +455,8 @@ module WorldModule3 =
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
                 match World.tryMake sdlDeps worldConfig plugin with
                 | Right world -> World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess Live true world
-                | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
-            | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
+                | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
+            | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.

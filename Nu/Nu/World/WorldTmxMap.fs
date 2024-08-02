@@ -99,19 +99,19 @@ module TmxMap =
         | EmptyShape as empty ->
             empty
         | BoxShape box ->
-            Log.traceIf (Option.isSome box.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome box.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             BoxShape { box with Size = box.Size * tileSize.V3; TransformOpt = transformOpt }
         | SphereShape sphere ->
-            Log.traceIf (Option.isSome sphere.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome sphere.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             SphereShape { sphere with Radius = sphere.Radius * tileSize.Y; TransformOpt = transformOpt }
         | CapsuleShape capsule ->
-            Log.traceIf (Option.isSome capsule.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome capsule.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             CapsuleShape { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
-            Log.traceIf (Option.isSome boxRounded.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius; TransformOpt = transformOpt }
         | PointsShape points ->
-            Log.traceIf (Option.isSome points.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome points.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             PointsShape { points with Points = Array.map (fun point -> point * tileSize.V3) points.Points; TransformOpt = transformOpt }
         | GeometryShape _ as geometry ->
             geometry

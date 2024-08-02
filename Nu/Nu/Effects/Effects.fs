@@ -981,7 +981,7 @@ module EffectSystem =
             with exn ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EffectDescriptor>).PrettyPrinter
                 let effectStr = PrettyPrinter.prettyPrint (scstring descriptor) prettyPrinter
-                Log.debug ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
+                Log.error ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem
         else release effectSystem
     

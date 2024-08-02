@@ -287,7 +287,7 @@ module WorldModuleEntity =
                     entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing entity model value to new type; using fallback model value instead."
+                    Log.errorOnce "Could not convert existing entity model value to new type; using fallback model value instead."
                     match entityState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, entity, world) with
                     | None -> failwithnie ()
                     | Some model ->
@@ -2265,7 +2265,7 @@ module WorldModuleEntity =
                     // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                     | Right (entityState, _) -> entityState
-                    | Left error -> Log.debug error; entityState
+                    | Left error -> Log.error error; entityState
                 | None -> entityState
 
             // apply the entity state's overlay if exists
@@ -2488,7 +2488,7 @@ module WorldModuleEntity =
             let entityState =
                 match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                 | Right (entityState, _) -> entityState
-                | Left error -> Log.debug error; entityState
+                | Left error -> Log.error error; entityState
 
             // attempt to apply the entity state's overlay
             let entityState =
@@ -2593,7 +2593,7 @@ module WorldModuleEntity =
                     let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayerNameOld overlayName entityState overlayer overlayer
                     match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
-                    | Left error -> Log.debug error; (entityState, world)
+                    | Left error -> Log.error error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy overlayerNameOld overlayName facetNames entityState overlayer
                 let entityStateOld = entityState

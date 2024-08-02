@@ -666,7 +666,7 @@ module WorldModule2 =
 #if DEBUG
                         if  Array.contains Address.WildcardName eventNames ||
                             Array.contains Address.EllipsisName eventNames then
-                            Log.debug
+                            Log.error
                                 ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
                                  "This will cause a bug where some entity update events are not published.")
 #endif
@@ -711,7 +711,7 @@ module WorldModule2 =
                             else world
                         if  Array.contains Address.WildcardName eventNames ||
                             Array.contains Address.EllipsisName eventNames then
-                            Log.debug "Subscribing to change events with a wildcard or ellipsis is not supported."
+                            Log.error "Subscribing to change events with a wildcard or ellipsis is not supported."
                         world
                     | _ -> world
                 else world
@@ -1825,7 +1825,7 @@ module WorldModule2 =
                 Constants.Engine.ExitCodeSuccess
             with exn ->
                 let world = World.switch world
-                Log.trace (scstring exn)
+                Log.error (scstring exn)
                 World.cleanUp world
                 Constants.Engine.ExitCodeFailure
 
@@ -1881,7 +1881,7 @@ module EntityDispatcherModule2 =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing entity model to new type. Falling back on initial model value."
+                        Log.errorOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
             World.setEntityModelGeneric<'model> true model entity world |> snd'
 
@@ -1912,7 +1912,7 @@ module EntityDispatcherModule2 =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalEntity<'model, 'message, 'command> command entity world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').\n" +
                              "This may come about due to sending an incorrect signal type to the entity or due to too significant a change in the signal type when reloading code.")
                         world
@@ -2204,7 +2204,7 @@ module GroupDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing group model to new type. Falling back on initial model value."
+                        Log.errorOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGroupModelGeneric<'model> true model group world |> snd'
 
@@ -2229,7 +2229,7 @@ module GroupDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalGroup<'model, 'message, 'command> command group world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').\n" +
                              "This may come about due to sending an incorrect signal type to the group or due to too significant a change in the signal type when reloading code.")
                         world
@@ -2387,7 +2387,7 @@ module ScreenDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing screen model to new type. Falling back on initial model value."
+                        Log.errorOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
             World.setScreenModelGeneric<'model> true model screen world |> snd'
 
@@ -2412,7 +2412,7 @@ module ScreenDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalScreen<'model, 'message, 'command> command screen world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').\n" +
                              "This may come about due to sending an incorrect signal type to the screen or due to too significant a change in the signal type when reloading code.")
                         world
@@ -2577,7 +2577,7 @@ module GameDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing game model to new type. Falling back on initial model value."
+                        Log.errorOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGameModelGeneric<'model> true model game world |> snd'
 
@@ -2602,7 +2602,7 @@ module GameDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalGame<'model, 'message, 'command> command game world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').\n" +
                              "This may come about due to sending an incorrect signal type to the game or due to too significant a change in the signal type when reloading code.")
                         world

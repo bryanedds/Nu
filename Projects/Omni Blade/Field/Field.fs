@@ -1081,14 +1081,14 @@ module Field =
             if not (Map.containsKey name definitions) then
                 (Fin, Map.add name body definitions, just field)
             else
-                Log.debug ("Cue definition '" + name + "' already found.")
+                Log.error ("Cue definition '" + name + "' already found.")
                 (Fin, definitions, just field)
 
         | Assign (name, body) ->
             if Map.containsKey name definitions then
                 (Fin, Map.add name body definitions, just field)
             else
-                Log.debug ("Cue definition '" + name + "' not found.")
+                Log.error ("Cue definition '" + name + "' not found.")
                 (Fin, definitions, just field)
 
         | Expand name ->
@@ -1096,7 +1096,7 @@ module Field =
             | Some body ->
                 updateCue body definitions field
             | None ->
-                Log.debug ("Cue definition '" + name + "' not found.")
+                Log.error ("Cue definition '" + name + "' not found.")
                 (Fin, definitions, ([], field))
 
         | Parallel cues ->

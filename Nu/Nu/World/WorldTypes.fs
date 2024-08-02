@@ -1872,7 +1872,7 @@ and [<ReferenceEquality>] World =
         match WorldTypes.Chosen with
         | :? World as this -> 
             if this.ChooseCount <> this.ChooseCount then
-                Log.debug "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
+                Log.error "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
         | _ -> ()
         this.ChooseCount <- inc this.ChooseCount // mutation is fine here since calling Choose implies we're doing so on a new reference in functional mode
         WorldTypes.Chosen <- this
