@@ -1881,7 +1881,7 @@ module EntityDispatcherModule2 =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.errorOnce "Could not convert existing entity model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
             World.setEntityModelGeneric<'model> true model entity world |> snd'
 
@@ -2204,7 +2204,7 @@ module GroupDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.errorOnce "Could not convert existing group model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGroupModelGeneric<'model> true model group world |> snd'
 
@@ -2387,7 +2387,7 @@ module ScreenDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.errorOnce "Could not convert existing screen model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
             World.setScreenModelGeneric<'model> true model screen world |> snd'
 
@@ -2577,7 +2577,7 @@ module GameDispatcherModule =
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.errorOnce "Could not convert existing game model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGameModelGeneric<'model> true model game world |> snd'
 
