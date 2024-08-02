@@ -1,9 +1,12 @@
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
 =
 
-**Live Discord Support Here -**
+Big Update!!!
+=
+**Omni Blade**, the first commercial game built with Nu, is **available on Steam TOMORROW** - https://store.steampowered.com/app/3089800/Omni_Blade
+![image](https://github.com/user-attachments/assets/f2769f50-bcc8-44bb-aad9-c81e5b2ad281)
 
-[Come join our discord!](https://discord.gg/BN79RxYAjD)
+**Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
 
 So... just what is the **Nu Game Engine**?
 
@@ -17,7 +20,7 @@ This repository hosts several projects, including -
 - the sample 2D puzzle game ['Twenty48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty48).
 - the sample 2D action game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
 - the sample 3D project ['TerraFirma'](https://github.com/bryanedds/Nu/tree/master/Projects/TerraFirma).
-- the game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade) available free for Windows and Linux here - https://github.com/bryanedds/Nu/releases/tag/v13.0.1
+- the commercial game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade), full game available now here - https://store.steampowered.com/app/3089800/Omni_Blade
 
 Getting Started with Nu
 =======================
