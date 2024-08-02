@@ -120,7 +120,7 @@ module Hl =
 
         // assert that anisotropic texture filter is available
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
-            Log.trace "Anisotropic texture filtering required to run Nu."
+            Log.trace "Anisotropic texture filtering required to properly run Nu."
 
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =
