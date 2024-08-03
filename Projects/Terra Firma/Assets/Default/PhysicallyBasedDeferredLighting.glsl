@@ -143,112 +143,107 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 
 void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out float specularWeight)
 {
-    // apply screen-space reflection fragment when isn't too deep and surface slope isn't too great
-    mat3 view3 = mat3(view);
+    // compute view values
     vec4 positionView = view * position;
-    if (-positionView.z <= reflectionDepthMax)
+    vec3 positionViewNormal = normalize(positionView.xyz);
+    vec3 normalView = normalize(mat3(view) * normal);
+    vec3 reflectionView = reflect(positionViewNormal, normalView);
+    vec4 startView = vec4(positionView.xyz, 1.0);
+    vec4 stopView = vec4(positionView.xyz + reflectionView * reflectionDistanceMax, 1.0);
+
+    // compute the fragment at which to start marching
+    vec2 texSize = textureSize(positionTexture, 0).xy;
+    vec4 startFrag4 = projection * startView;
+    vec2 startFrag = startFrag4.xy / startFrag4.w;
+    startFrag = startFrag * 0.5 + 0.5;
+    startFrag *= texSize;
+
+    // compute the fragment at which to end marching
+    vec4 stopFrag4 = projection * stopView;
+    vec2 stopFrag = stopFrag4.xy / stopFrag4.w;
+    stopFrag = stopFrag * 0.5 + 0.5;
+    stopFrag *= texSize;
+
+    // initialize current fragment
+    vec2 currentFrag = startFrag;
+    vec2 currentUV = currentFrag / texSize;
+    vec4 currentPositionView = positionView;
+
+    // compute fragment step amount
+    float marchHorizonal = stopFrag.x - startFrag.x;
+    float marchVertical = stopFrag.y - startFrag.y;
+    float shouldMarchHorizontal = abs(marchHorizonal) >= abs(marchVertical) ? 1.0 : 0.0;
+    float stepLength = mix(abs(marchVertical), abs(marchHorizonal), shouldMarchHorizontal) * reflectionDetail;
+    vec2 stepAmount = vec2(marchHorizonal, marchVertical) / max(stepLength, 0.001);
+
+    // march fragment
+    float searchA = 0.0;
+    float searchB = 0.0;
+    float currentDistanceView = 0.0;
+    float currentDepthView = 0.0;
+    for (int i = 0; i < int(stepLength) && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
     {
-        // compute view values
-        vec2 texSize = textureSize(positionTexture, 0).xy;
-        vec3 positionViewNormal = normalize(positionView.xyz);
-        vec3 normalView = normalize(view3 * normal);
-        vec3 reflectionView = reflect(positionViewNormal, normalView);
-        vec4 startView = vec4(positionView.xyz, 1.0);
-        vec4 stopView = vec4(positionView.xyz + reflectionView * reflectionDistanceMax, 1.0);
+        // step fragment
+        currentFrag += stepAmount;
+        currentUV = currentFrag / texSize;
 
-        // compute the fragment at which to start marching
-        vec4 startFrag4 = projection * startView;
-        vec2 startFrag = startFrag4.xy / startFrag4.w;
-        startFrag = startFrag * 0.5 + 0.5;
-        startFrag *= texSize;
-
-        // compute the fragment at which to end marching
-        vec4 stopFrag4 = projection * stopView;
-        vec2 stopFrag = stopFrag4.xy / stopFrag4.w;
-        stopFrag = stopFrag * 0.5 + 0.5;
-        stopFrag *= texSize;
-
-        // initialize current fragment
-        vec2 currentFrag = startFrag;
-        vec2 currentUV = currentFrag / texSize;
-        vec4 currentPositionView = positionView;
-
-        // compute fragment step amount
-        float marchHorizonal = stopFrag.x - startFrag.x;
-        float marchVertical = stopFrag.y - startFrag.y;
-        float shouldMarchHorizontal = abs(marchHorizonal) >= abs(marchVertical) ? 1.0 : 0.0;
-        float stepLength = mix(abs(marchVertical), abs(marchHorizonal), shouldMarchHorizontal) * reflectionDetail;
-        vec2 stepAmount = vec2(marchHorizonal, marchVertical) / max(stepLength, 0.001);
-
-        // march fragment
-        float searchA = 0.0;
-        float searchB = 0.0;
-        float currentDistanceView = 0.0;
-        float currentDepthView = 0.0;
-        for (int i = 0; i < int(stepLength) && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
+        // determine whether we're in geometry
+        vec4 currentPosition = texture(positionTexture, currentUV);
+        if (currentPosition.w == 1.0)
         {
-            // step fragment
-            currentFrag += stepAmount;
-            currentUV = currentFrag / texSize;
-
-            // determine whether we're in geometry
-            vec4 currentPosition = texture(positionTexture, currentUV);
-            if (currentPosition.w == 1.0)
+            // determine whether we hit geometry within acceptable thickness
+            currentPositionView = view * currentPosition;
+            searchB = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizonal, shouldMarchHorizontal), 0.0, 1.0);
+            currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, searchB); // uses perspective correct interpolation for depth
+            currentDepthView = currentDistanceView - -currentPositionView.z;
+            float adaptedThickness = max(currentDistanceView * reflectionRayThicknessMarch, reflectionRayThicknessMarch);
+            if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
             {
-                // determine whether we hit geometry within acceptable thickness
-                currentPositionView = view * currentPosition;
-                searchB = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizonal, shouldMarchHorizontal), 0.0, 1.0);
-                currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, searchB); // uses perspective correct interpolation for depth
-                currentDepthView = currentDistanceView - -currentPositionView.z;
-                float adaptedThickness = max(currentDistanceView * reflectionRayThicknessMarch, reflectionRayThicknessMarch);
-                if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+                // perform refinements within walk
+                searchB = searchA + (searchB - searchA) * 0.5;
+                for (int i = 0; i < reflectionRefinements; ++i)
                 {
-                    // perform refinements within walk
-                    searchB = searchA + (searchB - searchA) * 0.5;
-                    for (int i = 0; i < reflectionRefinements; ++i)
+                    // refine fragment
+                    currentFrag = mix(startFrag, stopFrag, searchB);
+                    currentUV = currentFrag / texSize;
+
+                    // determine whether we're in geometry
+                    vec4 currentPosition = texture(positionTexture, currentUV);
+                    if (currentPosition.w == 1.0)
                     {
-                        // refine fragment
-                        currentFrag = mix(startFrag, stopFrag, searchB);
-                        currentUV = currentFrag / texSize;
-
-                        // determine whether we're in geometry
-                        vec4 currentPosition = texture(positionTexture, currentUV);
-                        if (currentPosition.w == 1.0)
+                        // determine whether we hit geometry within acceptable thickness
+                        currentPositionView = view * currentPosition;
+                        currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, searchB); // uses perspective correct interpolation for depth
+                        currentDepthView = currentDistanceView - -currentPositionView.z;
+                        float adaptedThickness = max(currentDistanceView * reflectionRayThicknessRefinement, reflectionRayThicknessRefinement);
+                        if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                         {
-                            // determine whether we hit geometry within acceptable thickness
-                            currentPositionView = view * currentPosition;
-                            currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, searchB); // uses perspective correct interpolation for depth
-                            currentDepthView = currentDistanceView - -currentPositionView.z;
-                            float adaptedThickness = max(currentDistanceView * reflectionRayThicknessRefinement, reflectionRayThicknessRefinement);
-                            if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
-                            {
-                                // compute screen-space specular color and weight
-                                searchB = searchA + (searchB - searchA) * 0.5;
-                                float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
-                                specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
-                                specularWeight =
-                                    (1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
-                                    (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
-                                    (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
-                                    smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
-                                    smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
-                                specularWeight = clamp(specularWeight, 0.0, 1.0);
-                                break;
-                            }
+                            // compute screen-space specular color and weight
+                            searchB = searchA + (searchB - searchA) * 0.5;
+                            float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
+                            specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
+                            specularWeight =
+                                (1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
+                                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
+                                (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                                smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
+                                smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
+                            specularWeight = clamp(specularWeight, 0.0, 1.0);
+                            break;
                         }
-
-                        // otherwise continue in the same direction
-                        float temp = searchB;
-                        searchB = searchB + (searchB - searchA) * 0.5;
-                        searchA = temp;
                     }
-                    break;
-                }
-            }
 
-            // otherwise loop
-            searchA = searchB;
+                    // otherwise continue in the same direction
+                    float temp = searchB;
+                    searchB = searchB + (searchB - searchA) * 0.5;
+                    searchA = temp;
+                }
+                break;
+            }
         }
+
+        // otherwise loop
+        searchA = searchB;
     }
 }
 
@@ -368,7 +363,10 @@ void main()
         vec3 specularSS = vec3(0.0);
         float specularWeight = 0.0;
         float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
-        if (roughness <= reflectionRoughnessMax && surfaceSlope <= reflectionSurfaceSlopeMax)
+        vec4 positionView = view * position;
+        if (roughness <= reflectionRoughnessMax &&
+            surfaceSlope <= reflectionSurfaceSlopeMax &&
+            -positionView.z <= reflectionDepthMax)
         {
             vec2 texSize = textureSize(positionTexture, 0).xy;
             float texelHeight = 1.0 / texSize.y;
