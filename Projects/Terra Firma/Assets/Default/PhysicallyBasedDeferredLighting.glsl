@@ -134,11 +134,10 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
     float reflectionFineness = 0.34;
     float reflectionDepthMax = 24.0;
     float reflectionDistanceMax = 24.0;
-    int reflectionStepsMax = 320;
     int reflectionRefinements = 10;
     float reflectionSurfaceSlopeMax = 0.1;
-    float reflectionRayThicknessMarch = 0.5;
-    float reflectionRayThicknessRefinement = 0.1;
+    float reflectionRayThicknessMarch = 0.05;
+    float reflectionRayThicknessRefinement = 0.02;
     float reflectionFilterCutoff = 0.8;
     float reflectionEdgeCutoffHorizontal = 0.05;
     float reflectionEdgeCutoffVertical = 0.2;
@@ -203,7 +202,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                 search1 = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizonal, shouldMarchHorizontal), 0.0, 1.0);
                 currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
                 currentDepthView = currentDistanceView - -currentPositionView.z;
-                float adaptedThickness = max(currentDistanceView * 0.05, 0.05);
+                float adaptedThickness = max(currentDistanceView * reflectionRayThicknessMarch, reflectionRayThicknessMarch);
                 if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                 {
                     // perform refinements within walk
@@ -222,7 +221,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                             currentPositionView = view * currentPosition;
                             currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
                             currentDepthView = currentDistanceView - -currentPositionView.z;
-                            float adaptedThickness = max(currentDistanceView * 0.02, 0.02);
+                            float adaptedThickness = max(currentDistanceView * reflectionRayThicknessRefinement, reflectionRayThicknessRefinement);
                             if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                             {
                                 // compute screen-space specular color and weight
