@@ -208,7 +208,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                 {
                     // perform refinements within walk
                     search1 = search0 + (search1 - search0) * 0.5;
-                    for (int i = 0; i < reflectionRefinements && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
+                    for (int i = 0; i < reflectionRefinements; ++i)
                     {
                         // refine fragment
                         currentFrag = mix(startFrag, stopFrag, search1);
