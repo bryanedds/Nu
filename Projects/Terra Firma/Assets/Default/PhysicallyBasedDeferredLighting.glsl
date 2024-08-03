@@ -370,25 +370,16 @@ void main()
         vec3 specularLM = environmentFilter * specularSubterm * lightAmbientSpecular;
 
         // compute specular term and weight from screen-space
-        vec2 texSize = textureSize(positionTexture, 0).xy;
-        float texelHeight = 1.0 / texSize.y;
         vec3 specularSS = vec3(0.0);
         float specularWeight = 0.0;
         if (roughness < 0.5)
         {
-            for (int i = -1; i < 0; ++i)
-            {
-                vec2 texCoords = texCoordsOut + vec2(0.0, texelHeight * i);
-                texCoords.y = max(0.0, min(1.0, texCoords.y));
-                vec4 positionInstance = texture(positionTexture, texCoords);
-                vec3 specularSSInstance = vec3(0.0);
-                float specularWeightInstance = 0.0;
-                ssr(positionInstance, normal, roughness, specularSSInstance, specularWeightInstance);
-                specularSS += specularSSInstance;
-                specularWeight += specularWeightInstance;
-            }
-            specularSS /= 1;
-            specularWeight /= 1;
+            vec2 texSize = textureSize(positionTexture, 0).xy;
+            float texelHeight = 1.0 / texSize.y;
+            vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
+            texCoordsBelow.y = max(0.0, texCoordsBelow.y);
+            vec4 positionBelow = texture(positionTexture, texCoordsBelow);
+            ssr(positionBelow, normal, roughness, specularSS, specularWeight);
         }
 
         // compute specular term
