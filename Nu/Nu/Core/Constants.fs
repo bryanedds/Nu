@@ -151,6 +151,7 @@ module Render =
     let [<Literal>] SsaoBiasDefault = 0.025f
     let [<Literal>] SsaoRadiusDefault = 0.125f
     let [<Literal>] SsaoDistanceMaxDefault = 0.125f
+    let [<Literal>] SsrEnabled = false;
     let [<Literal>] SsrDetail = 0.34f;
     let [<Literal>] SsrDepthMax = 24.0f;
     let [<Literal>] SsrDistanceMax = 24.0f;

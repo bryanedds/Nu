@@ -31,6 +31,7 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowBiasAcne;
 uniform float lightShadowBiasBleed;
+uniform int ssrEnabled;
 uniform float ssrDetail;
 uniform float ssrDepthMax;
 uniform float ssrDistanceMax;
@@ -362,7 +363,8 @@ void main()
         float specularWeight = 0.0;
         float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
         vec4 positionView = view * position;
-        if (roughness <= ssrRoughnessMax &&
+        if (ssrEnabled == 1 &&
+            roughness <= ssrRoughnessMax &&
             surfaceSlope <= ssrSurfaceSlopeMax &&
             -positionView.z <= ssrDepthMax)
         {

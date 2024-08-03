@@ -346,6 +346,7 @@ module PhysicallyBased =
           LightAmbientBrightnessUniform : int
           LightShadowBiasAcneUniform : int
           LightShadowBiasBleedUniform : int
+          SsrEnabled : int
           SsrDetail : int
           SsrDepthMax : int
           SsrDistanceMax : int
@@ -1632,6 +1633,7 @@ module PhysicallyBased =
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
         let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
+        let ssrEnabled = Gl.GetUniformLocation (shader, "ssrEnabled")
         let ssrDetail = Gl.GetUniformLocation (shader, "ssrDetail")
         let ssrDepthMax = Gl.GetUniformLocation (shader, "ssrDepthMax")
         let ssrDistanceMax = Gl.GetUniformLocation (shader, "ssrDistanceMax")
@@ -1679,6 +1681,7 @@ module PhysicallyBased =
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
           LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
+          SsrEnabled = ssrEnabled
           SsrDetail = ssrDetail
           SsrDepthMax = ssrDepthMax
           SsrDistanceMax = ssrDistanceMax
@@ -2612,6 +2615,7 @@ module PhysicallyBased =
          lightAmbientBrightness : single,
          lightShadowBiasAcne : single,
          lightShadowBiasBleed : single,
+         ssrEnabled : int,
          ssrDetail : single,
          ssrDepthMax : single,
          ssrDistanceMax : single,
@@ -2658,6 +2662,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
         Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
+        Gl.Uniform1 (shader.SsrEnabled, ssrEnabled)
         Gl.Uniform1 (shader.SsrDetail, ssrDetail)
         Gl.Uniform1 (shader.SsrDepthMax, ssrDepthMax)
         Gl.Uniform1 (shader.SsrDistanceMax, ssrDistanceMax)

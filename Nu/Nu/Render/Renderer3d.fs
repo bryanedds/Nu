@@ -2670,6 +2670,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // deferred render lighting quad to filter buffer
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
+             (if Constants.Render.SsrEnabled then 1 else 0),
              Constants.Render.SsrDetail, 
              Constants.Render.SsrDepthMax, 
              Constants.Render.SsrDistanceMax, 
