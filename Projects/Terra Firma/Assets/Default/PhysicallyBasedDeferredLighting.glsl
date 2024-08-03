@@ -24,7 +24,7 @@ const float SHADOW_FOV_MAX = 2.1;
 const int SHADOWS_MAX = 16;
 
 // TODO: make uniform values.
-const float reflectionDetail = 0.3;
+const float reflectionDetail = 0.34;
 const float reflectionDepthMax = 24.0;
 const float reflectionDistanceMax = 24.0;
 const int reflectionRefinements = 17;
@@ -181,7 +181,6 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
         vec2 stepAmount = vec2(marchHorizonal, marchVertical) / max(stepLength, 0.001);
 
         // march fragment
-        bool hit = false;
         float searchA = 0.0;
         float searchB = 0.0;
         float currentDistanceView = 0.0;
@@ -224,12 +223,10 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                             if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                             {
                                 // compute screen-space specular color and weight
-                                hit = true;
                                 searchB = searchA + (searchB - searchA) * 0.5;
                                 float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
                                 specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
                                 specularWeight =
-                                    (hit ? 1.0 : 0.0) * // filter out when refinement hit not found
                                     (1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
                                     (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
                                     (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
