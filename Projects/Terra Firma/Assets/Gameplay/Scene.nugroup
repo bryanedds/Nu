@@ -54,7 +54,7 @@
      []]
     [Lighting3dConfigDispatcher
      [[Lighting3dConfig
-       [[LightCutoffMargin 0.333] [ShadowBiasAcne 2E-07] [ShadowBiasBleed 0.5] [SsaoIntensity 1.333] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2]]]
+       [[LightCutoffMargin 0.333] [ShadowBiasAcne 2E-07] [ShadowBiasBleed 0.5] [SsaoIntensity 1.35] [SsaoBias 0.025] [SsaoRadius 0.4] [SsaoDistanceMax 0.2] [SsrEnabled True] [SsrDetail 0.34] [SsrDepthMax 24] [SsrDistanceMax 24] [SsrRefinementsMax 17] [SsrRoughnessMax 0.5] [SsrSurfaceSlopeMax 0.1] [SsrRayThicknessMarch 0.05] [SsrRayThicknessRefinement 0.02] [SsrFilterCutoff 0.8] [SsrEdgeCutoffHorizontal 0.05] [SsrEdgeCutoffVertical 0.2]]]
       [MountOpt [Some ^]]
       [Name Lighting3dConfig]]
      []]
@@ -1536,6 +1536,7 @@
       [Position [-2 1.59 -4.5]]
       [PositionLocal [-2 -0.05 -4.5]]
       [Presence Omnipresent]
+      [RotationLocal [0 0 -0.72676146 0.6868899]]
       [Scale [26.9 0.1 30.4]]
       [ScaleLocal [26.9 0.1 30.4]]
       [Static True]]
