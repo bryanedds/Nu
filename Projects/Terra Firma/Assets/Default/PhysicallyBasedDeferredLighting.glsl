@@ -134,7 +134,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
     float reflectionFineness = 0.34;
     float reflectionDepthMax = 24.0;
     float reflectionDistanceMax = 24.0;
-    int reflectionRefinements = 10;
+    int reflectionRefinements = 17;
     float reflectionSurfaceSlopeMax = 0.1;
     float reflectionRayThicknessMarch = 0.05;
     float reflectionRayThicknessRefinement = 0.02;
@@ -231,7 +231,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                                 specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
                                 specularWeight =
                                     (hit ? 1.0 : 0.0) * // filter out when refinement hit not found
-                                    //(1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
+                                    (1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
                                     (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
                                     (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                                     smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
