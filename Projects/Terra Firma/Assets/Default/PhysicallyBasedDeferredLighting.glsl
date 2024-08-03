@@ -183,8 +183,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
         vec2 stepAmount = vec2(marchHorizonal, marchVertical) / max(stepLength, 0.001);
 
         // march fragment
-        int hit0 = 0;
-        int hit1 = 0;
+        bool hit = false;
         float search0 = 0.0;
         float search1 = 0.0;
         float currentDistanceView = 0.0;
@@ -207,7 +206,47 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                 float adaptedThickness = max(currentDistanceView * 0.05, 0.05);
                 if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                 {
-                    hit0 = 1;
+                    // perform refinements within walk
+                    search1 = search0 + (search1 - search0) * 0.5;
+                    for (int i = 0; i < reflectionRefinements && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
+                    {
+                        // refine fragment
+                        currentFrag = mix(startFrag, stopFrag, search1);
+                        currentUV = currentFrag / texSize;
+
+                        // determine whether we're in geometry
+                        vec4 currentPosition = texture(positionTexture, currentUV);
+                        if (currentPosition.w == 1.0)
+                        {
+                            // determine whether we hit geometry within acceptable thickness
+                            currentPositionView = view * currentPosition;
+                            currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
+                            currentDepthView = currentDistanceView - -currentPositionView.z;
+                            float adaptedThickness = max(currentDistanceView * 0.02, 0.02);
+                            if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+                            {
+                                // compute screen-space specular color and weight
+                                hit = true;
+                                search1 = search0 + (search1 - search0) * 0.5;
+                                float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
+                                specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
+                                specularWeight =
+                                    (hit ? 1.0 : 0.0) * // filter out when refinement hit not found
+                                    //(1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
+                                    (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
+                                    (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                                    smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
+                                    smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
+                                specularWeight = clamp(specularWeight, 0.0, 1.0);
+                                break;
+                            }
+                        }
+
+                        // otherwise continue in the same direction
+                        float temp = search1;
+                        search1 = search1 + (search1 - search0) * 0.5;
+                        search0 = temp;
+                    }
                     break;
                 }
             }
@@ -215,53 +254,6 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
             // otherwise loop
             search0 = search1;
         }
-
-        // refine when hit occurred
-        if (hit0 == 1)
-        {
-            // perform refinements within last walk
-            search1 = search0 + (search1 - search0) * 0.5;
-            for (int i = 0; i < reflectionRefinements; ++i)
-            {
-                // refine fragment
-                currentFrag = mix(startFrag, stopFrag, search1);
-                currentUV = currentFrag / texSize;
-
-                // determine whether we're in geometry
-                vec4 currentPosition = texture(positionTexture, currentUV);
-                if (currentPosition.w == 1.0)
-                {
-                    // determine whether we hit geometry within acceptable thickness
-                    currentPositionView = view * currentPosition;
-                    currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, search1); // uses perspective correct interpolation for depth
-                    currentDepthView = currentDistanceView - -currentPositionView.z;
-                    float adaptedThickness = max(currentDistanceView * 0.02, 0.02);
-                    if (currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
-                    {
-                        hit1 = 1;
-                        search1 = search0 + (search1 - search0) * 0.5;
-                        continue;
-                    }
-                }
-
-                // otherwise continue in the same direction
-                float temp = search1;
-                search1 = search1 + (search1 - search0) * 0.5;
-                search0 = temp;
-            }
-        }
-
-        // compute screen-space specular color and weight
-        float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
-        specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
-        specularWeight =
-            hit1 * // filter out when refinement hit not found
-            //(1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
-            (1.0 - smoothstep(reflectionFilterCutoff, 1.0, positionView.z / -reflectionDepthMax)) * // filter out as fragment reaches max depth
-            (1.0 - smoothstep(reflectionFilterCutoff, 1.0, length(currentPositionView - positionView) / reflectionDistanceMax)) * // filter out as reflection point reaches max distance from fragment
-            smoothstep(0.0, reflectionEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
-            smoothstep(0.0, reflectionEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
-        specularWeight = clamp(specularWeight, 0.0, 1.0);
     }
 }
 
