@@ -131,7 +131,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out float specularWeight)
 {
     // uniform values
-    float reflectionFineness = 0.34;
+    float reflectionDetail = 0.3;
     float reflectionDepthMax = 24.0;
     float reflectionDistanceMax = 24.0;
     int reflectionRefinements = 17;
@@ -141,7 +141,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
     float reflectionFilterCutoff = 0.8;
     float reflectionEdgeCutoffHorizontal = 0.05;
     float reflectionEdgeCutoffVertical = 0.2;
-    reflectionFineness = clamp(reflectionFineness, 0.0, 1.0); // clamp user-defined values
+    reflectionDetail = clamp(reflectionDetail, 0.0, 1.0); // clamp user-defined values
 
     // apply screen-space reflection fragment when isn't too deep and surface slope isn't too great
     mat3 view3 = mat3(view);
@@ -178,7 +178,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
         float marchHorizonal = stopFrag.x - startFrag.x;
         float marchVertical = stopFrag.y - startFrag.y;
         float shouldMarchHorizontal = abs(marchHorizonal) >= abs(marchVertical) ? 1.0 : 0.0;
-        float stepLength = mix(abs(marchVertical), abs(marchHorizonal), shouldMarchHorizontal) * reflectionFineness;
+        float stepLength = mix(abs(marchVertical), abs(marchHorizonal), shouldMarchHorizontal) * reflectionDetail;
         vec2 stepAmount = vec2(marchHorizonal, marchVertical) / max(stepLength, 0.001);
 
         // march fragment
