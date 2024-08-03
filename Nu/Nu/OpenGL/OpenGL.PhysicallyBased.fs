@@ -350,7 +350,7 @@ module PhysicallyBased =
           SsrDetail : int
           SsrDepthMax : int
           SsrDistanceMax : int
-          SsrRefinements : int
+          SsrRefinementsMax : int
           SsrRoughnessMax : int
           SsrSurfaceSlopeMax : int
           SsrRayThicknessMarch : int
@@ -1637,7 +1637,7 @@ module PhysicallyBased =
         let ssrDetail = Gl.GetUniformLocation (shader, "ssrDetail")
         let ssrDepthMax = Gl.GetUniformLocation (shader, "ssrDepthMax")
         let ssrDistanceMax = Gl.GetUniformLocation (shader, "ssrDistanceMax")
-        let ssrRefinements = Gl.GetUniformLocation (shader, "ssrRefinements")
+        let ssrRefinementsMax = Gl.GetUniformLocation (shader, "ssrRefinementsMax")
         let ssrRoughnessMax = Gl.GetUniformLocation (shader, "ssrRoughnessMax")
         let ssrSurfaceSlopeMax = Gl.GetUniformLocation (shader, "ssrSurfaceSlopeMax")
         let ssrRayThicknessMarch = Gl.GetUniformLocation (shader, "ssrRayThicknessMarch")
@@ -1685,7 +1685,7 @@ module PhysicallyBased =
           SsrDetail = ssrDetail
           SsrDepthMax = ssrDepthMax
           SsrDistanceMax = ssrDistanceMax
-          SsrRefinements = ssrRefinements
+          SsrRefinementsMax = ssrRefinementsMax
           SsrRoughnessMax = ssrRoughnessMax
           SsrSurfaceSlopeMax = ssrSurfaceSlopeMax
           SsrRayThicknessMarch = ssrRayThicknessMarch
@@ -2619,7 +2619,7 @@ module PhysicallyBased =
          ssrDetail : single,
          ssrDepthMax : single,
          ssrDistanceMax : single,
-         ssrRefinements : int,
+         ssrRefinementsMax : int,
          ssrRoughnessMax : single,
          ssrSurfaceSlopeMax : single,
          ssrRayThicknessMarch : single,
@@ -2666,7 +2666,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrDetail, ssrDetail)
         Gl.Uniform1 (shader.SsrDepthMax, ssrDepthMax)
         Gl.Uniform1 (shader.SsrDistanceMax, ssrDistanceMax)
-        Gl.Uniform1 (shader.SsrRefinements, ssrRefinements)
+        Gl.Uniform1 (shader.SsrRefinementsMax, ssrRefinementsMax)
         Gl.Uniform1 (shader.SsrRoughnessMax, ssrRoughnessMax)
         Gl.Uniform1 (shader.SsrSurfaceSlopeMax, ssrSurfaceSlopeMax)
         Gl.Uniform1 (shader.SsrRayThicknessMarch, ssrRayThicknessMarch)

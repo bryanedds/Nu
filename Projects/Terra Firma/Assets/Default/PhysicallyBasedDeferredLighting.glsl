@@ -35,7 +35,7 @@ uniform int ssrEnabled;
 uniform float ssrDetail;
 uniform float ssrDepthMax;
 uniform float ssrDistanceMax;
-uniform int ssrRefinements;
+uniform int ssrRefinementsMax;
 uniform float ssrRoughnessMax;
 uniform float ssrSurfaceSlopeMax;
 uniform float ssrRayThicknessMarch;
@@ -200,7 +200,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
             {
                 // perform refinements within walk
                 searchB = searchA + (searchB - searchA) * 0.5;
-                for (int i = 0; i < ssrRefinements; ++i)
+                for (int i = 0; i < ssrRefinementsMax; ++i)
                 {
                     // refine fragment
                     currentFrag = mix(startFrag, stopFrag, searchB);
