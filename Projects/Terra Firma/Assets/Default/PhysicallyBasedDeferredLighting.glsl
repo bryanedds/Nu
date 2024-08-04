@@ -223,9 +223,9 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                             float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
                             specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * specularPower);
                             specularWeight =
-                                (1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
-                                (1.0 - smoothstep(ssrFilterCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
-                                (1.0 - smoothstep(ssrFilterCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                                smoothstep(0.0, 0.5, 1.0 - abs(dot(normal, vec3(view[0][2], view[1][2], view[2][2])))) * // filter out as look angles vertically
+                                smoothstep(0.0, ssrFilterCutoff, 1.0 - positionView.z / -ssrDepthMax) * // filter out as fragment reaches max depth
+                                smoothstep(0.0, ssrFilterCutoff, 1.0 - length(currentPositionView - positionView) / ssrDistanceMax) * // filter out as reflection point reaches max distance from fragment
                                 smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                                 smoothstep(0.0, ssrEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
                             specularWeight = clamp(specularWeight, 0.0, 1.0);
