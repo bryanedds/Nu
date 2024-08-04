@@ -163,6 +163,7 @@ module Render =
     let [<Literal>] SsrFilterCutoffDefault = 0.8f;
     let [<Literal>] SsrEdgeCutoffHorizontalDefault = 0.05f;
     let [<Literal>] SsrEdgeCutoffVerticalDefault = 0.2f;
+    let [<Uniform>] SsrAmbientLightColorDefault = Color.White;
     let [<Literal>] FxaaEnabledDefault = true
     let [<Literal>] LightProbeSizeDefault = 3.0f
     let [<Literal>] BrightnessDefault = 3.0f

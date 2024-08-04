@@ -462,7 +462,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrRayThicknessRefinement : single
       SsrFilterCutoff : single
       SsrEdgeCutoffHorizontal : single
-      SsrEdgeCutoffVertical : single }
+      SsrEdgeCutoffVertical : single
+      SsrAmbientLightColor : Color }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -483,7 +484,8 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrRayThicknessRefinement = Constants.Render.SsrRayThicknessRefinementDefault
           SsrFilterCutoff = Constants.Render.SsrFilterCutoffDefault
           SsrEdgeCutoffHorizontal = Constants.Render.SsrEdgeCutoffHorizontalDefault
-          SsrEdgeCutoffVertical = Constants.Render.SsrEdgeCutoffVerticalDefault }
+          SsrEdgeCutoffVertical = Constants.Render.SsrEdgeCutoffVerticalDefault
+          SsrAmbientLightColor = Constants.Render.SsrAmbientLightColorDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
@@ -2694,11 +2696,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render lighting quad to filter buffer
+        let ssrAmbientLightColor = renderer.LightingConfig.SsrAmbientLightColor.ToArray ()
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
              (if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0),
              renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrDepthMax, renderer.LightingConfig.SsrDistanceMax, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRoughnessMax, renderer.LightingConfig.SsrSurfaceSlopeMax,
-             renderer.LightingConfig.SsrRayThicknessMarch, renderer.LightingConfig.SsrRayThicknessRefinement, renderer.LightingConfig.SsrFilterCutoff, renderer.LightingConfig.SsrEdgeCutoffHorizontal, renderer.LightingConfig.SsrEdgeCutoffVertical,
+             renderer.LightingConfig.SsrRayThicknessMarch, renderer.LightingConfig.SsrRayThicknessRefinement, renderer.LightingConfig.SsrFilterCutoff, renderer.LightingConfig.SsrEdgeCutoffHorizontal, renderer.LightingConfig.SsrEdgeCutoffVertical, ssrAmbientLightColor,
              positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)

@@ -43,6 +43,7 @@ uniform float ssrRayThicknessRefinement;
 uniform float ssrFilterCutoff;
 uniform float ssrEdgeCutoffHorizontal;
 uniform float ssrEdgeCutoffVertical;
+uniform vec4 ssrAmbientLightColor;
 uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
@@ -220,7 +221,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                             // compute screen-space specular color and weight
                             searchB = searchA + (searchB - searchA) * 0.5;
                             float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
-                            specularSS = vec3(texture(albedoTexture, currentUV).rgb * specularPower);
+                            specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrAmbientLightColor.rgb * specularPower);
                             specularWeight =
                                 (1.0 - smoothstep(0.0, 0.5, abs(dot(vec3(view[0][2], view[1][2], view[2][2]), vec3(0.0, 1.0, 0.0))))) * // filter out as look angles vertically
                                 (1.0 - smoothstep(ssrFilterCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
