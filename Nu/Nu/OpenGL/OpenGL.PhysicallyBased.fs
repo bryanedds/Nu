@@ -358,7 +358,7 @@ module PhysicallyBased =
           SsrFilterCutoffUniform : int
           SsrEdgeCutoffHorizontalUniform : int
           SsrEdgeCutoffVerticalUniform : int
-          SsrAmbientLightColorUniform : int
+          SsrLightColorUniform : int
           PositionTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -1646,7 +1646,7 @@ module PhysicallyBased =
         let ssrFilterCutoff = Gl.GetUniformLocation (shader, "ssrFilterCutoff")
         let ssrEdgeCutoffHorizontal = Gl.GetUniformLocation (shader, "ssrEdgeCutoffHorizontal")
         let ssrEdgeCutoffVertical = Gl.GetUniformLocation (shader, "ssrEdgeCutoffVertical")
-        let ssrAmbientLightColor = Gl.GetUniformLocation (shader, "ssrAmbientLightColor")
+        let SsrLightColor = Gl.GetUniformLocation (shader, "ssrLightColor")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -1695,7 +1695,7 @@ module PhysicallyBased =
           SsrFilterCutoffUniform = ssrFilterCutoff
           SsrEdgeCutoffHorizontalUniform = ssrEdgeCutoffHorizontal
           SsrEdgeCutoffVerticalUniform = ssrEdgeCutoffVertical
-          SsrAmbientLightColorUniform = ssrAmbientLightColor
+          SsrLightColorUniform = SsrLightColor
           PositionTextureUniform = positionTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -2630,7 +2630,7 @@ module PhysicallyBased =
          ssrFilterCutoff : single,
          ssrEdgeCutoffHorizontal : single,
          ssrEdgeCutoffVertical : single,
-         ssrAmbientLightColor : single array,
+         ssrLightColor : single array,
          positionTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -2678,7 +2678,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrFilterCutoffUniform, ssrFilterCutoff)
         Gl.Uniform1 (shader.SsrEdgeCutoffHorizontalUniform, ssrEdgeCutoffHorizontal)
         Gl.Uniform1 (shader.SsrEdgeCutoffVerticalUniform, ssrEdgeCutoffVertical)
-        Gl.Uniform4 (shader.SsrAmbientLightColorUniform, ssrAmbientLightColor)
+        Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)
