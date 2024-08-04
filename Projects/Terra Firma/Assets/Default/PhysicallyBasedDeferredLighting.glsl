@@ -220,7 +220,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                         {
                             // compute screen-space specular color and weight
                             searchB = searchA + (searchB - searchA) * 0.5;
-                            float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
+                            float specularPower = 1.0 - roughness; // TODO: figure out how to make this the proper specular power (and give it its proper name).
                             specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * specularPower);
                             vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
                             vec3 normalProj = (projection * vec4(normal, 0.0)).xyz; // NOTE: this is an unfamiliar concept to me...
