@@ -146,7 +146,7 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
     // compute view values
     vec4 positionView = view * position;
     vec3 positionViewNormal = normalize(positionView.xyz);
-    vec3 normalView = normalize(mat3(view) * normal);
+    vec3 normalView = mat3(view) * normal;
     vec3 reflectionView = reflect(positionViewNormal, normalView);
     vec4 startView = vec4(positionView.xyz, 1.0);
     vec4 stopView = vec4(positionView.xyz + reflectionView * ssrDistanceMax, 1.0);
@@ -222,10 +222,12 @@ void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out f
                             searchB = searchA + (searchB - searchA) * 0.5;
                             float specularPower = (1.0 - roughness); // TODO: figure out how to make this the proper specular power (and give it its proper name).
                             specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * specularPower);
+                            vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
+                            vec3 normalProj = (projection * vec4(normal, 0.0)).xyz; // NOTE: this is an unfamiliar concept to me...
                             specularWeight =
-                                smoothstep(0.0, 0.5, 1.0 - abs(dot(normal, vec3(view[0][2], view[1][2], view[2][2])))) * // filter out as look angles vertically
-                                smoothstep(0.0, ssrFilterCutoff, 1.0 - positionView.z / -ssrDepthMax) * // filter out as fragment reaches max depth
-                                smoothstep(0.0, ssrFilterCutoff, 1.0 - length(currentPositionView - positionView) / ssrDistanceMax) * // filter out as reflection point reaches max distance from fragment
+                                smoothstep(0.0, 0.5, 1.0 - abs(dot(forward, normalProj))) * // filter out as look angles vertically
+                                (1.0 - smoothstep(ssrFilterCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
+                                (1.0 - smoothstep(ssrFilterCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                                 smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                                 smoothstep(0.0, ssrEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
                             specularWeight = clamp(specularWeight, 0.0, 1.0);
