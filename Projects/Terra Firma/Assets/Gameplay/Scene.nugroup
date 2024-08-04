@@ -62,7 +62,7 @@
         [SsaoRadius 0.4]
         [SsaoDistanceMax 0.2]
         [SsrEnabled True]
-        [SsrDetail 0.34]
+        [SsrDetail 0.3]
         [SsrDepthMax 24]
         [SsrDistanceMax 24]
         [SsrRefinementsMax 17]
