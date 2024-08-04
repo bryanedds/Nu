@@ -24,7 +24,7 @@ module Log =
     /// Log a purely informational message with Trace.TraceInformation.
     /// Thread-safe.
     let info message =
-        Trace.TraceInformation (getDateTimeNowStr () + "|Info|" + message)
+        Trace.WriteLine (getDateTimeNowStr () + "|Info|" + message)
 
     /// Log a purely informational message once with Trace.WriteLine.
     /// Thread-safe.
@@ -38,7 +38,7 @@ module Log =
     /// Log a warning message with Trace.TraceWarning.
     /// Thread-safe.
     let warn message =
-        Trace.TraceWarning (getDateTimeNowStr () + "|Warning|" + message)
+        Trace.WriteLine (getDateTimeNowStr () + "|Warning|" + message)
 
     /// Log a warning message once with Trace.WriteLine.
     /// Thread-safe.
@@ -52,7 +52,7 @@ module Log =
     /// Log an error message with Trace.TraceError.
     /// Thread-safe.
     let error message =
-        Trace.TraceError (getDateTimeNowStr () + "|Error|" + message)
+        Trace.WriteLine (getDateTimeNowStr () + "|Error|" + message)
 
     /// Log an error message once with Trace.WriteLine.
     /// Thread-safe.
@@ -71,7 +71,7 @@ module Log =
     /// Log an custom log type with Trace.TraceInformation.
     /// Thread-safe.
     let custom header message =
-        Trace.TraceInformation (getDateTimeNowStr () + "|" + header + "|" + message)
+        Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
 
     /// Initialize logging.
     let init (fileNameOpt : string option) =
