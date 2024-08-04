@@ -141,7 +141,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void ssr(vec4 position, float roughness, float metallic, vec3 normal, out vec3 specularSS, out float specularWeight)
+void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, out vec3 specularSS, out float specularWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -220,7 +220,11 @@ void ssr(vec4 position, float roughness, float metallic, vec3 normal, out vec3 s
                         {
                             // compute screen-space specular color and weight
                             searchB = searchA + (searchB - searchA) * 0.5;
-                            float specularIntensity = pow(1.0 - roughness, 4.0);
+                            vec3 f0 = mix(vec3(0.04), albedo, metallic);
+                            vec3 v = normalize(-positionView.xyz);
+                            vec3 h = normalize(v + normal);
+                            vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
+                            vec3 specularIntensity = f * (1.0 - roughness);
                             specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * specularIntensity);
                             vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
                             vec3 normalProj = (projection * vec4(normal, 0.0)).xyz; // NOTE: this is an unfamiliar concept to me...
@@ -375,7 +379,7 @@ void main()
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
             vec4 positionBelow = texture(positionTexture, texCoordsBelow);
-            ssr(positionBelow, roughness, metallic, normal, specularSS, specularWeight);
+            ssr(positionBelow, albedo, roughness, metallic, normal, specularSS, specularWeight);
         }
 
         // compute specular term
