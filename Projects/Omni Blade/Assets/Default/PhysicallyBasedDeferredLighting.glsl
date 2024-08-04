@@ -141,7 +141,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void ssr(vec4 position, vec3 normal, float roughness, out vec3 specularSS, out float specularWeight)
+void ssr(vec4 position, float roughness, vec3 normal, out vec3 specularSS, out float specularWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -368,17 +368,14 @@ void main()
         float specularWeight = 0.0;
         float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
         vec4 positionView = view * position;
-        if (ssrEnabled == 1 &&
-            roughness <= ssrRoughnessMax &&
-            surfaceSlope <= ssrSurfaceSlopeMax &&
-            -positionView.z <= ssrDepthMax)
+        if (ssrEnabled == 1 && roughness <= ssrRoughnessMax && surfaceSlope <= ssrSurfaceSlopeMax && -positionView.z <= ssrDepthMax)
         {
             vec2 texSize = textureSize(positionTexture, 0).xy;
             float texelHeight = 1.0 / texSize.y;
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
             vec4 positionBelow = texture(positionTexture, texCoordsBelow);
-            ssr(positionBelow, normal, roughness, specularSS, specularWeight);
+            ssr(positionBelow, roughness, normal, specularSS, specularWeight);
         }
 
         // compute specular term
@@ -391,7 +388,7 @@ void main()
         vec3 color = lightAccum + ambient;
         color = color / (color + vec3(1.0));
         color = pow(color, vec3(1.0 / GAMMA));
-        color = color + emission * albedo.rgb;
+        color = color + emission * albedo;
 
         // write color
         frag = vec4(color, 1.0);
