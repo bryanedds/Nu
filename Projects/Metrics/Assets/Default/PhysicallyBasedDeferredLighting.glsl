@@ -229,7 +229,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                             vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
                             vec3 normalProj = (projection * vec4(normal, 0.0)).xyz; // NOTE: this is an unfamiliar concept to me...
                             specularWeight =
-                                (1.0 - smoothstep(ssrFilterCutoff, 1.0, max(0.0, dot(forward, normalProj)))) * // filter out as look angles vertically
+                                (1.0 - smoothstep(ssrFilterCutoff, 1.0, max(0.0, dot(forward, normalProj)))) * // filter out as look angles approach forward
                                 (1.0 - smoothstep(ssrFilterCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
                                 (1.0 - smoothstep(ssrFilterCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                                 smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
