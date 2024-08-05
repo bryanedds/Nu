@@ -132,7 +132,7 @@ module WorldModuleEntity =
                 world
             else world
 
-        static member inline private getEntityStateOpt entity world =
+        static member inline internal getEntityStateOpt entity world =
             World.entityStateFinder entity world
 
 #if DEBUG
