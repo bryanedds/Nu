@@ -3423,6 +3423,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity world |> snd else world
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Infer an entity's bounds from the asset(s) it uses. (Ctrl+B)"
+                    ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Delete" then tryDeleteSelectedEntity world |> snd else world
                 ImGui.SameLine ()
