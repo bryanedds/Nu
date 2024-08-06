@@ -189,11 +189,11 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentUV = currentFrag / texSize;
         currentPosition = texture(positionTexture, currentUV);
         currentPositionView = view * currentPosition;
-        currentSearchB = clamp(mix((currentFrag.y - startFrag.y) / marchVertical, (currentFrag.x - startFrag.x) / marchHorizontal, shouldMarchHorizontal), 0.0, 1.0);
+        currentSearchB = shouldMarchHorizontal ? (currentFrag.x - startFrag.x) / marchHorizontal : (currentFrag.y - startFrag.y) / marchVertical;
         currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentSearchB); // uses perspective correct interpolation for depth
         currentDepthView = currentDistanceView - -currentPositionView.z;
         float adaptedThickness = max(currentDistanceView * ssrRayThicknessMarch, ssrRayThicknessMarch);
-        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.99)
+        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.999)
         {
             // perform refinements within walk
             currentSearchB = currentSearchA + (currentSearchB - currentSearchA) * 0.5;
@@ -207,7 +207,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentSearchB); // uses perspective correct interpolation for depth
                 currentDepthView = currentDistanceView - -currentPositionView.z;
                 float adaptedThickness = max(currentDistanceView * ssrRayThicknessRefinement, ssrRayThicknessRefinement);
-                if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.999)
+                if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                 {
                     // compute screen-space specular color and weight
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
