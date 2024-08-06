@@ -191,10 +191,10 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentPosition = texture(positionTexture, currentUV);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
-        currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentProgressB); // uses perspective correct interpolation for depth
+        currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
         currentDepthView = currentDistanceView - -currentPositionView.z;
         float adaptedThickness = max(currentDistanceView * ssrRayThicknessMarch, ssrRayThicknessMarch);
-        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.999)
+        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
@@ -205,7 +205,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 currentUV = currentFrag / texSize;
                 currentPosition = texture(positionTexture, currentUV);
                 currentPositionView = view * currentPosition;
-                currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentProgressB); // uses perspective correct interpolation for depth
+                currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
                 currentDepthView = currentDistanceView - -currentPositionView.z;
                 float adaptedThickness = max(currentDistanceView * ssrRayThicknessRefinement, ssrRayThicknessRefinement);
                 if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
