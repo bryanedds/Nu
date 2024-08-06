@@ -158,11 +158,12 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     startFrag = startFrag * 0.5 + 0.5;
     startFrag *= texSize;
 
-    // compute the fragment at which to end marching
+    // compute the fragment at which to end marching as well as total length
     vec4 stopFrag4 = projection * stopView;
     vec2 stopFrag = stopFrag4.xy / stopFrag4.w;
     stopFrag = stopFrag * 0.5 + 0.5;
     stopFrag *= texSize;
+    float lengthFrag = length(stopFrag - startFrag);
 
     // initialize current fragment
     vec2 currentFrag = startFrag;
@@ -178,8 +179,8 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepCount, 0.001);
 
     // march fragment
-    float currentSearchA = 0.0;
-    float currentSearchB = 0.0;
+    float currentProgressA = 0.0;
+    float currentProgressB = 0.0;
     float currentDistanceView = 0.0;
     float currentDepthView = 0.0;
     for (int i = 0; i < stepCount && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
@@ -189,22 +190,22 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentUV = currentFrag / texSize;
         currentPosition = texture(positionTexture, currentUV);
         currentPositionView = view * currentPosition;
-        currentSearchB = shouldMarchHorizontal ? (currentFrag.x - startFrag.x) / marchHorizontal : (currentFrag.y - startFrag.y) / marchVertical;
-        currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentSearchB); // uses perspective correct interpolation for depth
+        currentProgressB = length(currentFrag - startFrag) / lengthFrag;
+        currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentProgressB); // uses perspective correct interpolation for depth
         currentDepthView = currentDistanceView - -currentPositionView.z;
         float adaptedThickness = max(currentDistanceView * ssrRayThicknessMarch, ssrRayThicknessMarch);
         if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.999)
         {
             // perform refinements within walk
-            currentSearchB = currentSearchA + (currentSearchB - currentSearchA) * 0.5;
+            currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
             for (int j = 0; j < ssrRefinementsMax; ++j)
             {
                 // determine whether we hit geometry within acceptable thickness
-                currentFrag = mix(startFrag, stopFrag, currentSearchB);
+                currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentUV = currentFrag / texSize;
                 currentPosition = texture(positionTexture, currentUV);
                 currentPositionView = view * currentPosition;
-                currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentSearchB); // uses perspective correct interpolation for depth
+                currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentProgressB); // uses perspective correct interpolation for depth
                 currentDepthView = currentDistanceView - -currentPositionView.z;
                 float adaptedThickness = max(currentDistanceView * ssrRayThicknessRefinement, ssrRayThicknessRefinement);
                 if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
@@ -226,9 +227,9 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 }
 
                 // continue in the same direction
-                float temp = currentSearchB;
-                currentSearchB = currentSearchB + (currentSearchB - currentSearchA) * 0.5;
-                currentSearchA = temp;
+                float temp = currentProgressB;
+                currentProgressB = currentProgressB + (currentProgressB - currentProgressA) * 0.5;
+                currentProgressA = temp;
             }
 
             // fin
@@ -237,7 +238,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     }
 
     // otherwise loop
-    currentSearchA = currentSearchB;
+    currentProgressA = currentProgressB;
 }
 
 void main()
