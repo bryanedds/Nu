@@ -1531,11 +1531,10 @@
    [[RigidModelSurfaceDispatcher
      [[Material
        [[AlbedoImageOpt
-         [Some [Default LightProbeModelAlbedo]]]
-        [RoughnessImageOpt
-         [Some [Default LightProbeModelRoughness]]]
+         [Some [Gameplay Slab_Albedo]]]
+        [RoughnessImageOpt None]
         [MetallicImageOpt
-         [Some [Default LightProbeModelMetallic]]]
+         [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
@@ -1653,6 +1652,16 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] False None None]]]
+      [MaterialProperties
+       [[AlbedoOpt
+         [Some [1 1 1 1]]]
+        [RoughnessOpt None]
+        [MetallicOpt None]
+        [AmbientOcclusionOpt None]
+        [EmissionOpt None]
+        [HeightOpt None]
+        [IgnoreLightMapsOpt None]
+        [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name House2]
       [NavShape StaticModelNavShape]
