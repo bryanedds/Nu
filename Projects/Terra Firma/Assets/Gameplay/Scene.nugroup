@@ -101,13 +101,12 @@
              [Some [Default MaterialMetallic]]]
             [AmbientOcclusionImageOpt None]
             [EmissionImageOpt None]
-            [NormalImageOpt
-             [Some [Gameplay Slab_Normal]]]
+            [NormalImageOpt None]
             [HeightImageOpt None]
             [TwoSidedOpt None]]]
           [MaterialProperties
            [[AlbedoOpt None]
-            [RoughnessOpt [Some 1.15]]
+            [RoughnessOpt [Some 0]]
             [MetallicOpt None]
             [AmbientOcclusionOpt None]
             [EmissionOpt None]
@@ -116,6 +115,7 @@
             [OpaqueDistanceOpt None]]]
           [MountOpt [Some ^]]
           [Name Ground]
+          [NavShape EmptyNavShape]
           [Position [-2 1.59 -4.5]]
           [PositionLocal [-2 -0.05 -4.5]]
           [Presence Omnipresent]
@@ -216,6 +216,16 @@
          [[BodyShape
            [StaticModelShape
             [[Gameplay House2] False None None]]]
+          [MaterialProperties
+           [[AlbedoOpt
+             [Some [1 1 1 1]]]
+            [RoughnessOpt None]
+            [MetallicOpt None]
+            [AmbientOcclusionOpt None]
+            [EmissionOpt None]
+            [HeightOpt None]
+            [IgnoreLightMapsOpt None]
+            [OpaqueDistanceOpt None]]]
           [MountOpt [Some ^]]
           [Name House2]
           [NavShape StaticModelNavShape]
@@ -602,25 +612,6 @@
           [RotationLocal [0 -0.67559016 0 0.7372774]]
           [Scale [0.9999999 1 0.9999999]]
           [ScaleLocal [0.9999999 1 0.9999999]]
-          [Size [4.0000005 0.9294096 1.7338116]]
-          [Static True]
-          [StaticModel [Gameplay Barrier]]]
-         []]
-        [RigidModelDispatcher
-         [[BodyShape
-           [StaticModelShape
-            [[Gameplay Barrier] True None None]]]
-          [MountOpt [Some ^]]
-          [Name Barrier-0017]
-          [NavShape StaticModelNavShape]
-          [Offset [0.110984206 0.46470478 0.8669058]]
-          [Position [7.8 1.64 6.8]]
-          [PositionLocal [7.8 0 6.8]]
-          [Presence Omnipresent]
-          [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
-          [Rotation [0 0.9063078 0 -0.42261824]]
-          [RotationLocal [0 0.9063078 0 -0.42261827]]
-          [Scale [1.0000001 1 1.0000001]]
           [Size [4.0000005 0.9294096 1.7338116]]
           [Static True]
           [StaticModel [Gameplay Barrier]]]
@@ -1532,7 +1523,8 @@
      [[Material
        [[AlbedoImageOpt
          [Some [Gameplay Slab_Albedo]]]
-        [RoughnessImageOpt None]
+        [RoughnessImageOpt
+         [Some [Default MaterialRoughness]]]
         [MetallicImageOpt
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
@@ -1551,10 +1543,10 @@
         [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name Ground]
+      [NavShape EmptyNavShape]
       [Position [-2 1.59 -4.5]]
       [PositionLocal [-2 -0.05 -4.5]]
       [Presence Omnipresent]
-      [RotationLocal [0 0 -0.72676146 0.6868899]]
       [Scale [26.9 0.1 30.4]]
       [ScaleLocal [26.9 0.1 30.4]]
       [Static True]]
@@ -2970,13 +2962,12 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Gameplay Slab_Normal]]]
+        [NormalImageOpt None]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
-        [RoughnessOpt [Some 1.15]]
+        [RoughnessOpt [Some 0]]
         [MetallicOpt None]
         [AmbientOcclusionOpt None]
         [EmissionOpt None]
@@ -2985,6 +2976,7 @@
         [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name Ground]
+      [NavShape EmptyNavShape]
       [Position [-3.7000003 1.25 25.5]]
       [PositionLocal [-2 -0.05 -4.5]]
       [Presence Omnipresent]
@@ -3070,6 +3062,16 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] False None None]]]
+      [MaterialProperties
+       [[AlbedoOpt
+         [Some [1 1 1 1]]]
+        [RoughnessOpt None]
+        [MetallicOpt None]
+        [AmbientOcclusionOpt None]
+        [EmissionOpt None]
+        [HeightOpt None]
+        [IgnoreLightMapsOpt None]
+        [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name House2]
       [NavShape StaticModelNavShape]
@@ -3396,24 +3398,6 @@
       [RotationLocal [0 -0.67559016 0 0.7372774]]
       [Scale [0.9999998 1 0.9999998]]
       [ScaleLocal [0.9999999 1 0.9999999]]
-      [Size [4.0000005 0.9294096 1.7338116]]
-      [Static True]
-      [StaticModel [Gameplay Barrier]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
-      [MountOpt [Some ^]]
-      [Name Barrier-0017]
-      [NavShape StaticModelNavShape]
-      [Offset [0.110984206 0.46470478 0.8669058]]
-      [Position [-14.999999 1.3 35.3]]
-      [PositionLocal [7.8 0 6.8]]
-      [Presence Omnipresent]
-      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
-      [Rotation [0 0.9396927 0 0.34202012]]
-      [RotationLocal [0 0.9063078 0 -0.42261827]]
       [Size [4.0000005 0.9294096 1.7338116]]
       [Static True]
       [StaticModel [Gameplay Barrier]]]
@@ -4259,13 +4243,12 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Gameplay Slab_Normal]]]
+        [NormalImageOpt None]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
-        [RoughnessOpt [Some 1.15]]
+        [RoughnessOpt [Some 0]]
         [MetallicOpt None]
         [AmbientOcclusionOpt None]
         [EmissionOpt None]
@@ -4274,6 +4257,7 @@
         [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name Ground]
+      [NavShape EmptyNavShape]
       [Position [26.7 2.05 27.2]]
       [PositionLocal [-2 -0.05 -4.5]]
       [Presence Omnipresent]
@@ -4359,6 +4343,16 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] False None None]]]
+      [MaterialProperties
+       [[AlbedoOpt
+         [Some [1 1 1 1]]]
+        [RoughnessOpt None]
+        [MetallicOpt None]
+        [AmbientOcclusionOpt None]
+        [EmissionOpt None]
+        [HeightOpt None]
+        [IgnoreLightMapsOpt None]
+        [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name House2]
       [NavShape StaticModelNavShape]
@@ -4674,24 +4668,6 @@
       [RotationLocal [0 -0.67559016 0 0.7372774]]
       [Scale [0.9999999 1 0.9999999]]
       [ScaleLocal [0.9999999 1 0.9999999]]
-      [Size [4.0000005 0.9294096 1.7338116]]
-      [Static True]
-      [StaticModel [Gameplay Barrier]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
-      [MountOpt [Some ^]]
-      [Name Barrier-0017]
-      [NavShape StaticModelNavShape]
-      [Offset [0.110984206 0.46470478 0.8669058]]
-      [Position [16.900002 2.1 15.9]]
-      [PositionLocal [7.8 0 6.8]]
-      [Presence Omnipresent]
-      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
-      [Rotation [0 0.42261827 0 0.9063078]]
-      [RotationLocal [0 0.9063078 0 -0.42261827]]
       [Size [4.0000005 0.9294096 1.7338116]]
       [Static True]
       [StaticModel [Gameplay Barrier]]]
@@ -5510,13 +5486,12 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt
-         [Some [Gameplay Slab_Normal]]]
+        [NormalImageOpt None]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
-        [RoughnessOpt [Some 1.15]]
+        [RoughnessOpt [Some 0]]
         [MetallicOpt None]
         [AmbientOcclusionOpt None]
         [EmissionOpt None]
@@ -5525,6 +5500,7 @@
         [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name Ground]
+      [NavShape EmptyNavShape]
       [Position [26.8 2.05 -4.5]]
       [PositionLocal [-2 -0.05 -4.5]]
       [Presence Omnipresent]
@@ -5610,6 +5586,16 @@
      [[BodyShape
        [StaticModelShape
         [[Gameplay House2] False None None]]]
+      [MaterialProperties
+       [[AlbedoOpt
+         [Some [1 1 1 1]]]
+        [RoughnessOpt None]
+        [MetallicOpt None]
+        [AmbientOcclusionOpt None]
+        [EmissionOpt None]
+        [HeightOpt None]
+        [IgnoreLightMapsOpt None]
+        [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name House2]
       [NavShape StaticModelNavShape]
@@ -5925,25 +5911,6 @@
       [RotationLocal [0 -0.67559016 0 0.7372774]]
       [Scale [0.9999999 1 0.9999999]]
       [ScaleLocal [0.9999999 1 0.9999999]]
-      [Size [4.0000005 0.9294096 1.7338116]]
-      [Static True]
-      [StaticModel [Gameplay Barrier]]]
-     []]
-    [RigidModelDispatcher
-     [[BodyShape
-       [StaticModelShape
-        [[Gameplay Barrier] True None None]]]
-      [MountOpt [Some ^]]
-      [Name Barrier-0017]
-      [NavShape StaticModelNavShape]
-      [Offset [0.110984206 0.46470478 0.8669058]]
-      [Position [16.999998 2.1 -15.799999]]
-      [PositionLocal [7.8 0 6.8]]
-      [Presence Omnipresent]
-      [PropagationSourceOpt [Some Game/Gameplay/Scene/Villa/Barrier]]
-      [Rotation [0 0.42261827 0 0.90630776]]
-      [RotationLocal [0 0.9063078 0 -0.42261827]]
-      [Scale [1.0000001 1 1.0000001]]
       [Size [4.0000005 0.9294096 1.7338116]]
       [Static True]
       [StaticModel [Gameplay Barrier]]]
