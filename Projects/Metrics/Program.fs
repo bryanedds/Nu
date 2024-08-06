@@ -56,7 +56,7 @@ type MyGameDispatcher () =
 
     override this.Update (game, world) =
         let world = base.Update (game, world)        
-        if World.isKeyboardAltDown world & World.isKeyboardKeyDown KeyboardKey.F4 world
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world
 #else
@@ -103,7 +103,7 @@ type MmccGameDispatcher () =
 
     override this.Update (game, world) =
         let world = base.Update (game, world)        
-        if World.isKeyboardAltDown world & World.isKeyboardKeyDown KeyboardKey.F4 world
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world
 #endif
