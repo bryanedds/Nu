@@ -193,7 +193,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentDistanceView = -startView.z * -stopView.z / mix(-stopView.z, -startView.z, currentSearchB); // uses perspective correct interpolation for depth
         currentDepthView = currentDistanceView - -currentPositionView.z;
         float adaptedThickness = max(currentDistanceView * ssrRayThicknessMarch, ssrRayThicknessMarch);
-        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.99)
         {
             // perform refinements within walk
             currentSearchB = currentSearchA + (currentSearchB - currentSearchA) * 0.5;
@@ -210,7 +210,6 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness && max(0.0, dot(texture(normalPlusTexture, currentUV).xyz, normal)) < 0.999)
                 {
                     // compute screen-space specular color and weight
-                    currentSearchB = currentSearchA + (currentSearchB - currentSearchA) * 0.5;
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
                     vec3 v = normalize(-positionView.xyz);
                     vec3 h = normalize(v + normal);
