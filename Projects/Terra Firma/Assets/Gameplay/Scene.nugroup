@@ -64,7 +64,7 @@
         [SsrEnabled True]
         [SsrDetail 0.3]
         [SsrDepthMax 24]
-        [SsrDistanceMax 24]
+        [SsrDistanceMax 16]
         [SsrRefinementsMax 17]
         [SsrRoughnessMax 0.5]
         [SsrSurfaceSlopeMax 0.1]
