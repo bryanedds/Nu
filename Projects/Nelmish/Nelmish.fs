@@ -46,7 +46,7 @@ type NelmishDispatcher () =
                         Entity.Text == "Reset"
                         Entity.ClickEvent => Reset]]]]
 
-    // this is just a quick hack to exit the game upon hitting Alt+F4. generally, you'd want to define an MMCC mappin
+    // this is just a quick hack to exit the game upon hitting Alt+F4. generally, you'd want to define an MMCC mapping
     // from a Game.UpdateEvent to a command to handle it, but that's not the point of this little code demo.
     override this.Update (game, world) =
         let world = base.Update (game, world)        
