@@ -174,15 +174,15 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     float marchHorizontal = stopFrag.x - startFrag.x;
     float marchVertical = stopFrag.y - startFrag.y;
     bool shouldMarchHorizontal = abs(marchHorizontal) >= abs(marchVertical);
-    float stepLength = abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrDetail;
-    vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepLength, 0.001);
+    float stepCount = abs(shouldMarchHorizontal ? marchHorizontal : marchVertical) * ssrDetail;
+    vec2 stepAmount = vec2(marchHorizontal, marchVertical) / max(stepCount, 0.001);
 
     // march fragment
     float currentSearchA = 0.0;
     float currentSearchB = 0.0;
     float currentDistanceView = 0.0;
     float currentDepthView = 0.0;
-    for (int i = 0; i < int(stepLength) && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
+    for (int i = 0; i < stepCount && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
     {
         // determine whether we hit geometry within acceptable thickness
         currentFrag += stepAmount;
