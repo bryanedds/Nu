@@ -355,7 +355,9 @@ module PhysicallyBased =
           SsrSurfaceSlopeMaxUniform : int
           SsrRayThicknessMarchUniform : int
           SsrRayThicknessRefinementUniform : int
-          SsrFilterCutoffUniform : int
+          SsrRoughnessFilterCutoffUniform : int
+          SsrDepthFilterCutoffUniform : int
+          SsrDistanceFilterCutoffUniform : int
           SsrEdgeCutoffHorizontalUniform : int
           SsrEdgeCutoffVerticalUniform : int
           SsrLightColorUniform : int
@@ -1643,7 +1645,9 @@ module PhysicallyBased =
         let ssrSurfaceSlopeMax = Gl.GetUniformLocation (shader, "ssrSurfaceSlopeMax")
         let ssrRayThicknessMarch = Gl.GetUniformLocation (shader, "ssrRayThicknessMarch")
         let ssrRayThicknessRefinement = Gl.GetUniformLocation (shader, "ssrRayThicknessRefinement")
-        let ssrFilterCutoff = Gl.GetUniformLocation (shader, "ssrFilterCutoff")
+        let ssrRoughnessFilterCutoff = Gl.GetUniformLocation (shader, "ssrRoughnessFilterCutoff")
+        let ssrDepthFilterCutoff = Gl.GetUniformLocation (shader, "ssrDepthFilterCutoff")
+        let ssrDistanceFilterCutoff = Gl.GetUniformLocation (shader, "ssrDistanceFilterCutoff")
         let ssrEdgeCutoffHorizontal = Gl.GetUniformLocation (shader, "ssrEdgeCutoffHorizontal")
         let ssrEdgeCutoffVertical = Gl.GetUniformLocation (shader, "ssrEdgeCutoffVertical")
         let SsrLightColor = Gl.GetUniformLocation (shader, "ssrLightColor")
@@ -1692,7 +1696,9 @@ module PhysicallyBased =
           SsrSurfaceSlopeMaxUniform = ssrSurfaceSlopeMax
           SsrRayThicknessMarchUniform = ssrRayThicknessMarch
           SsrRayThicknessRefinementUniform = ssrRayThicknessRefinement
-          SsrFilterCutoffUniform = ssrFilterCutoff
+          SsrRoughnessFilterCutoffUniform = ssrRoughnessFilterCutoff
+          SsrDepthFilterCutoffUniform = ssrDepthFilterCutoff
+          SsrDistanceFilterCutoffUniform = ssrDistanceFilterCutoff
           SsrEdgeCutoffHorizontalUniform = ssrEdgeCutoffHorizontal
           SsrEdgeCutoffVerticalUniform = ssrEdgeCutoffVertical
           SsrLightColorUniform = SsrLightColor
@@ -2627,7 +2633,9 @@ module PhysicallyBased =
          ssrSurfaceSlopeMax : single,
          ssrRayThicknessMarch : single,
          ssrRayThicknessRefinement : single,
-         ssrFilterCutoff : single,
+         ssrRoughnessFilterCutoff : single,
+         ssrDepthFilterCutoff : single,
+         ssrDistanceFilterCutoff : single,
          ssrEdgeCutoffHorizontal : single,
          ssrEdgeCutoffVertical : single,
          ssrLightColor : single array,
@@ -2675,7 +2683,9 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrSurfaceSlopeMaxUniform, ssrSurfaceSlopeMax)
         Gl.Uniform1 (shader.SsrRayThicknessMarchUniform, ssrRayThicknessMarch)
         Gl.Uniform1 (shader.SsrRayThicknessRefinementUniform, ssrRayThicknessRefinement)
-        Gl.Uniform1 (shader.SsrFilterCutoffUniform, ssrFilterCutoff)
+        Gl.Uniform1 (shader.SsrRoughnessFilterCutoffUniform, ssrRoughnessFilterCutoff)
+        Gl.Uniform1 (shader.SsrDepthFilterCutoffUniform, ssrDepthFilterCutoff)
+        Gl.Uniform1 (shader.SsrDistanceFilterCutoffUniform, ssrDistanceFilterCutoff)
         Gl.Uniform1 (shader.SsrEdgeCutoffHorizontalUniform, ssrEdgeCutoffHorizontal)
         Gl.Uniform1 (shader.SsrEdgeCutoffVerticalUniform, ssrEdgeCutoffVertical)
         Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor)
