@@ -40,9 +40,9 @@ uniform float ssrRoughnessMax;
 uniform float ssrSurfaceSlopeMax;
 uniform float ssrRayThicknessMarch;
 uniform float ssrRayThicknessRefinement;
-uniform float ssrRoughnessFilterCutoff;
-uniform float ssrDepthFilterCutoff;
-uniform float ssrDistanceFilterCutoff;
+uniform float ssrRoughnessCutoff;
+uniform float ssrDepthCutoff;
+uniform float ssrDistanceCutoff;
 uniform float ssrEdgeCutoffHorizontal;
 uniform float ssrEdgeCutoffVertical;
 uniform vec3 ssrLightColor;
@@ -220,9 +220,9 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                     vec3 specularIntensity = f * (1.0 - roughness);
                     specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * specularIntensity);
                     specularWeight =
-                        (1.0 - smoothstep(1.0 - ssrRoughnessFilterCutoff, 1.0, roughness / ssrRoughnessMax)) * // filter out as fragment reaches max roughtness
-                        (1.0 - smoothstep(1.0 - ssrDepthFilterCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
-                        (1.0 - smoothstep(1.0 - ssrDistanceFilterCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                        (1.0 - smoothstep(1.0 - ssrRoughnessCutoff, 1.0, roughness / ssrRoughnessMax)) * // filter out as fragment reaches max roughtness
+                        (1.0 - smoothstep(1.0 - ssrDepthCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
+                        (1.0 - smoothstep(1.0 - ssrDistanceCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                         smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                         smoothstep(0.0, ssrEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
                     specularWeight = clamp(specularWeight, 0.0, 1.0);

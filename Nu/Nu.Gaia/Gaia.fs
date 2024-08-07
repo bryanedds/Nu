@@ -2661,9 +2661,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable ssrSurfaceSlopeMax = lighting3dConfig.SsrSurfaceSlopeMax
                 let mutable ssrRayThicknessMarch = lighting3dConfig.SsrRayThicknessMarch
                 let mutable ssrRayThicknessRefinement = lighting3dConfig.SsrRayThicknessRefinement
-                let mutable ssrRoughnessFilterCutoff = lighting3dConfig.SsrRoughnessFilterCutoff
-                let mutable ssrDepthFilterCutoff = lighting3dConfig.SsrDepthFilterCutoff
-                let mutable ssrDistanceFilterCutoff = lighting3dConfig.SsrDistanceFilterCutoff
+                let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
+                let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
+                let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
                 let mutable ssrEdgeCutoffHorizontal = lighting3dConfig.SsrEdgeCutoffHorizontal
                 let mutable ssrEdgeCutoffVertical = lighting3dConfig.SsrEdgeCutoffVertical
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
@@ -2684,9 +2684,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Max", &ssrSurfaceSlopeMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness March", &ssrRayThicknessMarch, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness Refinement", &ssrRayThicknessRefinement, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Filter Cutoff", &ssrRoughnessFilterCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Filter Cutoff", &ssrDepthFilterCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Filter Cutoff", &ssrDistanceFilterCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Filter Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Filter Cutoff", &ssrDepthCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Filter Cutoff", &ssrDistanceCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Horizontal", &ssrEdgeCutoffHorizontal, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Vertical", &ssrEdgeCutoffVertical, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; focusProperty ()
@@ -2708,9 +2708,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           SsrSurfaceSlopeMax = ssrSurfaceSlopeMax
                           SsrRayThicknessMarch = ssrRayThicknessMarch
                           SsrRayThicknessRefinement = ssrRayThicknessRefinement
-                          SsrRoughnessFilterCutoff = ssrRoughnessFilterCutoff
-                          SsrDepthFilterCutoff = ssrDepthFilterCutoff
-                          SsrDistanceFilterCutoff = ssrDistanceFilterCutoff
+                          SsrRoughnessCutoff = ssrRoughnessCutoff
+                          SsrDepthCutoff = ssrDepthCutoff
+                          SsrDistanceCutoff = ssrDistanceCutoff
                           SsrEdgeCutoffHorizontal = ssrEdgeCutoffHorizontal
                           SsrEdgeCutoffVertical = ssrEdgeCutoffVertical
                           SsrLightColor = Color ssrLightColor }
