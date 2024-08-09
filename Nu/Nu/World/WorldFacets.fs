@@ -2322,6 +2322,7 @@ type BasicStaticBillboardEmitterFacet () =
         match tryMakeEmitter entity world with
         | Some emitter ->
             let mutable transform = entity.GetTransform world
+            let renderType = match entity.GetEmitterRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             { emitter with
                 Body =
                     { Position = transform.Position
@@ -2333,7 +2334,8 @@ type BasicStaticBillboardEmitterFacet () =
                 Absolute = transform.Absolute
                 Material = entity.GetEmitterMaterial world
                 ParticleSeed = entity.GetBasicParticleSeed world
-                Constraint = entity.GetEmitterConstraint world }
+                Constraint = entity.GetEmitterConstraint world
+                RenderType = renderType }
         | None ->
             Particles.BasicStaticBillboardEmitter.makeEmpty
                 world.GameTime
