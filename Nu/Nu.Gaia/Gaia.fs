@@ -2659,8 +2659,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
                 let mutable ssrRoughnessMax = lighting3dConfig.SsrRoughnessMax
                 let mutable ssrSurfaceSlopeMax = lighting3dConfig.SsrSurfaceSlopeMax
-                let mutable ssrRayThicknessMarch = lighting3dConfig.SsrRayThicknessMarch
-                let mutable ssrRayThicknessRefinement = lighting3dConfig.SsrRayThicknessRefinement
+                let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
                 let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
                 let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
                 let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
@@ -2683,8 +2682,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Max", &ssrRoughnessMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Max", &ssrSurfaceSlopeMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness March", &ssrRayThicknessMarch, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness Refinement", &ssrRayThicknessRefinement, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
@@ -2708,8 +2706,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           SsrRefinementsMax = ssrRefinementsMax
                           SsrRoughnessMax = ssrRoughnessMax
                           SsrSurfaceSlopeMax = ssrSurfaceSlopeMax
-                          SsrRayThicknessMarch = ssrRayThicknessMarch
-                          SsrRayThicknessRefinement = ssrRayThicknessRefinement
+                          SsrRayThickness = ssrRayThickness
                           SsrRoughnessCutoff = ssrRoughnessCutoff
                           SsrDepthCutoff = ssrDepthCutoff
                           SsrDistanceCutoff = ssrDistanceCutoff

@@ -38,8 +38,7 @@ uniform float ssrDistanceMax;
 uniform int ssrRefinementsMax;
 uniform float ssrRoughnessMax;
 uniform float ssrSurfaceSlopeMax;
-uniform float ssrRayThicknessMarch;
-uniform float ssrRayThicknessRefinement;
+uniform float ssrRayThickness;
 uniform float ssrRoughnessCutoff;
 uniform float ssrDepthCutoff;
 uniform float ssrDistanceCutoff;
@@ -196,7 +195,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
         currentDepthView = currentDistanceView - -currentPositionView.z;
-        float adaptedThickness = max(currentDistanceView * ssrRayThicknessMarch, ssrRayThicknessMarch);
+        float adaptedThickness = max(currentDistanceView * ssrRayThickness, ssrRayThickness);
         if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
         {
             // perform refinements within walk
@@ -210,7 +209,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 currentPositionView = view * currentPosition;
                 currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
                 currentDepthView = currentDistanceView - -currentPositionView.z;
-                float adaptedThickness = max(currentDistanceView * ssrRayThicknessRefinement, ssrRayThicknessRefinement);
+                float adaptedThickness = max(currentDistanceView * ssrRayThickness, ssrRayThickness);
                 if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
                 {
                     // compute screen-space specular color and weight
