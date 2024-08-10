@@ -907,7 +907,7 @@ type FillBarFacet () =
          define Entity.FillInset 0.0f
          define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
          define Entity.FillImage Assets.Default.White
-         define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
+         define Entity.BorderColor (Color (1.0f, 1.0f, 1.0f, 1.0f))
          define Entity.BorderImage Assets.Default.Border]
 
     override this.Render (_, entity, world) =
@@ -917,7 +917,7 @@ type FillBarFacet () =
         let perimeter = transform.Perimeter // gui currently ignores rotation
         let horizon = transform.Horizon
         let mutable borderTransform = Transform.makeDefault transform.PerimeterCentered
-        borderTransform.Position <- perimeter.Min
+        borderTransform.Position <- perimeter.Center
         borderTransform.Size <- perimeter.Size
         borderTransform.Offset <- transform.Offset
         borderTransform.Elevation <- transform.Elevation + 0.5f
@@ -943,8 +943,8 @@ type FillBarFacet () =
         // fill sprite
         let fillSize = perimeter.Size
         let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
-        let fillPosition = perimeter.Min + v3 fillInset fillInset 0.0f
         let fillWidth = (fillSize.X - fillInset * 2.0f) * entity.GetFill world
+        let fillPosition = perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
         let fillHeight = fillSize.Y - fillInset * 2.0f
         let fillSize = v3 fillWidth fillHeight 0.0f
         let mutable fillTransform = Transform.makeDefault transform.PerimeterCentered
