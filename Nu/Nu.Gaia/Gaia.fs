@@ -2667,6 +2667,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable ssrEdgeCutoffHorizontal = lighting3dConfig.SsrEdgeCutoffHorizontal
                 let mutable ssrEdgeCutoffVertical = lighting3dConfig.SsrEdgeCutoffVertical
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
+                let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                 lighting3dChanged <- ImGui.InputText ("Shadow Bias Acne", &shadowBiasAcneStr, 4096u) || lighting3dChanged; focusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Shadow Bias Bleed", &shadowBiasBleed, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
@@ -2690,6 +2691,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Horizontal", &ssrEdgeCutoffHorizontal, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Vertical", &ssrEdgeCutoffVertical, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 32.0f) || lighting3dChanged; focusProperty ()
                 if lighting3dChanged then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -2713,7 +2715,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           SsrDistanceCutoff = ssrDistanceCutoff
                           SsrEdgeCutoffHorizontal = ssrEdgeCutoffHorizontal
                           SsrEdgeCutoffVertical = ssrEdgeCutoffVertical
-                          SsrLightColor = Color ssrLightColor }
+                          SsrLightColor = Color ssrLightColor
+                          SsrLightBrightness = ssrLightBrightness }
                     setProperty lighting3dConfig propertyDescriptor simulant world
                 else world
             | _ ->

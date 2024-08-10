@@ -361,6 +361,7 @@ module PhysicallyBased =
           SsrEdgeCutoffHorizontalUniform : int
           SsrEdgeCutoffVerticalUniform : int
           SsrLightColorUniform : int
+          SsrLightBrightnessUniform : int
           PositionTextureUniform : int
           AlbedoTextureUniform : int
           MaterialTextureUniform : int
@@ -1651,6 +1652,7 @@ module PhysicallyBased =
         let ssrEdgeCutoffHorizontal = Gl.GetUniformLocation (shader, "ssrEdgeCutoffHorizontal")
         let ssrEdgeCutoffVertical = Gl.GetUniformLocation (shader, "ssrEdgeCutoffVertical")
         let SsrLightColor = Gl.GetUniformLocation (shader, "ssrLightColor")
+        let SsrLightBrightness = Gl.GetUniformLocation (shader, "ssrLightBrightness")
         let positionTextureUniform = Gl.GetUniformLocation (shader, "positionTexture")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let materialTextureUniform = Gl.GetUniformLocation (shader, "materialTexture")
@@ -1702,6 +1704,7 @@ module PhysicallyBased =
           SsrEdgeCutoffHorizontalUniform = ssrEdgeCutoffHorizontal
           SsrEdgeCutoffVerticalUniform = ssrEdgeCutoffVertical
           SsrLightColorUniform = SsrLightColor
+          SsrLightBrightnessUniform = SsrLightBrightness
           PositionTextureUniform = positionTextureUniform
           AlbedoTextureUniform = albedoTextureUniform
           MaterialTextureUniform = materialTextureUniform
@@ -2639,6 +2642,7 @@ module PhysicallyBased =
          ssrEdgeCutoffHorizontal : single,
          ssrEdgeCutoffVertical : single,
          ssrLightColor : single array,
+         ssrLightBrightness : single,
          positionTexture : Texture.Texture,
          albedoTexture : Texture.Texture,
          materialTexture : Texture.Texture,
@@ -2689,6 +2693,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrEdgeCutoffHorizontalUniform, ssrEdgeCutoffHorizontal)
         Gl.Uniform1 (shader.SsrEdgeCutoffVerticalUniform, ssrEdgeCutoffVertical)
         Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor)
+        Gl.Uniform1 (shader.SsrLightBrightnessUniform, ssrLightBrightness)
         Gl.Uniform1 (shader.PositionTextureUniform, 0)
         Gl.Uniform1 (shader.AlbedoTextureUniform, 1)
         Gl.Uniform1 (shader.MaterialTextureUniform, 2)

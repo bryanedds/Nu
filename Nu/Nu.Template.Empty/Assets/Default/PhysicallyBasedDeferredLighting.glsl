@@ -46,6 +46,7 @@ uniform float ssrDistanceCutoff;
 uniform float ssrEdgeCutoffHorizontal;
 uniform float ssrEdgeCutoffVertical;
 uniform vec3 ssrLightColor;
+uniform float ssrLightBrightness;
 uniform sampler2D positionTexture;
 uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
@@ -218,9 +219,9 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * specularIntensity);
+                    specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
                     specularWeight =
-                        (1.0 - smoothstep(1.0 - ssrRoughnessCutoff, 1.0, roughness / ssrRoughnessMax)) * // filter out as fragment reaches max roughtness
+                        (1.0 - smoothstep(1.0 - ssrRoughnessCutoff, 1.0, roughness / ssrRoughnessMax)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrDistanceCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
                         smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
