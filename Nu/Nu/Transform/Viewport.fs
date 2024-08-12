@@ -33,11 +33,12 @@ module Viewport =
         /// Compute the 2d projection matrix.
         member this.Projection2d =
             Matrix4x4.CreateOrthographicOffCenter
-                (single (this.Bounds.Min.X),
+                (single this.Bounds.Min.X,
                  single (this.Bounds.Min.X + this.Bounds.Size.X),
-                 single (this.Bounds.Min.Y),
+                 single this.Bounds.Min.Y,
                  single (this.Bounds.Min.Y + this.Bounds.Size.Y),
-                 -1.0f, 1.0f)
+                 -1.0f,
+                 1.0f)
 
         /// Compute the 2d view projection matrix.
         member this.ViewProjection2d (absolute, eyeCenter, eyeSize) =
@@ -81,10 +82,7 @@ module Viewport =
         /// Transform the given mouse position to 2d world space.
         member this.MouseToWorld2d (absolute, mousePosition, eyeCenter : Vector2, eyeSize : Vector2) =
             let mouseScreen = this.MouseTo2dScreen (mousePosition, eyeCenter, eyeSize)
-            let view =
-                if absolute
-                then Matrix4x4.Identity
-                else Matrix4x4.CreateTranslation eyeCenter.V3
+            let view = if absolute then Matrix4x4.Identity else Matrix4x4.CreateTranslation eyeCenter.V3
             (mouseScreen.V3.Transform view).V2
 
         /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
