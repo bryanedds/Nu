@@ -23,7 +23,7 @@ module Stream =
             let subscriptionAddress = ntoa<'a> (scstring subscriptionId)
             let unsubscribe = fun world -> World.unsubscribe subscriptionId world
             let callback = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "stream" "" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "make" "" evt.Trace
                 let world = World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
                 (Cascade, world)
             let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
@@ -153,7 +153,7 @@ module Stream =
                 let (passed, world) = pred evt world
                 let world =
                     if passed then
-                        let eventTrace = EventTrace.record "Stream" "filterEvent" "" evt.Trace
+                        let eventTrace = EventTrace.record "Stream" "filterEffect" "" evt.Trace
                         World.publishPlus<'a, Simulant> evt.Data subscriptionAddress eventTrace globalSimulant false false world
                     else world
                 (Cascade, world)
@@ -174,7 +174,7 @@ module Stream =
                 World.unsubscribe subscriptionId world
             let callback = fun evt world ->
                 let (eventData, world) = mapper evt world
-                let eventTrace = EventTrace.record "Stream" "mapEvent" "" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "mapEffect" "" evt.Trace
                 let world = World.publishPlus<'b, Simulant> eventData subscriptionAddress eventTrace globalSimulant false false world
                 (Cascade, world)
             let world = World.subscribePlus<'a, Simulant> subscriptionId callback eventAddress globalSimulant world |> snd
@@ -208,7 +208,7 @@ module Stream =
 
             // callback for 'a events
             let callback = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "product" "'a" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "map2Effect" "'a" evt.Trace
                 let (aList : Event<'a, Simulant> list, bList : Event<'b, Simulant> list) = World.getEventState stateId world
                 let aList = evt :: aList
                 let (state, world) =
@@ -224,7 +224,7 @@ module Stream =
 
             // callback for 'b events
             let callback' = fun evt world ->
-                let eventTrace = EventTrace.record "Stream" "product" "'b" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "map2Effect" "'b" evt.Trace
                 let (aList : Event<'a, Simulant> list, bList : Event<'b, Simulant> list) = World.getEventState stateId world
                 let bList = evt :: bList
                 let (state, world) =
@@ -394,12 +394,12 @@ module Stream =
                 World.unsubscribe subscriptionId' world
             let callback = fun evt world ->
                 let eventData = Left evt.Data
-                let eventTrace = EventTrace.record "Stream" "sum" "" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "sum" "a" evt.Trace
                 let world = World.publishPlus<Either<'a, 'b>, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
                 (Cascade, world)
             let callback' = fun evt world ->
                 let eventData = Right evt.Data
-                let eventTrace = EventTrace.record "Stream" "sum" "" evt.Trace
+                let eventTrace = EventTrace.record "Stream" "sum" "b" evt.Trace
                 let world = World.publishPlus<Either<'a, 'b>, Simulant> eventData subscriptionAddress'' eventTrace globalSimulant false false world
                 (Cascade, world)
             let world = World.subscribePlus<'b, Simulant> subscriptionId' callback' subscriptionAddress' globalSimulant world |> snd
