@@ -4240,10 +4240,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let newFileName = NewProjectName + ".fsproj"
             let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
             let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
-            if not validName then ImGui.Text "Invalid project name!"
             let validDirectory = not (Directory.Exists newProjectDir)
-            if not validDirectory then ImGui.Text "Project already exists!"
-            if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) then
+            if not validName then
+                ImGui.Text "Invalid project name!"
+            elif not validDirectory then
+                ImGui.Text "Project already exists!"
+            elif ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter then
 
                 // choose a template, ensuring it exists
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
