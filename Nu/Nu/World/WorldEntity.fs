@@ -500,6 +500,12 @@ module WorldEntityModule =
         /// Get an entity's descendants.
         member this.GetDescendants world = World.getEntityDescendants this world
 
+        /// Check that entity has entities to propagate its structure to.
+        member this.HasPropagationTargets world = World.hasPropagationTargets this world
+
+        /// Find all the entities to which an entity may propagate its structure.
+        member this.GetPropagationTargets world = World.getPropagationTargets this world
+
         /// Apply physics changes to an entity.
         member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
             let mutable transformOld = this.GetTransform world
@@ -839,7 +845,7 @@ module WorldEntityModule =
                     List.fold (fun world (descendantSource, descendentEntity) ->
                         if descendentEntity.GetExists world then
                             let world = World.setEntityPropagatedDescriptorOpt None descendentEntity world |> snd'
-                            if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                            if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                             then World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> snd'
                             else world
                         else world)

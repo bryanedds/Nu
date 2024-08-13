@@ -646,14 +646,12 @@ module WorldModuleEntity =
             World.traverseEntityMounters World.propagateEntityAffineMatrix3 entity world
 
         /// Check that entity has entities to propagate its structure to.
-        /// TODO: P1: expose this through Entity API.
         static member hasPropagationTargets entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue entity with
             | (true, targets) -> USet.notEmpty targets
             | (false, _) -> false
 
         /// Find all the entities to which an entity may propagate its structure.
-        /// TODO: P1: expose this through Entity API.
         static member getPropagationTargets entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue entity with
             | (true, targets) -> seq targets

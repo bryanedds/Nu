@@ -453,7 +453,7 @@ module WorldModule2 =
                 if considerUsingCurrentEntityAsPropagationSource then
                     match currentEntityOpt with
                     | Some currentEntity ->
-                        if currentEntity.GetExists world && World.hasPropagationTargets currentEntity world
+                        if currentEntity.GetExists world && currentEntity.HasPropagationTargets world
                         then { propagatedDescriptor with EntityProperties = Map.add Constants.Engine.PropagationSourceOptPropertyName (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
                         else propagatedDescriptor
                     | None -> propagatedDescriptor
@@ -598,10 +598,10 @@ module WorldModule2 =
 
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
         /// TODO: expose this through Entity API.
-        static member propagateEntityStructure entity world =
+        static member propagateEntityStructure (entity : Entity) world =
 
             // propagate entity
-            let targets = World.getPropagationTargets entity world
+            let targets = entity.GetPropagationTargets world
             let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
@@ -622,21 +622,21 @@ module WorldModule2 =
 
             // propagate sourced ancestor entities
             seq {
-                for target in World.getPropagationTargets entity world do
+                for target in entity.GetPropagationTargets world do
                     if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
-                            if ancestor.GetExists world && World.hasPropagationTargets ancestor world then
+                            if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                                 ancestor } |>
             Set.ofSeq |>
             Set.fold (fun world ancestor ->
-                if ancestor.GetExists world && World.hasPropagationTargets ancestor world
+                if ancestor.GetExists world && ancestor.HasPropagationTargets world
                 then World.propagateEntityStructure ancestor world
                 else world)
                 world
 
         /// Clear all propagation targets pointing back to the given entity.
-        static member clearPropagationTargets entity world =
-            let targets = World.getPropagationTargets entity world
+        static member clearPropagationTargets (entity : Entity) world =
+            let targets = entity.GetPropagationTargets world
             Seq.fold (fun world target ->
                 if World.getEntityExists target world
                 then target.SetPropagationSourceOpt None world
