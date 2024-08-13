@@ -65,6 +65,7 @@ module Gaia =
     let mutable private OpenProjectFilePath = null // this will be initialized on start
     let mutable private OpenProjectEditMode = "Title"
     let mutable private OpenProjectImperativeExecution = false
+    let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
     let mutable private NewProjectType = "Empty"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
@@ -4384,18 +4385,20 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowCloseProjectDialog) then
             ImGui.Text "Close the project and use Gaia in its default state?"
-            ImGui.Checkbox ("Proceed w/ Imperative Execution (faster, but no Undo / Redo)", &OpenProjectImperativeExecution) |> ignore<bool>
+            ImGui.Checkbox ("Proceed w/ Imperative Execution (faster, but no Undo / Redo)", &CloseProjectImperativeExecution) |> ignore<bool>
             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowCloseProjectDialog <- false
-                let gaiaState = GaiaState.defaultState
+                let gaiaState = { GaiaState.defaultState with ProjectImperativeExecution = CloseProjectImperativeExecution }
                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                 let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDirectory
                     ShowRestartDialog <- true
-                with _ -> Log.info "Could not clear editor state and close project."
+                with _ ->
+                    CloseProjectImperativeExecution <- world.Imperative
+                    Log.info "Could not clear editor state and close project."
             if ImGui.IsKeyReleased ImGuiKey.Escape then
-                OpenProjectImperativeExecution <- world.Imperative
+                CloseProjectImperativeExecution <- world.Imperative
                 ShowCloseProjectDialog <- false
             ImGui.EndPopup ()
 
@@ -4929,6 +4932,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectFilePath <- gaiaState.ProjectDllPath
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        CloseProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d
