@@ -395,8 +395,8 @@ Size=400,400
 Collapsed=0
 
 [Window][Close project... *EDITOR RESTART REQUIRED!*]
-Pos=769,504
-Size=381,71
+Pos=716,510
+Size=463,94
 Collapsed=0
 
 [Window][Editor restart required.]
@@ -4379,11 +4379,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
             OpenProjectFilePath <- ProjectFileDialogState.FilePath
 
-    let private imGuiCloseProjectDialog () =
+    let private imGuiCloseProjectDialog (world : World) =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowCloseProjectDialog) then
             ImGui.Text "Close the project and use Gaia in its default state?"
+            ImGui.Checkbox ("Proceed w/ Imperative Execution (faster, but no Undo / Redo)", &OpenProjectImperativeExecution) |> ignore<bool>
             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowCloseProjectDialog <- false
                 let gaiaState = GaiaState.defaultState
@@ -4393,7 +4394,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     Directory.SetCurrentDirectory gaiaDirectory
                     ShowRestartDialog <- true
                 with _ -> Log.info "Could not clear editor state and close project."
-            if ImGui.IsKeyReleased ImGuiKey.Escape then ShowCloseProjectDialog <- false
+            if ImGui.IsKeyReleased ImGuiKey.Escape then
+                OpenProjectImperativeExecution <- world.Imperative
+                ShowCloseProjectDialog <- false
             ImGui.EndPopup ()
 
     let private imGuiNewGroupDialog world =
@@ -4790,7 +4793,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ShowNewProjectDialog then imGuiNewProjectDialog world
                         if ShowOpenProjectDialog && not ShowOpenProjectFileDialog then imGuiOpenProjectDialog world
                         elif ShowOpenProjectFileDialog then imGuiOpenProjectFileDialog ()
-                        if ShowCloseProjectDialog then imGuiCloseProjectDialog ()
+                        if ShowCloseProjectDialog then imGuiCloseProjectDialog world
                         let world = if ShowNewGroupDialog then imGuiNewGroupDialog world else world
                         let world = if ShowOpenGroupDialog then imGuiOpenGroupDialog world else world
                         let world = if ShowSaveGroupDialog then imGuiSaveGroupDialog world else world
