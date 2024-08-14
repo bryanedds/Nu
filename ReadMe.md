@@ -9,8 +9,6 @@ Big Update!!!
 
 ![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 
-![image](https://github.com/user-attachments/assets/72a54e03-7246-4c2a-9b63-5d0ad9d98b44)
-
 **Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
 
 So... just what is the **Nu Game Engine**?
