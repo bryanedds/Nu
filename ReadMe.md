@@ -3,8 +3,13 @@ Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](h
 
 Big Update!!!
 =
-**Omni Blade**, the first commercial game built with Nu, is **available on Steam NOW** - https://store.steampowered.com/app/3089800/Omni_Blade
-![image](https://github.com/user-attachments/assets/f2769f50-bcc8-44bb-aad9-c81e5b2ad281)
+**Omni Blade**, the first commercial game built with Nu, is **available for free NOW!** - https://github.com/bryanedds/Nu/releases/tag/v15.11.0
+
+![image](https://github.com/user-attachments/assets/81f64a06-ffac-487e-8a59-6ca827b4c67a)
+
+![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
+
+![image](https://github.com/user-attachments/assets/72a54e03-7246-4c2a-9b63-5d0ad9d98b44)
 
 **Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
 
