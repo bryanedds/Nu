@@ -22,7 +22,7 @@ This repository hosts several projects, including -
 - the sample 2D puzzle game ['Twenty48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty48).
 - the sample 2D action game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
 - the sample 3D project ['TerraFirma'](https://github.com/bryanedds/Nu/tree/master/Projects/TerraFirma).
-- the commercial game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade), full game available now here - https://store.steampowered.com/app/3089800/Omni_Blade
+- the commercial game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/Omni-Blade/Projects/OmniBlade), full game available now here - https://bryanedds.itch.io/omni-blade
 
 Getting Started with Nu
 =======================
