@@ -40,7 +40,6 @@ module Effect =
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
             { StartTime_ : GameTime
-              PerimeterCentered_ : bool
               Offset_ : Vector3
               Transform_ : Transform
               ShadowOffset_ : single
@@ -116,8 +115,7 @@ module Effect =
                   Brightness = Constants.Render.BrightnessDefault
                   LightCutoff = Constants.Render.LightCutoffDefault
                   Volume = Constants.Audio.SoundVolumeDefault
-                  Enabled = true
-                  PerimeterCentered = effect.PerimeterCentered_ }
+                  Enabled = true }
             let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
@@ -187,9 +185,8 @@ module Effect =
         | Dead -> (Dead, effect, DataToken.empty)
 
     /// Make an effect.
-    let makePlus startTime perimeterCentered offset transform shadowOffset renderType particleSystem historyMax history definitions descriptor =
+    let makePlus startTime offset transform shadowOffset renderType particleSystem historyMax history definitions descriptor =
         { StartTime_ = startTime
-          PerimeterCentered_ = perimeterCentered
           Offset_ = offset
           Transform_ = transform
           ShadowOffset_ = shadowOffset
@@ -203,7 +200,7 @@ module Effect =
 
     /// Make an effect.
     let make startTime offset transform shadowOffset renderType descriptor =
-        makePlus startTime true offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
+        makePlus startTime offset transform shadowOffset renderType ParticleSystem.empty Constants.Effects.EffectHistoryMaxDefault (Deque ()) Map.empty descriptor
 
     /// The empty effect.
     let empty =

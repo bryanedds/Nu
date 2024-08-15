@@ -871,7 +871,6 @@ module BasicStaticSpriteEmitter =
                 particle'.Transform.Angles <- particle.Body.Angles
                 particle'.Transform.Offset <- particle.Offset
                 particle'.Transform.Size <- particle.Size
-                particle'.Transform.PerimeterCentered <- true
                 particle'.Color <- particle.Color
                 particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
@@ -1125,7 +1124,6 @@ module BasicStaticBillboardEmitter =
                 particle'.Transform.Angles <- particle.Body.Angles
                 particle'.Transform.Offset <- particle.Offset
                 particle'.Transform.Size <- particle.Size
-                particle'.Transform.PerimeterCentered <- true
                 particle'.Color <- particle.Color
                 particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset

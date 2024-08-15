@@ -404,14 +404,16 @@ module TmxMap =
                             xO <- xO + tileSize.X
 
                         // compute strip transform
-                        let mutable transform = Transform.makeDefault false
-                        transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3
-                        transform.Size <- v3 (single tiles.Length * tileSize.X) tileSize.Y 0.0f
+                        let stripSize = v3 (single tiles.Length * tileSize.X) tileSize.Y 0.0f
+                        let stripPosition = v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3 + stripSize * 0.5f
+                        let mutable transform = Transform.makeDefault ()
+                        transform.Position <- stripPosition
+                        transform.Size <- stripSize
                         transform.Elevation <- elevation
                         transform.Absolute <- absolute
 
                         // check if strip in view bounds
-                        let stripBounds = box2 transform.Position.V2 transform.Size.V2
+                        let stripBounds = box2 transform.PerimeterMin.V2 transform.Size.V2
                         if stripBounds.Intersects viewBounds then
 
                             // accumulate descriptor
