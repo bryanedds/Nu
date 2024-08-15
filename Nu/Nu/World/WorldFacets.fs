@@ -917,7 +917,7 @@ type FillBarFacet () =
         let perimeter = transform.Perimeter // gui currently ignores rotation
         let horizon = transform.Horizon
         let mutable borderTransform = Transform.makeDefault transform.PerimeterCentered
-        borderTransform.Position <- perimeter.Center
+        borderTransform.Position <- if transform.PerimeterCentered then perimeter.Center else perimeter.Min
         borderTransform.Size <- perimeter.Size
         borderTransform.Offset <- transform.Offset
         borderTransform.Elevation <- transform.Elevation + 0.5f
@@ -944,7 +944,7 @@ type FillBarFacet () =
         let fillSize = perimeter.Size
         let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
         let fillWidth = (fillSize.X - fillInset * 2.0f) * entity.GetFill world
-        let fillPosition = perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
+        let fillPosition = if transform.PerimeterCentered then perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f else perimeter.Min + v3 fillInset fillInset 0.0f
         let fillHeight = fillSize.Y - fillInset * 2.0f
         let fillSize = v3 fillWidth fillHeight 0.0f
         let mutable fillTransform = Transform.makeDefault transform.PerimeterCentered
