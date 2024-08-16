@@ -74,7 +74,7 @@ module WorldModuleScreen =
             World.publishPlus changeData changeEventAddress eventTrace screen false false world
 
         static member internal getScreenStateOpt screen world =
-             World.screenStateFinder screen world
+            World.screenStateFinder screen world
 
         static member internal getScreenState screen world =
             match World.getScreenStateOpt screen world with
@@ -94,6 +94,7 @@ module WorldModuleScreen =
         static member internal getScreenTransitionState screen world = (World.getScreenState screen world).TransitionState
         static member internal getScreenIncoming screen world = (World.getScreenState screen world).Incoming
         static member internal getScreenOutgoing screen world = (World.getScreenState screen world).Outgoing
+        static member internal getScreenRequestedSong screen world = (World.getScreenState screen world).RequestedSong
         static member internal getScreenSlideOpt screen world = (World.getScreenState screen world).SlideOpt
         static member internal getScreenNav3d screen world = (World.getScreenState screen world).Nav3d
         static member internal getScreenProtected screen world = (World.getScreenState screen world).Protected
@@ -121,14 +122,17 @@ module WorldModuleScreen =
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
             | modelObj ->
-                try let model = modelObj |> valueToSymbol |> symbolToValue
-                    screenState.Model.DesignerValue <- model
+                let modelSymbol = valueToSymbol modelObj
+                try let model = symbolToValue modelSymbol
+                    screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing screen model to new type. Falling back on initial model value."
-                    match screenState.Dispatcher.TryGetInitialModel<'a> world with
+                    Log.warn "Could not convert existing screen model value to new type; using fallback model value instead."
+                    match screenState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, screen, world) with
                     | None -> failwithnie ()
-                    | Some value -> value
+                    | Some model ->
+                        screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
+                        model
 
         static member internal setScreenModelGeneric<'a> initializing (value : 'a) screen world =
             let screenState = World.getScreenState screen world
@@ -167,6 +171,13 @@ module WorldModuleScreen =
             let previous = screenState.Outgoing
             if value <> previous
             then struct (true, world |> World.setScreenState { screenState with Outgoing = value } screen |> World.publishScreenChange (nameof screenState.Outgoing) previous value screen)
+            else struct (false, world)
+
+        static member internal setScreenRequestedSong value screen world =
+            let screenState = World.getScreenState screen world
+            let previous = screenState.RequestedSong
+            if value <> previous
+            then struct (true, world |> World.setScreenState { screenState with RequestedSong = value } screen |> World.publishScreenChange (nameof screenState.RequestedSong) previous value screen)
             else struct (false, world)
 
         static member internal setScreenSlideOpt value screen world =
@@ -354,6 +365,11 @@ module WorldModuleScreen =
             let state = World.getScreenState screen world
             World.viewSimulantStateProperties state
 
+        static member notifyScreenModelChange screen world =
+            let screenState = World.getScreenState screen world
+            let world = screenState.Dispatcher.TrySynchronize (false, screen, world)
+            World.publishScreenChange Constants.Engine.ModelPropertyName screenState.Model.DesignerValue screenState.Model.DesignerValue screen world
+
     /// Initialize property getters.
     let private initGetters () =
         ScreenGetters.Add ("Dispatcher", fun screen world -> { PropertyType = typeof<ScreenDispatcher>; PropertyValue = World.getScreenDispatcher screen world })
@@ -361,6 +377,7 @@ module WorldModuleScreen =
         ScreenGetters.Add ("TransitionState", fun screen world -> { PropertyType = typeof<TransitionState>; PropertyValue = World.getScreenTransitionState screen world })
         ScreenGetters.Add ("Incoming", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenIncoming screen world })
         ScreenGetters.Add ("Outgoing", fun screen world -> { PropertyType = typeof<Transition>; PropertyValue = World.getScreenOutgoing screen world })
+        ScreenGetters.Add ("RequestedSong", fun screen world -> { PropertyType = typeof<RequestedSong>; PropertyValue = World.getScreenRequestedSong screen world })
         ScreenGetters.Add ("SlideOpt", fun screen world -> { PropertyType = typeof<Slide option>; PropertyValue = World.getScreenSlideOpt screen world })
         ScreenGetters.Add ("Nav3d", fun screen world -> { PropertyType = typeof<Nav3d>; PropertyValue = World.getScreenNav3d screen world })
         ScreenGetters.Add ("Protected", fun screen world -> { PropertyType = typeof<bool>; PropertyValue = World.getScreenProtected screen world })
@@ -375,6 +392,7 @@ module WorldModuleScreen =
         ScreenSetters.Add ("TransitionState", fun property screen world -> World.setScreenTransitionState (property.PropertyValue :?> TransitionState) screen world)
         ScreenSetters.Add ("Incoming", fun property screen world -> World.setScreenIncoming (property.PropertyValue :?> Transition) screen world)
         ScreenSetters.Add ("Outgoing", fun property screen world -> World.setScreenOutgoing (property.PropertyValue :?> Transition) screen world)
+        ScreenSetters.Add ("RequestedSong", fun property screen world -> World.setScreenRequestedSong (property.PropertyValue :?> RequestedSong) screen world)
         ScreenSetters.Add ("SlideOpt", fun property screen world -> World.setScreenSlideOpt (property.PropertyValue :?> Slide option) screen world)
         ScreenSetters.Add ("Persistent", fun property screen world -> World.setScreenPersistent (property.PropertyValue :?> bool) screen world)
 

@@ -48,43 +48,45 @@ vec3 parallaxCorrection(samplerCube cubeMap, vec3 lightMapOrigin, vec3 lightMapM
 
 void main()
 {
-    // retrieve normal and height values first, allowing for early-out
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-    if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-
-    // retrieve remaining data from geometry buffers
-    vec3 position = texture(positionTexture, texCoordsOut).xyz;
-    float roughness = texture(materialTexture, texCoordsOut).r;
-
-    // retrieve light mapping data
-    vec4 lmData = texture(lightMappingTexture, texCoordsOut);
-    int lm1 = int(lmData.r) - 1;
-    int lm2 = int(lmData.g) - 1;
-    float lmRatio = lmData.b;
-
-    // compute environment filter term
-    vec3 v = normalize(eyeCenter - position);
-    vec3 environmentFilter = vec3(0.0);
-    if (lm1 == -1 && lm2 == -1)
+    // ensure position was written
+    vec4 position = texture(positionTexture, texCoordsOut);
+    if (position.w == 1.0)
     {
-        vec3 r = reflect(-v, normal);
-        environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
-    }
-    else if (lm2 == -1)
-    {
-        vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
-        environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
-    }
-    else
-    {
-        // compute blended environment filter
-        vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position, normal);
-        vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position, normal);
-        vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
-        vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
-        environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
-    }
+        // retrieve remaining data from geometry buffers
+        float roughness = texture(materialTexture, texCoordsOut).r;
+        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
-    // write
-    frag = vec4(environmentFilter, 1.0);
+        // retrieve light mapping data
+        vec4 lmData = texture(lightMappingTexture, texCoordsOut);
+        int lm1 = int(lmData.r) - 1;
+        int lm2 = int(lmData.g) - 1;
+        float lmRatio = lmData.b;
+
+        // compute environment filter term
+        vec3 v = normalize(eyeCenter - position.xyz);
+        vec3 environmentFilter = vec3(0.0);
+        if (lm1 == -1 && lm2 == -1)
+        {
+            vec3 r = reflect(-v, normal);
+            environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
+        }
+        else if (lm2 == -1)
+        {
+            vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
+            environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
+        }
+        else
+        {
+            // compute blended environment filter
+            vec3 r1 = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, normal);
+            vec3 r2 = parallaxCorrection(environmentFilterMaps[lm2], lightMapOrigins[lm2], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal);
+            vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
+            vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
+            environmentFilter = mix(environmentFilter1, environmentFilter2, lmRatio);
+        }
+
+        // write
+        frag = vec4(environmentFilter, 1.0);
+    }
+    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white environment filter
 }

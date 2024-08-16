@@ -325,9 +325,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     match staticModelShape.TransformOpt with
                     | Some transform ->
                         Affine.make
-                            (Vector3.Transform (transform.Translation, surface.SurfaceMatrix))
+                            (transform.Translation.Transform surface.SurfaceMatrix)
                             (transform.Rotation * surface.SurfaceMatrix.Rotation)
-                            (Vector3.Transform (transform.Scale, surface.SurfaceMatrix))
+                            (transform.Scale.Transform surface.SurfaceMatrix)
                     | None -> Affine.makeFromMatrix surface.SurfaceMatrix
                 let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
                 PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine)
@@ -429,9 +429,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             ghost.UserIndex <- userIndex
             PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
-            then physicsEngine.Objects.Add (bodyId, ghost)
-            else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+            if physicsEngine.Ghosts.TryAdd (bodyId, ghost) then
+                physicsEngine.Objects.Add (bodyId, ghost)
+                ghost.Activate true // force activation since it seems to be unconditionally disabled somewhere in the above bullet processes
+            else Log.error ("Could not add body for '" + scstring bodyId + "'.")
         elif bodyProperties.BodyType = KinematicCharacter then
             match shape with
             | :? ConvexShape as convexShape ->
@@ -465,9 +466,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                       AngularVelocity = v3Zero
                       CharacterController = characterController
                       Ghost = ghost }
-                if physicsEngine.KinematicCharacters.TryAdd (bodyId, character)
-                then physicsEngine.Objects.Add (bodyId, ghost)
-                else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+                if physicsEngine.KinematicCharacters.TryAdd (bodyId, character) then
+                    physicsEngine.Objects.Add (bodyId, ghost)
+                    ghost.Activate true // force activation since it seems to be unconditionally disabled somewhere in the above bullet processes
+                else Log.error ("Could not add body for '" + scstring bodyId + "'.")
             | _ -> Log.info "Non-convex body shapes are unsupported for KinematicCharacter."
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
@@ -484,7 +486,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     physicsEngine.BodiesGravitating.Add (bodyId, (bodyProperties.GravityOverride, body))
                 | Static | Kinematic -> ()
                 physicsEngine.Objects.Add (bodyId, body)
-            else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+            else Log.error ("Could not add body for '" + scstring bodyId + "'.")
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         PhysicsEngine3d.createBody3 (fun ps cs cmas ->
@@ -910,7 +912,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
                 // create ground collision entry for body0 if needed
                 normal <- -normal
-                let theta = Vector3.Dot (normal, Vector3.UnitY) |> acos |> abs
+                let theta = normal.Dot Vector3.UnitY |> acos |> abs
                 if theta < Constants.Physics.GroundAngleMax then
                     match physicsEngine.CollisionsGround.TryGetValue body0Source with
                     | (true, collisions) -> collisions.Add normal
@@ -958,9 +960,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let character = characterEntry.Value
             if character.Ghost.IsActive then
                 let center = character.Ghost.WorldTransform.Translation
+                let forward = character.Ghost.WorldTransform.Rotation.Forward
+                let sign = if v3Up.Dot (forward.Cross character.Rotation.Forward) < 0.0f then 1.0f else -1.0f
+                let angleBetweenOpt = forward.AngleBetween character.Rotation.Forward
                 character.LinearVelocity <- center - character.Center
-                character.AngularVelocity <- v3Up * character.Ghost.WorldTransform.Rotation.Forward.AngleBetween character.Rotation.Forward
-                if Single.IsNaN character.AngularVelocity.X then character.AngularVelocity <- v3Zero // TODO: see if we can avoid NaN in the first place.
+                character.AngularVelocity <- if Single.IsNaN angleBetweenOpt then v3Zero else v3 0.0f (angleBetweenOpt * sign) 0.0f
                 character.Center <- center
                 character.Rotation <- character.Ghost.WorldTransform.Rotation
                 let bodyTransformMessage =
@@ -983,7 +987,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         world.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
         world.DispatchInfo.AllowedCcdPenetration <- Constants.Physics.AllowedCcdPenetration3d
         world.Gravity <- gravity
-
         let physicsEngine =
             { PhysicsContext = world
               Constraints = Dictionary HashIdentity.Structural

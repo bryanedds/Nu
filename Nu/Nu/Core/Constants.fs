@@ -3,9 +3,9 @@
 
 namespace Nu.Constants
 open System
+open System.Configuration
 open System.Diagnostics
 open System.Numerics
-open System.Configuration
 open Prime
 open Nu
 
@@ -56,9 +56,7 @@ module Engine =
     let [<Literal>] EffectNameDefault = "Effect"
     let [<Literal>] RefinementDir = "Refinement"
     let [<Uniform>] Entity2dSizeDefault = Vector3 (32.0f, 32.0f, 0.0f)
-    let [<Uniform>] mutable Entity2dPerimeterCenteredDefault = match ConfigurationManager.AppSettings.["Entity2dPerimeterCenteredDefault"] with null -> true | centered -> scvalue centered
     let [<Uniform>] EntityGuiSizeDefault = Vector3 (128.0f, 32.0f, 0.0f)
-    let [<Uniform>] mutable EntityGuiPerimeterCenteredDefault = match ConfigurationManager.AppSettings.["EntityGuiPerimeterCenteredDefault"] with null -> true | centered -> scvalue centered
     let [<Uniform>] Entity3dSizeDefault = Vector3 (1.0f, 1.0f, 1.0f)
     let [<Uniform>] EntityVuiSizeDefault = Vector3 (4.0f, 1.0f, 1.0f)
     let [<Uniform>] Particle2dSizeDefault = Vector3 (4.0f, 4.0f, 0.0f)
@@ -96,21 +94,19 @@ module Render =
     let [<Uniform>] mutable FarPlaneDistanceOmnipresent = FarPlaneDistanceImposter
     let [<Uniform>] mutable VirtualResolution = match ConfigurationManager.AppSettings.["VirtualResolution"] with null -> v2i 640 360 | resolution -> scvalue resolution
     let [<Uniform>] mutable VirtualScalar = match ConfigurationManager.AppSettings.["VirtualScalar"] with null -> 3 | scalar -> scvalue scalar
-    let [<Uniform>] mutable VirtualScalar2 = Vector2i VirtualScalar
-    let [<Uniform>] mutable VirtualScalar2F = VirtualScalar2.V2
     let [<Uniform>] mutable Resolution = VirtualResolution * VirtualScalar
     let [<Uniform>] mutable ShadowResolution = Vector2i (512 * VirtualScalar)
+    let [<Uniform>] mutable Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
+    let [<Uniform>] OffsetMargin (windowSize : Vector2i) = Vector2i ((windowSize.X - Resolution.X) / 2, (windowSize.Y - Resolution.Y) / 2)
+    let [<Uniform>] OffsetViewport (windowSize : Vector2i) = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(OffsetMargin windowSize, Resolution))
     let [<Uniform>] mutable SsaoResolutionDivisor = match ConfigurationManager.AppSettings.["SsaoResolutionDivisor"] with null -> 1 | divisor -> scvalue divisor
     let [<Uniform>] mutable SsaoResolution = Resolution / SsaoResolutionDivisor
     let [<Uniform>] mutable SsaoViewport = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i (v2iZero, SsaoResolution))
-    let [<Uniform>] mutable Viewport = Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, v2iZero, Resolution)
-    let [<Uniform>] ViewportMargin (windowSize : Vector2i) = Vector2i ((windowSize.X - Resolution.X) / 2, (windowSize.Y - Resolution.Y) / 2)
-    let [<Uniform>] ViewportOffset (windowSize : Vector2i) = Nu.Viewport (NearPlaneDistanceOmnipresent, FarPlaneDistanceOmnipresent, Box2i(ViewportMargin windowSize, Resolution))
     let [<Uniform>] mutable FieldOfView = match ConfigurationManager.AppSettings.["FieldOfView"] with null -> single (Math.PI / 3.0) | fov -> scvalue fov
     let [<Uniform>] Play3dBoxSize = Vector3 64.0f
     let [<Uniform>] Light3dBoxSize = Vector3 64.0f
     let [<Uniform>] WindowClearColor = Color.Zero
-    let [<Uniform>] ViewportClearColor = Color.White // NOTE: do not change this color as the deferred lighting shader checks if normal color is equal to [1;1;1] to discard fragment.
+    let [<Uniform>] ViewportClearColor = Color.Zero // NOTE: do not change this color as the deferred lighting shader checks if position.w zero to ignore fragment.
     let [<Literal>] TexturePriorityDefault = 0.5f // higher priority than (supposed) default, but not maximum. this value is arrived at through experimenting with a Windows NVidia driver.
     let [<Uniform>] mutable TextureAnisotropyMax = match ConfigurationManager.AppSettings.["TextureAnisotropyMax"] with null -> 8.0f | anisoMax -> scvalue anisoMax
     let [<Uniform>] mutable TextureMinimalMipmapIndex = match ConfigurationManager.AppSettings.["TextureMinimalMipmapIndex"] with null -> 1 | index -> scvalue index
@@ -141,6 +137,9 @@ module Render =
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 512
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
+    let [<Literal>] AnimatedSurfaceOcclusionPrePassEnabledDefault = false
+    let [<Literal>] StaticSurfaceOcclusionPrePassEnabledDefault = false
+    let [<Literal>] TerrainOcclusionPrePassEnabledDefault = false
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] ShadowBiasAcneDefault = 0.0000002f
@@ -152,6 +151,21 @@ module Render =
     let [<Literal>] SsaoBiasDefault = 0.025f
     let [<Literal>] SsaoRadiusDefault = 0.125f
     let [<Literal>] SsaoDistanceMaxDefault = 0.125f
+    let [<Literal>] SsrEnabledDefault = true
+    let [<Literal>] SsrDetailDefault = 0.41f
+    let [<Literal>] SsrDepthMaxDefault = 24.0f
+    let [<Literal>] SsrDistanceMaxDefault = 16.0f
+    let [<Literal>] SsrRefinementsMaxDefault = 17
+    let [<Literal>] SsrRoughnessMaxDefault = 0.6f
+    let [<Literal>] SsrSurfaceSlopeMaxDefault = 0.1f
+    let [<Literal>] SsrRayThicknessDefault = 0.0333f
+    let [<Literal>] SsrRoughnessCutoffDefault = 0.5f
+    let [<Literal>] SsrDepthCutoffDefault = 0.2f
+    let [<Literal>] SsrDistanceCutoffDefault = 0.2f
+    let [<Literal>] SsrEdgeCutoffHorizontalDefault = 0.05f
+    let [<Literal>] SsrEdgeCutoffVerticalDefault = 0.2f
+    let [<Uniform>] SsrLightColorDefault = Color.White
+    let [<Uniform>] SsrLightBrightnessDefault = 1.0f
     let [<Literal>] FxaaEnabledDefault = true
     let [<Literal>] LightProbeSizeDefault = 3.0f
     let [<Literal>] BrightnessDefault = 3.0f
@@ -171,8 +185,11 @@ module Render =
 [<RequireQualifiedAccess>]
 module Audio =
 
-    let [<Literal>] SongVolumeDefault = 0.5f
+    let [<Literal>] MasterAudioVolumeDefault = 1.0f
+    let [<Literal>] MasterSoundVolumeDefault = 1.0f
+    let [<Literal>] MasterSongVolumeDefault = 1.0f
     let [<Literal>] SoundVolumeDefault = 1.0f
+    let [<Literal>] SongVolumeDefault = 1.0f
     let [<Uniform>] FadeOutTimeDefault = GameTime.ofSeconds 0.5f
     let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
     let [<Literal>] Frequency = 44100
@@ -246,6 +263,9 @@ module Paths =
     let [<Literal>] PhysicallyBasedShadowStaticShaderFilePath = "Assets/Default/PhysicallyBasedShadowStatic.glsl"
     let [<Literal>] PhysicallyBasedShadowAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedShadowAnimated.glsl"
     let [<Literal>] PhysicallyBasedShadowTerrainShaderFilePath = "Assets/Default/PhysicallyBasedShadowTerrain.glsl"
+    let [<Literal>] PhysicallyBasedOcclusionStaticShaderFilePath = "Assets/Default/PhysicallyBasedOcclusionStatic.glsl"
+    let [<Literal>] PhysicallyBasedOcclusionAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedOcclusionAnimated.glsl"
+    let [<Literal>] PhysicallyBasedOcclusionTerrainShaderFilePath = "Assets/Default/PhysicallyBasedOcclusionTerrain.glsl"
     let [<Literal>] PhysicallyBasedDeferredStaticShaderFilePath = "Assets/Default/PhysicallyBasedDeferredStatic.glsl"
     let [<Literal>] PhysicallyBasedDeferredAnimatedShaderFilePath = "Assets/Default/PhysicallyBasedDeferredAnimated.glsl"
     let [<Literal>] PhysicallyBasedDeferredTerrainShaderFilePath = "Assets/Default/PhysicallyBasedDeferredTerrain.glsl"

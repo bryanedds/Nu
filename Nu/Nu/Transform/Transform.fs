@@ -10,30 +10,29 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b000000000000000000001u
-    let [<Literal>] DirtyMask =                     0b000000000000000000010u
-    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000001000u
-    let [<Literal>] ImperativeMask =                0b000000000000000010000u
-    let [<Literal>] EnabledMask =                   0b000000000000000100000u
-    let [<Literal>] VisibleMask =                   0b000000000000001000000u
-    let [<Literal>] PickableMask =                  0b000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000000100000000000u
-    let [<Literal>] ProtectedMask =                 0b000000001000000000000u
-    let [<Literal>] PersistentMask =                0b000000010000000000000u
-    let [<Literal>] MountedMask =                   0b000000100000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000001000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000010000000000000000u
-    let [<Literal>] PerimeterCenteredMask =         0b000100000000000000000u // TODO: remove PerimeterCentered from the engine.
-    let [<Literal>] StaticMask =                    0b001000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b010000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b100000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b100111010000011110001u
+    let [<Literal>] ActiveMask =                    0b00000000000000000001u
+    let [<Literal>] DirtyMask =                     0b00000000000000000010u
+    let [<Literal>] InvalidatedMask =               0b00000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b00000000000000001000u
+    let [<Literal>] ImperativeMask =                0b00000000000000010000u
+    let [<Literal>] EnabledMask =                   0b00000000000000100000u
+    let [<Literal>] VisibleMask =                   0b00000000000001000000u
+    let [<Literal>] PickableMask =                  0b00000000000010000000u
+    let [<Literal>] AlwaysUpdateMask =              0b00000000000100000000u
+    let [<Literal>] AlwaysRenderMask =              0b00000000001000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b00000000010000000000u
+    let [<Literal>] PublishUpdatesMask =            0b00000000100000000000u
+    let [<Literal>] ProtectedMask =                 0b00000001000000000000u
+    let [<Literal>] PersistentMask =                0b00000010000000000000u
+    let [<Literal>] MountedMask =                   0b00000100000000000000u
+    let [<Literal>] EnabledLocalMask =              0b00001000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b00010000000000000000u
+    let [<Literal>] StaticMask =                    0b00100000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b01000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b10000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b10011010000011110001u
 
-// NOTE: opening masks for succintness.
+// opening masks for succintness
 open TransformMasks
 
 /// Carries transformation data specific to an Entity.
@@ -52,33 +51,31 @@ type [<NoEquality; NoComparison>] Transform =
         val mutable private Presence_ : Presence
         end
 
-    member this.Active with get () = this.Flags_ &&& ActiveMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
-    member this.Dirty with get () = this.Flags_ &&& DirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
-    member this.Invalidated with get () = this.Flags_ &&& InvalidatedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
-    member this.Imperative with get () = this.Flags_ &&& ImperativeMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
-    member this.PublishChangeEvents with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
-    member this.Enabled with get () = this.Flags_ &&& EnabledMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
-    member this.Visible with get () = this.Flags_ &&& VisibleMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
-    member this.Pickable with get () = this.Flags_ &&& PickableMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PickableMask else this.Flags_ &&& ~~~PickableMask
-    member this.AlwaysUpdate with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
-    member this.AlwaysRender with get () = this.Flags_ &&& AlwaysRenderMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
-    member this.PublishUpdates with get () = this.Flags_ &&& PublishUpdatesMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
-    member this.Protected with get () = this.Flags_ &&& ProtectedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| ProtectedMask else this.Flags_ &&& ~~~ProtectedMask
-    member this.Persistent with get () = this.Flags_ &&& PersistentMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
-    member this.Mounted with get () = this.Flags_ &&& MountedMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
-    member this.EnabledLocal with get () = this.Flags_ &&& EnabledLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
-    member this.VisibleLocal with get () = this.Flags_ &&& VisibleLocalMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
-    member this.Static with get () = this.Flags_ &&& StaticMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| StaticMask else this.Flags_ &&& ~~~StaticMask
-    member this.RotationMatrixDirty with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
-    member this.AnglesDirty with get () = this.Flags_ &&& AnglesDirtyMask <> 0u and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
-    member this.Optimized with get () = this.Imperative && this.Presence_.OmnipresentType && not this.PublishChangeEvents
-
-    member this.Position with get () = this.Position_ and set value = this.Position_ <- value
-    member this.Scale with get () = this.Scale_ and set value = this.Scale_ <- value
-    member this.Offset with get () = this.Offset_ and set value = this.Offset_ <- value
-    member this.Size with get () = this.Size_ and set value = this.Size_ <- value
-    member this.Elevation with get () = this.Elevation_ and set value = this.Elevation_ <- value
-    member this.Overflow with get () = this.Overflow_ and set value = this.Overflow_ <- value
+    member this.Active                  with get () = this.Flags_ &&& ActiveMask <> 0u                  and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
+    member this.Dirty                   with get () = this.Flags_ &&& DirtyMask <> 0u                   and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
+    member this.Invalidated             with get () = this.Flags_ &&& InvalidatedMask <> 0u             and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
+    member this.Imperative              with get () = this.Flags_ &&& ImperativeMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
+    member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
+    member this.Enabled                 with get () = this.Flags_ &&& EnabledMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
+    member this.Visible                 with get () = this.Flags_ &&& VisibleMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
+    member this.Pickable                with get () = this.Flags_ &&& PickableMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| PickableMask else this.Flags_ &&& ~~~PickableMask
+    member this.AlwaysUpdate            with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
+    member this.AlwaysRender            with get () = this.Flags_ &&& AlwaysRenderMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
+    member this.PublishUpdates          with get () = this.Flags_ &&& PublishUpdatesMask <> 0u          and set value = this.Flags_ <- if value then this.Flags_ ||| PublishUpdatesMask else this.Flags_ &&& ~~~PublishUpdatesMask
+    member this.Protected               with get () = this.Flags_ &&& ProtectedMask <> 0u               and set value = this.Flags_ <- if value then this.Flags_ ||| ProtectedMask else this.Flags_ &&& ~~~ProtectedMask
+    member this.Persistent              with get () = this.Flags_ &&& PersistentMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| PersistentMask else this.Flags_ &&& ~~~PersistentMask
+    member this.Mounted                 with get () = this.Flags_ &&& MountedMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| MountedMask else this.Flags_ &&& ~~~MountedMask
+    member this.EnabledLocal            with get () = this.Flags_ &&& EnabledLocalMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledLocalMask else this.Flags_ &&& ~~~EnabledLocalMask
+    member this.VisibleLocal            with get () = this.Flags_ &&& VisibleLocalMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleLocalMask else this.Flags_ &&& ~~~VisibleLocalMask
+    member this.Static                  with get () = this.Flags_ &&& StaticMask <> 0u                  and set value = this.Flags_ <- if value then this.Flags_ ||| StaticMask else this.Flags_ &&& ~~~StaticMask
+    member this.RotationMatrixDirty     with get () = this.Flags_ &&& RotationMatrixDirtyMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| RotationMatrixDirtyMask else this.Flags_ &&& ~~~RotationMatrixDirtyMask
+    member this.AnglesDirty             with get () = this.Flags_ &&& AnglesDirtyMask <> 0u             and set value = this.Flags_ <- if value then this.Flags_ ||| AnglesDirtyMask else this.Flags_ &&& ~~~AnglesDirtyMask
+    member this.Position                with get () = this.Position_                                    and set value = this.Position_ <- value
+    member this.Scale                   with get () = this.Scale_                                       and set value = this.Scale_ <- value
+    member this.Offset                  with get () = this.Offset_                                      and set value = this.Offset_ <- value
+    member this.Size                    with get () = this.Size_                                        and set value = this.Size_ <- value
+    member this.Elevation               with get () = this.Elevation_                                   and set value = this.Elevation_ <- value
+    member this.Overflow                with get () = this.Overflow_                                    and set value = this.Overflow_ <- value
 
     member this.Absolute
         with get () = this.Flags_ &&& AbsoluteMask <> 0u
@@ -87,9 +84,10 @@ type [<NoEquality; NoComparison>] Transform =
             if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
                 this.Presence_ <- Omnipresent
 
-    member this.PerimeterCentered
-        with get () = this.Flags_ &&& PerimeterCenteredMask <> 0u
-        and set value = this.Flags_ <- if value then this.Flags_ ||| PerimeterCenteredMask else this.Flags_ &&& ~~~PerimeterCenteredMask
+    member this.Optimized =
+        this.Imperative &&
+        this.Presence_.OmnipresentType &&
+        not this.PublishChangeEvents
 
     member this.Presence
         with get () = this.Presence_
@@ -189,10 +187,10 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.PerimeterUnscaled
         with get () =
-            let perimeterUnscaledOffset = if this.PerimeterCentered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
             Box3 (this.Position_ + perimeterUnscaledOffset * this.Size_, this.Size_)
         and set (value : Box3) =
-            let perimeterUnscaledOffset = if this.PerimeterCentered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
             this.Position <- value.Min - perimeterUnscaledOffset * value.Size
             this.Size <- value.Size
 
@@ -200,7 +198,7 @@ type [<NoEquality; NoComparison>] Transform =
         with get () : Box3 =
             let scale = this.Scale_
             let sizeScaled = this.Size_ * scale
-            let perimeterUnscaledOffset = if this.PerimeterCentered then this.Offset_ - v3UncenteredOffset else this.Offset_
+            let perimeterUnscaledOffset = this.Offset_ - v3UncenteredOffset
             Box3 (this.Position_ + perimeterUnscaledOffset * sizeScaled, sizeScaled)
         and set (value : Box3) =
             this.Scale_ <- Vector3.One
@@ -231,7 +229,7 @@ type [<NoEquality; NoComparison>] Transform =
                 let mutable maxZ = Single.MinValue
                 for i in 0 .. 8 - 1 do
                     let mutable corner = NativePtr.get corners i
-                    corner <- Vector3.Transform (corner + pivot, rotation) - pivot
+                    corner <- (corner + pivot).Transform rotation - pivot
                     minX <- Operators.min minX corner.X
                     minY <- Operators.min minY corner.Y
                     minZ <- Operators.min minZ corner.Z
@@ -271,7 +269,7 @@ type [<NoEquality; NoComparison>] Transform =
             let mutable maxZ = Single.MinValue
             for i in 0 .. 8 - 1 do
                 let mutable corner = NativePtr.get corners i
-                corner <- Vector3.Transform (corner - this.Position_, rotation) + this.Position_
+                corner <- (corner - this.Position_).Transform rotation + this.Position_
                 minX <- Operators.min minX corner.X
                 minY <- Operators.min minY corner.Y
                 minZ <- Operators.min minZ corner.Z
@@ -282,14 +280,10 @@ type [<NoEquality; NoComparison>] Transform =
         else bounds
 
     member this.HorizonUnscaled =
-        if this.PerimeterCentered
-        then this.PerimeterUnscaled.Center.Y
-        else this.PerimeterUnscaled.Bottom.Y
+        this.PerimeterUnscaled.Center.Y
 
     member this.Horizon =
-        if this.PerimeterCentered
-        then this.Perimeter.Center.Y
-        else this.Perimeter.Bottom.Y
+        this.Perimeter.Center.Y
 
     member this.PerimeterPivot =
         let perimeter = this.Perimeter
@@ -317,9 +311,9 @@ type [<NoEquality; NoComparison>] Transform =
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
         left.Flags_ = right.Flags_ &&
-        v3EqApprox left.Position_ right.Position_ &&
-        quatEqApprox left.Rotation_ right.Rotation_ &&
-        v3EqApprox left.Scale_ right.Scale_ &&
+        v3Eq left.Position_ right.Position_ &&
+        quatEq left.Rotation_ right.Rotation_ &&
+        v3EqApprox left.Scale_ right.Scale_ 0.0001f && // NOTE: using approx here since scale tends to be pulled from an affine matrix. Also, just guessing at espilon...
         left.Offset_.Equals right.Offset_ &&
         left.Size_.Equals right.Size_ &&
         left.Elevation_ = right.Elevation_ &&
@@ -351,33 +345,31 @@ type [<NoEquality; NoComparison>] Transform =
         Unchecked.defaultof<Transform>
 
     /// Make a transform with default values.
-    static member makeDefault perimeterCentered =
+    static member makeDefault () =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- Vector3.One
         transform.Size_ <- Vector3.One
         transform.Overflow_ <- 1.0f
-        transform.PerimeterCentered <- perimeterCentered
         transform
 
     /// Make a transform based on a perimeter.
-    static member makePerimeter (perimeter : Box3) offset elevation absolute perimeterCentered =
+    static member makePerimeter (perimeter : Box3) offset elevation absolute =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
-        transform.Position_ <- if perimeterCentered then perimeter.Center else perimeter.Min
+        transform.Position_ <- perimeter.Center
         transform.Rotation_ <- Quaternion.Identity
         transform.Scale_ <- v3One
         transform.Offset_ <- offset
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
-        transform.PerimeterCentered <- perimeterCentered
         transform
 
     /// Make a transform based on human-intuited values.
-    static member makeIntuitive position scale offset size angles elevation absolute perimeterCentered =
-        let mutable transform = Transform.makeDefault perimeterCentered
+    static member makeIntuitive position scale offset size angles elevation absolute =
+        let mutable transform = Transform.makeDefault ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position
         transform.Scale_ <- scale

@@ -82,19 +82,9 @@ layout (location = 3) out vec4 normalPlus;
 
 void main()
 {
-    // discard if depth out of range
-    float depthCutoff = heightPlusOut.z;
-    if (depthCutoff >= 0.0)
-    {
-        if (gl_FragCoord.z / gl_FragCoord.w > depthCutoff) discard;
-    }
-    else
-    {
-        if (gl_FragCoord.z / gl_FragCoord.w <= -depthCutoff) discard;
-    }
-
-    // forward position
-    position = positionOut;
+    // forward position, marking w for written
+    position.xyz = positionOut.xyz;
+    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -115,9 +105,8 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo, discarding on zero alpha
+    // compute albedo
     vec4 albedoSample = texture(albedoTexture, texCoords);
-    if (albedoSample.a == 0.0f) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties

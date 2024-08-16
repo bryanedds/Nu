@@ -29,6 +29,7 @@ module Assets =
         let [<Uniform>] Panel = asset<Image> PackageName Assets.Default.PanelName
         let [<Uniform>] Ball = asset<Image> PackageName Assets.Default.BallName
         let [<Uniform>] Brick = asset<Image> PackageName Assets.Default.BrickName
+        let [<Uniform>] Paddle = asset<Image> PackageName Assets.Default.PaddleName
         let [<Uniform>] StaticSprite = asset<Image> PackageName Assets.Default.StaticSpriteName
         let [<Uniform>] AnimatedSprite = asset<Image> PackageName Assets.Default.AnimatedSpriteName
         let [<Uniform>] NuSlide = asset<Image> PackageName Assets.Default.NuSlideName

@@ -140,9 +140,9 @@ type NavBuilderResultData =
       NavPoints : Vector3 array
       NavEdgesMinY : single
       NavEdgesMaxY : single
-      NavInteriorEdges : struct (Vector3 * Vector3) array
-      NavExteriorEdges : struct (Vector3 * Vector3) array }
-      
+      NavInteriorEdges : Segment3 array
+      NavExteriorEdges : Segment3 array }
+
     /// Make from an RcBuilderResult.
     static member make (builderResult : RcBuilderResult) =
 
@@ -190,7 +190,7 @@ type NavBuilderResultData =
                                     dmesh.verts.[verts + dmesh.tris.[t + k] * 3]
                                     dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 1]
                                     dmesh.verts.[verts + dmesh.tris.[t + k] * 3 + 2]
-                            struct (start, stop)
+                            segment3 start stop
                         kp <- k
                         k <- inc k|]
 
@@ -224,7 +224,7 @@ type NavBuilderResultData =
                             if edgesMaxY < start.Y then edgesMaxY <- start.Y
                             if edgesMinY > stop.Y then edgesMinY <- stop.Y
                             if edgesMaxY < stop.Y then edgesMaxY <- stop.Y
-                            struct (start, stop)
+                            segment3 start stop
                         kp <- k
                         k <- inc k|]
 
@@ -438,17 +438,19 @@ module AmbientState =
               Flags : uint
               Liveness : Liveness
               UpdateTime : int64
+              ClockDelta : single
+              ClockTime : single
               TickDelta : int64
-              KeyValueStore : SUMap<obj, obj>
-              TickTime : int64
               // cache line 2
+              KeyValueStore : SUMap<string, obj>
+              TickTime : int64
               TickTimeShavings : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
+              // cache line 3
               DateTime : DateTimeOffset
               Tasklets : OMap<Simulant, 'w Tasklet UList>
               SdlDepsOpt : SdlDeps option
-              // cache line 3
               Symbolics : Symbolics
               Overlayer : Overlayer
               Timers : Timers
@@ -482,6 +484,14 @@ module AmbientState =
     let getUpdateTime state =
         state.UpdateTime
 
+    /// Get the clock delta as a number of seconds.
+    let getClockDelta state =
+        state.ClockDelta
+
+    /// Get the clock time as a number of seconds.
+    let getClockTime state =
+        state.ClockTime
+
     /// Get the tick delta as a number of environment ticks.
     let getTickDelta state =
         state.TickDelta
@@ -489,14 +499,6 @@ module AmbientState =
     /// Get the tick time as a number of environment ticks.
     let getTickTime state =
         state.TickTime
-
-    /// Get the clock delta as a number of seconds.
-    let getClockDelta state =
-        single state.TickDelta / single Stopwatch.Frequency
-
-    /// Get the clock time as a number of seconds.
-    let getClockTime state =
-        single state.TickTime / single Stopwatch.Frequency
 
     /// Get the polymorphic engine time delta.
     let getGameDelta (state : 'w AmbientState) =
@@ -522,15 +524,18 @@ module AmbientState =
     let updateTime (state : 'w AmbientState) =
         let updateDelta = if state.Advancing then 1L else 0L
         let tickTimeShaved = state.TickWatch.ElapsedTicks - state.TickTimeShavings
-        let tickDelta = tickTimeShaved - state.TickTime
-        let tickDeltaShaved = min (tickTimeShaved - state.TickTime) Constants.Engine.TickDeltaMax
-        let tickDeltaShavings = max (tickDelta - tickDeltaShaved) 0L
+        let tickDeltaUnshaved = tickTimeShaved - state.TickTime
+        let tickDelta = min (tickTimeShaved - state.TickTime) Constants.Engine.TickDeltaMax
+        let tickDeltaShavings = max (tickDeltaUnshaved - tickDelta) 0L
+        let tickTime = tickTimeShaved - tickDeltaShavings
         let dateTime = DateTimeOffset.Now
         { state with
             UpdateTime = state.UpdateTime + updateDelta
-            TickTime = tickTimeShaved - tickDeltaShavings
+            ClockDelta = single tickDelta / single Stopwatch.Frequency
+            ClockTime = single tickTime / single Stopwatch.Frequency
+            TickTime = tickTime
             TickTimeShavings = state.TickTimeShavings + tickDeltaShavings
-            TickDelta = tickDeltaShaved
+            TickDelta = tickDelta
             DateTime = dateTime
             DateDelta = dateTime - state.DateTime }
 
@@ -545,13 +550,13 @@ module AmbientState =
     let exit state =
         { state with Liveness = Dead }
 
+    /// Get the key-value store.
+    let getKeyValueStore state =
+        state.KeyValueStore
+
     /// Get the key-value store with the by map.
     let getKeyValueStoreBy by state =
         by state.KeyValueStore
-
-    /// Get the key-value store.
-    let getKeyValueStore state =
-        getKeyValueStoreBy id state
 
     /// Set the key-value store.
     let setKeyValueStore store state =
@@ -602,7 +607,7 @@ module AmbientState =
 
     /// Attempt to check that the window is in a full screen state.
     let tryGetWindowFullScreen state =
-        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN <> 0u) (tryGetWindowFlags state)
+        Option.map (fun flags -> flags &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u) (tryGetWindowFlags state)
 
     /// Attempt to set the window's full screen state.
     let trySetWindowFullScreen fullScreen state =
@@ -671,6 +676,8 @@ module AmbientState =
         { Flags = flags
           Liveness = Live
           UpdateTime = 0L
+          ClockDelta = 0.0f
+          ClockTime = 0.0f
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
           TickTime = 0L

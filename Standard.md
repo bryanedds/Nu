@@ -22,7 +22,7 @@ Correctness, Consistency, Simplicity
 8) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
--   avoiding unnecessary laziness and asynchrony (but since async being strewn throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead).
+-   avoiding unnecessary laziness and asynchrony (but since async being woven throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead).
 
 9) Suffix option bindings, choice bindings, either bindings, and bindings to potentially null values with `Opt`.
 

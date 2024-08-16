@@ -219,7 +219,7 @@ module Transformer =
                 let distanceSquared = distanceDelta.MagnitudeSquared
                 let radiusSquared = radius * radius
                 if distanceSquared < radiusSquared then
-                    let normal = Vector3.Normalize (center - positionNext)
+                    let normal = (center - positionNext).Normalized
                     let reflectedVelocity = Vector3.Reflect (body.LinearVelocity, normal)
                     body.LinearVelocity <- reflectedVelocity * body.Restitution
                 i <- inc i
@@ -232,7 +232,7 @@ module Transformer =
                 let distanceDelta = positionNext - box.Center
                 if box.Intersects positionNext then
                     let speed = body.LinearVelocity.Magnitude
-                    let distanceNormalized = Vector3.Normalize distanceDelta
+                    let distanceNormalized = distanceDelta.Normalized
                     body.LinearVelocity <- speed * distanceNormalized * body.Restitution
                 i <- inc i
         | Constraints constraints ->
@@ -871,7 +871,6 @@ module BasicStaticSpriteEmitter =
                 particle'.Transform.Angles <- particle.Body.Angles
                 particle'.Transform.Offset <- particle.Offset
                 particle'.Transform.Size <- particle.Size
-                particle'.Transform.PerimeterCentered <- true
                 particle'.Color <- particle.Color
                 particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
@@ -1125,7 +1124,6 @@ module BasicStaticBillboardEmitter =
                 particle'.Transform.Angles <- particle.Body.Angles
                 particle'.Transform.Offset <- particle.Offset
                 particle'.Transform.Size <- particle.Size
-                particle'.Transform.PerimeterCentered <- true
                 particle'.Color <- particle.Color
                 particle'.Emission <- particle.Emission
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset

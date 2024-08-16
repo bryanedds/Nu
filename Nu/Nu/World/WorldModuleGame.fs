@@ -63,14 +63,17 @@ module WorldModuleGame =
             | :? 'a as model -> model
             | null -> null :> obj :?> 'a
             | modelObj ->
-                try let model = modelObj |> valueToSymbol |> symbolToValue
-                    gameState.Model.DesignerValue <- model
+                let modelSymbol = valueToSymbol modelObj
+                try let model = symbolToValue modelSymbol
+                    gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing game model to new type. Falling back on initial model value."
-                    match gameState.Dispatcher.TryGetInitialModel<'a> world with
+                    Log.warn "Could not convert existing game model value to new type; using fallback model value instead."
+                    match gameState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, game, world) with
                     | None -> failwithnie ()
-                    | Some value -> value
+                    | Some model ->
+                        gameState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
+                        model
 
         static member internal setGameModelGeneric<'a> initializing (value : 'a) (game : Game) world =
             let gameState = World.getGameState game world
@@ -425,7 +428,7 @@ module WorldModuleGame =
             match World.tryGetSymbol assetTag metadata world with
             | Some symbol ->
                 try let script = symbolToValue<'a> symbol in Some script
-                with exn -> Log.debug ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
+                with exn -> Log.error ("Failed to convert symbol '" + scstring symbol + "' to value due to: " + scstring exn); None
             | None -> None
 
         /// Fetch assets with the given tags and convert it to values of type 'a.
@@ -537,6 +540,11 @@ module WorldModuleGame =
         static member internal viewGameProperties game world =
             let state = World.getGameState game world
             World.viewSimulantStateProperties state
+
+        static member notifyGameModelChange game world =
+            let gameState = World.getGameState game world
+            let world = gameState.Dispatcher.TrySynchronize (false, game, world)
+            World.publishGameChange Constants.Engine.ModelPropertyName gameState.Model.DesignerValue gameState.Model.DesignerValue game world
 
     /// Initialize property getters.
     let private initGetters () =

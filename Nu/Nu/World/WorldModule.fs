@@ -227,49 +227,6 @@ module WorldModule =
         static member exit world =
             World.mapAmbientState AmbientState.exit world
 
-        static member internal getKeyValueStoreBy by world =
-            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
-
-        static member internal getKeyValueStore world =
-            World.getAmbientStateBy AmbientState.getKeyValueStore world
-
-        static member internal setKeyValueStore symbolics world =
-            World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
-
-        static member internal mapKeyValueStore mapper world =
-            World.mapAmbientState (AmbientState.mapKeyValueStore mapper) world
-
-        static member internal tryGetKeyedValueFast<'k, 'v> (key : 'k, world, value : 'v outref) =
-            let ambientState = World.getAmbientState world
-            let kvs = AmbientState.getKeyValueStore ambientState
-            let mutable valueObj = Unchecked.defaultof<obj>
-            if kvs.TryGetValue (key, &valueObj) then
-                value <- valueObj :?> 'v
-                true
-            else false
-
-        /// Attempt to look up a value from the world's key value store.
-        static member tryGetKeyedValue<'k, 'v> (key : 'k) world =
-            match World.getKeyValueStoreBy (SUMap.tryFind (key :> obj)) world with
-            | Some value -> Some (value :?> 'v)
-            | None -> None
-
-        /// Look up a value from the world's key value store, throwing an exception if it is not found.
-        static member getKeyedValue<'k, 'v> (key : 'k) world =
-            World.getKeyValueStoreBy (SUMap.find (key :> obj)) world :?> 'v
-
-        /// Add a value to the world's key value store.
-        static member addKeyedValue<'k, 'v> (key : 'k) (value : 'v) world =
-            World.mapKeyValueStore (SUMap.add (key :> obj) (value :> obj)) world
-
-        /// Remove a value from the world's key value store.
-        static member removeKeyedValue<'k> (key : 'k) world =
-            World.mapKeyValueStore (SUMap.remove (key :> obj)) world
-
-        /// Transform a value in the world's key value store if it exists.
-        static member mapKeyedValue<'k, 'v> (mapper : 'v -> 'v) (key : 'k) world =
-            World.addKeyedValue<'k, 'v> key (mapper (World.getKeyedValue<'k, 'v> key world)) world
-
         static member internal getTasklets world =
             World.getAmbientStateBy AmbientState.getTasklets world
 
@@ -335,10 +292,10 @@ module WorldModule =
             ignore world
             Constants.Render.Viewport
 
-        /// Get the viewport offset by margin when applicable.
-        static member getViewportOffset world =
+        /// Get the offset viewport.
+        static member getOffsetViewport world =
             let windowSize = World.getWindowSize world
-            Constants.Render.ViewportOffset windowSize
+            Constants.Render.OffsetViewport windowSize
 
         static member internal getSymbolicsBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world
@@ -543,10 +500,10 @@ module WorldModule =
                                         match subscriber with
                                         | :? Game -> EventGraph.publishEvent<'a, 'p, Game, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                         | :? GlobalSimulantGeneralized -> EventGraph.publishEvent<'a, 'p, Simulant, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                        | _ -> Log.debugOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); (Cascade, world)
+                                        | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with 1 name that is neither a Game or a GlobalSimulantGeneralized."); (Cascade, world)
                                     | 2 -> EventGraph.publishEvent<'a, 'p, Screen, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
                                     | 3 -> EventGraph.publishEvent<'a, 'p, Group, World> subscriber publisher eventData eventAddress eventTrace subscriptionEntry.SubscriptionCallback world
-                                    | _ -> Log.debugOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); (Cascade, world)
+                                    | _ -> Log.errorOnce ("Event publish operation failed. Cannot publish event '" + scstring eventAddress + "' to a subscriber with no names."); (Cascade, world)
                             handling <- fst result
                             world <- snd result
                             world |> World.choose |> ignore
@@ -679,6 +636,65 @@ module WorldModule =
         static member sense<'a>
             (callback : Event<'a, Entity> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : Entity) (facetName : string) (world : World) =
             World.sensePlus callback eventAddress subscriber facetName world |> snd
+
+    type World with // KeyValueStore (tho part of AmbientState, must come after EventGraph definitions since it publishes)
+
+        static member internal getKeyValueStore world =
+            World.getAmbientStateBy AmbientState.getKeyValueStore world
+
+        static member internal getKeyValueStoreBy by world =
+            World.getAmbientStateBy (AmbientState.getKeyValueStoreBy by) world
+
+        static member internal setKeyValueStore symbolics world =
+            World.mapAmbientState (AmbientState.setKeyValueStore symbolics) world
+
+        static member internal mapKeyValueStore mapper world =
+            World.mapAmbientState (AmbientState.mapKeyValueStore mapper) world
+
+        static member internal tryGetKeyedValueFast<'a> (key, world, value : 'a outref) =
+            let ambientState = World.getAmbientState world
+            let kvs = AmbientState.getKeyValueStore ambientState
+            let mutable valueObj = Unchecked.defaultof<obj>
+            if kvs.TryGetValue (key, &valueObj) then
+                value <- valueObj :?> 'a
+                true
+            else false
+
+        /// Attempt to look up a value from the world's key value store.
+        static member tryGetKeyedValue<'a> key world =
+            match World.getKeyValueStoreBy (SUMap.tryFind key) world with
+            | Some value -> Some (value :?> 'a)
+            | None -> None
+
+        /// Look up a value from the world's key value store, throwing an exception if it is not found.
+        static member getKeyedValue<'a> key world =
+            World.getKeyValueStoreBy (SUMap.find key) world :?> 'a
+
+        /// Add a value to the world's key value store.
+        static member addKeyedValue<'a> key (value : 'a) world =
+            let previousOpt = World.tryGetKeyedValue key world
+            let valueOpt = Some (value :> obj)
+            let data = { Key = key; PreviousOpt = previousOpt; ValueOpt = valueOpt }
+            let world = World.mapKeyValueStore (SUMap.add key (value :> obj)) world
+            match previousOpt with
+            | Some previous ->
+                if previous =/= value
+                then World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+                else world
+            | None -> World.publish data (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+
+        /// Remove a value from the world's key value store.
+        static member removeKeyedValue key world =
+            let previousOpt = World.tryGetKeyedValue key world
+            match previousOpt with
+            | Some _ ->
+                let world = World.mapKeyValueStore (SUMap.remove key) world
+                World.publish { Key = key; PreviousOpt = previousOpt; ValueOpt = None } (Events.KeyedValueChangeEvent key) Nu.Game.Handle world
+            | None -> world
+
+        /// Transform a value in the world's key value store if it exists.
+        static member mapKeyedValue<'a> (mapper : 'a -> 'a) key world =
+            World.addKeyedValue<'a> key (mapper (World.getKeyedValue<'a> key world)) world
 
     type World with // Plugin
 

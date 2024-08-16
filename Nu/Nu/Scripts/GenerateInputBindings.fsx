@@ -8,7 +8,7 @@
 #r "nuget: FParsec, 1.1.1"
 #r "nuget: Twizzle.ImGuizmo.NET, 1.89.4.1"
 #r "nuget: Magick.NET-Q8-AnyCpu, 13.5.0"
-#r "nuget: Prime, 9.23.0"
+#r "nuget: Prime, 9.26.0"
 #r "nuget: System.Configuration.ConfigurationManager, 8.0.0"
 #r "nuget: System.Drawing.Common, 8.0.0"
 #r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1/AssimpNet.dll"
@@ -83,7 +83,6 @@ let generateBindingsCode codesStr =
     "\n" +
     "namespace Nu\n" +
     "open System\n" +
-    "open Prime\n" +
     "\n" +
     "type KeyboardKey =\n" +
     codesStr +
@@ -96,4 +95,4 @@ do
         enumEntries |>
         enumEntriesToCode |>
         generateBindingsCode
-    File.WriteAllText ("../../../Sdl/SdlInputBindings.fs", code)
+    File.WriteAllText ("../../Sdl/SdlInputBindings.fs", code)

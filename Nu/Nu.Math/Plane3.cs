@@ -3,7 +3,6 @@
 // file 'LICENSE.txt', which is part of this source code package.
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 
 namespace Nu
@@ -30,8 +29,9 @@ namespace Nu
         public static float PerpendicularDistance(ref Vector3 point, ref Plane3 plane)
         {
             // dist = (ax + by + cz + d) / sqrt(a*a + b*b + c*c)
-            return (float)System.Math.Abs((plane.Normal.X * point.X + plane.Normal.Y * point.Y + plane.Normal.Z * point.Z)
-                                    / System.Math.Sqrt(plane.Normal.X * plane.Normal.X + plane.Normal.Y * plane.Normal.Y + plane.Normal.Z * plane.Normal.Z));
+            return
+                (float)System.Math.Abs((plane.Normal.X * point.X + plane.Normal.Y * point.Y + plane.Normal.Z * point.Z) /
+                (float)System.Math.Sqrt(plane.Normal.X * plane.Normal.X + plane.Normal.Y * plane.Normal.Y + plane.Normal.Z * plane.Normal.Z));
         }
     }
 
@@ -41,8 +41,6 @@ namespace Nu
     /// </summary>
     public struct Plane3 : IEquatable<Plane3>
     {
-        #region Public Fields
-
         /// <summary>
         /// The distance of the <see cref="Plane3"/> to the origin.
         /// </summary>
@@ -52,11 +50,6 @@ namespace Nu
         /// The normal of the <see cref="Plane3"/>.
         /// </summary>
         public Vector3 Normal;
-
-        #endregion Public Fields
-
-
-        #region Constructors
 
         /// <summary>
         /// Create a <see cref="Plane3"/> with the first three components of the specified <see cref="Vector4"/>
@@ -124,11 +117,6 @@ namespace Nu
                 pointOnPlane.Z * normal.Z
             );
         }
-
-        #endregion Constructors
-
-
-        #region Public Methods
 
         /// <summary>
         /// Get the dot product of a <see cref="Vector4"/> with this <see cref="Plane3"/>.
@@ -443,7 +431,5 @@ namespace Nu
         {
             return $"{{Normal:{Normal} D:{D}}}";
         }
-
-        #endregion
     }
 }

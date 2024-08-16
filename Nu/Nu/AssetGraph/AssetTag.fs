@@ -50,6 +50,8 @@ type AssetTagConverter (pointType : Type) =
 and [<TypeConverter (typeof<AssetTagConverter>)>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
+    member this.Pair =
+        (this.PackageName, this.AssetName)
     interface AssetTag with
         member this.PackageName = this.PackageName
         member this.AssetName = this.AssetName

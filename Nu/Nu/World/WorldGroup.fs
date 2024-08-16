@@ -76,14 +76,14 @@ module WorldGroupModule =
             World.setGroupXtensionProperty propertyName property this world
 
         /// Check that a group is selected.
-        member this.Selected world =
+        member this.GetSelected world =
             let gameState = World.getGameState Game.Handle world
             match gameState.SelectedScreenOpt with
             | Some screen when this.Screen.Name = screen.Name -> true
             | _ -> false
 
         /// Check that a group exists in the world.
-        member this.Exists world = World.getGroupExists this world
+        member this.GetExists world = World.getGroupExists this world
 
         /// Check that a group dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -91,12 +91,11 @@ module WorldGroupModule =
         /// Check that a group dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Get a group's change event address.
-        member this.GetChangeEvent propertyName = this.ChangeEvent propertyName
-
         /// Send a signal to a group.
-        member this.Signal<'message, 'command> (signal : Signal) world =
-            (this.GetDispatcher world).Signal (signal, this, world)
+        member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
+
+        /// Notify the engine that a group's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
+        member this.NotifyModelChange world = World.notifyGroupModelChange this world
 
     type World with
 

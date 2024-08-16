@@ -99,19 +99,19 @@ module TmxMap =
         | EmptyShape as empty ->
             empty
         | BoxShape box ->
-            Log.traceIf (Option.isSome box.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome box.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             BoxShape { box with Size = box.Size * tileSize.V3; TransformOpt = transformOpt }
         | SphereShape sphere ->
-            Log.traceIf (Option.isSome sphere.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome sphere.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             SphereShape { sphere with Radius = sphere.Radius * tileSize.Y; TransformOpt = transformOpt }
         | CapsuleShape capsule ->
-            Log.traceIf (Option.isSome capsule.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome capsule.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             CapsuleShape { capsule with Height = tileSize.Y; Radius = capsule.Radius * tileSize.Y; TransformOpt = transformOpt }
         | BoxRoundedShape boxRounded ->
-            Log.traceIf (Option.isSome boxRounded.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome boxRounded.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             BoxRoundedShape { boxRounded with Size = boxRounded.Size * tileSize.V3; Radius = boxRounded.Radius; TransformOpt = transformOpt }
         | PointsShape points ->
-            Log.traceIf (Option.isSome points.TransformOpt) "Transform of importing tile map shape should be None."
+            if Option.isSome points.TransformOpt then Log.error "Transform of importing tile map shape should be None."
             PointsShape { points with Points = Array.map (fun point -> point * tileSize.V3) points.Points; TransformOpt = transformOpt }
         | GeometryShape _ as geometry ->
             geometry
@@ -225,11 +225,11 @@ module TmxMap =
                             let tileShapeImported = importShape tileShape (v3 0.0f 0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Bottom" ->
-                            let tileShape = BoxShape { Size = v3 1.0f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 1.0f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 0.0f -0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Left" ->
-                            let tileShape = BoxShape { Size = v3 -0.5f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 1.0f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 -0.25f 0.0f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "Right" ->
@@ -237,19 +237,19 @@ module TmxMap =
                             let tileShapeImported = importShape tileShape (v3 0.25f 0.0f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopLeft" ->
-                            let tileShape = BoxShape { Size = v3 -0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 -0.25f 0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "TopRight" ->
-                            let tileShape = BoxShape { Size = v3 0.5f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 0.25f 0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomLeft" ->
-                            let tileShape = BoxShape { Size = v3 -0.5f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 -0.25f -0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | "BottomRight" ->
-                            let tileShape = BoxShape { Size = v3 0.5f -0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
+                            let tileShape = BoxShape { Size = v3 0.5f 0.5f 0.0f; TransformOpt = None; PropertiesOpt = None }
                             let tileShapeImported = importShape tileShape (v3 0.25f -0.25f 0.0f) tileMapDescriptor.TileSizeF tileCenter
                             bodyShapes.Add tileShapeImported
                         | _ ->
@@ -372,6 +372,7 @@ module TmxMap =
                         let tiles = SList.make ()
                         let mutable xS = 0.0f
                         let mutable xO = r.X
+                        xO <- xO + 0.0001f |> floor // NOTE: attempts to fix #832. Alternatively, we could instead do + 0.5f |> floor on xI.
                         while xO < r2.X + tileSize.X do
                             let xI = int (xO / tileSize.X)
                             if xO >= 0.0f && xI >= 0 then
@@ -403,14 +404,16 @@ module TmxMap =
                             xO <- xO + tileSize.X
 
                         // compute strip transform
-                        let mutable transform = Transform.makeDefault false
-                        transform.Position <- v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3
-                        transform.Size <- v3 (single tiles.Length * tileSize.X) tileSize.Y 0.0f
+                        let stripSize = v3 (single tiles.Length * tileSize.X) tileSize.Y 0.0f
+                        let stripPosition = v3 (xS - modulus r.X tileSize.X) (single yC * tileSize.Y - modulus r.Y tileSize.Y) 0.0f + viewBounds.Min.V3 + stripSize * 0.5f
+                        let mutable transform = Transform.makeDefault ()
+                        transform.Position <- stripPosition
+                        transform.Size <- stripSize
                         transform.Elevation <- elevation
                         transform.Absolute <- absolute
 
                         // check if strip in view bounds
-                        let stripBounds = box2 transform.Position.V2 transform.Size.V2
+                        let stripBounds = box2 transform.PerimeterMin.V2 transform.Size.V2
                         if stripBounds.Intersects viewBounds then
 
                             // accumulate descriptor

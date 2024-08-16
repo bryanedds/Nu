@@ -63,50 +63,52 @@ float computeDepthRatio(vec3 minA, vec3 sizeA, vec3 minB, vec3 sizeB, vec3 posit
 
 void main()
 {
-    // retrieve normal value first, allowing for early-out
-    vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
-    vec3 normal = normalPlus.xyz;
-    bool ignoreLightMaps = normalPlus.w == 1.0;
-    if (normal == vec3(1.0)) discard; // discard if geometry pixel was not written (equal to the buffer clearing color of white)
-
-    // retrieve remaining data from geometry buffers
-    vec3 position = texture(positionTexture, texCoordsOut).xyz;
-
-    // compute nearest light map indices
-    int lm1 = -1;
-    int lm2 = -1;
-    float lm1DistanceSquared = FLOAT_MAX;
-    float lm2DistanceSquared = FLOAT_MAX;
-    if (!ignoreLightMaps)
+    // ensure position was written
+    vec4 position = texture(positionTexture, texCoordsOut);
+    if (position.w == 1.0)
     {
-        for (int i = 0; i < lightMapsCount; ++i)
+        // retrieve remaining data from geometry buffers
+        vec4 normalPlus = texture(normalPlusTexture, texCoordsOut);
+        vec3 normal = normalPlus.xyz;
+        bool ignoreLightMaps = normalPlus.w == 1.0;
+
+        // compute nearest light map indices
+        int lm1 = -1;
+        int lm2 = -1;
+        float lm1DistanceSquared = FLOAT_MAX;
+        float lm2DistanceSquared = FLOAT_MAX;
+        if (!ignoreLightMaps)
         {
-            if (inBounds(position, lightMapMins[i], lightMapSizes[i]))
+            for (int i = 0; i < lightMapsCount; ++i)
             {
-                vec3 delta = lightMapOrigins[i] - position;
-                float distanceSquared = dot(delta, delta);
-                if (distanceSquared < lm1DistanceSquared)
+                if (inBounds(position.xyz, lightMapMins[i], lightMapSizes[i]))
                 {
-                    lm2 = lm1;
-                    lm1 = i;
-                    lm2DistanceSquared = lm1DistanceSquared;
-                    lm1DistanceSquared = distanceSquared;
-                }
-                else if (distanceSquared < lm2DistanceSquared)
-                {
-                    lm2 = i;
-                    lm2DistanceSquared = distanceSquared;
+                    vec3 delta = lightMapOrigins[i] - position.xyz;
+                    float distanceSquared = dot(delta, delta);
+                    if (distanceSquared < lm1DistanceSquared)
+                    {
+                        lm2 = lm1;
+                        lm1 = i;
+                        lm2DistanceSquared = lm1DistanceSquared;
+                        lm1DistanceSquared = distanceSquared;
+                    }
+                    else if (distanceSquared < lm2DistanceSquared)
+                    {
+                        lm2 = i;
+                        lm2DistanceSquared = distanceSquared;
+                    }
                 }
             }
         }
+
+        // compute light map blending ratio
+        float ratio =
+            lm1 != -1 && lm2 != -1 ?
+            computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal) :
+            0.0f;
+
+        // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
+        frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0f);
     }
-
-    // compute light map blending ratio
-    float ratio =
-        lm1 != -1 && lm2 != -1 ?
-        computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position, normal) :
-        0.0f;
-
-    // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
-    frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0f);
+    else frag = vec4(0.0, 0.0, 0.0, 0.0); // zero map
 }

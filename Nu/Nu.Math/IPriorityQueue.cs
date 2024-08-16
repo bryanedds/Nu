@@ -1,4 +1,6 @@
-﻿namespace Nu
+﻿using System;
+
+namespace Nu
 {
     /// <summary>
     /// Priority queue interface.

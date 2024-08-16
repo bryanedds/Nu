@@ -317,15 +317,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Creates a <see cref="string"/> that describes this Color structure.
-        /// </summary>
-        /// <returns>A <see cref="string"/> that describes this Color structure.</returns>
-        public override string ToString()
-        {
-            return $"<{R}, {G}, {B}, {A}>";
-        }
-
-        /// <summary>
         /// Compares whether this Color structure is equal to the specified object.
         /// </summary>
         /// <param name="obj">An object to compare to.</param>
@@ -350,6 +341,20 @@ namespace Nu
                 return hashCode;
             }
         }
+
+        /// <summary>
+        /// Creates a <see cref="string"/> that describes this Color structure.
+        /// </summary>
+        /// <returns>A <see cref="string"/> that describes this Color structure.</returns>
+        public override string ToString()
+        {
+            return $"<{R}, {G}, {B}, {A}>";
+        }
+
+        /// <summary>
+        /// Convert a color to a 4D float array.
+        /// </summary>
+        public float[] ToArray() => new float[] { R, G, B, A };
 
         /// <summary>
         /// The Zero color.

@@ -183,7 +183,7 @@ module Content =
                 let childrenAdded = List ()
                 for childEntry in childContents do
                     match childContentsOld.TryGetValue childEntry.Key with
-                    | (true, childContentOld) ->
+                    | (true, childContentOld) when optEq childEntry.Value.DispatcherNameOpt childContentOld.DispatcherNameOpt ->
                         let childSimulant = // OPTIMIZATION: attempt to get child simulant from old content rather than deriving it, and store it for future use.
                             if isNull (childContentOld.SimulantCachedOpt :> obj) then
                                 let derived = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
@@ -194,15 +194,15 @@ module Content =
                                 childEntry.Value.SimulantCachedOpt <- found
                                 found
                         childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
-                    | (false, _) ->
+                    | (_, _) ->
                         let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
                         childEntry.Value.SimulantCachedOpt <- childSimulant
                         childrenAdded.Add (childSimulant, childEntry.Value)
                 let childrenRemoved = List<'child> ()
                 for childEntryOld in childContentsOld do
                     match childContents.TryGetValue childEntryOld.Key with
-                    | (true, _) -> ()
-                    | (false, _) ->
+                    | (true, childContentOld) when optEq childEntryOld.Value.DispatcherNameOpt childContentOld.DispatcherNameOpt -> ()
+                    | (_, _) ->
                         let childSimulant = childEntryOld.Value.SimulantCachedOpt :?> 'child // OPTIMIZATION: because of above optimization, should be guaranteed to exist.
                         childrenRemoved.Add childSimulant
                         childrenPotentiallyAltered.Remove childSimulant |> ignore
@@ -211,7 +211,7 @@ module Content =
         else None
 
     /// Synchronize an entity and its contained simulants to the given content.
-    let rec synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
+    let rec internal synchronizeEntity initializing (contentOld : EntityContent) (content : EntityContent) (origin : Simulant) (entity : Entity) world =
         if contentOld =/= content then
             let mutable mountOptFound = false
             let world = synchronizeEventSignals contentOld content origin entity world
@@ -237,7 +237,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) || entity.GetDestroying world
+                            if not (entity.GetExists world) || entity.GetDestroying world
                             then World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                             else world
                         let world = World.setEntityProtected true entity world |> snd'
@@ -248,7 +248,7 @@ module Content =
         else world
 
     /// Synchronize a group and its contained simulants to the given content.
-    let synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
+    let internal synchronizeGroup initializing (contentOld : GroupContent) (content : GroupContent) (origin : Simulant) (group : Group) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin group world
             let world = synchronizeEventHandlers contentOld content origin group world
@@ -267,7 +267,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (entity : Entity, entityContent : EntityContent) ->
                         let world =
-                            if not (entity.Exists world) || entity.GetDestroying world then
+                            if not (entity.GetExists world) || entity.GetDestroying world then
                                 match entityContent.EntityFilePathOpt with
                                 | Some entityFilePath -> World.readEntityFromFile entityFilePath (Some entity.Name) entity.Parent world |> snd
                                 | None -> World.createEntity5 entityContent.EntityDispatcherName DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
@@ -280,7 +280,7 @@ module Content =
         else world
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
+    let internal synchronizeScreen initializing (contentOld : ScreenContent) (content : ScreenContent) (origin : Simulant) (screen : Screen) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin screen world
             let world = synchronizeEventHandlers contentOld content origin screen world
@@ -318,7 +318,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (group : Group, groupContent : GroupContent) ->
                         let world =
-                            if not (group.Exists world) || group.GetDestroying world then
+                            if not (group.GetExists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
                                 | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                                 | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
@@ -331,7 +331,7 @@ module Content =
         else world
 
     /// Synchronize a screen and its contained simulants to the given content.
-    let synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
+    let internal synchronizeGame setScreenSlide initializing (contentOld : GameContent) (content : GameContent) (origin : Simulant) (game : Game) world =
         if contentOld =/= content then
             let world = synchronizeEventSignals contentOld content origin game world
             let world = synchronizeEventHandlers contentOld content origin game world
@@ -348,7 +348,7 @@ module Content =
                 let world =
                     List.foldGeneric (fun world (screen : Screen, screenContent : ScreenContent) ->
                         let world =
-                            if not (screen.Exists world) || screen.GetDestroying world
+                            if not (screen.GetExists world) || screen.GetDestroying world
                             then World.createScreen3 screenContent.ScreenDispatcherName (Some screen.Name) world |> snd
                             else world
                         let world = World.setScreenProtected true screen world |> snd'

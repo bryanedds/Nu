@@ -95,8 +95,9 @@ void main()
     // ensure layers count is in range
     float layersCountCeil = max(min(layersCount, TERRAIN_LAYERS_MAX), 0);
 
-    // forward position
-    position = positionOut;
+    // forward position, marking w for written
+    position.xyz = positionOut.xyz;
+    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);
@@ -135,9 +136,6 @@ void main()
         ambientOcclusionBlend += texture(ambientOcclusionTextures[i], texCoords).b * blend;
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
-
-    // discard on zero alpha
-    if (albedoBlend.a == 0.0f) discard;
 
     // populate albedo, material, and normalPlus
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;

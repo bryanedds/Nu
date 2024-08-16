@@ -7,7 +7,6 @@ open System
 
 /// Provides operators for branchless programming.
 /// NOTE: implemented in terms of a static class to enable overloading.
-/// TODO: consider moving into Prime.
 type [<AbstractClass; Sealed>] Branchless () =
 
     /// Reinterpret cast a value from 'a to 'b.
@@ -29,7 +28,7 @@ type [<AbstractClass; Sealed>] Branchless () =
 
     // NOTE: this code has been dummied out due to broken performance. Broken perf is likely due to the resulting
     // value not landing in a floating-point enabled register. I don't know of a performant way to land an int
-    // value into a fp register with .NET.
+    // value into a floating point register with .NET.
     // Convert a bool as a single without branching.
     //static member inline boolToSingle (bool : bool) =
     //    let int = (Branchless.reinterpret bool : int)

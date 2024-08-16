@@ -63,7 +63,6 @@ module WorldEntityModule =
         let mutable Persistent = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is2d = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Is3d = Unchecked.defaultof<Lens<bool, Entity>>
-        let mutable PerimeterCentered = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Static = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Physical = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable LightProbe = Unchecked.defaultof<Lens<bool, Entity>>
@@ -219,9 +218,6 @@ module WorldEntityModule =
         member this.Is2d = if notNull (this :> obj) then lensReadOnly (nameof this.Is2d) this this.GetIs2d else Cached.Is2d
         member this.GetIs3d world = World.getEntityIs3d this world
         member this.Is3d = if notNull (this :> obj) then lensReadOnly (nameof this.Is3d) this this.GetIs3d else Cached.Is3d
-        member this.GetPerimeterCentered world = World.getEntityPerimeterCentered this world
-        member this.SetPerimeterCentered value world = World.setEntityPerimeterCentered value this world |> snd'
-        member this.PerimeterCentered = if notNull (this :> obj) then lens (nameof this.PerimeterCentered) this this.GetPerimeterCentered this.SetPerimeterCentered else Cached.PerimeterCentered
         member this.GetStatic world = World.getEntityStatic this world
         member this.SetStatic value world = World.setEntityStatic value this world |> snd'
         member this.Static = if notNull (this :> obj) then lens (nameof this.Static) this this.GetStatic this.SetStatic else Cached.Static
@@ -294,7 +290,6 @@ module WorldEntityModule =
             Cached.Persistent <- lens (nameof Cached.Persistent) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is2d <- lensReadOnly (nameof Cached.Is2d) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Is3d <- lensReadOnly (nameof Cached.Is3d) Unchecked.defaultof<_> Unchecked.defaultof<_>
-            Cached.PerimeterCentered <- lens (nameof Cached.PerimeterCentered) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Static <- lens (nameof Cached.Static) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Physical <- lensReadOnly (nameof Cached.Physical) Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.LightProbe <- lens (nameof Cached.LightProbe) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -398,14 +393,14 @@ module WorldEntityModule =
         member this.GetInView3d world = World.getEntityInView3d this world
 
         /// Check that an entity is selected.
-        member this.Selected world =
+        member this.GetSelected world =
             let gameState = World.getGameState Game.Handle world
             match gameState.SelectedScreenOpt with
             | Some screen when this.Screen.Name = screen.Name -> true
             | _ -> false
 
         /// Check that an entity exists in the world.
-        member this.Exists world = World.getEntityExists this world
+        member this.GetExists world = World.getEntityExists this world
 
         /// Check if an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world
@@ -417,7 +412,7 @@ module WorldEntityModule =
         member this.SetMountOptWithAdjustment (value : Entity Relation option) world =
             match (Option.bind (tryResolve this) (this.GetMountOpt world), Option.bind (tryResolve this) value) with
             | (Some mountOld, Some mountNew) ->
-                if mountOld.Exists world && mountNew.Exists world then
+                if mountOld.GetExists world && mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
@@ -435,7 +430,7 @@ module WorldEntityModule =
                     world
                 else world
             | (Some mountOld, None) ->
-                if mountOld.Exists world then
+                if mountOld.GetExists world then
                     let world = this.SetMountOpt value world
                     let position = this.GetPosition world
                     let rotation = this.GetRotation world
@@ -454,7 +449,7 @@ module WorldEntityModule =
                     world
                 else world
             | (None, Some mountNew) ->
-                if mountNew.Exists world then
+                if mountNew.GetExists world then
                     let affineMatrixMount = World.getEntityAffineMatrix mountNew world
                     let affineMatrixMounter = World.getEntityAffineMatrix this world
                     let affineMatrixLocal = affineMatrixMounter * affineMatrixMount.Inverted
@@ -476,7 +471,7 @@ module WorldEntityModule =
         /// Check whether the entity's mount exists.
         member this.MountExists world =
             match Option.bind (tryResolve this) (this.GetMountOpt world) with
-            | Some mount -> mount.Exists world
+            | Some mount -> mount.GetExists world
             | None -> false
 
         /// Check than an entity has any other entitiese mounted on it.
@@ -499,6 +494,12 @@ module WorldEntityModule =
 
         /// Get an entity's descendants.
         member this.GetDescendants world = World.getEntityDescendants this world
+
+        /// Check that entity has entities to propagate its structure to.
+        member this.HasPropagationTargets world = World.hasPropagationTargets this world
+
+        /// Find all the entities to which an entity may propagate its structure.
+        member this.GetPropagationTargets world = World.getPropagationTargets this world
 
         /// Apply physics changes to an entity.
         member this.ApplyPhysics (center : Vector3) rotation linearVelocity angularVelocity world =
@@ -542,11 +543,11 @@ module WorldEntityModule =
         /// Check that an entity dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Get an entity's change event address.
-        member this.GetChangeEvent propertyName = Events.ChangeEvent propertyName --> this.EntityAddress
-
         /// Send a signal to an entity.
         member this.Signal<'message, 'command> (signal : Signal) world = (this.GetDispatcher world).Signal (signal, this, world)
+
+        /// Notify the engine that an entity's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
+        member this.NotifyModelChange world = World.notifyEntityModelChange this world
 
     type World with
 
@@ -809,7 +810,7 @@ module WorldEntityModule =
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            | PasteAtLook -> eyeCenter + Vector3.Transform (v3Forward, eyeRotation) * distance
+                            | PasteAtLook -> eyeCenter + v3Forward.Transform eyeRotation * distance
                             | PasteAt position -> position
                         match positionSnapEir with
                         | Right positionSnap -> (position, Some positionSnap)
@@ -824,7 +825,7 @@ module WorldEntityModule =
                     if tryForwardPropagationSource && not cut then
                         match entity.GetPropagationSourceOpt world with
                         | None ->
-                            if entitySource.Exists world
+                            if entitySource.GetExists world
                             then entity.SetPropagationSourceOpt (Some entitySource) world
                             else world
                         | Some _ -> world
@@ -837,9 +838,9 @@ module WorldEntityModule =
                 let world =
                     getDescendantPairs entitySource entity world |>
                     List.fold (fun world (descendantSource, descendentEntity) ->
-                        if descendentEntity.Exists world then
+                        if descendentEntity.GetExists world then
                             let world = World.setEntityPropagatedDescriptorOpt None descendentEntity world |> snd'
-                            if descendantSource.Exists world && World.hasPropagationTargets descendantSource world
+                            if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                             then World.setEntityPropagationSourceOpt (Some descendantSource) descendentEntity world |> snd'
                             else world
                         else world)

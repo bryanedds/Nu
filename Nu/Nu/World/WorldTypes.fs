@@ -45,31 +45,101 @@ type Callback<'a, 's when 's :> Simulant> = Event<'a, 's> -> World -> Handling *
 /// Represents an unsubscription operation for an event.
 and Unsubscription = World -> World
 
+/// Describes the type of snapshot taken for operation tracking.
+and SnapshotType =
+    | RerenderLightMap
+    | WipePropagationTargets
+    | TranslateEntity
+    | RotateEntity
+    | ScaleEntity
+    | AutoBoundsEntity
+    | PropagateEntity
+    | ReorderEntities
+    | SetEntityFrozen of bool
+    | SetEntityFamilyStatic of bool
+    | ChangeEntityDispatcher
+    | RenameEntity
+    | CreateEntity
+    | DeleteEntity
+    | CutEntity
+    | PasteEntity
+    | LoadEntity
+    | DuplicateEntity
+    | RenameGroup
+    | OpenGroup
+    | CloseGroup
+    | ChangeProperty of int64 option * string
+    | Evaluate of string
+    | RestorePoint
+    | RencenterInProbeBounds
+    | ResetProbeBounds
+    | SynchronizeNav
+    | SetEditMode of int
+    | ReloadCode
+    | Advance
+    | Halt
+    | UserDefinedSnapshot of Image AssetTag * string // a user-defined type of snapshot
+
+    member this.Label =
+        match this with
+        | RerenderLightMap -> (scstringMemo this).Spaced
+        | WipePropagationTargets -> (scstringMemo this).Spaced
+        | TranslateEntity -> (scstringMemo this).Spaced
+        | RotateEntity -> (scstringMemo this).Spaced
+        | ScaleEntity -> (scstringMemo this).Spaced
+        | AutoBoundsEntity -> (scstringMemo this).Spaced
+        | PropagateEntity -> (scstringMemo this).Spaced
+        | ReorderEntities -> (scstringMemo this).Spaced
+        | SetEntityFrozen frozen -> if frozen then "Freeze Entity" else "Thaw Entity"
+        | SetEntityFamilyStatic static_ -> if static_ then "Staticize Entity Family" else "Dynamize Entity Family"
+        | ChangeEntityDispatcher -> (scstringMemo this).Spaced
+        | RenameEntity -> (scstringMemo this).Spaced
+        | CreateEntity -> (scstringMemo this).Spaced
+        | DeleteEntity -> (scstringMemo this).Spaced
+        | CutEntity -> (scstringMemo this).Spaced
+        | PasteEntity -> (scstringMemo this).Spaced
+        | LoadEntity -> (scstringMemo this).Spaced
+        | DuplicateEntity -> (scstringMemo this).Spaced
+        | RenameGroup -> (scstringMemo this).Spaced
+        | OpenGroup -> (scstringMemo this).Spaced
+        | CloseGroup -> (scstringMemo this).Spaced
+        | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
+        | Evaluate _ -> "Evaluate F# Expression"
+        | RestorePoint -> (scstringMemo this).Spaced
+        | RencenterInProbeBounds -> (scstringMemo this).Spaced
+        | ResetProbeBounds -> (scstringMemo this).Spaced
+        | SynchronizeNav -> (scstringMemo this).Spaced
+        | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
+        | ReloadCode -> (scstringMemo this).Spaced
+        | Advance -> (scstringMemo this).Spaced
+        | Halt -> (scstringMemo this).Spaced
+        | UserDefinedSnapshot (_, label) -> label
+
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.
 and [<ReferenceEquality>] ReplaceProperty =
-    { Snapshot : World -> World
+    { Snapshot : SnapshotType -> World -> World
       FocusProperty : World -> World
       IndicateReplaced : World -> World
       PropertyDescriptor : PropertyDescriptor }
 
 /// Details additional editing behavior for a simulant's properties.
 and AppendProperties =
-    { Snapshot : World -> World
+    { Snapshot : SnapshotType -> World -> World
       UnfocusProperty : World -> World }
 
 /// Details additional editing behavior for viewport context menu.
 and ContextHierarchy =
-    { Snapshot : World -> World }
+    { Snapshot : SnapshotType -> World -> World }
 
 /// Details additional editing behavior for viewport context menu.
 and ContextViewport =
-    { Snapshot : World -> World
+    { Snapshot : SnapshotType -> World -> World
       RightClickPosition : Vector2 }
 
 /// Details the additional editing behavior for a simulant in a viewport.
 and [<ReferenceEquality>] OverlayViewport =
-    { Snapshot : World -> World
+    { Snapshot : SnapshotType -> World -> World
       ViewportView : Matrix4x4
       ViewportProjection : Matrix4x4
       ViewportBounds : Box2 }
@@ -289,6 +359,13 @@ and [<CustomEquality; CustomComparison>] SortPriority =
             | :? SortPriority as that -> (this :> SortPriority IComparable).CompareTo that
             | _ -> failwithumf ()
 
+/// Specified the requested song, if any, or whether to ignore song request functionality altogether.
+and RequestedSong =
+    | Request of SongDescriptor
+    | RequestFadeOut of GameTime
+    | RequestNone
+    | RequestIgnore
+
 /// Specifies the desired screen, if any, or whether to ignore screen desire functionality altogether.
 and DesiredScreen =
     | Desire of Screen
@@ -366,9 +443,9 @@ and GameDispatcher () =
     abstract Signal : obj * Game * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Symbol * Game * World -> 'a option
+    default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a game.
     abstract TrySynchronize : bool * Game * World -> World
@@ -418,9 +495,9 @@ and ScreenDispatcher () =
     abstract Signal : obj * Screen * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Symbol * Screen * World -> 'a option
+    default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a screen.
     abstract TrySynchronize : bool * Screen * World -> World
@@ -470,9 +547,9 @@ and GroupDispatcher () =
     abstract Signal : obj * Group * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Symbol * Group * World -> 'a option
+    default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize the content of a group.
     abstract TrySynchronize : bool * Group * World -> World
@@ -491,7 +568,7 @@ and GroupDispatcher () =
     default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for entities.
-and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
+and EntityDispatcher (is2d, physical, lightProbe, light) =
     inherit SimulantDispatcher ()
 
     static member Properties =
@@ -521,7 +598,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
          Define? Visible true
          Define? VisibleLocal true
          Define? Pickable true
-         Define? PerimeterCentered true
          Define? Static false
          Define? AlwaysUpdate false
          Define? AlwaysRender false
@@ -555,9 +631,9 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     abstract Signal : obj * Entity * World -> World
     default this.Signal (_, _, world) = world
 
-    /// Attempt to get the initial model value if the dispatcher defines one.
-    abstract TryGetInitialModel<'a> : World -> 'a option
-    default this.TryGetInitialModel _ = None
+    /// Attempt to get the fallback model value if the dispatcher defines one.
+    abstract TryGetFallbackModel<'a> : Symbol * Entity * World -> 'a option
+    default this.TryGetFallbackModel (_, _, _) = None
 
     /// Attempt to synchronize content of an entity.
     abstract TrySynchronize : bool * Entity * World -> World
@@ -585,9 +661,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     /// Attempt to untruncate an entity model.
     abstract TryUntruncateModel<'a> : 'a * Entity* World  -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
-
-    /// Whether the dispatcher uses a centered perimeter by default.
-    member this.PerimeterCentered = perimeterCentered
 
     /// Whether the dispatcher has a 2-dimensional transform interpretation.
     member this.Is2d = is2d
@@ -803,7 +876,7 @@ and SimulantState =
 and [<ReferenceEquality; CLIMutable>] GameState =
     { Dispatcher : GameDispatcher
       Xtension : Xtension
-      Model : DesignerProperty
+      mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GameContent
       SelectedScreenOpt : Screen option
       DesiredScreen : DesiredScreen
@@ -880,11 +953,12 @@ and [<ReferenceEquality; CLIMutable>] GameState =
 and [<ReferenceEquality; CLIMutable>] ScreenState =
     { Dispatcher : ScreenDispatcher
       Xtension : Xtension
-      Model : DesignerProperty
+      mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : ScreenContent
       TransitionState : TransitionState
       Incoming : Transition
       Outgoing : Transition
+      RequestedSong : RequestedSong
       SlideOpt : Slide option
       Nav3d : Nav3d
       Protected : bool
@@ -934,6 +1008,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           TransitionState = IdlingState time
           Incoming = Transition.make Incoming
           Outgoing = Transition.make Outgoing
+          RequestedSong = RequestIgnore
           SlideOpt = None
           Nav3d = Nav3d.make ()
           Protected = false
@@ -949,7 +1024,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
 and [<ReferenceEquality; CLIMutable>] GroupState =
     { Dispatcher : GroupDispatcher
       Xtension : Xtension
-      Model : DesignerProperty
+      mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GroupContent
       Visible : bool
       Protected : bool
@@ -1076,7 +1151,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets
     member this.LightProbe with get () = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
     member this.Light with get () = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
-    member this.PerimeterCentered with get () = this.Transform.PerimeterCentered and set value = this.Transform.PerimeterCentered <- value
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized with get () = this.Transform.Optimized
 
@@ -1136,7 +1210,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Make an entity state value.
     static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-        let mutable transform = Transform.makeDefault dispatcher.PerimeterCentered
+        let mutable transform = Transform.makeDefault ()
         transform.Imperative <- imperative
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
@@ -1233,7 +1307,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
         if isNull (game :> obj) then Address.anonymize address else acatf address game.GameAddress
 
     override this.ToString () =
-        scstring this.GameAddress
+        this.GameAddress.ToString ()
 
     override this.Equals that =
         match that with
@@ -1335,7 +1409,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
         if isNull (screen :> obj) then Address.anonymize address else acatf address screen.ScreenAddress
 
     override this.ToString () =
-        scstring this.ScreenAddress
+        this.ScreenAddress.ToString ()
 
     override this.Equals that =
         match that with
@@ -1439,7 +1513,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
         if isNull (group :> obj) then Address.anonymize address else acatf address group.GroupAddress
 
     override this.ToString () =
-        scstring this.GroupAddress
+        this.GroupAddress.ToString ()
 
     override this.Equals that =
         match that with
@@ -1566,7 +1640,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
         if isNull (entity :> obj) then Address.anonymize address else acatf address entity.EntityAddress
 
     override this.ToString () =
-        scstring this.EntityAddress
+        this.EntityAddress.ToString ()
 
     override this.Equals that =
         match that with
@@ -1752,14 +1826,6 @@ and [<ReferenceEquality>] World =
     member this.UpdateTime =
         AmbientState.getUpdateTime this.AmbientState
 
-    /// Get the tick delta as a number of environment ticks.
-    member this.TickDelta =
-        AmbientState.getTickDelta this.AmbientState
-
-    /// Get the tick time as a number of environment ticks.
-    member this.TickTime =
-        AmbientState.getTickTime this.AmbientState
-
     /// Get the amount of clock time that has transpired between this and the previous frame.
     member this.ClockDelta =
         AmbientState.getClockDelta this.AmbientState
@@ -1767,6 +1833,14 @@ and [<ReferenceEquality>] World =
     /// Get the clock time as of when the current frame began.
     member this.ClockTime =
         AmbientState.getClockTime this.AmbientState
+
+    /// Get the tick delta as a number of environment ticks.
+    member this.TickDelta =
+        AmbientState.getTickDelta this.AmbientState
+
+    /// Get the tick time as a number of environment ticks.
+    member this.TickTime =
+        AmbientState.getTickTime this.AmbientState
 
     /// Get the polymorphic engine time delta.
     member this.GameDelta =
@@ -1793,7 +1867,7 @@ and [<ReferenceEquality>] World =
         match WorldTypes.Chosen with
         | :? World as this -> 
             if this.ChooseCount <> this.ChooseCount then
-                Log.debug "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
+                Log.error "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
         | _ -> ()
         this.ChooseCount <- inc this.ChooseCount // mutation is fine here since calling Choose implies we're doing so on a new reference in functional mode
         WorldTypes.Chosen <- this
@@ -1819,12 +1893,21 @@ and [<AbstractClass>] NuPlugin () =
     abstract EditModes : Map<string, World -> World>
     default this.EditModes = Map.empty
 
+    /// The packages that should be loaded at start-up in all contexts, including in audio player, renderers, and
+    /// metadata. The Default package is always included.
+    abstract InitialPackages : string list
+    default this.InitialPackages = []
+
+    /// Clean-up any user-defined resources of the plugin, such with shutting down a Steamworks API.
+    abstract CleanUp : unit -> unit
+    default this.CleanUp () = ()
+
     /// Invoke a user-defined callback.
     abstract Invoke : string -> obj list -> World -> World
     default this.Invoke _ _ world = world
 
     /// Make a list of keyed values to hook into the engine.
-    abstract MakeKeyedValues : World -> ((Guid * obj) list) * World
+    abstract MakeKeyedValues : World -> ((string * obj) list) * World
     default this.MakeKeyedValues world = ([], world)
 
     /// Attempt to make an emitter of the given name.
@@ -1834,16 +1917,6 @@ and [<AbstractClass>] NuPlugin () =
         | "BasicStaticSpriteEmitter" -> Particles.BasicStaticSpriteEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | "BasicStaticBillboardEmitter" -> Particles.BasicStaticBillboardEmitter.makeDefault time lifeTimeOpt particleLifeTimeOpt particleRate particleMax :> Particles.Emitter |> Some
         | _ -> None
-
-    /// Attempt to convert a sequence of entities to the given scenery entity, destroying all those that were
-    /// successfully converted.
-    abstract TryConvertEntitiesToScenery : Entity seq -> Entity -> World -> World
-    default this.TryConvertEntitiesToScenery _ _ world = world // fail to convert any by default.
-
-    /// Attempt to convert a given scenery entity to a sequence of entities, creating all those that were
-    /// successfully converted.
-    abstract TryConvertSceneryToEntities : Entity -> World -> (Entity seq * World)
-    default this.TryConvertSceneryToEntities _ world = (Seq.empty, world) // fail to convert any by default.
 
     /// A call-back at the beginning of each frame.
     abstract PreProcess : World -> World

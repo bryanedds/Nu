@@ -1,5 +1,0 @@
-EncounterType,BattleTypes
-DebugEncounter,[DebugBattle]
-CastleEncounter,[CastleBattle CastleBattle2 CastleBattle3 CastleBattle4 CastleBattle5 CastleBattle6 CastleBattle7 CastleBattle8 CastleBattle9]
-Castle2Encounter,[Castle2Battle Castle2Battle2 Castle2Battle3 Castle2Battle4 Castle2Battle5 Castle2Battle6 Castle2Battle7 Castle2Battle8 Castle2Battle9]
-Castle3Encounter,[Castle3Battle Castle3Battle2 Castle3Battle3 Castle3Battle4 Castle3Battle5 Castle3Battle6 Castle3Battle7 Castle3Battle8 Castle3Battle9]

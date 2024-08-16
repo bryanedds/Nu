@@ -60,8 +60,7 @@ type Slice =
       mutable Brightness : single
       mutable LightCutoff : single
       mutable Volume : single
-      mutable Enabled : bool
-      mutable PerimeterCentered : bool }
+      mutable Enabled : bool }
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 
@@ -440,7 +439,7 @@ module EffectSystem =
         match aspect with
         | Position position -> slice.Position <- slice.Position + position; slice
         | PositionLocal positionLocal ->
-            let oriented = Vector3.Transform (positionLocal, slice.Angles.RollPitchYaw)
+            let oriented = positionLocal.Transform slice.Angles.RollPitchYaw
             let translated = slice.Position + oriented
             slice.Position <- translated
             slice
@@ -475,7 +474,7 @@ module EffectSystem =
                 let (keyFrameTime, keyFrame, keyFrame2) = selectKeyFrames effectSystem.EffectTime playback keyFrames
                 let progress = evalProgress keyFrameTime keyFrame.TweenLength effectSystem
                 let tweened = tween Vector3.op_Multiply keyFrame.TweenValue keyFrame2.TweenValue progress algorithm
-                let oriented = Vector3.Transform (tweened, slice.Angles.RollPitchYaw)
+                let oriented = tweened.Transform slice.Angles.RollPitchYaw
                 let applied = applyTween Vector3.Multiply Vector3.Divide Vector3.Pow Vector3.Modulo slice.Position oriented applicator
                 slice.Position <- applied
             slice
@@ -632,7 +631,7 @@ module EffectSystem =
         // build sprite tokens
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
@@ -669,7 +668,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
+                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
@@ -699,7 +698,7 @@ module EffectSystem =
         // build text tokens
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
                 let text =
                     { TextValue.Transform = transform
                       Text = text
@@ -981,7 +980,7 @@ module EffectSystem =
             with exn ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EffectDescriptor>).PrettyPrinter
                 let effectStr = PrettyPrinter.prettyPrint (scstring descriptor) prettyPrinter
-                Log.debug ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
+                Log.error ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem
         else release effectSystem
     

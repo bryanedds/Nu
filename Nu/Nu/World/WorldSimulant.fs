@@ -182,6 +182,15 @@ module WorldSimulantModule =
             | :? Game as game -> World.tryUntruncateGameModel<'model> model game world
             | _ -> failwithumf ()
 
+        /// Notify the engine that a simulant's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
+        static member notifyModelChange (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.notifyEntityModelChange entity world
+            | :? Group as group -> World.notifyGroupModelChange group world
+            | :? Screen as screen -> World.notifyScreenModelChange screen world
+            | :? Game as game -> World.notifyGameModelChange game world
+            | _ -> failwithumf ()
+
         /// Attempt to get the parent of the given simulant.
         static member tryGetParent (simulant : Simulant) world =
             ignore (world : World)

@@ -95,7 +95,7 @@ module WorldModule2 =
         /// out via another screen.
         static member tryGetSelectedScreenIdling world =
             match World.getSelectedScreenOpt world with
-            | Some selectedScreen -> Some (selectedScreen.Idling world)
+            | Some selectedScreen -> Some (selectedScreen.GetIdling world)
             | None -> None
 
         /// Try to check that the selected screen is transitioning.
@@ -134,7 +134,7 @@ module WorldModule2 =
                 let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
                 let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
                 world
-
+                
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
             let transition =
                 match transitionType with
@@ -144,38 +144,34 @@ module WorldModule2 =
             match (transitionTime, transition.TransitionLifeTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime = lifeTime
+                localTime - 2L >= lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime >= lifeTime
+                localTime - world.ClockDelta * 2.0f >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIdling3 transitionTime slide (_ : Screen) (world : World) =
             match (transitionTime, slide.IdlingTime) with
             | (UpdateTime time, UpdateTime lifeTime) ->
                 let localTime = world.UpdateTime - time
-                localTime = lifeTime
+                localTime - 2L >= lifeTime
             | (ClockTime time, ClockTime lifeTime) ->
                 let localTime = world.ClockTime - time
-                localTime >= lifeTime
+                localTime - world.ClockDelta * 2.0f >= lifeTime
             | (_, _) -> failwithumf ()
 
         static member private updateScreenIncoming transitionTime (selectedScreen : Screen) world =
             match World.getLiveness world with
             | Live ->
                 let world =
-                    let firstFrame = 
-                        match transitionTime with
-                        | UpdateTime time -> time + 1L = world.UpdateTime
-                        | ClockTime time -> time + world.ClockDelta = world.ClockTime
-                    if firstFrame then
+                    if transitionTime = world.GameTime then
                         let eventTrace = EventTrace.debug "World" "updateScreenIncoming" "IncomingStart" EventTrace.empty
                         let world = World.publishPlus () selectedScreen.IncomingStartEvent eventTrace selectedScreen false false world
                         match (selectedScreen.GetIncoming world).SongOpt with
                         | Some playSong ->
-                            match World.getCurrentSongOpt world with
+                            match World.getSongOpt world with
                             | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
-                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                            | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                         | None -> ()
                         world
                     else world
@@ -195,44 +191,52 @@ module WorldModule2 =
                 if world.Accompanied && world.Halted then // special case to play song when halted in editor
                     match (selectedScreen.GetIncoming world).SongOpt with
                     | Some playSong ->
-                        match World.getCurrentSongOpt world with
+                        match World.getSongOpt world with
                         | Some song when assetEq song.Song playSong.Song -> () // do nothing when song is the same
-                        | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.Volume playSong.Song world // play song when song is different
+                        | _ -> World.playSong playSong.FadeInTime playSong.FadeOutTime GameTime.zero playSong.RepeatLimitOpt playSong.Volume playSong.Song world // play song when song is different
                     | None -> ()
                 match selectedScreen.GetSlideOpt world with
                 | Some slide ->
                     // slide-specific behavior currently has to ignore desired screen in order to work. However, we
                     // special case it here to pay attention to desired screen when it is a non-slide screen (IE, not
                     // executing a series of slides). Additionally, to keep this hack's implementation self-contained,
-                    // we use a quick cut to the desired screen in this special-case.
+                    // we use a quick cut to the desired screen in this special case.
                     match World.getDesiredScreen world with
                     | Desire desiredScreen when desiredScreen <> selectedScreen && (desiredScreen.GetSlideOpt world).IsNone ->
-                        World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world
+                        let transitionTime = world.GameTime
+                        let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
+                        World.updateScreenIdling transitionTime desiredScreen world
                     | DesireNone ->
                         World.selectScreenOpt None world
                     | _ ->
-                        if World.updateScreenIdling3 transitionTime slide selectedScreen world
-                        then World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                        if World.updateScreenIdling3 transitionTime slide selectedScreen world then
+                            let transitionTime = world.GameTime
+                            let world = World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
+                            World.updateScreenOutgoing transitionTime selectedScreen world
                         else world
                 | None ->
                     match World.getDesiredScreen world with
                     | Desire desiredScreen ->
                         if desiredScreen <> selectedScreen then
-                            if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
-                            then World.selectScreenOpt (Some (TransitionState.IdlingState world.GameTime, desiredScreen)) world
-                            else World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                            if world.Accompanied && world.Halted then // special case to quick cut when halted in the editor
+                                let transitionTime = world.GameTime
+                                let world = World.selectScreen (IdlingState transitionTime) desiredScreen world
+                                World.updateScreenIdling transitionTime desiredScreen world
+                            else
+                                let transitionTime = world.GameTime
+                                let world = World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
+                                World.updateScreenOutgoing transitionTime selectedScreen world
                         else world
-                    | DesireNone -> World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                    | DesireNone ->
+                        let transitionTime = world.GameTime
+                        let world = World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
+                        World.updateScreenOutgoing transitionTime selectedScreen world
                     | DesireIgnore -> world
             | Dead -> world
 
         static member private updateScreenOutgoing transitionTime (selectedScreen : Screen) (world : World) =
             let world =
-                let firstFrame =
-                    match transitionTime with
-                    | UpdateTime time -> time + 1L = world.UpdateTime
-                    | ClockTime time -> time + world.ClockDelta = world.ClockTime
-                if firstFrame then
+                if transitionTime = world.GameTime then
                     let incoming = selectedScreen.GetIncoming world
                     let outgoing = selectedScreen.GetOutgoing world
                     match outgoing.SongOpt with
@@ -265,7 +269,9 @@ module WorldModule2 =
             match World.getLiveness world with
             | Live ->
                 if World.updateScreenTransition3 Outgoing selectedScreen world then
-                    let world = World.setScreenTransitionStatePlus (IdlingState world.GameTime) selectedScreen world
+                    let transitionTime = world.GameTime
+                    let world = World.setScreenTransitionStatePlus (IdlingState transitionTime) selectedScreen world
+                    let world = World.updateScreenIdling transitionTime selectedScreen world
                     let world =
                         match World.getLiveness world with
                         | Live ->
@@ -287,18 +293,44 @@ module WorldModule2 =
                                     | DesireIgnore -> None
                         match destinationOpt with
                         | Some destination ->
-                            if destination <> selectedScreen
-                            then World.selectScreen (IncomingState world.GameTime) destination world
+                            if destination <> selectedScreen then
+                                let transitionTime = world.GameTime
+                                let world = World.selectScreen (IncomingState transitionTime) destination world
+                                World.updateScreenIncoming transitionTime destination world
                             else world
                         | None ->
                             let world = World.selectScreenOpt None world
                             match World.getDesiredScreen world with // handle the possibility that screen deselect event changed destination
-                            | Desire destination -> World.selectScreen (IncomingState world.GameTime) destination world
+                            | Desire destination ->
+                                let transitionTime = world.GameTime
+                                let world = World.selectScreen (IncomingState transitionTime) destination world
+                                World.updateScreenIncoming transitionTime destination world
                             | DesireNone -> world
                             | DesireIgnore -> world
                     | Dead -> world
                 else world
             | Dead -> world
+
+        static member private updateScreenRequestedSong world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                match World.getScreenRequestedSong selectedScreen world with
+                | Request song ->
+                    match World.getSongOpt world with
+                    | Some current ->
+                        if  current.FadeInTime <> song.FadeInTime ||
+                            current.FadeOutTime <> song.FadeOutTime ||
+                            current.StartTime <> song.StartTime ||
+                            current.RepeatLimitOpt <> song.RepeatLimitOpt ||
+                            assetNeq current.Song song.Song then
+                            World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+                        elif current.Volume <> song.Volume then
+                            World.setSongVolume song.Volume world
+                    | None -> World.playSong song.FadeInTime song.FadeOutTime song.StartTime song.RepeatLimitOpt song.Volume song.Song world
+                | RequestFadeOut fadeOutTime -> if not (World.getSongFadingOut world) then World.fadeOutSong fadeOutTime world
+                | RequestNone -> World.stopSong world
+                | RequestIgnore -> ()
+            | None -> ()
 
         static member private updateScreenTransition world =
             match World.getSelectedScreenOpt world with
@@ -319,13 +351,17 @@ module WorldModule2 =
             | Some selectedScreen ->
                 if  selectedScreen <> destination &&
                     not (World.getSelectedScreenTransitioning world) then
+                    let transitionTime = world.GameTime
                     let world = World.setScreenTransitionDestinationOpt (Some destination) world
-                    let world = World.setScreenTransitionStatePlus (OutgoingState world.GameTime) selectedScreen world
+                    let world = World.setScreenTransitionStatePlus (OutgoingState transitionTime) selectedScreen world
+                    let world = World.updateScreenOutgoing transitionTime selectedScreen world
                     (true, world)
                 else (false, world)
             | None ->
-                let world = World.setScreenTransitionStatePlus (IncomingState world.GameTime) destination world
+                let transitionTime = world.GameTime
+                let world = World.setScreenTransitionStatePlus (IncomingState transitionTime) destination world
                 let world = World.setSelectedScreen destination world
+                let world = World.updateScreenIncoming transitionTime destination world
                 (true, world)
 
         /// Transition to the given screen.
@@ -352,10 +388,6 @@ module WorldModule2 =
             let world = World.setEntityProtected true slideSprite world |> snd'
             let world = slideSprite.SetPersistent false world
             let world = slideSprite.SetSize eyeSize.V3 world
-            let world =
-                if not Constants.Engine.Entity2dPerimeterCenteredDefault
-                then slideSprite.SetPosition (-eyeSize.V3 * 0.5f) world
-                else world
             let world = slideSprite.SetAbsolute true world
             let world =
                 match slideDescriptor.SlideImageOpt with
@@ -417,7 +449,7 @@ module WorldModule2 =
                 if considerUsingCurrentEntityAsPropagationSource then
                     match currentEntityOpt with
                     | Some currentEntity ->
-                        if currentEntity.Exists world && World.hasPropagationTargets currentEntity world
+                        if currentEntity.GetExists world && currentEntity.HasPropagationTargets world
                         then { propagatedDescriptor with EntityProperties = Map.add Constants.Engine.PropagationSourceOptPropertyName (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
                         else propagatedDescriptor
                     | None -> propagatedDescriptor
@@ -514,7 +546,7 @@ module WorldModule2 =
                                     match nameSymbol with
                                     | Atom (name, _) | Text (name, _) ->
                                         let currentEntity = currentEntity / name
-                                        if currentEntity.Exists world
+                                        if currentEntity.GetExists world
                                         then Some currentEntity
                                         else None
                                     | _ -> None
@@ -562,10 +594,10 @@ module WorldModule2 =
 
         /// Propagate the structure of an entity to all other entities with it as their propagation source.
         /// TODO: expose this through Entity API.
-        static member propagateEntityStructure entity world =
+        static member propagateEntityStructure (entity : Entity) world =
 
             // propagate entity
-            let targets = World.getPropagationTargets entity world
+            let targets = entity.GetPropagationTargets world
             let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
@@ -586,21 +618,21 @@ module WorldModule2 =
 
             // propagate sourced ancestor entities
             seq {
-                for target in World.getPropagationTargets entity world do
-                    if target.Exists world then
+                for target in entity.GetPropagationTargets world do
+                    if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
-                            if ancestor.Exists world && World.hasPropagationTargets ancestor world then
+                            if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                                 ancestor } |>
             Set.ofSeq |>
             Set.fold (fun world ancestor ->
-                if ancestor.Exists world && World.hasPropagationTargets ancestor world
+                if ancestor.GetExists world && ancestor.HasPropagationTargets world
                 then World.propagateEntityStructure ancestor world
                 else world)
                 world
 
         /// Clear all propagation targets pointing back to the given entity.
-        static member clearPropagationTargets entity world =
-            let targets = World.getPropagationTargets entity world
+        static member clearPropagationTargets (entity : Entity) world =
+            let targets = entity.GetPropagationTargets world
             Seq.fold (fun world target ->
                 if World.getEntityExists target world
                 then target.SetPropagationSourceOpt None world
@@ -630,7 +662,7 @@ module WorldModule2 =
 #if DEBUG
                         if  Array.contains Address.WildcardName eventNames ||
                             Array.contains Address.EllipsisName eventNames then
-                            Log.debug
+                            Log.error
                                 ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
                                  "This will cause a bug where some entity update events are not published.")
 #endif
@@ -646,7 +678,7 @@ module WorldModule2 =
                             if eventNamesLength >= 6 then
                                 let entityAddress = rtoa (Array.skip 3 eventNames)
                                 let entity = Nu.Entity entityAddress
-                                match World.tryGetKeyedValueFast<Guid, UMap<Entity Address, int>> (EntityChangeCountsId, world) with
+                                match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with
                                 | (true, entityChangeCounts) ->
                                     match entityChangeCounts.TryGetValue entityAddress with
                                     | (true, entityChangeCount) ->
@@ -656,26 +688,26 @@ module WorldModule2 =
                                             then UMap.remove entityAddress entityChangeCounts
                                             else UMap.add entityAddress entityChangeCount entityChangeCounts
                                         let world =
-                                            if entity.Exists world then
+                                            if entity.GetExists world then
                                                 if entityChangeCount = 0 then World.setEntityPublishChangeEvents false entity world |> snd'
                                                 elif entityChangeCount = 1 then World.setEntityPublishChangeEvents true entity world |> snd'
                                                 else world
                                             else world
-                                        World.addKeyedValue EntityChangeCountsId entityChangeCounts world
+                                        World.mapKeyValueStore (SUMap.add EntityChangeCountsKey entityChangeCounts) world // no event
                                     | (false, _) ->
                                         if not subscribing then failwithumf ()
-                                        let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
-                                        World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                        let world = if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                        World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                                 | (false, _) ->
                                     if not subscribing then failwithumf ()
                                     let config = World.getCollectionConfig world
                                     let entityChangeCounts = UMap.makeEmpty HashIdentity.Structural config
-                                    let world = if entity.Exists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
-                                    World.addKeyedValue EntityChangeCountsId (UMap.add entityAddress 1 entityChangeCounts) world
+                                    let world = if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
+                                    World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                             else world
                         if  Array.contains Address.WildcardName eventNames ||
                             Array.contains Address.EllipsisName eventNames then
-                            Log.debug "Subscribing to change events with a wildcard or ellipsis is not supported."
+                            Log.error "Subscribing to change events with a wildcard or ellipsis is not supported."
                         world
                     | _ -> world
                 else world
@@ -842,10 +874,10 @@ module WorldModule2 =
             | Some screen ->
                 let groups = World.getGroups screen world
                 Seq.fold (fun world (group : Group) ->
-                    if group.Exists world then
+                    if group.GetExists world then
                         let entities = World.getEntities group world
                         Seq.fold (fun world (entity : Entity) ->
-                            if entity.Exists world
+                            if entity.GetExists world
                             then World.registerEntityPhysics entity world
                             else world)
                             world entities
@@ -1009,7 +1041,7 @@ module WorldModule2 =
                 | BodyCollisionMessage bodyCollisionMessage ->
                     match bodyCollisionMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.Selected world then
+                        if entity.GetExists world && entity.GetSelected world then
                             let collisionData =
                                 { BodyShapeCollider = bodyCollisionMessage.BodyShapeSource
                                   BodyShapeCollidee = bodyCollisionMessage.BodyShapeSource2
@@ -1022,7 +1054,7 @@ module WorldModule2 =
                 | BodySeparationMessage bodySeparationMessage ->
                     match bodySeparationMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.Selected world then
+                        if entity.GetExists world && entity.GetSelected world then
                             let explicit =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
                                   BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
@@ -1035,7 +1067,7 @@ module WorldModule2 =
                     let bodyId = bodyTransformMessage.BodyId
                     match bodyId.BodySource with
                     | :? Entity as entity ->
-                        if entity.Exists world && entity.Selected world then
+                        if entity.GetExists world && entity.GetSelected world then
                             let center = bodyTransformMessage.Center
                             if not (Single.IsNaN center.X) then
                                 let rotation = bodyTransformMessage.Rotation
@@ -1220,12 +1252,12 @@ module WorldModule2 =
 
             // pre-update screen if any
             world.Timers.PreUpdateScreensTimer.Restart ()
-            let world = Option.fold (fun world screen -> if advancing then World.preUpdateScreen screen world else world) world screenOpt
+            let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.preUpdateScreen screen world else world) world screenOpt
             world.Timers.PreUpdateScreensTimer.Stop ()
 
             // pre-update groups
             world.Timers.PreUpdateGroupsTimer.Restart ()
-            let world = Seq.fold (fun world group -> if advancing then World.preUpdateGroup group world else world) world groups
+            let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.preUpdateGroup group world else world) world groups
             world.Timers.PreUpdateGroupsTimer.Stop ()
 
             // fin
@@ -1250,28 +1282,28 @@ module WorldModule2 =
                 world.Timers.UpdateGameTimer.Restart ()
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
-            
+
                 // update screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world screen -> if advancing then World.updateScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world group -> if advancing then World.updateGroup group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.updateGroup group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 let world =
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet3dNormalCached
                 let world =
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Entry.GetAlwaysUpdate world || advancing && not (element.Entry.GetStatic world)
+                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
                         then World.updateEntity element.Entry world
                         else world)
                         world HashSet2dNormalCached
@@ -1302,12 +1334,12 @@ module WorldModule2 =
 
             // post-update screen if any
             world.Timers.PostUpdateScreensTimer.Restart ()
-            let world = Option.fold (fun world screen -> if advancing then World.postUpdateScreen screen world else world) world screenOpt
+            let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.postUpdateScreen screen world else world) world screenOpt
             world.Timers.PostUpdateScreensTimer.Stop ()
 
             // post-update groups
             world.Timers.PostUpdateGroupsTimer.Restart ()
-            let world = Seq.fold (fun world group -> if advancing then World.postUpdateGroup group world else world) world groups
+            let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.postUpdateGroup group world else world) world groups
             world.Timers.PostUpdateGroupsTimer.Stop ()
 
             // fin
@@ -1329,10 +1361,8 @@ module WorldModule2 =
                         | (_, _) -> failwithumf ()
                     let alpha = match transition.TransitionType with Incoming -> 1.0f - progress | Outgoing -> progress
                     let color = Color.One.WithA alpha
-                    let position = -eyeSize.V3 * 0.5f
                     let size = eyeSize.V3
-                    let mutable transform = Transform.makeDefault false
-                    transform.Position <- position
+                    let mutable transform = Transform.makeDefault ()
                     transform.Size <- size
                     transform.Elevation <- Single.MaxValue
                     transform.Absolute <- true
@@ -1562,6 +1592,7 @@ module WorldModule2 =
             world.JobGraph.CleanUp ()
             let world = World.unregisterGame Nu.Game.Handle world
             World.cleanUpSubsystems world |> ignore
+            world.WorldExtension.Plugin.CleanUp ()
 
         /// Run the game engine with the given handlers, but don't clean up at the end, and return the world.
         static member runWithoutCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess liveness firstFrame (world : World) =
@@ -1582,6 +1613,9 @@ module WorldModule2 =
                     let world = World.updateScreenTransition world
                     match World.getLiveness world with
                     | Live ->
+
+                        // 
+                        World.updateScreenRequestedSong world
 
                         // process HID inputs
                         world.Timers.InputTimer.Restart ()
@@ -1683,7 +1717,8 @@ module WorldModule2 =
                                                                         // automatically enable frame pacing when need is detected
                                                                         let world =
                                                                             if not world.FramePacing then
-                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
+                                                                                let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                                if world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum * 0.9 then FramePaceIssues <- inc FramePaceIssues
                                                                                 FramePaceChecks <- inc FramePaceChecks
                                                                                 let world = if FramePaceIssues = 15 then World.setFramePacing true world else world
                                                                                 if FramePaceChecks % 30 = 0 then FramePaceIssues <- 0
@@ -1692,8 +1727,9 @@ module WorldModule2 =
 
                                                                         // pace frame when enabled
                                                                         if world.FramePacing then
-                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < Constants.GameTime.DesiredFrameTimeMinimum do
-                                                                                let timeToSleep = Constants.GameTime.DesiredFrameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
+                                                                            let frameTimeMinimum = GameTime.DesiredFrameTimeMinimum
+                                                                            while world.Timers.MainThreadTimer.Elapsed.TotalSeconds < frameTimeMinimum do
+                                                                                let timeToSleep = frameTimeMinimum - world.Timers.MainThreadTimer.Elapsed.TotalSeconds
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1
@@ -1751,7 +1787,7 @@ module WorldModule2 =
                                                                             let world = World.publish () (Events.TimeUpdateEvent --> selectedScreen) selectedScreen world
                                                                             let groups = World.getGroups selectedScreen world
                                                                             Seq.fold (fun world (group : Group) ->
-                                                                                if group.Exists world
+                                                                                if group.GetExists world
                                                                                 then World.publish () (Events.TimeUpdateEvent --> group) group world
                                                                                 else world)
                                                                                 world groups
@@ -1783,7 +1819,7 @@ module WorldModule2 =
                 Constants.Engine.ExitCodeSuccess
             with exn ->
                 let world = World.switch world
-                Log.trace (scstring exn)
+                Log.error (scstring exn)
                 World.cleanUp world
                 Constants.Engine.ExitCodeFailure
 
@@ -1808,11 +1844,11 @@ module EntityDispatcherModule2 =
 
     /// The MMCC dispatcher for entities.
     and [<AbstractClass>] EntityDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command>
-        (is2d, perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
-        inherit EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light)
+        (is2d, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
-        new (is2d, perimeterCentered, physical, lightProbe, light, initial : 'model) =
-            EntityDispatcher<'model, 'message, 'command> (is2d, perimeterCentered, physical, lightProbe, light, fun _ -> initial)
+        new (is2d, physical, lightProbe, light, initial : 'model) =
+            EntityDispatcher<'model, 'message, 'command> (is2d, physical, lightProbe, light, fun _ -> initial)
 
         /// Get the entity's model.
         member this.GetModel (entity : Entity) world : 'model =
@@ -1835,10 +1871,11 @@ module EntityDispatcherModule2 =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing entity model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
                         makeInitial world
             World.setEntityModelGeneric<'model> true model entity world |> snd'
 
@@ -1869,13 +1906,13 @@ module EntityDispatcherModule2 =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalEntity<'model, 'message, 'command> command entity world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by entity (signal = '" + scstring signalObj + "'; entity = '" + scstring entity + "').\n" +
                              "This may come about due to sending an incorrect signal type to the entity or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModel<'a> world =
-            makeInitial world :> obj :?> 'a |> Some
+        override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
+            this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, entity, world) =
             let contentOld = World.getEntityContent entity world
@@ -1897,6 +1934,10 @@ module EntityDispatcherModule2 =
                 let current = entity.GetModelGeneric<'model> world
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Entity * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The entity's own MMCC definitions.
         abstract Definitions : 'model * Entity -> DefinitionContent list
@@ -1935,25 +1976,18 @@ module EntityDispatcherModule2 =
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
-    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, lightProbe, light, makeInitial)
-
-        new (centered, physical, lightProbe, light, initial : 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (centered, physical, lightProbe, light, fun _ -> initial)
-
-        new (physical, lightProbe, light, makeInitial : World -> 'model) =
-            Entity2dDispatcher<'model, 'message, 'command> (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light, makeInitial)
+    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model, 'message, 'command> (true, physical, lightProbe, light, makeInitial)
 
         new (physical, lightProbe, light, initial : 'model) =
             Entity2dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
 
         static member Properties =
-            [define Entity.Size Constants.Engine.Entity2dSizeDefault
-             define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
     /// A gui entity dispatcher.
     and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (true, false, false, false, makeInitial)
 
         new (initial : 'model) =
             GuiDispatcher<'model, 'message, 'command> (fun _ -> initial)
@@ -1962,9 +1996,7 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
-             define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
-             define Entity.Presence Omnipresent
+            [define Entity.Presence Omnipresent
              define Entity.Absolute true
              define Entity.DisabledColor Constants.Gui.DisabledColor
              define Entity.Layout Manual
@@ -1975,7 +2007,7 @@ module EntityDispatcherModule2 =
 
     /// A 3d entity dispatcher.
     and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, lightProbe, light, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (false, physical, lightProbe, light, makeInitial)
 
         new (physical, lightProbe, light, initial : 'model) =
             Entity3dDispatcher<'model, 'message, 'command> (physical, lightProbe, light, fun _ -> initial)
@@ -1992,7 +2024,7 @@ module EntityDispatcherModule2 =
 
     /// A vui dispatcher (gui in 3d).
     and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
-        inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, false, false, makeInitial)
+        inherit EntityDispatcher<'model, 'message, 'command> (false, false, false, false, makeInitial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
@@ -2041,7 +2073,9 @@ module EntityPropertyDescriptor =
             propertyName = Constants.Engine.FacetNamesPropertyName ||
             propertyName = Constants.Engine.PropagatedDescriptorOptPropertyName ||
             propertyName = "Rotation" ||
-            propertyName = "RotationLocal" then
+            propertyName = "RotationLocal" ||
+            propertyName = "Light" ||
+            propertyName = "LightProbe" then
             false
         else
             propertyName = "Degrees" ||
@@ -2151,15 +2185,22 @@ module GroupDispatcherModule =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing group model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing group model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGroupModelGeneric<'model> true model group world |> snd'
 
         override this.Render (renderPass, group, world) =
             this.Render (this.GetModel group world, renderPass, group, world)
+
+        override this.Edit (operation, group, world) =
+            let model = group.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, group, world)
+            let world = this.SetModel model group world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model group) signal group world) world signals
 
         [<DebuggerHidden>]
         override this.Signal (signalObj : obj, group, world) =
@@ -2173,13 +2214,13 @@ module GroupDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalGroup<'model, 'message, 'command> command group world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by group (signal = '" + scstring signalObj + "'; group = '" + scstring group + "').\n" +
                              "This may come about due to sending an incorrect signal type to the group or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModel<'a> world =
-            makeInitial world :> obj :?> 'a |> Some
+        override this.TryGetFallbackModel<'a> (modelSymbol, group, world) =
+            this.GetFallbackModel (modelSymbol, group, world) :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, group, world) =
             let contentOld = World.getGroupContent group world
@@ -2201,6 +2242,10 @@ module GroupDispatcherModule =
                 let current = group.GetModelGeneric<'model> world
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Group * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The group's own MMCC definitions.
         abstract Definitions : 'model * Group -> DefinitionContent list
@@ -2323,15 +2368,22 @@ module ScreenDispatcherModule =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing screen model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing screen model to new type. Falling back on initial model value."
                         makeInitial world
             World.setScreenModelGeneric<'model> true model screen world |> snd'
 
         override this.Render (renderPass, screen, world) =
             this.Render (this.GetModel screen world, renderPass, screen, world)
+
+        override this.Edit (operation, screen, world) =
+            let model = screen.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, screen, world)
+            let world = this.SetModel model screen world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model screen) signal screen world) world signals
 
         [<DebuggerHidden>]
         override this.Signal (signalObj : obj, screen, world) =
@@ -2345,13 +2397,13 @@ module ScreenDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalScreen<'model, 'message, 'command> command screen world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by screen (signal = '" + scstring signalObj + "'; screen = '" + scstring screen + "').\n" +
                              "This may come about due to sending an incorrect signal type to the screen or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModel<'a> world =
-            makeInitial world :> obj :?> 'a |> Some
+        override this.TryGetFallbackModel<'a> (modelSymbol, screen, world) =
+            this.GetFallbackModel (modelSymbol, screen, world) :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, screen, world) =
             let contentOld = World.getScreenContent screen world
@@ -2373,6 +2425,10 @@ module ScreenDispatcherModule =
                 let current = screen.GetModelGeneric<'model> world
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Screen * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The screen's own MMCC definitions.
         abstract Definitions : 'model * Screen -> DefinitionContent list
@@ -2502,15 +2558,22 @@ module GameDispatcherModule =
                 | null -> null :> obj :?> 'model
                 | modelObj ->
                     try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
                         property.DesignerValue <- model
                         model
                     with _ ->
-                        Log.debugOnce "Could not convert existing game model to new type. Falling back on initial model value."
+                        Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
                         makeInitial world
             World.setGameModelGeneric<'model> true model game world |> snd'
 
         override this.Render (renderPass, game, world) =
             this.Render (this.GetModel game world, renderPass, game, world)
+
+        override this.Edit (operation, game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (signals, model) = this.Edit (model, operation, game, world)
+            let world = this.SetModel model game world
+            List.fold (fun world signal -> Signal.processSignal this.Message this.Command (this.Model game) signal game world) world signals
 
         [<DebuggerHidden>]
         override this.Signal (signalObj : obj, game, world) =
@@ -2524,13 +2587,13 @@ module GameDispatcherModule =
                     try let command = signalObj |> valueToSymbol |> symbolToValue : 'command
                         World.signalGame<'model, 'message, 'command> command game world
                     with _ ->
-                        Log.debugOnce
+                        Log.errorOnce
                             ("Incompatible signal type received by game (signal = '" + scstring signalObj + "'; game = '" + scstring game + "').\n" +
                              "This may come about due to sending an incorrect signal type to the game or due to too significant a change in the signal type when reloading code.")
                         world
 
-        override this.TryGetInitialModel<'a> world =
-            makeInitial world :> obj :?> 'a |> Some
+        override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
+            this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
 
         override this.TrySynchronize (initializing, game, world) =
             synchronize initializing game world this |> snd
@@ -2546,6 +2609,10 @@ module GameDispatcherModule =
                 let current = game.GetModelGeneric<'model> world
                 Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
             | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Game * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The game own MMCC definitions.
         abstract Definitions : 'model * Game -> DefinitionContent list

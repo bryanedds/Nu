@@ -39,8 +39,6 @@ module Override =
                 | nameof OpenGL.HlAssert -> OpenGL.HlAssert <- scvalue value
                 | nameof Engine.RunSynchronously -> Engine.RunSynchronously <- scvalue value
                 | nameof Engine.Meter2d -> Engine.Meter2d <- scvalue value
-                | nameof Engine.Entity2dPerimeterCenteredDefault -> Engine.Entity2dPerimeterCenteredDefault <- scvalue value
-                | nameof Engine.EntityGuiPerimeterCenteredDefault -> Engine.EntityGuiPerimeterCenteredDefault <- scvalue value
                 | nameof Engine.QuadnodeSize -> Engine.QuadnodeSize <- scvalue value
                 | nameof Engine.QuadtreeDepth -> Engine.QuadtreeDepth <- scvalue value
                 | nameof Engine.OctnodeSize -> Engine.OctnodeSize <- scvalue value
@@ -66,13 +64,11 @@ module Override =
                 | _ -> ()
             Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior
             Constants.Render.FarPlaneDistanceOmnipresent <- Constants.Render.FarPlaneDistanceImposter
-            Constants.Render.VirtualScalar2 <- Vector2i Constants.Render.VirtualScalar
-            Constants.Render.VirtualScalar2F <- Constants.Render.VirtualScalar2.V2
             Constants.Render.Resolution <- Constants.Render.VirtualResolution * Constants.Render.VirtualScalar
+            Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
             Constants.Render.ShadowResolution <- Vector2i (512 * Constants.Render.VirtualScalar)
             Constants.Render.SsaoResolution <- Constants.Render.Resolution / Constants.Render.SsaoResolutionDivisor
             Constants.Render.SsaoViewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, Box2i (v2iZero, Constants.Render.SsaoResolution))
-            Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
         with
         | :? ConfigurationErrorsException ->
             Log.info ("Configuration value override failed due to: Could not find App.config file for " + exeFilePath + ".")

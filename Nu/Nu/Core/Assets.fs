@@ -28,6 +28,7 @@ module Assets =
         let [<Literal>] BlockName = "Block"
         let [<Literal>] BallName = "Ball"
         let [<Literal>] BrickName = "Brick"
+        let [<Literal>] PaddleName = "Paddle"
         let [<Literal>] StaticSpriteName = "StaticSprite"
         let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
         let [<Literal>] NuSlideName = "NuSlide"

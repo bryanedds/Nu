@@ -36,7 +36,7 @@ module Hl =
         if AssertEnabled then
             let error = Gl.GetError ()
             if error <> ErrorCode.NoError then
-                Log.debug ("OpenGL assertion failed due to: " + string error)
+                Log.error ("OpenGL assertion failed due to: " + string error)
         a
 
 #if DEBUG
@@ -47,7 +47,7 @@ module Hl =
             let messageBytes = Array.zeroCreate<byte> length
             Marshal.Copy (message, messageBytes, 0, length)
             let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
-            Log.debug messageStr
+            Log.error messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DebugSeverityLow
         | DebugSeverity.DontCare
@@ -86,7 +86,7 @@ module Hl =
             not (version.StartsWith "4.5") &&
             not (version.StartsWith "4.6") &&
             not (version.StartsWith "5.0") (* heaven forbid... *) then
-            Log.trace "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
+            Log.fail "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
         glContext
 
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
@@ -117,6 +117,10 @@ module Hl =
         Gl.GetInteger (GetPName.NumExtensions, &extensionsCount)
         for i in 0 .. dec extensionsCount do
             extensions.Add (Gl.GetString (StringName.Extensions, uint i)) |> ignore<bool>
+
+        // assert that anisotropic texture filter is available
+        if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
+            Log.warn "Anisotropic texture filtering required to properly run Nu."
 
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =

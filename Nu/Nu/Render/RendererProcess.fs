@@ -168,33 +168,33 @@ type RendererInline () =
 
         member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize windowSize drawData =
             ()
-    //        match renderersOpt with
-    //        | Some (renderer3d, renderer2d, rendererImGui) ->
-    //            
-    //            // begin frame
-    //            OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
-    //            OpenGL.Hl.Assert ()
-    //
-    //            // render 3d
-    //            renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
-    //            messages3d.Clear ()
-    //            OpenGL.Hl.Assert ()
-    //
-    //            // render 2d
-    //            renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
-    //            messages2d.Clear ()
-    //            OpenGL.Hl.Assert ()
-    //
-    //            // render imgui
-    //            rendererImGui.Render drawData
-    //            OpenGL.Hl.Assert ()
-    //
-    //            // end frame
-    //            OpenGL.Hl.EndFrame ()
-    //            OpenGL.Hl.Assert ()
-    //
-    //        | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
-            
+            //match renderersOpt with
+            //| Some (renderer3d, renderer2d, rendererImGui) ->
+            //    
+            //    // begin frame
+            //    OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
+            //    OpenGL.Hl.Assert ()
+            //
+            //    // render 3d
+            //    renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
+            //    messages3d.Clear ()
+            //    OpenGL.Hl.Assert ()
+            //
+            //    // render 2d
+            //    renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
+            //    messages2d.Clear ()
+            //    OpenGL.Hl.Assert ()
+            //
+            //    // render imgui
+            //    rendererImGui.Render drawData
+            //    OpenGL.Hl.Assert ()
+            //
+            //    // end frame
+            //    OpenGL.Hl.EndFrame ()
+            //    OpenGL.Hl.Assert ()
+            //
+            //| None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
         member this.Swap () =
             ()
     //        match windowOpt with
@@ -956,17 +956,16 @@ type RendererThread () =
 
                 let result = vkQueuePresentKHR (presentQueue, Interop.AsPointer &presentInfo)
                 
-                // begin frame
+                //// begin frame
                 //OpenGL.Hl.BeginFrame (Constants.Render.ViewportOffset windowSize, windowSize)
-                OpenGL.Hl.Assert ()
-
+                //OpenGL.Hl.Assert ()
+                //
                 //// render 3d
                 //renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
                 //freeStaticModelMessages messages3d
                 //freeStaticModelSurfaceMessages messages3d
                 //freeAnimatedModelMessages messages3d
                 //renderer3dConfig <- renderer3d.RendererConfig
-                //OpenGL.Hl.Assert ()
                 //
                 //// render 2d
                 //renderer2d.Render eye2dCenter eye2dSize windowSize messages2d

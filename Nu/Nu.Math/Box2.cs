@@ -8,8 +8,8 @@
 //
 
 using System;
-using System.Runtime.InteropServices;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace Nu
 {
@@ -116,10 +116,10 @@ namespace Nu
                 return ContainmentType.Disjoint;
 
 
-            if (min2.X >= Min.X
-                && max2.X <= max.X
-                && min2.Y >= min.Y
-                && max2.Y <= max.Y)
+            if (min2.X > Min.X
+                && max2.X < max.X
+                && min2.Y > min.Y
+                && max2.Y < max.Y)
                 return ContainmentType.Contains;
 
             return ContainmentType.Intersects;

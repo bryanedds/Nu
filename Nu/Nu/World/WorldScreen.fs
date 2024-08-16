@@ -33,6 +33,9 @@ module WorldScreenModule =
         member this.GetOutgoing world = World.getScreenOutgoing this world
         member this.SetOutgoing value world = World.setScreenOutgoing value this world |> snd'
         member this.Outgoing = lens (nameof this.Outgoing) this this.GetOutgoing this.SetOutgoing
+        member this.GetRequestedSong world = World.getScreenRequestedSong this world
+        member this.SetRequestedSong value world = World.setScreenRequestedSong value this world |> snd'
+        member this.RequestedSong = lens (nameof this.RequestedSong) this this.GetRequestedSong this.SetRequestedSong
         member this.GetSlideOpt world = World.getScreenSlideOpt this world
         member this.SetSlideOpt value world = World.setScreenSlideOpt value this world |> snd'
         member this.SlideOpt = lens (nameof this.SlideOpt) this this.GetSlideOpt this.SetSlideOpt
@@ -101,20 +104,20 @@ module WorldScreenModule =
             World.setScreenXtensionProperty propertyName property this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
-        member this.Idling world =
+        member this.GetIdling world =
             match this.GetTransitionState world with
             | IdlingState _ -> true
             | _ -> false
 
         /// Check that a screen is selected.
-        member this.Selected world =
+        member this.GetSelected world =
             let gameState = World.getGameState Game.Handle world
             match gameState.SelectedScreenOpt with
             | Some screen when this.Name = screen.Name -> true
             | _ -> false
 
         /// Check that a screen exists in the world.
-        member this.Exists world = World.getScreenExists this world
+        member this.GetExists world = World.getScreenExists this world
 
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -122,11 +125,11 @@ module WorldScreenModule =
         /// Check that a screen dispatches in the same manner as the dispatcher with the given type.
         member this.Is<'a> world = this.Is (typeof<'a>, world)
 
-        /// Get a screen's change event address.
-        member this.GetChangeEvent propertyName = this.ChangeEvent propertyName
-
         /// Send a signal to a screen.
         member this.Signal signal world = (this.GetDispatcher world).Signal (signal, this, world)
+
+        /// Notify the engine that a screen's MMCC model has changed in some automatically undetectable way (such as being mutated directly by user code).
+        member this.NotifyModelChange world = World.notifyScreenModelChange this world
 
     type World with
 
@@ -400,7 +403,7 @@ module WorldScreenModule =
                                 | Some (bounds' : Box3) -> boundsOpt <- Some (bounds'.Combine bounds)
                                 if geometry.PrimitiveType = OpenGL.PrimitiveType.Triangles then
                                     for v in geometry.Vertices do
-                                        let v' = Vector3.Transform (v, affineMatrix)
+                                        let v' = v.Transform affineMatrix
                                         v'.X; v'.Y; v'.Z|]
 
                     // compute indices
@@ -580,16 +583,14 @@ module WorldScreenModule =
         /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
         static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
             let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-            let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-            let navRotation =
-                if navAngularVelocityY > turnSpeed then
-                    let sign = (Vector3.Cross (rotation.Forward, navRotation.Forward)).Y
-                    rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, sign))
-                else navRotation
-            let navAngularVelocityYOpt = rotation.Forward.AngleBetween navRotation.Forward
-            let navAngularVelocityY = if Single.IsNaN navAngularVelocityYOpt then 0.0f else navAngularVelocityYOpt
-            let navAngularVelocity = v3Up * navAngularVelocityY
+            let naveSign = (rotation.Forward.Cross navRotation.Forward).Y
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
+            let navRotation = if navAngleBetween > turnSpeed then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, naveSign)) else navRotation
+            let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+            let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
+            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign) 0.0f
             (navRotation, navAngularVelocity)
 
         /// Compute navigation information that results in following the given destination.

@@ -53,6 +53,12 @@ type MyGameDispatcher () =
                 world)
                 world positions
         World.selectScreen (IdlingState world.GameTime) screen world
+
+    override this.Update (game, world) =
+        let world = base.Update (game, world)        
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world
 #else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
@@ -94,6 +100,12 @@ type MmccGameDispatcher () =
              Content.group "Other" []
                 [Content.skyBox "SkyBox" []
                  Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
+
+    override this.Update (game, world) =
+        let world = base.Update (game, world)        
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world
 #endif
 
 type MetricsPlugin () =
@@ -105,7 +117,7 @@ module Program =
     let [<EntryPoint; STAThread>] main _ =
         Directory.SetCurrentDirectory AppContext.BaseDirectory
         Nu.init ()
-        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "MyGame" }
+        let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Metrics" }
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
 #if FUNCTIONAL
         let worldConfig = { WorldConfig.defaultConfig with Imperative = false; SdlConfig = sdlConfig }

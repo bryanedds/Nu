@@ -8,7 +8,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
+		<NoWarn>FS9;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
@@ -17,7 +17,7 @@
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
 		<WarnOn>FS1182</WarnOn>
-		<NoWarn>FS9;FS1178;FS3391;FS3536;FS3560</NoWarn>
+		<NoWarn>FS9;FS1118;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
@@ -38,11 +38,8 @@
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
 		<Compile Include="Core\Constants.fs" />
-		<Compile Include="Collections\ListTree.fs" />
-		<Compile Include="Collections\KeyedArray.fs" />
-		<Compile Include="Collections\ForgetfulDictionary.fs" />
-		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Viewport.fs" />
+		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Quadtree.fs" />
 		<Compile Include="Transform\Octree.fs" />
 		<Compile Include="Transform\Transform.fs" />
@@ -177,6 +174,9 @@
 		<None Include="assimp.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Include="libassimp.so">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="libbulletc.dll">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -204,10 +204,10 @@
 		<PackageReference Include="Csv" Version="2.0.93" />
 		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.1.3" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
-		<PackageReference Include="Aether.Physics2D" Version="2.0.0" />
+		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.5.0" />
 		<PackageReference Include="Pfim" Version="0.11.2" />
-		<PackageReference Include="Prime" Version="9.23.0" />
+		<PackageReference Include="Prime" Version="9.26.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />

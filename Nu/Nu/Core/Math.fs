@@ -15,29 +15,38 @@ module Vector2 =
 
     type Vector2 with
 
-        member this.V2i = Vector2i (int this.X, int this.Y)
-        member this.V3i = Vector3i (int this.X, int this.Y, 0)
-        member this.V3 = Vector3 (this.X, this.Y, 0.0f)
-        member this.Normalized = Vector2.Normalize this
-        member this.Magnitude = this.Length ()
-        member this.MagnitudeSquared = this.LengthSquared ()
-        member this.Absolute = Vector2 (abs this.X, abs this.Y)
-        member this.MapX mapper = Vector2 (mapper this.X, this.Y)
-        member this.MapY mapper = Vector2 (this.X, mapper this.Y)
-        member this.WithX x = Vector2 (x, this.Y)
-        member this.WithY y = Vector2 (this.X, y)
-        member this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
+        member inline this.V3 = Vector3 (this.X, this.Y, 0.0f)
+        member inline this.V4 = Vector4 (this.X, this.Y, 0.0f, 0.0f)
+        member inline this.V2i = Vector2i (int this.X, int this.Y)
+        member inline this.V3i = Vector3i (int this.X, int this.Y, 0)
+        member inline this.V4i = Vector4i (int this.X, int this.Y, 0, 0)
+        member inline this.Normalized = Vector2.Normalize this
+        member inline this.Magnitude = this.Length ()
+        member inline this.MagnitudeSquared = this.LengthSquared ()
+        member inline this.Absolute = Vector2 (abs this.X, abs this.Y)
+        member inline this.MapX mapper = Vector2 (mapper this.X, this.Y)
+        member inline this.MapY mapper = Vector2 (this.X, mapper this.Y)
+        member inline this.WithX x = Vector2 (x, this.Y)
+        member inline this.WithY y = Vector2 (this.X, y)
+        member inline this.Dot that = Vector2.Dot (this, that)
+        member inline this.Transform (m : Matrix4x4) = Vector2.Transform (this, m)
+        member inline this.Transform (m : Matrix3x2) = Vector2.Transform (this, m)
+        member inline this.Transform (q : Quaternion) = Vector2.Transform (this, q)
+        member inline this.Rotate r = Vector2 (cos r * this.X - sin r * this.Y, sin r * this.X + cos r * this.Y)
 
+        /// Compute angle between vectors.
         member this.AngleBetween (that : Vector2) =
-            let a = Vector2.Normalize this
-            let b = Vector2.Normalize that
+            let a = this.Normalized
+            let b = that.Normalized
             acos (Vector2.Dot (a, b))
 
+        /// Compute power of vector components.
         static member Pow (a : Vector2, b : Vector2) =
             Vector2
                 (single (Math.Pow (double a.X, double b.X)),
                  single (Math.Pow (double a.Y, double b.Y)))
 
+        /// Compute modulo of vector components.
         static member Modulo (a : Vector2, b : Vector2) =
             Vector2
                 (a.X % b.X,
@@ -46,10 +55,10 @@ module Vector2 =
     let inline v2 x y = Vector2 (x, y)
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
     let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
-    let v2EqApprox (v : Vector2) (v2 : Vector2) =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f)
-    let inline v2NeqApprox v v2 = not (v2EqApprox v v2)
+    let v2EqApprox (v : Vector2) (v2 : Vector2) epsilon =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon)
+    let inline v2NeqApprox v v2 epsilon = not (v2EqApprox v v2 epsilon)
     let inline v2Dup (a : single) = v2 a a
     let v2One = Vector2.One
     let v2Zero = Vector2.Zero
@@ -95,26 +104,32 @@ module Vector3 =
 
     type Vector3 with
 
-        member this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
-        member this.V2i = Vector2i (int this.X, int this.Y)
-        member this.V2 = Vector2 (this.X, this.Y)
-        member this.Normalized = Vector3.Normalize this
-        member this.Magnitude = this.Length ()
-        member this.MagnitudeSquared = this.LengthSquared ()
-        member this.Absolute = Vector3 (abs this.X, abs this.Y, abs this.Z)
-        member this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
-        member this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
-        member this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
-        member this.WithX x = Vector3 (x, this.Y, this.Z)
-        member this.WithY y = Vector3 (this.X, y, this.Z)
-        member this.WithZ z = Vector3 (this.X, this.Y, z)
-        member this.RollPitchYaw = Math.RollPitchYaw &this
+        member inline this.V2 = Vector2 (this.X, this.Y)
+        member inline this.V4 = Vector4 (this.X, this.Y, 0.0f, 0.0f)
+        member inline this.V2i = Vector2i (int this.X, int this.Y)
+        member inline this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
+        member inline this.V4i = Vector4i (int this.X, int this.Y, int this.Z, 0)
+        member inline this.Normalized = Vector3.Normalize this
+        member inline this.Magnitude = this.Length ()
+        member inline this.MagnitudeSquared = this.LengthSquared ()
+        member inline this.Absolute = Vector3 (abs this.X, abs this.Y, abs this.Z)
+        member inline this.MapX mapper = Vector3 (mapper this.X, this.Y, this.Z)
+        member inline this.MapY mapper = Vector3 (this.X, mapper this.Y, this.Z)
+        member inline this.MapZ mapper = Vector3 (this.X, this.Y, mapper this.Z)
+        member inline this.WithX x = Vector3 (x, this.Y, this.Z)
+        member inline this.WithY y = Vector3 (this.X, y, this.Z)
+        member inline this.WithZ z = Vector3 (this.X, this.Y, z)
+        member inline this.Dot that = Vector3.Dot (this, that)
+        member inline this.Cross that = Vector3.Cross (this, that)
+        member inline this.Transform (m : Matrix4x4) = Vector3.Transform (this, m)
+        member inline this.Transform (q : Quaternion) = Vector3.Transform (this, q)
+        member inline this.RollPitchYaw = Math.RollPitchYaw &this
 
         /// Compute angle between vectors.
         member this.AngleBetween (that : Vector3) =
-            let a = Vector3.Normalize this
-            let b = Vector3.Normalize that
-            acos (Vector3.Dot (a, b))
+            let a = this.Normalized
+            let b = that.Normalized
+            acos (a.Dot b)
 
         /// Compute power of vector components.
         static member Pow (a : Vector3, b : Vector3) =
@@ -163,11 +178,11 @@ module Vector3 =
     let inline v3 x y z = Vector3 (x, y, z)
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
     let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
-    let v3EqApprox (v : Vector3) (v2 : Vector3) =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, 0.0001f)
-    let inline v3NeqApprox v v2 = not (v3EqApprox v v2)
+    let v3EqApprox (v : Vector3) (v2 : Vector3) epsilon =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon)
+    let inline v3NeqApprox v v2 epsilon = not (v3EqApprox v v2 epsilon)
     let inline v3Dup (a : single) = v3 a a a
     let v3UncenteredOffset = v3Dup 0.5f
     let v3One = Vector3.One
@@ -219,22 +234,25 @@ module Vector4 =
 
     type Vector4 with
 
-        member this.V2 = Vector2 (this.X, this.Y)
-        member this.V2i = Vector2i (int this.X, int this.Y)
-        member this.V3 = Vector3 (this.X, this.Y, this.Z)
-        member this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
-        member this.V4i = Vector4i (int this.X, int this.Y, int this.Z, int this.W)
-        member this.Magnitude = this.Magnitude
-        member this.MagnitudeSquared = this.LengthSquared ()
-        member this.Absolute = Vector4 (abs this.X, abs this.Y, abs this.Z, abs this.W)
-        member this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
-        member this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
-        member this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
-        member this.MapW mapper = Vector4 (this.X, this.Y, this.Z, mapper this.W)
-        member this.WithX x = Vector4 (x, this.Y, this.Z, this.W)
-        member this.WithY y = Vector4 (this.X, y, this.Z, this.W)
-        member this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
-        member this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+        member inline this.V2 = Vector2 (this.X, this.Y)
+        member inline this.V3 = Vector3 (this.X, this.Y, this.Z)
+        member inline this.V2i = Vector2i (int this.X, int this.Y)
+        member inline this.V3i = Vector3i (int this.X, int this.Y, int this.Z)
+        member inline this.V4i = Vector4i (int this.X, int this.Y, int this.Z, int this.W)
+        member inline this.Magnitude = this.Length ()
+        member inline this.MagnitudeSquared = this.LengthSquared ()
+        member inline this.Absolute = Vector4 (abs this.X, abs this.Y, abs this.Z, abs this.W)
+        member inline this.MapX mapper = Vector4 (mapper this.X, this.Y, this.Z, this.W)
+        member inline this.MapY mapper = Vector4 (this.X, mapper this.Y, this.Z, this.W)
+        member inline this.MapZ mapper = Vector4 (this.X, this.Y, mapper this.Z, this.W)
+        member inline this.MapW mapper = Vector4 (this.X, this.Y, this.Z, mapper this.W)
+        member inline this.WithX x = Vector4 (x, this.Y, this.Z, this.W)
+        member inline this.WithY y = Vector4 (this.X, y, this.Z, this.W)
+        member inline this.WithZ z = Vector4 (this.X, this.Y, z, this.W)
+        member inline this.WithW w = Vector4 (this.X, this.Y, this.Z, w)
+        member inline this.Dot that = Vector4.Dot (this, that)
+        member inline this.Transform (m : Matrix4x4) = Vector4.Transform (this, m)
+        member inline this.Transform (q : Quaternion) = Vector4.Transform (this, q)
 
         static member Pow (a : Vector4, b : Vector4) =
             Vector4
@@ -253,12 +271,12 @@ module Vector4 =
     let inline v4 x y z w = Vector4 (x, y, z, w)
     let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
     let inline v4Neq (v : Vector4) (v2 : Vector4) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
-    let v4EqApprox (v : Vector4) (v2 : Vector4) =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.W, v2.W, 0.0001f)
-    let inline v3NeqApprox v v2 = not (v3EqApprox v v2)
+    let v4EqApprox (v : Vector4) (v2 : Vector4) epsilon =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
+    let inline v3NeqApprox v v2 epsilon = not (v3EqApprox v v2 epsilon)
     let inline v4Dup (a : single) = v4 a a a a
     let v4One = Vector4.One
     let v4Zero = Vector4.Zero
@@ -307,7 +325,9 @@ module Vector2i =
 
         member this.V2 = Vector2 (single this.X, single this.Y)
         member this.V3 = Vector3 (single this.X, single this.Y, 0.0f)
+        member this.V4 = Vector4 (single this.X, single this.Y, 0.0f, 0.0f)
         member this.V3i = Vector3i (this.X, this.Y, 0)
+        member this.V4i = Vector4i (this.X, this.Y, 0, 0)
         member this.MapX mapper = Vector2i (mapper this.X, this.Y)
         member this.MapY mapper = Vector2i (this.X, mapper this.Y)
         member this.WithX x = Vector2i (x, this.Y)
@@ -369,15 +389,17 @@ module Vector3i =
 
     type Vector3i with
 
-        member this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
-        member this.V2 = Vector2 (single this.X, single this.Y)
-        member this.V2i = Vector2i (this.X, this.Y)
-        member this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
-        member this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
-        member this.MapZ mapper = Vector3i (this.X, this.Y, mapper this.Z)
-        member this.WithX x = Vector3i (x, this.Y, this.Z)
-        member this.WithY y = Vector3i (this.X, y, this.Z)
-        member this.WithZ z = Vector3i (this.X, this.Y, z)
+        member inline this.V2 = Vector2 (single this.X, single this.Y)
+        member inline this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
+        member inline this.V4 = Vector4 (single this.X, single this.Y, single this.Z, 0.0f)
+        member inline this.V2i = Vector2i (this.X, this.Y)
+        member inline this.V4i = Vector4i (this.X, this.Y, 0, 0)
+        member inline this.MapX mapper = Vector3i (mapper this.X, this.Y, this.Z)
+        member inline this.MapY mapper = Vector3i (this.X, mapper this.Y, this.Z)
+        member inline this.MapZ mapper = Vector3i (this.X, this.Y, mapper this.Z)
+        member inline this.WithX x = Vector3i (x, this.Y, this.Z)
+        member inline this.WithY y = Vector3i (this.X, y, this.Z)
+        member inline this.WithZ z = Vector3i (this.X, this.Y, z)
 
         static member Pow (a : Vector3i, b : Vector3i) =
             Vector3i
@@ -438,19 +460,19 @@ module Vector4i =
 
     type Vector4i with
     
-        member this.V2 = Vector2 (single this.X, single this.Y)
-        member this.V2i = Vector2i (this.X, this.Y)
-        member this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
-        member this.V3i = Vector3i (this.X, this.Y, this.Z)
-        member this.V4 = Vector4 (single this.X, single this.Y, single this.Z, single this.W)
-        member this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
-        member this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
-        member this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
-        member this.MapW mapper = Vector4i (this.X, this.Y, this.Z, mapper this.W)
-        member this.WithX x = Vector4i (x, this.Y, this.Z, this.W)
-        member this.WithY y = Vector4i (this.X, y, this.Z, this.W)
-        member this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
-        member this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
+        member inline this.V2 = Vector2 (single this.X, single this.Y)
+        member inline this.V3 = Vector3 (single this.X, single this.Y, single this.Z)
+        member inline this.V4 = Vector4 (single this.X, single this.Y, single this.Z, single this.W)
+        member inline this.V2i = Vector2i (this.X, this.Y)
+        member inline this.V3i = Vector3i (this.X, this.Y, this.Z)
+        member inline this.MapX mapper = Vector4i (mapper this.X, this.Y, this.Z, this.W)
+        member inline this.MapY mapper = Vector4i (this.X, mapper this.Y, this.Z, this.W)
+        member inline this.MapZ mapper = Vector4i (this.X, this.Y, mapper this.Z, this.W)
+        member inline this.MapW mapper = Vector4i (this.X, this.Y, this.Z, mapper this.W)
+        member inline this.WithX x = Vector4i (x, this.Y, this.Z, this.W)
+        member inline this.WithY y = Vector4i (this.X, y, this.Z, this.W)
+        member inline this.WithZ z = Vector4i (this.X, this.Y, z, this.W)
+        member inline this.WithW w = Vector4i (this.X, this.Y, this.Z, w)
 
         static member Pow (a : Vector4i, b : Vector4i) =
             Vector4i
@@ -517,27 +539,27 @@ module Quaternion =
 
         /// The right vector of the quaternion.
         member inline this.Right =
-            Vector3.Transform (v3Right, this)
+            v3Right.Transform this
 
         /// The left vector of the quaternion.
         member inline this.Left =
-            Vector3.Transform (v3Left, this)
+            v3Left.Transform this
 
         /// The up vector of the quaternion.
         member inline this.Up =
-            Vector3.Transform (v3Up, this)
+            v3Up.Transform this
 
         /// The down vector of the quaternion.
         member inline this.Down =
-            Vector3.Transform (v3Down, this)
+            v3Down.Transform this
 
         /// The back vector of the quaternion.
         member inline this.Back =
-            Vector3.Transform (v3Back, this)
+            v3Back.Transform this
 
         /// The forward vector of the quaternion.
         member inline this.Forward =
-            Vector3.Transform (v3Forward, this)
+            v3Forward.Transform this
 
         /// Right, up, and forward quaternion vectors.
         member inline this.RightUpForward =
@@ -570,12 +592,12 @@ module Quaternion =
     let inline quat x y z w = Quaternion (x, y, z, w)
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
-    let quatEqApprox (v : Quaternion) (v2 : Quaternion) =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, 0.0001f) &&
-        Math.ApproximatelyEqualEpsilon (v.W, v2.W, 0.0001f)
-    let inline quatNeqApprox v v2 = not (quatEqApprox v v2)
+    let quatEqApprox (v : Quaternion) (v2 : Quaternion) epsilon =
+        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon) &&
+        Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
+    let inline quatNeqApprox v v2 epsilon = not (quatEqApprox v v2 epsilon)
 
     /// Create a look-at rotation quaternion.
     /// NOTE: this might be less efficient since it uses Matrix4x4's look-at function then converts to quaternion.
@@ -733,7 +755,7 @@ module Box3 =
                 let mutable maxZ = Single.MinValue
                 for i in 0 .. 8 - 1 do
                     let mutable corner = NativePtr.get corners i
-                    corner <- Vector3.Transform (corner, transformation)
+                    corner <- corner.Transform transformation
                     minX <- Operators.min minX corner.X
                     minY <- Operators.min minY corner.Y
                     minZ <- Operators.min minZ corner.Z
@@ -1080,6 +1102,47 @@ type ColorConverter () =
         | :? Color -> source
         | _ -> failconv "Invalid ColorConverter conversion from source." None
 
+// TODO: create symbolic converter for Segment2.
+[<AutoOpen>]
+module Segment2 =
+
+    let inline segment2 (a : Vector2) (b : Vector2) = Segment2 (a, b)
+    let inline segment2Eq (left : Segment2) (right : Segment2) = left.Equals right
+    let inline segment2Neq (left : Segment2) (right : Segment2) = not (left.Equals right)
+
+    type Segment2 with
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
+
+// TODO: create symbolic converter for Segment3.
+[<AutoOpen>]
+module Segment3 =
+
+    let inline segment3 (a : Vector3) (b : Vector3) = Segment3 (a, b)
+    let inline segment3Eq (left : Segment3) (right : Segment3) = left.Equals right
+    let inline segment3Neq (left : Segment3) (right : Segment3) = not (left.Equals right)
+
+    type Segment3 with
+        member this.Magnitude = this.Length ()
+        member this.MagnitudeSquared = this.LengthSquared ()
+
+// TODO: create symbolic converter for Ray2.
+[<AutoOpen>]
+module Ray2 =
+
+    let inline ray2 (origin : Vector2) (direction : Vector2) = Ray2 (origin, direction)
+    let inline ray2Eq (left : Ray2) (right : Ray2) = left.Equals right
+    let inline ray2Neq (left : Ray2) (right : Ray2) = not (left.Equals right)
+
+// TODO: create symbolic converter for Ray3.
+[<AutoOpen>]
+module Ray3 =
+
+    let inline ray3 (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
+    let inline ray3Eq (left : Ray3) (right : Ray3) = left.Equals right
+    let inline ray3Neq (left : Ray3) (right : Ray3) = not (left.Equals right)
+
+// TODO: create symbolic converter for Plane3.
 [<AutoOpen>]
 module Plane3 =
 
@@ -1091,29 +1154,23 @@ module Plane3 =
     type Plane3 with
 
         /// Attempt to find the intersection of the given ray with the plane.
-        /// TODO: move this to Ray3.cs.
-        member this.Intersection (ray : Ray3) =
-            ray.Intersection this
+        member this.Intersection (ray : Ray3) = ray.Intersection this
 
-[<AutoOpen>]
-module Ray3 =
-
-    let inline ray (origin : Vector3) (direction : Vector3) = Ray3 (origin, direction)
-    let inline rayEq (left : Ray3) (right : Ray3) = left.Equals right
-    let inline rayNeq (left : Ray3) (right : Ray3) = not (left.Equals right)
-
-/// Composition of individual affine matrix components.
+/// Lossless composition of individual affine matrix components.
 type [<Struct>] Affine =
     { mutable Translation : Vector3
       mutable Rotation : Quaternion
       mutable Scale : Vector3 }
 
+    /// Create an affine matrix (lossy).
     member this.Matrix =
         Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
 
+    /// Create from components (lossless).
     static member make translation rotation scale =
         { Translation = translation; Rotation = rotation; Scale = scale }
 
+    /// Create from affine matrix value (lossy).
     static member makeFromMatrix affineMatrix =
         let mutable scale = v3One
         let mutable rotation = quatIdentity
@@ -1123,15 +1180,19 @@ type [<Struct>] Affine =
             Affine.Identity
         else Affine.make translation rotation scale
 
+    /// Create from a translation value (lossless).
     static member makeTranslation translation =
         Affine.make translation quatIdentity v3One
 
+    /// Create from a rotation value (lossless).
     static member makeRotation translation =
         Affine.make v3Zero translation v3One
 
+    /// Create from a scale value (lossless).
     static member makeScale scale =
         Affine.make v3Zero quatIdentity scale
 
+    /// The identity affine value (lossless).
     static member Identity =
         Affine.make v3Zero quatIdentity v3One
 
@@ -1246,7 +1307,7 @@ module Math =
         Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
 
     /// Find the the union of a line segment and a frustum if one exists.
-    let tryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then

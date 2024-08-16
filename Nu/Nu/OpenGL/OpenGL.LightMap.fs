@@ -46,7 +46,7 @@ module LightMap =
         Hl.Assert ()
 
         // assert reflection framebuffer completion
-        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Reflection framebuffer is incomplete!"
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete then Log.error "Reflection framebuffer is incomplete!"
         Hl.Assert ()
 
         // construct viewports
@@ -156,7 +156,7 @@ module LightMap =
         Hl.Assert ()
 
         // assert irradiance framebuffer completion
-        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete then Log.error "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
         // compute views and projection
@@ -313,7 +313,7 @@ module LightMap =
         Hl.Assert ()
 
         // assert environment filter framebuffer completion
-        Log.debugIf (fun () -> Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete) "Irradiance framebuffer is incomplete!"
+        if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete then Log.error "Irradiance framebuffer is incomplete!"
         Hl.Assert ()
 
         // compute views and projection
@@ -367,7 +367,7 @@ module LightMap =
           IrradianceMap : Texture.Texture
           EnvironmentFilterMap : Texture.Texture }
 
-    /// Create a light map.
+    /// Create a light map with existing irradiance and environment filter maps.
     let CreateLightMap enabled origin bounds irradianceMap environmentFilterMap =
         { Enabled = enabled
           Origin = origin
@@ -375,7 +375,7 @@ module LightMap =
           IrradianceMap = irradianceMap
           EnvironmentFilterMap = environmentFilterMap }
 
-    /// Destroy a light map.
+    /// Destroy a light map, including its irradiance environment filter maps.
     let DestroyLightMap lightMap =
         lightMap.IrradianceMap.Destroy ()
         lightMap.EnvironmentFilterMap.Destroy ()
