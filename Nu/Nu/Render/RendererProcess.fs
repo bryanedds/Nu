@@ -420,8 +420,13 @@ type RendererThread () =
                         let span = Interop.GetUtf8Span sdlExtensions[i]
                         printfn "%s" (span.GetString ())
 
+                    // populate application info
+                    let mutable applicationInfo = VkApplicationInfo ()
+                    applicationInfo.apiVersion <- VkVersion.Version_1_0 // TODO: let's see if we actually want 1.3 instead due to its dynamic whatever things.
+
                     // populate createinstance info
                     let mutable instanceCreateInfo = VkInstanceCreateInfo ()
+                    instanceCreateInfo.pApplicationInfo <- Interop.AsPointer &applicationInfo
                     instanceCreateInfo.enabledExtensionCount <- sdlExtensionCount
                     instanceCreateInfo.ppEnabledExtensionNames <- sdlExtensionsWrap.Pointer
                 
@@ -452,7 +457,7 @@ type RendererThread () =
                     let result = vkEnumeratePhysicalDevices (instance, Interop.AsPointer &deviceCount, devicesWrap.Pointer)
 
                     // select physical device
-                    physicalDevice <- devices[0]
+                    physicalDevice <- devices[0] // TODO: profile available devices to pick the fastest one with the appropriate vk function.
                     let mutable physicalDeviceProperties = Unchecked.defaultof<VkPhysicalDeviceProperties>
                     vkGetPhysicalDeviceProperties (physicalDevice, &physicalDeviceProperties)
                     printfn "Using physical device %s." (physicalDeviceProperties.GetDeviceName ())
