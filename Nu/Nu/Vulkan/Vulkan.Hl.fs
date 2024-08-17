@@ -27,7 +27,7 @@ module Vulkan =
             member this.Dispose () =
                 handle.Dispose ()
 
-    let hlCreateBuffer<'ub when 'ub : unmanaged> (allocator : VmaAllocator byref, usage : VkBufferUsageFlags, buffer : VkBuffer byref, allocation : VmaAllocation byref) =
+    let hlCreateBuffer<'ub when 'ub : unmanaged> (allocator : VmaAllocator inref, usage : VkBufferUsageFlags, buffer : VkBuffer byref, allocation : VmaAllocation byref) =
         let size = sizeof<'ub>
         let mutable bufferCreateInfo = VkBufferCreateInfo ()
         bufferCreateInfo.size <- uint64 size
@@ -38,7 +38,7 @@ module Vulkan =
         let mutable allocationInfo = VmaAllocationInfo ()
         vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, Interop.AsPointer &allocationInfo)
 
-    let hlWriteBuffer<'ub when 'ub : unmanaged> (allocator : VmaAllocator inref, allocation : VmaAllocation inref, values : 'ub byref) =
+    let hlWriteBuffer<'ub when 'ub : unmanaged> (allocator : VmaAllocator inref, allocation : VmaAllocation inref, values : 'ub inref) =
         let memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
         let result = vmaMapMemory (allocator, allocation, memoryPtrPtr)
         Marshal.StructureToPtr<'ub> (values, NativePtr.toNativeInt memoryPtrPtr, false)
