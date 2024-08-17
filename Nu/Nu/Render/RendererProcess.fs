@@ -9,6 +9,7 @@ open System.Threading
 open System.IO
 open FSharp.NativeInterop
 open SDL2
+open Vulkan
 open Vortice.Vulkan
 open type Vortice.Vulkan.Vulkan
 open type Vortice.Vulkan.Vma
@@ -17,23 +18,6 @@ open ImGuiNET
 open Prime
 open System.Runtime.InteropServices
 open System.Collections.Generic
-
-// experimental abstraction of memory pinning and native pointer
-type ArrayPin<'a when 'a: unmanaged> private (handle : Buffers.MemoryHandle, pointer : nativeptr<'a>) =
-
-    let handle = handle
-    let pointer = pointer
-
-    member private this.Handle = handle
-    member this.Pointer = pointer
-
-    new (array : 'a array) =
-        let handle = array.AsMemory().Pin()
-        let pointer = NativePtr.ofVoidPtr<'a> handle.Pointer
-        new ArrayPin<'a> (handle, pointer)
-
-    interface IDisposable with
-        member this.Dispose() = this.Handle.Dispose()
 
 /// A renderer process that may or may not be threaded.
 type RendererProcess =

@@ -58,6 +58,8 @@
 		<Compile Include="OpenGL\OpenGL.SkyBox.fs" />
 		<Compile Include="OpenGL\OpenGL.PhysicallyBased.fs" />
 		<Compile Include="OpenGL\OpenGL.SpriteBatch.fs" />
+		<Compile Include="Vulkan\Vulkan.Hl.fs" />
+		<Compile Include="Vulkan\Vulkan.CubeMap.fs" />
 		<Compile Include="Sdl\SdlInputBindings.fs" />
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
