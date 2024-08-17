@@ -161,7 +161,7 @@ module SkyBox =
         let result = vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutCreateInfo, NativePtr.nullPtr, &pipelineLayout)
 
         let mutable graphicsPipelineCreateInfo = VkGraphicsPipelineCreateInfo ()
-        graphicsPipelineCreateInfo.stageCount <- 2u
+        graphicsPipelineCreateInfo.stageCount <- uint stagesArray.Length
         graphicsPipelineCreateInfo.pStages <- stagesArrayWrap.Pointer
         graphicsPipelineCreateInfo.pVertexInputState <- Interop.AsPointer &pipelineVertexInputStateCreateInfo
         graphicsPipelineCreateInfo.pInputAssemblyState <- Interop.AsPointer &pipelineInputAssemblyStateCreateInfo
