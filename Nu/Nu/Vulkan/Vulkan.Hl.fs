@@ -20,6 +20,7 @@ module Hl =
         { mutable Buffer : VkBuffer
           mutable Allocation : VmaAllocation }
 
+        /// Allocate an upload buffer.
         static member createUpload<'ub when 'ub : unmanaged> (usage : VkBufferUsageFlags, allocator : VmaAllocator) =
 
             // specify exclusive buffer
@@ -38,6 +39,7 @@ module Hl =
             vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, NativePtr.nullPtr) |> Assert
             { Buffer = buffer; Allocation = allocation }
 
+        /// Map and write to allocated buffer, then unmap.
         static member write<'ub when 'ub : unmanaged> (values : 'ub inref, allocation : VmaAllocation, allocator : VmaAllocator) =
             let memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
             vmaMapMemory (allocator, allocation, memoryPtrPtr) |> Assert
@@ -47,6 +49,7 @@ module Hl =
     [<RequireQualifiedAccess>]
     module DescriptorSetLayoutBinding =
 
+        /// Specify a VkDescriptorSetLayoutBinding.
         let make (binding, descriptorType, descriptorCount, stages) =
             let mutable descriptorSetLayoutBinding = VkDescriptorSetLayoutBinding ()
             descriptorSetLayoutBinding.binding <- binding
@@ -58,6 +61,7 @@ module Hl =
     [<RequireQualifiedAccess>]
     module DescriptorSetLayout =
 
+        /// Create a VkDescriptorSetLayout.
         let create (bindings, device) =
 
             // specify layout
@@ -76,6 +80,7 @@ module Hl =
         { mutable DescriptorSetLayout : VkDescriptorSetLayout
           mutable DescriptorSet : VkDescriptorSet }
 
+        /// Create a VkDescriptorSet from a given layout.
         static member create (descriptorSetLayout : VkDescriptorSetLayout byref, descriptorPool, device) =
 
             // specify allocation
@@ -92,6 +97,7 @@ module Hl =
     [<RequireQualifiedAccess>]
     module PipelineDepthStencilStateCreateInfo =
 
+        /// Specify depth filtering as `less than` without stenciling.
         let makeLessThanUnstenciled () =
             let mutable pipelineDepthStencilStateCreateInfo = VkPipelineDepthStencilStateCreateInfo ()
             pipelineDepthStencilStateCreateInfo.depthCompareOp <- VkCompareOp.Less
@@ -100,6 +106,7 @@ module Hl =
     [<RequireQualifiedAccess>]
     module PipelineColorBlendStateCreateInfo =
 
+        /// Specify overwrite rendering.
         let makeOverwrite () =
             let mutable pipelineColorBlendAttachmentState = VkPipelineColorBlendAttachmentState ()
             pipelineColorBlendAttachmentState.colorWriteMask <- VkColorComponentFlags.R ||| VkColorComponentFlags.G ||| VkColorComponentFlags.B ||| VkColorComponentFlags.A
@@ -112,6 +119,7 @@ module Hl =
             pipelineColorBlendAttachmentState.alphaBlendOp <- VkBlendOp.Add
             VkPipelineColorBlendStateCreateInfo pipelineColorBlendAttachmentState
 
+        /// Specify alpha blended rendering.
         let makeAlpha () =
             let mutable pipelineColorBlendAttachmentState = VkPipelineColorBlendAttachmentState ()
             pipelineColorBlendAttachmentState.colorWriteMask <- VkColorComponentFlags.R ||| VkColorComponentFlags.G ||| VkColorComponentFlags.B ||| VkColorComponentFlags.A
