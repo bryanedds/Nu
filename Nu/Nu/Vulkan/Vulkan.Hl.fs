@@ -10,6 +10,11 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    /// Assert based on Vulkan operation result.
+    let Assert (result : VkResult) =
+        if int result > 0 then Log.info ("Vulkan notification due to: " + string result)
+        elif int result < 0 then Log.error ("Vulkan error due to: " + string result)
+
     /// Abstraction for VkBuffer usage.
     type Buffer =
         { mutable Buffer : VkBuffer
@@ -27,15 +32,14 @@ module Hl =
 
             let mutable buffer = VkBuffer ()
             let mutable allocation = VmaAllocation ()
-            let result = vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, NativePtr.nullPtr)
-            (result, { Buffer = buffer; Allocation = allocation })
+            vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, NativePtr.nullPtr) |> Assert
+            { Buffer = buffer; Allocation = allocation }
 
         static member write<'ub when 'ub : unmanaged> (values : 'ub inref, allocation : VmaAllocation, allocator : VmaAllocator) =
             let memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
-            let result = vmaMapMemory (allocator, allocation, memoryPtrPtr)
+            vmaMapMemory (allocator, allocation, memoryPtrPtr) |> Assert
             Marshal.StructureToPtr<'ub> (values, NativePtr.toNativeInt memoryPtrPtr, false)
             vmaUnmapMemory (allocator, allocation)
-            result
 
     /// Abstraction for VkDescriptorSet usage.
     type DescriptorSet =
@@ -50,8 +54,8 @@ module Hl =
             descriptorSetAllocateInfo.pSetLayouts <- Interop.AsPointer &descriptorSetLayout
 
             let mutable descriptorSet = VkDescriptorSet ()
-            let result = vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet)
-            (result, { DescriptorSet = descriptorSet; DescriptorSetLayout = descriptorSetLayout })
+            vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet) |> Assert
+            { DescriptorSet = descriptorSet; DescriptorSetLayout = descriptorSetLayout }
 
     type PipelineDepthStencilStateCreateInfo =
         { mutable PipelineDepthStencilStateCreateInfo : VkPipelineDepthStencilStateCreateInfo }
@@ -101,6 +105,7 @@ module Hl =
         static member createVertexFragment<'ubv, 'ubf when 'ubv : unmanaged and 'ubf : unmanaged>
             (viewport : VkViewport byref,
              scissor : VkRect2D byref,
+             primitiveTopology : VkPrimitiveTopology,
              pipelineDepthStencilStateCreateInfo : PipelineDepthStencilStateCreateInfo,
              pipelineColorBlendStateCreateInfo : PipelineColorBlendStateCreateInfo,
              descriptorSet : DescriptorSet,
@@ -109,11 +114,11 @@ module Hl =
 
             let mutable shaderModuleCreateInfoVertex = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
             let mutable shaderModuleVertex = VkShaderModule ()
-            let result = vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoVertex, NativePtr.nullPtr, Interop.AsPointer &shaderModuleVertex)
+            vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoVertex, NativePtr.nullPtr, Interop.AsPointer &shaderModuleVertex) |> Assert
 
             let mutable shaderModuleCreateInfoFragment = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
             let mutable shaderModuleFragment = VkShaderModule ()
-            let result = vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoFragment, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment)
+            vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoFragment, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment) |> Assert
 
             let mutable pipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo ()
             pipelineLayoutCreateInfo.setLayoutCount <- 1u
@@ -122,14 +127,14 @@ module Hl =
             let mutable uniformBuffersVertex = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
             let mutable uniformAllocationsVertex = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
             for i in 0 .. dec Constants.Render.FrameCount do
-                let (result, buffer) = Buffer.createCpuToGpu<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
+                let buffer = Buffer.createCpuToGpu<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
                 uniformBuffersVertex.[i] <- buffer.Buffer
                 uniformAllocationsVertex.[i] <- buffer.Allocation
 
             let mutable uniformBuffersFragment = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
             let mutable uniformAllocationsFragment = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
             for i in 0 .. dec Constants.Render.FrameCount do
-                let (result, buffer) = Buffer.createCpuToGpu<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
+                let buffer = Buffer.createCpuToGpu<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
                 uniformBuffersFragment.[i] <- buffer.Buffer
                 uniformAllocationsFragment.[i] <- buffer.Allocation
 
@@ -144,7 +149,7 @@ module Hl =
             pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions <- NativePtr.nullPtr
 
             let mutable pipelineInputAssemblyStateCreateInfo = VkPipelineInputAssemblyStateCreateInfo ()
-            pipelineInputAssemblyStateCreateInfo.topology <- VkPrimitiveTopology.TriangleList
+            pipelineInputAssemblyStateCreateInfo.topology <- primitiveTopology
             pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable <- VkBool32.False
 
             let mutable pipelineViewportStateCreateInfo = VkPipelineViewportStateCreateInfo ()
@@ -180,7 +185,7 @@ module Hl =
             pipelineLayoutCreateInfo.pPushConstantRanges <- NativePtr.nullPtr
 
             let mutable pipelineLayout = VkPipelineLayout ()
-            let result = vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutCreateInfo, NativePtr.nullPtr, &pipelineLayout)
+            vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutCreateInfo, NativePtr.nullPtr, &pipelineLayout) |> Assert
 
             let mutable pipelineShaderStageCreateInfoVertex = VkPipelineShaderStageCreateInfo ()
             use pipelineShaderStageCreateInfoVertexName = new VkString (nameof pipelineShaderStageCreateInfoVertex)
@@ -213,12 +218,10 @@ module Hl =
             graphicsPipelineCreateInfo.subpass <- 0u
 
             let mutable pipeline = VkPipeline ()
-            let result = vkCreateGraphicsPipeline (device, graphicsPipelineCreateInfo, &pipeline)
-            let pipeline =
-                { UniformBuffersVertex = uniformBuffersVertex
-                  UniformAllocationsVertex = uniformAllocationsVertex
-                  UniformBuffersFragment = uniformBuffersFragment
-                  UniformAllocationsFragment = uniformAllocationsFragment
-                  PipelineLayout = pipelineLayout
-                  Pipeline = pipeline }
-            (result, pipeline)
+            vkCreateGraphicsPipeline (device, graphicsPipelineCreateInfo, &pipeline) |> Assert
+            { UniformBuffersVertex = uniformBuffersVertex
+              UniformAllocationsVertex = uniformAllocationsVertex
+              UniformBuffersFragment = uniformBuffersFragment
+              UniformAllocationsFragment = uniformAllocationsFragment
+              PipelineLayout = pipelineLayout
+              Pipeline = pipeline }
