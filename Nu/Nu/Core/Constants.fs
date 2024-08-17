@@ -133,6 +133,7 @@ module Render =
     let [<Uniform>] mutable ShadowsMax = match ConfigurationManager.AppSettings.["ShadowsMax"] with null -> 8 | shadowsMax -> min (scvalue shadowsMax) ShadowsMaxShader
     let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | scalar -> scvalue scalar
     let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 2 | scalar -> scvalue scalar
+    let [<Literal>] FrameCount = 2
     let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 512

@@ -713,8 +713,8 @@ type RendererThread () =
                     let mutable viewport = VkViewport ()
                     viewport.x <- 0.0f
                     viewport.y <- 0.0f
-                    viewport.width <- float32 swapChainExtent.width
-                    viewport.height <- float32 swapChainExtent.height
+                    viewport.width <- single swapChainExtent.width
+                    viewport.height <- single swapChainExtent.height
                     viewport.minDepth <- 0.0f
                     viewport.maxDepth <- 1.0f
 

@@ -2,9 +2,9 @@
 open System
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
+open type Vma
 open Prime
 open Nu
-open type Vma
 
 [<AutoOpen>]
 module Vulkan =

@@ -13,6 +13,6 @@ module CubeMap =
           PrimitiveType : uint
           ElementCount : int
           Vertices : Vector3 array
-          VertexBuffer : uint
-          IndexBuffer : uint
+          VertexBuffer : VkBuffer
+          IndexBuffer : VkBuffer
           CubeMapVao : uint }
