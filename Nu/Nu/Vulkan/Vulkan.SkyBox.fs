@@ -37,15 +37,15 @@ module SkyBox =
           Pipeline : VkPipeline }
 
     /// Create a skybox shader pipeline.
-    let CreateSkyBoxPipeline (shaderFilePath : string) (viewport : VkViewport byref) (scissor : VkRect2D byref) (allocator : VmaAllocator byref) (device : VkDevice byref) =
+    let CreateSkyBoxPipeline (shaderFilePath : string, viewport : VkViewport byref, scissor : VkRect2D byref, descriptorPool : VkDescriptorPool, allocator : VmaAllocator, device : VkDevice) =
 
-        let mutable vertShaderCode = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
-        let mutable fragShaderCode = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
-
+        let mutable shaderModuleCreateInfoVertex = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
         let mutable shaderModuleVertex = VkShaderModule ()
-        let result = vkCreateShaderModule (device, Interop.AsPointer &vertShaderCode, NativePtr.nullPtr, Interop.AsPointer &shaderModuleVertex)
+        let result = vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoVertex, NativePtr.nullPtr, Interop.AsPointer &shaderModuleVertex)
+
+        let mutable shaderModuleCreateInfoFragment = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
         let mutable shaderModuleFragment = VkShaderModule ()
-        let result = vkCreateShaderModule (device, Interop.AsPointer &fragShaderCode, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment)
+        let result = vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoFragment, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment)
 
         let mutable bindingVertex = VkDescriptorSetLayoutBinding ()
         bindingVertex.binding <- 0u
@@ -62,11 +62,19 @@ module SkyBox =
         let bindings = [|bindingVertex; bindingFragment|]
         let bindingsWrap = new ArrayPin<_> (bindings)
 
-        let mutable descriptorSetLayout = VkDescriptorSetLayout ()
         let mutable descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo ()
+        let mutable descriptorSetLayout = VkDescriptorSetLayout ()
         descriptorSetLayoutCreateInfo.bindingCount <- uint bindings.Length
         descriptorSetLayoutCreateInfo.pBindings <- bindingsWrap.Pointer
         let result = vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout)
+
+        let mutable descriptorSetAllocateInfo = VkDescriptorSetAllocateInfo ()
+        descriptorSetAllocateInfo.descriptorPool <- descriptorPool
+        descriptorSetAllocateInfo.descriptorSetCount <- 1u
+        descriptorSetAllocateInfo.pSetLayouts <- Interop.AsPointer &descriptorSetLayout
+
+        let mutable descriptorSet = VkDescriptorSet ()
+        let result = vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet)
 
         let mutable pipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo ()
         pipelineLayoutCreateInfo.setLayoutCount <- 1u
@@ -75,13 +83,13 @@ module SkyBox =
         let mutable uniformBuffersVertex = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
         let mutable uniformAllocationsVertex = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
         for i in 0 .. dec Constants.Render.FrameCount do
-            let result = hlCreateBuffer<SkyBoxUniformBufferVertex> (&allocator, VkBufferUsageFlags.UniformBuffer, &uniformBuffersVertex.[i], &uniformAllocationsVertex.[i])
+            let result = hlCreateBuffer<SkyBoxUniformBufferVertex> (allocator, VkBufferUsageFlags.UniformBuffer, &uniformBuffersVertex.[i], &uniformAllocationsVertex.[i])
             ()
 
         let mutable uniformBuffersFragment = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
         let mutable uniformAllocationsFragment = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
         for i in 0 .. dec Constants.Render.FrameCount do
-            let result = hlCreateBuffer<SkyBoxUniformBufferFragment> (&allocator, VkBufferUsageFlags.UniformBuffer, &uniformBuffersFragment.[i], &uniformAllocationsFragment.[i])
+            let result = hlCreateBuffer<SkyBoxUniformBufferFragment> (allocator, VkBufferUsageFlags.UniformBuffer, &uniformBuffersFragment.[i], &uniformAllocationsFragment.[i])
             ()
 
         let mutable pipelineShaderStageCreateInfoVertex = VkPipelineShaderStageCreateInfo ()
@@ -183,7 +191,7 @@ module SkyBox =
           UniformBuffersFragment = uniformBuffersFragment
           UniformAllocationsFragment = uniformAllocationsFragment
           DescriptorSetLayout = descriptorSetLayout
-          DescriptorSet = Unchecked.defaultof<_> // TODO: P0: figure out what, if anything, is needed here.
+          DescriptorSet = descriptorSet
           PipelineLayout = pipelineLayout
           Pipeline = pipeline }
 
@@ -198,7 +206,7 @@ module SkyBox =
          color : Vector3,
          brightness : single,
          cubeMap : VkImageView,
-         allocator : VmaAllocator byref) =
+         allocator : VmaAllocator) =
 
         // Bind the pipeline
         vkCmdBindPipeline (commandBuffer, VkPipelineBindPoint.Graphics, skyBoxPipeline.Pipeline)
@@ -209,13 +217,13 @@ module SkyBox =
         let mutable uniformValuesVertex = SkyBoxUniformBufferVertex ()
         uniformValuesVertex.View <- view
         uniformValuesVertex.Projection <- projection
-        let result = hlWriteBuffer (&allocator, &skyBoxPipeline.UniformAllocationsVertex.[frame], &uniformValuesVertex)
+        let result = hlWriteBuffer (allocator, skyBoxPipeline.UniformAllocationsVertex.[frame], &uniformValuesVertex)
 
         let mutable uniformValuesFragment = SkyBoxUniformBufferFragment ()
         uniformValuesFragment.Color <- color
         uniformValuesFragment.Brightness <- brightness
         uniformValuesFragment.SamplerCube <- Unchecked.defaultof<_> // TODO: P0: figure out what's needed here.
-        let result = hlWriteBuffer (&allocator, &skyBoxPipeline.UniformAllocationsFragment.[frame], &uniformValuesFragment)
+        let result = hlWriteBuffer (allocator, skyBoxPipeline.UniformAllocationsFragment.[frame], &uniformValuesFragment)
 
         // Bind the vertex and index buffers
         vkCmdBindVertexBuffer (commandBuffer, 0u, geometry.VertexBuffer, 0UL)
