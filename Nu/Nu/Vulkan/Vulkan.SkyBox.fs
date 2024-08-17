@@ -31,14 +31,14 @@ module SkyBox =
         /// Create a skybox shader pipeline.
         static member createPipeline (shaderFilePath : string, viewport : VkViewport byref, scissor : VkRect2D byref, descriptorPool : VkDescriptorPool, allocator : VmaAllocator, device : VkDevice) =
 
-            // create bindings
+            // specify bindings
             let mutable descriptorSetLayoutBindingVertex = Hl.DescriptorSetLayoutBinding.make (0u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Vertex)
             let mutable descriptorSetLayoutBindingFragment = Hl.DescriptorSetLayoutBinding.make (1u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Fragment)
             let mutable descriptorSetLayoutBindingCubeMap = Hl.DescriptorSetLayoutBinding.make (2u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Fragment)
             let descriptorSetLayoutBindings = [|descriptorSetLayoutBindingVertex; descriptorSetLayoutBindingFragment; descriptorSetLayoutBindingCubeMap|]
 
             // create descriptor set
-            let mutable descriptorSetLayout = Hl.DescriptorSetLayout.make (descriptorSetLayoutBindings, device)
+            let mutable descriptorSetLayout = Hl.DescriptorSetLayout.create (descriptorSetLayoutBindings, device)
             let descriptorSet = Hl.DescriptorSet.create (&descriptorSetLayout, descriptorPool, device)
 
             // create pipeline
@@ -69,12 +69,12 @@ module SkyBox =
             let mutable uniformValuesVertex = SkyBoxUniformBufferVertex ()
             uniformValuesVertex.View <- view
             uniformValuesVertex.Projection <- projection
-            Hl.Buffer.write (&uniformValuesVertex, skyBoxPipeline.Pipeline.UniformAllocationsVertex.[frame], allocator)
+            Hl.Allocation.write (&uniformValuesVertex, skyBoxPipeline.Pipeline.UniformAllocationsVertex.[frame], allocator)
 
             let mutable uniformValuesFragment = SkyBoxUniformBufferFragment ()
             uniformValuesFragment.Color <- color
             uniformValuesFragment.Brightness <- brightness
-            Hl.Buffer.write (&uniformValuesFragment, skyBoxPipeline.Pipeline.UniformAllocationsFragment.[frame], allocator)
+            Hl.Allocation.write (&uniformValuesFragment, skyBoxPipeline.Pipeline.UniformAllocationsFragment.[frame], allocator)
 
             // TODO: P0: figure out how to write cube map sampler.
 

@@ -15,21 +15,24 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
 
-    /// Abstraction for VkBuffer usage.
-    type Buffer =
+    /// Abstraction for VmaAllocation usage.
+    type Allocation =
         { mutable Buffer : VkBuffer
           mutable Allocation : VmaAllocation }
 
-        static member createCpuToGpu<'ub when 'ub : unmanaged> (usage : VkBufferUsageFlags, allocator : VmaAllocator) =
+        static member createUpload<'ub when 'ub : unmanaged> (usage : VkBufferUsageFlags, allocator : VmaAllocator) =
 
+            // specify exclusive buffer
             let mutable bufferCreateInfo = VkBufferCreateInfo ()
             bufferCreateInfo.size <- uint64 sizeof<'ub>
             bufferCreateInfo.usage <- usage
             bufferCreateInfo.sharingMode <- VkSharingMode.Exclusive
 
+            // specify cpu to gpu
             let mutable allocationCreateInfo = VmaAllocationCreateInfo ()
             allocationCreateInfo.usage <- VmaMemoryUsage.CpuToGpu
 
+            // allocate buffer
             let mutable buffer = VkBuffer ()
             let mutable allocation = VmaAllocation ()
             vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, NativePtr.nullPtr) |> Assert
@@ -55,13 +58,15 @@ module Hl =
     [<RequireQualifiedAccess>]
     module DescriptorSetLayout =
 
-        let make (bindings, device) =
+        let create (bindings, device) =
 
+            // specify layout
             use bindingsWrap = new ArrayPin<_> (bindings)
             let mutable descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo ()
             descriptorSetLayoutCreateInfo.bindingCount <- uint bindings.Length
             descriptorSetLayoutCreateInfo.pBindings <- bindingsWrap.Pointer
 
+            // create layout
             let mutable descriptorSetLayout = VkDescriptorSetLayout ()
             vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout) |> Assert
             descriptorSetLayout
@@ -73,14 +78,16 @@ module Hl =
 
         static member create (descriptorSetLayout : VkDescriptorSetLayout byref, descriptorPool, device) =
 
+            // specify allocation
             let mutable descriptorSetAllocateInfo = VkDescriptorSetAllocateInfo ()
             descriptorSetAllocateInfo.descriptorPool <- descriptorPool
             descriptorSetAllocateInfo.descriptorSetCount <- 1u
             descriptorSetAllocateInfo.pSetLayouts <- Interop.AsPointer &descriptorSetLayout
 
+            // create descriptor set
             let mutable descriptorSet = VkDescriptorSet ()
             vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet) |> Assert
-            { DescriptorSet = descriptorSet; DescriptorSetLayout = descriptorSetLayout }
+            { DescriptorSetLayout = descriptorSetLayout; DescriptorSet = descriptorSet }
 
     [<RequireQualifiedAccess>]
     module PipelineDepthStencilStateCreateInfo =
@@ -152,16 +159,16 @@ module Hl =
             let mutable uniformBuffersVertex = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
             let mutable uniformAllocationsVertex = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
             for i in 0 .. dec Constants.Render.FrameCount do
-                let buffer = Buffer.createCpuToGpu<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
-                uniformBuffersVertex.[i] <- buffer.Buffer
-                uniformAllocationsVertex.[i] <- buffer.Allocation
+                let allocation = Allocation.createUpload<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
+                uniformBuffersVertex.[i] <- allocation.Buffer
+                uniformAllocationsVertex.[i] <- allocation.Allocation
 
             let mutable uniformBuffersFragment = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
             let mutable uniformAllocationsFragment = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
             for i in 0 .. dec Constants.Render.FrameCount do
-                let buffer = Buffer.createCpuToGpu<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
-                uniformBuffersFragment.[i] <- buffer.Buffer
-                uniformAllocationsFragment.[i] <- buffer.Allocation
+                let allocation = Allocation.createUpload<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
+                uniformBuffersFragment.[i] <- allocation.Buffer
+                uniformAllocationsFragment.[i] <- allocation.Allocation
 
             let mutable pipelineDynamicStateCreateInfo = VkPipelineDynamicStateCreateInfo ()
             pipelineDynamicStateCreateInfo.dynamicStateCount <- 0u
