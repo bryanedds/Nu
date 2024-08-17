@@ -12,8 +12,8 @@ module Hl =
 
     /// Assert based on Vulkan operation result.
     let Assert (result : VkResult) =
-        if int result > 0 then Log.info ("Vulkan notification due to: " + string result)
-        elif int result < 0 then Log.error ("Vulkan error due to: " + string result)
+        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        elif int result < 0 then Log.error ("Vulkan error: " + string result)
 
     /// Abstraction for VkBuffer usage.
     type Buffer =
@@ -41,6 +41,29 @@ module Hl =
             Marshal.StructureToPtr<'ub> (values, NativePtr.toNativeInt memoryPtrPtr, false)
             vmaUnmapMemory (allocator, allocation)
 
+    [<RequireQualifiedAccess>]
+    module DescriptorSetLayoutBinding =
+
+        let make (binding, descriptorType, descriptorCount, stages) =
+            let mutable descriptorSetLayoutBinding = VkDescriptorSetLayoutBinding ()
+            descriptorSetLayoutBinding.binding <- binding
+            descriptorSetLayoutBinding.descriptorType <- descriptorType
+            descriptorSetLayoutBinding.descriptorCount <- descriptorCount
+            descriptorSetLayoutBinding.stageFlags <- stages
+            descriptorSetLayoutBinding
+
+    [<RequireQualifiedAccess>]
+    module DescriptorSetLayout =
+
+        let make (bindings, device) =
+            use bindingsWrap = new ArrayPin<_> (bindings)
+            let mutable descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo ()
+            let mutable descriptorSetLayout = VkDescriptorSetLayout ()
+            descriptorSetLayoutCreateInfo.bindingCount <- uint bindings.Length
+            descriptorSetLayoutCreateInfo.pBindings <- bindingsWrap.Pointer
+            vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout) |> Assert
+            descriptorSetLayout
+
     /// Abstraction for VkDescriptorSet usage.
     type DescriptorSet =
         { mutable DescriptorSetLayout : VkDescriptorSetLayout
@@ -57,18 +80,18 @@ module Hl =
             vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet) |> Assert
             { DescriptorSet = descriptorSet; DescriptorSetLayout = descriptorSetLayout }
 
-    type PipelineDepthStencilStateCreateInfo =
-        { mutable PipelineDepthStencilStateCreateInfo : VkPipelineDepthStencilStateCreateInfo }
+    [<RequireQualifiedAccess>]
+    module PipelineDepthStencilStateCreateInfo =
 
-        static member makeLessThanUnstenciled () =
+        let makeLessThanUnstenciled () =
             let mutable pipelineDepthStencilStateCreateInfo = VkPipelineDepthStencilStateCreateInfo ()
             pipelineDepthStencilStateCreateInfo.depthCompareOp <- VkCompareOp.Less
-            { PipelineDepthStencilStateCreateInfo = pipelineDepthStencilStateCreateInfo }
+            pipelineDepthStencilStateCreateInfo
 
-    type PipelineColorBlendStateCreateInfo =
-        { mutable PipelineColorBlendStateCreateInfo : VkPipelineColorBlendStateCreateInfo }
+    [<RequireQualifiedAccess>]
+    module PipelineColorBlendStateCreateInfo =
 
-        static member makeOverwrite () =
+        let makeOverwrite () =
             let mutable pipelineColorBlendAttachmentState = VkPipelineColorBlendAttachmentState ()
             pipelineColorBlendAttachmentState.colorWriteMask <- VkColorComponentFlags.R ||| VkColorComponentFlags.G ||| VkColorComponentFlags.B ||| VkColorComponentFlags.A
             pipelineColorBlendAttachmentState.blendEnable <- VkBool32.False
@@ -78,9 +101,9 @@ module Hl =
             pipelineColorBlendAttachmentState.srcAlphaBlendFactor <- VkBlendFactor.One
             pipelineColorBlendAttachmentState.dstAlphaBlendFactor <- VkBlendFactor.Zero
             pipelineColorBlendAttachmentState.alphaBlendOp <- VkBlendOp.Add
-            { PipelineColorBlendStateCreateInfo = VkPipelineColorBlendStateCreateInfo pipelineColorBlendAttachmentState }
+            VkPipelineColorBlendStateCreateInfo pipelineColorBlendAttachmentState
 
-        static member makeAlpha () =
+        let makeAlpha () =
             let mutable pipelineColorBlendAttachmentState = VkPipelineColorBlendAttachmentState ()
             pipelineColorBlendAttachmentState.colorWriteMask <- VkColorComponentFlags.R ||| VkColorComponentFlags.G ||| VkColorComponentFlags.B ||| VkColorComponentFlags.A
             pipelineColorBlendAttachmentState.blendEnable <- VkBool32.True
@@ -90,7 +113,7 @@ module Hl =
             pipelineColorBlendAttachmentState.srcAlphaBlendFactor <- VkBlendFactor.One
             pipelineColorBlendAttachmentState.dstAlphaBlendFactor <- VkBlendFactor.Zero
             pipelineColorBlendAttachmentState.alphaBlendOp <- VkBlendOp.Add
-            { PipelineColorBlendStateCreateInfo = VkPipelineColorBlendStateCreateInfo pipelineColorBlendAttachmentState }
+            VkPipelineColorBlendStateCreateInfo pipelineColorBlendAttachmentState
 
     /// Abstraction for VkPipeline usage.
     type Pipeline =
@@ -106,8 +129,8 @@ module Hl =
             (viewport : VkViewport byref,
              scissor : VkRect2D byref,
              primitiveTopology : VkPrimitiveTopology,
-             pipelineDepthStencilStateCreateInfo : PipelineDepthStencilStateCreateInfo,
-             pipelineColorBlendStateCreateInfo : PipelineColorBlendStateCreateInfo,
+             pipelineDepthStencilStateCreateInfo : VkPipelineDepthStencilStateCreateInfo byref,
+             pipelineColorBlendStateCreateInfo : VkPipelineColorBlendStateCreateInfo byref,
              descriptorSet : DescriptorSet,
              allocator : VmaAllocator,
              device : VkDevice) =
@@ -210,8 +233,8 @@ module Hl =
             graphicsPipelineCreateInfo.pViewportState <- Interop.AsPointer &pipelineViewportStateCreateInfo
             graphicsPipelineCreateInfo.pRasterizationState <- Interop.AsPointer &pipelineRasterizationStateCreateInfo
             graphicsPipelineCreateInfo.pMultisampleState <- Interop.AsPointer &pipelineMultisampleStateCreateInfo
-            graphicsPipelineCreateInfo.pDepthStencilState <- Interop.AsPointer &pipelineDepthStencilStateCreateInfo.PipelineDepthStencilStateCreateInfo
-            graphicsPipelineCreateInfo.pColorBlendState <- Interop.AsPointer &pipelineColorBlendStateCreateInfo.PipelineColorBlendStateCreateInfo
+            graphicsPipelineCreateInfo.pDepthStencilState <- Interop.AsPointer &pipelineDepthStencilStateCreateInfo
+            graphicsPipelineCreateInfo.pColorBlendState <- Interop.AsPointer &pipelineColorBlendStateCreateInfo
             graphicsPipelineCreateInfo.pDynamicState <- Interop.AsPointer &pipelineDynamicStateCreateInfo
             graphicsPipelineCreateInfo.layout <- pipelineLayout
             graphicsPipelineCreateInfo.renderPass <- Unchecked.defaultof<_> // TODO: P0: figure out what's needed here.

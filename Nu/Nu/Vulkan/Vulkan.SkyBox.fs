@@ -2,7 +2,6 @@ namespace Vortice.Vulkan
 open System
 open System.Numerics
 open System.Runtime.InteropServices
-open FSharp.NativeInterop
 open type Vulkan
 open Prime
 open Nu
@@ -31,40 +30,24 @@ module SkyBox =
 
         /// Create a skybox shader pipeline.
         static member createPipeline (shaderFilePath : string, viewport : VkViewport byref, scissor : VkRect2D byref, descriptorPool : VkDescriptorPool, allocator : VmaAllocator, device : VkDevice) =
+            
+            // create bindings
+            let mutable descriptorSetLayoutBindingVertex = Hl.DescriptorSetLayoutBinding.make (0u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Vertex)
+            let mutable descriptorSetLayoutBindingFragment = Hl.DescriptorSetLayoutBinding.make (1u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Fragment)
+            let mutable descriptorSetLayoutBindingCubeMap = Hl.DescriptorSetLayoutBinding.make (2u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Fragment)
+            let descriptorSetLayoutBindings = [|descriptorSetLayoutBindingVertex; descriptorSetLayoutBindingFragment; descriptorSetLayoutBindingCubeMap|]
 
-            let mutable descriptorSetLayoutBindingVertex = VkDescriptorSetLayoutBinding ()
-            descriptorSetLayoutBindingVertex.binding <- 0u
-            descriptorSetLayoutBindingVertex.descriptorType <- VkDescriptorType.UniformBuffer
-            descriptorSetLayoutBindingVertex.descriptorCount <- 1u
-            descriptorSetLayoutBindingVertex.stageFlags <- VkShaderStageFlags.Vertex
-
-            let mutable descriptorSetLayoutBindingFragment = VkDescriptorSetLayoutBinding ()
-            descriptorSetLayoutBindingFragment.binding <- 1u
-            descriptorSetLayoutBindingFragment.descriptorType <- VkDescriptorType.UniformBuffer
-            descriptorSetLayoutBindingFragment.descriptorCount <- 1u
-            descriptorSetLayoutBindingFragment.stageFlags <- VkShaderStageFlags.Fragment
-
-            let mutable descriptorSetLayoutBindingCubeMap = VkDescriptorSetLayoutBinding ()
-            descriptorSetLayoutBindingCubeMap.binding <- 2u
-            descriptorSetLayoutBindingCubeMap.descriptorType <- VkDescriptorType.CombinedImageSampler
-            descriptorSetLayoutBindingCubeMap.descriptorCount <- 1u
-            descriptorSetLayoutBindingCubeMap.stageFlags <- VkShaderStageFlags.Fragment
-
-            let bindings = [|descriptorSetLayoutBindingVertex; descriptorSetLayoutBindingFragment; descriptorSetLayoutBindingCubeMap|]
-            use bindingsWrap = new ArrayPin<_> (bindings)
-
-            let mutable descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo ()
-            let mutable descriptorSetLayout = VkDescriptorSetLayout ()
-            descriptorSetLayoutCreateInfo.bindingCount <- uint bindings.Length
-            descriptorSetLayoutCreateInfo.pBindings <- bindingsWrap.Pointer
-            let result = vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout)
-
+            // create descriptor set
+            let mutable descriptorSetLayout = Hl.DescriptorSetLayout.make (descriptorSetLayoutBindings, device)
             let descriptorSet = Hl.DescriptorSet.create (&descriptorSetLayout, descriptorPool, device)
-            let lessThanDepthUnstenciled = Hl.PipelineDepthStencilStateCreateInfo.makeLessThanUnstenciled ()
-            let alphaBlend = Hl.PipelineColorBlendStateCreateInfo.makeAlpha ()
-            let pipeline = Hl.Pipeline.createVertexFragment<SkyBoxUniformBufferVertex, SkyBoxUniformBufferFragment> (&viewport, &scissor, VkPrimitiveTopology.TriangleList, lessThanDepthUnstenciled, alphaBlend, descriptorSet, allocator, device)
 
-            (result, { DescriptorSet = descriptorSet; Pipeline = pipeline })
+            // create pipeline
+            let mutable lessThanDepthUnstenciled = Hl.PipelineDepthStencilStateCreateInfo.makeLessThanUnstenciled ()
+            let mutable alphaBlend = Hl.PipelineColorBlendStateCreateInfo.makeAlpha ()
+            let pipeline = Hl.Pipeline.createVertexFragment<SkyBoxUniformBufferVertex, SkyBoxUniformBufferFragment> (&viewport, &scissor, VkPrimitiveTopology.TriangleList, &lessThanDepthUnstenciled, &alphaBlend, descriptorSet, allocator, device)
+            
+            // fin
+            { DescriptorSet = descriptorSet; Pipeline = pipeline }
 
         /// Draw a skybox.
         static member draw
