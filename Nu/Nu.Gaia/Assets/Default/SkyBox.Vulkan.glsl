@@ -24,8 +24,9 @@ layout(binding = 1) uniform UniformBuffer
 {
     vec3 color;
     float brightness;
-    samplerCube cubeMap;
 } ub;
+
+layout(binding = 2) uniform samplerCube cubeMap;
 
 in vec3 texCoordsOut;
 
