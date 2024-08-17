@@ -152,18 +152,12 @@ module Hl =
              allocator : VmaAllocator,
              device : VkDevice) =
 
+            //
             let mutable shaderModuleCreateInfoVertex = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
             let mutable shaderModuleVertex = VkShaderModule ()
             vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoVertex, NativePtr.nullPtr, Interop.AsPointer &shaderModuleVertex) |> Assert
 
-            let mutable shaderModuleCreateInfoFragment = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
-            let mutable shaderModuleFragment = VkShaderModule ()
-            vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoFragment, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment) |> Assert
-
-            let mutable pipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo ()
-            pipelineLayoutCreateInfo.setLayoutCount <- 1u
-            pipelineLayoutCreateInfo.pSetLayouts <- Interop.AsPointer &descriptorSet.DescriptorSetLayout
-
+            //
             let mutable uniformBuffersVertex = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
             let mutable uniformAllocationsVertex = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
             for i in 0 .. dec Constants.Render.FrameCount do
@@ -171,6 +165,12 @@ module Hl =
                 uniformBuffersVertex.[i] <- allocation.Buffer
                 uniformAllocationsVertex.[i] <- allocation.Allocation
 
+            //
+            let mutable shaderModuleCreateInfoFragment = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
+            let mutable shaderModuleFragment = VkShaderModule ()
+            vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoFragment, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment) |> Assert
+
+            //
             let mutable uniformBuffersFragment = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
             let mutable uniformAllocationsFragment = Array.init Constants.Render.FrameCount (fun _ -> VmaAllocation ())
             for i in 0 .. dec Constants.Render.FrameCount do
@@ -178,26 +178,27 @@ module Hl =
                 uniformBuffersFragment.[i] <- allocation.Buffer
                 uniformAllocationsFragment.[i] <- allocation.Allocation
 
-            let mutable pipelineDynamicStateCreateInfo = VkPipelineDynamicStateCreateInfo ()
-            pipelineDynamicStateCreateInfo.dynamicStateCount <- 0u
-            pipelineDynamicStateCreateInfo.pDynamicStates <- NativePtr.nullPtr
-
+            // specify position-only vertex info state
+            // TODO: P0: specify PBR vertex data.
             let mutable pipelineVertexInputStateCreateInfo = VkPipelineVertexInputStateCreateInfo ()
             pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount <- 0u
             pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions <- NativePtr.nullPtr
             pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount <- 0u
             pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions <- NativePtr.nullPtr
 
+            // specify input assembly state
             let mutable pipelineInputAssemblyStateCreateInfo = VkPipelineInputAssemblyStateCreateInfo ()
             pipelineInputAssemblyStateCreateInfo.topology <- primitiveTopology
             pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable <- VkBool32.False
 
+            // specify viewport state
             let mutable pipelineViewportStateCreateInfo = VkPipelineViewportStateCreateInfo ()
             pipelineViewportStateCreateInfo.viewportCount <- 1u
             pipelineViewportStateCreateInfo.pViewports <- Interop.AsPointer &viewport
             pipelineViewportStateCreateInfo.scissorCount <- 1u
             pipelineViewportStateCreateInfo.pScissors <- Interop.AsPointer &scissor
 
+            // specify raterization state
             let mutable pipelineRasterizationStateCreateInfo = VkPipelineRasterizationStateCreateInfo ()
             pipelineRasterizationStateCreateInfo.depthClampEnable <- VkBool32.False
             pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable <- VkBool32.False
@@ -210,6 +211,7 @@ module Hl =
             pipelineRasterizationStateCreateInfo.depthBiasClamp <- 0.0f
             pipelineRasterizationStateCreateInfo.depthBiasSlopeFactor <- 0.0f
 
+            // specify null multisampling
             let mutable pipelineMultisampleStateCreateInfo = VkPipelineMultisampleStateCreateInfo ()
             pipelineMultisampleStateCreateInfo.sampleShadingEnable <- VkBool32.False
             pipelineMultisampleStateCreateInfo.rasterizationSamples <- VkSampleCountFlags.Count1
@@ -218,30 +220,37 @@ module Hl =
             pipelineMultisampleStateCreateInfo.alphaToCoverageEnable <- VkBool32.False
             pipelineMultisampleStateCreateInfo.alphaToOneEnable <- VkBool32.False
 
-            let mutable pipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo ()
-            pipelineLayoutCreateInfo.setLayoutCount <- 0u
-            pipelineLayoutCreateInfo.pSetLayouts <- NativePtr.nullPtr
-            pipelineLayoutCreateInfo.pushConstantRangeCount <- 0u
-            pipelineLayoutCreateInfo.pPushConstantRanges <- NativePtr.nullPtr
+            // specify dynamic state
+            let mutable pipelineDynamicStateCreateInfo = VkPipelineDynamicStateCreateInfo ()
+            pipelineDynamicStateCreateInfo.dynamicStateCount <- 0u
+            pipelineDynamicStateCreateInfo.pDynamicStates <- NativePtr.nullPtr
 
+            // specify pipeline layout
+            let mutable pipelineLayoutCreateInfo = VkPipelineLayoutCreateInfo ()
+            pipelineLayoutCreateInfo.setLayoutCount <- 1u
+            pipelineLayoutCreateInfo.pSetLayouts <- Interop.AsPointer &descriptorSet.DescriptorSetLayout
+
+            // create pipeline layout
             let mutable pipelineLayout = VkPipelineLayout ()
             vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutCreateInfo, NativePtr.nullPtr, &pipelineLayout) |> Assert
 
+            // specify vertex shader stage
             let mutable pipelineShaderStageCreateInfoVertex = VkPipelineShaderStageCreateInfo ()
             use pipelineShaderStageCreateInfoVertexName = new VkString (nameof pipelineShaderStageCreateInfoVertex)
             pipelineShaderStageCreateInfoVertex.stage <- VkShaderStageFlags.Vertex
             pipelineShaderStageCreateInfoVertex.``module`` <- shaderModuleVertex
             pipelineShaderStageCreateInfoVertex.pName <- pipelineShaderStageCreateInfoVertexName
 
+            // specify fragment shader stage
             let mutable pipelineShaderStageCreateInfoFragment = VkPipelineShaderStageCreateInfo ()
             use pipelineShaderStageCreateInfoFragmentName = new VkString (nameof pipelineShaderStageCreateInfoFragment)
             pipelineShaderStageCreateInfoFragment.stage <- VkShaderStageFlags.Fragment
             pipelineShaderStageCreateInfoFragment.``module`` <- shaderModuleFragment
             pipelineShaderStageCreateInfoFragment.pName <- pipelineShaderStageCreateInfoFragmentName
 
+            // specify pipeline
             let stagesArray = [|pipelineShaderStageCreateInfoVertex; pipelineShaderStageCreateInfoFragment|]
             use stagesArrayWrap = new ArrayPin<_> (stagesArray)
-
             let mutable graphicsPipelineCreateInfo = VkGraphicsPipelineCreateInfo ()
             graphicsPipelineCreateInfo.stageCount <- uint stagesArray.Length
             graphicsPipelineCreateInfo.pStages <- stagesArrayWrap.Pointer
@@ -257,6 +266,7 @@ module Hl =
             graphicsPipelineCreateInfo.renderPass <- Unchecked.defaultof<_> // TODO: P0: figure out what's needed here.
             graphicsPipelineCreateInfo.subpass <- 0u
 
+            // create pipeline
             let mutable pipeline = VkPipeline ()
             vkCreateGraphicsPipeline (device, graphicsPipelineCreateInfo, &pipeline) |> Assert
             { UniformBuffersVertex = uniformBuffersVertex
