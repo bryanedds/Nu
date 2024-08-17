@@ -125,7 +125,7 @@ module Hl =
           mutable Pipeline : VkPipeline }
 
         /// Create a pipeline with vertex and fragment stages.
-        static member createVertexFragment<'ubv, 'ubf when 'ubv : unmanaged and 'ubf : unmanaged>
+        static member createWithVertexAndFragmentStages<'ubv, 'ubf when 'ubv : unmanaged and 'ubf : unmanaged>
             (viewport : VkViewport byref,
              scissor : VkRect2D byref,
              primitiveTopology : VkPrimitiveTopology,

@@ -30,7 +30,7 @@ module SkyBox =
 
         /// Create a skybox shader pipeline.
         static member createPipeline (shaderFilePath : string, viewport : VkViewport byref, scissor : VkRect2D byref, descriptorPool : VkDescriptorPool, allocator : VmaAllocator, device : VkDevice) =
-            
+
             // create bindings
             let mutable descriptorSetLayoutBindingVertex = Hl.DescriptorSetLayoutBinding.make (0u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Vertex)
             let mutable descriptorSetLayoutBindingFragment = Hl.DescriptorSetLayoutBinding.make (1u, VkDescriptorType.UniformBuffer, 1u, VkShaderStageFlags.Fragment)
@@ -44,8 +44,8 @@ module SkyBox =
             // create pipeline
             let mutable lessThanDepthUnstenciled = Hl.PipelineDepthStencilStateCreateInfo.makeLessThanUnstenciled ()
             let mutable alphaBlend = Hl.PipelineColorBlendStateCreateInfo.makeAlpha ()
-            let pipeline = Hl.Pipeline.createVertexFragment<SkyBoxUniformBufferVertex, SkyBoxUniformBufferFragment> (&viewport, &scissor, VkPrimitiveTopology.TriangleList, &lessThanDepthUnstenciled, &alphaBlend, descriptorSet, allocator, device)
-            
+            let pipeline = Hl.Pipeline.createWithVertexAndFragmentStages<SkyBoxUniformBufferVertex, SkyBoxUniformBufferFragment> (&viewport, &scissor, VkPrimitiveTopology.TriangleList, &lessThanDepthUnstenciled, &alphaBlend, descriptorSet, allocator, device)
+
             // fin
             { DescriptorSet = descriptorSet; Pipeline = pipeline }
 
