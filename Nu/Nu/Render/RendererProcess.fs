@@ -8,16 +8,13 @@ open System.Numerics
 open System.Threading
 open System.IO
 open FSharp.NativeInterop
-open SDL2
-open Vulkan
-open Vortice.Vulkan
-open type Vortice.Vulkan.Vulkan
-open type Vortice.Vulkan.Vma
 open Vortice.ShaderCompiler
+open Vortice.Vulkan
+open type Vulkan
+open type Vma
+open SDL2
 open ImGuiNET
 open Prime
-open System.Runtime.InteropServices
-open System.Collections.Generic
 
 /// A renderer process that may or may not be threaded.
 type RendererProcess =

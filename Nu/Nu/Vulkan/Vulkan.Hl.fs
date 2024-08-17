@@ -1,12 +1,10 @@
-﻿namespace Vulkan
+﻿namespace Vortice.Vulkan
 open System
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
 open Prime
 open Nu
-open Vortice.Vulkan
-open type Vortice.Vulkan.Vulkan
-open type Vortice.Vulkan.Vma
+open type Vma
 
 [<AutoOpen>]
 module Vulkan =

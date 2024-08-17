@@ -1,10 +1,6 @@
-﻿namespace Vulkan
+﻿namespace Vortice.Vulkan
 open System
-open System.Collections.Generic
-open System.IO
 open System.Numerics
-open System.Runtime.InteropServices
-open FSharp.NativeInterop
 open Prime
 open Nu
 
