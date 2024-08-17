@@ -56,11 +56,13 @@ module Hl =
     module DescriptorSetLayout =
 
         let make (bindings, device) =
+
             use bindingsWrap = new ArrayPin<_> (bindings)
             let mutable descriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo ()
-            let mutable descriptorSetLayout = VkDescriptorSetLayout ()
             descriptorSetLayoutCreateInfo.bindingCount <- uint bindings.Length
             descriptorSetLayoutCreateInfo.pBindings <- bindingsWrap.Pointer
+
+            let mutable descriptorSetLayout = VkDescriptorSetLayout ()
             vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout) |> Assert
             descriptorSetLayout
 
@@ -224,7 +226,7 @@ module Hl =
 
             let stagesArray = [|pipelineShaderStageCreateInfoVertex; pipelineShaderStageCreateInfoFragment|]
             use stagesArrayWrap = new ArrayPin<_> (stagesArray)
-            
+
             let mutable graphicsPipelineCreateInfo = VkGraphicsPipelineCreateInfo ()
             graphicsPipelineCreateInfo.stageCount <- uint stagesArray.Length
             graphicsPipelineCreateInfo.pStages <- stagesArrayWrap.Pointer
