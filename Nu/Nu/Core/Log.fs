@@ -67,7 +67,7 @@ module Log =
     /// Thread-safe.
     let fail<'a> message =
         Trace.Fail (getDateTimeNowStr () + "|Fatal|" + message)
-        Unchecked.defaultof<'a>
+        failwith "Log.fail exception."
 
     /// Log an custom log type with Trace.TraceInformation.
     /// Thread-safe.
