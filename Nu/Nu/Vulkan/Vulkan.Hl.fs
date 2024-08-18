@@ -199,14 +199,14 @@ module Hl =
 
             // specify vertex shader stage
             let mutable pipelineShaderStageCreateInfoVertex = VkPipelineShaderStageCreateInfo ()
-            use pipelineShaderStageCreateInfoVertexName = new VkString (nameof pipelineShaderStageCreateInfoVertex)
+            use pipelineShaderStageCreateInfoVertexName = new VkString (typeof<'ubv>.Name)
             pipelineShaderStageCreateInfoVertex.stage <- VkShaderStageFlags.Vertex
             pipelineShaderStageCreateInfoVertex.``module`` <- shaderModuleVertex
             pipelineShaderStageCreateInfoVertex.pName <- pipelineShaderStageCreateInfoVertexName
 
             // specify fragment shader stage
             let mutable pipelineShaderStageCreateInfoFragment = VkPipelineShaderStageCreateInfo ()
-            use pipelineShaderStageCreateInfoFragmentName = new VkString (nameof pipelineShaderStageCreateInfoFragment)
+            use pipelineShaderStageCreateInfoFragmentName = new VkString (typeof<'ubf>.Name)
             pipelineShaderStageCreateInfoFragment.stage <- VkShaderStageFlags.Fragment
             pipelineShaderStageCreateInfoFragment.``module`` <- shaderModuleFragment
             pipelineShaderStageCreateInfoFragment.pName <- pipelineShaderStageCreateInfoFragmentName
