@@ -44,7 +44,7 @@ module SkyBox =
             // create pipeline
             let mutable lessThanDepthUnstenciled = Hl.PipelineDepthStencilStateCreateInfo.makeLessThanUnstenciled ()
             let mutable alphaBlend = Hl.PipelineColorBlendStateCreateInfo.makeAlpha ()
-            let pipeline = Hl.Pipeline.createWithVertexAndFragmentStages<SkyBoxUniformBufferVertex, SkyBoxUniformBufferFragment> (&viewport, &scissor, VkPrimitiveTopology.TriangleList, &lessThanDepthUnstenciled, &alphaBlend, descriptorSet, allocator, device)
+            let pipeline = Hl.Pipeline.createWithVertexAndFragmentStages<SkyBoxUniformBufferVertex, SkyBoxUniformBufferFragment> (&viewport, &scissor, VkPrimitiveTopology.TriangleList, shaderFilePath, &lessThanDepthUnstenciled, &alphaBlend, descriptorSet, allocator, device)
             { DescriptorSet = descriptorSet; Pipeline = pipeline }
 
         /// Draw a skybox.

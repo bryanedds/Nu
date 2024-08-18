@@ -1,7 +1,9 @@
 ﻿namespace Vortice.Vulkan
 open System
+open System.IO
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
+open Vortice.ShaderCompiler
 open type Vma
 open type Vulkan
 open Prime
@@ -10,8 +12,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
-    /// Assert based on Vulkan operation result.
-    let Assert (result : VkResult) =
+    /// Check the given Vulkan operation result, logging on non-Success.
+    let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
 
@@ -36,13 +38,13 @@ module Hl =
             // allocate buffer
             let mutable buffer = VkBuffer ()
             let mutable allocation = VmaAllocation ()
-            vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, NativePtr.nullPtr) |> Assert
+            vmaCreateBuffer (allocator, Interop.AsPointer &bufferCreateInfo, Interop.AsPointer &allocationCreateInfo, Interop.AsPointer &buffer, Interop.AsPointer &allocation, NativePtr.nullPtr) |> check
             { Buffer = buffer; Allocation = allocation }
 
         /// Map and write to allocated buffer, then unmap.
         static member write<'ub when 'ub : unmanaged> (values : 'ub inref, allocation : VmaAllocation, allocator : VmaAllocator) =
             let memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
-            vmaMapMemory (allocator, allocation, memoryPtrPtr) |> Assert
+            vmaMapMemory (allocator, allocation, memoryPtrPtr) |> check
             Marshal.StructureToPtr<'ub> (values, NativePtr.toNativeInt memoryPtrPtr, false)
             vmaUnmapMemory (allocator, allocation)
 
@@ -72,7 +74,7 @@ module Hl =
 
             // create layout
             let mutable descriptorSetLayout = VkDescriptorSetLayout ()
-            vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout) |> Assert
+            vkCreateDescriptorSetLayout (device, Interop.AsPointer &descriptorSetLayoutCreateInfo, NativePtr.nullPtr, Interop.AsPointer &descriptorSetLayout) |> check
             descriptorSetLayout
 
     /// Abstraction for VkDescriptorSet usage.
@@ -91,8 +93,47 @@ module Hl =
 
             // create descriptor set
             let mutable descriptorSet = VkDescriptorSet ()
-            vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet) |> Assert
+            vkAllocateDescriptorSets (device, Interop.AsPointer &descriptorSetAllocateInfo, Interop.AsPointer &descriptorSet) |> check
             { DescriptorSetLayout = descriptorSetLayout; DescriptorSet = descriptorSet }
+
+    [<RequireQualifiedAccess>]
+    module ShaderModule =
+
+        /// Compile a vertex and a fragment into respective modules.
+        let compileVertexAndFragmentShader (shaderVertexStr, shaderFragmentStr, shaderFilePath, device) =
+            use compiler = new Compiler ()
+            use resultVertex = compiler.Compile (shaderVertexStr, shaderFilePath, ShaderKind.VertexShader)
+            if resultVertex.Status <> CompilationStatus.Success
+            then Log.fail resultVertex.ErrorMessage
+            else
+                use resultFragment = compiler.Compile (shaderFragmentStr, shaderFilePath, ShaderKind.FragmentShader)
+                if resultFragment.Status <> CompilationStatus.Success
+                then Log.fail resultFragment.ErrorMessage
+                else
+                    let bytesVertex = resultVertex.GetBytecode().ToArray()
+                    let mutable shaderModuleVertex = VkShaderModule ()
+                    vkCreateShaderModule (device, bytesVertex, NativePtr.nullPtr, &shaderModuleVertex) |> check
+                    let bytesFragment = resultFragment.GetBytecode().ToArray()
+                    let mutable shaderModuleFragment = VkShaderModule ()
+                    vkCreateShaderModule (device, bytesFragment, NativePtr.nullPtr, &shaderModuleFragment) |> check
+                    (shaderModuleVertex, shaderModuleFragment)
+
+        /// Create a shader from a single file with both a '#shader vertex' section and a '#shader fragment' section.
+        let createWithVertexAndFragmentShaderFromFilePath (shaderFilePath : string, device) =
+            use shaderStream = new StreamReader (File.OpenRead shaderFilePath)
+            let shaderStr = shaderStream.ReadToEnd ()
+            let vertexStrIndex = shaderStr.IndexOf "#shader vertex"
+            let fragmentStrIndex = shaderStr.IndexOf "#shader fragment"
+            if vertexStrIndex > -1 && fragmentStrIndex > -1 then
+                let (vertexStr, fragmentStr) =
+                    if vertexStrIndex < fragmentStrIndex then
+                        (shaderStr.Substring (vertexStrIndex, fragmentStrIndex - vertexStrIndex),
+                         shaderStr.Substring (fragmentStrIndex, shaderStr.Length - fragmentStrIndex))
+                    else
+                        (shaderStr.Substring (fragmentStrIndex, vertexStrIndex - fragmentStrIndex),
+                         shaderStr.Substring (vertexStrIndex, shaderStr.Length - vertexStrIndex))
+                compileVertexAndFragmentShader (shaderFilePath, vertexStr.Replace ("#shader vertex", ""), fragmentStr.Replace ("#shader fragment", ""), device)
+            else failwith ("Invalid shader file '" + shaderFilePath + "'. Both vertex and fragment shader sections required.")
 
     [<RequireQualifiedAccess>]
     module PipelineDepthStencilStateCreateInfo =
@@ -145,17 +186,30 @@ module Hl =
         static member createWithVertexAndFragmentStages<'ubv, 'ubf when 'ubv : unmanaged and 'ubf : unmanaged>
             (viewport : VkViewport byref,
              scissor : VkRect2D byref,
-             primitiveTopology : VkPrimitiveTopology,
+             primitiveTopology,
+             vertexAndFragmentShaderFilePath,
              pipelineDepthStencilStateCreateInfo : VkPipelineDepthStencilStateCreateInfo byref,
              pipelineColorBlendStateCreateInfo : VkPipelineColorBlendStateCreateInfo byref,
-             descriptorSet : DescriptorSet,
-             allocator : VmaAllocator,
-             device : VkDevice) =
+             descriptorSet,
+             allocator,
+             device) =
 
-            //
-            let mutable shaderModuleCreateInfoVertex = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
-            let mutable shaderModuleVertex = VkShaderModule ()
-            vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoVertex, NativePtr.nullPtr, Interop.AsPointer &shaderModuleVertex) |> Assert
+            // create shader modules
+            let (shaderModuleVertex, shaderModuleFragment) = ShaderModule.createWithVertexAndFragmentShaderFromFilePath (vertexAndFragmentShaderFilePath, device)
+
+            // specify vertex shader stage
+            let mutable pipelineShaderStageCreateInfoVertex = VkPipelineShaderStageCreateInfo ()
+            use pipelineShaderStageCreateInfoVertexName = new VkString (nameof pipelineShaderStageCreateInfoVertex)
+            pipelineShaderStageCreateInfoVertex.stage <- VkShaderStageFlags.Vertex
+            pipelineShaderStageCreateInfoVertex.``module`` <- shaderModuleVertex
+            pipelineShaderStageCreateInfoVertex.pName <- pipelineShaderStageCreateInfoVertexName
+
+            // specify fragment shader stage
+            let mutable pipelineShaderStageCreateInfoFragment = VkPipelineShaderStageCreateInfo ()
+            use pipelineShaderStageCreateInfoFragmentName = new VkString (nameof pipelineShaderStageCreateInfoFragment)
+            pipelineShaderStageCreateInfoFragment.stage <- VkShaderStageFlags.Fragment
+            pipelineShaderStageCreateInfoFragment.``module`` <- shaderModuleFragment
+            pipelineShaderStageCreateInfoFragment.pName <- pipelineShaderStageCreateInfoFragmentName
 
             //
             let mutable uniformBuffersVertex = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
@@ -164,11 +218,6 @@ module Hl =
                 let allocation = Allocation.createUpload<'ubv> (VkBufferUsageFlags.UniformBuffer, allocator)
                 uniformBuffersVertex.[i] <- allocation.Buffer
                 uniformAllocationsVertex.[i] <- allocation.Allocation
-
-            //
-            let mutable shaderModuleCreateInfoFragment = Unchecked.defaultof<VkShaderModuleCreateInfo> // TODO: P0: load code.
-            let mutable shaderModuleFragment = VkShaderModule ()
-            vkCreateShaderModule (device, Interop.AsPointer &shaderModuleCreateInfoFragment, NativePtr.nullPtr, Interop.AsPointer &shaderModuleFragment) |> Assert
 
             //
             let mutable uniformBuffersFragment = Array.init Constants.Render.FrameCount (fun _ -> VkBuffer ())
@@ -232,21 +281,7 @@ module Hl =
 
             // create pipeline layout
             let mutable pipelineLayout = VkPipelineLayout ()
-            vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutCreateInfo, NativePtr.nullPtr, &pipelineLayout) |> Assert
-
-            // specify vertex shader stage
-            let mutable pipelineShaderStageCreateInfoVertex = VkPipelineShaderStageCreateInfo ()
-            use pipelineShaderStageCreateInfoVertexName = new VkString (nameof pipelineShaderStageCreateInfoVertex)
-            pipelineShaderStageCreateInfoVertex.stage <- VkShaderStageFlags.Vertex
-            pipelineShaderStageCreateInfoVertex.``module`` <- shaderModuleVertex
-            pipelineShaderStageCreateInfoVertex.pName <- pipelineShaderStageCreateInfoVertexName
-
-            // specify fragment shader stage
-            let mutable pipelineShaderStageCreateInfoFragment = VkPipelineShaderStageCreateInfo ()
-            use pipelineShaderStageCreateInfoFragmentName = new VkString (nameof pipelineShaderStageCreateInfoFragment)
-            pipelineShaderStageCreateInfoFragment.stage <- VkShaderStageFlags.Fragment
-            pipelineShaderStageCreateInfoFragment.``module`` <- shaderModuleFragment
-            pipelineShaderStageCreateInfoFragment.pName <- pipelineShaderStageCreateInfoFragmentName
+            vkCreatePipelineLayout (device, Interop.AsPointer &pipelineLayoutCreateInfo, NativePtr.nullPtr, &pipelineLayout) |> check
 
             // specify pipeline
             let stagesArray = [|pipelineShaderStageCreateInfoVertex; pipelineShaderStageCreateInfoFragment|]
@@ -268,7 +303,7 @@ module Hl =
 
             // create pipeline
             let mutable pipeline = VkPipeline ()
-            vkCreateGraphicsPipeline (device, graphicsPipelineCreateInfo, &pipeline) |> Assert
+            vkCreateGraphicsPipeline (device, graphicsPipelineCreateInfo, &pipeline) |> check
             { UniformBuffersVertex = uniformBuffersVertex
               UniformAllocationsVertex = uniformAllocationsVertex
               UniformBuffersFragment = uniformBuffersFragment
