@@ -65,8 +65,9 @@ module Log =
 
     /// Log a failure message using Trace.Fail.
     /// Thread-safe.
-    let fail message =
+    let fail<'a> message =
         Trace.Fail (getDateTimeNowStr () + "|Fatal|" + message)
+        failwith "Log.fail exception."
 
     /// Log an custom log type with Trace.TraceInformation.
     /// Thread-safe.
