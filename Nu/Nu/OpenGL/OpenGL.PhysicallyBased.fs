@@ -357,6 +357,7 @@ module PhysicallyBased =
           SsrRoughnessCutoffUniform : int
           SsrDepthCutoffUniform : int
           SsrDistanceCutoffUniform : int
+          SsrSurfaceSlopeCutoffUniform : int
           SsrEdgeCutoffHorizontalUniform : int
           SsrEdgeCutoffVerticalUniform : int
           SsrLightColorUniform : int
@@ -1647,6 +1648,7 @@ module PhysicallyBased =
         let ssrRoughnessCutoff = Gl.GetUniformLocation (shader, "ssrRoughnessCutoff")
         let ssrDepthCutoff = Gl.GetUniformLocation (shader, "ssrDepthCutoff")
         let ssrDistanceCutoff = Gl.GetUniformLocation (shader, "ssrDistanceCutoff")
+        let ssrSurfaceSlopeCutoff = Gl.GetUniformLocation (shader, "ssrSurfaceSlopeCutoff")
         let ssrEdgeCutoffHorizontal = Gl.GetUniformLocation (shader, "ssrEdgeCutoffHorizontal")
         let ssrEdgeCutoffVertical = Gl.GetUniformLocation (shader, "ssrEdgeCutoffVertical")
         let SsrLightColor = Gl.GetUniformLocation (shader, "ssrLightColor")
@@ -1698,6 +1700,7 @@ module PhysicallyBased =
           SsrRoughnessCutoffUniform = ssrRoughnessCutoff
           SsrDepthCutoffUniform = ssrDepthCutoff
           SsrDistanceCutoffUniform = ssrDistanceCutoff
+          SsrSurfaceSlopeCutoffUniform = ssrSurfaceSlopeCutoff
           SsrEdgeCutoffHorizontalUniform = ssrEdgeCutoffHorizontal
           SsrEdgeCutoffVerticalUniform = ssrEdgeCutoffVertical
           SsrLightColorUniform = SsrLightColor
@@ -2635,6 +2638,7 @@ module PhysicallyBased =
          ssrRoughnessCutoff : single,
          ssrDepthCutoff : single,
          ssrDistanceCutoff : single,
+         ssrSurfaceSlopeCutoff : single,
          ssrEdgeCutoffHorizontal : single,
          ssrEdgeCutoffVertical : single,
          ssrLightColor : single array,
@@ -2685,6 +2689,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrRoughnessCutoffUniform, ssrRoughnessCutoff)
         Gl.Uniform1 (shader.SsrDepthCutoffUniform, ssrDepthCutoff)
         Gl.Uniform1 (shader.SsrDistanceCutoffUniform, ssrDistanceCutoff)
+        Gl.Uniform1 (shader.SsrSurfaceSlopeCutoffUniform, ssrSurfaceSlopeCutoff)
         Gl.Uniform1 (shader.SsrEdgeCutoffHorizontalUniform, ssrEdgeCutoffHorizontal)
         Gl.Uniform1 (shader.SsrEdgeCutoffVerticalUniform, ssrEdgeCutoffVertical)
         Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor)
