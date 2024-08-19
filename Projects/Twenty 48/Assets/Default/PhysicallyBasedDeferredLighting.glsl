@@ -153,8 +153,6 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     vec3 reflectionView = reflect(positionViewNormal, normalView);
     vec4 startView = vec4(positionView.xyz, 1.0);
     vec4 stopView = vec4(positionView.xyz + reflectionView * ssrDistanceMax, 1.0);
-
-    // compute distance of eye to nearest point on fragment's plane
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
@@ -187,7 +185,6 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     // march fragment
     float currentProgressA = 0.0;
     float currentProgressB = 0.0;
-    float currentDistanceView = 0.0;
     float currentDepthView = 0.0;
     for (int i = 0; i < stepCount && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
     {
@@ -197,16 +194,16 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentPosition = texture(positionTexture, currentUV);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
-        currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
-        currentDepthView = currentDistanceView - -currentPositionView.z;
-        
-        // compute thickness based on view state
-        float adaptedThickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
-        if (currentDepthView > 2.0 && eyeDistanceFromPlane < 1.0)
-            adaptedThickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, adaptedThickness);
-        
+        currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
+
+        // compute depth delta and thickness based on view state
+        float depthDelta = currentDepthView - -currentPositionView.z;
+        float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
+        if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0)
+            thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
+
         // determine whether we hit geometry within acceptable thickness
-        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+        if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
@@ -217,16 +214,16 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 currentUV = currentFrag / texSize;
                 currentPosition = texture(positionTexture, currentUV);
                 currentPositionView = view * currentPosition;
-                currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
-                currentDepthView = currentDistanceView - -currentPositionView.z;
+                currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
 
-                // compute thickness based on view state
-                float adaptedThickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
-                if (currentDepthView > 2.0 && eyeDistanceFromPlane < 1.0)
-                    adaptedThickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, adaptedThickness);
-                
+                // compute depth delta and thickness based on view state
+                float depthDelta = currentDepthView - -currentPositionView.z;
+                float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
+                if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0)
+                    thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
+
                 // determine whether we hit geometry within acceptable thickness
-                if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+                if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space specular color and weight
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
