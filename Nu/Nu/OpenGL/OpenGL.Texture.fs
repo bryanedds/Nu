@@ -438,7 +438,7 @@ module Texture =
                 if not destroyed && not fullServeAttempted then
                     match TryCreateTextureGl (false, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, fullAnisoFilter, false, BlockCompressable filePath, filePath) with
                     | Right (metadata, textureId) ->
-                        Gl.Finish ()
+                        Gl.Finish () // NOTE: calling this seems to prevent a bug, IIRC.
                         fullMetadataAndIdOpt <- ValueSome (metadata, textureId)
                     | Left error -> Log.info ("Could not serve lazy texture due to:" + error)
                     fullServeAttempted <- true

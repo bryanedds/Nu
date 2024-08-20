@@ -197,12 +197,12 @@ type RendererInline () =
 
         member this.Swap () =
             ()
-    //        match windowOpt with
-    //        | Some window ->
-    //            match window with
-    //            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
-    //        | None -> ()
-            
+            //match windowOpt with
+            //| Some (SglWindow window) ->
+            //    OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
+            //    SDL.SDL_GL_SwapWindow window.SglWindow
+            //| None -> ()
+
         member this.Terminate () =
             ()
     //        match renderersOpt with
@@ -993,7 +993,9 @@ type RendererThread () =
 
                     // attempt to swap
                     match windowOpt with
-                    | Some window -> ()//match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                    | Some (SglWindow window) -> ()
+                        //OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
+                        //SDL.SDL_GL_SwapWindow window.SglWindow
                     | None -> ()
 
                     // complete swap request
@@ -1188,6 +1190,7 @@ type RendererThread () =
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
 
         member this.Swap () =
+            if swap then raise (InvalidOperationException "Render process already swapping.")
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swap <- true
             while swap do Thread.Sleep 1

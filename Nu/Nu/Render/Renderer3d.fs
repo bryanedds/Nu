@@ -462,6 +462,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrRoughnessCutoff : single
       SsrDepthCutoff : single
       SsrDistanceCutoff : single
+      SsrSurfaceSlopeCutoff : single
       SsrEdgeCutoffHorizontal : single
       SsrEdgeCutoffVertical : single
       SsrLightColor : Color
@@ -486,6 +487,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
           SsrDepthCutoff = Constants.Render.SsrDepthCutoffDefault
           SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
+          SsrSurfaceSlopeCutoff = Constants.Render.SsrSurfaceSlopeCutoffDefault
           SsrEdgeCutoffHorizontal = Constants.Render.SsrEdgeCutoffHorizontalDefault
           SsrEdgeCutoffVertical = Constants.Render.SsrEdgeCutoffVerticalDefault
           SsrLightColor = Constants.Render.SsrLightColorDefault
@@ -2717,7 +2719,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
              ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrDepthMax, renderer.LightingConfig.SsrDistanceMax, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRoughnessMax, renderer.LightingConfig.SsrSurfaceSlopeMax,
-             renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrEdgeCutoffHorizontal, renderer.LightingConfig.SsrEdgeCutoffVertical,
+             renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrSurfaceSlopeCutoff, renderer.LightingConfig.SsrEdgeCutoffHorizontal, renderer.LightingConfig.SsrEdgeCutoffVertical,
              ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
@@ -3412,7 +3414,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         member renderer.Swap () =
             match renderer.Window with
-            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+            | SglWindow window ->
+                OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
+                SDL.SDL_GL_SwapWindow window.SglWindow
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader

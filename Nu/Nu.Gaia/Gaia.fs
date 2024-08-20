@@ -2664,6 +2664,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
                 let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
                 let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
+                let mutable ssrSurfaceSlopeCutoff = lighting3dConfig.SsrSurfaceSlopeCutoff
                 let mutable ssrEdgeCutoffHorizontal = lighting3dConfig.SsrEdgeCutoffHorizontal
                 let mutable ssrEdgeCutoffVertical = lighting3dConfig.SsrEdgeCutoffVertical
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
@@ -2687,6 +2688,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Cutoff", &ssrSurfaceSlopeCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Horizontal", &ssrEdgeCutoffHorizontal, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Vertical", &ssrEdgeCutoffVertical, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
                     lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; focusProperty ()
@@ -2711,6 +2713,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           SsrRoughnessCutoff = ssrRoughnessCutoff
                           SsrDepthCutoff = ssrDepthCutoff
                           SsrDistanceCutoff = ssrDistanceCutoff
+                          SsrSurfaceSlopeCutoff = ssrSurfaceSlopeCutoff
                           SsrEdgeCutoffHorizontal = ssrEdgeCutoffHorizontal
                           SsrEdgeCutoffVertical = ssrEdgeCutoffVertical
                           SsrLightColor = Color ssrLightColor
