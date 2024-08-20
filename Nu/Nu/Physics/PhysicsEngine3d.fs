@@ -429,9 +429,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             ghost.UserIndex <- userIndex
             PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
             physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
-            if physicsEngine.Ghosts.TryAdd (bodyId, ghost)
-            then physicsEngine.Objects.Add (bodyId, ghost)
-            else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+            if physicsEngine.Ghosts.TryAdd (bodyId, ghost) then
+                physicsEngine.Objects.Add (bodyId, ghost)
+                ghost.Activate true // force activation since it seems to be unconditionally disabled somewhere in the above bullet processes
+            else Log.error ("Could not add body for '" + scstring bodyId + "'.")
         elif bodyProperties.BodyType = KinematicCharacter then
             match shape with
             | :? ConvexShape as convexShape ->
@@ -465,9 +466,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                       AngularVelocity = v3Zero
                       CharacterController = characterController
                       Ghost = ghost }
-                if physicsEngine.KinematicCharacters.TryAdd (bodyId, character)
-                then physicsEngine.Objects.Add (bodyId, ghost)
-                else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+                if physicsEngine.KinematicCharacters.TryAdd (bodyId, character) then
+                    physicsEngine.Objects.Add (bodyId, ghost)
+                    ghost.Activate true // force activation since it seems to be unconditionally disabled somewhere in the above bullet processes
+                else Log.error ("Could not add body for '" + scstring bodyId + "'.")
             | _ -> Log.info "Non-convex body shapes are unsupported for KinematicCharacter."
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
@@ -484,7 +486,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     physicsEngine.BodiesGravitating.Add (bodyId, (bodyProperties.GravityOverride, body))
                 | Static | Kinematic -> ()
                 physicsEngine.Objects.Add (bodyId, body)
-            else Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+            else Log.error ("Could not add body for '" + scstring bodyId + "'.")
 
     static member private createBody4 bodyShape (bodyId : BodyId) bodyProperties physicsEngine =
         PhysicsEngine3d.createBody3 (fun ps cs cmas ->
@@ -985,7 +987,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         world.Broadphase.OverlappingPairCache.SetInternalGhostPairCallback ghostPairCallback
         world.DispatchInfo.AllowedCcdPenetration <- Constants.Physics.AllowedCcdPenetration3d
         world.Gravity <- gravity
-
         let physicsEngine =
             { PhysicsContext = world
               Constraints = Dictionary HashIdentity.Structural

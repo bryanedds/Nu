@@ -450,7 +450,23 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsaoIntensity : single
       SsaoBias : single
       SsaoRadius : single
-      SsaoDistanceMax : single }
+      SsaoDistanceMax : single
+      SsrEnabled : bool
+      SsrDetail : single
+      SsrDepthMax : single
+      SsrDistanceMax : single
+      SsrRefinementsMax : int
+      SsrRoughnessMax : single
+      SsrSurfaceSlopeMax : single
+      SsrRayThickness : single
+      SsrRoughnessCutoff : single
+      SsrDepthCutoff : single
+      SsrDistanceCutoff : single
+      SsrSurfaceSlopeCutoff : single
+      SsrEdgeCutoffHorizontal : single
+      SsrEdgeCutoffVertical : single
+      SsrLightColor : Color
+      SsrLightBrightness : single }
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
@@ -459,20 +475,42 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
-          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault }
+          SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
+          SsrEnabled = Constants.Render.SsrEnabledDefault
+          SsrDetail = Constants.Render.SsrDetailDefault
+          SsrDepthMax = Constants.Render.SsrDepthMaxDefault
+          SsrDistanceMax = Constants.Render.SsrDistanceMaxDefault
+          SsrRefinementsMax = Constants.Render.SsrRefinementsMaxDefault
+          SsrRoughnessMax = Constants.Render.SsrRoughnessMaxDefault
+          SsrSurfaceSlopeMax = Constants.Render.SsrSurfaceSlopeMaxDefault
+          SsrRayThickness = Constants.Render.SsrRayThicknessDefault
+          SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
+          SsrDepthCutoff = Constants.Render.SsrDepthCutoffDefault
+          SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
+          SsrSurfaceSlopeCutoff = Constants.Render.SsrSurfaceSlopeCutoffDefault
+          SsrEdgeCutoffHorizontal = Constants.Render.SsrEdgeCutoffHorizontalDefault
+          SsrEdgeCutoffVertical = Constants.Render.SsrEdgeCutoffVerticalDefault
+          SsrLightColor = Constants.Render.SsrLightColorDefault
+          SsrLightBrightness = Constants.Render.SsrLightBrightnessDefault }
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
-    { AnimatedModelOcclusionPrePassEnabled : bool
+    { StaticSurfaceOcclusionPrePassEnabled : bool
+      AnimatedSurfaceOcclusionPrePassEnabled : bool
+      TerrainOcclusionPrePassEnabled : bool
       LightMappingEnabled : bool
       SsaoEnabled : bool
-      SsaoSampleCount : int }
+      SsaoSampleCount : int
+      SsrEnabled : bool }
 
     static member defaultConfig =
-        { AnimatedModelOcclusionPrePassEnabled = Constants.Render.AnimatedModelOcclusionPrePassEnabledDefault
+        { StaticSurfaceOcclusionPrePassEnabled = Constants.Render.StaticSurfaceOcclusionPrePassEnabledDefault
+          AnimatedSurfaceOcclusionPrePassEnabled = Constants.Render.AnimatedSurfaceOcclusionPrePassEnabledDefault
+          TerrainOcclusionPrePassEnabled = Constants.Render.TerrainOcclusionPrePassEnabledDefault
           LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
-          SsaoSampleCount = Constants.Render.SsaoSampleCountDefault }
+          SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
+          SsrEnabled = Constants.Render.SsrEnabledDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -626,12 +664,12 @@ type private SortableLight =
 /// Enables efficient comparison of animated model surfaces.
 type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
     { BoneTransforms : Matrix4x4 array
-      AnimatedModelSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
+      AnimatedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
 
     static member hash amsKey =
         let mutable hashCode = 0
         for i in 0 .. dec amsKey.BoneTransforms.Length do hashCode <- hashCode ^^^ amsKey.BoneTransforms.[i].GetHashCode ()
-        hashCode <- hashCode ^^^ OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedModelSurface
+        hashCode <- hashCode ^^^ OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.hash amsKey.AnimatedSurface
         hashCode
 
     static member equals left right =
@@ -641,7 +679,7 @@ type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
             while i < left.BoneTransforms.Length && equal do
                 equal <- m4Eq left.BoneTransforms.[i] right.BoneTransforms.[i]
                 i <- inc i
-            equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedModelSurface right.AnimatedModelSurface
+            equal && OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals left.AnimatedSurface right.AnimatedSurface
         else false
 
     static member comparer =
@@ -1727,12 +1765,12 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     // render animated surface
                     if absolute then
-                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                         match renderTasks.DeferredAnimatedAbsolute.TryGetValue animatedModelSurfaceKey with
                         | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
                         | (false, _) -> renderTasks.DeferredAnimatedAbsolute.Add (animatedModelSurfaceKey, List ([struct (model, presence, texCoordsOffset, properties)]))
                     else
-                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                        let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                         match renderTasks.DeferredAnimatedRelative.TryGetValue animatedModelSurfaceKey with
                         | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
                         | (false, _) -> renderTasks.DeferredAnimatedRelative.Add (animatedModelSurfaceKey, List ([struct (model, presence, texCoordsOffset, properties)]))
@@ -1778,12 +1816,12 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         // render animated surface
                         if absolute then
-                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                             match renderTasks.DeferredAnimatedAbsolute.TryGetValue animatedModelSurfaceKey with
                             | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
                             | (false, _) -> renderTasks.DeferredAnimatedAbsolute.Add (animatedModelSurfaceKey, List ([struct (model, presence, texCoordsOffset, properties)]))
                         else
-                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedModelSurface = surface }
+                            let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                             match renderTasks.DeferredAnimatedRelative.TryGetValue animatedModelSurfaceKey with
                             | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
                             | (false, _) -> renderTasks.DeferredAnimatedRelative.Add (animatedModelSurfaceKey, List ([struct (model, presence, texCoordsOffset, properties)]))
@@ -2258,7 +2296,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase lightViewAbsoluteArray lightProjectionArray bonesArray parameters
-                    surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
+                    surfaceKey.AnimatedSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
         // deferred render animated surface shadows w/ relative transforms
@@ -2268,7 +2306,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightViewRelativeArray lightProjectionArray bonesArray parameters
-                surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
+                surfaceKey.AnimatedSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows w/ absolute transforms if in top level render
@@ -2414,39 +2452,44 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
-        // render static surface occlusions w/ absolute transforms if in top level render
-        if topLevelRender then
-            let mutable enr = renderTasks.DeferredStaticAbsolute.GetEnumerator ()
+        
+
+        // render static surface occlusions if needed
+        if renderer.RendererConfig.StaticSurfaceOcclusionPrePassEnabled then
+        
+            // render static surface occlusions w/ absolute transforms if in top level render
+            if topLevelRender then
+                let mutable enr = renderTasks.DeferredStaticAbsolute.GetEnumerator ()
+                let mutable i = 0
+                while enr.MoveNext () do
+                    let entry = enr.Current
+                    let batchPhase =
+                        match renderTasks.DeferredStaticAbsolute.Count with
+                        | 1 -> SingletonPhase
+                        | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
+                    GlRenderer3d.renderPhysicallyBasedDepthSurfaces
+                        batchPhase viewAbsoluteArray geometryProjectionArray [||] entry.Value
+                        entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
+                    OpenGL.Hl.Assert ()
+                    i <- inc i
+        
+            // render static surface occlusions w/ relative transforms
+            let mutable enr = renderTasks.DeferredStaticRelative.GetEnumerator ()
             let mutable i = 0
             while enr.MoveNext () do
                 let entry = enr.Current
                 let batchPhase =
-                    match renderTasks.DeferredStaticAbsolute.Count with
+                    match renderTasks.DeferredStaticRelative.Count with
                     | 1 -> SingletonPhase
                     | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    batchPhase viewAbsoluteArray geometryProjectionArray [||] entry.Value
+                    batchPhase viewRelativeArray geometryProjectionArray [||] entry.Value
                     entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
                 OpenGL.Hl.Assert ()
                 i <- inc i
 
-        // render static surface occlusions w/ relative transforms
-        let mutable enr = renderTasks.DeferredStaticRelative.GetEnumerator ()
-        let mutable i = 0
-        while enr.MoveNext () do
-            let entry = enr.Current
-            let batchPhase =
-                match renderTasks.DeferredStaticRelative.Count with
-                | 1 -> SingletonPhase
-                | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-            GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                batchPhase viewRelativeArray geometryProjectionArray [||] entry.Value
-                entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
-            OpenGL.Hl.Assert ()
-            i <- inc i
-
-        // render animated model occlusions if needed
-        if renderer.RendererConfig.AnimatedModelOcclusionPrePassEnabled then
+        // render animated surface occlusions if needed
+        if renderer.RendererConfig.AnimatedSurfaceOcclusionPrePassEnabled then
 
             // render animated surface occlusions w/ absolute transforms if in top level render
             if topLevelRender then
@@ -2456,7 +2499,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                     GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                         SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray parameters
-                        surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
+                        surfaceKey.AnimatedSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
                     OpenGL.Hl.Assert ()
 
             // render animated surface occlusions w/ relative transforms
@@ -2466,17 +2509,20 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                 GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                     SingletonPhase viewRelativeArray geometryProjectionArray bonesArray parameters
-                    surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
+                    surfaceKey.AnimatedSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
-        // attempt to render terrain occlusions w/ absolute transforms if in top level render
-        if topLevelRender then
-            for (descriptor, geometry) in renderTasks.DeferredTerrainsAbsolute do
-                GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
+        // render terrain occlusions if needed
+        if renderer.RendererConfig.TerrainOcclusionPrePassEnabled then
 
-        // attempt to render terrain occlusions w/ relative transforms
-        for (descriptor, geometry) in renderTasks.DeferredTerrainsRelative do
-            GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
+            // attempt to render terrain occlusions w/ absolute transforms if in top level render
+            if topLevelRender then
+                for (descriptor, geometry) in renderTasks.DeferredTerrainsAbsolute do
+                    GlRenderer3d.renderPhysicallyBasedTerrain viewAbsoluteArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
+        
+            // attempt to render terrain occlusions w/ relative transforms
+            for (descriptor, geometry) in renderTasks.DeferredTerrainsRelative do
+                GlRenderer3d.renderPhysicallyBasedTerrain viewRelativeArray geometryProjectionArray eyeCenter descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
 
         // render static surfaces deferred w/ absolute transforms if in top level render
         if topLevelRender then
@@ -2517,7 +2563,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
                 GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                     SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray eyeCenter parameters
-                    surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                    surfaceKey.AnimatedSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
                 OpenGL.Hl.Assert ()
 
         // render animated surfaces deferred w/ relative transforms
@@ -2527,7 +2573,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 SingletonPhase viewRelativeArray geometryProjectionArray bonesArray eyeCenter parameters
-                surfaceKey.AnimatedModelSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+                surfaceKey.AnimatedSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // render terrains deferred w/ absolute transforms if in top level render
@@ -2667,9 +2713,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render lighting quad to filter buffer
+        let ssrEnabled = if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0
+        let ssrLightColor = Array.take 3 (renderer.LightingConfig.SsrLightColor.ToArray ())
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
-            (eyeCenter, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
-             positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
+            (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
+             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrDepthMax, renderer.LightingConfig.SsrDistanceMax, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRoughnessMax, renderer.LightingConfig.SsrSurfaceSlopeMax,
+             renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrSurfaceSlopeCutoff, renderer.LightingConfig.SsrEdgeCutoffHorizontal, renderer.LightingConfig.SsrEdgeCutoffVertical,
+             ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
@@ -2737,7 +2787,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     /// Render 3d surfaces.
     static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) windowSize renderbuffer framebuffer renderMessages renderer =
 
-        // process messages, categorizing those that can be acted on later in this function
+        // categorize messages
         let userDefinedStaticModelsToDestroy = SList.make ()
         for message in renderMessages do
             match message with
@@ -3381,7 +3431,9 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         member renderer.Swap () =
             match renderer.Window with
-            | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+            | SglWindow window ->
+                OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
+                SDL.SDL_GL_SwapWindow window.SglWindow
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader

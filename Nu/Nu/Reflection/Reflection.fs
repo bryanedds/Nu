@@ -261,7 +261,7 @@ module Reflection =
                     if converter.CanConvertFrom typeof<Symbol> then
                         let propertyValue = converter.ConvertFrom propertySymbol
                         property.SetValue (target, propertyValue)
-                    else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
+                    else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + property.PropertyType.Name + "'.")
                 | _ -> ()
             | None -> ()
         elif property.Name = Constants.Engine.TransformPropertyName &&
@@ -291,7 +291,7 @@ module Reflection =
                 if converter.CanConvertFrom typeof<Symbol> then
                     let property = { PropertyType = propertyDefinition.PropertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                     Xtension.attachProperty propertyName property xtension
-                else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
+                else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyDefinition.PropertyType.Name + "'."); xtension
             | None ->
                 match propertySymbol with
                 | Symbols ([Text (str, _); _], _) when notNull (Type.GetType str) ->
@@ -300,7 +300,7 @@ module Reflection =
                     if converter.CanConvertFrom typeof<Symbol> then
                         let property = { PropertyType = propertyType; PropertyValue = converter.ConvertFrom propertySymbol }
                         Xtension.attachProperty propertyName property xtension
-                    else Log.debug ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
+                    else Log.error ("Cannot convert property '" + scstring propertySymbol + "' to type '" + propertyType.Name + "'."); xtension
                 | _ -> xtension
         else xtension
 
@@ -318,7 +318,7 @@ module Reflection =
         let targetType = target.GetType ()
         match targetType.GetProperty Constants.Engine.XtensionPropertyName with
         | null ->
-            Log.debug "Target does not support Xtensions due to missing Xtension property."
+            Log.error "Target does not support Xtensions due to missing Xtension property."
             target
         | xtensionProperty ->
             match xtensionProperty.GetValue target with
@@ -327,7 +327,7 @@ module Reflection =
                 xtensionProperty.SetValue (target, xtension)
                 target
             | _ ->
-                Log.debug "Target does not support Xtensions due to Xtension property having unexpected type."
+                Log.error "Target does not support Xtensions due to Xtension property having unexpected type."
                 target
 
     /// Try to read just the target's OverlayNameOpt from property descriptors.

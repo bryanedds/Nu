@@ -38,7 +38,7 @@
      [Some [0 0 0]]]
     [LinearDamping 3]
     [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
     [Position [-336 24 0]]
     [Size [24 48 0]]]
@@ -58,27 +58,7 @@
      [Some [0 0 0]]]
     [LinearDamping 3]
     [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Health 7]]]]
-    [Position [1284 -72 0]]
-    [Size [24 48 0]]]
-   []]
-  [EnemyDispatcher
-   [[AngularFactor [0 0 0]]
-    [AnimationDelay 8]
-    [AnimationSheet [Gameplay Enemy]]
-    [BodyShape
-     [CapsuleShape [0.5 0.25 None None]]]
-    [BodyType Dynamic]
-    [CelCount 6]
-    [CelSize [48 96]]
-    [Elevation 4]
-    [Friction 0]
-    [GravityOverride
-     [Some [0 0 0]]]
-    [LinearDamping 3]
-    [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
     [Position [90.55058 -16.73351 0]]
     [Size [24 48 0]]]
@@ -98,7 +78,7 @@
      [Some [0 0 0]]]
     [LinearDamping 3]
     [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
     [Position [336 84 0]]
     [Size [24 48 0]]]
@@ -118,27 +98,7 @@
      [Some [0 0 0]]]
     [LinearDamping 3]
     [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[Health 7]]]]
-    [Position [972 0 0]]
-    [Size [24 48 0]]]
-   []]
-  [EnemyDispatcher
-   [[AngularFactor [0 0 0]]
-    [AnimationDelay 8]
-    [AnimationSheet [Gameplay Enemy]]
-    [BodyShape
-     [CapsuleShape [0.5 0.25 None None]]]
-    [BodyType Dynamic]
-    [CelCount 6]
-    [CelSize [48 96]]
-    [Elevation 4]
-    [Friction 0]
-    [GravityOverride
-     [Some [0 0 0]]]
-    [LinearDamping 3]
-    [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
     [Position [398.00003 -50.66667 0]]
     [Size [24 48 0]]]
@@ -158,7 +118,7 @@
      [Some [0 0 0]]]
     [LinearDamping 3]
     [Model
-     ["BlazeVector.EnemyDispatcher+Enemy, BlazeVector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
       [[Health 7]]]]
     [Position [-204 60 0]]
     [Size [24 48 0]]]

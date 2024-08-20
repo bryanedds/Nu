@@ -74,17 +74,18 @@ void main()
 
 #shader fragment
 #version 410
+#extension GL_ARB_bindless_texture : require
 
 const float GAMMA = 2.2;
 
 uniform vec3 eyeCenter;
-uniform sampler2D albedoTexture;
-uniform sampler2D roughnessTexture;
-uniform sampler2D metallicTexture;
-uniform sampler2D ambientOcclusionTexture;
-uniform sampler2D emissionTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D heightTexture;
+layout (bindless_sampler) uniform sampler2D albedoTexture;
+layout (bindless_sampler) uniform sampler2D roughnessTexture;
+layout (bindless_sampler) uniform sampler2D metallicTexture;
+layout (bindless_sampler) uniform sampler2D emissionTexture;
+layout (bindless_sampler) uniform sampler2D ambientOcclusionTexture;
+layout (bindless_sampler) uniform sampler2D normalTexture;
+layout (bindless_sampler) uniform sampler2D heightTexture;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -100,8 +101,9 @@ layout (location = 3) out vec4 normalPlus;
 
 void main()
 {
-    // forward position
-    position = positionOut;
+    // forward position, marking w for writter
+    position.xyz = positionOut.xyz;
+    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);

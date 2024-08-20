@@ -93,12 +93,12 @@ float randomAngle()
 
 void main()
 {
-    // retrieve normal value first, allowing for early-out
-    vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
-    if (normal != vec3(1.0)) // when geometry pixel was written (IE, normal is not equal to the buffer clearing color of white)
+    // ensure position was written
+    vec4 position = texture(positionTexture, texCoordsOut);
+    if (position.w == 1.0)
     {
         // retrieve remaining data from geometry buffers
-        vec3 position = texture(positionTexture, texCoordsOut).xyz;
+        vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
         // pre-compute resolution inverse
         vec2 ssaoResolutionInverse = vec2(1.0) / vec2(ssaoResolution);
@@ -117,7 +117,7 @@ void main()
 
         // compute screen space ambient occlusion
         float ssao = 0.0;
-        vec3 positionView = (view * vec4(position, 1.0)).xyz;
+        vec3 positionView = (view * position).xyz;
         vec3 normalView = mat3(view) * normal;
         for (int i = 0; i < ssaoSampleCountCeil; ++i)
         {
@@ -134,13 +134,13 @@ void main()
             vec2 samplingPositionScreen = samplingPositionClip.xy / samplingPositionClip.w * 0.5 + 0.5;
             float distanceScreen = length(samplingPositionScreen - positionScreen);
 
-            // ensure we're not sampling too far from origin and thus blowing the texture cache and that we're not using
-            // empty space as indicated by normal sample
-            if (distanceScreen < ssaoDistanceMax && texture(normalPlusTexture, samplingPositionScreen).xyz != vec3(1.0))
+            // ensure we're not sampling too far from origin and thus blowing the texture cache and that position is
+            // written
+            vec4 samplePosition = texture(positionTexture, samplingPositionScreen);
+            if (distanceScreen < ssaoDistanceMax && samplePosition.w == 1.0)
             {
-                // sample position in view space
-                vec3 samplePosition = texture(positionTexture, samplingPositionScreen).xyz;
-                vec3 samplePositionView = (view * vec4(samplePosition, 1.0)).xyz;
+                // compute sample position in view space
+                vec4 samplePositionView = view * samplePosition;
 
                 // perform range check and accumulate if occluded
                 float rangeCheck = smoothstep(0.0, 1.0, ssaoRadius / abs(positionView.z - samplePositionView.z));

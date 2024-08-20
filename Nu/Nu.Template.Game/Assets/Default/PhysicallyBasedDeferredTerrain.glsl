@@ -64,17 +64,18 @@ void main()
 
 #shader fragment
 #version 410
+#extension GL_ARB_bindless_texture : require
 
 const float GAMMA = 2.2;
 const int TERRAIN_LAYERS_MAX = 8;
 
 uniform vec3 eyeCenter;
 uniform int layersCount;
-uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
-uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
+layout (bindless_sampler) uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
+layout (bindless_sampler) uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
+layout (bindless_sampler) uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
+layout (bindless_sampler) uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
+layout (bindless_sampler) uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -95,8 +96,9 @@ void main()
     // ensure layers count is in range
     float layersCountCeil = max(min(layersCount, TERRAIN_LAYERS_MAX), 0);
 
-    // forward position
-    position = positionOut;
+    // forward position, marking w for written
+    position.xyz = positionOut.xyz;
+    position.w = 1.0;
 
     // compute spatial converters
     vec3 q1 = dFdx(positionOut.xyz);

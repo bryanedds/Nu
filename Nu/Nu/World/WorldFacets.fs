@@ -435,8 +435,8 @@ type TextFacet () =
          define Entity.FontStyling Set.empty
          define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
          define Entity.TextMargin v2Zero
-         define Entity.TextColor Color.Black
-         define Entity.TextDisabledColor (Color (0.25f, 0.25f, 0.25f, 0.75f))
+         define Entity.TextColor Color.White
+         define Entity.TextDisabledColor (Color (0.75f, 0.75f, 0.75f, 0.75f))
          define Entity.TextOffset v2Zero
          define Entity.TextShift 0.5f]
 
@@ -446,11 +446,11 @@ type TextFacet () =
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter // gui currently ignores rotation and scale
             let horizon = transform.Horizon
-            let mutable textTransform = Transform.makeDefault false // centered-ness and offset are already baked into perimeter
+            let mutable textTransform = Transform.makeDefault ()
             let margin = (entity.GetTextMargin world).V3
             let offset = (entity.GetTextOffset world).V3
             let shift = entity.GetTextShift world
-            textTransform.Position <- perimeter.Min + margin + offset
+            textTransform.Position <- perimeter.Center + margin + offset
             textTransform.Size <- perimeter.Size - margin * 2.0f
             textTransform.Elevation <- transform.Elevation + shift
             textTransform.Absolute <- transform.Absolute
@@ -498,7 +498,7 @@ type BackdroppableFacet () =
         match entity.GetBackdropImageOpt world with
         | Some spriteImage ->
             let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered
+            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
             World.enqueueLayeredOperation2d
                 { Elevation = spriteTransform.Elevation
                   Horizon = spriteTransform.Horizon
@@ -608,7 +608,7 @@ type ButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignore rotation
+        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute // gui currently ignore rotation
         let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
         World.enqueueLayeredOperation2d
             { Elevation = spriteTransform.Elevation
@@ -730,7 +730,7 @@ type ToggleButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignores rotation
+        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute // gui currently ignores rotation
         let spriteImage =
             if entity.GetToggled world || entity.GetPressed world
             then entity.GetToggledImage world
@@ -850,7 +850,7 @@ type RadioButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute transform.PerimeterCentered // gui currently ignores rotation
+        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute // gui currently ignores rotation
         let spriteImage =
             if entity.GetDialed world || entity.GetPressed world
             then entity.GetDialedImage world
@@ -907,7 +907,7 @@ type FillBarFacet () =
          define Entity.FillInset 0.0f
          define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
          define Entity.FillImage Assets.Default.White
-         define Entity.BorderColor (Color (0.0f, 0.0f, 0.0f, 1.0f))
+         define Entity.BorderColor (Color (1.0f, 1.0f, 1.0f, 1.0f))
          define Entity.BorderImage Assets.Default.Border]
 
     override this.Render (_, entity, world) =
@@ -916,8 +916,8 @@ type FillBarFacet () =
         let mutable transform = entity.GetTransform world
         let perimeter = transform.Perimeter // gui currently ignores rotation
         let horizon = transform.Horizon
-        let mutable borderTransform = Transform.makeDefault transform.PerimeterCentered
-        borderTransform.Position <- perimeter.Min
+        let mutable borderTransform = Transform.makeDefault ()
+        borderTransform.Position <- perimeter.Center
         borderTransform.Size <- perimeter.Size
         borderTransform.Offset <- transform.Offset
         borderTransform.Elevation <- transform.Elevation + 0.5f
@@ -943,11 +943,11 @@ type FillBarFacet () =
         // fill sprite
         let fillSize = perimeter.Size
         let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
-        let fillPosition = perimeter.Min + v3 fillInset fillInset 0.0f
         let fillWidth = (fillSize.X - fillInset * 2.0f) * entity.GetFill world
+        let fillPosition = perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
         let fillHeight = fillSize.Y - fillInset * 2.0f
         let fillSize = v3 fillWidth fillHeight 0.0f
-        let mutable fillTransform = Transform.makeDefault transform.PerimeterCentered
+        let mutable fillTransform = Transform.makeDefault ()
         fillTransform.Position <- fillPosition
         fillTransform.Size <- fillSize
         fillTransform.Offset <- transform.Offset
@@ -1079,9 +1079,6 @@ module EffectFacetExtensions =
         /// effect due to a semantic limitation in Nu.
         member this.SetEffectDescriptor (value : Effects.EffectDescriptor) world = this.Set (nameof this.EffectDescriptor) value world
         member this.EffectDescriptor = lens (nameof this.EffectDescriptor) this this.GetEffectDescriptor this.SetEffectDescriptor
-        member this.GetEffectPerimeterCentered world : bool = this.Get (nameof this.EffectPerimeterCentered) world
-        member this.SetEffectPerimeterCentered (value : bool) world = this.Set (nameof this.EffectPerimeterCentered) value world
-        member this.EffectPerimeterCentered = lens (nameof this.EffectPerimeterCentered) this this.GetEffectPerimeterCentered this.SetEffectPerimeterCentered
         member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
         member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
         member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
@@ -1125,7 +1122,6 @@ type EffectFacet () =
         let effect =
             Effect.makePlus
                 (match entity.GetEffectStartTimeOpt world with Some effectStartTime -> effectStartTime | None -> GameTime.zero)
-                (entity.GetEffectPerimeterCentered world)
                 (entity.GetEffectOffset world)
                 (entity.GetTransform world)
                 (entity.GetEffectShadowOffset world)
@@ -1191,7 +1187,6 @@ type EffectFacet () =
          define Entity.RunMode RunLate
          define Entity.EffectSymbolOpt None
          define Entity.EffectStartTimeOpt None
-         define Entity.EffectPerimeterCentered true
          define Entity.EffectDefinitions Map.empty
          define Entity.EffectDescriptor Effects.EffectDescriptor.empty
          define Entity.EffectOffset v3Zero
@@ -1405,7 +1400,7 @@ type RigidBodyFacet () =
 
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
         // OPTIMIZATION: share lambdas to reduce live object count.
-        let subIds = Array.init 25 (fun _ -> makeGuid ())
+        let subIds = Array.init 24 (fun _ -> makeGuid ())
         let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
@@ -1413,24 +1408,23 @@ type RigidBodyFacet () =
         let world = World.subscribePlus subIds.[4] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Scale)) entity world |> snd
         let world = World.subscribePlus subIds.[5] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Offset)) entity world |> snd
         let world = World.subscribePlus subIds.[6] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Size)) entity world |> snd
-        let world = World.subscribePlus subIds.[7] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.PerimeterCentered)) entity world |> snd
-        let world = World.subscribePlus subIds.[8] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
-        let world = World.subscribePlus subIds.[9] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
-        let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
-        let world = World.subscribePlus subIds.[11] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
-        let world = World.subscribePlus subIds.[12] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
-        let world = World.subscribePlus subIds.[13] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
-        let world = World.subscribePlus subIds.[14] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
-        let world = World.subscribePlus subIds.[15] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
-        let world = World.subscribePlus subIds.[16] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
-        let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
-        let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
-        let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
-        let world = World.subscribePlus subIds.[20] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
-        let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
-        let world = World.subscribePlus subIds.[22] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
-        let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
-        let world = World.subscribePlus subIds.[24] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
+        let world = World.subscribePlus subIds.[7] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
+        let world = World.subscribePlus subIds.[8] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
+        let world = World.subscribePlus subIds.[9] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
+        let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
+        let world = World.subscribePlus subIds.[11] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
+        let world = World.subscribePlus subIds.[12] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
+        let world = World.subscribePlus subIds.[13] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
+        let world = World.subscribePlus subIds.[14] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
+        let world = World.subscribePlus subIds.[15] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
+        let world = World.subscribePlus subIds.[16] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
+        let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
+        let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
+        let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
+        let world = World.subscribePlus subIds.[20] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
+        let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
+        let world = World.subscribePlus subIds.[22] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
+        let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
         let unsubscribe = fun world ->
             Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
         let callback = fun evt world ->
@@ -1940,39 +1934,34 @@ type LayoutFacet () =
             world children
 
     static let performLayout (entity : Entity) world =
-        if entity.GetPerimeterCentered world then // NOTE: layouts only supported for centered entities.
-            match entity.GetLayout world with
-            | Manual -> world // OPTIMIZATION: early exit.
-            | layout ->
-                let children =
-                    World.getEntityMounters entity world |>
-                    Array.ofSeq |>
-                    Array.map (fun child ->
-                        let layoutOrder =
-                            if child.Has<LayoutFacet> world
-                            then child.GetLayoutOrder world
-                            else 0
-                        let order = child.GetOrder world
-                        (layoutOrder, order, child)) |>
-                    Array.sortBy ab_ |>
-                    Array.map __c
-                let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
-                let margin = entity.GetLayoutMargin world
-                let world =
-                    match layout with
-                    | Flow (flowDirection, flowLimit) ->
-                        flowLayout perimeter margin flowDirection flowLimit children world
-                    | Dock (margins, percentageBased, resizeChildren) ->
-                        ignore (percentageBased, resizeChildren) // TODO: P1: implement using these values.
-                        dockLayout perimeter margin margins children world
-                    | Grid (dims, flowDirectionOpt, resizeChildren) ->
-                        gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
-                    | Manual -> world
-                world
-        else
-            match entity.GetLayout world with
-            | Manual -> world
-            | _ -> Log.warnOnce "Layouts are not supported for uncentered entities."; world
+        match entity.GetLayout world with
+        | Manual -> world // OPTIMIZATION: early exit.
+        | layout ->
+            let children =
+                World.getEntityMounters entity world |>
+                Array.ofSeq |>
+                Array.map (fun child ->
+                    let layoutOrder =
+                        if child.Has<LayoutFacet> world
+                        then child.GetLayoutOrder world
+                        else 0
+                    let order = child.GetOrder world
+                    (layoutOrder, order, child)) |>
+                Array.sortBy ab_ |>
+                Array.map __c
+            let perimeter = (entity.GetPerimeter world).Box2 // gui currently ignores rotation
+            let margin = entity.GetLayoutMargin world
+            let world =
+                match layout with
+                | Flow (flowDirection, flowLimit) ->
+                    flowLayout perimeter margin flowDirection flowLimit children world
+                | Dock (margins, percentageBased, resizeChildren) ->
+                    ignore (percentageBased, resizeChildren) // TODO: P1: implement using these values.
+                    dockLayout perimeter margin margins children world
+                | Grid (dims, flowDirectionOpt, resizeChildren) ->
+                    gridLayout perimeter margin dims flowDirectionOpt resizeChildren children world
+                | Manual -> world
+            world
 
     static let handleLayout evt world =
         let entity = evt.Subscriber : Entity
@@ -2285,7 +2274,7 @@ type StaticBillboardFacet () =
         else [||]
 
 [<AutoOpen>]
-module BasicStaticBillboardEmitterFaceExtensions =
+module BasicStaticBillboardEmitterFacetExtensions =
     type Entity with
         member this.GetEmitterMaterialProperties world : MaterialProperties = this.Get (nameof this.EmitterMaterialProperties) world
         member this.SetEmitterMaterialProperties (value : MaterialProperties) world = this.Set (nameof this.EmitterMaterialProperties) value world
@@ -2299,9 +2288,9 @@ module BasicStaticBillboardEmitterFaceExtensions =
         member this.GetEmitterShadowOffset world : single = this.Get (nameof this.EmitterShadowOffset) world
         member this.SetEmitterShadowOffset (value : single) world = this.Set (nameof this.EmitterShadowOffset) value world
         member this.EmitterShadowOffset = lens (nameof this.EmitterShadowOffset) this this.GetEmitterShadowOffset this.SetEmitterShadowOffset
-        member this.GetEmitterRenderType world : RenderType = this.Get (nameof this.EmitterRenderType) world
-        member this.SetEmitterRenderType (value : RenderType) world = this.Set (nameof this.EmitterRenderType) value world
-        member this.EmitterRenderType = lens (nameof this.EmitterRenderType) this this.GetEmitterRenderType this.SetEmitterRenderType
+        member this.GetEmitterRenderStyle world : RenderStyle = this.Get (nameof this.EmitterRenderStyle) world
+        member this.SetEmitterRenderStyle (value : RenderStyle) world = this.Set (nameof this.EmitterRenderStyle) value world
+        member this.EmitterRenderStyle = lens (nameof this.EmitterRenderStyle) this this.GetEmitterRenderStyle this.SetEmitterRenderStyle
 
 /// Augments an entity with basic static billboard emitter.
 type BasicStaticBillboardEmitterFacet () =
@@ -2322,6 +2311,7 @@ type BasicStaticBillboardEmitterFacet () =
         match tryMakeEmitter entity world with
         | Some emitter ->
             let mutable transform = entity.GetTransform world
+            let renderType = match entity.GetEmitterRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
             { emitter with
                 Body =
                     { Position = transform.Position
@@ -2333,7 +2323,8 @@ type BasicStaticBillboardEmitterFacet () =
                 Absolute = transform.Absolute
                 Material = entity.GetEmitterMaterial world
                 ParticleSeed = entity.GetBasicParticleSeed world
-                Constraint = entity.GetEmitterConstraint world }
+                Constraint = entity.GetEmitterConstraint world
+                RenderType = renderType }
         | None ->
             Particles.BasicStaticBillboardEmitter.makeEmpty
                 world.GameTime
@@ -2377,8 +2368,9 @@ type BasicStaticBillboardEmitterFacet () =
         let world = mapEmitter (fun emitter -> if emitter.ShadowOffset <> emitterShadowOffset then { emitter with ShadowOffset = emitterShadowOffset } else emitter) evt.Subscriber world
         (Cascade, world)
 
-    static let handleEmitterRenderTypeChange evt world =
-        let emitterRenderType = evt.Data.Value :?> RenderType
+    static let handleEmitterRenderStyleChange evt world =
+        let emitterRenderStyle = evt.Data.Value :?> RenderStyle
+        let emitterRenderType = match emitterRenderStyle with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
         let world = mapEmitter (fun emitter -> if emitter.RenderType <> emitterRenderType then { emitter with RenderType = emitterRenderType } else emitter) evt.Subscriber world
         (Cascade, world)
 
@@ -2461,6 +2453,7 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
+         define Entity.EmitterRenderStyle (Forward (0.0f, 0.0f))
          define Entity.EmitterShadowEnabled true
          define Entity.EmitterShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
@@ -2475,7 +2468,7 @@ type BasicStaticBillboardEmitterFacet () =
         let world = World.sense handleEmitterMaterialPropertiesChange entity.EmitterMaterialProperties.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         let world = World.sense handleEmitterMaterialChange entity.EmitterMaterial.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         let world = World.sense handleEmitterShadowOffsetChange entity.EmitterShadowOffset.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
-        let world = World.sense handleEmitterRenderTypeChange entity.EmitterRenderType.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
+        let world = World.sense handleEmitterRenderStyleChange entity.EmitterRenderStyle.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         let world = World.sense handleEmitterLifeTimeOptChange entity.EmitterLifeTimeOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         let world = World.sense handleParticleLifeTimeMaxOptChange entity.ParticleLifeTimeMaxOpt.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
         let world = World.sense handleParticleRateChange entity.ParticleRate.ChangeEvent entity (nameof BasicStaticBillboardEmitterFacet) world
@@ -2718,29 +2711,29 @@ module AnimatedModelFacetExtensions =
                 Some transform
             | (_, _) -> None
 
+        member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
+            match sceneOpt with
+            | Some scene when scene.Meshes.Count > 0 ->
+                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
+                Some (boneIds, boneOffsets, boneTransforms)
+            | Some _ | None -> None
+
+        member this.AnimateBones (world : World) =
+            let time = world.GameTime
+            let animations = this.GetAnimations world
+            let animatedModel = this.GetAnimatedModel world
+            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
+            match this.TryComputeBoneTransforms time animations sceneOpt with
+            | Some (boneIds, boneOffsets, boneTransforms) ->
+                let world = this.SetBoneIdsOpt (Some boneIds) world
+                let world = this.SetBoneOffsetsOpt (Some boneOffsets) world
+                let world = this.SetBoneTransformsOpt (Some boneTransforms) world
+                world
+            | None -> world
+
 /// Augments an entity with an animated model.
 type AnimatedModelFacet () =
     inherit Facet (false, false, false)
-
-    static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
-        match sceneOpt with
-        | Some scene when scene.Meshes.Count > 0 ->
-            let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
-            Some (boneIds, boneOffsets, boneTransforms)
-        | Some _ | None -> None
-
-    static let tryAnimateBones (entity : Entity) (world : World) =
-        let time = world.GameTime
-        let animations = entity.GetAnimations world
-        let animatedModel = entity.GetAnimatedModel world
-        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-        match tryComputeBoneTransforms time animations sceneOpt with
-        | Some (boneIds, boneOffsets, boneTransforms) ->
-            let world = entity.SetBoneIdsOpt (Some boneIds) world
-            let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
-            let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
-            world
-        | None -> world
 
     static member Properties =
         [define Entity.StartTime GameTime.zero
@@ -2753,7 +2746,7 @@ type AnimatedModelFacet () =
          nonPersistent Entity.BoneTransformsOpt None]
 
     override this.Register (entity, world) =
-        let world = tryAnimateBones entity world
+        let world = entity.AnimateBones world
         let world =
             World.sense
                 (fun evt world ->
@@ -2763,12 +2756,12 @@ type AnimatedModelFacet () =
                         entity.GetPresence world <> Omnipresent &&
                         not (entity.GetAlwaysUpdate world) &&
                         not (playBox.Intersects (evt.Subscriber.GetBounds world))
-                    let world = if notUpdating then tryAnimateBones evt.Subscriber world else world
+                    let world = if notUpdating then evt.Subscriber.AnimateBones world else world
                     (Cascade, world))
                 (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
         let world =
             World.sense
-                (fun evt world -> (Cascade, tryAnimateBones evt.Subscriber world))
+                (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world))
                 (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
         world
 
@@ -2789,7 +2782,7 @@ type AnimatedModelFacet () =
                 let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                 world
             | None -> world
-        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneTransforms time animations sceneOpt)
+        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
         World.enqueueJob 1.0f job world
         world
 

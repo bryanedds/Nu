@@ -60,8 +60,7 @@ type Slice =
       mutable Brightness : single
       mutable LightCutoff : single
       mutable Volume : single
-      mutable Enabled : bool
-      mutable PerimeterCentered : bool }
+      mutable Enabled : bool }
     static member copy slice =
         { slice with SliceDelta = slice.SliceDelta }
 
@@ -632,7 +631,7 @@ module EffectSystem =
         // build sprite tokens
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
@@ -669,7 +668,7 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
+                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
@@ -699,7 +698,7 @@ module EffectSystem =
         // build text tokens
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute slice.PerimeterCentered
+                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
                 let text =
                     { TextValue.Transform = transform
                       Text = text
@@ -981,7 +980,7 @@ module EffectSystem =
             with exn ->
                 let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EffectDescriptor>).PrettyPrinter
                 let effectStr = PrettyPrinter.prettyPrint (scstring descriptor) prettyPrinter
-                Log.debug ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
+                Log.error ("Error in effect descriptor:\n" + effectStr + "\n due to: " + scstring exn)
                 release effectSystem
         else release effectSystem
     

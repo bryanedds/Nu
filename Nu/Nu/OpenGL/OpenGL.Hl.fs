@@ -36,18 +36,22 @@ module Hl =
         if AssertEnabled then
             let error = Gl.GetError ()
             if error <> ErrorCode.NoError then
-                Log.debug ("OpenGL assertion failed due to: " + string error)
+                Log.error ("OpenGL assertion failed due to: " + string error)
         a
 
 #if DEBUG
     let private DebugMessageListener (_ : DebugSource) (_ : DebugType) (_ : uint) (severity : DebugSeverity) (length : int) (message : nativeint) (_ : nativeint) =
         match severity with
-        | DebugSeverity.DebugSeverityMedium
+        | DebugSeverity.DebugSeverityMedium ->
+            let messageBytes = Array.zeroCreate<byte> length
+            Marshal.Copy (message, messageBytes, 0, length)
+            let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
+            Log.warn messageStr
         | DebugSeverity.DebugSeverityHigh ->
             let messageBytes = Array.zeroCreate<byte> length
             Marshal.Copy (message, messageBytes, 0, length)
             let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
-            Log.debug messageStr
+            Log.error messageStr
         | DebugSeverity.DebugSeverityNotification
         | DebugSeverity.DebugSeverityLow
         | DebugSeverity.DontCare
@@ -86,7 +90,7 @@ module Hl =
             not (version.StartsWith "4.5") &&
             not (version.StartsWith "4.6") &&
             not (version.StartsWith "5.0") (* heaven forbid... *) then
-            Log.trace "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
+            Log.fail "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
         glContext
 
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
@@ -120,11 +124,11 @@ module Hl =
 
         // assert that anisotropic texture filter is available
         if not (extensions.Contains "GL_ARB_texture_filter_anisotropic") then
-            Log.trace "Anisotropic texture filtering required to run Nu."
+            Log.warn "Anisotropic texture filtering required to properly run Nu."
 
         // assert that GL_ARB_bindless_texture is available
         if not (extensions.Contains "GL_ARB_bindless_texture") then
-            Log.trace "Bindless textures required to run Nu."
+            Log.fail "Bindless textures required to run Nu."
 
     /// Begin an OpenGL frame.
     let BeginFrame (viewportOffset : Viewport, windowSize : Vector2i) =

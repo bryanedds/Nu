@@ -65,6 +65,7 @@ module Gaia =
     let mutable private OpenProjectFilePath = null // this will be initialized on start
     let mutable private OpenProjectEditMode = "Title"
     let mutable private OpenProjectImperativeExecution = false
+    let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
     let mutable private NewProjectType = "Empty"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
@@ -395,8 +396,8 @@ Size=400,400
 Collapsed=0
 
 [Window][Close project... *EDITOR RESTART REQUIRED!*]
-Pos=769,504
-Size=381,71
+Pos=716,510
+Size=463,94
 Collapsed=0
 
 [Window][Editor restart required.]
@@ -1116,7 +1117,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Log.info ("Inspecting directory " + workingDirPath + " for F# code...")
             try match Array.ofSeq (Directory.EnumerateFiles (workingDirPath, "*.fsproj")) with
                 | [||] ->
-                    Log.trace ("Unable to find fsproj file in '" + workingDirPath + "'.")
+                    Log.error ("Unable to find fsproj file in '" + workingDirPath + "'.")
                     world
                 | fsprojFilePaths ->
 
@@ -1208,7 +1209,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     FsiOutStream.GetStringBuilder().Clear() |> ignore<StringBuilder>
                     world
             with exn ->
-                Log.trace ("Failed to inspect for F# code due to: " + scstring exn)
+                Log.error ("Failed to inspect for F# code due to: " + scstring exn)
                 World.switch worldOld
         else
             MessageBoxOpt <- Some "Code reloading not allowed by current plugin. This is likely because you're using the GaiaPlugin which doesn't allow it."
@@ -1279,7 +1280,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (gaiaState, ".", gaiaPlugin)
         | Left () ->
             if not (String.IsNullOrWhiteSpace gaiaState.ProjectDllPath) then
-                Log.trace ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
+                Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
     let private tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
@@ -2652,20 +2653,46 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable ssaoBias = lighting3dConfig.SsaoBias
                 let mutable ssaoRadius = lighting3dConfig.SsaoRadius
                 let mutable ssaoDistanceMax = lighting3dConfig.SsaoDistanceMax
-                lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged
-                focusProperty ()
-                lighting3dChanged <- ImGui.InputText ("Shadow Bias Acne", &shadowBiasAcneStr, 4096u) || lighting3dChanged
-                focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Shadow Bias Bleed", &shadowBiasBleed, 0.0f, 1.0f) || lighting3dChanged
-                focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged
-                focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged
-                focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged
-                focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged
-                focusProperty ()
+                let mutable ssrEnabled = lighting3dConfig.SsrEnabled
+                let mutable ssrDetail = lighting3dConfig.SsrDetail
+                let mutable ssrDepthMax = lighting3dConfig.SsrDepthMax
+                let mutable ssrDistanceMax = lighting3dConfig.SsrDistanceMax
+                let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
+                let mutable ssrRoughnessMax = lighting3dConfig.SsrRoughnessMax
+                let mutable ssrSurfaceSlopeMax = lighting3dConfig.SsrSurfaceSlopeMax
+                let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
+                let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
+                let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
+                let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
+                let mutable ssrSurfaceSlopeCutoff = lighting3dConfig.SsrSurfaceSlopeCutoff
+                let mutable ssrEdgeCutoffHorizontal = lighting3dConfig.SsrEdgeCutoffHorizontal
+                let mutable ssrEdgeCutoffVertical = lighting3dConfig.SsrEdgeCutoffVertical
+                let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
+                let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
+                lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.InputText ("Shadow Bias Acne", &shadowBiasAcneStr, 4096u) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Shadow Bias Bleed", &shadowBiasBleed, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                lighting3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dChanged; focusProperty ()
+                if ssrEnabled then
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Max", &ssrDepthMax, 0.0f, 128.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Max", &ssrDistanceMax, 0.0f, 128.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Max", &ssrRoughnessMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Max", &ssrSurfaceSlopeMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Cutoff", &ssrSurfaceSlopeCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Horizontal", &ssrEdgeCutoffHorizontal, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Vertical", &ssrEdgeCutoffVertical, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; focusProperty ()
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 32.0f) || lighting3dChanged; focusProperty ()
                 if lighting3dChanged then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
@@ -2674,7 +2701,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                           SsaoIntensity = ssaoIntensity
                           SsaoBias = ssaoBias
                           SsaoRadius = ssaoRadius
-                          SsaoDistanceMax = ssaoDistanceMax }
+                          SsaoDistanceMax = ssaoDistanceMax
+                          SsrEnabled = ssrEnabled
+                          SsrDetail = ssrDetail
+                          SsrDepthMax = ssrDepthMax
+                          SsrDistanceMax = ssrDistanceMax
+                          SsrRefinementsMax = ssrRefinementsMax
+                          SsrRoughnessMax = ssrRoughnessMax
+                          SsrSurfaceSlopeMax = ssrSurfaceSlopeMax
+                          SsrRayThickness = ssrRayThickness
+                          SsrRoughnessCutoff = ssrRoughnessCutoff
+                          SsrDepthCutoff = ssrDepthCutoff
+                          SsrDistanceCutoff = ssrDistanceCutoff
+                          SsrSurfaceSlopeCutoff = ssrSurfaceSlopeCutoff
+                          SsrEdgeCutoffHorizontal = ssrEdgeCutoffHorizontal
+                          SsrEdgeCutoffVertical = ssrEdgeCutoffVertical
+                          SsrLightColor = Color ssrLightColor
+                          SsrLightBrightness = ssrLightBrightness }
                     setProperty lighting3dConfig propertyDescriptor simulant world
                 else world
             | _ ->
@@ -3390,6 +3433,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Auto Bounds" then tryAutoBoundsSelectedEntity world |> snd else world
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Infer an entity's bounds from the asset(s) it uses. (Ctrl+B)"
+                    ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Delete" then tryDeleteSelectedEntity world |> snd else world
                 ImGui.SameLine ()
@@ -4034,7 +4080,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
             let world =
                 if ImGui.Checkbox ("Trace Events", &traceEvents)
-                then World.setEventTracerOpt (if traceEvents then Some (Log.remark "Event") else None) world
+                then World.setEventTracerOpt (if traceEvents then Some (Log.custom "Event") else None) world
                 else world
             let eventFilter = World.getEventFilter world
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<EventFilter>).PrettyPrinter
@@ -4069,20 +4115,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
             let renderer3dConfig = World.getRenderer3dConfig world
             let mutable renderer3dChanged = false
-            let mutable animatedModelOcclusionPrePassEnabled = renderer3dConfig.AnimatedModelOcclusionPrePassEnabled
+            let mutable staticSurfaceOcclusionPrePassEnabled = renderer3dConfig.StaticSurfaceOcclusionPrePassEnabled
+            let mutable animatedSurfaceOcclusionPrePassEnabled = renderer3dConfig.AnimatedSurfaceOcclusionPrePassEnabled
+            let mutable terrainOcclusionPrePassEnabled = renderer3dConfig.TerrainOcclusionPrePassEnabled
             let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
             let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
             let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
-            renderer3dChanged <- ImGui.Checkbox ("Animated Model Occlusion Pre-Pass Enabled", &animatedModelOcclusionPrePassEnabled) || renderer3dChanged
+            let mutable ssrEnabled = renderer3dConfig.SsrEnabled
+            renderer3dChanged <- ImGui.Checkbox ("Static Surface Occlusion Pre-Pass Enabled", &staticSurfaceOcclusionPrePassEnabled) || renderer3dChanged
+            renderer3dChanged <- ImGui.Checkbox ("Animated Surface Occlusion Pre-Pass Enabled", &animatedSurfaceOcclusionPrePassEnabled) || renderer3dChanged
+            renderer3dChanged <- ImGui.Checkbox ("Terrain Occlusion Pre-Pass Enabled", &terrainOcclusionPrePassEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dChanged
+            renderer3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dChanged
             if renderer3dChanged then
                 let renderer3dConfig =
-                    { AnimatedModelOcclusionPrePassEnabled = animatedModelOcclusionPrePassEnabled
+                    { StaticSurfaceOcclusionPrePassEnabled = staticSurfaceOcclusionPrePassEnabled
+                      AnimatedSurfaceOcclusionPrePassEnabled = animatedSurfaceOcclusionPrePassEnabled
+                      TerrainOcclusionPrePassEnabled = terrainOcclusionPrePassEnabled
                       LightMappingEnabled = lightMappingEnabled
                       SsaoEnabled = ssaoEnabled
-                      SsaoSampleCount = ssaoSampleCount }
+                      SsaoSampleCount = ssaoSampleCount
+                      SsrEnabled = ssrEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
             world
         else world
@@ -4189,10 +4244,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let newFileName = NewProjectName + ".fsproj"
             let newProject = PathF.GetFullPath (newProjectDir + "/" + newFileName)
             let validName = not (String.IsNullOrWhiteSpace NewProjectName) && Array.notExists (fun char -> NewProjectName.Contains (string char)) (PathF.GetInvalidPathChars ())
-            if not validName then ImGui.Text "Invalid project name!"
             let validDirectory = not (Directory.Exists newProjectDir)
-            if not validDirectory then ImGui.Text "Project already exists!"
-            if validName && validDirectory && (ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter) then
+            if not validName then
+                ImGui.Text "Invalid project name!"
+            elif not validDirectory then
+                ImGui.Text "Project already exists!"
+            elif ImGui.Button "Create" || ImGui.IsKeyReleased ImGuiKey.Enter then
 
                 // choose a template, ensuring it exists
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
@@ -4265,18 +4322,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                             Directory.SetCurrentDirectory gaiaDirectory
                             ShowRestartDialog <- true
-                        with _ -> Log.trace "Could not save gaia state and open new project."
+                        with _ -> Log.error "Could not save gaia state and open new project."
 
                         // close dialog
                         ShowNewProjectDialog <- false
                         NewProjectName <- "My Game"
 
                     // log failure
-                    with exn -> Log.trace ("Failed to create new project '" + NewProjectName + "' due to: " + scstring exn)
+                    with exn -> Log.error ("Failed to create new project '" + NewProjectName + "' due to: " + scstring exn)
 
                 // template project missing
                 else
-                    Log.trace "Template project is missing; new project cannot be generated."
+                    Log.error "Template project is missing; new project cannot be generated."
                     ShowNewProjectDialog <- false
 
             // escape to cancel
@@ -4326,21 +4383,26 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.FileDialog (&ShowOpenProjectFileDialog, ProjectFileDialogState) then
             OpenProjectFilePath <- ProjectFileDialogState.FilePath
 
-    let private imGuiCloseProjectDialog () =
+    let private imGuiCloseProjectDialog (world : World) =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowCloseProjectDialog) then
             ImGui.Text "Close the project and use Gaia in its default state?"
+            ImGui.Checkbox ("Proceed w/ Imperative Execution (faster, but no Undo / Redo)", &CloseProjectImperativeExecution) |> ignore<bool>
             if ImGui.Button "Okay" || ImGui.IsKeyReleased ImGuiKey.Enter then
                 ShowCloseProjectDialog <- false
-                let gaiaState = GaiaState.defaultState
+                let gaiaState = { GaiaState.defaultState with ProjectImperativeExecution = CloseProjectImperativeExecution }
                 let gaiaFilePath = (Assembly.GetEntryAssembly ()).Location
                 let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                 try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                     Directory.SetCurrentDirectory gaiaDirectory
                     ShowRestartDialog <- true
-                with _ -> Log.info "Could not clear editor state and close project."
-            if ImGui.IsKeyReleased ImGuiKey.Escape then ShowCloseProjectDialog <- false
+                with _ ->
+                    CloseProjectImperativeExecution <- world.Imperative
+                    Log.info "Could not clear editor state and close project."
+            if ImGui.IsKeyReleased ImGuiKey.Escape then
+                CloseProjectImperativeExecution <- world.Imperative
+                ShowCloseProjectDialog <- false
             ImGui.EndPopup ()
 
     let private imGuiNewGroupDialog world =
@@ -4491,7 +4553,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let gaiaDirectory = PathF.GetDirectoryName gaiaFilePath
                     try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
                         Directory.SetCurrentDirectory gaiaDirectory
-                    with _ -> Log.trace "Could not save gaia state."
+                    with _ -> Log.error "Could not save gaia state."
                     World.exit world
                 else world
             ImGui.SameLine ()
@@ -4737,7 +4799,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ShowNewProjectDialog then imGuiNewProjectDialog world
                         if ShowOpenProjectDialog && not ShowOpenProjectFileDialog then imGuiOpenProjectDialog world
                         elif ShowOpenProjectFileDialog then imGuiOpenProjectFileDialog ()
-                        if ShowCloseProjectDialog then imGuiCloseProjectDialog ()
+                        if ShowCloseProjectDialog then imGuiCloseProjectDialog world
                         let world = if ShowNewGroupDialog then imGuiNewGroupDialog world else world
                         let world = if ShowOpenGroupDialog then imGuiOpenGroupDialog world else world
                         let world = if ShowSaveGroupDialog then imGuiSaveGroupDialog world else world
@@ -4817,7 +4879,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let absolute = entity.GetAbsolute world
                 let bounds = entity.GetBounds world
                 let elevation = Single.MaxValue
-                let transform = Transform.makePerimeter bounds v3Zero elevation absolute false
+                let transform = Transform.makePerimeter bounds v3Zero elevation absolute
                 let image = Assets.Default.HighlightSprite
                 World.enqueueRenderMessage2d
                     (LayeredOperation2d
@@ -4873,6 +4935,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectFilePath <- gaiaState.ProjectDllPath
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
+        CloseProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d
@@ -4963,5 +5026,5 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
                 // run the world
                 runWithCleanUp gaiaState targetDir screen world
-            | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
-        | Left error -> Log.trace error; Constants.Engine.ExitCodeFailure
+            | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
+        | Left error -> Log.error error; Constants.Engine.ExitCodeFailure

@@ -132,7 +132,7 @@ module WorldModuleEntity =
                 world
             else world
 
-        static member inline private getEntityStateOpt entity world =
+        static member inline internal getEntityStateOpt entity world =
             World.entityStateFinder entity world
 
 #if DEBUG
@@ -177,8 +177,7 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange (nameof Transform) () () publishChangeEvents entity world // OPTIMIZATION: eliding data for computed change events for speed.
                 let world =
                     if is2d then
-                        let perimeterCenteredChanged = transformNew.PerimeterCentered <> transformOld.PerimeterCentered
-                        let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged || perimeterCenteredChanged
+                        let perimeterChanged = positionChanged || scaleChanged || offsetChanged || sizeChanged
                         let boundsChanged = perimeterChanged || rotationChanged
                         if boundsChanged then
                             let world = World.publishEntityChange Constants.Engine.BoundsPropertyName transformOld.Bounds2d transformNew.Bounds2d publishChangeEvents entity world
@@ -197,7 +196,6 @@ module WorldModuleEntity =
                             let world = if scaleChanged then World.publishEntityChange (nameof transformNew.Scale) transformOld.Scale transformNew.Scale publishChangeEvents entity world else world
                             let world = if offsetChanged then World.publishEntityChange (nameof transformNew.Offset) transformOld.Offset transformNew.Offset publishChangeEvents entity world else world
                             let world = if sizeChanged then World.publishEntityChange (nameof transformNew.Size) transformOld.Size transformNew.Size publishChangeEvents entity world else world
-                            let world = if perimeterCenteredChanged then World.publishEntityChange (nameof transformNew.PerimeterCentered) transformOld.PerimeterCentered transformNew.PerimeterCentered publishChangeEvents entity world else world
                             world
                         else world
                     else
@@ -287,7 +285,7 @@ module WorldModuleEntity =
                     entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.debugOnce "Could not convert existing entity model value to new type; using fallback model value instead."
+                    Log.errorOnce "Could not convert existing entity model value to new type; using fallback model value instead."
                     match entityState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, entity, world) with
                     | None -> failwithnie ()
                     | Some model ->
@@ -367,7 +365,6 @@ module WorldModuleEntity =
         static member internal getEntityMounted entity world = (World.getEntityState entity world).Mounted
         static member internal getEntityIs2d entity world = (World.getEntityState entity world).Is2d
         static member internal getEntityIs3d entity world = (World.getEntityState entity world).Is3d
-        static member internal getEntityPerimeterCentered entity world = (World.getEntityState entity world).PerimeterCentered
         static member internal getEntityStatic entity world = (World.getEntityState entity world).Static
         static member internal getEntityPhysical entity world = (World.getEntityState entity world).Physical
         static member internal getEntityLightProbe entity world = (World.getEntityState entity world).LightProbe
@@ -646,14 +643,12 @@ module WorldModuleEntity =
             World.traverseEntityMounters World.propagateEntityAffineMatrix3 entity world
 
         /// Check that entity has entities to propagate its structure to.
-        /// TODO: P1: expose this through Entity API.
         static member hasPropagationTargets entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue entity with
             | (true, targets) -> USet.notEmpty targets
             | (false, _) -> false
 
         /// Find all the entities to which an entity may propagate its structure.
-        /// TODO: P1: expose this through Entity API.
         static member getPropagationTargets entity world =
             match world.WorldExtension.PropagationTargets.TryGetValue entity with
             | (true, targets) -> seq targets
@@ -1490,19 +1485,6 @@ module WorldModuleEntity =
                     struct (true, world)
             else struct (false, world)
 
-        static member internal setEntityPerimeterCentered value entity world =
-            let entityState = World.getEntityState entity world
-            if value <> entityState.PerimeterCentered then
-                if entityState.Optimized then
-                    entityState.PerimeterCentered <- value
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.PerimeterCentered <- value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    struct (true, world)
-            else struct (false, world)
-
         static member internal getEntityPerimeterUnscaled entity world =
             (World.getEntityState entity world).Transform.PerimeterUnscaled
 
@@ -2265,7 +2247,7 @@ module WorldModuleEntity =
                     // synchronize the entity's facets (and attach their properties)
                     match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                     | Right (entityState, _) -> entityState
-                    | Left error -> Log.debug error; entityState
+                    | Left error -> Log.error error; entityState
                 | None -> entityState
 
             // apply the entity state's overlay if exists
@@ -2488,7 +2470,7 @@ module WorldModuleEntity =
             let entityState =
                 match World.trySynchronizeFacetsToNames Set.empty entityState None world with
                 | Right (entityState, _) -> entityState
-                | Left error -> Log.debug error; entityState
+                | Left error -> Log.error error; entityState
 
             // attempt to apply the entity state's overlay
             let entityState =
@@ -2593,7 +2575,7 @@ module WorldModuleEntity =
                     let entityState = Overlayer.applyOverlayToFacetNames EntityState.diverge overlayerNameOld overlayName entityState overlayer overlayer
                     match World.trySynchronizeFacetsToNames facetNamesOld entityState (Some entity) world with
                     | Right (entityState, world) -> (entityState, world)
-                    | Left error -> Log.debug error; (entityState, world)
+                    | Left error -> Log.error error; (entityState, world)
                 let facetNames = World.getEntityFacetNamesReflectively entityState
                 let entityState = Overlayer.applyOverlay EntityState.copy overlayerNameOld overlayName facetNames entityState overlayer
                 let entityStateOld = entityState
@@ -2735,7 +2717,6 @@ module WorldModuleEntity =
         EntityGetters.["Mounted"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityMounted entity world }
         EntityGetters.["Is2d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs2d entity world }
         EntityGetters.["Is3d"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityIs3d entity world }
-        EntityGetters.["PerimeterCentered"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPerimeterCentered entity world }
         EntityGetters.["Static"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityStatic entity world }
         EntityGetters.["LightProbe"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityLightProbe entity world }
         EntityGetters.["Light"] <- fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityLight entity world }
@@ -2791,7 +2772,6 @@ module WorldModuleEntity =
         EntitySetters.["Visible"] <- fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world
         EntitySetters.["VisibleLocal"] <- fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world
         EntitySetters.["Pickable"] <- fun property entity world -> World.setEntityPickable (property.PropertyValue :?> bool) entity world
-        EntitySetters.["PerimeterCentered"] <- fun property entity world -> World.setEntityPerimeterCentered (property.PropertyValue :?> bool) entity world
         EntitySetters.["Static"] <- fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world
         EntitySetters.["AlwaysUpdate"] <- fun property entity world -> World.setEntityAlwaysUpdate (property.PropertyValue :?> bool) entity world
         EntitySetters.["AlwaysRender"] <- fun property entity world -> World.setEntityAlwaysRender (property.PropertyValue :?> bool) entity world

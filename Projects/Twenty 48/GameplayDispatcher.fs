@@ -106,13 +106,7 @@ type GameplayDispatcher () =
          // the scene group
          Content.group Simulants.GameplayScene.Name []
 
-            [// background
-             Content.staticSprite "Background"
-                [Entity.Size == Constants.Render.VirtualResolution.V3
-                 Entity.StaticImage == Assets.Default.White
-                 Entity.Color == Color.GhostWhite]
-
-             // score
+            [// score
              Content.text "Score"
                 [Entity.Position == v3 232.0f 155.0f 0.0f
                  Entity.Elevation == 10.0f

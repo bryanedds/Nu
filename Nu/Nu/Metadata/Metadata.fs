@@ -71,11 +71,11 @@ module Metadata =
                     Some (TextureMetadata metadata)
                 | None ->
                     let errorMessage = "Failed to load texture metadata for '" + asset.FilePath + "."
-                    Log.trace errorMessage
+                    Log.error errorMessage
                     None
         else
             let errorMessage = "Failed to load texture due to missing file '" + asset.FilePath + "'."
-            Log.trace errorMessage
+            Log.error errorMessage
             None
 
     /// Thread-safe.
@@ -85,7 +85,7 @@ module Metadata =
             Some (TileMapMetadata { TileMapImageAssets = imageAssets; TileMap = tmxMap })
         with exn ->
             let errorMessage = "Failed to load TmxMap '" + asset.FilePath + "' due to: " + scstring exn
-            Log.trace errorMessage
+            Log.error errorMessage
             None
 
     /// Thread-safe.
@@ -100,11 +100,11 @@ module Metadata =
                 else Some (StaticModelMetadata model)
             | Left error ->
                 let errorMessage = "Failed to load model '" + asset.FilePath + "' due to: " + error
-                Log.trace errorMessage
+                Log.error errorMessage
                 None
         else
             let errorMessage = "Failed to load model due to missing file '" + asset.FilePath + "'."
-            Log.trace errorMessage
+            Log.error errorMessage
             None
 
     /// Thread-safe.

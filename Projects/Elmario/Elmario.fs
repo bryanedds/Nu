@@ -46,6 +46,9 @@ type ElmarioDispatcher () =
                     then World.applyBodyForce (v3 800.0f 0.0f 0.0f) v3Zero bodyId world
                     else World.applyBodyForce (v3 200.0f 0.0f 0.0f) v3Zero bodyId world
                 just world
+            elif World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world then
+                let world = World.exit world
+                just world
             else just world
         | Jump ->
             let bodyId = Simulants.Elmario.GetBodyId world

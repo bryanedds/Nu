@@ -568,7 +568,7 @@ and GroupDispatcher () =
     default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for entities.
-and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
+and EntityDispatcher (is2d, physical, lightProbe, light) =
     inherit SimulantDispatcher ()
 
     static member Properties =
@@ -598,7 +598,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
          Define? Visible true
          Define? VisibleLocal true
          Define? Pickable true
-         Define? PerimeterCentered true
          Define? Static false
          Define? AlwaysUpdate false
          Define? AlwaysRender false
@@ -662,9 +661,6 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     /// Attempt to untruncate an entity model.
     abstract TryUntruncateModel<'a> : 'a * Entity* World  -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
-
-    /// Whether the dispatcher uses a centered perimeter by default.
-    member this.PerimeterCentered = perimeterCentered
 
     /// Whether the dispatcher has a 2-dimensional transform interpretation.
     member this.Is2d = is2d
@@ -1155,7 +1151,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Physical with get () = this.Dispatcher.Physical || Array.exists (fun (facet : Facet) -> facet.Physical) this.Facets
     member this.LightProbe with get () = this.Dispatcher.LightProbe || Array.exists (fun (facet : Facet) -> facet.LightProbe) this.Facets
     member this.Light with get () = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
-    member this.PerimeterCentered with get () = this.Transform.PerimeterCentered and set value = this.Transform.PerimeterCentered <- value
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized with get () = this.Transform.Optimized
 
@@ -1215,7 +1210,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
 
     /// Make an entity state value.
     static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
-        let mutable transform = Transform.makeDefault dispatcher.PerimeterCentered
+        let mutable transform = Transform.makeDefault ()
         transform.Imperative <- imperative
         let (id, surnames) = Gen.id64AndSurnamesIf surnamesOpt
         { Transform = transform
@@ -1872,7 +1867,7 @@ and [<ReferenceEquality>] World =
         match WorldTypes.Chosen with
         | :? World as this -> 
             if this.ChooseCount <> this.ChooseCount then
-                Log.debug "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
+                Log.error "World utilization order error. Likely a world reference has been accidentally dropped or World.switch wasn't used where required."
         | _ -> ()
         this.ChooseCount <- inc this.ChooseCount // mutation is fine here since calling Choose implies we're doing so on a new reference in functional mode
         WorldTypes.Chosen <- this

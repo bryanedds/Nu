@@ -305,7 +305,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         // attempt to add the body
         let bodyId = { BodySource = createBodyMessage.BodyId.BodySource; BodyIndex = bodyProperties.BodyIndex }
         if not (physicsEngine.Bodies.TryAdd (bodyId, (bodyProperties.GravityOverride, body))) then
-            Log.debug ("Could not add body for '" + scstring bodyId + "'.")
+            Log.error ("Could not add body for '" + scstring bodyId + "'.")
 
         // attempt to run any related body joint creation functions
         match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with

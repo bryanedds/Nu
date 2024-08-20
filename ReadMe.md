@@ -1,9 +1,14 @@
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
 =
 
-**Live Discord Support Here -**
+UPDATE: **Omni Blade**, the first commercial game built with Nu, is **available on itch.io NOW!** - https://bryanedds.itch.io/omni-blade
+=
 
-[Come join our discord!](https://discord.gg/BN79RxYAjD)
+![image](https://github.com/user-attachments/assets/81f64a06-ffac-487e-8a59-6ca827b4c67a)
+
+![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
+
+**Live Nu Game Engine Support on Discord here -** https://discord.gg/BN79RxYAjD
 
 So... just what is the **Nu Game Engine**?
 
@@ -14,10 +19,10 @@ So... just what is the **Nu Game Engine**?
 This repository hosts several projects, including -
 
 - the sample 2D demo game ['Breakout'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout).
-- the sample 2D puzzle game ['Twenty48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty48).
-- the sample 2D action game ['BlazeVector'](https://github.com/bryanedds/Nu/tree/master/Projects/BlazeVector).
-- the sample 3D project ['TerraFirma'](https://github.com/bryanedds/Nu/tree/master/Projects/TerraFirma).
-- the game demo for ['OmniBlade'](https://github.com/bryanedds/Nu/tree/master/Projects/OmniBlade) available free for Windows and Linux here - https://github.com/bryanedds/Nu/releases/tag/v13.0.1
+- the sample 2D puzzle game ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
+- the sample 2D action game ['Blaze Vector'](https://github.com/bryanedds/Nu/tree/master/Projects/Blaze%20Vector).
+- the sample 3D project ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
+- the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade), full game available now here - https://bryanedds.itch.io/omni-blade
 
 Getting Started with Nu
 =======================

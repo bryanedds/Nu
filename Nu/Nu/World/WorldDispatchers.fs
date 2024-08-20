@@ -8,33 +8,28 @@ open Prime
 open Nu
 
 /// A 2d entity dispatcher.
-type Entity2dDispatcher (perimeterCentered, physical, lightProbe, light) =
-    inherit EntityDispatcher (true, perimeterCentered, physical, lightProbe, light)
-
-    new (physical, lightProbe, light) =
-        Entity2dDispatcher (Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light)
+type Entity2dDispatcher (physical, lightProbe, light) =
+    inherit EntityDispatcher (true, physical, lightProbe, light)
 
     static member Properties =
-        [define Entity.Size Constants.Engine.Entity2dSizeDefault
-         define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
+        [define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
 /// A gui entity dispatcher.
 type GuiDispatcher () =
-    inherit EntityDispatcher (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false)
+    inherit EntityDispatcher (true, false, false, false)
 
     static member Facets =
         [typeof<LayoutFacet>]
 
     static member Properties =
         [define Entity.Size Constants.Engine.EntityGuiSizeDefault
-         define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
          define Entity.Absolute true
          define Entity.Presence Omnipresent
          define Entity.DisabledColor Constants.Gui.DisabledColor]
 
 /// A 3d entity dispatcher.
 type Entity3dDispatcher (physical, lightProbe, light) =
-    inherit EntityDispatcher (false, true, physical, lightProbe, light)
+    inherit EntityDispatcher (false, physical, lightProbe, light)
 
     static member Properties =
         [define Entity.Size Constants.Engine.Entity3dSizeDefault]
@@ -48,7 +43,7 @@ type Entity3dDispatcher (physical, lightProbe, light) =
 
 /// A vui dispatcher (gui in 3d).
 type VuiDispatcher () =
-    inherit EntityDispatcher (false, true, false, false, false)
+    inherit EntityDispatcher (false, false, false, false)
 
     static member Properties =
         [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
@@ -178,24 +173,20 @@ type PanelDispatcher () =
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
-    inherit Entity2dDispatcher (true, false, false, false)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<BasicStaticSpriteEmitterFacet>]
 
-    static member Properties =
-        [define Entity.PerimeterCentered true]
-
 /// Gives an entity the base behavior of a 2d effect.
 type Effect2dDispatcher () =
-    inherit Entity2dDispatcher (true, false, false, false)
+    inherit Entity2dDispatcher (true, false, false)
 
     static member Facets =
         [typeof<EffectFacet>]
 
     static member Properties =
-        [define Entity.PerimeterCentered true
-         define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
+        [define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
 
 /// Gives an entity the base behavior of a rigid 2d block using static physics.
 type Block2dDispatcher () =
@@ -491,7 +482,9 @@ type Effect3dDispatcher () =
         [typeof<EffectFacet>]
 
     static member Properties =
-        [define Entity.EffectDescriptor (scvalue<Effects.EffectDescriptor> "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[StaticSprite [Resource Default Image] [] Nil]]]]]")]
+        [define Entity.EffectDescriptor
+            (scvalue<Effects.EffectDescriptor>
+                "[[EffectName Effect] [LifeTimeOpt None] [Definitions []] [Content [Contents [Shift 0] [[Billboard [Resource Default MaterialAlbedo] [Resource Default MaterialRoughness] [Resource Default MaterialMetallic] [Resource Default MaterialAmbientOcclusion] [Resource Default MaterialEmission] [Resource Default MaterialNormal] [Resource Default MaterialHeightMap] False [] Nil]]]]]")]
 
 /// Gives an entity the base behavior of a rigid 3d block using static physics.
 type Block3dDispatcher () =

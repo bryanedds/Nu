@@ -684,9 +684,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                                     | JustifyRight -> size.X - single width
                                 let offsetY =
                                     match v with
-                                    | JustifyTop -> 0.0f
+                                    | JustifyTop -> size.Y - single height
                                     | JustifyMiddle -> floor ((size.Y - single height) * 0.5f)
-                                    | JustifyBottom -> size.Y - single height
+                                    | JustifyBottom -> 0.0f
                                 let offset = v2 offsetX offsetY
                                 (offset, textSurface, textSurfacePtr)
 
