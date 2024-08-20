@@ -587,6 +587,7 @@ type RendererThread () =
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
 
         member this.Swap () =
+            if swap then raise (InvalidOperationException "Render process already swapping.")
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             swap <- true
             while swap do Thread.Sleep 1
