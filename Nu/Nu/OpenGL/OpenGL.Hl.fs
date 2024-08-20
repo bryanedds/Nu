@@ -42,7 +42,11 @@ module Hl =
 #if DEBUG
     let private DebugMessageListener (_ : DebugSource) (_ : DebugType) (_ : uint) (severity : DebugSeverity) (length : int) (message : nativeint) (_ : nativeint) =
         match severity with
-        | DebugSeverity.DebugSeverityMedium
+        | DebugSeverity.DebugSeverityMedium ->
+            let messageBytes = Array.zeroCreate<byte> length
+            Marshal.Copy (message, messageBytes, 0, length)
+            let messageStr = Encoding.ASCII.GetString (messageBytes, 0, length)
+            Log.warn messageStr
         | DebugSeverity.DebugSeverityHigh ->
             let messageBytes = Array.zeroCreate<byte> length
             Marshal.Copy (message, messageBytes, 0, length)

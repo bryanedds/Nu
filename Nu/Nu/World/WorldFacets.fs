@@ -2711,29 +2711,29 @@ module AnimatedModelFacetExtensions =
                 Some transform
             | (_, _) -> None
 
+        member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
+            match sceneOpt with
+            | Some scene when scene.Meshes.Count > 0 ->
+                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
+                Some (boneIds, boneOffsets, boneTransforms)
+            | Some _ | None -> None
+
+        member this.AnimateBones (world : World) =
+            let time = world.GameTime
+            let animations = this.GetAnimations world
+            let animatedModel = this.GetAnimatedModel world
+            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
+            match this.TryComputeBoneTransforms time animations sceneOpt with
+            | Some (boneIds, boneOffsets, boneTransforms) ->
+                let world = this.SetBoneIdsOpt (Some boneIds) world
+                let world = this.SetBoneOffsetsOpt (Some boneOffsets) world
+                let world = this.SetBoneTransformsOpt (Some boneTransforms) world
+                world
+            | None -> world
+
 /// Augments an entity with an animated model.
 type AnimatedModelFacet () =
     inherit Facet (false, false, false)
-
-    static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
-        match sceneOpt with
-        | Some scene when scene.Meshes.Count > 0 ->
-            let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
-            Some (boneIds, boneOffsets, boneTransforms)
-        | Some _ | None -> None
-
-    static let tryAnimateBones (entity : Entity) (world : World) =
-        let time = world.GameTime
-        let animations = entity.GetAnimations world
-        let animatedModel = entity.GetAnimatedModel world
-        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-        match tryComputeBoneTransforms time animations sceneOpt with
-        | Some (boneIds, boneOffsets, boneTransforms) ->
-            let world = entity.SetBoneIdsOpt (Some boneIds) world
-            let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
-            let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
-            world
-        | None -> world
 
     static member Properties =
         [define Entity.StartTime GameTime.zero
@@ -2746,7 +2746,7 @@ type AnimatedModelFacet () =
          nonPersistent Entity.BoneTransformsOpt None]
 
     override this.Register (entity, world) =
-        let world = tryAnimateBones entity world
+        let world = entity.AnimateBones world
         let world =
             World.sense
                 (fun evt world ->
@@ -2756,12 +2756,12 @@ type AnimatedModelFacet () =
                         entity.GetPresence world <> Omnipresent &&
                         not (entity.GetAlwaysUpdate world) &&
                         not (playBox.Intersects (evt.Subscriber.GetBounds world))
-                    let world = if notUpdating then tryAnimateBones evt.Subscriber world else world
+                    let world = if notUpdating then evt.Subscriber.AnimateBones world else world
                     (Cascade, world))
                 (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
         let world =
             World.sense
-                (fun evt world -> (Cascade, tryAnimateBones evt.Subscriber world))
+                (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world))
                 (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
         world
 
@@ -2782,7 +2782,7 @@ type AnimatedModelFacet () =
                 let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                 world
             | None -> world
-        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneTransforms time animations sceneOpt)
+        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
         World.enqueueJob 1.0f job world
         world
 

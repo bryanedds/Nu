@@ -129,6 +129,7 @@ type CharacterDispatcher (character : Character) =
         | Register ->
             let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
             let world = animatedModel.SetAnimations [|Animation.loop GameTime.zero None "Armature|Idle"|] world
+            let world = animatedModel.AnimateBones world
             withSignal SyncWeaponTransform world
 
         | UpdateTransform (position, rotation) ->

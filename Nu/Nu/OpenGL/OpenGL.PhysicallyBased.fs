@@ -357,6 +357,7 @@ module PhysicallyBased =
           SsrRoughnessCutoffUniform : int
           SsrDepthCutoffUniform : int
           SsrDistanceCutoffUniform : int
+          SsrSurfaceSlopeCutoffUniform : int
           SsrEdgeCutoffHorizontalUniform : int
           SsrEdgeCutoffVerticalUniform : int
           SsrLightColorUniform : int
@@ -1647,6 +1648,7 @@ module PhysicallyBased =
         let ssrRoughnessCutoff = Gl.GetUniformLocation (shader, "ssrRoughnessCutoff")
         let ssrDepthCutoff = Gl.GetUniformLocation (shader, "ssrDepthCutoff")
         let ssrDistanceCutoff = Gl.GetUniformLocation (shader, "ssrDistanceCutoff")
+        let ssrSurfaceSlopeCutoff = Gl.GetUniformLocation (shader, "ssrSurfaceSlopeCutoff")
         let ssrEdgeCutoffHorizontal = Gl.GetUniformLocation (shader, "ssrEdgeCutoffHorizontal")
         let ssrEdgeCutoffVertical = Gl.GetUniformLocation (shader, "ssrEdgeCutoffVertical")
         let SsrLightColor = Gl.GetUniformLocation (shader, "ssrLightColor")
@@ -1698,6 +1700,7 @@ module PhysicallyBased =
           SsrRoughnessCutoffUniform = ssrRoughnessCutoff
           SsrDepthCutoffUniform = ssrDepthCutoff
           SsrDistanceCutoffUniform = ssrDistanceCutoff
+          SsrSurfaceSlopeCutoffUniform = ssrSurfaceSlopeCutoff
           SsrEdgeCutoffHorizontalUniform = ssrEdgeCutoffHorizontal
           SsrEdgeCutoffVerticalUniform = ssrEdgeCutoffVertical
           SsrLightColorUniform = SsrLightColor
@@ -1785,9 +1788,12 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown shader
+        // teardown textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
         Gl.UseProgram 0u
 
     /// Draw the filter gaussian pass using a physically-based surface.
@@ -2294,19 +2300,19 @@ module PhysicallyBased =
         // setup textures
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AlbedoTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].AlbedoTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].RoughnessTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].RoughnessTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 2 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].AmbientOcclusionTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].AmbientOcclusionTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 3 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].NormalTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].NormalTexture.TextureId)
         for i in 0 .. dec layersCount do
             Gl.ActiveTexture (int TextureUnit.Texture0 + i + Constants.Render.TerrainLayersMax * 4 |> Branchless.reinterpret)
-            Gl.BindTexture (TextureTarget.Texture2d, materials[i].HeightTexture.TextureId)
+            Gl.BindTexture (TextureTarget.Texture2d, materials.[i].HeightTexture.TextureId)
         Hl.Assert ()
 
         // update instance buffer
@@ -2635,6 +2641,7 @@ module PhysicallyBased =
          ssrRoughnessCutoff : single,
          ssrDepthCutoff : single,
          ssrDistanceCutoff : single,
+         ssrSurfaceSlopeCutoff : single,
          ssrEdgeCutoffHorizontal : single,
          ssrEdgeCutoffVertical : single,
          ssrLightColor : single array,
@@ -2685,6 +2692,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrRoughnessCutoffUniform, ssrRoughnessCutoff)
         Gl.Uniform1 (shader.SsrDepthCutoffUniform, ssrDepthCutoff)
         Gl.Uniform1 (shader.SsrDistanceCutoffUniform, ssrDistanceCutoff)
+        Gl.Uniform1 (shader.SsrSurfaceSlopeCutoffUniform, ssrSurfaceSlopeCutoff)
         Gl.Uniform1 (shader.SsrEdgeCutoffHorizontalUniform, ssrEdgeCutoffHorizontal)
         Gl.Uniform1 (shader.SsrEdgeCutoffVerticalUniform, ssrEdgeCutoffVertical)
         Gl.Uniform3 (shader.SsrLightColorUniform, ssrLightColor)

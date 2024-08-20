@@ -42,6 +42,7 @@ uniform float ssrRayThickness;
 uniform float ssrRoughnessCutoff;
 uniform float ssrDepthCutoff;
 uniform float ssrDistanceCutoff;
+uniform float ssrSurfaceSlopeCutoff;
 uniform float ssrEdgeCutoffHorizontal;
 uniform float ssrEdgeCutoffVertical;
 uniform vec3 ssrLightColor;
@@ -143,7 +144,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, out vec3 specularSS, out float specularWeight)
+void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float surfaceSlope, out vec3 specularSS, out float specularWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -152,6 +153,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     vec3 reflectionView = reflect(positionViewNormal, normalView);
     vec4 startView = vec4(positionView.xyz, 1.0);
     vec4 stopView = vec4(positionView.xyz + reflectionView * ssrDistanceMax, 1.0);
+    float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
     vec2 texSize = textureSize(positionTexture, 0).xy;
@@ -183,34 +185,45 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     // march fragment
     float currentProgressA = 0.0;
     float currentProgressB = 0.0;
-    float currentDistanceView = 0.0;
     float currentDepthView = 0.0;
     for (int i = 0; i < stepCount && currentUV.x >= 0.0 && currentUV.x <= 1.0 && currentUV.y >= 0.0 && currentUV.y <= 1.0; ++i)
     {
-        // determine whether we hit geometry within acceptable thickness
+        // advance frag values
         currentFrag += stepAmount;
         currentUV = currentFrag / texSize;
         currentPosition = texture(positionTexture, currentUV);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
-        currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
-        currentDepthView = currentDistanceView - -currentPositionView.z;
-        float adaptedThickness = max(currentDistanceView * ssrRayThickness, ssrRayThickness);
-        if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+        currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
+
+        // compute depth delta and thickness based on view state
+        float depthDelta = currentDepthView - -currentPositionView.z;
+        float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
+        if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0)
+            thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
+
+        // determine whether we hit geometry within acceptable thickness
+        if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
             for (int j = 0; j < ssrRefinementsMax; ++j)
             {
-                // determine whether we hit geometry within acceptable thickness
+                // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentUV = currentFrag / texSize;
                 currentPosition = texture(positionTexture, currentUV);
                 currentPositionView = view * currentPosition;
-                currentDistanceView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
-                currentDepthView = currentDistanceView - -currentPositionView.z;
-                float adaptedThickness = max(currentDistanceView * ssrRayThickness, ssrRayThickness);
-                if (currentPosition.w == 1.0 && currentDepthView >= 0.0 && currentDepthView <= adaptedThickness)
+                currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
+
+                // compute depth delta and thickness based on view state
+                float depthDelta = currentDepthView - -currentPositionView.z;
+                float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
+                if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0)
+                    thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
+
+                // determine whether we hit geometry within acceptable thickness
+                if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space specular color and weight
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);
@@ -223,6 +236,8 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoff, 1.0, roughness / ssrRoughnessMax)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrDistanceCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
+                        (1.0 - smoothstep(1.0 - ssrSurfaceSlopeCutoff, 1.0, surfaceSlope / ssrSurfaceSlopeMax)) *
+                        smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
                         smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
                         smoothstep(0.0, ssrEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
                     specularWeight = clamp(specularWeight, 0.0, 1.0);
@@ -368,7 +383,7 @@ void main()
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
             vec4 positionBelow = texture(positionTexture, texCoordsBelow);
-            ssr(positionBelow, albedo, roughness, metallic, normal, specularSS, specularWeight);
+            ssr(positionBelow, albedo, roughness, metallic, normal, surfaceSlope, specularSS, specularWeight);
         }
 
         // compute specular term
