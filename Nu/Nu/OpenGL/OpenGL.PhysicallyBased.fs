@@ -1788,9 +1788,12 @@ module PhysicallyBased =
         Gl.BindVertexArray 0u
         Hl.Assert ()
 
-        // teardown shader
+        // teardown textures
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
         Gl.UseProgram 0u
 
     /// Draw the filter gaussian pass using a physically-based surface.
