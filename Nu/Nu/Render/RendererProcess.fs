@@ -170,9 +170,9 @@ type RendererInline () =
 
         member this.Swap () =
             match windowOpt with
-            | Some window ->
-                match window with
-                | SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+            | Some (SglWindow window) ->
+                OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
+                SDL.SDL_GL_SwapWindow window.SglWindow
             | None -> ()
 
         member this.Terminate () =
@@ -396,7 +396,9 @@ type RendererThread () =
 
                     // attempt to swap
                     match windowOpt with
-                    | Some window -> match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                    | Some (SglWindow window) ->
+                        OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
+                        SDL.SDL_GL_SwapWindow window.SglWindow
                     | None -> ()
 
                     // complete swap request
