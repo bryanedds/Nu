@@ -167,9 +167,9 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 let indexBufferSizeNeeded = uint (drawData.TotalIdxCount * sizeof<uint16>)
                 if indexBufferSizeNeeded > indexBufferSize then
                     indexBufferSize <- max (indexBufferSize * 2u) indexBufferSizeNeeded
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indexBuffer)
-                    OpenGL.Gl.BufferData (OpenGL.BufferTarget.ArrayBuffer, indexBufferSize, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, 0u)
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                    OpenGL.Gl.BufferData (OpenGL.BufferTarget.ElementArrayBuffer, indexBufferSize, nativeint 0, OpenGL.BufferUsage.DynamicDraw)
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, 0u)
                     OpenGL.Hl.Assert ()
 
                 // compute offsets
@@ -178,8 +178,8 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                     let cmds = cmdsRange.[i]
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
                     OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * Unsafe.SizeOf<ImDrawVert> ()), uint (cmds.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmds.VtxBuffer.Data)
-                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, indexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmds.IdxBuffer.Size * sizeof<uint16>), cmds.IdxBuffer.Data)
+                    OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ElementArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmds.IdxBuffer.Size * sizeof<uint16>), cmds.IdxBuffer.Data)
                     vertexOffsetInVertices <- vertexOffsetInVertices + cmds.VtxBuffer.Size
                     indexOffsetInElements <- indexOffsetInElements + cmds.IdxBuffer.Size
                     OpenGL.Hl.Assert ()
