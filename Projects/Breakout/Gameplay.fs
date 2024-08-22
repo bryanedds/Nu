@@ -22,15 +22,21 @@ type Paddle =
 type Ball =
     { Position : Vector3
       Size : Vector3
-      Velocity : Vector3 }
+      Speed : single
+      Direction : Vector3 }
+
+    member this.Velocity =
+        this.Speed * this.Direction
 
     member this.PositionNext =
         this.Position + this.Velocity
 
     static member initial =
+        let speed = 4.0f
         { Position = v3 0.0f 48.0f 0.0f
           Size = v3 8.0f 8.0f 0.0f
-          Velocity = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * 4.0f }
+          Speed = speed
+          Direction = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized }
 
 // the bricks to break out of.
 type Brick =
@@ -105,12 +111,12 @@ type [<SymbolicExpansion>] Gameplay =
                     if  ball.PositionNext.X <= -160.0f ||
                         ball.PositionNext.X >= 160.0f then 
                         World.playSound 1.0f Assets.Default.Sound world
-                        { ball with Velocity = ball.Velocity.MapX negate }
+                        { ball with Direction = ball.Direction.MapX negate }
                     else ball
                 let ball =
                     if ball.PositionNext.Y >= 172.0f then
                         World.playSound 1.0f Assets.Default.Sound world
-                        { ball with Velocity = ball.Velocity.MapY negate }
+                        { ball with Direction = ball.Direction.MapY negate }
                     else ball
                 { gameplay with Ball = ball }
 
@@ -122,7 +128,7 @@ type [<SymbolicExpansion>] Gameplay =
                     let perimeter = box3 (paddle.Position - paddle.Size * 0.5f) paddle.Size
                     if perimeter.Intersects ball.PositionNext then
                         World.playSound 1.0f Assets.Default.Sound world
-                        { ball with Velocity = (ball.Position - paddle.Position).Normalized * 4.0f }
+                        { ball with Direction = (ball.Position - paddle.Position).Normalized }
                     else ball
                 { gameplay with Ball = ball }
 
@@ -138,7 +144,7 @@ type [<SymbolicExpansion>] Gameplay =
                     if Map.notEmpty bricksIntersected then
                         World.playSound 1.0f Assets.Default.Sound world
                         let brick = Seq.head bricksIntersected.Values
-                        { ball with Velocity = (ball.Position - brick.Position).Normalized * 4.0f }
+                        { ball with Direction = (ball.Position - brick.Position).Normalized }
                     else ball
                 let scoring = Map.count bricksIntersected * 100
                 let bricks = Map.removeMany bricksIntersected.Keys gameplay.Bricks
