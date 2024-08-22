@@ -32,10 +32,9 @@ type Ball =
         this.Position + this.Velocity
 
     static member initial =
-        let speed = 4.0f
         { Position = v3 0.0f 48.0f 0.0f
           Size = v3 8.0f 8.0f 0.0f
-          Speed = speed
+          Speed = 4.0f
           Direction = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized }
 
 // the bricks to break out of.
