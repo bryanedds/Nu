@@ -496,12 +496,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private selectGroupInitial screen world =
         let groups = World.getGroups screen world
         let (group, world) =
-            match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
+            match Seq.tryHead groups with
             | Some group -> (group, world)
-            | None ->
-                match Seq.tryHead groups with
-                | Some group -> (group, world)
-                | None -> World.createGroup (Some "Group") screen world
+            | None -> World.createGroup (Some "Group") screen world
         selectGroup group
         world
 
@@ -724,12 +721,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleData, Game>) world =
         let world =
             match evt.Data with
-            | RegisterData simulant ->
-                match simulant with
-                | :? Group as group when group.GetSelected world && group.Name = "Scene" ->
-                    selectGroup group // select newly created Scene group since it's more likely to be the group the user wants to edit.
-                    world
-                | _ -> world
             | UnregisteringData simulant ->
                 if SelectedGroup :> Simulant = simulant then
                     let groups = World.getGroups SelectedScreen world
