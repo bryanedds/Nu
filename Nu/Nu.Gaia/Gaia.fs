@@ -479,17 +479,19 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             else world
         setPropertyValueWithoutUndo value propertyDescriptor simulant world
 
-    let private selectScreen screen =
+    let private selectScreen show screen =
         if screen <> SelectedScreen then
-            ImGui.SetWindowFocus "Screen Properties" // make sure group properties are showing
-            ImGui.SetWindowFocus null
+            if show then
+                ImGui.SetWindowFocus "Screen Properties" // make sure group properties are showing
+                ImGui.SetWindowFocus null
             NewEntityParentOpt <- None
             SelectedScreen <- screen
 
-    let private selectGroup group =
+    let private selectGroup show group =
         if group <> SelectedGroup then
-            ImGui.SetWindowFocus "Group Properties" // make sure group properties are showing
-            ImGui.SetWindowFocus null
+            if show then
+                ImGui.SetWindowFocus "Group Properties" // make sure group properties are showing
+                ImGui.SetWindowFocus null
             NewEntityParentOpt <- None
             SelectedGroup <- group
 
@@ -499,7 +501,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             match Seq.tryHead groups with
             | Some group -> (group, world)
             | None -> World.createGroup (Some "Group") screen world
-        selectGroup group
+        selectGroup false group
         world
 
     let rec private focusPropertyOpt targetOpt world =
@@ -557,10 +559,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | (true, world) ->
             focusPropertyOpt None world
             PropertyValueStrPrevious <- ""
-            selectScreen (World.getSelectedScreen world)
+            selectScreen false (World.getSelectedScreen world)
             if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
                 let group = Seq.head (World.getGroups SelectedScreen world)
-                selectGroup group
+                selectGroup false group
             match SelectedEntityOpt with
             | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
             | Some _ | None -> ()
@@ -586,10 +588,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | (true, world) ->
             focusPropertyOpt None world
             PropertyValueStrPrevious <- ""
-            selectScreen (World.getSelectedScreen world)
+            selectScreen false (World.getSelectedScreen world)
             if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
                 let group = Seq.head (World.getGroups SelectedScreen world)
-                selectGroup group
+                selectGroup false group
             match SelectedEntityOpt with
             | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
             | Some _ | None -> ()
@@ -738,7 +740,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) world =
         match evt.Data.Value :?> Screen option with
         | Some screen ->
-            selectScreen screen
+            selectScreen true screen
             let world = selectGroupInitial screen world
             selectEntityOpt None world
             focusPropertyOpt None world
@@ -1066,7 +1068,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         then World.destroyGroupImmediate SelectedGroup world
                         else world
                     let (group, world) = World.readGroup groupDescriptor None SelectedScreen world
-                    selectGroup group
+                    selectGroup true group
                     match SelectedEntityOpt with
                     | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
                     | Some _ | None -> ()
@@ -3381,7 +3383,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         selectEntityOpt None world
                                         let world = World.destroyGroupImmediate SelectedGroup world
                                         GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
-                                        selectGroup (Seq.head groupsRemaining)
+                                        selectGroup true (Seq.head groupsRemaining)
                                         world
                                     else MessageBoxOpt <- Some "Cannot close protected or only group."; world
                                 else world
@@ -3623,7 +3625,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     for group in groups do
                         if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
                             selectEntityOpt None world
-                            selectGroup group
+                            selectGroup true group
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
@@ -4447,7 +4449,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let worldOld = world
                     try let world = World.createGroup4 NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> snd
                         selectEntityOpt None world
-                        selectGroup newGroup
+                        selectGroup true newGroup
                         ShowNewGroupDialog <- false
                         NewGroupName <- ""
                         world
@@ -4501,7 +4503,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty GroupRename && Address.validName GroupRename && not (group'.GetExists world) then
                         let world = snapshot RenameGroup world
                         let world = World.renameGroupImmediate group group' world
-                        selectGroup group'
+                        selectGroup true group'
                         ShowRenameGroupDialog <- false
                         world
                     else world
@@ -4981,7 +4983,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ProjectImperativeExecution <- OpenProjectImperativeExecution
         GroupFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
         EntityFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
-        selectScreen screen
+        selectScreen false screen
         let world = selectGroupInitial screen world
         NewEntityDispatcherName <- World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         AssetGraphStr <-
