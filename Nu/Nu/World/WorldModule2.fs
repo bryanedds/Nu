@@ -2047,11 +2047,12 @@ module EntityPropertyDescriptor =
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if  propertyName = "Name" ||
             propertyName = "Surnames" ||
-            propertyName = "Model" ||
             propertyName = "MountOpt" ||
             propertyName = "PropagationSourceOpt" ||
             propertyName = "OverlayNameOpt" then
             "Ambient Properties"
+        elif propertyName = "Model" then
+            "Applied Model Properties"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
              propertyName = "Offset" || propertyName = "Overflow" ||

@@ -2891,6 +2891,37 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         focusProperty ()
         world
 
+    let private imGuiEditPropertyRecord propertyLabelPrefix (propertyDescriptor : PropertyDescriptor) simulant world =
+        let propertyValueUntruncated = getPropertyValue propertyDescriptor simulant world
+        let propertyValue =
+            if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                match World.tryTruncateModel propertyValueUntruncated simulant world with
+                | Some truncatedValue -> truncatedValue
+                | None -> propertyValueUntruncated
+            else propertyValueUntruncated
+        let fields = FSharpValue.GetRecordFields propertyValue
+        FSharpType.GetRecordFields propertyDescriptor.PropertyType |>
+        Array.zip fields |>
+        Array.foldi (fun i world (field, fieldInfo : PropertyInfo) ->
+            imGuiEditProperty
+                (fun _ _ _ -> field)
+                (fun field _ _ world ->
+                    fields.[i] <- field
+                    let propertyValueTruncated = FSharpValue.MakeRecord (propertyDescriptor.PropertyType, fields)
+                    let propertyValueUntruncated =
+                        if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                            match World.tryUntruncateModel propertyValueTruncated simulant world with
+                            | Some truncatedValue -> truncatedValue
+                            | None -> propertyValueTruncated
+                        else propertyValueTruncated
+                    setPropertyValue propertyValueUntruncated propertyDescriptor simulant world)
+                (fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world)
+                (propertyLabelPrefix + "." + fieldInfo.Name)
+                { PropertyName = fieldInfo.Name; PropertyType = fieldInfo.PropertyType }
+                simulant
+                world)
+            world
+
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
         let world =
@@ -2952,9 +2983,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             Array.sortBy (fun pd ->
                                 match pd.PropertyName with
                                 | Constants.Engine.NamePropertyName -> "!00" // put Name first
-                                | Constants.Engine.ModelPropertyName -> "!01" // put Model second
-                                | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
-                                | Constants.Engine.PropagationSourceOptPropertyName -> "!03"
+                                | Constants.Engine.MountOptPropertyName -> "!01" // and so on...
+                                | Constants.Engine.PropagationSourceOptPropertyName -> "!02"
+                                | Constants.Engine.ModelPropertyName -> "!03"
                                 | nameof Entity.Position -> "!04"
                                 | nameof Entity.PositionLocal -> "!05"
                                 | nameof Entity.Degrees -> "!06"
@@ -2992,12 +3023,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if ImGui.IsItemFocused () then focusPropertyOpt None world
                                     world
                                 elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                                    let mutable clickToEditModel = "*click to view*"
-                                    ImGui.InputText ("Model", &clickToEditModel, uint clickToEditModel.Length, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                                    if ImGui.IsItemFocused () then
-                                        focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                                        PropertyEditorFocusRequested <- true
-                                    world
+                                    if FSharpType.IsRecord propertyDescriptor.PropertyType then
+                                        imGuiEditPropertyRecord propertyDescriptor.PropertyName propertyDescriptor simulant world
+                                    else
+                                        let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                                        imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor.PropertyName propertyDescriptor simulant world
                                 else
                                     let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                                     let mutable replaced = false
@@ -3015,26 +3045,24 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             world propertyDescriptors
                     else world
                 if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
-                    if ImGui.CollapsingHeader ("Applied Types", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
-                        match simulant with
-                        | :? Game as game ->
-                            let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
-                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        | :? Screen as screen ->
-                            let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
-                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        | :? Group as group ->
-                            let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
-                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        | :? Entity as entity ->
-                            imGuiEditEntityAppliedTypes entity world
-                        | _ ->
-                            Log.infoOnce "Unexpected simulant type."
-                            world
-                    else world
+                    match simulant with
+                    | :? Game as game ->
+                        let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
+                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        world
+                    | :? Screen as screen ->
+                        let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
+                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        world
+                    | :? Group as group ->
+                        let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
+                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        world
+                    | :? Entity as entity ->
+                        imGuiEditEntityAppliedTypes entity world
+                    | _ ->
+                        Log.infoOnce "Unexpected simulant type."
+                        world
                 else world)
                 world propertyDescriptorses.Pairs
         let appendProperties =
