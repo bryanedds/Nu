@@ -3077,12 +3077,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if ImGui.IsItemFocused () then focusPropertyOpt None world
                                     world
                                 elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                                    let propertyValue = getPropertyValue propertyDescriptor simulant world
-                                    if FSharpType.IsRecord propertyDescriptor.PropertyType then
-                                        imGuiEditPropertyRecord propertyDescriptor.PropertyName propertyDescriptor propertyValue simulant world
-                                    else
-                                        let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                                        imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor.PropertyName propertyDescriptor simulant world
+                                    let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                                    let mutable replaced = false
+                                    let replaceProperty =
+                                        ReplaceProperty
+                                            { Snapshot = snapshot
+                                              FocusProperty = fun world -> focusProperty (); world
+                                              IndicateReplaced = fun world -> replaced <- true; world
+                                              PropertyDescriptor = propertyDescriptor }
+                                    let world = World.edit replaceProperty simulant world
+                                    if not replaced then
+                                        let propertyValue = getPropertyValue propertyDescriptor simulant world
+                                        if FSharpType.IsRecord propertyDescriptor.PropertyType then
+                                            imGuiEditPropertyRecord propertyDescriptor.PropertyName propertyDescriptor propertyValue simulant world
+                                        else
+                                            let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                                            imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor.PropertyName propertyDescriptor simulant world
+                                    else world
                                 else
                                     let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                                     let mutable replaced = false
