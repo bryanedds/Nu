@@ -118,7 +118,7 @@ module WorldImGui =
             World.imGuiSegments3d absolute (SArray.singleton segment) thickness color world
 
         ///
-        static member imGuiEditPropertyArray<'a> (editItem : (unit -> unit) -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) =
+        static member imGuiEditPropertyArray<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) =
             let mutable focused = false
             let mutable changed = false
             let items =
@@ -133,18 +133,20 @@ module WorldImGui =
                     let mutable i = 0
                     [|for item in items do
                         let itemName = itemsName + ".[" + string i + "]"
-                        ImGui.Text itemName
                         ImGui.PushID itemName
-                        ImGui.SameLine ()
                         let itemOpt =
                             if not (ImGui.SmallButton "x") then
                                 if ImGui.IsAnyItemFocused () then focused <- true
-                                try let (changed', item) = editItem (fun () -> focused <- true) item
+                                ImGui.SameLine ()
+                                try let (changed', item) = editItem (fun () -> focused <- true) itemName item
                                     changed <- changed || changed'
-                                    if ImGui.IsAnyItemFocused () then focused <- true
+                                    if ImGui.IsItemFocused () then focused <- true
                                     Some item
                                 with _ -> Some item
-                            else focused <- true; None
+                            else
+                                focused <- true
+                                changed <- true
+                                None
                         ImGui.PopID ()
                         i <- inc i
                         itemOpt|]
@@ -155,7 +157,7 @@ module WorldImGui =
             (focused, changed, items)
 
         ///
-        static member imGuiTryEditPropertyList<'a> (editItem : (unit -> unit) -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
+        static member imGuiTryEditPropertyList<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
             let mutable focused = false
             let mutable changed = false
             let items =
@@ -170,18 +172,20 @@ module WorldImGui =
                     let mutable i = 0
                     [for item in items do
                         let itemName = itemsName + ".[" + string i + "]"
-                        ImGui.Text itemName
                         ImGui.PushID itemName
-                        ImGui.SameLine ()
                         let itemOpt =
                             if not (ImGui.SmallButton "x") then
                                 if ImGui.IsAnyItemFocused () then focused <- true
-                                try let (changed', item) = editItem (fun () -> focused <- true) item
+                                ImGui.SameLine ()
+                                try let (changed', item) = editItem (fun () -> focused <- true) itemName item
                                     changed <- changed || changed'
-                                    if ImGui.IsAnyItemFocused () then focused <- true
+                                    if ImGui.IsItemFocused () then focused <- true
                                     Some item
                                 with _ -> Some item
-                            else focused <- true; None
+                            else
+                                focused <- true
+                                changed <- true
+                                None
                         ImGui.PopID ()
                         i <- inc i
                         itemOpt]
@@ -372,7 +376,7 @@ module WorldImGui =
                     ImGui.PushID name
                     let (focused', changed, animations) =
                         World.imGuiEditPropertyArray
-                            (fun focusProperty animation ->
+                            (fun focusProperty name animation ->
                                 let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) animation
                                 if focused then focusProperty ()
                                 (changed, animation :?> Animation))
