@@ -869,6 +869,72 @@ type Box2iConverter () =
         | :? Box2 -> source
         | _ -> failconv "Invalid Box2iConverter conversion from source." None
 
+[<AutoOpen>]
+module Box3i =
+
+    type Box3i with
+
+        member this.Max = this.Min + this.Size
+        member this.Extent = this.Size / 2
+        member this.Width = this.Size.X
+        member this.Height = this.Size.Y
+        member this.Depth = this.Size.Z
+        member this.Center = this.Min + this.Extent
+        member this.Top = v3i (this.Min.X + this.Size.X / 2) (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z / 2)
+        member this.Bottom = v3i (this.Min.X + this.Size.X / 2) this.Min.Y (this.Min.Z + this.Size.Z / 2)
+        member this.Right = v3i (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y / 2) (this.Min.Z + this.Size.Z / 2)
+        member this.Left = v3i this.Min.X (this.Min.Y + this.Size.Y / 2) (this.Min.Z + this.Size.Z / 2)
+        member this.TopLeft = v3i this.Min.X (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z / 2)
+        member this.TopRight = v3i (this.Min.X + this.Size.X) (this.Min.Y + this.Size.Y) (this.Min.Z + this.Size.Z / 2)
+        member this.BottomLeft = v3i this.Min.X this.Min.Y (this.Min.Z + this.Size.Z / 2)
+        member this.BottomRight = v3i (this.Min.X + this.Size.X) this.Min.Y (this.Min.Z + this.Size.Z / 2)
+        member this.IsEmpty = this.Equals Box3i.Zero
+        member this.Translate translation = Box3i (this.Min + translation, this.Size)
+        member this.WithMin min = Box3i (min, this.Size)
+        member this.WithCenter center = this.Translate (center - this.Center)
+        member this.WithBottom bottom = this.Translate (bottom - this.Bottom)
+        member this.WithBottomLeft bottomLeft = this.Translate (bottomLeft - this.BottomLeft)
+        member this.WithSize size = Box3i (this.Min, size)
+
+    let box3iZero = Box3i.Zero
+    let inline box3i min size = Box3i (min, size)
+    let inline box3iEq (b : Box3i) (b2 : Box3i) = b.Equals b2
+    let inline box3iNeq (b : Box3i) (b2 : Box3i) = not (b.Equals b2)
+
+/// Converts Box3i types.
+type Box3iConverter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Box3i>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let box3i = source :?> Box3i
+            Symbols
+                ([Symbols ([Number (string box3i.Min.X, ValueNone); Number (string box3i.Min.Y, ValueNone); Number (string box3i.Min.Z, ValueNone)], ValueNone)
+                  Symbols ([Number (string box3i.Size.X, ValueNone); Number (string box3i.Size.Y, ValueNone); Number (string box3i.Size.Z, ValueNone)], ValueNone)], ValueNone) :> obj
+        elif destType = typeof<Box3i> then source
+        else failconv "Invalid Box3iConverter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Box3i>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols ([minSymbol; sizeSymbol], _) ->
+                match (minSymbol, sizeSymbol) with
+                | (Symbols ([Number (px, _); Number (py, _); Number (pz, _)], _), Symbols ([Number (sx, _); Number (sy, _); Number (sz, _)], _)) ->
+                    Box3i (Int32.Parse px, Int32.Parse py, Int32.Parse pz, Int32.Parse sx, Int32.Parse sy, Int32.Parse sz) :> obj
+                | _ -> failconv "Invalid Box3iConverter conversion from source." (Some symbol)
+            | _ -> failconv "Invalid Box3iConverter conversion from source." (Some symbol)
+        | :? Box3 -> source
+        | _ -> failconv "Invalid Box3iConverter conversion from source." None
+
 /// Converts Matrix4x4 types.
 type Matrix4x4Converter () =
     inherit TypeConverter ()
