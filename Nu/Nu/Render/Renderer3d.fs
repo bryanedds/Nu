@@ -2385,7 +2385,22 @@ type [<ReferenceEquality>] GlRenderer3d =
                     OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
                     renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
-        // collect light maps from cached light maps
+        // ensure light maps are synchronized with any light probe changes
+        for (lightMapId, lightMap) in renderer.LightMaps.Pairs do
+            match renderTasks.LightProbes.TryGetValue lightMapId with
+            | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+                if  lightMap.Enabled <> lightProbeEnabled ||
+                    lightMap.Origin <> lightProbeOrigin ||
+                    lightMap.Bounds <> lightProbeBounds then
+                    let lightMap =
+                        { lightMap with
+                            Enabled = lightProbeEnabled
+                            Origin = lightProbeOrigin
+                            Bounds = lightProbeBounds }
+                    renderer.LightMaps.[lightMapId] <- lightMap
+            | _ -> ()
+
+        // collect light maps from cached light maps and ensure they're up to date with 
         for lightMapKvp in renderer.LightMaps do
             let lightMap =
                 { SortableLightMapEnabled = lightMapKvp.Value.Enabled
@@ -2394,6 +2409,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                   SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
                   SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
                   SortableLightMapDistanceSquared = Single.MaxValue }
+            let lightMap =
+                match renderTasks.LightProbes.TryGetValue lightMapKvp.Key with
+                | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+                    if  lightMap.SortableLightMapEnabled <> lightProbeEnabled ||
+                        lightMap.SortableLightMapOrigin <> lightProbeOrigin ||
+                        lightMap.SortableLightMapBounds <> lightProbeBounds then
+                        { lightMap with
+                            SortableLightMapEnabled = lightProbeEnabled
+                            SortableLightMapOrigin = lightProbeOrigin
+                            SortableLightMapBounds = lightProbeBounds }
+                    else lightMap
+                | _ -> lightMap
             renderTasks.LightMaps.Add lightMap
 
         // filter light map according to enabledness and intersection with the geometry frustum
