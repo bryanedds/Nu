@@ -197,7 +197,7 @@ module WorldImGui =
             (focused, changed, items)
 
         /// Edit a record value via ImGui.
-        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup headered name ty (value : obj) =
+        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup headered name ty (value : obj) =
             if headered then
                 ImGui.Text name
                 ImGui.Indent ()
@@ -211,8 +211,8 @@ module WorldImGui =
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
                     let (focused', changed', field) =
                         if FSharpType.IsRecord fieldInfo.PropertyType
-                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true fieldInfo.Name fieldInfo.PropertyType field
-                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup fieldInfo.Name fieldInfo.PropertyType field
+                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldInfo.Name fieldInfo.PropertyType field
+                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldInfo.Name fieldInfo.PropertyType field
                     if focused' then focused <- true
                     if changed' then changed <- true
                     field)
@@ -227,6 +227,7 @@ module WorldImGui =
             (snapDrag : single)
             (valueStrPreviousRef : string ref)
             (dragDropPayloadOpt : string option)
+            (selectedScreen : Screen)
             (selectedGroup : Group)
             (name : string)
             (ty : Type)
@@ -306,9 +307,13 @@ module WorldImGui =
                     let mutable v = v4 c.R c.G c.B c.A
                     (ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
                 | :? Transition as transition ->
-                    let (focused', changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Transition>) transition
+                    let (focused', changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Transition>) transition
                     if focused' then focused <- true
                     (changed, transition)
+                | :? Slide as slide ->
+                    let (focused', changed, slide) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Slide>) slide
+                    if focused' then focused <- true
+                    (changed, slide)
                 | :? RenderStyle as style ->
                     let mutable index = match style with Deferred -> 0 | Forward _ -> 1
                     let (changed, style) =
@@ -368,7 +373,7 @@ module WorldImGui =
                         (true, substance :> obj)
                     else (false, substance :> obj)
                 | :? Animation as animation ->
-                    let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Animation>) animation
+                    let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Animation>) animation
                     if focused' then focused <- true
                     (changed, animation)
                 | :? (Animation array) as animations ->
@@ -378,7 +383,7 @@ module WorldImGui =
                     let (focused', changed, animations) =
                         World.imGuiEditPropertyArray
                             (fun focusProperty name animation ->
-                                let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) animation
+                                let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name (typeof<Animation>) animation
                                 if focused then focusProperty ()
                                 (changed, animation :?> Animation))
                             { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
@@ -389,15 +394,15 @@ module WorldImGui =
                     ImGui.PopID ()
                     (changed, animations)
                 | :? TerrainMaterialProperties as tmps ->
-                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<TerrainMaterialProperties>) tmps
+                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<TerrainMaterialProperties>) tmps
                     if focused' then focused <- true
                     (changed, tmps)
                 | :? MaterialProperties as mps ->
-                    let (focused', changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<MaterialProperties>) mps
+                    let (focused', changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<MaterialProperties>) mps
                     if focused' then focused <- true
                     (changed, mps)
                 | :? Material as material ->
-                    let (focused', changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Material>) material
+                    let (focused', changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Material>) material
                     if focused' then focused <- true
                     (changed, material)
                 | :? Lighting3dConfig as lighting3dConfig ->
@@ -581,7 +586,7 @@ module WorldImGui =
                             ty.GenericTypeArguments.[0] <> typeof<Material> &&
                             (ty.GenericTypeArguments.[0].IsValueType ||
                              ty.GenericTypeArguments.[0] = typeof<string> ||
-                             ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                             ty.GenericTypeArguments.[0] = typeof<Slide> ||
                              ty.GenericTypeArguments.[0] = typeof<Image AssetTag> ||
                              ty.GenericTypeArguments.[0] = typeof<Font AssetTag> ||
                              ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> ||
@@ -590,6 +595,7 @@ module WorldImGui =
                              ty.GenericTypeArguments.[0] = typeof<Song AssetTag> ||
                              ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> ||
                              ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
+                             ty.GenericTypeArguments.[0] = typeof<Entity> ||
                              (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                              ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                             let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
@@ -602,8 +608,8 @@ module WorldImGui =
                                             elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
                                                 (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
                                             else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
-                                        elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                            (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<string> then (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<Slide> then (true, Activator.CreateInstance (ty, [|{ IdlingTime = GameTime.zero; Destination = selectedScreen } :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<Image AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Image :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<Font AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Font :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.TileMap :> obj|]))
@@ -628,7 +634,7 @@ module WorldImGui =
                             let mutable focused = ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
-                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
                                 let value = Activator.CreateInstance (ty, [|value'|])
                                 if focused' then focused <- true
                                 (changed || changed', value)
@@ -644,7 +650,7 @@ module WorldImGui =
                                 ty.GenericTypeArguments.[0] <> typeof<Material> &&
                                 (ty.GenericTypeArguments.[0].IsValueType ||
                                  ty.GenericTypeArguments.[0] = typeof<string> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                                 ty.GenericTypeArguments.[0] = typeof<Slide> ||
                                  ty.GenericTypeArguments.[0] = typeof<Image AssetTag> ||
                                  ty.GenericTypeArguments.[0] = typeof<Font AssetTag> ||
                                  ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> ||
@@ -653,6 +659,7 @@ module WorldImGui =
                                  ty.GenericTypeArguments.[0] = typeof<Song AssetTag> ||
                                  ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> ||
                                  ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
+                                 ty.GenericTypeArguments.[0] = typeof<Entity> ||
                                  (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                                  ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                             let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
@@ -665,8 +672,8 @@ module WorldImGui =
                                             elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
                                                 (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
                                             else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
-                                        elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                            (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<string> then (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<Slide> then (true, Activator.CreateInstance (ty, [|{ IdlingTime = GameTime.zero; Destination = selectedScreen } :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<Image AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Image :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<Font AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Font :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.TileMap :> obj|]))
@@ -691,7 +698,7 @@ module WorldImGui =
                             let mutable focused = ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
-                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
                                 let value = Activator.CreateInstance (ty, [|value'|])
                                 if focused' then focused <- true
                                 (changed || changed', value)

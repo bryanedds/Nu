@@ -1845,7 +1845,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         (world : World) =
         let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
         let propertyValue = getProperty propertyDescriptor simulant world
-        let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedGroup headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
+        let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedScreen SelectedGroup headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
         PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
         if focused then focusProperty ()
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
@@ -1859,7 +1859,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         (world : World) =
         let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
         let propertyValue = getProperty propertyDescriptor simulant world
-        let (focused, changed, propertyValue) = World.imGuiEditProperty searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedGroup propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
+        let (focused, changed, propertyValue) = World.imGuiEditProperty searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedScreen SelectedGroup propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
         PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
         if focused then focusProperty ()
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
