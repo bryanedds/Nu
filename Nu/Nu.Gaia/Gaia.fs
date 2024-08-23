@@ -2503,7 +2503,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // fin
         world
 
-    let rec private imGuiEditPropertyArray<'a> (editItem : 'a -> 'a) (defaultItemValue : 'a) (propertyDescriptor : PropertyDescriptor) (items : 'a array) simulant world =
+    let private imGuiEditPropertyArray<'a> (editItem : 'a -> 'a) (defaultItemValue : 'a) (propertyDescriptor : PropertyDescriptor) (items : 'a array) simulant world =
         ImGui.Text propertyDescriptor.PropertyName
         ImGui.SameLine ()
         ImGui.PushID propertyDescriptor.PropertyName
@@ -2536,7 +2536,40 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ImGui.PopID ()
         world
 
-    and private imGuiEditPropertyRecord propertyLabelPrefix (propertyDescriptor : PropertyDescriptor) propertyValue simulant world =
+    let private imGuiEditPropertyList<'a> (editItem : 'a -> 'a) (defaultItemValue : 'a) (propertyDescriptor : PropertyDescriptor) (items : 'a list) simulant world =
+        ImGui.Text propertyDescriptor.PropertyName
+        ImGui.SameLine ()
+        ImGui.PushID propertyDescriptor.PropertyName
+        let focusProperty () = if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+        let (items, world) =
+            if ImGui.SmallButton "+" then
+                let propertyValue = items @ [defaultItemValue]
+                let world = setPropertyValue propertyValue propertyDescriptor simulant world
+                focusProperty ()
+                (propertyValue, world)
+            else (items, world)
+        ImGui.Indent ()
+        let itemOpts =
+            let mutable i = 0
+            [for item in items do
+                let itemName = propertyDescriptor.PropertyName + ".[" + string i + "]"
+                ImGui.Text itemName
+                ImGui.PushID itemName
+                ImGui.SameLine ()
+                let itemOpt =
+                    if not (ImGui.SmallButton "x")
+                    then try Some (editItem item) with _ -> Some item
+                    else None
+                ImGui.PopID ()
+                i <- inc i
+                itemOpt]
+        let items = List.definitize itemOpts
+        let world = setPropertyValue items propertyDescriptor simulant world
+        ImGui.Unindent ()
+        ImGui.PopID ()
+        world
+
+    let rec private imGuiEditPropertyRecord propertyLabelPrefix (propertyDescriptor : PropertyDescriptor) propertyValue simulant world =
         ImGui.Text propertyDescriptor.PropertyName
         ImGui.PushID propertyDescriptor.PropertyName
         ImGui.Indent ()
