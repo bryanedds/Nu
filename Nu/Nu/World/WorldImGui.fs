@@ -372,23 +372,6 @@ module WorldImGui =
                     let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Animation>) animation
                     if focused' then focused <- true
                     (changed, animation)
-                | :? (Animation array) as animations ->
-                    ImGui.Text name
-                    ImGui.SameLine ()
-                    ImGui.PushID name
-                    let (focused', changed, animations) =
-                        World.imGuiEditPropertyArray
-                            (fun focusProperty name animation ->
-                                let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name (typeof<Animation>) animation
-                                if focused then focusProperty ()
-                                (changed, animation :?> Animation))
-                            { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
-                            name
-                            animations
-                    if focused' then focused <- true
-                    ImGui.Unindent ()
-                    ImGui.PopID ()
-                    (changed, animations)
                 | :? TerrainMaterialProperties as tmps ->
                     let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<TerrainMaterialProperties>) tmps
                     if focused' then focused <- true
@@ -558,6 +541,23 @@ module WorldImGui =
                               PartitionType = scvalue partitionTypeStr }
                         (true, nav3dConfig)
                     else (false, nav3dConfig)
+                | :? (Animation array) as animations ->
+                    ImGui.Text name
+                    ImGui.SameLine ()
+                    ImGui.PushID name
+                    let (focused', changed, animations) =
+                        World.imGuiEditPropertyArray
+                            (fun focusProperty name animation ->
+                                let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name (typeof<Animation>) animation
+                                if focused then focusProperty ()
+                                (changed, animation :?> Animation))
+                            { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
+                            name
+                            animations
+                    if focused' then focused <- true
+                    ImGui.Unindent ()
+                    ImGui.PopID ()
+                    (changed, animations)
                 | _ ->
                     let mutable combo = false
                     let (changed, value) =
