@@ -14,9 +14,6 @@ open Prime
 [<AutoOpen>]
 module WorldImGui =
 
-    let private ToSymbolMemo = new ForgetfulDictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
-    let private OfSymbolMemo = new ForgetfulDictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
-
     type World with
 
         static member internal getImGui world =
@@ -231,8 +228,8 @@ module WorldImGui =
             (name : string)
             (ty : Type)
             (value : obj) =
+            let converter = SymbolicConverter (false, None, ty)
             let mutable focused = false
-            let converter = SymbolicConverter (false, None, ty, ToSymbolMemo, OfSymbolMemo)
             let (changed, value) =
                 match value with
                 | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj)
