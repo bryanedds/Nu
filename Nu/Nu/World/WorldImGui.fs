@@ -357,7 +357,7 @@ module WorldImGui =
                                 ImGui.Unindent ()
                                 (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
                         | _ -> failwithumf ()
-                    (changed, Some (light :> obj))
+                    (changed, light :> obj)
                 | :? Substance as substance ->
                     let mutable scalar = match substance with Mass m -> m | Density d -> d
                     let changed = ImGui.DragFloat ("##scalar via " + name, &scalar, snapDrag)
