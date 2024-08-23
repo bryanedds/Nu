@@ -43,6 +43,7 @@ module Engine =
     let [<Literal>] RequiredDispatcherPropertyName = "RequiredDispatcher"
     let [<Literal>] FacetsPropertyName = "Facets"
     let [<Literal>] OverlayNameOptPropertyName = "OverlayNameOpt"
+    let [<Literal>] DispatcherNamePropertyName = "DispatcherName"
     let [<Literal>] FacetNamesPropertyName = "FacetNames"
     let [<Literal>] MountOptPropertyName = "MountOpt"
     let [<Literal>] PropagationSourceOptPropertyName = "PropagationSourceOpt"

@@ -2013,15 +2013,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     match simulant with
                     | :? Game as game ->
                         let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
-                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        ImGui.InputText (Constants.Engine.DispatcherNamePropertyName, &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                         world
                     | :? Screen as screen ->
                         let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
-                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        ImGui.InputText (Constants.Engine.DispatcherNamePropertyName, &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                         world
                     | :? Group as group ->
                         let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
-                        ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        ImGui.InputText (Constants.Engine.DispatcherNamePropertyName, &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
                         world
                     | :? Entity as entity ->
                         imGuiEditEntityAppliedTypes entity world
