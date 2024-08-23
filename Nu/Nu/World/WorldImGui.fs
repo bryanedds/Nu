@@ -5,12 +5,16 @@ namespace Nu
 open System
 open System.Numerics
 open System.Reflection
+open FSharp.NativeInterop
 open FSharp.Reflection
 open ImGuiNET
 open Prime
 
 [<AutoOpen>]
 module WorldImGui =
+
+    let private ToSymbolMemo = new ForgetfulDictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
+    let private OfSymbolMemo = new ForgetfulDictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
 
     type World with
 
@@ -188,7 +192,7 @@ module WorldImGui =
             (focused, changed, items)
 
         ///
-        static member imGuiEditPropertyRecord snapDrag name ty (value : obj) =
+        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty (value : obj) =
             ImGui.Text name
             ImGui.PushID name
             ImGui.Indent ()
@@ -199,7 +203,10 @@ module WorldImGui =
                 FSharpType.GetRecordFields ty |>
                 Array.zip fields |>
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
-                    let (focused', changed', field) = World.imGuiEditProperty snapDrag fieldInfo.Name fieldInfo.PropertyType field
+                    let (focused', changed', field) =
+                        if FSharpType.IsRecord fieldInfo.PropertyType
+                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup fieldInfo.Name fieldInfo.PropertyType field
+                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup fieldInfo.Name fieldInfo.PropertyType field
                     if focused' then focused <- true
                     if changed' then changed <- true
                     field)
@@ -209,8 +216,17 @@ module WorldImGui =
             (focused, changed, value)
 
         /// Attempt to edit a value via ImGui.
-        static member imGuiEditProperty (snapDrag : single) (name : string) (ty : Type) (value : obj) =
+        static member imGuiEditProperty
+            (searchAssetViewer : unit -> unit)
+            (snapDrag : single)
+            (valueStrPreviousRef : string ref)
+            (dragDropPayloadOpt : string option)
+            (selectedGroup : Group)
+            (name : string)
+            (ty : Type)
+            (value : obj) =
             let mutable focused = false
+            let converter = SymbolicConverter (false, None, ty, ToSymbolMemo, OfSymbolMemo)
             let (changed, value) =
                 match value with
                 | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj)
@@ -284,7 +300,7 @@ module WorldImGui =
                     let mutable v = v4 c.R c.G c.B c.A
                     (ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
                 | :? Transition as transition ->
-                    let (focused', changed, transition) = World.imGuiEditPropertyRecord snapDrag name (typeof<Transition>) transition
+                    let (focused', changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Transition>) transition
                     if focused' then focused <- true
                     (changed, transition)
                 | :? RenderStyle as style ->
@@ -346,13 +362,107 @@ module WorldImGui =
                         (true, substance :> obj)
                     else (false, substance :> obj)
                 | :? Animation as animation ->
-                    let (focused', changed, animation) = World.imGuiEditPropertyRecord snapDrag name (typeof<Animation>) animation
+                    let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) animation
                     if focused' then focused <- true
                     (changed, animation)
+                | :? (Animation array) as animations ->
+                    let animationDefaultValue = { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
+                    ImGui.Text name
+                    ImGui.SameLine ()
+                    ImGui.PushID name
+                    let (focused', changed, animations) =
+                        World.imGuiEditPropertyArray
+                            (fun focusProperty animation ->
+                                let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) animation
+                                if focused then focusProperty ()
+                                (changed, animation :?> Animation))
+                            animationDefaultValue
+                            name
+                            animations
+                    if focused' then focused <- true
+                    ImGui.Unindent ()
+                    ImGui.PopID ()
+                    (changed, animations)
                 | :? TerrainMaterialProperties as tmps ->
-                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord snapDrag name (typeof<Animation>) tmps
+                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) tmps
                     if focused' then focused <- true
                     (changed, tmps)
+                | :? Lighting3dConfig as lighting3dConfig ->
+                    let mutable lighting3dChanged = false
+                    let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
+                    let mutable shadowBiasAcneStr = lighting3dConfig.ShadowBiasAcne.ToString "0.00000000"
+                    let mutable shadowBiasBleed = lighting3dConfig.ShadowBiasBleed
+                    let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
+                    let mutable ssaoBias = lighting3dConfig.SsaoBias
+                    let mutable ssaoRadius = lighting3dConfig.SsaoRadius
+                    let mutable ssaoDistanceMax = lighting3dConfig.SsaoDistanceMax
+                    let mutable ssrEnabled = lighting3dConfig.SsrEnabled
+                    let mutable ssrDetail = lighting3dConfig.SsrDetail
+                    let mutable ssrDepthMax = lighting3dConfig.SsrDepthMax
+                    let mutable ssrDistanceMax = lighting3dConfig.SsrDistanceMax
+                    let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
+                    let mutable ssrRoughnessMax = lighting3dConfig.SsrRoughnessMax
+                    let mutable ssrSurfaceSlopeMax = lighting3dConfig.SsrSurfaceSlopeMax
+                    let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
+                    let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
+                    let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
+                    let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
+                    let mutable ssrSurfaceSlopeCutoff = lighting3dConfig.SsrSurfaceSlopeCutoff
+                    let mutable ssrEdgeCutoffHorizontal = lighting3dConfig.SsrEdgeCutoffHorizontal
+                    let mutable ssrEdgeCutoffVertical = lighting3dConfig.SsrEdgeCutoffVertical
+                    let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
+                    let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
+                    lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.InputText ("Shadow Bias Acne", &shadowBiasAcneStr, 4096u) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Shadow Bias Bleed", &shadowBiasBleed, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    if ssrEnabled then
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Max", &ssrDepthMax, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Max", &ssrDistanceMax, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Max", &ssrRoughnessMax, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Max", &ssrSurfaceSlopeMax, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Cutoff", &ssrSurfaceSlopeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Horizontal", &ssrEdgeCutoffHorizontal, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Vertical", &ssrEdgeCutoffVertical, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                        lighting3dChanged <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 32.0f) || lighting3dChanged
+                    if lighting3dChanged then
+                        let lighting3dConfig =
+                            { LightCutoffMargin = lightCutoffMargin
+                              ShadowBiasAcne = match Single.TryParse shadowBiasAcneStr with (true, s) -> s | (false, _) -> lighting3dConfig.ShadowBiasAcne
+                              ShadowBiasBleed = shadowBiasBleed
+                              SsaoIntensity = ssaoIntensity
+                              SsaoBias = ssaoBias
+                              SsaoRadius = ssaoRadius
+                              SsaoDistanceMax = ssaoDistanceMax
+                              SsrEnabled = ssrEnabled
+                              SsrDetail = ssrDetail
+                              SsrDepthMax = ssrDepthMax
+                              SsrDistanceMax = ssrDistanceMax
+                              SsrRefinementsMax = ssrRefinementsMax
+                              SsrRoughnessMax = ssrRoughnessMax
+                              SsrSurfaceSlopeMax = ssrSurfaceSlopeMax
+                              SsrRayThickness = ssrRayThickness
+                              SsrRoughnessCutoff = ssrRoughnessCutoff
+                              SsrDepthCutoff = ssrDepthCutoff
+                              SsrDistanceCutoff = ssrDistanceCutoff
+                              SsrSurfaceSlopeCutoff = ssrSurfaceSlopeCutoff
+                              SsrEdgeCutoffHorizontal = ssrEdgeCutoffHorizontal
+                              SsrEdgeCutoffVertical = ssrEdgeCutoffVertical
+                              SsrLightColor = Color ssrLightColor
+                              SsrLightBrightness = ssrLightBrightness }
+                        (true, lighting3dConfig)
+                    else (false, lighting3dConfig)
                 | _ ->
                     let mutable combo = false
                     let (changed, value) =
@@ -368,155 +478,144 @@ module WorldImGui =
                                 else (false, value)
                             else (false, value)
                         else (false, value)
-                    let (changed, value) =
-                        if not combo then
-                            if  ty.IsGenericType &&
-                                ty.GetGenericTypeDefinition () = typedefof<_ option> &&
+                    if not combo then
+                        if  ty.IsGenericType &&
+                            ty.GetGenericTypeDefinition () = typedefof<_ option> &&
+                            (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                            (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
+                            ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                            ty.GenericTypeArguments.[0] <> typeof<Material> &&
+                            (ty.GenericTypeArguments.[0].IsValueType ||
+                                ty.GenericTypeArguments.[0] = typeof<string> ||
+                                ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                                (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                                ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                            let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                            let (changed, value) =
+                                if ImGui.Checkbox ("##" + name, &isSome) then
+                                    if isSome then
+                                        if ty.GenericTypeArguments.[0].IsValueType then
+                                            if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                                (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
+                                            elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                                (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
+                                            else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<string> then
+                                            (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                        elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                            let relationType = ty.GenericTypeArguments.[0]
+                                            let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                            let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
+                                            (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                            (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|]))
+                                        elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
+                                            (true, Activator.CreateInstance (ty, [|null|]))
+                                        else (false, value)
+                                    else (true, None)
+                                else (false, value)
+                            let mutable focused = ImGui.IsItemFocused ()
+                            if isSome then
+                                ImGui.SameLine ()
+                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                let value = Activator.CreateInstance (ty, [|value'|])
+                                if focused' then focused <- true
+                                (changed || changed', value)
+                            else
+                                ImGui.SameLine ()
+                                ImGui.Text name
+                                (false, value)
+                        elif ty.IsGenericType &&
+                                ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
                                 ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
                                 ty.GenericTypeArguments.[0] <> typeof<Material> &&
                                 (ty.GenericTypeArguments.[0].IsValueType ||
-                                 ty.GenericTypeArguments.[0] = typeof<string> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                                 (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                                 ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                                let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
-                                let (changed, value) =
-                                    if ImGui.Checkbox ("##" + name, &isSome) then
-                                        if isSome then
-                                            if ty.GenericTypeArguments.[0].IsValueType then
-                                                if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                                    (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
-                                                elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                                    (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
-                                                else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
-                                            elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                                (true, Activator.CreateInstance (ty, [|"" :> obj|]))
-                                            elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                                let relationType = ty.GenericTypeArguments.[0]
-                                                let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                                (true, Activator.CreateInstance (ty, [|relationValue|]))
-                                            elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                                (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" SelectedGroup.Names) :> obj|]))
-                                            elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                                (true, Activator.CreateInstance (ty, [|null|]))
-                                            else (false, value)
-                                        else (true, None)
-                                    else (false, value)
-                                let mutable focused = ImGui.IsItemFocused ()
-                                if isSome then
-                                    ImGui.SameLine ()
-                                    let (focused', changed', value') = World.imGuiEditProperty snapDrag name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
-                                    let value = Activator.CreateInstance (ty, [|value'|])
-                                    if focused' then focused <- true
-                                    (changed || changed', value)
-                                else
-                                    ImGui.SameLine ()
-                                    ImGui.Text name
-                                    (false, value)
-                            elif ty.IsGenericType &&
-                                 ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                                 ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                                 ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                                 (ty.GenericTypeArguments.[0].IsValueType ||
-                                  ty.GenericTypeArguments.[0] = typeof<string> ||
-                                  ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                                  (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                                  ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                                let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
-                                let world =
-                                    if ImGui.Checkbox ("##" + name, &isSome) then
-                                        if isSome then
-                                            if ty.GenericTypeArguments.[0].IsValueType then
-                                                if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                                    (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
-                                                elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                                    (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
-                                                else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
-                                            elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                                (true, Activator.CreateInstance (ty, [|"" :> obj|]))
-                                            elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                                let relationType = ty.GenericTypeArguments.[0]
-                                                let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                                (true, Activator.CreateInstance (ty, [|relationValue|]))
-                                            elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                                (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" SelectedGroup.Names) :> obj|]))
-                                            elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                                (true, Activator.CreateInstance (ty, [|null|]))
-                                            else failwithumf ()
-                                        else (true, ValueNone)
-                                    else (false, value)
-                                let mutable focused = ImGui.IsItemFocused ()
-                                if isSome then
-                                    ImGui.SameLine ()
-                                    let (focused', changed', value') = World.imGuiEditProperty snapDrag name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
-                                    let value = Activator.CreateInstance (ty, [|value'|])
-                                    if focused' then focused <- true
-                                    (changed || changed', value)
-                                else
-                                    ImGui.SameLine ()
-                                    ImGui.Text name
-                                    (false, value)
-                            elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
-                                let mutable propertyValueStr = propertyValueStr
-                                let world =
-                                    if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
-                                        let pasts = Pasts
-                                        try let propertyValue = converter.ConvertFromString propertyValueStr
-                                            setProperty propertyValue propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    else world
-                                focusProperty ()
-                                let world =
-                                    if ImGui.BeginDragDropTarget () then
-                                        let world =
-                                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                                match DragDropPayloadOpt with
-                                                | Some payload ->
-                                                    let pasts = Pasts
-                                                    try let propertyValueEscaped = payload
-                                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                        setProperty propertyValue propertyDescriptor simulant world
-                                                    with _ ->
-                                                        Pasts <- pasts
-                                                        world
-                                                | None -> world
-                                            else world
-                                        ImGui.EndDragDropTarget ()
-                                        world
-                                    else world
+                                ty.GenericTypeArguments.[0] = typeof<string> ||
+                                ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                                (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                                ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                            let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                            let (changed, value) =
+                                if ImGui.Checkbox ("##" + name, &isSome) then
+                                    if isSome then
+                                        if ty.GenericTypeArguments.[0].IsValueType then
+                                            if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                                (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
+                                            elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                                (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
+                                            else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<string> then
+                                            (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                        elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                            let relationType = ty.GenericTypeArguments.[0]
+                                            let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                            let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                            let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                            (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                            (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" selectedGroup.Names) :> obj|]))
+                                        elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
+                                            (true, Activator.CreateInstance (ty, [|null|]))
+                                        else failwithumf ()
+                                    else (true, ValueNone)
+                                else (false, value)
+                            let mutable focused = ImGui.IsItemFocused ()
+                            if isSome then
                                 ImGui.SameLine ()
-                                ImGui.PushID ("##pickAsset" + name)
-                                if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                                focusProperty ()
-                                ImGui.PopID ()
+                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                let value = Activator.CreateInstance (ty, [|value'|])
+                                if focused' then focused <- true
+                                (changed || changed', value)
+                            else
                                 ImGui.SameLine ()
                                 ImGui.Text name
-                                world
-                            else
-                                let mutable propertyValueStr = propertyValueStr
-                                if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> PropertyValueStrPrevious then
-                                    let pasts = Pasts
-                                    let world =
-                                        try let propertyValue = converter.ConvertFromString propertyValueStr
-                                            setProperty propertyValue propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    PropertyValueStrPrevious <- propertyValueStr
-                                    world
-                                else world
-                        else world
-                    (changed, value)
-            if ImGui.IsAnyItemFocused () then focused <- true
+                                (false, value)
+                        elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                            let mutable valueStr = converter.ConvertToString value
+                            let (changed, value) =
+                                if ImGui.InputText ("##text" + name, &valueStr, 4096u) then
+                                    (true, converter.ConvertFromString valueStr)
+                                else (false, value)
+                            if ImGui.IsItemFocused () then focused <- true
+                            let (changed, value) =
+                                if ImGui.BeginDragDropTarget () then
+                                    let (changed, value) =
+                                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                            match dragDropPayloadOpt with
+                                            | Some payload ->
+                                                try let valueStrEscaped = payload
+                                                    let valueStrUnescaped = String.unescape valueStrEscaped
+                                                    let value = converter.ConvertFromString valueStrUnescaped
+                                                    (true, value)
+                                                with _ ->
+                                                    (changed, value)
+                                            | None -> (changed, value)
+                                        else (changed, value)
+                                    ImGui.EndDragDropTarget ()
+                                    (changed, value)
+                                else (changed, value)
+                            ImGui.SameLine ()
+                            ImGui.PushID ("##pickAsset" + name)
+                            if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
+                            if ImGui.IsItemFocused () then focused <- true
+                            ImGui.PopID ()
+                            ImGui.SameLine ()
+                            ImGui.Text name
+                            (changed, value)
+                        else
+                            let mutable valueStr = converter.ConvertToString value
+                            if ImGui.InputText (name, &valueStr, 131072u) && valueStr <> valueStrPreviousRef.Value then
+                                let (changed, value) =
+                                    try let value = converter.ConvertFromString valueStr
+                                        (true, value)
+                                    with _ ->
+                                        (false, value)
+                                valueStrPreviousRef.Value <- valueStr
+                                (changed, value)
+                            else (false, value)
+                    else (changed, value)
+            if ImGui.IsItemFocused () then focused <- true
             (focused, changed, value)
