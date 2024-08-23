@@ -34,7 +34,7 @@ type Ball =
     static member initial =
         { Position = v3 0.0f 48.0f 0.0f
           Size = v3 8.0f 8.0f 0.0f
-          Speed = 4.0f
+          Speed = 3.0f
           Direction = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized }
 
 // the bricks to break out of.
@@ -79,7 +79,7 @@ type [<SymbolicExpansion>] Gameplay =
         { Gameplay.empty with
             GameplayState = Playing
             Bricks = bricks
-            Lives = 3 }
+            Lives = 5 }
 
     // this updates the gameplay model every frame that gameplay is active.
     static member update gameplay world =
