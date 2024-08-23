@@ -69,6 +69,10 @@ module AssetTag =
     let make<'a> packageName assetName : 'a AssetTag =
         { PackageName = packageName; AssetName = assetName }
 
+    /// Make an asset tag from a string.
+    let makeFromString<'a> str : 'a AssetTag =
+        scvalue str
+
     /// Convert an asset tag to a string pair.
     let toPair<'a> (assetTag : AssetTag) =
         (assetTag.PackageName, assetTag.AssetName)
