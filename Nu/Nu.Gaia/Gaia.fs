@@ -2740,7 +2740,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ImGui.InputText (nameof animation.BoneFilterOpt, &boneFilterOpt, 131072u) |> ignore<bool>
                         { animation with BoneFilterOpt = scvalue boneFilterOpt })
                     animationDefaultValue propertyDescriptor animations simulant world
-                
             | :? TerrainMaterialProperties as tmps ->
                 imGuiEditPropertyRecord propertyLabelPrefix propertyDescriptor tmps simulant world
             | :? Lighting3dConfig as lighting3dConfig ->
