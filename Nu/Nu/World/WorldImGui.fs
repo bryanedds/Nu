@@ -389,7 +389,7 @@ module WorldImGui =
                     ImGui.PopID ()
                     (changed, animations)
                 | :? TerrainMaterialProperties as tmps ->
-                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Animation>) tmps
+                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<TerrainMaterialProperties>) tmps
                     if focused' then focused <- true
                     (changed, tmps)
                 | :? MaterialProperties as mps ->

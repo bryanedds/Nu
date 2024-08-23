@@ -254,7 +254,7 @@ type GameplayDispatcher () =
 
              // message
              Content.text "Message"
-                [Entity.Text := if gameplay.Lives = 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
+                [Entity.Text := if gameplay.Lives <= 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
              
              // quit
              Content.button Simulants.GameplayQuit.Name
