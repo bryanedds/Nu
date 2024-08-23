@@ -204,13 +204,12 @@ module WorldImGui =
             ImGui.PushID name
             let mutable focused = false
             let mutable changed = false
-            let fields = FSharpValue.GetRecordFields value
             let fields =
                 FSharpType.GetRecordFields ty |>
-                Array.zip fields |>
+                Array.zip (FSharpValue.GetRecordFields value) |>
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
                     let (focused', changed', field) =
-                        if FSharpType.IsRecord fieldInfo.PropertyType
+                        if FSharpType.IsRecord fieldInfo.PropertyType && fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name
                         then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldInfo.Name fieldInfo.PropertyType field
                         else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldInfo.Name fieldInfo.PropertyType field
                     if focused' then focused <- true
@@ -643,25 +642,25 @@ module WorldImGui =
                                 ImGui.Text name
                                 (changed, value)
                         elif ty.IsGenericType &&
-                                ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                                (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                                (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                                ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                                ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                                (ty.GenericTypeArguments.[0].IsValueType ||
-                                 ty.GenericTypeArguments.[0] = typeof<string> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Slide> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Image AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Font AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<CubeMap AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Sound AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Song AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
-                                 ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                                 (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                                 ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                             ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
+                             (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                             (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
+                             ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                             ty.GenericTypeArguments.[0] <> typeof<Material> &&
+                             (ty.GenericTypeArguments.[0].IsValueType ||
+                              ty.GenericTypeArguments.[0] = typeof<string> ||
+                              ty.GenericTypeArguments.[0] = typeof<Slide> ||
+                              ty.GenericTypeArguments.[0] = typeof<Image AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<Font AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<CubeMap AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<Sound AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<Song AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                              (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                              ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                             let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
                             let (changed, value) =
                                 if ImGui.Checkbox ("##" + name, &isSome) then
