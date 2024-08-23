@@ -699,7 +699,7 @@ module WorldImGui =
             // fin
             world*)
 
-        ///
+        /// Edit an array value via ImGui.
         static member imGuiEditPropertyArray<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) =
             let mutable focused = false
             let mutable changed = false
@@ -738,7 +738,7 @@ module WorldImGui =
             ImGui.PopID ()
             (focused, changed, items)
 
-        ///
+        /// Edit a list value via ImGui.
         static member imGuiEditPropertyList<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
             let mutable focused = false
             let mutable changed = false
@@ -777,7 +777,7 @@ module WorldImGui =
             ImGui.PopID ()
             (focused, changed, items)
 
-        ///
+        /// Edit a record value via ImGui.
         static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty (value : obj) =
             ImGui.Text name
             ImGui.PushID name
@@ -801,7 +801,7 @@ module WorldImGui =
             ImGui.PopID ()
             (focused, changed, value)
 
-        /// Attempt to edit a value via ImGui.
+        /// Edit a value via ImGui.
         static member imGuiEditProperty
             (searchAssetViewer : unit -> unit)
             (snapDrag : single)
