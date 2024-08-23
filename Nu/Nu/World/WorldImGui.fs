@@ -973,10 +973,14 @@ module WorldImGui =
                     let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Animation>) tmps
                     if focused' then focused <- true
                     (changed, tmps)
-                (*| :? MaterialProperties as mp ->
-                      World.imGuiEditMaterialPropertiesProperty mp propertyDescriptor simulant world
-                  | :? Material as m ->
-                      World.imGuiEditMaterialProperty m propertyDescriptor simulant world*)
+                | :? MaterialProperties as mps ->
+                    let (focused', changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<MaterialProperties>) mps
+                    if focused' then focused <- true
+                    (changed, mps)
+                | :? Material as material ->
+                    let (focused', changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Material>) material
+                    if focused' then focused <- true
+                    (changed, material)
                 | :? Lighting3dConfig as lighting3dConfig ->
                     let mutable lighting3dChanged = false
                     let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
@@ -1196,7 +1200,7 @@ module WorldImGui =
                             else
                                 ImGui.SameLine ()
                                 ImGui.Text name
-                                (false, value)
+                                (changed, value)
                         elif ty.IsGenericType &&
                                 ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
@@ -1243,7 +1247,7 @@ module WorldImGui =
                             else
                                 ImGui.SameLine ()
                                 ImGui.Text name
-                                (false, value)
+                                (changed, value)
                         elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
                             let mutable valueStr = converter.ConvertToString value
                             let (changed, value) =
