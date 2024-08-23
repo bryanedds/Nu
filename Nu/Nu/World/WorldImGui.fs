@@ -778,10 +778,11 @@ module WorldImGui =
             (focused, changed, items)
 
         /// Edit a record value via ImGui.
-        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name ty (value : obj) =
-            ImGui.Text name
+        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup headered name ty (value : obj) =
+            if headered then
+                ImGui.Text name
+                ImGui.Indent ()
             ImGui.PushID name
-            ImGui.Indent ()
             let mutable focused = false
             let mutable changed = false
             let fields = FSharpValue.GetRecordFields value
@@ -791,13 +792,13 @@ module WorldImGui =
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
                     let (focused', changed', field) =
                         if FSharpType.IsRecord fieldInfo.PropertyType
-                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup fieldInfo.Name fieldInfo.PropertyType field
+                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true fieldInfo.Name fieldInfo.PropertyType field
                         else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup fieldInfo.Name fieldInfo.PropertyType field
                     if focused' then focused <- true
                     if changed' then changed <- true
                     field)
             let value = FSharpValue.MakeRecord (ty, fields)
-            ImGui.Unindent ()
+            if headered then ImGui.Unindent ()
             ImGui.PopID ()
             (focused, changed, value)
 
@@ -886,7 +887,7 @@ module WorldImGui =
                     let mutable v = v4 c.R c.G c.B c.A
                     (ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
                 | :? Transition as transition ->
-                    let (focused', changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Transition>) transition
+                    let (focused', changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Transition>) transition
                     if focused' then focused <- true
                     (changed, transition)
                 | :? RenderStyle as style ->
@@ -948,7 +949,7 @@ module WorldImGui =
                         (true, substance :> obj)
                     else (false, substance :> obj)
                 | :? Animation as animation ->
-                    let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) animation
+                    let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Animation>) animation
                     if focused' then focused <- true
                     (changed, animation)
                 | :? (Animation array) as animations ->
@@ -969,7 +970,7 @@ module WorldImGui =
                     ImGui.PopID ()
                     (changed, animations)
                 | :? TerrainMaterialProperties as tmps ->
-                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) tmps
+                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup true name (typeof<Animation>) tmps
                     if focused' then focused <- true
                     (changed, tmps)
                 (*| :? MaterialProperties as mp ->

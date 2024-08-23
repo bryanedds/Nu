@@ -1839,12 +1839,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
         (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
+        (headered : bool)
         (propertyDescriptor : PropertyDescriptor)
         (simulant : Simulant)
         (world : World) =
         let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
         let propertyValue = getProperty propertyDescriptor simulant world
-        let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedGroup propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
+        let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedGroup headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
         PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
         if focused then focusProperty ()
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
@@ -1990,7 +1991,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let world = World.edit replaceProperty simulant world
                                     if not replaced then
                                         if FSharpType.IsRecord propertyDescriptor.PropertyType
-                                        then imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
+                                        then imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
                                         else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
                                     else world
                                 else
