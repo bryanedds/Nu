@@ -739,7 +739,7 @@ module WorldImGui =
             (focused, changed, items)
 
         ///
-        static member imGuiTryEditPropertyList<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
+        static member imGuiEditPropertyList<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
             let mutable focused = false
             let mutable changed = false
             let items =
@@ -952,7 +952,6 @@ module WorldImGui =
                     if focused' then focused <- true
                     (changed, animation)
                 | :? (Animation array) as animations ->
-                    let animationDefaultValue = { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
                     ImGui.Text name
                     ImGui.SameLine ()
                     ImGui.PushID name
@@ -962,7 +961,7 @@ module WorldImGui =
                                 let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedGroup name (typeof<Animation>) animation
                                 if focused then focusProperty ()
                                 (changed, animation :?> Animation))
-                            animationDefaultValue
+                            { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
                             name
                             animations
                     if focused' then focused <- true
