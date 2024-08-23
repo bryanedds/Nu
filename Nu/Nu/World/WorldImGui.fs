@@ -4,6 +4,8 @@
 namespace Nu
 open System
 open System.Numerics
+open System.Reflection
+open FSharp.Reflection
 open ImGuiNET
 open Prime
 
@@ -110,3 +112,411 @@ module WorldImGui =
         /// Render a segment via ImGui in the current eye 3d space.
         static member imGuiSegment3d absolute segment thickness color world =
             World.imGuiSegments3d absolute (SArray.singleton segment) thickness color world
+
+        ///
+        static member imGuiEditPropertyArray<'a> (editItem : (unit -> unit) -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) =
+            let mutable focused = false
+            let mutable changed = false
+            let items =
+                if ImGui.SmallButton "+" then
+                    changed <- true
+                    Array.add defaultItemValue items
+                else items
+            if ImGui.IsAnyItemFocused () then focused <- true
+            let items =
+                ImGui.Indent ()
+                let itemOpts =
+                    let mutable i = 0
+                    [|for item in items do
+                        let itemName = itemsName + ".[" + string i + "]"
+                        ImGui.Text itemName
+                        ImGui.PushID itemName
+                        ImGui.SameLine ()
+                        let itemOpt =
+                            if not (ImGui.SmallButton "x") then
+                                if ImGui.IsAnyItemFocused () then focused <- true
+                                try let (changed', item) = editItem (fun () -> focused <- true) item
+                                    changed <- changed || changed'
+                                    if ImGui.IsAnyItemFocused () then focused <- true
+                                    Some item
+                                with _ -> Some item
+                            else focused <- true; None
+                        ImGui.PopID ()
+                        i <- inc i
+                        itemOpt|]
+                let items = Array.definitize itemOpts
+                ImGui.Unindent ()
+                items
+            ImGui.PopID ()
+            (focused, changed, items)
+
+        ///
+        static member imGuiTryEditPropertyList<'a> (editItem : (unit -> unit) -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
+            let mutable focused = false
+            let mutable changed = false
+            let items =
+                if ImGui.SmallButton "+" then
+                    changed <- true
+                    items @ [defaultItemValue]
+                else items
+            if ImGui.IsAnyItemFocused () then focused <- true
+            let items =
+                ImGui.Indent ()
+                let itemOpts =
+                    let mutable i = 0
+                    [for item in items do
+                        let itemName = itemsName + ".[" + string i + "]"
+                        ImGui.Text itemName
+                        ImGui.PushID itemName
+                        ImGui.SameLine ()
+                        let itemOpt =
+                            if not (ImGui.SmallButton "x") then
+                                if ImGui.IsAnyItemFocused () then focused <- true
+                                try let (changed', item) = editItem (fun () -> focused <- true) item
+                                    changed <- changed || changed'
+                                    if ImGui.IsAnyItemFocused () then focused <- true
+                                    Some item
+                                with _ -> Some item
+                            else focused <- true; None
+                        ImGui.PopID ()
+                        i <- inc i
+                        itemOpt]
+                let items = List.definitize itemOpts
+                ImGui.Unindent ()
+                items
+            ImGui.PopID ()
+            (focused, changed, items)
+
+        ///
+        static member imGuiEditPropertyRecord snapDrag name ty (value : obj) =
+            ImGui.Text name
+            ImGui.PushID name
+            ImGui.Indent ()
+            let mutable focused = false
+            let mutable changed = false
+            let fields = FSharpValue.GetRecordFields value
+            let fields =
+                FSharpType.GetRecordFields ty |>
+                Array.zip fields |>
+                Array.map (fun (field, fieldInfo : PropertyInfo) ->
+                    let (focused', changed', field) = World.imGuiEditProperty snapDrag fieldInfo.Name fieldInfo.PropertyType field
+                    if focused' then focused <- true
+                    if changed' then changed <- true
+                    field)
+            let value = FSharpValue.MakeRecord (ty, fields)
+            ImGui.Unindent ()
+            ImGui.PopID ()
+            (focused, changed, value)
+
+        /// Attempt to edit a value via ImGui.
+        static member imGuiEditProperty (snapDrag : single) (name : string) (ty : Type) (value : obj) =
+            let mutable focused = false
+            let (changed, value) =
+                match value with
+                | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj)
+                | :? int8 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int8 i :> obj)
+                | :? uint8 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), uint8 i :> obj)
+                | :? int16 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int16 i :> obj)
+                | :? uint16 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), uint16 i :> obj)
+                | :? int32 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int32 i :> obj)
+                | :? uint32 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), uint32 i :> obj)
+                | :? int64 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int64 i :> obj)
+                | :? uint64 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), uint64 i :> obj)
+                | :? single as f -> let mutable f = single f in (ImGui.DragFloat (name, &f, snapDrag), single f :> obj)
+                | :? double as f -> let mutable f = single f in (ImGui.DragFloat (name, &f, snapDrag), double f :> obj)
+                | :? Vector2 as v -> let mutable v = v in (ImGui.DragFloat2 (name, &v, snapDrag), v :> obj)
+                | :? Vector3 as v -> let mutable v = v in (ImGui.DragFloat3 (name, &v, snapDrag), v :> obj)
+                | :? Vector4 as v -> let mutable v = v in (ImGui.DragFloat4 (name, &v, snapDrag), v :> obj)
+                | :? Vector2i as v -> let mutable v = v in (ImGui.DragInt2 (name, &v.X, snapDrag), v :> obj)
+                | :? Vector3i as v -> let mutable v = v in (ImGui.DragInt3 (name, &v.X, snapDrag), v :> obj)
+                | :? Vector4i as v -> let mutable v = v in (ImGui.DragInt4 (name, &v.X, snapDrag), v :> obj)
+                | :? Box2 as b ->
+                    ImGui.Text name
+                    ImGui.PushID name
+                    ImGui.Indent ()
+                    let mutable min = v2 b.Min.X b.Min.Y
+                    let mutable size = v2 b.Size.X b.Size.Y
+                    let minChanged = ImGui.DragFloat2 (nameof b.Min, &min, snapDrag)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let sizeChanged = ImGui.DragFloat2 (nameof b.Size, &size, snapDrag)
+                    ImGui.Unindent ()
+                    (minChanged || sizeChanged, box2 min size :> obj)
+                | :? Box3 as b ->
+                    ImGui.Text name
+                    ImGui.PushID name
+                    ImGui.Indent ()
+                    let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
+                    let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
+                    let minChanged = ImGui.DragFloat3 (nameof b.Min, &min, snapDrag)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let sizeChanged = ImGui.DragFloat3 (nameof b.Size, &size, snapDrag)
+                    ImGui.Unindent ()
+                    (minChanged || sizeChanged, box3 min size :> obj)
+                | :? Box2i as b ->
+                    ImGui.Text name
+                    ImGui.PushID name
+                    ImGui.Indent ()
+                    let mutable min = v2i b.Min.X b.Min.Y
+                    let mutable size = v2i b.Size.X b.Size.Y
+                    let minChanged = ImGui.DragInt2 (nameof b.Min, &min.X, snapDrag)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let sizeChanged = ImGui.DragInt2 (nameof b.Size, &size.X, snapDrag)
+                    ImGui.Unindent ()
+                    (minChanged || sizeChanged, box2i min size :> obj)
+                | :? Box3i as b ->
+                    ImGui.Text name
+                    ImGui.PushID name
+                    ImGui.Indent ()
+                    let mutable min = v3i b.Min.X b.Min.Y b.Min.Z
+                    let mutable size = v3i b.Size.X b.Size.Y b.Size.Z
+                    let minChanged = ImGui.DragInt3 (nameof b.Min, &min.X, snapDrag)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let sizeChanged = ImGui.DragInt3 (nameof b.Size, &size.X, snapDrag)
+                    ImGui.Unindent ()
+                    (minChanged || sizeChanged, box3i min size :> obj)
+                | :? Quaternion as q ->
+                    let mutable v = v4 q.X q.Y q.Z q.W
+                    (ImGui.DragFloat4 (name, &v, snapDrag), quat v.X v.Y v.Z v.W :> obj)
+                | :? Frustum as frustum ->
+                    let mutable frustumStr = string frustum
+                    (ImGui.InputText (name, &frustumStr, 4096u, ImGuiInputTextFlags.ReadOnly), frustum :> obj)
+                | :? Color as c ->
+                    let mutable v = v4 c.R c.G c.B c.A
+                    (ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
+                | :? Transition as transition ->
+                    let (focused', changed, transition) = World.imGuiEditPropertyRecord snapDrag name (typeof<Transition>) transition
+                    if focused' then focused <- true
+                    (changed, transition)
+                | :? RenderStyle as style ->
+                    let mutable index = match style with Deferred -> 0 | Forward _ -> 1
+                    let (changed, style) =
+                        if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
+                        then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
+                        else (false, style)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let (changed, style) =
+                        match index with
+                        | 0 -> (changed, style)
+                        | 1 ->
+                            match style with
+                            | Deferred -> failwithumf ()
+                            | Forward (subsort, sort) ->
+                                let mutable (subsort, sort) = (subsort, sort)
+                                ImGui.Indent ()
+                                let subsortChanged = ImGui.DragFloat ("Subsort via " + name, &subsort, snapDrag)
+                                if ImGui.IsAnyItemFocused () then focused <- true
+                                let sortChanged = ImGui.DragFloat ("Sort via " + name, &sort, snapDrag)
+                                ImGui.Unindent ()
+                                (changed || subsortChanged || sortChanged, Forward (subsort, sort))
+                        | _ -> failwithumf ()
+                    (changed, style :> obj)
+                | :? LightType as light ->
+                    let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
+                    let (changed, light) =
+                        if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
+                        then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
+                        else (false, light)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let (changed, light) =
+                        match index with
+                        | 0 -> (changed, light)
+                        | 1 -> (changed, light)
+                        | 2 ->
+                            match light with
+                            | PointLight -> failwithumf ()
+                            | DirectionalLight -> failwithumf ()
+                            | SpotLight (innerCone, outerCone) ->
+                                let mutable (innerCone, outerCone) = (innerCone, outerCone)
+                                ImGui.Indent ()
+                                let innerConeChanged = ImGui.DragFloat ("InnerCone via " + name, &innerCone, snapDrag)
+                                if ImGui.IsAnyItemFocused () then focused <- true
+                                let outerConeChanged = ImGui.DragFloat ("OuterCone via " + name, &outerCone, snapDrag)
+                                ImGui.Unindent ()
+                                (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
+                        | _ -> failwithumf ()
+                    (changed, Some (light :> obj))
+                | :? Substance as substance ->
+                    let mutable scalar = match substance with Mass m -> m | Density d -> d
+                    let changed = ImGui.DragFloat ("##scalar via " + name, &scalar, snapDrag)
+                    if ImGui.IsAnyItemFocused () then focused <- true
+                    let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
+                    ImGui.SameLine ()
+                    if ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || changed then
+                        let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
+                        (true, substance :> obj)
+                    else (false, substance :> obj)
+                | :? Animation as animation ->
+                    let (focused', changed, animation) = World.imGuiEditPropertyRecord snapDrag name (typeof<Animation>) animation
+                    if focused' then focused <- true
+                    (changed, animation)
+                | :? TerrainMaterialProperties as tmps ->
+                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord snapDrag name (typeof<Animation>) tmps
+                    if focused' then focused <- true
+                    (changed, tmps)
+                | _ ->
+                    let mutable combo = false
+                    let (changed, value) =
+                        if FSharpType.IsUnion ty then
+                            let cases = FSharpType.GetUnionCases ty
+                            if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                combo <- true
+                                let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                let mutable tag = unionCaseInfo.Tag
+                                if ImGui.Combo (name, &tag, caseNames, caseNames.Length) then
+                                    (true, FSharpValue.MakeUnion (cases.[tag], [||]))
+                                else (false, value)
+                            else (false, value)
+                        else (false, value)
+                    let (changed, value) =
+                        if not combo then
+                            if  ty.IsGenericType &&
+                                ty.GetGenericTypeDefinition () = typedefof<_ option> &&
+                                (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                                (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
+                                ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                                ty.GenericTypeArguments.[0] <> typeof<Material> &&
+                                (ty.GenericTypeArguments.[0].IsValueType ||
+                                 ty.GenericTypeArguments.[0] = typeof<string> ||
+                                 ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                                 (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                                 ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                                let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                                let (changed, value) =
+                                    if ImGui.Checkbox ("##" + name, &isSome) then
+                                        if isSome then
+                                            if ty.GenericTypeArguments.[0].IsValueType then
+                                                if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                                    (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
+                                                elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                                    (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
+                                                else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
+                                            elif ty.GenericTypeArguments.[0] = typeof<string> then
+                                                (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                            elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                                let relationType = ty.GenericTypeArguments.[0]
+                                                let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
+                                                (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                            elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                                (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" SelectedGroup.Names) :> obj|]))
+                                            elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
+                                                (true, Activator.CreateInstance (ty, [|null|]))
+                                            else (false, value)
+                                        else (true, None)
+                                    else (false, value)
+                                let mutable focused = ImGui.IsItemFocused ()
+                                if isSome then
+                                    ImGui.SameLine ()
+                                    let (focused', changed', value') = World.imGuiEditProperty snapDrag name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                    let value = Activator.CreateInstance (ty, [|value'|])
+                                    if focused' then focused <- true
+                                    (changed || changed', value)
+                                else
+                                    ImGui.SameLine ()
+                                    ImGui.Text name
+                                    (false, value)
+                            elif ty.IsGenericType &&
+                                 ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
+                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
+                                 (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
+                                 ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
+                                 ty.GenericTypeArguments.[0] <> typeof<Material> &&
+                                 (ty.GenericTypeArguments.[0].IsValueType ||
+                                  ty.GenericTypeArguments.[0] = typeof<string> ||
+                                  ty.GenericTypeArguments.[0] = typeof<Entity> ||
+                                  (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
+                                  ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
+                                let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                                let world =
+                                    if ImGui.Checkbox ("##" + name, &isSome) then
+                                        if isSome then
+                                            if ty.GenericTypeArguments.[0].IsValueType then
+                                                if ty.GenericTypeArguments.[0] = typeof<Color> then
+                                                    (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
+                                                elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
+                                                    (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
+                                                else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
+                                            elif ty.GenericTypeArguments.[0] = typeof<string> then
+                                                (true, Activator.CreateInstance (ty, [|"" :> obj|]))
+                                            elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
+                                                let relationType = ty.GenericTypeArguments.[0]
+                                                let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
+                                                let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
+                                                let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
+                                                (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                            elif ty.GenericTypeArguments.[0] = typeof<Entity> then
+                                                (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" SelectedGroup.Names) :> obj|]))
+                                            elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
+                                                (true, Activator.CreateInstance (ty, [|null|]))
+                                            else failwithumf ()
+                                        else (true, ValueNone)
+                                    else (false, value)
+                                let mutable focused = ImGui.IsItemFocused ()
+                                if isSome then
+                                    ImGui.SameLine ()
+                                    let (focused', changed', value') = World.imGuiEditProperty snapDrag name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                    let value = Activator.CreateInstance (ty, [|value'|])
+                                    if focused' then focused <- true
+                                    (changed || changed', value)
+                                else
+                                    ImGui.SameLine ()
+                                    ImGui.Text name
+                                    (false, value)
+                            elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                                let mutable propertyValueStr = propertyValueStr
+                                let world =
+                                    if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
+                                        let pasts = Pasts
+                                        try let propertyValue = converter.ConvertFromString propertyValueStr
+                                            setProperty propertyValue propertyDescriptor simulant world
+                                        with _ ->
+                                            Pasts <- pasts
+                                            world
+                                    else world
+                                focusProperty ()
+                                let world =
+                                    if ImGui.BeginDragDropTarget () then
+                                        let world =
+                                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                                match DragDropPayloadOpt with
+                                                | Some payload ->
+                                                    let pasts = Pasts
+                                                    try let propertyValueEscaped = payload
+                                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                        setProperty propertyValue propertyDescriptor simulant world
+                                                    with _ ->
+                                                        Pasts <- pasts
+                                                        world
+                                                | None -> world
+                                            else world
+                                        ImGui.EndDragDropTarget ()
+                                        world
+                                    else world
+                                ImGui.SameLine ()
+                                ImGui.PushID ("##pickAsset" + name)
+                                if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
+                                focusProperty ()
+                                ImGui.PopID ()
+                                ImGui.SameLine ()
+                                ImGui.Text name
+                                world
+                            else
+                                let mutable propertyValueStr = propertyValueStr
+                                if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> PropertyValueStrPrevious then
+                                    let pasts = Pasts
+                                    let world =
+                                        try let propertyValue = converter.ConvertFromString propertyValueStr
+                                            setProperty propertyValue propertyDescriptor simulant world
+                                        with _ ->
+                                            Pasts <- pasts
+                                            world
+                                    PropertyValueStrPrevious <- propertyValueStr
+                                    world
+                                else world
+                        else world
+                    (changed, value)
+            if ImGui.IsAnyItemFocused () then focused <- true
+            (focused, changed, value)

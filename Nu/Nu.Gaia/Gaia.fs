@@ -2503,110 +2503,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         // fin
         world
 
-    let private imGuiEditPropertyArray<'a> (editItem : 'a -> 'a) (defaultItemValue : 'a) (propertyDescriptor : PropertyDescriptor) (items : 'a array) simulant world =
-        ImGui.Text propertyDescriptor.PropertyName
-        ImGui.SameLine ()
-        ImGui.PushID propertyDescriptor.PropertyName
-        let focusProperty () = if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        let (items, world) =
-            if ImGui.SmallButton "+" then
-                let propertyValue = Array.add defaultItemValue items
-                let world = setPropertyValue propertyValue propertyDescriptor simulant world
-                focusProperty ()
-                (propertyValue, world)
-            else (items, world)
-        ImGui.Indent ()
-        let itemOpts =
-            let mutable i = 0
-            [|for item in items do
-                let itemName = propertyDescriptor.PropertyName + ".[" + string i + "]"
-                ImGui.Text itemName
-                ImGui.PushID itemName
-                ImGui.SameLine ()
-                let itemOpt =
-                    if not (ImGui.SmallButton "x")
-                    then try Some (editItem item) with _ -> Some item
-                    else None
-                ImGui.PopID ()
-                i <- inc i
-                itemOpt|]
-        let items = Array.definitize itemOpts
-        let world = setPropertyValue items propertyDescriptor simulant world
-        ImGui.Unindent ()
-        ImGui.PopID ()
-        world
-
-    let private imGuiEditPropertyList<'a> (editItem : 'a -> 'a) (defaultItemValue : 'a) (propertyDescriptor : PropertyDescriptor) (items : 'a list) simulant world =
-        ImGui.Text propertyDescriptor.PropertyName
-        ImGui.SameLine ()
-        ImGui.PushID propertyDescriptor.PropertyName
-        let focusProperty () = if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        let (items, world) =
-            if ImGui.SmallButton "+" then
-                let propertyValue = items @ [defaultItemValue]
-                let world = setPropertyValue propertyValue propertyDescriptor simulant world
-                focusProperty ()
-                (propertyValue, world)
-            else (items, world)
-        ImGui.Indent ()
-        let itemOpts =
-            let mutable i = 0
-            [for item in items do
-                let itemName = propertyDescriptor.PropertyName + ".[" + string i + "]"
-                ImGui.Text itemName
-                ImGui.PushID itemName
-                ImGui.SameLine ()
-                let itemOpt =
-                    if not (ImGui.SmallButton "x")
-                    then try Some (editItem item) with _ -> Some item
-                    else None
-                ImGui.PopID ()
-                i <- inc i
-                itemOpt]
-        let items = List.definitize itemOpts
-        let world = setPropertyValue items propertyDescriptor simulant world
-        ImGui.Unindent ()
-        ImGui.PopID ()
-        world
-
-    let rec private imGuiEditPropertyRecord propertyLabelPrefix (propertyDescriptor : PropertyDescriptor) propertyValue simulant world =
-        ImGui.Text propertyDescriptor.PropertyName
-        ImGui.PushID propertyDescriptor.PropertyName
-        ImGui.Indent ()
-        let propertyValue =
-            if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                match World.tryTruncateModel propertyValue simulant world with
-                | Some truncatedValue -> truncatedValue
-                | None -> propertyValue
-            else propertyValue
-        let fields = FSharpValue.GetRecordFields propertyValue
-        let world =
-            FSharpType.GetRecordFields propertyDescriptor.PropertyType |>
-            Array.zip fields |>
-            Array.foldi (fun i world (field, fieldInfo : PropertyInfo) ->
-                imGuiEditProperty
-                    (fun _ _ _ -> field)
-                    (fun field _ _ world ->
-                        fields.[i] <- field
-                        let propertyValueTruncated = FSharpValue.MakeRecord (propertyDescriptor.PropertyType, fields)
-                        let propertyValue =
-                            if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                                match World.tryUntruncateModel propertyValueTruncated simulant world with
-                                | Some truncatedValue -> truncatedValue
-                                | None -> propertyValueTruncated
-                            else propertyValueTruncated
-                        setPropertyValue propertyValue propertyDescriptor simulant world)
-                    (fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world)
-                    propertyLabelPrefix
-                    { PropertyName = fieldInfo.Name; PropertyType = fieldInfo.PropertyType }
-                    simulant
-                    world)
-                world
-        ImGui.Unindent ()
-        ImGui.PopID ()
-        world
-
-    and private imGuiEditProperty
+    let rec private imGuiEditProperty
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
         (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
@@ -2685,7 +2582,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let mutable v = v4 c.R c.G c.B c.A
                 if ImGui.ColorEdit4 (name, &v) then setPropertyValue (color v.X v.Y v.Z v.W) propertyDescriptor simulant world else world
             | :? Transition as transition ->
-                imGuiEditPropertyRecord propertyLabelPrefix propertyDescriptor transition simulant world
+                let (focused, changed, transition) = World.imGuiEditPropertyRecord SnapDrag propertyDescriptor.PropertyName propertyDescriptor.PropertyType transition
+                let world = if changed then setPropertyValue transition propertyDescriptor simulant world else world
+                if focused then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                world
             | :? RenderStyle as style ->
                 let mutable index = match style with Deferred -> 0 | Forward _ -> 1
                 let (changed, style) =
@@ -2746,35 +2646,34 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     setProperty substance propertyDescriptor simulant world
                 else world
             | :? Animation as animation ->
-                imGuiEditPropertyRecord propertyLabelPrefix propertyDescriptor animation simulant world
+                let (focused, changed, animation) = World.imGuiEditPropertyRecord SnapDrag propertyDescriptor.PropertyName propertyDescriptor.PropertyType animation
+                let world = if changed then setPropertyValue animation propertyDescriptor simulant world else world
+                if focused then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                world
             | :? (Animation array) as animations ->
                 let animationDefaultValue = { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
-                imGuiEditPropertyArray
-                    (fun animation ->
-                        let mutable startTime = scstring animation.StartTime
-                        ImGui.InputText (nameof animation.StartTime, &startTime, 4096u) |> ignore<bool>
-                        let animation = { animation with StartTime = scvalue startTime }
-                        let mutable lifeTimeOpt = scstring animation.LifeTimeOpt
-                        ImGui.InputText (nameof animation.LifeTimeOpt, &lifeTimeOpt, 4096u) |> ignore<bool>
-                        let animation = { animation with LifeTimeOpt = scvalue lifeTimeOpt }
-                        let mutable name = animation.Name
-                        ImGui.InputText (nameof animation.Name, &name, 1024u) |> ignore<bool>
-                        let animation = { animation with Name = name }
-                        let mutable playback = scstringMemo animation.Playback
-                        ImGui.InputText (nameof animation.Playback, &playback, 4096u) |> ignore<bool>
-                        let animation = { animation with Playback = scvalueMemo playback }
-                        let mutable rate = animation.Rate
-                        ImGui.SliderFloat (nameof animation.Rate, &rate, -16.0f, 16.0f) |> ignore<bool>
-                        let animation = { animation with Rate = rate }
-                        let mutable weight = animation.Weight
-                        ImGui.SliderFloat (nameof animation.Weight, &weight, 0.0f, 16.0f) |> ignore<bool>
-                        let animation = { animation with Weight = weight }
-                        let mutable boneFilterOpt = scstring animation.BoneFilterOpt
-                        ImGui.InputText (nameof animation.BoneFilterOpt, &boneFilterOpt, 131072u) |> ignore<bool>
-                        { animation with BoneFilterOpt = scvalue boneFilterOpt })
-                    animationDefaultValue propertyDescriptor animations simulant world
+                ImGui.Text propertyDescriptor.PropertyName
+                ImGui.SameLine ()
+                ImGui.PushID propertyDescriptor.PropertyName
+                let (focused, changed, animations) =
+                    World.imGuiEditPropertyArray
+                        (fun focusProperty animation ->
+                            let (focused, changed, animation) = World.imGuiEditProperty SnapDrag propertyDescriptor.PropertyName animation
+                            if focused then focusProperty ()
+                            (changed, animation :?> Animation))
+                        animationDefaultValue
+                        propertyDescriptor.PropertyName
+                        animations
+                let world = if changed then setPropertyValue animations propertyDescriptor simulant world else world
+                if focused then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                ImGui.Unindent ()
+                ImGui.PopID ()
+                world
             | :? TerrainMaterialProperties as tmps ->
-                imGuiEditPropertyRecord propertyLabelPrefix propertyDescriptor tmps simulant world
+                let (focused, changed, tmps) = World.imGuiEditPropertyRecord SnapDrag propertyDescriptor.PropertyName propertyDescriptor.PropertyType tmps
+                let world = if changed then setPropertyValue tmps propertyDescriptor simulant world else world
+                if focused then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                world
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dChanged = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
@@ -3135,7 +3034,22 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if not replaced then
                                         let propertyValue = getPropertyValue propertyDescriptor simulant world
                                         if FSharpType.IsRecord propertyDescriptor.PropertyType then
-                                            imGuiEditPropertyRecord propertyDescriptor.PropertyName propertyDescriptor propertyValue simulant world
+                                            let propertyValue =
+                                                if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                                    match World.tryTruncateModel propertyValue simulant world with
+                                                    | Some truncatedValue -> truncatedValue
+                                                    | None -> propertyValue
+                                                else propertyValue
+                                            let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord SnapDrag propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
+                                            let propertyValue =
+                                                if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                                    match World.tryUntruncateModel propertyValue simulant world with
+                                                    | Some untruncatedValue -> untruncatedValue
+                                                    | None -> propertyValue
+                                                else propertyValue
+                                            let world = if changed then setPropertyValue propertyValue propertyDescriptor simulant world else world
+                                            if focused then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                                            world
                                         else
                                             let focusProperty () = if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                                             imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor.PropertyName propertyDescriptor simulant world
