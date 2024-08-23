@@ -2504,19 +2504,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let rec private imGuiEditPropertyArray<'a> propertyLabelPrefix (defaultItemValue : 'a) (propertyDescriptor : PropertyDescriptor) (propertyValue : 'a array) simulant world =
         ImGui.Text propertyDescriptor.PropertyName
         ImGui.PushID propertyDescriptor.PropertyName
-        ImGui.Indent ()
         let propertyValue =
             if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
                 match World.tryTruncateModel propertyValue simulant world with
                 | Some truncatedValue -> truncatedValue
                 | None -> propertyValue
             else propertyValue
-        let (propertyValue, world) =
-            if ImGui.SmallButton "+" then
-                let propertyValue = Array.add defaultItemValue propertyValue
-                let world = setPropertyValue propertyValue propertyDescriptor simulant world
-                (propertyValue, world)
-            else (propertyValue, world)
         ImGui.SameLine ()
         let (propertyValue, world) =
             if ImGui.SmallButton "-" && Array.notEmpty propertyValue then
@@ -2524,6 +2517,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = setPropertyValue propertyValue propertyDescriptor simulant world
                 (propertyValue, world)
             else (propertyValue, world)
+        ImGui.SameLine ()
+        let (propertyValue, world) =
+            if ImGui.SmallButton "+" then
+                let propertyValue = Array.add defaultItemValue propertyValue
+                let world = setPropertyValue propertyValue propertyDescriptor simulant world
+                (propertyValue, world)
+            else (propertyValue, world)
+        ImGui.Indent ()
         let items = propertyValue : 'a array
         let world =
             Array.foldi (fun i world (item : 'a) ->
