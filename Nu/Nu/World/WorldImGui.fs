@@ -554,7 +554,6 @@ module WorldImGui =
                             name
                             animations
                     if focused' then focused <- true
-                    ImGui.Unindent ()
                     ImGui.PopID ()
                     (changed, animations)
                 | _ ->
