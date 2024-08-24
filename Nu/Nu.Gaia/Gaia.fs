@@ -961,14 +961,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             (true, world)
         | Some _ | None -> (false, world)
 
-    let private trySeverSelectedEntityPropagationTargets world =
-        match SelectedEntityOpt with
-        | Some entity when entity.GetExists world ->
-            let world = snapshot SeverPropagationTargets world
-            let world = World.clearPropagationTargets entity world
-            (true, world)
-        | Some _ | None -> (false, world)
-
     let private tryWipeSelectedEntityPropagationTargets world =
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
@@ -1556,7 +1548,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowSaveEntityDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntityStructure world |> snd
-            elif ImGui.IsKeyPressed ImGuiKey.W && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then trySeverSelectedEntityPropagationTargets world |> snd
             elif ImGui.IsKeyPressed ImGuiKey.U && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryWipeSelectedEntityPropagationTargets world |> snd
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy (); world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ShowOpenProjectDialog <- true; world
@@ -1642,7 +1633,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.Separator ()
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                 let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
-                let world = if ImGui.MenuItem ("Sever Propagation Targets") then trySeverSelectedEntityPropagationTargets world |> snd else world
                 let world = if ImGui.MenuItem ("Wipe Propagated Descriptor", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                 let world =
                     match SelectedEntityOpt with
@@ -1761,16 +1751,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | None -> world
                 else world
             else world
-        let mutable separatorInserted = false
         let world =
             if entity.GetExists world && entity.Has<FreezerFacet> world then // check for existence since entity may have been deleted just above
                 let frozen = entity.GetFrozen world
                 let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
                 ImGui.SameLine ()
-                if not separatorInserted then
-                    ImGui.Separator ()
-                    ImGui.SameLine ()
-                    separatorInserted <- true
                 ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
                 ImGui.PushID ("##frozen" + scstringMemo entity)
                 let world =
@@ -1787,43 +1772,28 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let hasPropagationTargets = World.hasPropagationTargets entity world
             let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
             if hasPropagationTargets || hasPropagationDescriptorOpt then
-                ImGui.SameLine ()
-                if not separatorInserted then
-                    ImGui.Separator ()
-                    ImGui.SameLine ()
-                    separatorInserted <- true
                 ImGui.PushID ("##push" + scstringMemo entity)
+                ImGui.SameLine ()
                 let world =
-                    if hasPropagationTargets && hasPropagationDescriptorOpt && ImGui.SmallButton "Push"
+                    if ImGui.SmallButton "Push"
                     then propagateEntityStructure entity world
                     else world
                 ImGui.PopID ()
-                if hasPropagationTargets && hasPropagationDescriptorOpt && ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Propagate entity structure to all targets, preserving propagation data."
                     ImGui.EndTooltip ()
+                ImGui.PushID ("##wipe" + scstringMemo entity)
                 ImGui.SameLine ()
-                ImGui.PushID ("##sever" + scstringMemo entity)
                 let world =
-                    if hasPropagationTargets && ImGui.SmallButton "Sever" then
-                        let world = snapshot SeverPropagationTargets world
-                        World.clearPropagationTargets entity world
-                    else world
-                ImGui.PopID ()
-                if hasPropagationTargets && ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Clear entity structure propagation targets."
-                    ImGui.EndTooltip ()
-                ImGui.SameLine ()
-                ImGui.PushID ("##purge" + scstringMemo entity)
-                let world =
-                    if hasPropagationDescriptorOpt && ImGui.SmallButton "Wipe" then
+                    if ImGui.SmallButton "Wipe" then
                         let world = snapshot WipePropagationTargets world
                         let world = World.clearPropagationTargets entity world
                         let world = entity.SetPropagatedDescriptorOpt None world
                         world
                     else world
                 ImGui.PopID ()
-                if hasPropagationDescriptorOpt && ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Wipe entity structure data, clearing propagation targets as well."
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Clear entity structure propagation targets, wiping any propagated descriptor data."
                     ImGui.EndTooltip ()
                 world
             else world
@@ -2416,7 +2386,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ImGui.Separator ()
                             let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                             let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
-                            let world = if ImGui.MenuItem ("Sever Propagation Targets") then trySeverSelectedEntityPropagationTargets world |> snd else world
                             let world = if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                             ImGui.EndMenu ()
                             world
@@ -3686,7 +3655,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Separator ()
             let world = if ImGui.Button "Auto Bounds Entity" then tryAutoBoundsSelectedEntity world |> snd else world
             let world = if ImGui.Button "Propagate Entity" then tryPropagateSelectedEntityStructure world |> snd else world
-            let world = if ImGui.Button "Sever Propagation Targets" then trySeverSelectedEntityPropagationTargets world |> snd else world
             let world = if ImGui.Button "Wipe Propagated Descriptor" then tryWipeSelectedEntityPropagationTargets world |> snd else world
             if ImGui.Button "Show in Hierarchy" then ShowSelectedEntity <- true; ShowEntityContextMenu <- false
             if ImGui.Button "Set as Creation Parent" then NewEntityParentOpt <- SelectedEntityOpt; ShowEntityContextMenu <- false
