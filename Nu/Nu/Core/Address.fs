@@ -105,8 +105,8 @@ module Address =
 
         /// Equate Addresses.
         static member equals left right =
-            refEq left right || // OPTIMIZATION: first check ref equality
-            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible
+            refEq left right || // OPTIMIZATION: first check ref equality.
+            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
             String.equateMany left.Names right.Names
 
         /// Compare Addresses.
