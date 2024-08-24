@@ -1306,13 +1306,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 match Game.GetDesiredScreen world with
                 | Desire screen -> (screen, world)
                 | DesireNone ->
-                    let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = Game.SetDesiredScreen (Desire screen) world
-                    (screen, world)
+                    match Game.GetSelectedScreenOpt world with
+                    | None ->
+                        let screen = Game / "Screen"
+                        if not (screen.GetExists world) then
+                            let (screen, world) = World.createScreen (Some "Screen") world
+                            let world = Game.SetDesiredScreen (Desire screen) world
+                            (screen, world)
+                        else (screen, world)
+                    | Some screen -> (screen, world)
                 | DesireIgnore ->
-                    let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setSelectedScreen screen world
-                    (screen, world)
+                    match Game.GetSelectedScreenOpt world with
+                    | None ->
+                        let screen = Game / "Screen"
+                        if not (screen.GetExists world) then
+                            let (screen, world) = World.createScreen (Some "Screen") world
+                            let world = World.setSelectedScreen screen world
+                            (screen, world)
+                        else (screen, world)
+                    | Some screen -> (screen, world)
 
             // proceed directly to idle state
             let world = World.selectScreen (IdlingState world.GameTime) screen world
@@ -2918,7 +2930,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
-                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 35.0)
+                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 40.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
