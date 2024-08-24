@@ -735,6 +735,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else
                         SelectedGroup <- Seq.head groups
                         world
+                elif (match SelectedEntityOpt with Some entity -> entity :> Simulant = simulant | None -> false) then
+                    SelectedEntityOpt <- None
+                    world
                 else world
             | _ -> world
         (Cascade, world)
@@ -936,6 +939,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if not (entity.GetProtected world) then
                 let world = snapshot DeleteEntity world
                 let world = World.destroyEntity entity world
+                SelectedEntityOpt <- None
                 (true, world)
             else
                 MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
@@ -3643,7 +3647,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     world
                 else world
             ImGui.Separator ()
-            if ImGui.Button "Open Entity" then ShowOpenEntityDialog <- true
+            if ImGui.Button "Open Entity" then
+                ShowOpenEntityDialog <- true
+                ShowEntityContextMenu <- false
             if ImGui.Button "Save Entity" then
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world ->
@@ -3651,13 +3657,33 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | Some filePath -> EntityFileDialogState.FilePath <- filePath
                     | None -> EntityFileDialogState.FileName <- ""
                     ShowSaveEntityDialog <- true
+                    ShowEntityContextMenu <- false
                 | Some _ | None -> ()
             ImGui.Separator ()
-            let world = if ImGui.Button "Auto Bounds Entity" then tryAutoBoundsSelectedEntity world |> snd else world
-            let world = if ImGui.Button "Propagate Entity" then tryPropagateSelectedEntityStructure world |> snd else world
-            let world = if ImGui.Button "Wipe Propagated Descriptor" then tryWipeSelectedEntityPropagationTargets world |> snd else world
-            if ImGui.Button "Show in Hierarchy" then ShowSelectedEntity <- true; ShowEntityContextMenu <- false
-            if ImGui.Button "Set as Creation Parent" then NewEntityParentOpt <- SelectedEntityOpt; ShowEntityContextMenu <- false
+            let world =
+                if ImGui.Button "Auto Bounds Entity" then
+                    let world = tryAutoBoundsSelectedEntity world |> snd
+                    ShowEntityContextMenu <- false
+                    world
+                else world
+            let world =
+                if ImGui.Button "Propagate Entity" then
+                    let world = tryPropagateSelectedEntityStructure world |> snd
+                    ShowEntityContextMenu <- false
+                    world
+                else world
+            let world =
+                if ImGui.Button "Wipe Propagated Descriptor" then
+                    let world = tryWipeSelectedEntityPropagationTargets world |> snd
+                    ShowEntityContextMenu <- false
+                    world
+                else world
+            if ImGui.Button "Show in Hierarchy" then
+                ShowSelectedEntity <- true
+                ShowEntityContextMenu <- false
+            if ImGui.Button "Set as Creation Parent" then
+                NewEntityParentOpt <- SelectedEntityOpt
+                ShowEntityContextMenu <- false
             let operation = ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }
             let world = World.editGame operation Game world
             let world = World.editScreen operation SelectedScreen world
