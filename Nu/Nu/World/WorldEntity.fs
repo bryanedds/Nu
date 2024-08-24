@@ -560,10 +560,10 @@ module WorldEntityModule =
 
         static member internal updateEntity (entity : Entity) world =
             let facets = entity.GetFacets world
-            let world =
-                if Array.notEmpty facets // OPTIMIZATION: avoid lambda allocation.
-                then Array.fold (fun world (facet : Facet) -> facet.Update (entity, world)) world facets
-                else world
+            let mutable world = world // OPTIMIZATION: inlining fold for speed.
+            if Array.notEmpty facets then // OPTIMIZATION: eliding iteration setup for speed.
+                for facet in facets do
+                    world <- facet.Update (entity, world)
             let dispatcher = entity.GetDispatcher world
             let world = dispatcher.Update (entity, world)
             if World.getEntityPublishUpdates entity world then

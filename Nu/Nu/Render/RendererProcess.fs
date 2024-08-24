@@ -394,15 +394,15 @@ type RendererThread () =
                 // guard against early termination
                 if not terminated then
 
+                    // acknowledge swap request
+                    swap <- false
+
                     // attempt to swap
                     match windowOpt with
                     | Some (SglWindow window) ->
                         OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
                         SDL.SDL_GL_SwapWindow window.SglWindow
                     | None -> ()
-
-                    // complete swap request
-                    swap <- false
 
         // clean up
         renderer2d.CleanUp ()

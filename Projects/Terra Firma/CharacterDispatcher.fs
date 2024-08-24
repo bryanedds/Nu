@@ -62,7 +62,7 @@ type CharacterDispatcher (character : Character) =
          // weapon
          Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
             [Entity.Offset == v3 0.0f 0.5f 0.0f
-             Entity.StaticModel == character.WeaponModel
+             Entity.StaticModel := character.WeaponModel
              Entity.BodyType == Static
              Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
              Entity.Sensor == true

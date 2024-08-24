@@ -13,7 +13,6 @@ open FSharp.Compiler.Interactive
 open FSharp.NativeInterop
 open FSharp.Reflection
 open Microsoft.FSharp.Core
-open DotRecast.Recast
 open ImGuiNET
 open ImGuizmoNET
 open ImPlotNET
@@ -27,11 +26,14 @@ open Nu
 //  NormalOpt (for terrain)                                                         //
 //  Enums                                                                           //
 //  Layout                                                                          //
+//  Animation                                                                       //
 //  CollisionMask                                                                   //
 //  CollisionCategories                                                             //
 //  CollisionDetection                                                              //
 //  BodyShape                                                                       //
 //  BodyJoint                                                                       //
+//  TerrainMaterial                                                                 //
+//  TerrainMaterial                                                                 //
 //  DateTimeOffset?                                                                 //
 //  SymbolicCompression                                                             //
 //  Flag Enums                                                                      //
@@ -479,30 +481,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             else world
         setPropertyValueWithoutUndo value propertyDescriptor simulant world
 
-    let private selectScreen screen =
+    let private selectScreen show screen =
         if screen <> SelectedScreen then
-            ImGui.SetWindowFocus "Screen Properties" // make sure group properties are showing
-            ImGui.SetWindowFocus null
+            if show then
+                ImGui.SetWindowFocus "Screen Properties" // make sure group properties are showing
+                ImGui.SetWindowFocus null
             NewEntityParentOpt <- None
             SelectedScreen <- screen
 
-    let private selectGroup group =
+    let private selectGroup show group =
         if group <> SelectedGroup then
-            ImGui.SetWindowFocus "Group Properties" // make sure group properties are showing
-            ImGui.SetWindowFocus null
+            if show then
+                ImGui.SetWindowFocus "Group Properties" // make sure group properties are showing
+                ImGui.SetWindowFocus null
             NewEntityParentOpt <- None
             SelectedGroup <- group
 
     let private selectGroupInitial screen world =
         let groups = World.getGroups screen world
         let (group, world) =
-            match Seq.tryFind (fun (group : Group) -> group.Name = "Scene") groups with // NOTE: try to get the Scene group since it's more likely to be the group the user wants to edit.
+            match Seq.tryHead groups with
             | Some group -> (group, world)
-            | None ->
-                match Seq.tryHead groups with
-                | Some group -> (group, world)
-                | None -> World.createGroup (Some "Group") screen world
-        selectGroup group
+            | None -> World.createGroup (Some "Group") screen world
+        selectGroup false group
         world
 
     let rec private focusPropertyOpt targetOpt world =
@@ -560,10 +561,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | (true, world) ->
             focusPropertyOpt None world
             PropertyValueStrPrevious <- ""
-            selectScreen (World.getSelectedScreen world)
+            selectScreen false (World.getSelectedScreen world)
             if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
                 let group = Seq.head (World.getGroups SelectedScreen world)
-                selectGroup group
+                selectGroup false group
             match SelectedEntityOpt with
             | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
             | Some _ | None -> ()
@@ -589,10 +590,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         | (true, world) ->
             focusPropertyOpt None world
             PropertyValueStrPrevious <- ""
-            selectScreen (World.getSelectedScreen world)
+            selectScreen false (World.getSelectedScreen world)
             if not (SelectedGroup.GetExists world) || not (SelectedGroup.GetSelected world) then
                 let group = Seq.head (World.getGroups SelectedScreen world)
-                selectGroup group
+                selectGroup false group
             match SelectedEntityOpt with
             | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
             | Some _ | None -> ()
@@ -724,12 +725,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private handleNuLifeCycleGroup (evt : Event<LifeCycleData, Game>) world =
         let world =
             match evt.Data with
-            | RegisterData simulant ->
-                match simulant with
-                | :? Group as group when group.GetSelected world && group.Name = "Scene" ->
-                    selectGroup group // select newly created Scene group since it's more likely to be the group the user wants to edit.
-                    world
-                | _ -> world
             | UnregisteringData simulant ->
                 if SelectedGroup :> Simulant = simulant then
                     let groups = World.getGroups SelectedScreen world
@@ -740,6 +735,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else
                         SelectedGroup <- Seq.head groups
                         world
+                elif (match SelectedEntityOpt with Some entity -> entity :> Simulant = simulant | None -> false) then
+                    SelectedEntityOpt <- None
+                    world
                 else world
             | _ -> world
         (Cascade, world)
@@ -747,7 +745,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) world =
         match evt.Data.Value :?> Screen option with
         | Some screen ->
-            selectScreen screen
+            selectScreen true screen
             let world = selectGroupInitial screen world
             selectEntityOpt None world
             focusPropertyOpt None world
@@ -941,6 +939,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if not (entity.GetProtected world) then
                 let world = snapshot DeleteEntity world
                 let world = World.destroyEntity entity world
+                SelectedEntityOpt <- None
                 (true, world)
             else
                 MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
@@ -970,6 +969,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             let world = snapshot WipePropagationTargets world
+            let world = entity.SetPropagatedDescriptorOpt None world
             let world = World.clearPropagationTargets entity world
             (true, world)
         | Some _ | None -> (false, world)
@@ -1075,7 +1075,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         then World.destroyGroupImmediate SelectedGroup world
                         else world
                     let (group, world) = World.readGroup groupDescriptor None SelectedScreen world
-                    selectGroup group
+                    selectGroup true group
                     match SelectedEntityOpt with
                     | Some entity when not (entity.GetExists world) || entity.Group <> SelectedGroup -> selectEntityOpt None world
                     | Some _ | None -> ()
@@ -1306,13 +1306,25 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 match Game.GetDesiredScreen world with
                 | Desire screen -> (screen, world)
                 | DesireNone ->
-                    let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = Game.SetDesiredScreen (Desire screen) world
-                    (screen, world)
+                    match Game.GetSelectedScreenOpt world with
+                    | None ->
+                        let screen = Game / "Screen"
+                        if not (screen.GetExists world) then
+                            let (screen, world) = World.createScreen (Some "Screen") world
+                            let world = Game.SetDesiredScreen (Desire screen) world
+                            (screen, world)
+                        else (screen, world)
+                    | Some screen -> (screen, world)
                 | DesireIgnore ->
-                    let (screen, world) = World.createScreen (Some "Screen") world
-                    let world = World.setSelectedScreen screen world
-                    (screen, world)
+                    match Game.GetSelectedScreenOpt world with
+                    | None ->
+                        let screen = Game / "Screen"
+                        if not (screen.GetExists world) then
+                            let (screen, world) = World.createScreen (Some "Screen") world
+                            let world = World.setSelectedScreen screen world
+                            (screen, world)
+                        else (screen, world)
+                    | Some screen -> (screen, world)
 
             // proceed directly to idle state
             let world = World.selectScreen (IdlingState world.GameTime) screen world
@@ -1551,8 +1563,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowOpenEntityDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowSaveEntityDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- 1; world
-            elif ImGui.IsKeyPressed ImGuiKey.W && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryWipeSelectedEntityPropagationTargets world |> snd
             elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryPropagateSelectedEntityStructure world |> snd
+            elif ImGui.IsKeyPressed ImGuiKey.U && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryWipeSelectedEntityPropagationTargets world |> snd
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy (); world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ShowOpenProjectDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
@@ -1637,7 +1649,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.Separator ()
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                 let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
-                let world = if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
+                let world = if ImGui.MenuItem ("Wipe Propagated Descriptor", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
                 let world =
                     match SelectedEntityOpt with
                     | Some entity when entity.GetExists world ->
@@ -1755,16 +1767,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | None -> world
                 else world
             else world
-        let mutable separatorInserted = false
         let world =
             if entity.GetExists world && entity.Has<FreezerFacet> world then // check for existence since entity may have been deleted just above
                 let frozen = entity.GetFrozen world
                 let (text, color) = if frozen then ("Thaw", Color.CornflowerBlue) else ("Freeze", Color.DarkRed)
                 ImGui.SameLine ()
-                if not separatorInserted then
-                    ImGui.Separator ()
-                    ImGui.SameLine ()
-                    separatorInserted <- true
                 ImGui.PushStyleColor (ImGuiCol.Button, color.Abgr)
                 ImGui.PushID ("##frozen" + scstringMemo entity)
                 let world =
@@ -1778,31 +1785,31 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world
             else world
         let world =
-            if World.hasPropagationTargets entity world then
-                ImGui.SameLine ()
-                if not separatorInserted then
-                    ImGui.Separator ()
-                    ImGui.SameLine ()
-                    separatorInserted <- true
+            let hasPropagationTargets = World.hasPropagationTargets entity world
+            let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
+            if hasPropagationTargets || hasPropagationDescriptorOpt then
                 ImGui.PushID ("##push" + scstringMemo entity)
+                ImGui.SameLine ()
                 let world =
                     if ImGui.SmallButton "Push"
                     then propagateEntityStructure entity world
                     else world
                 ImGui.PopID ()
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Propagate entity structure to all targets."
+                    ImGui.Text "Propagate entity structure to all targets, preserving propagation data."
                     ImGui.EndTooltip ()
-                ImGui.SameLine ()
                 ImGui.PushID ("##wipe" + scstringMemo entity)
+                ImGui.SameLine ()
                 let world =
                     if ImGui.SmallButton "Wipe" then
                         let world = snapshot WipePropagationTargets world
-                        World.clearPropagationTargets entity world
+                        let world = World.clearPropagationTargets entity world
+                        let world = entity.SetPropagatedDescriptorOpt None world
+                        world
                     else world
                 ImGui.PopID ()
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Clear entity structure propagation targets."
+                    ImGui.Text "Clear entity structure propagation targets, wiping any propagated descriptor data."
                     ImGui.EndTooltip ()
                 world
             else world
@@ -1840,1061 +1847,39 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             else world
         else world
 
-    let private imGuiEditMaterialPropertiesProperty (mp : MaterialProperties) propertyDescriptor simulant world =
-
-        // edit albedo
-        let world =
-            let mutable isSome = Option.isSome mp.AlbedoOpt
-            if ImGui.Checkbox ("##mpAlbedoIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with AlbedoOpt = Some Constants.Render.AlbedoDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with AlbedoOpt = None } propertyDescriptor simulant world
-            else
-                match mp.AlbedoOpt with
-                | Some albedo ->
-                    let mutable v = v4 albedo.R albedo.G albedo.B albedo.A
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.ColorEdit4 ("##mpAlbedo", &v)
-                        then setPropertyValue { mp with AlbedoOpt = Some (color v.X v.Y v.Z v.W) } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "AlbedoOpt"
-
-        // edit roughness
-        let world =
-            let mutable isSome = Option.isSome mp.RoughnessOpt
-            if ImGui.Checkbox ("##mpRoughnessIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with RoughnessOpt = Some Constants.Render.RoughnessDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with RoughnessOpt = None } propertyDescriptor simulant world
-            else
-                match mp.RoughnessOpt with
-                | Some roughness ->
-                    let mutable roughness = roughness
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.SliderFloat ("##mpRoughness", &roughness, 0.0f, 10.0f)
-                        then setPropertyValue { mp with RoughnessOpt = Some roughness } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "RoughnessOpt"
-
-        // edit metallic
-        let world =
-            let mutable isSome = Option.isSome mp.MetallicOpt
-            if ImGui.Checkbox ("##mpMetallicIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with MetallicOpt = Some Constants.Render.MetallicDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with MetallicOpt = None } propertyDescriptor simulant world
-            else
-                match mp.MetallicOpt with
-                | Some metallic ->
-                    let mutable metallic = metallic
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.SliderFloat ("##mpMetallic", &metallic, 0.0f, 10.0f)
-                        then setPropertyValue { mp with MetallicOpt = Some metallic } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "MetallicOpt"
-
-        // edit ambient occlusion
-        let world =
-            let mutable isSome = Option.isSome mp.AmbientOcclusionOpt
-            if ImGui.Checkbox ("##mpAmbientOcclusionIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with AmbientOcclusionOpt = Some Constants.Render.AmbientOcclusionDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with AmbientOcclusionOpt = None } propertyDescriptor simulant world
-            else
-                match mp.AmbientOcclusionOpt with
-                | Some ambientOcclusion ->
-                    let mutable ambientOcclusion = ambientOcclusion
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.SliderFloat ("##mpAmbientOcclusion", &ambientOcclusion, 0.0f, 10.0f)
-                        then setPropertyValue { mp with AmbientOcclusionOpt = Some ambientOcclusion } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "AmbientOcclusionOpt"
-
-        // edit emission
-        let world =
-            let mutable isSome = Option.isSome mp.EmissionOpt
-            if ImGui.Checkbox ("##mpEmissionIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with EmissionOpt = Some Constants.Render.EmissionDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with EmissionOpt = None } propertyDescriptor simulant world
-            else
-                match mp.EmissionOpt with
-                | Some emission ->
-                    let mutable emission = emission
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.SliderFloat ("##mpEmission", &emission, 0.0f, 10.0f)
-                        then setPropertyValue { mp with EmissionOpt = Some emission } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "EmissionOpt"
-
-        // edit height
-        let world =
-            let mutable isSome = Option.isSome mp.HeightOpt
-            if ImGui.Checkbox ("##mpHeightIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with HeightOpt = Some Constants.Render.HeightDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with HeightOpt = None } propertyDescriptor simulant world
-            else
-                match mp.HeightOpt with
-                | Some height ->
-                    let mutable height = height
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.SliderFloat ("##mpHeight", &height, 0.0f, 10.0f)
-                        then setPropertyValue { mp with HeightOpt = Some height } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "HeightOpt"
-
-        // edit ignore light maps
-        let world =
-            let mutable isSome = Option.isSome mp.IgnoreLightMapsOpt
-            if ImGui.Checkbox ("##mpIgnoreLightMapsIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with IgnoreLightMapsOpt = Some false } propertyDescriptor simulant world
-                else setPropertyValue { mp with IgnoreLightMapsOpt = None } propertyDescriptor simulant world
-            else
-                match mp.IgnoreLightMapsOpt with
-                | Some ignoreLightMaps ->
-                    let mutable ignoreLightMaps = ignoreLightMaps
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.Checkbox ("##mpIgnoreLightMaps", &ignoreLightMaps)
-                        then setPropertyValue { mp with IgnoreLightMapsOpt = Some ignoreLightMaps } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "IgnoreLightMapsOpt"
-
-        // edit opaque distance
-        let world =
-            let mutable isSome = Option.isSome mp.OpaqueDistanceOpt
-            if ImGui.Checkbox ("##mpOpaqueDistanceIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { mp with OpaqueDistanceOpt = Some Constants.Render.OpaqueDistanceDefault } propertyDescriptor simulant world
-                else setPropertyValue { mp with OpaqueDistanceOpt = None } propertyDescriptor simulant world
-            else
-                match mp.OpaqueDistanceOpt with
-                | Some opaqueDistance ->
-                    let mutable opaqueDistance = opaqueDistance
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputFloat ("##mpOpaqueDistance", &opaqueDistance)
-                        then setPropertyValue { mp with OpaqueDistanceOpt = Some opaqueDistance } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "OpaqueDistanceOpt"
-
-        // fin
-        world
-
-    let private imGuiEditNav3dConfigProperty (nc : Nav3dConfig) propertyDescriptor simulant world =
-        let mutable changed = false
-        let mutable cellSize = nc.CellSize
-        let mutable cellHeight = nc.CellHeight
-        let mutable agentHeight = nc.AgentHeight
-        let mutable agentRadius = nc.AgentRadius
-        let mutable agentClimbMax = nc.AgentClimbMax
-        let mutable agentSlopeMax = nc.AgentSlopeMax
-        let mutable regionSizeMin = nc.RegionSizeMin
-        let mutable regionSizeMerge = nc.RegionSizeMerge
-        let mutable edgeLengthMax = nc.EdgeLengthMax
-        let mutable edgeErrorMax = nc.EdgeErrorMax
-        let mutable vertsPerPolygon = nc.VertsPerPolygon
-        let mutable detailSampleDistance = nc.DetailSampleDistance
-        let mutable detailSampleErrorMax = nc.DetailSampleErrorMax
-        let mutable filterLowHangingObstacles = nc.FilterLowHangingObstacles
-        let mutable filterLedgeSpans = nc.FilterLedgeSpans
-        let mutable filterWalkableLowHeightSpans = nc.FilterWalkableLowHeightSpans
-        let mutable partitionTypeStr = scstring nc.PartitionType
-        if ImGui.SliderFloat ("CellSize", &cellSize, 0.01f, 1.0f, "%.2f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("CellHeight", &cellHeight, 0.01f, 1.0f, "%.2f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("AgentHeight", &agentHeight, 0.1f, 5.0f, "%.2f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("AgentRadius", &agentRadius, 0.0f, 5.0f, "%.2f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("AgentClimbMax", &agentClimbMax, 0.1f, 5.0f, "%.2f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("AgentSlopeMax", &agentSlopeMax, 1.0f, 90.0f, "%.0f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderInt ("RegionSizeMin", &regionSizeMin, 1, 150) then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderInt ("RegionSizeMerge", &regionSizeMerge, 1, 150) then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("EdgeLengthMax", &edgeLengthMax, 0.0f, 50.0f, "%.1f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("EdgeErrorMax", &edgeErrorMax, 0.1f, 3f, "%.1f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderInt ("VertPerPoly", &vertsPerPolygon, 3, 12) then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("DetailSampleDistance", &detailSampleDistance, 0.0f, 16.0f, "%.1f") then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.SliderFloat ("DetailSampleErrorMax", &detailSampleErrorMax, 0.0f, 16.0f, "%.1f") then changed <- true        
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.Checkbox ("FilterLowHangingObstacles", &filterLowHangingObstacles) then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.Checkbox ("FilterLedgeSpans", &filterLedgeSpans) then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.Checkbox ("FilterWalkableLowHeightSpans", &filterWalkableLowHeightSpans) then changed <- true
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        if ImGui.BeginCombo ("ParitionType", partitionTypeStr, ImGuiComboFlags.HeightLarge) then
-            let partitionTypeStrs = Array.map (fun (ptv : RcPartitionType) -> ptv.Name) RcPartitionType.Values
-            for partitionTypeStr' in partitionTypeStrs do
-                if ImGui.Selectable (partitionTypeStr', strEq partitionTypeStr' partitionTypeStr) then
-                    if strNeq partitionTypeStr partitionTypeStr' then
-                        partitionTypeStr <- partitionTypeStr'
-                        changed <- true
-            ImGui.EndCombo ()
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        let world =
-            if changed then
-                let nc =
-                    { CellSize = cellSize
-                      CellHeight = cellHeight
-                      AgentHeight = agentHeight
-                      AgentRadius = agentRadius
-                      AgentClimbMax = agentClimbMax
-                      AgentSlopeMax = agentSlopeMax
-                      RegionSizeMin = regionSizeMin
-                      RegionSizeMerge = regionSizeMerge
-                      EdgeLengthMax = edgeLengthMax
-                      EdgeErrorMax = edgeErrorMax
-                      VertsPerPolygon = vertsPerPolygon
-                      DetailSampleDistance = detailSampleDistance
-                      DetailSampleErrorMax = detailSampleErrorMax
-                      FilterLowHangingObstacles = filterLowHangingObstacles
-                      FilterLedgeSpans = filterLedgeSpans
-                      FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans
-                      PartitionType = scvalue partitionTypeStr }
-                setPropertyValue nc propertyDescriptor simulant world
-            else world
-        if ImGui.Button "Rebuild Navigation"
-        then synchronizeNav world
-        else world
-
-    let private imGuiEditMaterialProperty m propertyDescriptor simulant world =
-
-        // edit albedo image
-        let world =
-            let mutable isSome = Option.isSome m.AlbedoImageOpt
-            if ImGui.Checkbox ("##matAlbedoImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with AlbedoImageOpt = Some Assets.Default.MaterialAlbedo } propertyDescriptor simulant world
-                else setPropertyValue { m with AlbedoImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.AlbedoImageOpt with
-                | Some albedoImage ->
-                    let mutable propertyStr = scstring albedoImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matAlbedoImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with AlbedoImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with AlbedoImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matAlbedoImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "AlbedoImageOpt"
-
-        // edit roughness image
-        let world =
-            let mutable isSome = Option.isSome m.RoughnessImageOpt
-            if ImGui.Checkbox ("##matRoughnessImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with RoughnessImageOpt = Some Assets.Default.MaterialRoughness } propertyDescriptor simulant world
-                else setPropertyValue { m with RoughnessImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.RoughnessImageOpt with
-                | Some roughnessImage ->
-                    let mutable propertyStr = scstring roughnessImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matRoughnessImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with RoughnessImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with RoughnessImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matRoughnessImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "RoughnessImageOpt"
-
-        // edit metallic image
-        let world =
-            let mutable isSome = Option.isSome m.MetallicImageOpt
-            if ImGui.Checkbox ("##matMetallicImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with MetallicImageOpt = Some Assets.Default.MaterialMetallic } propertyDescriptor simulant world
-                else setPropertyValue { m with MetallicImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.MetallicImageOpt with
-                | Some roughnessImage ->
-                    let mutable propertyStr = scstring roughnessImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matMetallicImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with MetallicImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with MetallicImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matMetallicImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "MetallicImageOpt"
-
-        // edit ambient occlusion image
-        let world =
-            let mutable isSome = Option.isSome m.AmbientOcclusionImageOpt
-            if ImGui.Checkbox ("##matAmbientOcclusionImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with AmbientOcclusionImageOpt = Some Assets.Default.MaterialAmbientOcclusion } propertyDescriptor simulant world
-                else setPropertyValue { m with AmbientOcclusionImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.AmbientOcclusionImageOpt with
-                | Some ambientOcclusionImage ->
-                    let mutable propertyStr = scstring ambientOcclusionImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matAmbientOcclusionImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with AmbientOcclusionImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with AmbientOcclusionImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matAmbientOcclusionImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "AmbientOcclusionImageOpt"
-
-        // edit emission image
-        let world =
-            let mutable isSome = Option.isSome m.EmissionImageOpt
-            if ImGui.Checkbox ("##matEmissionImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with EmissionImageOpt = Some Assets.Default.MaterialEmission } propertyDescriptor simulant world
-                else setPropertyValue { m with EmissionImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.EmissionImageOpt with
-                | Some emissionImage ->
-                    let mutable propertyStr = scstring emissionImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matEmissionImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with EmissionImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with EmissionImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matEmissionImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "EmissionImageOpt"
-
-        // edit normal image
-        let world =
-            let mutable isSome = Option.isSome m.NormalImageOpt
-            if ImGui.Checkbox ("##matNormalImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with NormalImageOpt = Some Assets.Default.MaterialNormal } propertyDescriptor simulant world
-                else setPropertyValue { m with NormalImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.NormalImageOpt with
-                | Some normalImage ->
-                    let mutable propertyStr = scstring normalImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matNormalImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with NormalImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with NormalImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matNormalImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "NormalImageOpt"
-
-        // edit height image
-        let world =
-            let mutable isSome = Option.isSome m.HeightImageOpt
-            if ImGui.Checkbox ("##matHeightImageIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with HeightImageOpt = Some Assets.Default.MaterialHeight } propertyDescriptor simulant world
-                else setPropertyValue { m with HeightImageOpt = None } propertyDescriptor simulant world
-            else
-                match m.HeightImageOpt with
-                | Some heightImage ->
-                    let mutable propertyStr = scstring heightImage
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.InputText ("##matHeightImage", &propertyStr, 4096u) then
-                            let pasts = Pasts
-                            try let property = scvalue propertyStr
-                                setPropertyValue { m with HeightImageOpt = Some property } propertyDescriptor simulant world
-                            with _ ->
-                                Pasts <- pasts
-                                world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    let world =
-                        if ImGui.BeginDragDropTarget () then
-                            let world =
-                                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                    match DragDropPayloadOpt with
-                                    | Some payload ->
-                                        let pasts = Pasts
-                                        try let propertyEscaped = payload
-                                            let propertyUnescaped = String.unescape propertyEscaped
-                                            let property = scvalue propertyUnescaped
-                                            setPropertyValue { m with HeightImageOpt = Some property } propertyDescriptor simulant world
-                                        with _ ->
-                                            Pasts <- pasts
-                                            world
-                                    | None -> world
-                                else world
-                            ImGui.EndDragDropTarget ()
-                            world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    ImGui.SameLine ()
-                    ImGui.PushID ("##matHeightImagePick")
-                    if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                    ImGui.PopID ()
-                    world
-                | None -> world
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-        ImGui.SameLine ()
-        ImGui.Text "HeightImageOpt"
-
-        // edit two-sided
-        let world =
-            let mutable isSome = Option.isSome m.TwoSidedOpt
-            if ImGui.Checkbox ("##matTwoSidedIsSome", &isSome) then
-                if isSome
-                then setPropertyValue { m with TwoSidedOpt = Some false } propertyDescriptor simulant world
-                else setPropertyValue { m with TwoSidedOpt = None } propertyDescriptor simulant world
-            else
-                match m.TwoSidedOpt with
-                | Some twoSided ->
-                    let mutable twoSided = twoSided
-                    ImGui.SameLine ()
-                    let world =
-                        if ImGui.Checkbox ("##matTwoSided", &twoSided)
-                        then setPropertyValue { m with TwoSidedOpt = Some twoSided } propertyDescriptor simulant world
-                        else world
-                    if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                    world
-                | None -> world
-        ImGui.SameLine ()
-        ImGui.Text "TwoSidedOpt"
-        if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-
-        // fin
-        world
-
-    let rec private imGuiEditProperty
+    let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
         (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
-        (propertyLabelPrefix : string)
+        (headered : bool)
         (propertyDescriptor : PropertyDescriptor)
         (simulant : Simulant)
         (world : World) =
-        let ty = propertyDescriptor.PropertyType
-        let name = propertyDescriptor.PropertyName
-        let converter = SymbolicConverter (false, None, propertyDescriptor.PropertyType, ToSymbolMemo, OfSymbolMemo)
+        let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
         let propertyValue = getProperty propertyDescriptor simulant world
-        let propertyValueStr = converter.ConvertToString propertyValue
-        let world =
-            match propertyValue with
-            | :? bool as b -> let mutable b = b in if ImGui.Checkbox (name, &b) then setProperty b propertyDescriptor simulant world else world
-            | :? int8 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int8 i) propertyDescriptor simulant world else world
-            | :? uint8 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint8 i) propertyDescriptor simulant world else world
-            | :? int16 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int16 i) propertyDescriptor simulant world else world
-            | :? uint16 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint16 i) propertyDescriptor simulant world else world
-            | :? int32 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int32 i) propertyDescriptor simulant world else world
-            | :? uint32 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint32 i) propertyDescriptor simulant world else world
-            | :? int64 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (int64 i) propertyDescriptor simulant world else world
-            | :? uint64 as i -> let mutable i = int32 i in if ImGui.DragInt (name, &i) then setProperty (uint64 i) propertyDescriptor simulant world else world
-            | :? single as f -> let mutable f = single f in if ImGui.DragFloat (name, &f, SnapDrag) then setProperty (single f) propertyDescriptor simulant world else world
-            | :? double as f -> let mutable f = single f in if ImGui.DragFloat (name, &f, SnapDrag) then setProperty (double f) propertyDescriptor simulant world else world
-            | :? Vector2 as v -> let mutable v = v in if ImGui.DragFloat2 (name, &v, SnapDrag) then setProperty v propertyDescriptor simulant world else world
-            | :? Vector3 as v -> let mutable v = v in if ImGui.DragFloat3 (name, &v, SnapDrag) then setProperty v propertyDescriptor simulant world else world
-            | :? Vector4 as v -> let mutable v = v in if ImGui.DragFloat4 (name, &v, SnapDrag) then setProperty v propertyDescriptor simulant world else world
-            | :? Vector2i as v -> let mutable v = v in if ImGui.DragInt2 (name, &v.X, SnapDrag) then setProperty v propertyDescriptor simulant world else world
-            | :? Vector3i as v -> let mutable v = v in if ImGui.DragInt3 (name, &v.X, SnapDrag) then setProperty v propertyDescriptor simulant world else world
-            | :? Vector4i as v -> let mutable v = v in if ImGui.DragInt4 (name, &v.X, SnapDrag) then setProperty v propertyDescriptor simulant world else world
-            | :? MaterialProperties as mp -> imGuiEditMaterialPropertiesProperty mp propertyDescriptor simulant world
-            | :? Material as m -> imGuiEditMaterialProperty m propertyDescriptor simulant world
-            | :? Nav3dConfig as nc -> imGuiEditNav3dConfigProperty nc propertyDescriptor simulant world
-            | :? Box2 as b ->
-                ImGui.Text name
-                let mutable min = v2 b.Min.X b.Min.Y
-                let mutable size = v2 b.Size.X b.Size.Y
-                ImGui.Indent ()
-                let minChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Min via " + name, &min, SnapDrag)
-                focusProperty ()
-                let sizeChanged = ImGui.DragFloat2 (propertyLabelPrefix + "Size via " + name, &size, SnapDrag)
-                let world = if minChanged || sizeChanged then setProperty (box2 min size) propertyDescriptor simulant world else world
-                ImGui.Unindent ()
-                world
-            | :? Box3 as b ->
-                ImGui.Text name
-                let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
-                let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
-                ImGui.Indent ()
-                let minChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Min via " + name, &min, SnapDrag)
-                focusProperty ()
-                let sizeChanged = ImGui.DragFloat3 (propertyLabelPrefix + "Size via " + name, &size, SnapDrag)
-                let world = if minChanged || sizeChanged then setProperty (box3 min size) propertyDescriptor simulant world else world
-                ImGui.Unindent ()
-                world
-            | :? Box2i as b ->
-                ImGui.Text name
-                let mutable min = v2i b.Min.X b.Min.Y
-                let mutable size = v2i b.Size.X b.Size.Y
-                ImGui.Indent ()
-                let minChanged = ImGui.DragInt2 (propertyLabelPrefix + "Min via " + name, &min.X, SnapDrag)
-                focusProperty ()
-                let sizeChanged = ImGui.DragInt2 (propertyLabelPrefix + "Size via " + name, &size.X, SnapDrag)
-                let world = if minChanged || sizeChanged then setProperty (box2i min size) propertyDescriptor simulant world else world
-                ImGui.Unindent ()
-                world
-            | :? Quaternion as q ->
-                let mutable v = v4 q.X q.Y q.Z q.W
-                if ImGui.DragFloat4 (name, &v, SnapDrag) then setProperty (quat v.X v.Y v.Z v.W) propertyDescriptor simulant world else world
-            | :? Frustum as frustum ->
-                let mutable frustumStr = string frustum
-                ImGui.InputText (name, &frustumStr, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                world
-            | :? Color as c ->
-                let mutable v = v4 c.R c.G c.B c.A
-                if ImGui.ColorEdit4 (name, &v) then setPropertyValue (color v.X v.Y v.Z v.W) propertyDescriptor simulant world else world
-            | :? RenderStyle as style ->
-                let mutable index = match style with Deferred -> 0 | Forward _ -> 1
-                let (changed, style) =
-                    if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
-                    then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
-                    else (false, style)
-                focusProperty ()
-                let (changed, style) =
-                    match index with
-                    | 0 -> (changed, style)
-                    | 1 ->
-                        match style with
-                        | Deferred -> failwithumf ()
-                        | Forward (subsort, sort) ->
-                            let mutable (subsort, sort) = (subsort, sort)
-                            ImGui.Indent ()
-                            let subsortChanged = ImGui.DragFloat ("Subsort via " + name, &subsort, SnapDrag)
-                            focusProperty ()
-                            let sortChanged = ImGui.DragFloat ("Sort via " + name, &sort, SnapDrag)
-                            ImGui.Unindent ()
-                            (changed || subsortChanged || sortChanged, Forward (subsort, sort))
-                    | _ -> failwithumf ()
-                if changed then setProperty style propertyDescriptor simulant world else world
-            | :? LightType as light ->
-                let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
-                let (changed, light) =
-                    if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
-                    then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
-                    else (false, light)
-                focusProperty ()
-                let (changed, light) =
-                    match index with
-                    | 0 -> (changed, light)
-                    | 1 -> (changed, light)
-                    | 2 ->
-                        match light with
-                        | PointLight -> failwithumf ()
-                        | DirectionalLight -> failwithumf ()
-                        | SpotLight (innerCone, outerCone) ->
-                            let mutable (innerCone, outerCone) = (innerCone, outerCone)
-                            ImGui.Indent ()
-                            let innerConeChanged = ImGui.DragFloat ("InnerCone via " + name, &innerCone, SnapDrag)
-                            focusProperty ()
-                            let outerConeChanged = ImGui.DragFloat ("OuterCone via " + name, &outerCone, SnapDrag)
-                            ImGui.Unindent ()
-                            (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
-                    | _ -> failwithumf ()
-                if changed then setProperty light propertyDescriptor simulant world else world
-            | :? Substance as substance ->
-                let mutable scalar = match substance with Mass m -> m | Density d -> d
-                let changed = ImGui.DragFloat ("##scalar via " + name, &scalar, SnapDrag)
-                focusProperty ()
-                let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
-                ImGui.SameLine ()
-                let changed = ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || changed
-                if changed then
-                    let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
-                    setProperty substance propertyDescriptor simulant world
-                else world
-            | :? Lighting3dConfig as lighting3dConfig ->
-                let mutable lighting3dChanged = false
-                let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
-                let mutable shadowBiasAcneStr = lighting3dConfig.ShadowBiasAcne.ToString "0.00000000"
-                let mutable shadowBiasBleed = lighting3dConfig.ShadowBiasBleed
-                let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
-                let mutable ssaoBias = lighting3dConfig.SsaoBias
-                let mutable ssaoRadius = lighting3dConfig.SsaoRadius
-                let mutable ssaoDistanceMax = lighting3dConfig.SsaoDistanceMax
-                let mutable ssrEnabled = lighting3dConfig.SsrEnabled
-                let mutable ssrDetail = lighting3dConfig.SsrDetail
-                let mutable ssrDepthMax = lighting3dConfig.SsrDepthMax
-                let mutable ssrDistanceMax = lighting3dConfig.SsrDistanceMax
-                let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
-                let mutable ssrRoughnessMax = lighting3dConfig.SsrRoughnessMax
-                let mutable ssrSurfaceSlopeMax = lighting3dConfig.SsrSurfaceSlopeMax
-                let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
-                let mutable ssrRoughnessCutoff = lighting3dConfig.SsrRoughnessCutoff
-                let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
-                let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
-                let mutable ssrSurfaceSlopeCutoff = lighting3dConfig.SsrSurfaceSlopeCutoff
-                let mutable ssrEdgeCutoffHorizontal = lighting3dConfig.SsrEdgeCutoffHorizontal
-                let mutable ssrEdgeCutoffVertical = lighting3dConfig.SsrEdgeCutoffVertical
-                let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
-                let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
-                lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.InputText ("Shadow Bias Acne", &shadowBiasAcneStr, 4096u) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Shadow Bias Bleed", &shadowBiasBleed, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                lighting3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dChanged; focusProperty ()
-                if ssrEnabled then
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Max", &ssrDepthMax, 0.0f, 128.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Max", &ssrDistanceMax, 0.0f, 128.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Max", &ssrRoughnessMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Max", &ssrSurfaceSlopeMax, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Surface Slope Cutoff", &ssrSurfaceSlopeCutoff, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Horizontal", &ssrEdgeCutoffHorizontal, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Cutoff Vertical", &ssrEdgeCutoffVertical, 0.0f, 1.0f) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; focusProperty ()
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 32.0f) || lighting3dChanged; focusProperty ()
-                if lighting3dChanged then
-                    let lighting3dConfig =
-                        { LightCutoffMargin = lightCutoffMargin
-                          ShadowBiasAcne = match Single.TryParse shadowBiasAcneStr with (true, s) -> s | (false, _) -> lighting3dConfig.ShadowBiasAcne
-                          ShadowBiasBleed = shadowBiasBleed
-                          SsaoIntensity = ssaoIntensity
-                          SsaoBias = ssaoBias
-                          SsaoRadius = ssaoRadius
-                          SsaoDistanceMax = ssaoDistanceMax
-                          SsrEnabled = ssrEnabled
-                          SsrDetail = ssrDetail
-                          SsrDepthMax = ssrDepthMax
-                          SsrDistanceMax = ssrDistanceMax
-                          SsrRefinementsMax = ssrRefinementsMax
-                          SsrRoughnessMax = ssrRoughnessMax
-                          SsrSurfaceSlopeMax = ssrSurfaceSlopeMax
-                          SsrRayThickness = ssrRayThickness
-                          SsrRoughnessCutoff = ssrRoughnessCutoff
-                          SsrDepthCutoff = ssrDepthCutoff
-                          SsrDistanceCutoff = ssrDistanceCutoff
-                          SsrSurfaceSlopeCutoff = ssrSurfaceSlopeCutoff
-                          SsrEdgeCutoffHorizontal = ssrEdgeCutoffHorizontal
-                          SsrEdgeCutoffVertical = ssrEdgeCutoffVertical
-                          SsrLightColor = Color ssrLightColor
-                          SsrLightBrightness = ssrLightBrightness }
-                    setProperty lighting3dConfig propertyDescriptor simulant world
-                else world
-            | _ ->
-                let mutable combo = false
-                let world =
-                    if FSharpType.IsUnion ty then
-                        let cases = FSharpType.GetUnionCases ty
-                        if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                            combo <- true
-                            let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (propertyValue, ty)
-                            let mutable tag = unionCaseInfo.Tag
-                            if ImGui.Combo (name, &tag, caseNames, caseNames.Length) then
-                                let value' = FSharpValue.MakeUnion (cases.[tag], [||])
-                                setProperty value' propertyDescriptor simulant world
-                            else world
-                        else world
-                    else world
-                if not combo then
-                    if  ty.IsGenericType &&
-                        ty.GetGenericTypeDefinition () = typedefof<_ option> &&
-                        (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                        (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                        ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                        ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                        (ty.GenericTypeArguments.[0].IsValueType ||
-                         ty.GenericTypeArguments.[0] = typeof<string> ||
-                         ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                         (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                         ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                        let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
-                        let world =
-                            if ImGui.Checkbox ("##" + name, &isSome) then
-                                if isSome then
-                                    if ty.GenericTypeArguments.[0].IsValueType then
-                                        if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                            setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant world
-                                        elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                            setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant world
-                                        else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant world
-                                    elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                        setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant world
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"???"|])
-                                        setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant world
-                                    elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                        setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" SelectedGroup.Names) :> obj|])) propertyDescriptor simulant world
-                                    elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                        setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant world
-                                    else world
-                                else setProperty None propertyDescriptor simulant world
-                            else world
-                        focusProperty ()
-                        let world =
-                            if isSome then
-                                ImGui.SameLine ()
-                                let getProperty = fun _ simulant world -> let opt = getProperty propertyDescriptor simulant world in ty.GetProperty("Value").GetValue(opt, [||])
-                                let setProperty = fun value _ simulant world -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant world
-                                let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
-                                imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant world
-                            else
-                                ImGui.SameLine ()
-                                ImGui.Text name
-                                world
-                        world
-                    elif ty.IsGenericType &&
-                         ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
-                         (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
-                         (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ voption>) &&
-                         ty.GenericTypeArguments.[0] <> typeof<MaterialProperties> &&
-                         ty.GenericTypeArguments.[0] <> typeof<Material> &&
-                         (ty.GenericTypeArguments.[0].IsValueType ||
-                          ty.GenericTypeArguments.[0] = typeof<string> ||
-                          ty.GenericTypeArguments.[0] = typeof<Entity> ||
-                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
-                          ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                        let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|propertyValue|]) :?> bool
-                        let world =
-                            if ImGui.Checkbox ("##" + name, &isSome) then
-                                if isSome then
-                                    if ty.GenericTypeArguments.[0].IsValueType then
-                                        if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                            setProperty (Activator.CreateInstance (ty, [|colorOne :> obj|])) propertyDescriptor simulant world
-                                        elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                            setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|])) propertyDescriptor simulant world
-                                        else setProperty (Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|])) propertyDescriptor simulant world
-                                    elif ty.GenericTypeArguments.[0] = typeof<string> then
-                                        setProperty (Activator.CreateInstance (ty, [|"" :> obj|])) propertyDescriptor simulant world
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
-                                        let relationType = ty.GenericTypeArguments.[0]
-                                        let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
-                                        let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
-                                        let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                        setProperty (Activator.CreateInstance (ty, [|relationValue|])) propertyDescriptor simulant world
-                                    elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                        setProperty (Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" SelectedGroup.Names) :> obj|])) propertyDescriptor simulant world
-                                    elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                        setProperty (Activator.CreateInstance (ty, [|null|])) propertyDescriptor simulant world
-                                    else failwithumf ()
-                                else setProperty ValueNone propertyDescriptor simulant world
-                            else world
-                        focusProperty ()
-                        let world =
-                            if isSome then
-                                ImGui.SameLine ()
-                                let getProperty = fun _ simulant world -> let opt = getProperty propertyDescriptor simulant world in ty.GetProperty("Value").GetValue(opt, [||])
-                                let setProperty = fun value _ simulant world -> setProperty (Activator.CreateInstance (ty, [|value|])) propertyDescriptor simulant world
-                                let propertyDescriptor = { propertyDescriptor with PropertyType = ty.GenericTypeArguments.[0] }
-                                imGuiEditProperty getProperty setProperty focusProperty (name + ".") propertyDescriptor simulant world
-                            else
-                                ImGui.SameLine ()
-                                ImGui.Text name
-                                world
-                        world
-                    elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
-                        let mutable propertyValueStr = propertyValueStr
-                        let world =
-                            if ImGui.InputText ("##text" + name, &propertyValueStr, 4096u) then
-                                let pasts = Pasts
-                                try let propertyValue = converter.ConvertFromString propertyValueStr
-                                    setProperty propertyValue propertyDescriptor simulant world
-                                with _ ->
-                                    Pasts <- pasts
-                                    world
-                            else world
-                        focusProperty ()
-                        let world =
-                            if ImGui.BeginDragDropTarget () then
-                                let world =
-                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                        match DragDropPayloadOpt with
-                                        | Some payload ->
-                                            let pasts = Pasts
-                                            try let propertyValueEscaped = payload
-                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                setProperty propertyValue propertyDescriptor simulant world
-                                            with _ ->
-                                                Pasts <- pasts
-                                                world
-                                        | None -> world
-                                    else world
-                                ImGui.EndDragDropTarget ()
-                                world
-                            else world
-                        ImGui.SameLine ()
-                        ImGui.PushID ("##pickAsset" + name)
-                        if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                        focusProperty ()
-                        ImGui.PopID ()
-                        ImGui.SameLine ()
-                        ImGui.Text name
-                        world
-                    else
-                        let mutable propertyValueStr = propertyValueStr
-                        if ImGui.InputText (name, &propertyValueStr, 131072u) && propertyValueStr <> PropertyValueStrPrevious then
-                            let pasts = Pasts
-                            let world =
-                                try let propertyValue = converter.ConvertFromString propertyValueStr
-                                    setProperty propertyValue propertyDescriptor simulant world
-                                with _ ->
-                                    Pasts <- pasts
-                                    world
-                            PropertyValueStrPrevious <- propertyValueStr
-                            world
-                        else world
-                else world
-        focusProperty ()
-        world
+        let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedScreen SelectedGroup headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
+        PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
+        if focused then focusProperty ()
+        if changed then setProperty propertyValue propertyDescriptor simulant world else world
+
+    let private imGuiEditProperty
+        (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
+        (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
+        (focusProperty : unit -> unit)
+        (propertyDescriptor : PropertyDescriptor)
+        (simulant : Simulant)
+        (world : World) =
+        let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
+        let propertyValue = getProperty propertyDescriptor simulant world
+        let (focused, changed, propertyValue) = World.imGuiEditProperty searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedScreen SelectedGroup propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
+        PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
+        if focused then focusProperty ()
+        if changed then setProperty propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
         let world =
-            if ImGui.BeginCombo ("Dispatcher Name", dispatcherNameCurrent, ImGuiComboFlags.HeightLarge) then
+            if ImGui.BeginCombo ("Dispatcher Name", dispatcherNameCurrent, ImGuiComboFlags.HeightRegular) then
                 let dispatcherNames = (World.getEntityDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 let world =
@@ -2906,7 +1891,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     World.changeEntityDispatcher dispatcherName entity world
                                 else MessageBoxOpt <- Some "Cannot change dispatcher of a protected simulant (such as an entity created by the MMCC API)."; world
                             else world
-                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                         if dispatcherName = dispatcherNameCurrent then ImGui.SetItemDefaultFocus ()
                         world)
                         world dispatcherNames
@@ -2923,13 +1908,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         for i in 0 .. facetNamesValue.Count do
             let last = i = facetNamesValue.Count
             let mutable facetName = if not last then Seq.item i facetNamesValue else facetNameEmpty
-            if ImGui.BeginCombo ("Facet Name " + string i, facetName, ImGuiComboFlags.HeightLarge) then
+            if ImGui.BeginCombo ("Facet Name " + string i, facetName, ImGuiComboFlags.HeightRegular) then
                 let facetNameSelectablePicked = tryPickName facetNamesSelectable
                 for facetNameSelectable in facetNamesSelectable do
                     if ImGui.Selectable (facetNameSelectable, strEq facetName NewEntityDispatcherName) then
                         facetName <- facetNameSelectable
                         changed <- true
-                    if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY -0.015f
+                    if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if facetNameSelectable = facetName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if not last && ImGui.IsItemFocused () then focusPropertyOpt (Some (facetNamesPropertyDescriptor, entity :> Simulant)) world
@@ -2952,9 +1937,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             Array.sortBy (fun pd ->
                                 match pd.PropertyName with
                                 | Constants.Engine.NamePropertyName -> "!00" // put Name first
-                                | Constants.Engine.ModelPropertyName -> "!01" // put Model second
-                                | Constants.Engine.MountOptPropertyName -> "!02" // and so on...
-                                | Constants.Engine.PropagationSourceOptPropertyName -> "!03"
+                                | Constants.Engine.MountOptPropertyName -> "!01" // and so on...
+                                | Constants.Engine.PropagationSourceOptPropertyName -> "!02"
+                                | Constants.Engine.ModelPropertyName -> "!03"
                                 | nameof Entity.Position -> "!04"
                                 | nameof Entity.PositionLocal -> "!05"
                                 | nameof Entity.Degrees -> "!06"
@@ -2992,14 +1977,37 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     if ImGui.IsItemFocused () then focusPropertyOpt None world
                                     world
                                 elif propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
-                                    let mutable clickToEditModel = "*click to view*"
-                                    ImGui.InputText ("Model", &clickToEditModel, uint clickToEditModel.Length, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                                    if ImGui.IsItemFocused () then
-                                        focusPropertyOpt (Some (propertyDescriptor, simulant)) world
-                                        PropertyEditorFocusRequested <- true
-                                    world
+                                    let getPropertyValue propertyDescriptor simulant world =
+                                        let propertyValue = getPropertyValue propertyDescriptor simulant world
+                                        if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                            match World.tryTruncateModel propertyValue simulant world with
+                                            | Some truncatedValue -> truncatedValue
+                                            | None -> propertyValue
+                                        else propertyValue
+                                    let setPropertyValue propertyValue propertyDescriptor simulant world =
+                                        let propertyValue =
+                                            if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
+                                                match World.tryUntruncateModel propertyValue simulant world with
+                                                | Some untruncatedValue -> untruncatedValue
+                                                | None -> propertyValue
+                                            else propertyValue
+                                        setPropertyValue propertyValue propertyDescriptor simulant world
+                                    let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                                    let mutable replaced = false
+                                    let replaceProperty =
+                                        ReplaceProperty
+                                            { Snapshot = snapshot
+                                              FocusProperty = fun world -> focusProperty (); world
+                                              IndicateReplaced = fun world -> replaced <- true; world
+                                              PropertyDescriptor = propertyDescriptor }
+                                    let world = World.edit replaceProperty simulant world
+                                    if not replaced then
+                                        if FSharpType.IsRecord propertyDescriptor.PropertyType
+                                        then imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
+                                        else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
+                                    else world
                                 else
-                                    let focusProperty = fun () -> if ImGui.IsItemFocused () then focusPropertyOpt (Some (propertyDescriptor, simulant)) world
+                                    let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                                     let mutable replaced = false
                                     let replaceProperty =
                                         ReplaceProperty
@@ -3009,32 +2017,30 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                               PropertyDescriptor = propertyDescriptor }
                                     let world = World.edit replaceProperty simulant world
                                     if not replaced
-                                    then imGuiEditProperty getPropertyValue setPropertyValue focusProperty "" propertyDescriptor simulant world
+                                    then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
                                     else world
                             else world)
                             world propertyDescriptors
                     else world
                 if propertyCategory = "Ambient Properties" then // applied types directly after ambient properties
-                    if ImGui.CollapsingHeader ("Applied Types", ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
-                        match simulant with
-                        | :? Game as game ->
-                            let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
-                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        | :? Screen as screen ->
-                            let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
-                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        | :? Group as group ->
-                            let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
-                            ImGui.InputText ("DispatcherName", &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
-                            world
-                        | :? Entity as entity ->
-                            imGuiEditEntityAppliedTypes entity world
-                        | _ ->
-                            Log.infoOnce "Unexpected simulant type."
-                            world
-                    else world
+                    match simulant with
+                    | :? Game as game ->
+                        let mutable dispatcherNameCurrent = getTypeName (game.GetDispatcher world)
+                        ImGui.InputText (Constants.Engine.DispatcherNamePropertyName, &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        world
+                    | :? Screen as screen ->
+                        let mutable dispatcherNameCurrent = getTypeName (screen.GetDispatcher world)
+                        ImGui.InputText (Constants.Engine.DispatcherNamePropertyName, &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        world
+                    | :? Group as group ->
+                        let mutable dispatcherNameCurrent = getTypeName (group.GetDispatcher world)
+                        ImGui.InputText (Constants.Engine.DispatcherNamePropertyName, &dispatcherNameCurrent, 4096u, ImGuiInputTextFlags.ReadOnly) |> ignore<bool>
+                        world
+                    | :? Entity as entity ->
+                        imGuiEditEntityAppliedTypes entity world
+                    | _ ->
+                        Log.infoOnce "Unexpected simulant type."
+                        world
                 else world)
                 world propertyDescriptorses.Pairs
         let appendProperties =
@@ -3362,7 +2368,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         selectEntityOpt None world
                                         let world = World.destroyGroupImmediate SelectedGroup world
                                         GroupFilePaths <- Map.remove SelectedGroup.GroupAddress GroupFilePaths
-                                        selectGroup (Seq.head groupsRemaining)
+                                        selectGroup true (Seq.head groupsRemaining)
                                         world
                                     else MessageBoxOpt <- Some "Cannot close protected or only group."; world
                                 else world
@@ -3411,12 +2417,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world = if ImGui.Button "Create" then createEntity false false world else world
                 ImGui.SameLine ()
                 ImGui.SetNextItemWidth 200.0f
-                if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightLarge) then
+                if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightRegular) then
                     let dispatcherNames = (World.getEntityDispatchers world).Keys
                     let dispatcherNamePicked = tryPickName dispatcherNames
                     for dispatcherName in dispatcherNames do
                         if ImGui.Selectable (dispatcherName, strEq dispatcherName NewEntityDispatcherName) then NewEntityDispatcherName <- dispatcherName
-                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                        if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                         if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
@@ -3424,11 +2430,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SameLine ()
                 ImGui.SetNextItemWidth 150.0f
                 let overlayNames = Seq.append ["(Default Overlay)"; "(Routed Overlay)"; "(No Overlay)"] (World.getOverlayNames world)
-                if ImGui.BeginCombo ("##newEntityOverlayName", NewEntityOverlayName, ImGuiComboFlags.HeightLarge) then
+                if ImGui.BeginCombo ("##newEntityOverlayName", NewEntityOverlayName, ImGuiComboFlags.HeightRegular) then
                     let overlayNamePicked = tryPickName overlayNames
                     for overlayName in overlayNames do
                         if ImGui.Selectable (overlayName, strEq overlayName NewEntityOverlayName) then NewEntityOverlayName <- overlayName
-                        if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY -0.015f
+                        if Some overlayName = overlayNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                         if overlayName = NewEntityOverlayName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 ImGui.SameLine ()
@@ -3480,7 +2486,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.SameLine ()
                 ImGui.SetNextItemWidth 130.0f
                 let world =
-                    if ImGui.BeginCombo ("##projectEditMode", ProjectEditMode, ImGuiComboFlags.HeightLarge) then
+                    if ImGui.BeginCombo ("##projectEditMode", ProjectEditMode, ImGuiComboFlags.HeightRegular) then
                         let editModes = World.getEditModes world
                         let world =
                             Seq.fold (fun world (editModeName, editModeFn) ->
@@ -3600,11 +2606,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let groups = World.getGroups SelectedScreen world
                 let mutable selectedGroupName = SelectedGroup.Name
                 ImGui.SetNextItemWidth -1.0f
-                if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName, ImGuiComboFlags.HeightLarge) then
+                if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName, ImGuiComboFlags.HeightRegular) then
                     for group in groups do
                         if ImGui.Selectable (group.Name, strEq group.Name selectedGroupName) then
                             selectEntityOpt None world
-                            selectGroup group
+                            selectGroup true group
                         if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                     ImGui.EndCombo ()
                 if ImGui.BeginDragDropTarget () then
@@ -3924,7 +2930,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             FrameTimings.Dequeue () |> ignore<single>
             if ImPlot.BeginPlot ("FrameTimings", v2 -1.0f -1.0f, ImPlotFlags.NoTitle ||| ImPlotFlags.NoInputs) then
                 ImPlot.SetupLegend (ImPlotLocation.West, ImPlotLegendFlags.Outside)
-                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 35.0)
+                ImPlot.SetupAxesLimits (0.0, double (dec TimingsArray.Length), 0.0, 40.0)
                 ImPlot.SetupAxes ("Frame", "Time (ms)", ImPlotAxisFlags.NoLabel ||| ImPlotAxisFlags.NoTickLabels, ImPlotAxisFlags.None)
                 FrameTimings.CopyTo (TimingsArray, 0)
                 ImPlot.PlotLine ("Frame Time", &TimingsArray.[0], TimingsArray.Length)
@@ -4197,7 +3203,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if searchActiveCurrent then ImGui.SetNextItemOpen true
                 if searchDeactivated then ImGui.SetNextItemOpen false
                 if ImGui.TreeNodeEx (packageEntry.Key, flags) then
-                    for assetEntry in packageEntry.Value do
+                    for assetEntry in packageEntry.Value |> Array.sortBy (fun kvp -> kvp.Key) do
                         let assetName = assetEntry.Key
                         if (assetName.ToLowerInvariant ()).Contains (AssetViewerSearchStr.ToLowerInvariant ()) then
                             ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
@@ -4415,12 +3421,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if opening then ImGui.SetKeyboardFocusHere ()
             ImGui.InputTextWithHint ("##newGroupName", "[enter group name]", &NewGroupName, 4096u) |> ignore<bool>
             let newGroup = SelectedScreen / NewGroupName
-            if ImGui.BeginCombo ("##newGroupDispatcherName", NewGroupDispatcherName, ImGuiComboFlags.HeightLarge) then
+            if ImGui.BeginCombo ("##newGroupDispatcherName", NewGroupDispatcherName, ImGuiComboFlags.HeightRegular) then
                 let dispatcherNames = (World.getGroupDispatchers world).Keys
                 let dispatcherNamePicked = tryPickName dispatcherNames
                 for dispatcherName in dispatcherNames do
                     if ImGui.Selectable (dispatcherName, strEq dispatcherName NewGroupDispatcherName) then NewGroupDispatcherName <- dispatcherName
-                    if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                    if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if dispatcherName = NewGroupDispatcherName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             let world =
@@ -4428,7 +3434,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let worldOld = world
                     try let world = World.createGroup4 NewGroupDispatcherName (Some NewGroupName) SelectedScreen world |> snd
                         selectEntityOpt None world
-                        selectGroup newGroup
+                        selectGroup true newGroup
                         ShowNewGroupDialog <- false
                         NewGroupName <- ""
                         world
@@ -4482,7 +3488,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if (ImGui.Button "Apply" || ImGui.IsKeyReleased ImGuiKey.Enter) && String.notEmpty GroupRename && Address.validName GroupRename && not (group'.GetExists world) then
                         let world = snapshot RenameGroup world
                         let world = World.renameGroupImmediate group group' world
-                        selectGroup group'
+                        selectGroup true group'
                         ShowRenameGroupDialog <- false
                         world
                     else world
@@ -4599,7 +3605,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.SameLine ()
             ImGui.SetNextItemWidth -1.0f
             let world =
-                if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightLarge) then
+                if ImGui.BeginCombo ("##newEntityDispatcherName", NewEntityDispatcherName, ImGuiComboFlags.HeightRegular) then
                     let dispatcherNames = (World.getEntityDispatchers world).Keys
                     let dispatcherNamePicked = tryPickName dispatcherNames
                     let world =
@@ -4611,7 +3617,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     ShowEntityContextMenu <- false
                                     world
                                 else world
-                            if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY -0.015f
+                            if Some dispatcherName = dispatcherNamePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                             if dispatcherName = NewEntityDispatcherName then ImGui.SetItemDefaultFocus ()
                             world)
                             world dispatcherNames
@@ -4653,7 +3659,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     world
                 else world
             ImGui.Separator ()
-            if ImGui.Button "Open Entity" then ShowOpenEntityDialog <- true
+            if ImGui.Button "Open Entity" then
+                ShowOpenEntityDialog <- true
+                ShowEntityContextMenu <- false
             if ImGui.Button "Save Entity" then
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world ->
@@ -4661,13 +3669,33 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | Some filePath -> EntityFileDialogState.FilePath <- filePath
                     | None -> EntityFileDialogState.FileName <- ""
                     ShowSaveEntityDialog <- true
+                    ShowEntityContextMenu <- false
                 | Some _ | None -> ()
             ImGui.Separator ()
-            let world = if ImGui.Button "Auto Bounds Entity" then tryAutoBoundsSelectedEntity world |> snd else world
-            let world = if ImGui.Button "Propagate Entity" then tryPropagateSelectedEntityStructure world |> snd else world
-            let world = if ImGui.Button "Wipe Propagation Targets" then tryWipeSelectedEntityPropagationTargets world |> snd else world
-            if ImGui.Button "Show in Hierarchy" then ShowSelectedEntity <- true; ShowEntityContextMenu <- false
-            if ImGui.Button "Set as Creation Parent" then NewEntityParentOpt <- SelectedEntityOpt; ShowEntityContextMenu <- false
+            let world =
+                if ImGui.Button "Auto Bounds Entity" then
+                    let world = tryAutoBoundsSelectedEntity world |> snd
+                    ShowEntityContextMenu <- false
+                    world
+                else world
+            let world =
+                if ImGui.Button "Propagate Entity" then
+                    let world = tryPropagateSelectedEntityStructure world |> snd
+                    ShowEntityContextMenu <- false
+                    world
+                else world
+            let world =
+                if ImGui.Button "Wipe Propagated Descriptor" then
+                    let world = tryWipeSelectedEntityPropagationTargets world |> snd
+                    ShowEntityContextMenu <- false
+                    world
+                else world
+            if ImGui.Button "Show in Hierarchy" then
+                ShowSelectedEntity <- true
+                ShowEntityContextMenu <- false
+            if ImGui.Button "Set as Creation Parent" then
+                NewEntityParentOpt <- SelectedEntityOpt
+                ShowEntityContextMenu <- false
             let operation = ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }
             let world = World.editGame operation Game world
             let world = World.editScreen operation SelectedScreen world
@@ -4962,7 +3990,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         ProjectImperativeExecution <- OpenProjectImperativeExecution
         GroupFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
         EntityFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
-        selectScreen screen
+        selectScreen false screen
         let world = selectGroupInitial screen world
         NewEntityDispatcherName <- World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         AssetGraphStr <-

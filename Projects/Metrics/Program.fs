@@ -39,7 +39,7 @@ type MyGameDispatcher () =
         let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
         let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
-        let positions = // 40,000 entities (goal: 60FPS, current 56FPS)
+        let positions = // 40,000 entities (goal: 60FPS, current 55FPS)
             [|for i in 0 .. dec 50 do
                 for j in 0 .. dec 50 do
                     for k in 0 .. dec 16 do
@@ -74,12 +74,12 @@ type [<ReferenceEquality>] Intss =
     static member inc intss =
         { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
 
-type Message =
+type MmccGameMessage =
     | Inc
     interface Message
 
 type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, Message, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 58FPS)
+    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 60FPS)
 
     override this.Definitions (_, _) =
         [Game.UpdateEvent => Inc]

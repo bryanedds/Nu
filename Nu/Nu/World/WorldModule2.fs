@@ -2047,11 +2047,12 @@ module EntityPropertyDescriptor =
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if  propertyName = "Name" ||
             propertyName = "Surnames" ||
-            propertyName = "Model" ||
             propertyName = "MountOpt" ||
             propertyName = "PropagationSourceOpt" ||
             propertyName = "OverlayNameOpt" then
             "Ambient Properties"
+        elif propertyName = "Model" then
+            "Basic Model Properties"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
              propertyName = "Offset" || propertyName = "Overflow" ||
@@ -2062,7 +2063,8 @@ module EntityPropertyDescriptor =
              propertyName = "Size" then
              "Basic Transform Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
-        elif propertyName = "MaterialProperties" || propertyName = "Material" then "Material Properties"
+        elif propertyName = "MaterialProperties" then "Material Properties"
+        elif propertyName = "Material" then "Material Properties 2"
         elif propertyName = "NavShape" || propertyName = "Nav3dConfig" then "Navigation Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Uncategorized Properties"
