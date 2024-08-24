@@ -33,18 +33,18 @@ uniform float lightShadowBiasAcne;
 uniform float lightShadowBiasBleed;
 uniform int ssrEnabled;
 uniform float ssrDetail;
-uniform float ssrDepthMax;
-uniform float ssrDistanceMax;
 uniform int ssrRefinementsMax;
-uniform float ssrRoughnessMax;
-uniform float ssrSurfaceSlopeMax;
 uniform float ssrRayThickness;
-uniform float ssrRoughnessCutoff;
 uniform float ssrDepthCutoff;
 uniform float ssrDistanceCutoff;
-uniform float ssrSurfaceSlopeCutoff;
-uniform float ssrEdgeCutoffHorizontal;
-uniform float ssrEdgeCutoffVertical;
+uniform float ssrRoughnessCutoff;
+uniform float ssrSlopeCutoff;
+uniform float ssrRoughnessCutoffMargin;
+uniform float ssrDepthCutoffMargin;
+uniform float ssrDistanceCutoffMargin;
+uniform float ssrSlopeCutoffMargin;
+uniform float ssrEdgeHorizontalMargin;
+uniform float ssrEdgeVerticalMargin;
 uniform vec3 ssrLightColor;
 uniform float ssrLightBrightness;
 uniform sampler2D positionTexture;
@@ -144,7 +144,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float surfaceSlope, out vec3 specularSS, out float specularWeight)
+void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularSS, out float specularWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -152,7 +152,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
     vec3 normalView = mat3(view) * normal;
     vec3 reflectionView = reflect(positionViewNormal, normalView);
     vec4 startView = vec4(positionView.xyz, 1.0);
-    vec4 stopView = vec4(positionView.xyz + reflectionView * ssrDistanceMax, 1.0);
+    vec4 stopView = vec4(positionView.xyz + reflectionView * ssrDistanceCutoff, 1.0);
     float eyeDistanceFromPlane = abs(dot(normalView, positionView.xyz));
 
     // compute the fragment at which to start marching
@@ -194,7 +194,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
         currentPosition = texture(positionTexture, currentUV);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
-        currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
+        currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
 
         // compute depth delta and thickness based on view state
         float depthDelta = currentDepthView - -currentPositionView.z;
@@ -214,7 +214,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                 currentUV = currentFrag / texSize;
                 currentPosition = texture(positionTexture, currentUV);
                 currentPositionView = view * currentPosition;
-                currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceMax increases.
+                currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
 
                 // compute depth delta and thickness based on view state
                 float depthDelta = currentDepthView - -currentPositionView.z;
@@ -233,13 +233,13 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                     vec3 specularIntensity = f * (1.0 - roughness);
                     specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
                     specularWeight =
-                        (1.0 - smoothstep(1.0 - ssrRoughnessCutoff, 1.0, roughness / ssrRoughnessMax)) * // filter out as fragment reaches max roughness
-                        (1.0 - smoothstep(1.0 - ssrDepthCutoff, 1.0, positionView.z / -ssrDepthMax)) * // filter out as fragment reaches max depth
-                        (1.0 - smoothstep(1.0 - ssrDistanceCutoff, 1.0, length(currentPositionView - positionView) / ssrDistanceMax)) * // filter out as reflection point reaches max distance from fragment
-                        (1.0 - smoothstep(1.0 - ssrSurfaceSlopeCutoff, 1.0, surfaceSlope / ssrSurfaceSlopeMax)) *
+                        (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
+                        (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
+                        (1.0 - smoothstep(1.0 - ssrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
+                        (1.0 - smoothstep(1.0 - ssrSlopeCutoffMargin, 1.0, slope / ssrSlopeCutoff)) *
                         smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        smoothstep(0.0, ssrEdgeCutoffHorizontal, min(currentUV.x, 1.0 - currentUV.x)) *
-                        smoothstep(0.0, ssrEdgeCutoffVertical, min(currentUV.y, 1.0 - currentUV.y));
+                        smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentUV.x, 1.0 - currentUV.x)) *
+                        smoothstep(0.0, ssrEdgeVerticalMargin, min(currentUV.y, 1.0 - currentUV.y));
                     specularWeight = clamp(specularWeight, 0.0, 1.0);
                     break;
                 }
@@ -374,16 +374,16 @@ void main()
         // compute specular term and weight from screen-space
         vec3 specularSS = vec3(0.0);
         float specularWeight = 0.0;
-        float surfaceSlope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
+        float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
         vec4 positionView = view * position;
-        if (ssrEnabled == 1 && roughness <= ssrRoughnessMax && surfaceSlope <= ssrSurfaceSlopeMax && -positionView.z <= ssrDepthMax)
+        if (ssrEnabled == 1 && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff && -positionView.z <= ssrDepthCutoff)
         {
             vec2 texSize = textureSize(positionTexture, 0).xy;
             float texelHeight = 1.0 / texSize.y;
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
             vec4 positionBelow = texture(positionTexture, texCoordsBelow);
-            ssr(positionBelow, albedo, roughness, metallic, normal, surfaceSlope, specularSS, specularWeight);
+            ssr(positionBelow, albedo, roughness, metallic, normal, slope, specularSS, specularWeight);
         }
 
         // compute specular term
