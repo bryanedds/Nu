@@ -48,6 +48,7 @@ and Unsubscription = World -> World
 /// Describes the type of snapshot taken for operation tracking.
 and SnapshotType =
     | RerenderLightMap
+    | SeverPropagationTargets
     | WipePropagationTargets
     | TranslateEntity
     | RotateEntity
@@ -83,6 +84,7 @@ and SnapshotType =
     member this.Label =
         match this with
         | RerenderLightMap -> (scstringMemo this).Spaced
+        | SeverPropagationTargets -> (scstringMemo this).Spaced
         | WipePropagationTargets -> (scstringMemo this).Spaced
         | TranslateEntity -> (scstringMemo this).Spaced
         | RotateEntity -> (scstringMemo this).Spaced
