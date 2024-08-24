@@ -377,11 +377,11 @@ module WorldImGui =
                     if focused' then focused <- true
                     (changed, tmps)
                 | :? MaterialProperties as mps ->
-                    let (focused', changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<MaterialProperties>) mps
+                    let (focused', changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup false name (typeof<MaterialProperties>) mps
                     if focused' then focused <- true
                     (changed, mps)
                 | :? Material as material ->
-                    let (focused', changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Material>) material
+                    let (focused', changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup false name (typeof<Material>) material
                     if focused' then focused <- true
                     (changed, material)
                 | :? Lighting3dConfig as lighting3dConfig ->
