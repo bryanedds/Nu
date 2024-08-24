@@ -704,7 +704,10 @@ module WorldImGui =
                             let mutable valueStr = converter.ConvertToString value
                             let (changed, value) =
                                 if ImGui.InputText ("##text" + name, &valueStr, 4096u) then
-                                    (true, converter.ConvertFromString valueStr)
+                                    try let value = converter.ConvertFromString valueStr
+                                        (true, value)
+                                    with _ ->
+                                        (false, value)
                                 else (false, value)
                             if ImGui.IsItemFocused () then focused <- true
                             let (changed, value) =
