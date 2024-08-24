@@ -626,7 +626,7 @@ module WorldImGui =
                                         else (false, value)
                                     else (true, None)
                                 else (false, value)
-                            let mutable focused = ImGui.IsItemFocused ()
+                            focused <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
                                 let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
@@ -690,7 +690,7 @@ module WorldImGui =
                                         else failwithumf ()
                                     else (true, ValueNone)
                                 else (false, value)
-                            let mutable focused = ImGui.IsItemFocused ()
+                            focused <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
                                 let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
