@@ -456,12 +456,12 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrRefinementsMax : int
       SsrRayThickness : single
       SsrDepthCutoff : single
-      SsrDistanceCutoff : single
-      SsrRoughnessCutoff : single
-      SsrSlopeCutoff : single
-      SsrRoughnessCutoffMargin : single
       SsrDepthCutoffMargin : single
+      SsrDistanceCutoff : single
       SsrDistanceCutoffMargin : single
+      SsrRoughnessCutoff : single
+      SsrRoughnessCutoffMargin : single
+      SsrSlopeCutoff : single
       SsrSlopeCutoffMargin : single
       SsrEdgeHorizontalMargin : single
       SsrEdgeVerticalMargin : single
@@ -481,12 +481,12 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsrRefinementsMax = Constants.Render.SsrRefinementsMaxDefault
           SsrRayThickness = Constants.Render.SsrRayThicknessDefault
           SsrDepthCutoff = Constants.Render.SsrDepthCutoffDefault
-          SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
-          SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
-          SsrSlopeCutoff = Constants.Render.SsrSlopeCutoffDefault
-          SsrRoughnessCutoffMargin = Constants.Render.SsrRoughnessCutoffMarginDefault
           SsrDepthCutoffMargin = Constants.Render.SsrDepthCutoffMarginDefault
+          SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
           SsrDistanceCutoffMargin = Constants.Render.SsrDistanceCutoffMarginDefault
+          SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
+          SsrRoughnessCutoffMargin = Constants.Render.SsrRoughnessCutoffMarginDefault
+          SsrSlopeCutoff = Constants.Render.SsrSlopeCutoffDefault
           SsrSlopeCutoffMargin = Constants.Render.SsrSlopeCutoffMarginDefault
           SsrEdgeHorizontalMargin = Constants.Render.SsrEdgeHorizontalMarginDefault
           SsrEdgeVerticalMargin = Constants.Render.SsrEdgeVerticalMarginDefault
@@ -2745,8 +2745,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssrLightColor = Array.take 3 (renderer.LightingConfig.SsrLightColor.ToArray ())
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
-             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrSlopeCutoff,
-             renderer.LightingConfig.SsrRoughnessCutoffMargin, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
+             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness,
+             renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
+             renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
              ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
