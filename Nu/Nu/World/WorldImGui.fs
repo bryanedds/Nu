@@ -628,7 +628,9 @@ module WorldImGui =
                             focused <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
+                                ImGui.PushID name
                                 let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                ImGui.PopID ()
                                 let value = Activator.CreateInstance (ty, [|value'|])
                                 if focused' then focused <- true
                                 (changed || changed', value)
@@ -692,7 +694,9 @@ module WorldImGui =
                             focused <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
+                                ImGui.PushID name
                                 let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                ImGui.PopID ()
                                 let value = Activator.CreateInstance (ty, [|value'|])
                                 if focused' then focused <- true
                                 (changed || changed', value)
