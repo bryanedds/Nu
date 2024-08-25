@@ -81,17 +81,22 @@ module Hl =
         SDL.SDL_GL_MakeCurrent (window, glContext) |> ignore<int>
         Gl.BindAPI ()
         Assert ()
-        let version = Gl.GetString StringName.Version
-        Log.info ("Initialized OpenGL " + version + ".")
-        if  not (version.StartsWith "4.1") &&
-            not (version.StartsWith "4.2") &&
-            not (version.StartsWith "4.3") &&
-            not (version.StartsWith "4.4") &&
-            not (version.StartsWith "4.5") &&
-            not (version.StartsWith "4.6") &&
-            not (version.StartsWith "5.0") (* heaven forbid... *) then
+        let versionStr = Gl.GetString StringName.Version
+        Log.info ("Initialized OpenGL " + versionStr + ".")
+        if  not (versionStr.StartsWith "4.1") &&
+            not (versionStr.StartsWith "4.2") &&
+            not (versionStr.StartsWith "4.3") &&
+            not (versionStr.StartsWith "4.4") &&
+            not (versionStr.StartsWith "4.5") &&
+            not (versionStr.StartsWith "4.6") &&
+            not (versionStr.StartsWith "5.0") (* heaven forbid... *) then
             Log.fail "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
-        glContext
+        let vendorName = Gl.GetString StringName.Vendor
+        let glFinishRequired =
+            Constants.Render.VendorNamesExceptedFromGlFinishSwapRequirement |>
+            List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))
+        if glFinishRequired then Log.warn "Requirement to call 'glFinish' before swapping is detected on current hardware. This will likely reduce rendering performance."
+        (glFinishRequired, glContext)
 
     /// Create a SDL OpenGL context with the given window that shares the current context. Originating thread must wait
     /// on the given WaitOnce object before continuing processing.

@@ -783,8 +783,6 @@ type Renderer3d =
     abstract RendererConfig : Renderer3dConfig
     /// Render a frame of the game.
     abstract Render : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
-    /// Swap a rendered frame of the game.
-    abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -796,7 +794,6 @@ type [<ReferenceEquality>] StubRenderer3d =
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
         member renderer.Render _ _ _ _ _ _ _ _ = ()
-        member renderer.Swap () = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -3439,12 +3436,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.ResetDrawCalls ()
             if renderMessages.Count > 0 then
                 GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
-
-        member renderer.Swap () =
-            match renderer.Window with
-            | SglWindow window ->
-                OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
-                SDL.SDL_GL_SwapWindow window.SglWindow
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader
