@@ -194,7 +194,7 @@ module WorldImGui =
             (focused, changed, items)
 
         /// Edit a record value via ImGui.
-        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup headered name ty (value : obj) =
+        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup headered (name : string) (ty : Type) (value : obj) =
             if headered then
                 ImGui.Text name
                 ImGui.Indent ()
@@ -202,17 +202,26 @@ module WorldImGui =
             let mutable focused = false
             let mutable changed = false
             let fields =
-                FSharpType.GetRecordFields ty |>
-                Array.zip (FSharpValue.GetRecordFields value) |>
+                FSharpType.GetRecordFields (ty, true) |>
+                Array.zip (FSharpValue.GetRecordFields (value, true)) |>
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
+                    let fieldName =
+                        if ty.IsDefined (typeof<SymbolicExpansionAttribute>, true) then
+                            let expansionAttribute = ty.GetCustomAttribute<SymbolicExpansionAttribute> true
+                            if expansionAttribute.PrettifyFieldNames then
+                                if fieldInfo.Name.EndsWith "_"
+                                then fieldInfo.Name.Substring (0, dec fieldInfo.Name.Length)
+                                else String.capitalize fieldInfo.Name
+                            else fieldInfo.Name
+                        else fieldInfo.Name
                     let (focused', changed', field) =
                         if FSharpType.IsRecord fieldInfo.PropertyType && fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name
-                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldInfo.Name fieldInfo.PropertyType field
-                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldInfo.Name fieldInfo.PropertyType field
+                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldName fieldInfo.PropertyType field
+                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldName fieldInfo.PropertyType field
                     if focused' then focused <- true
                     if changed' then changed <- true
                     field)
-            let value = FSharpValue.MakeRecord (ty, fields)
+            let value = FSharpValue.MakeRecord (ty, fields, true)
             if headered then ImGui.Unindent ()
             ImGui.PopID ()
             (focused, changed, value)
