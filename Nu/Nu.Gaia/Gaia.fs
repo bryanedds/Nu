@@ -3960,6 +3960,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world <- World.setEye3dRotation DesiredEye3dRotation world
         world
 
+    let rec private runWithCleanUpAndErrorProtection firstFrame world =
+        try let world = World.runWithoutCleanUp tautology id id imGuiRender imGuiProcess imGuiPostProcess Live firstFrame world
+            World.cleanUp world
+            Constants.Engine.ExitCodeSuccess
+        with exn ->
+            let (undone, world) = tryUndo world
+            if undone then
+                Futures <- [] // NOTE: clearing invalid futures.
+                let wasAdvancing = world.Advancing
+                let world = if wasAdvancing then World.setAdvancing false world else world
+                let errorMsg =
+                    "Unexpected exception!\n\nRewound to previous world" +
+                    (if wasAdvancing then " and halted." else ".") +
+                    "\n\nError due to: " + exn.Message +
+                    "\n\nStack trace:\n" + string exn.StackTrace
+                Log.error errorMsg
+                MessageBoxOpt <- Some errorMsg
+                runWithCleanUpAndErrorProtection false world
+            else
+                let errorMsg = "Unexpected exception! Could not rewind world. Error due to: " + scstring exn
+                Log.error errorMsg
+                Constants.Engine.ExitCodeFailure
+
     let rec private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectFilePath <- gaiaState.ProjectDllPath
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
@@ -4009,7 +4032,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'."); ""
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
-        let result = World.runWithCleanUp tautology id id imGuiRender imGuiProcess imGuiPostProcess Live true world
+        let result = runWithCleanUpAndErrorProtection true world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
         FsiErrorStream.Dispose ()
         FsiInStream.Dispose ()
