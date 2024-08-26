@@ -1226,7 +1226,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DesiredEye3dRotation <- quatIdentity
 
     let private toggleAdvancing (world : World) =
-        let world = if not world.Advancing then snapshot Advance world else world
+        let world = snapshot (if world.Advancing then Halt else Advance) world
         let world = World.setAdvancing (not world.Advancing) world
         world
 
@@ -3574,7 +3574,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.BeginPopupModal title then
             ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
             let world =
-                if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then // HACK: checking key pressed event so that previous ui's key release won't bypass this.
+                if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then // HACK: checking key pressed event so that previous gui's key release won't bypass this.
                     World.exit world
                 else world
             ImGui.EndPopup ()
