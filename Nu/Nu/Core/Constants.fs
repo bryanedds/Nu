@@ -157,6 +157,7 @@ module Render =
     let [<Literal>] SsrDetailDefault = 0.41f
     let [<Literal>] SsrRefinementsMaxDefault = 24
     let [<Literal>] SsrRayThicknessDefault = 0.0333f
+    let [<Literal>] SsrTowardEyeCutoffDefault = 0.9f
     let [<Literal>] SsrDepthCutoffDefault = 24.0f
     let [<Literal>] SsrDepthCutoffMarginDefault = 0.2f
     let [<Literal>] SsrDistanceCutoffDefault = 16.0f

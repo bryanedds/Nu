@@ -397,6 +397,7 @@ module WorldImGui =
                     let mutable ssrDetail = lighting3dConfig.SsrDetail
                     let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
                     let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
+                    let mutable ssrTowardEyeCutoff = lighting3dConfig.SsrTowardEyeCutoff
                     let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
                     let mutable ssrDepthCutoffMargin = lighting3dConfig.SsrDepthCutoffMargin
                     let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
@@ -420,6 +421,7 @@ module WorldImGui =
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Toward Eye Cutoff", &ssrTowardEyeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff Margin", &ssrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
@@ -445,6 +447,7 @@ module WorldImGui =
                               SsrDetail = ssrDetail
                               SsrRefinementsMax = ssrRefinementsMax
                               SsrRayThickness = ssrRayThickness
+                              SsrTowardEyeCutoff = ssrTowardEyeCutoff
                               SsrDepthCutoff = ssrDepthCutoff
                               SsrDepthCutoffMargin = ssrDepthCutoffMargin
                               SsrDistanceCutoff = ssrDistanceCutoff

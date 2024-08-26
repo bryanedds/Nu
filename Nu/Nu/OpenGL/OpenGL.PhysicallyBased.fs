@@ -352,6 +352,7 @@ module PhysicallyBased =
           SsrDetailUniform : int
           SsrRefinementsMaxUniform : int
           SsrRayThicknessUniform : int
+          SsrTowardEyeCutoffUniform : int
           SsrDepthCutoffUniform : int
           SsrDepthCutoffMarginUniform : int
           SsrDistanceCutoffUniform : int
@@ -1643,6 +1644,7 @@ module PhysicallyBased =
         let ssrDetailUniform = Gl.GetUniformLocation (shader, "ssrDetail")
         let ssrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrRefinementsMax")
         let ssrRayThicknessUniform = Gl.GetUniformLocation (shader, "ssrRayThickness")
+        let ssrTowardEyeCutoffUniform = Gl.GetUniformLocation (shader, "ssrTowardEyeCutoff")
         let ssrDepthCutoffUniform = Gl.GetUniformLocation (shader, "ssrDepthCutoff")
         let ssrDepthCutoffMarginUniform = Gl.GetUniformLocation (shader, "ssrDepthCutoffMargin")
         let ssrDistanceCutoffUniform = Gl.GetUniformLocation (shader, "ssrDistanceCutoff")
@@ -1695,6 +1697,7 @@ module PhysicallyBased =
           SsrDetailUniform = ssrDetailUniform
           SsrRefinementsMaxUniform = ssrRefinementsMaxUniform
           SsrRayThicknessUniform = ssrRayThicknessUniform
+          SsrTowardEyeCutoffUniform = ssrTowardEyeCutoffUniform
           SsrDepthCutoffUniform = ssrDepthCutoffUniform
           SsrDepthCutoffMarginUniform = ssrDepthCutoffMarginUniform
           SsrDistanceCutoffUniform = ssrDistanceCutoffUniform
@@ -2636,6 +2639,7 @@ module PhysicallyBased =
          ssrDetail : single,
          ssrRefinementsMax : int,
          ssrRayThickness : single,
+         ssrTowardEyeCutoff : single,
          ssrDepthCutoff : single,
          ssrDepthCutoffMargin : single,
          ssrDistanceCutoff : single,
@@ -2687,6 +2691,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.SsrDetailUniform, ssrDetail)
         Gl.Uniform1 (shader.SsrRefinementsMaxUniform, ssrRefinementsMax)
         Gl.Uniform1 (shader.SsrRayThicknessUniform, ssrRayThickness)
+        Gl.Uniform1 (shader.SsrTowardEyeCutoffUniform, ssrTowardEyeCutoff)
         Gl.Uniform1 (shader.SsrDepthCutoffUniform, ssrDepthCutoff)
         Gl.Uniform1 (shader.SsrDepthCutoffMarginUniform, ssrDepthCutoffMargin)
         Gl.Uniform1 (shader.SsrDistanceCutoffUniform, ssrDistanceCutoff)
