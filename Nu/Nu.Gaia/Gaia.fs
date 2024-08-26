@@ -3971,10 +3971,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let wasAdvancing = world.Advancing
                 let world = if wasAdvancing then World.setAdvancing false world else world
                 let errorMsg =
-                    "Unexpected exception!\n\nRewound to previous world" +
+                    "Unexpected exception!\nRewound to previous world" +
                     (if wasAdvancing then " and halted." else ".") +
-                    "\n\nError due to: " + exn.Message +
-                    "\n\nStack trace:\n" + string exn.StackTrace
+                    "\nError due to: " + exn.Message +
+                    "\nStack trace:\n" + string exn.StackTrace
                 Log.error errorMsg
                 MessageBoxOpt <- Some errorMsg
                 runWithCleanUpAndErrorProtection false world
