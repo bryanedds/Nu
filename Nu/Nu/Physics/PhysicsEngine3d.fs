@@ -419,7 +419,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // TODO: make this more accurate by making each c weighted proportionately to its respective m.
             List.fold (fun (c, m, i, d) (c', m', i', d') -> (c + c', m + m', i + i', fun () -> d (); d' ())) (v3Zero, 0.0f, v3Zero, id) centerMassInertiaDisposes
         let shapeSensorOpt = match bodyProperties.BodyShape.PropertiesOpt with Some properties -> properties.SensorOpt | None -> None
-        let userIndex = if Option.defaultValue false shapeSensorOpt ||  bodyProperties.Sensor || bodyProperties.Observable then 1 else -1
+        let userIndex = if Option.defaultValue false shapeSensorOpt || bodyProperties.Sensor || bodyProperties.Observable then 1 else -1
         if bodyProperties.Sensor then
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape

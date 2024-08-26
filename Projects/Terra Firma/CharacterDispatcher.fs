@@ -5,6 +5,7 @@ open Prime
 open Nu
 
 type CharacterMessage =
+    | CharacterCollide of BodyCollisionData
     | WeaponCollide of BodyCollisionData
     | WeaponSeparateExplicit of BodySeparationExplicitData
     | WeaponSeparateImplicit of BodySeparationImplicitData
@@ -44,10 +45,12 @@ type CharacterDispatcher (character : Character) =
          Entity.SleepingAllowed == true
          Entity.CharacterProperties == character.CharacterProperties
          Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
+         Entity.Observable == true
          Entity.FollowTargetOpt := match character.CharacterType with Enemy -> Some Simulants.GameplayPlayer | Player -> None
          Entity.RegisterEvent => Register
          Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
          Entity.UpdateEvent => Update
+         Entity.BodyCollisionEvent =|> fun evt -> CharacterCollide evt.Data
          Game.PostUpdateEvent => SyncWeaponTransform]
 
     override this.Content (character, _) =
@@ -108,11 +111,27 @@ type CharacterDispatcher (character : Character) =
             let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
             withSignals signals character
 
+        | CharacterCollide collisionData ->
+            match collisionData.BodyShapeCollidee.BodyId.BodySource with
+            | :? Entity as collidee when collidee.Is<CharacterDispatcher> world ->
+                let characterCollidee = collidee.GetCharacter world
+                match (character.CharacterType, characterCollidee.CharacterType) with
+                | (Enemy, Enemy) ->
+                    let playerPosition = Simulants.GameplayPlayer.GetPosition world
+                    if  Vector3.DistanceSquared (entity.GetPosition world, playerPosition) >=
+                        Vector3.DistanceSquared (collidee.GetPosition world, playerPosition) then
+                        let severe = match characterCollidee.ActionState with AttackState _ | ObstructedState _ -> true | _ -> false
+                        let character = { character with ActionState = ObstructedState { ObstructedTime = world.UpdateTime; Severe = severe }}
+                        just character
+                    else just character
+                | (_, _) -> just character
+            | _ -> just character
+
         | WeaponCollide collisionData ->
             match collisionData.BodyShapeCollidee.BodyId.BodySource with
             | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
-                let collideeCharacter = collidee.GetCharacter world
-                if character.CharacterType <> collideeCharacter.CharacterType then
+                let characterCollidee = collidee.GetCharacter world
+                if character.CharacterType <> characterCollidee.CharacterType then
                     let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
                     just character
                 else just character
