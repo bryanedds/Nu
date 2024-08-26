@@ -6,7 +6,7 @@ open Nu
 
 type BulletCommand =
     | Update
-    | Collision
+    | Penetration
     interface Command
 
 type BulletDispatcher () =
@@ -30,7 +30,7 @@ type BulletDispatcher () =
          Entity.Observable == true
          Entity.StaticImage == Assets.Gameplay.PlayerBulletImage
          Entity.UpdateEvent => Update
-         Entity.BodyCollisionEvent => Collision]
+         Entity.BodyPenetrationEvent => Penetration]
 
     override this.Command (startTime, command, entity, world) =
         match command with
@@ -38,6 +38,6 @@ type BulletDispatcher () =
             let localTime = world.UpdateTime - startTime
             let world = if localTime = BulletLifeTime then World.destroyEntity entity world else world
             just world
-        | Collision ->
+        | Penetration ->
             let world = World.destroyEntity entity world
             just world

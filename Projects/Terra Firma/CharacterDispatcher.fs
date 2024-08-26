@@ -5,8 +5,8 @@ open Prime
 open Nu
 
 type CharacterMessage =
-    | CharacterCollide of BodyCollisionData
-    | WeaponCollide of BodyCollisionData
+    | CharacterPenetration of BodyPenetrationData
+    | WeaponPenetration of BodyPenetrationData
     | WeaponSeparateExplicit of BodySeparationExplicitData
     | WeaponSeparateImplicit of BodySeparationImplicitData
     | UpdateInputKey of KeyboardKeyData
@@ -50,7 +50,7 @@ type CharacterDispatcher (character : Character) =
          Entity.RegisterEvent => Register
          Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
          Entity.UpdateEvent => Update
-         Entity.BodyCollisionEvent =|> fun evt -> CharacterCollide evt.Data
+         Entity.BodyPenetrationEvent =|> fun evt -> CharacterPenetration evt.Data
          Game.PostUpdateEvent => SyncWeaponTransform]
 
     override this.Content (character, _) =
@@ -80,7 +80,7 @@ type CharacterDispatcher (character : Character) =
              Entity.Sensor == true
              Entity.NavShape == EmptyNavShape
              Entity.Pickable == false
-             Entity.BodyCollisionEvent =|> fun evt -> WeaponCollide evt.Data
+             Entity.BodyPenetrationEvent =|> fun evt -> WeaponPenetration evt.Data
              Entity.BodySeparationExplicitEvent =|> fun evt -> WeaponSeparateExplicit evt.Data
              Entity.BodySeparationImplicitEvent =|> fun evt -> WeaponSeparateImplicit evt.Data]]
 
@@ -111,28 +111,28 @@ type CharacterDispatcher (character : Character) =
             let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
             withSignals signals character
 
-        | CharacterCollide collisionData ->
-            match collisionData.BodyShapeCollidee.BodyId.BodySource with
-            | :? Entity as collidee when collidee.Is<CharacterDispatcher> world ->
-                let characterCollidee = collidee.GetCharacter world
-                match (character.CharacterType, characterCollidee.CharacterType) with
+        | CharacterPenetration penetrationData ->
+            match penetrationData.BodyShapePenetratee.BodyId.BodySource with
+            | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world ->
+                let characterPenetratee = penetratee.GetCharacter world
+                match (character.CharacterType, characterPenetratee.CharacterType) with
                 | (Enemy, Enemy) ->
                     let playerPosition = Simulants.GameplayPlayer.GetPosition world
                     if  Vector3.DistanceSquared (entity.GetPosition world, playerPosition) >=
-                        Vector3.DistanceSquared (collidee.GetPosition world, playerPosition) then
-                        let severe = match characterCollidee.ActionState with AttackState _ | ObstructedState _ -> true | _ -> false
+                        Vector3.DistanceSquared (penetratee.GetPosition world, playerPosition) then
+                        let severe = match characterPenetratee.ActionState with AttackState _ | ObstructedState _ -> true | _ -> false
                         let character = { character with ActionState = ObstructedState { ObstructedTime = world.UpdateTime; Severe = severe }}
                         just character
                     else just character
                 | (_, _) -> just character
             | _ -> just character
 
-        | WeaponCollide collisionData ->
-            match collisionData.BodyShapeCollidee.BodyId.BodySource with
-            | :? Entity as collidee when collidee.Is<CharacterDispatcher> world && collidee <> entity ->
-                let characterCollidee = collidee.GetCharacter world
-                if character.CharacterType <> characterCollidee.CharacterType then
-                    let character = { character with WeaponCollisions = Set.add collidee character.WeaponCollisions }
+        | WeaponPenetration penetrationData ->
+            match penetrationData.BodyShapePenetratee.BodyId.BodySource with
+            | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
+                let characterPenetratee = penetratee.GetCharacter world
+                if character.CharacterType <> characterPenetratee.CharacterType then
+                    let character = { character with WeaponCollisions = Set.add penetratee character.WeaponCollisions }
                     just character
                 else just character
             | _ -> just character

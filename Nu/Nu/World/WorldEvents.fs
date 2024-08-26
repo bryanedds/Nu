@@ -57,10 +57,10 @@ type TransformData =
       Position : Vector3
       Rotation : Quaternion }
 
-/// The data for a collision event.
-type BodyCollisionData =
-    { BodyShapeCollider : BodyShapeIndex
-      BodyShapeCollidee : BodyShapeIndex
+/// The data for a penetration event.
+type BodyPenetrationData =
+    { BodyShapePenetrator : BodyShapeIndex
+      BodyShapePenetratee : BodyShapeIndex
       Normal : Vector3 }
 
 /// The explicit data for a separation event.
@@ -117,7 +117,7 @@ module Events =
     let IntegrationEvent = stoa<IntegrationData> "Integration/Event"
     let BodyAddingEvent = stoa<BodyId> "Body/Adding/Event"
     let BodyRemovingEvent = stoa<BodyId> "Body/Removing/Event"
-    let BodyCollisionEvent = stoa<BodyCollisionData> "BodyCollision/Event"
+    let BodyPenetrationEvent = stoa<BodyPenetrationData> "BodyPenetration/Event"
     let BodySeparationExplicitEvent = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"
     let BodySeparationImplicitEvent = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
     let BodyTransformEvent = stoa<BodyTransformData> "BodyTransform/Event"

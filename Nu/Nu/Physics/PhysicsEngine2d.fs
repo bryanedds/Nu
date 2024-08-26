@@ -21,7 +21,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
           Joints : Dictionary<BodyJointId, Dynamics.Joints.Joint>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List
-          CollisionHandler : OnCollisionEventHandler
+          PenetrationHandler : OnCollisionEventHandler
           SeparationHandler : OnSeparationEventHandler }
 
     static member private toPixel value =
@@ -52,23 +52,23 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | Dynamic -> Dynamics.BodyType.Dynamic
         | DynamicCharacter -> Log.infoOnce "DynamicCharacter not supported by PhysicsEngine2d. Using Dynamic configuration instead."; Dynamics.BodyType.Dynamic
 
-    static member private handleCollision
+    static member private handlePenetration
         (bodyShape : Dynamics.Fixture)
         (bodyShape2 : Dynamics.Fixture)
         (contact : Dynamics.Contacts.Contact)
         (integrationMessages : IntegrationMessage List) =
         let normal = fst (contact.GetWorldManifold ())
-        let bodyCollisionMessage =
+        let bodyPenetrationMessage =
             { BodyShapeSource = bodyShape.Tag :?> BodyShapeIndex
               BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeIndex
               Normal = Vector3 (normal.X, normal.Y, 0.0f) }
-        let integrationMessage = BodyCollisionMessage bodyCollisionMessage
+        let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         integrationMessages.Add integrationMessage
-        let bodyCollisionMessage2 =
-            { BodyShapeSource = bodyCollisionMessage.BodyShapeSource2
-              BodyShapeSource2 = bodyCollisionMessage.BodyShapeSource
-              Normal = -bodyCollisionMessage.Normal }
-        let integrationMessage = BodyCollisionMessage bodyCollisionMessage2
+        let bodyPenetrationMessage2 =
+            { BodyShapeSource = bodyPenetrationMessage.BodyShapeSource2
+              BodyShapeSource2 = bodyPenetrationMessage.BodyShapeSource
+              Normal = -bodyPenetrationMessage.Normal }
+        let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage2
         integrationMessages.Add integrationMessage
         true
 
@@ -299,7 +299,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         // listen for collisions when observable
         if bodyProperties.ShouldObserve then
-            body.add_OnCollision physicsEngine.CollisionHandler
+            body.add_OnCollision physicsEngine.PenetrationHandler
             body.add_OnSeparation physicsEngine.SeparationHandler
 
         // attempt to add the body
@@ -554,7 +554,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
     /// Make a physics engine.
     static member make gravity =
         let integrationMessages = List ()
-        let collisionHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handleCollision fixture fixture2 collision integrationMessages
+        let penetrationHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
         let physicsEngine =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
@@ -562,7 +562,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
               Joints = Dictionary<BodyJointId, Dynamics.Joints.Joint> HashIdentity.Structural
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = integrationMessages
-              CollisionHandler = collisionHandler
+              PenetrationHandler = penetrationHandler
               SeparationHandler = separationHandler }
         physicsEngine :> PhysicsEngine
 
