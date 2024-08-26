@@ -52,15 +52,15 @@ type CharacterDispatcher (character : Character) =
 
     override this.Content (character, _) =
 
-        [// hit points
+        [// hearts
          if character.CharacterType = Player then
             for i in 0 .. dec 5 do
-                Content.staticSprite ("HitPoint+" + string i)
+                Content.staticSprite ("Heart+" + string i)
                     [Entity.Position == v3 (-272.0f + single i * 32.0f) -144.0f 0.0f
                      Entity.Size == v3 32.0f 32.0f 0.0f
                      Entity.StaticImage := if character.HitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty
                      Entity.MountOpt == None]
-         
+
          // animated model
          Content.entity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
             [Entity.Size == v3Dup 2.0f
