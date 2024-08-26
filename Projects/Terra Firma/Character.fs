@@ -254,7 +254,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | ObstructedState obstructed ->
             let actionState =
                 let localTime = time - obstructed.ObstructedTime
-                if localTime < 55L
+                if localTime < 30L
                 then ObstructedState obstructed
                 else NormalState
             { character with ActionState = actionState }
