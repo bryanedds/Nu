@@ -56,7 +56,7 @@ type CharacterDispatcher (character : Character) =
          if character.CharacterType = Player then
             for i in 0 .. dec 5 do
                 Content.staticSprite ("Heart+" + string i)
-                    [Entity.Position == v3 (-272.0f + single i * 32.0f) -144.0f 0.0f
+                    [Entity.Position == v3 (-284.0f + single i * 32.0f) -144.0f 0.0f
                      Entity.Size == v3 32.0f 32.0f 0.0f
                      Entity.StaticImage := if character.HitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty
                      Entity.MountOpt == None]
