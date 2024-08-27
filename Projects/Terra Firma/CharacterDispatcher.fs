@@ -53,37 +53,6 @@ type CharacterDispatcher (character : Character) =
          Entity.BodyPenetrationEvent =|> fun evt -> CharacterPenetration evt.Data
          Game.PostUpdateEvent => SyncWeaponTransform]
 
-    override this.Content (character, _) =
-
-        [// hearts
-         if character.CharacterType = Player then
-            for i in 0 .. dec 5 do
-                Content.staticSprite ("Heart+" + string i)
-                    [Entity.Position == v3 (-284.0f + single i * 32.0f) -144.0f 0.0f
-                     Entity.Size == v3 32.0f 32.0f 0.0f
-                     Entity.StaticImage := if character.HitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty
-                     Entity.MountOpt == None]
-
-         // animated model
-         Content.entity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
-            [Entity.Size == v3Dup 2.0f
-             Entity.Offset == v3 0.0f 1.0f 0.0f
-             Entity.MaterialProperties == MaterialProperties.defaultProperties
-             Entity.AnimatedModel == Assets.Gameplay.JoanModel]
-
-         // weapon
-         Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
-            [Entity.Offset == v3 0.0f 0.5f 0.0f
-             Entity.StaticModel := character.WeaponModel
-             Entity.BodyType == Static
-             Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
-             Entity.Sensor == true
-             Entity.NavShape == EmptyNavShape
-             Entity.Pickable == false
-             Entity.BodyPenetrationEvent =|> fun evt -> WeaponPenetration evt.Data
-             Entity.BodySeparationExplicitEvent =|> fun evt -> WeaponSeparateExplicit evt.Data
-             Entity.BodySeparationImplicitEvent =|> fun evt -> WeaponSeparateImplicit evt.Data]]
-
     override this.Message (character, message, entity, world) =
 
         match message with
@@ -212,6 +181,37 @@ type CharacterDispatcher (character : Character) =
             let weapon = entity / Constants.Gameplay.CharacterWeaponName
             weapon.RayCast ray world
         | intersections -> intersections
+
+    override this.Content (character, _) =
+
+        [// hearts
+         if character.CharacterType = Player then
+            for i in 0 .. dec 5 do
+                Content.staticSprite ("Heart+" + string i)
+                    [Entity.Position == v3 (-284.0f + single i * 32.0f) -144.0f 0.0f
+                     Entity.Size == v3 32.0f 32.0f 0.0f
+                     Entity.StaticImage := if character.HitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty
+                     Entity.MountOpt == None]
+
+         // animated model
+         Content.entity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
+            [Entity.Size == v3Dup 2.0f
+             Entity.Offset == v3 0.0f 1.0f 0.0f
+             Entity.MaterialProperties == MaterialProperties.defaultProperties
+             Entity.AnimatedModel == Assets.Gameplay.JoanModel]
+
+         // weapon
+         Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
+            [Entity.Offset == v3 0.0f 0.5f 0.0f
+             Entity.StaticModel := character.WeaponModel
+             Entity.BodyType == Static
+             Entity.BodyShape == BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
+             Entity.Sensor == true
+             Entity.NavShape == EmptyNavShape
+             Entity.Pickable == false
+             Entity.BodyPenetrationEvent =|> fun evt -> WeaponPenetration evt.Data
+             Entity.BodySeparationExplicitEvent =|> fun evt -> WeaponSeparateExplicit evt.Data
+             Entity.BodySeparationImplicitEvent =|> fun evt -> WeaponSeparateImplicit evt.Data]]
 
 type EnemyDispatcher () =
     inherit CharacterDispatcher (Character.initialEnemy)
