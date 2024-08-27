@@ -477,7 +477,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
           SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
-          SsrEnabled = Constants.Render.SsrEnabledDefault
+          SsrEnabled = Constants.Render.SsrEnabledLocalDefault
           SsrDetail = Constants.Render.SsrDetailDefault
           SsrRefinementsMax = Constants.Render.SsrRefinementsMaxDefault
           SsrRayThickness = Constants.Render.SsrRayThicknessDefault
@@ -512,7 +512,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
-          SsrEnabled = Constants.Render.SsrEnabledDefault }
+          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
