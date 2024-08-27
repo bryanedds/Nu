@@ -3269,10 +3269,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     try Log.info ("Creating project '" + NewProjectName + "' in '" + projectsDir + "'...")
 
                         // install nu template
-                        let templateIdentifier = PathF.Denormalize templateDir // this is what dotnet knows the template as for uninstall...
                         Directory.SetCurrentDirectory templateDir
-                        Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
-                        Process.Start("dotnet", "new install ./").WaitForExit()
+                        Process.Start("dotnet", "new install ./ --force").WaitForExit()
 
                         // instantiate nu template
                         Directory.SetCurrentDirectory projectsDir
@@ -3319,7 +3317,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
                             List.skip insertionIndex slnLines
                         File.WriteAllLines ("Nu.sln", List.toArray slnLines)
-                        Log.info ("Project '" + NewProjectName + "'" + "created.")
+                        Log.info ("Project '" + NewProjectName + "'" + " created.")
 
                         // configure editor to open new project then exit
                         let gaiaState = makeGaiaState newProjectDllPath (Some editMode) true world
