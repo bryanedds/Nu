@@ -80,7 +80,7 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Uniform>] VendorNamesExceptedFromGlFinishSwapRequirement = ["NVIDIA Corporation"; "ATI Technologies Inc."] // NOTE: for all we know, maybe only Intel requires glFinish...
+    let [<Uniform>] VendorNamesExceptedFromGlFinishSwapRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."] // NOTE: for all we know, maybe only Intel requires glFinish...
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] TwoSidedName = "TwoSided"
