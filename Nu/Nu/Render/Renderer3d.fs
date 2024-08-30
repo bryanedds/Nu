@@ -455,6 +455,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsrDetail : single
       SsrRefinementsMax : int
       SsrRayThickness : single
+      SsrTowardEyeCutoff : single
       SsrDepthCutoff : single
       SsrDepthCutoffMargin : single
       SsrDistanceCutoff : single
@@ -476,10 +477,11 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
           SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
-          SsrEnabled = Constants.Render.SsrEnabledDefault
+          SsrEnabled = Constants.Render.SsrEnabledLocalDefault
           SsrDetail = Constants.Render.SsrDetailDefault
           SsrRefinementsMax = Constants.Render.SsrRefinementsMaxDefault
           SsrRayThickness = Constants.Render.SsrRayThicknessDefault
+          SsrTowardEyeCutoff = Constants.Render.SsrTowardEyeCutoffDefault
           SsrDepthCutoff = Constants.Render.SsrDepthCutoffDefault
           SsrDepthCutoffMargin = Constants.Render.SsrDepthCutoffMarginDefault
           SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
@@ -510,7 +512,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
-          SsrEnabled = Constants.Render.SsrEnabledDefault }
+          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -2741,7 +2743,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssrLightColor = Array.take 3 (renderer.LightingConfig.SsrLightColor.ToArray ())
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
-             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness,
+             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
              renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
              renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
              ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,

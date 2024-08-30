@@ -36,6 +36,7 @@ uniform int ssrEnabled;
 uniform float ssrDetail;
 uniform int ssrRefinementsMax;
 uniform float ssrRayThickness;
+uniform float ssrTowardEyeCutoff;
 uniform float ssrDepthCutoff;
 uniform float ssrDepthCutoffMargin;
 uniform float ssrDistanceCutoff;
@@ -237,7 +238,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
-                        (1.0 - smoothstep(1.0 - ssrSlopeCutoffMargin, 1.0, slope / ssrSlopeCutoff)) *
+                        (1.0 - smoothstep(1.0 - ssrSlopeCutoffMargin, 1.0, slope / ssrSlopeCutoff)) * // filter out as slope nears cutoff
                         smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
                         smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentUV.x, 1.0 - currentUV.x)) *
                         smoothstep(0.0, ssrEdgeVerticalMargin, min(currentUV.y, 1.0 - currentUV.y));
@@ -375,9 +376,11 @@ void main()
         // compute specular term and weight from screen-space
         vec3 specularSS = vec3(0.0);
         float specularWeight = 0.0;
+        vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
+        float towardEye = dot(forward, normal);
         float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
         vec4 positionView = view * position;
-        if (ssrEnabled == 1 && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff && -positionView.z <= ssrDepthCutoff)
+        if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
         {
             vec2 texSize = textureSize(positionTexture, 0).xy;
             float texelHeight = 1.0 / texSize.y;

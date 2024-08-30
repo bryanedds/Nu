@@ -1038,17 +1038,17 @@ module WorldModule2 =
             match World.getLiveness world with
             | Live ->
                 match integrationMessage with
-                | BodyCollisionMessage bodyCollisionMessage ->
-                    match bodyCollisionMessage.BodyShapeSource.BodyId.BodySource with
+                | BodyPenetrationMessage bodyPenetrationMessage ->
+                    match bodyPenetrationMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
                         if entity.GetExists world && entity.GetSelected world then
-                            let collisionData =
-                                { BodyShapeCollider = bodyCollisionMessage.BodyShapeSource
-                                  BodyShapeCollidee = bodyCollisionMessage.BodyShapeSource2
-                                  Normal = bodyCollisionMessage.Normal }
-                            let collisionAddress = entity.BodyCollisionEvent
+                            let penetrationData =
+                                { BodyShapePenetrator = bodyPenetrationMessage.BodyShapeSource
+                                  BodyShapePenetratee = bodyPenetrationMessage.BodyShapeSource2
+                                  Normal = bodyPenetrationMessage.Normal }
+                            let penetrationAddress = entity.BodyPenetrationEvent
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus collisionData collisionAddress eventTrace Nu.Game.Handle false false world
+                            World.publishPlus penetrationData penetrationAddress eventTrace Nu.Game.Handle false false world
                         else world
                     | _ -> world
                 | BodySeparationMessage bodySeparationMessage ->

@@ -8,7 +8,7 @@ type [<SymbolicExpansion>] Enemy =
     { Health : int }
 
 type EnemyMessage =
-    | Collision of BodyCollisionData
+    | Penetration of BodyPenetrationData
     interface Message
 
 type EnemyCommand =
@@ -47,14 +47,14 @@ type EnemyDispatcher () =
          Entity.AnimationDelay == UpdateTime 8L
          Entity.AnimationSheet == Assets.Gameplay.EnemyImage
          Entity.UpdateEvent => Update
-         Entity.BodyCollisionEvent =|> fun evt -> Collision evt.Data]
+         Entity.BodyPenetrationEvent =|> fun evt -> Penetration evt.Data]
 
     override this.Message (enemy, message, _, world) =
 
         match message with
-        | Collision collision ->
-            match collision.BodyShapeCollidee.BodyId.BodySource with
-            | :? Entity as collidee when collidee.Is<BulletDispatcher> world ->
+        | Penetration penetration ->
+            match penetration.BodyShapePenetratee.BodyId.BodySource with
+            | :? Entity as penetratee when penetratee.Is<BulletDispatcher> world ->
                 let enemy = { enemy with Health = dec enemy.Health }
                 withSignal Hit enemy
             | _ -> just enemy

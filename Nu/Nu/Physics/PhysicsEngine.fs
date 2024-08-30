@@ -665,13 +665,13 @@ type JumpBodyMessage =
       CanJumpInAir : bool
       JumpSpeed : single }
 
-/// A message from the physics system describing a body collision that took place.
-type BodyCollisionMessage =
+/// A message from the physics system describing body pentration that took place.
+type BodyPenetrationMessage =
     { BodyShapeSource : BodyShapeIndex
       BodyShapeSource2 : BodyShapeIndex
       Normal : Vector3 }
 
-/// A message from the physics system describing a body separation that took place.
+/// A message from the physics system describing body separation that took place.
 type BodySeparationMessage =
     { BodyShapeSource : BodyShapeIndex
       BodyShapeSource2 : BodyShapeIndex }
@@ -686,7 +686,7 @@ type BodyTransformMessage =
 
 /// A message from the physics system.
 type IntegrationMessage =
-    | BodyCollisionMessage of BodyCollisionMessage
+    | BodyPenetrationMessage of BodyPenetrationMessage
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
 

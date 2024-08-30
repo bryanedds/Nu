@@ -77,14 +77,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
 
-    static member private handleCollision physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
-        let bodyCollisionMessage =
+    static member private handlePenetration physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) normal =
+        let bodyPenetrationMessage =
             { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
               BodyShapeSource2 = { BodyId = bodyId2; BodyShapeIndex = 0 }
               Normal = normal }
-        let integrationMessage = BodyCollisionMessage bodyCollisionMessage
+        let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
-    
+
     static member private handleSeparation physicsEngine (bodyId : BodyId) (bodyId2 : BodyId) =
         let bodySeparationMessage =
             { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
@@ -419,7 +419,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // TODO: make this more accurate by making each c weighted proportionately to its respective m.
             List.fold (fun (c, m, i, d) (c', m', i', d') -> (c + c', m + m', i + i', fun () -> d (); d' ())) (v3Zero, 0.0f, v3Zero, id) centerMassInertiaDisposes
         let shapeSensorOpt = match bodyProperties.BodyShape.PropertiesOpt with Some properties -> properties.SensorOpt | None -> None
-        let userIndex = if Option.defaultValue false shapeSensorOpt ||  bodyProperties.Sensor || bodyProperties.Observable then 1 else -1
+        let userIndex = if Option.defaultValue false shapeSensorOpt || bodyProperties.Sensor || bodyProperties.Observable then 1 else -1
         if bodyProperties.Sensor then
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape
@@ -926,12 +926,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | (true, collisions) -> collisions.Add normal
                     | (false, _) -> physicsEngine.CollisionsGround.Add (body1Source, List [normal])
 
-        // create collision messages
+        // create penetration messages
         for entry in physicsEngine.CollisionsFiltered do
             let (bodySourceA, bodySourceB) = entry.Key
             if not (collisionsOld.ContainsKey entry.Key) then
-                PhysicsEngine3d.handleCollision physicsEngine bodySourceA bodySourceB entry.Value
-                PhysicsEngine3d.handleCollision physicsEngine bodySourceB bodySourceA -entry.Value
+                PhysicsEngine3d.handlePenetration physicsEngine bodySourceA bodySourceB entry.Value
+                PhysicsEngine3d.handlePenetration physicsEngine bodySourceB bodySourceA -entry.Value
 
         // create separation messages
         for entry in collisionsOld do

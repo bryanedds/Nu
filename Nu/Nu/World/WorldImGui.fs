@@ -194,7 +194,7 @@ module WorldImGui =
             (focused, changed, items)
 
         /// Edit a record value via ImGui.
-        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup headered name ty (value : obj) =
+        static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup headered (name : string) (ty : Type) (value : obj) =
             if headered then
                 ImGui.Text name
                 ImGui.Indent ()
@@ -202,22 +202,32 @@ module WorldImGui =
             let mutable focused = false
             let mutable changed = false
             let fields =
-                FSharpType.GetRecordFields ty |>
-                Array.zip (FSharpValue.GetRecordFields value) |>
+                FSharpType.GetRecordFields (ty, true) |>
+                Array.zip (FSharpValue.GetRecordFields (value, true)) |>
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
+                    let fieldName =
+                        if ty.IsDefined (typeof<SymbolicExpansionAttribute>, true) then
+                            let expansionAttribute = ty.GetCustomAttribute<SymbolicExpansionAttribute> true
+                            if expansionAttribute.PrettifyFieldNames then
+                                if fieldInfo.Name.EndsWith "_"
+                                then fieldInfo.Name.Substring (0, dec fieldInfo.Name.Length)
+                                else String.capitalize fieldInfo.Name
+                            else fieldInfo.Name
+                        else fieldInfo.Name
                     let (focused', changed', field) =
                         if FSharpType.IsRecord fieldInfo.PropertyType && fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name
-                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldInfo.Name fieldInfo.PropertyType field
-                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldInfo.Name fieldInfo.PropertyType field
+                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldName fieldInfo.PropertyType field
+                        else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldName fieldInfo.PropertyType field
                     if focused' then focused <- true
                     if changed' then changed <- true
                     field)
-            let value = FSharpValue.MakeRecord (ty, fields)
+            let value = FSharpValue.MakeRecord (ty, fields, true)
             if headered then ImGui.Unindent ()
             ImGui.PopID ()
             (focused, changed, value)
 
         /// Edit a value via ImGui.
+        /// TODO: split up this function.
         static member imGuiEditProperty
             (searchAssetViewer : unit -> unit)
             (snapDrag : single)
@@ -397,6 +407,7 @@ module WorldImGui =
                     let mutable ssrDetail = lighting3dConfig.SsrDetail
                     let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
                     let mutable ssrRayThickness = lighting3dConfig.SsrRayThickness
+                    let mutable ssrTowardEyeCutoff = lighting3dConfig.SsrTowardEyeCutoff
                     let mutable ssrDepthCutoff = lighting3dConfig.SsrDepthCutoff
                     let mutable ssrDepthCutoffMargin = lighting3dConfig.SsrDepthCutoffMargin
                     let mutable ssrDistanceCutoff = lighting3dConfig.SsrDistanceCutoff
@@ -420,6 +431,7 @@ module WorldImGui =
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Toward Eye Cutoff", &ssrTowardEyeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff Margin", &ssrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
@@ -445,6 +457,7 @@ module WorldImGui =
                               SsrDetail = ssrDetail
                               SsrRefinementsMax = ssrRefinementsMax
                               SsrRayThickness = ssrRayThickness
+                              SsrTowardEyeCutoff = ssrTowardEyeCutoff
                               SsrDepthCutoff = ssrDepthCutoff
                               SsrDepthCutoffMargin = ssrDepthCutoffMargin
                               SsrDistanceCutoff = ssrDistanceCutoff
@@ -628,7 +641,9 @@ module WorldImGui =
                             focused <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
+                                ImGui.PushID name
                                 let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                ImGui.PopID ()
                                 let value = Activator.CreateInstance (ty, [|value'|])
                                 if focused' then focused <- true
                                 (changed || changed', value)
@@ -692,7 +707,9 @@ module WorldImGui =
                             focused <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
+                                ImGui.PushID name
                                 let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                ImGui.PopID ()
                                 let value = Activator.CreateInstance (ty, [|value'|])
                                 if focused' then focused <- true
                                 (changed || changed', value)

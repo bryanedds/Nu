@@ -23,8 +23,8 @@ open Nu
 // TODO:                                                                            //
 // Perhaps look up (Value)Some-constructed default property values from overlayer.  //
 // Custom properties in order of priority:                                          //
-//  NormalOpt (for terrain)                                                         //
 //  Enums                                                                           //
+//  Flag Enums                                                                      //
 //  Layout                                                                          //
 //  Animation                                                                       //
 //  CollisionMask                                                                   //
@@ -32,11 +32,11 @@ open Nu
 //  CollisionDetection                                                              //
 //  BodyShape                                                                       //
 //  BodyJoint                                                                       //
-//  TerrainMaterial                                                                 //
+//  NormalOpt (for terrain)                                                         //
+//  BlendMaterial                                                                   //
 //  TerrainMaterial                                                                 //
 //  DateTimeOffset?                                                                 //
 //  SymbolicCompression                                                             //
-//  Flag Enums                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
@@ -99,6 +99,7 @@ module Gaia =
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private SnapDrag = 0.1f
     let mutable private AlternativeEyeTravelInput = false
+    let mutable private PhysicsReregisterWorkaround = true
     let mutable private EntityHierarchySearchStr = ""
     let mutable private EntityHierarchyFilterPropagationSources = false
     let mutable private AssetViewerSearchStr = ""
@@ -448,7 +449,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         GaiaState.make
             projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution EditWhileAdvancing
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
-            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput
+            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput PhysicsReregisterWorkaround
 
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
@@ -619,6 +620,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         Seq.filter (fun entity -> entity.Has<FreezerFacet> world) |>
         Seq.fold (fun world freezer -> freezer.SetFrozen false world) world
 
+    let private reregisterPhysics world =
+        World.reregisterPhysics world
+
+    let private synchronizeNav world =
+        let world = snapshot SynchronizeNav world
+        // TODO: sync nav 2d when it's available.
+        World.synchronizeNav3d SelectedScreen world
+
     let private rerenderLightMaps world =
         let groups = World.getGroups SelectedScreen world
         groups |>
@@ -626,11 +635,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         Seq.concat |>
         Seq.filter (fun entity -> entity.Has<LightProbe3dFacet> world) |>
         Seq.fold (fun world lightProbe -> lightProbe.SetProbeStale true world) world
-
-    let private synchronizeNav world =
-        let world = snapshot SynchronizeNav world
-        // TODO: sync nav 2d when it's available.
-        World.synchronizeNav3d SelectedScreen world
 
     let private getSnaps () =
         if Snaps2dSelected
@@ -1226,7 +1230,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         DesiredEye3dRotation <- quatIdentity
 
     let private toggleAdvancing (world : World) =
-        let world = if not world.Advancing then snapshot Advance world else world
+        let wasAdvancing = world.Advancing
+        let world = snapshot (if wasAdvancing then Halt else Advance) world
+        let world = if PhysicsReregisterWorkaround && not wasAdvancing then World.reregisterPhysics world else world // HACK: reregister physics as an automatic workaround for #856.
         let world = World.setAdvancing (not world.Advancing) world
         world
 
@@ -1346,7 +1352,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if canEditWithMouse world then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then
                 let mousePosition = World.getMousePosition world
-                let _ = tryMousePick mousePosition
+                tryMousePick mousePosition world |> ignore<(single * Entity) option>
                 RightClickPosition <- mousePosition
                 ShowEntityContextMenu <- true
 
@@ -1567,9 +1573,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             elif ImGui.IsKeyPressed ImGuiKey.U && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryWipeSelectedEntityPropagationTargets world |> snd
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then searchEntityHierarchy (); world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then ShowOpenProjectDialog <- true; world
-            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.F && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then freezeEntities world
             elif ImGui.IsKeyPressed ImGuiKey.T && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then thawEntities world
+            elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then reregisterPhysics world
+            elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then synchronizeNav world
             elif ImGui.IsKeyPressed ImGuiKey.L && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then rerenderLightMaps world
             elif not (ImGui.GetIO ()).WantCaptureKeyboardGlobal || entityHierarchyFocused then
                 if ImGui.IsKeyPressed ImGuiKey.Z && ImGui.IsCtrlDown () then tryUndo world |> snd
@@ -1647,6 +1654,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ShowSaveEntityDialog <- true
                     | Some _ | None -> ()
                 ImGui.Separator ()
+                if NewEntityParentOpt = Some entity then
+                    if ImGui.MenuItem "Reset Creation Parent" then
+                        NewEntityParentOpt <- None
+                        ShowEntityContextMenu <- false
+                else
+                    if ImGui.MenuItem "Set as Creation Parent" then
+                        NewEntityParentOpt <- SelectedEntityOpt
+                        ShowEntityContextMenu <- false
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                 let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
                 let world = if ImGui.MenuItem ("Wipe Propagated Descriptor", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
@@ -1658,14 +1673,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else
                             if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true world else world
                     | Some _ | None -> world
-                if NewEntityParentOpt = Some entity then
-                    if ImGui.MenuItem "Reset Creation Parent" then
-                        NewEntityParentOpt <- None
-                        ShowEntityContextMenu <- false
-                else
-                    if ImGui.MenuItem "Set as Creation Parent" then
-                        NewEntityParentOpt <- SelectedEntityOpt
-                        ShowEntityContextMenu <- false
                 let operation = ContextHierarchy { Snapshot = snapshot }
                 let world = World.editGame operation Game world
                 let world = World.editScreen operation SelectedScreen world
@@ -2002,8 +2009,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                               PropertyDescriptor = propertyDescriptor }
                                     let world = World.edit replaceProperty simulant world
                                     if not replaced then
-                                        if FSharpType.IsRecord propertyDescriptor.PropertyType
-                                        then imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
+                                        if  FSharpType.IsRecord propertyDescriptor.PropertyType ||
+                                            FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
+                                            imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
                                         else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
                                     else world
                                 else
@@ -2343,6 +2351,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         if ImGui.BeginMenu "Screen" then
                             let world = if ImGui.MenuItem ("Thaw Entities", "Ctrl+Shift+T") then freezeEntities world else world
                             let world = if ImGui.MenuItem ("Freeze Entities", "Ctrl+Shift+F") then freezeEntities world else world
+                            let world = if ImGui.MenuItem ("Reregister Physics", "Ctrl+Shift+P") then reregisterPhysics world else world
                             let world = if ImGui.MenuItem ("Rebuild Navigation", "Ctrl+Shift+N") then synchronizeNav world else world
                             let world = if ImGui.MenuItem ("Rerender Light Maps", "Ctrl+Shift+L") then rerenderLightMaps world else world
                             ImGui.EndMenu ()
@@ -2400,6 +2409,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     ShowSaveEntityDialog <- true
                                 | Some _ | None -> ()
                             ImGui.Separator ()
+                            if SelectedEntityOpt.IsSome && NewEntityParentOpt = SelectedEntityOpt then
+                                if ImGui.MenuItem "Reset Creation Parent" then
+                                    NewEntityParentOpt <- None
+                                    ShowEntityContextMenu <- false
+                            else
+                                if ImGui.MenuItem "Set as Creation Parent" then
+                                    NewEntityParentOpt <- SelectedEntityOpt
+                                    ShowEntityContextMenu <- false
                             let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                             let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
                             let world = if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
@@ -3185,6 +3202,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.DragFloat ("##newEntityDistance", &NewEntityDistance, SnapDrag, 0.5f, Single.MaxValue, "%2.2f") |> ignore<bool>
             ImGui.Text "Input"
             ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
+            ImGui.Text "Misc"
+            ImGui.Checkbox ("Physics Reregister Workaround", &PhysicsReregisterWorkaround) |> ignore<bool>
             ImGui.End ()
 
     let private imGuiAssetViewerWindow () =
@@ -3269,10 +3288,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     try Log.info ("Creating project '" + NewProjectName + "' in '" + projectsDir + "'...")
 
                         // install nu template
-                        let templateIdentifier = PathF.Denormalize templateDir // this is what dotnet knows the template as for uninstall...
                         Directory.SetCurrentDirectory templateDir
-                        Process.Start("dotnet", "new uninstall \"" + templateIdentifier + "\"").WaitForExit()
-                        Process.Start("dotnet", "new install ./").WaitForExit()
+                        Process.Start("dotnet", "new install ./ --force").WaitForExit()
 
                         // instantiate nu template
                         Directory.SetCurrentDirectory projectsDir
@@ -3319,7 +3336,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             ["\t\t{" + projectGuidStr + "} = {E3C4D6E1-0572-4D80-84A9-8001C21372D3}"] @
                             List.skip insertionIndex slnLines
                         File.WriteAllLines ("Nu.sln", List.toArray slnLines)
-                        Log.info ("Project '" + NewProjectName + "'" + "created.")
+                        Log.info ("Project '" + NewProjectName + "'" + " created.")
 
                         // configure editor to open new project then exit
                         let gaiaState = makeGaiaState newProjectDllPath (Some editMode) true world
@@ -3574,7 +3591,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if ImGui.BeginPopupModal title then
             ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
             let world =
-                if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then // HACK: checking key pressed event so that previous ui's key release won't bypass this.
+                if ImGui.Button "Okay" || ImGui.IsKeyPressed ImGuiKey.Enter then // HACK: checking key pressed event so that previous gui's key release won't bypass this.
                     World.exit world
                 else world
             ImGui.EndPopup ()
@@ -3672,6 +3689,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ShowEntityContextMenu <- false
                 | Some _ | None -> ()
             ImGui.Separator ()
+            if SelectedEntityOpt.IsSome && NewEntityParentOpt = SelectedEntityOpt then
+                if ImGui.Button "Reset Creation Parent" then
+                    NewEntityParentOpt <- None
+                    ShowEntityContextMenu <- false
+            elif ImGui.Button "Set as Creation Parent" then
+                NewEntityParentOpt <- SelectedEntityOpt
+                ShowEntityContextMenu <- false
             let world =
                 if ImGui.Button "Auto Bounds Entity" then
                     let world = tryAutoBoundsSelectedEntity world |> snd
@@ -3692,9 +3716,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else world
             if ImGui.Button "Show in Hierarchy" then
                 ShowSelectedEntity <- true
-                ShowEntityContextMenu <- false
-            if ImGui.Button "Set as Creation Parent" then
-                NewEntityParentOpt <- SelectedEntityOpt
                 ShowEntityContextMenu <- false
             let operation = ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }
             let world = World.editGame operation Game world
@@ -3960,6 +3981,29 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world <- World.setEye3dRotation DesiredEye3dRotation world
         world
 
+    let rec private runWithCleanUpAndErrorProtection firstFrame world =
+        try let world = World.runWithoutCleanUp tautology id id imGuiRender imGuiProcess imGuiPostProcess Live firstFrame world
+            World.cleanUp world
+            Constants.Engine.ExitCodeSuccess
+        with exn ->
+            let (undone, world) = tryUndo world
+            if undone then
+                Futures <- [] // NOTE: clearing invalid futures.
+                let wasAdvancing = world.Advancing
+                let world = if wasAdvancing then World.setAdvancing false world else world
+                let errorMsg =
+                    "Unexpected exception!\n" +
+                    "Rewound to previous world" + (if wasAdvancing then " and halted." else ".") +
+                    "\nError due to: " + exn.Message +
+                    "\nStack trace:\n" + string exn.StackTrace
+                Log.error errorMsg
+                MessageBoxOpt <- Some errorMsg
+                runWithCleanUpAndErrorProtection false world
+            else
+                let errorMsg = "Unexpected exception! Could not rewind world. Error due to: " + scstring exn
+                Log.error errorMsg
+                Constants.Engine.ExitCodeFailure
+
     let rec private runWithCleanUp gaiaState targetDir_ screen world =
         OpenProjectFilePath <- gaiaState.ProjectDllPath
         OpenProjectImperativeExecution <- gaiaState.ProjectImperativeExecution
@@ -4009,7 +4053,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 PrettyPrinter.prettyPrint extrinsicOverlaysStr prettyPrinter
             | Left error -> MessageBoxOpt <- Some ("Could not read overlayer due to: " + error + "'."); ""
         FsiSession <- Shell.FsiEvaluationSession.Create (FsiConfig, FsiArgs, FsiInStream, FsiOutStream, FsiErrorStream)
-        let result = World.runWithCleanUp tautology id id imGuiRender imGuiProcess imGuiPostProcess Live true world
+        let result = runWithCleanUpAndErrorProtection true world
         (FsiSession :> IDisposable).Dispose () // not sure why we have to cast here...
         FsiErrorStream.Dispose ()
         FsiInStream.Dispose ()

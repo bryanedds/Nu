@@ -26,6 +26,10 @@ type AttackState =
           FollowUpBuffered = false
           AttackedCharacters = Set.empty }
 
+type ObstructedState =
+    { ObstructedTime : int64
+      Severe : bool }
+
 type InjuryState =
     { InjuryTime : int64 }
 
@@ -35,6 +39,7 @@ type WoundState =
 type ActionState =
     | NormalState
     | AttackState of AttackState
+    | ObstructedState of ObstructedState
     | InjuryState of InjuryState
     | WoundState of WoundState
 
@@ -129,6 +134,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 else (attack.AttackTime + 55L, "Armature|AttackHorizontal")
             let animation = Animation.once animationTime None animationName
             Some (animation, false)
+        | ObstructedState obstructed ->
+            let animation = Animation.once obstructed.ObstructedTime None "Armature|WalkForward"
+            Some (animation, false)
         | InjuryState injury ->
             let animation = Animation.once injury.InjuryTime None "Armature|WalkBack"
             Some (animation, false)
@@ -195,15 +203,27 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | Enemy ->
         
             // enemy traversal
-            if character.ActionState = NormalState then
-                let sphere =
-                    if position.Y - playerPosition.Y >= 0.25f
-                    then Sphere (playerPosition, 0.1f) // when above player
-                    else Sphere (playerPosition, 0.7f) // when at or below player
-                let nearest = sphere.Nearest position
-                let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) 0.04f 0.1f position rotation nearest Simulants.Gameplay world
+            let navSpeedsOpt =
+                match character.ActionState with
+                | NormalState -> Some (0.04f, 0.1f)
+                | ObstructedState obstructed -> if obstructed.Severe then Some (0.0f, 0.3f) else Some (0.02f, 0.2f)
+                | _ -> None
+            match navSpeedsOpt with
+            | Some (moveSpeed, turnSpeed) ->
+                let nearest =
+                    let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
+                    let positionFlat = position.WithY 0.0f
+                    let playerPositionFlat = playerPosition.WithY 0.0f
+                    if rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) >= 0.1f then
+                        let sphere =
+                            if position.Y - playerPosition.Y >= 0.25f
+                            then Sphere (playerPosition, 0.1f) // when above player
+                            else Sphere (playerPosition, 0.7f) // when at or below player
+                        sphere.Nearest position
+                    else playerPosition // allow for infinite closeness while still needing to face player
+                let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
-            else (position, rotation, v3Zero, v3Zero, character)
+            | None -> (position, rotation, v3Zero, v3Zero, character)
 
     static member private updateAction time (position : Vector3) (rotation : Quaternion) (playerPosition : Vector3) character =
         match character.CharacterType with
@@ -235,6 +255,13 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 let localTime = time - attack.AttackTime
                 if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
                 then AttackState attack
+                else NormalState
+            { character with ActionState = actionState }
+        | ObstructedState obstructed ->
+            let actionState =
+                let localTime = time - obstructed.ObstructedTime
+                if localTime < 30L
+                then ObstructedState obstructed
                 else NormalState
             { character with ActionState = actionState }
         | InjuryState injury ->
@@ -295,7 +322,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                         if localTime > 10L && not attack.FollowUpBuffered
                         then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
                         else character
-                    | InjuryState _ | WoundState _ -> character
+                    | ObstructedState _ | InjuryState _ | WoundState _ -> character
                 (false, character)
             else (false, character)
 
