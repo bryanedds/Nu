@@ -2009,8 +2009,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                               PropertyDescriptor = propertyDescriptor }
                                     let world = World.edit replaceProperty simulant world
                                     if not replaced then
-                                        if FSharpType.IsRecord propertyDescriptor.PropertyType
-                                        then imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
+                                        if  FSharpType.IsRecord propertyDescriptor.PropertyType ||
+                                            FSharpType.isRecordAbstract propertyDescriptor.PropertyType then
+                                            imGuiEditPropertyRecord getPropertyValue setPropertyValue focusProperty false propertyDescriptor simulant world
                                         else imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
                                     else world
                                 else
