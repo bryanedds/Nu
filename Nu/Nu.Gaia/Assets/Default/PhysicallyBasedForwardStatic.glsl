@@ -117,9 +117,9 @@ float linstep(float low, float high, float v)
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
-float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shadowZ, float shadowBiasAcne, float shadowBiasBleed)
+float computeShadowScalar(sampler2D shadowTexture, vec2 shadowTexCoords, float shadowZ, float shadowBiasAcne, float shadowBiasBleed)
 {
-    vec2 moments = texture(shadowMap, shadowTexCoords).xy;
+    vec2 moments = texture(shadowTexture, shadowTexCoords).xy;
     float p = step(shadowZ, moments.x);
     float variance = max(moments.y - moments.x * moments.x, shadowBiasAcne);
     float delta = shadowZ - moments.x;
@@ -389,8 +389,47 @@ void main()
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
+    // compute fog lighting
+    vec3 accumFog = vec3(0.0);
+    const int NB_STEPS = 48;
+    const float G_SCATTERING = 0.75;
+    int shadowIndex = lightShadowIndices[0];
+    if (lightsCount > 0 && lightDirectionals[0] != 0 && shadowIndex >= 0)
+    {
+        vec3 startRayPosition = eyeCenter;
+        vec3 endRayPosition = position.xyz;
+        vec3 rayVector = endRayPosition - startRayPosition;
+        float rayLength = length(rayVector);
+        vec3 rayDirection = rayVector / rayLength;
+        float lightDotView = dot(-rayDirection, lightDirections[0]);
+        float stepLength = rayLength / NB_STEPS;
+        vec3 step = rayDirection * stepLength;
+        vec3 currentPosition = startRayPosition;
+        mat4 shadowMatrix = shadowMatrices[shadowIndex];
+        for (int i = 0; i < NB_STEPS; i++)
+        {
+            vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
+            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+            {
+                float shadowDepth = texture(shadowTextures[0], shadowTexCoords).x;
+                if (shadowDepth > shadowZ)
+                {
+                    // Mie scaterring approximated with Henyey-Greenstein phase function.
+                    float result = 1.0 - G_SCATTERING * G_SCATTERING;
+                    result /= (4.0 * PI * pow(1.0 + G_SCATTERING * G_SCATTERING - (2.0 * G_SCATTERING) * lightDotView, 1.5));
+                    accumFog += result * lightColors[0] * (lightBrightnesses[0] / 8.0);
+                }
+            }
+            currentPosition += step;
+        }
+        accumFog /= NB_STEPS;
+    }
+
     // compute ambient term
-    vec3 ambient = diffuse + specular;
+    vec3 ambient = diffuse + specular + accumFog;
 
     // compute color w/ tone mapping, gamma correction, and emission
     vec3 color = lightAccum + ambient;

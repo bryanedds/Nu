@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -85,9 +85,9 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
 }
 
-float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shadowZ, float varianceMin, float lightBleedFilter)
+float computeShadowScalar(sampler2D shadowTexture, vec2 shadowTexCoords, float shadowZ, float varianceMin, float lightBleedFilter)
 {
-    vec2 moments = texture(shadowMap, shadowTexCoords).xy;
+    vec2 moments = texture(shadowTexture, shadowTexCoords).xy;
     float p = step(shadowZ, moments.x);
     float variance = max(moments.y - moments.x * moments.x, varianceMin);
     float stepLength = shadowZ - moments.x;
@@ -395,8 +395,47 @@ void main()
         // compute ambient term
         vec3 ambient = diffuse + specular;
 
+        // compute fog lighting
+        vec3 accumFog = vec3(0.0);
+        const int NB_STEPS = 48;
+        const float G_SCATTERING = 0.75;
+        int shadowIndex = lightShadowIndices[0];
+        if (lightsCount > 0 && lightDirectionals[0] != 0 && shadowIndex >= 0)
+        {
+            vec3 startRayPosition = eyeCenter;
+            vec3 endRayPosition = position.xyz;
+            vec3 rayVector = endRayPosition - startRayPosition;
+            float rayLength = length(rayVector);
+            vec3 rayDirection = rayVector / rayLength;
+            float lightDotView = dot(-rayDirection, lightDirections[0]);
+            float stepLength = rayLength / NB_STEPS;
+            vec3 step = rayDirection * stepLength;
+            vec3 currentPosition = startRayPosition;
+            mat4 shadowMatrix = shadowMatrices[shadowIndex];
+            for (int i = 0; i < NB_STEPS; i++)
+            {
+                vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
+                vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+                vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+                float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+                if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+                {
+                    float shadowDepth = texture(shadowTextures[0], shadowTexCoords).x;
+                    if (shadowDepth > shadowZ)
+                    {
+                        // Mie scaterring approximated with Henyey-Greenstein phase function.
+                        float result = 1.0 - G_SCATTERING * G_SCATTERING;
+                        result /= (4.0 * PI * pow(1.0 + G_SCATTERING * G_SCATTERING - (2.0 * G_SCATTERING) * lightDotView, 1.5));
+                        accumFog += result * lightColors[0] * (lightBrightnesses[0] / 8.0);
+                    }
+                }
+                currentPosition += step;
+            }
+            accumFog /= NB_STEPS;
+        }
+
         // compute color w/ tone mapping, gamma correction, and emission
-        vec3 color = lightAccum + ambient;
+        vec3 color = lightAccum + ambient + accumFog;
         color = color / (color + vec3(1.0));
         color = pow(color, vec3(1.0 / GAMMA));
         color = color + emission * albedo;
