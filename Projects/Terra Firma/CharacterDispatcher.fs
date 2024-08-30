@@ -198,7 +198,8 @@ type CharacterDispatcher (character : Character) =
             [Entity.Size == v3Dup 2.0f
              Entity.Offset == v3 0.0f 1.0f 0.0f
              Entity.MaterialProperties == MaterialProperties.defaultProperties
-             Entity.AnimatedModel == Assets.Gameplay.JoanModel]
+             Entity.AnimatedModel == Assets.Gameplay.JoanModel
+             Entity.Pickable == false]
 
          // weapon
          Content.entity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
