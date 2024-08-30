@@ -1647,6 +1647,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         ShowSaveEntityDialog <- true
                     | Some _ | None -> ()
                 ImGui.Separator ()
+                if NewEntityParentOpt = Some entity then
+                    if ImGui.MenuItem "Reset Creation Parent" then
+                        NewEntityParentOpt <- None
+                        ShowEntityContextMenu <- false
+                else
+                    if ImGui.MenuItem "Set as Creation Parent" then
+                        NewEntityParentOpt <- SelectedEntityOpt
+                        ShowEntityContextMenu <- false
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                 let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
                 let world = if ImGui.MenuItem ("Wipe Propagated Descriptor", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
@@ -1658,14 +1666,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else
                             if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true world else world
                     | Some _ | None -> world
-                if NewEntityParentOpt = Some entity then
-                    if ImGui.MenuItem "Reset Creation Parent" then
-                        NewEntityParentOpt <- None
-                        ShowEntityContextMenu <- false
-                else
-                    if ImGui.MenuItem "Set as Creation Parent" then
-                        NewEntityParentOpt <- SelectedEntityOpt
-                        ShowEntityContextMenu <- false
                 let operation = ContextHierarchy { Snapshot = snapshot }
                 let world = World.editGame operation Game world
                 let world = World.editScreen operation SelectedScreen world
@@ -2400,6 +2400,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     ShowSaveEntityDialog <- true
                                 | Some _ | None -> ()
                             ImGui.Separator ()
+                            if SelectedEntityOpt.IsSome && NewEntityParentOpt = SelectedEntityOpt then
+                                if ImGui.MenuItem "Reset Creation Parent" then
+                                    NewEntityParentOpt <- None
+                                    ShowEntityContextMenu <- false
+                            else
+                                if ImGui.MenuItem "Set as Creation Parent" then
+                                    NewEntityParentOpt <- SelectedEntityOpt
+                                    ShowEntityContextMenu <- false
                             let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
                             let world = if ImGui.MenuItem ("Propagate Entity", "Ctrl+P") then tryPropagateSelectedEntityStructure world |> snd else world
                             let world = if ImGui.MenuItem ("Wipe Propagation Targets", "Ctrl+W") then tryWipeSelectedEntityPropagationTargets world |> snd else world
@@ -3670,6 +3678,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     ShowEntityContextMenu <- false
                 | Some _ | None -> ()
             ImGui.Separator ()
+            if SelectedEntityOpt.IsSome && NewEntityParentOpt = SelectedEntityOpt then
+                if ImGui.Button "Reset Creation Parent" then
+                    NewEntityParentOpt <- None
+                    ShowEntityContextMenu <- false
+            elif ImGui.Button "Set as Creation Parent" then
+                NewEntityParentOpt <- SelectedEntityOpt
+                ShowEntityContextMenu <- false
             let world =
                 if ImGui.Button "Auto Bounds Entity" then
                     let world = tryAutoBoundsSelectedEntity world |> snd
@@ -3690,9 +3705,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 else world
             if ImGui.Button "Show in Hierarchy" then
                 ShowSelectedEntity <- true
-                ShowEntityContextMenu <- false
-            if ImGui.Button "Set as Creation Parent" then
-                NewEntityParentOpt <- SelectedEntityOpt
                 ShowEntityContextMenu <- false
             let operation = ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }
             let world = World.editGame operation Game world
