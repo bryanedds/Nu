@@ -23,8 +23,8 @@ open Nu
 // TODO:                                                                            //
 // Perhaps look up (Value)Some-constructed default property values from overlayer.  //
 // Custom properties in order of priority:                                          //
-//  NormalOpt (for terrain)                                                         //
 //  Enums                                                                           //
+//  Flag Enums                                                                      //
 //  Layout                                                                          //
 //  Animation                                                                       //
 //  CollisionMask                                                                   //
@@ -32,11 +32,11 @@ open Nu
 //  CollisionDetection                                                              //
 //  BodyShape                                                                       //
 //  BodyJoint                                                                       //
-//  TerrainMaterial                                                                 //
+//  NormalOpt (for terrain)                                                         //
+//  BlendMaterial                                                                   //
 //  TerrainMaterial                                                                 //
 //  DateTimeOffset?                                                                 //
 //  SymbolicCompression                                                             //
-//  Flag Enums                                                                      //
 //////////////////////////////////////////////////////////////////////////////////////
 
 [<RequireQualifiedAccess>]
