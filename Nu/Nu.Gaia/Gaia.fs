@@ -1346,7 +1346,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if canEditWithMouse world then
             if ImGui.IsMouseReleased ImGuiMouseButton.Right then
                 let mousePosition = World.getMousePosition world
-                let _ = tryMousePick mousePosition
+                tryMousePick mousePosition world |> ignore<(single * Entity) option>
                 RightClickPosition <- mousePosition
                 ShowEntityContextMenu <- true
 
