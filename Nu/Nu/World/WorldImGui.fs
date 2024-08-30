@@ -227,6 +227,7 @@ module WorldImGui =
             (focused, changed, value)
 
         /// Edit a value via ImGui.
+        /// TODO: split up this function.
         static member imGuiEditProperty
             (searchAssetViewer : unit -> unit)
             (snapDrag : single)
