@@ -1944,6 +1944,11 @@ module PhysicallyBased =
             // teardown state
             Gl.DepthFunc DepthFunction.Less
             Gl.Disable EnableCap.DepthTest
+            Hl.Assert ()
+
+        // teardown dynamic state
+        if not material.TwoSided then
+            Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
