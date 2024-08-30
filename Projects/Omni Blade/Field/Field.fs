@@ -15,7 +15,7 @@ type FieldMessage =
     | TimeUpdate
     | UpdateAvatarBodyTracking
     | AvatarBodyTransform of BodyTransformData
-    | AvatarBodyCollision of BodyCollisionData
+    | AvatarBodyPenetration of BodyPenetrationData
     | AvatarBodySeparationExplicit of BodySeparationExplicitData
     | AvatarBodySeparationImplicit of BodySeparationImplicitData
     | ScreenTransitioning of bool

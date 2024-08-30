@@ -1323,7 +1323,7 @@ module RigidBodyFacetExtensions =
         member this.Observable = lens (nameof this.Observable) this this.GetObservable this.SetObservable
         member this.GetBodyId world : BodyId = this.Get (nameof this.BodyId) world
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
-        member this.BodyCollisionEvent = Events.BodyCollisionEvent --> this
+        member this.BodyPenetrationEvent = Events.BodyPenetrationEvent --> this
         member this.BodySeparationExplicitEvent = Events.BodySeparationExplicitEvent --> this
         member this.BodySeparationImplicitEvent = Events.BodySeparationImplicitEvent --> Game
         member this.BodyTransformEvent = Events.BodyTransformEvent --> this
@@ -1405,7 +1405,7 @@ type RigidBodyFacet () =
 
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
         // OPTIMIZATION: share lambdas to reduce live object count.
-        let subIds = Array.init 25 (fun _ -> makeGuid ())
+        let subIds = Array.init 24 (fun _ -> makeGuid ())
         let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
@@ -1413,24 +1413,23 @@ type RigidBodyFacet () =
         let world = World.subscribePlus subIds.[4] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Scale)) entity world |> snd
         let world = World.subscribePlus subIds.[5] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Offset)) entity world |> snd
         let world = World.subscribePlus subIds.[6] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Size)) entity world |> snd
-        let world = World.subscribePlus subIds.[7] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.PerimeterCentered)) entity world |> snd
-        let world = World.subscribePlus subIds.[8] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
-        let world = World.subscribePlus subIds.[9] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
-        let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
-        let world = World.subscribePlus subIds.[11] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
-        let world = World.subscribePlus subIds.[12] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
-        let world = World.subscribePlus subIds.[13] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
-        let world = World.subscribePlus subIds.[14] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
-        let world = World.subscribePlus subIds.[15] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
-        let world = World.subscribePlus subIds.[16] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
-        let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
-        let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
-        let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
-        let world = World.subscribePlus subIds.[20] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
-        let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
-        let world = World.subscribePlus subIds.[22] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
-        let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
-        let world = World.subscribePlus subIds.[24] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
+        let world = World.subscribePlus subIds.[7] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
+        let world = World.subscribePlus subIds.[8] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
+        let world = World.subscribePlus subIds.[9] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
+        let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
+        let world = World.subscribePlus subIds.[11] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
+        let world = World.subscribePlus subIds.[12] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
+        let world = World.subscribePlus subIds.[13] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
+        let world = World.subscribePlus subIds.[14] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
+        let world = World.subscribePlus subIds.[15] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
+        let world = World.subscribePlus subIds.[16] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
+        let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
+        let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
+        let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
+        let world = World.subscribePlus subIds.[20] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
+        let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
+        let world = World.subscribePlus subIds.[22] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
+        let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
         let unsubscribe = fun world ->
             Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
         let callback = fun evt world ->
@@ -2722,29 +2721,29 @@ module AnimatedModelFacetExtensions =
                 Some transform
             | (_, _) -> None
 
+        member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
+            match sceneOpt with
+            | Some scene when scene.Meshes.Count > 0 ->
+                let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
+                Some (boneIds, boneOffsets, boneTransforms)
+            | Some _ | None -> None
+
+        member this.AnimateBones (world : World) =
+            let time = world.GameTime
+            let animations = this.GetAnimations world
+            let animatedModel = this.GetAnimatedModel world
+            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
+            match this.TryComputeBoneTransforms time animations sceneOpt with
+            | Some (boneIds, boneOffsets, boneTransforms) ->
+                let world = this.SetBoneIdsOpt (Some boneIds) world
+                let world = this.SetBoneOffsetsOpt (Some boneOffsets) world
+                let world = this.SetBoneTransformsOpt (Some boneTransforms) world
+                world
+            | None -> world
+
 /// Augments an entity with an animated model.
 type AnimatedModelFacet () =
     inherit Facet (false, false, false)
-
-    static let tryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
-        match sceneOpt with
-        | Some scene when scene.Meshes.Count > 0 ->
-            let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
-            Some (boneIds, boneOffsets, boneTransforms)
-        | Some _ | None -> None
-
-    static let tryAnimateBones (entity : Entity) (world : World) =
-        let time = world.GameTime
-        let animations = entity.GetAnimations world
-        let animatedModel = entity.GetAnimatedModel world
-        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
-        match tryComputeBoneTransforms time animations sceneOpt with
-        | Some (boneIds, boneOffsets, boneTransforms) ->
-            let world = entity.SetBoneIdsOpt (Some boneIds) world
-            let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
-            let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
-            world
-        | None -> world
 
     static member Properties =
         [define Entity.StartTime GameTime.zero
@@ -2757,7 +2756,7 @@ type AnimatedModelFacet () =
          nonPersistent Entity.BoneTransformsOpt None]
 
     override this.Register (entity, world) =
-        let world = tryAnimateBones entity world
+        let world = entity.AnimateBones world
         let world =
             World.sense
                 (fun evt world ->
@@ -2767,12 +2766,12 @@ type AnimatedModelFacet () =
                         entity.GetPresence world <> Omnipresent &&
                         not (entity.GetAlwaysUpdate world) &&
                         not (playBox.Intersects (evt.Subscriber.GetBounds world))
-                    let world = if notUpdating then tryAnimateBones evt.Subscriber world else world
+                    let world = if notUpdating then evt.Subscriber.AnimateBones world else world
                     (Cascade, world))
                 (entity.ChangeEvent (nameof entity.Animations)) entity (nameof AnimatedModelFacet) world
         let world =
             World.sense
-                (fun evt world -> (Cascade, tryAnimateBones evt.Subscriber world))
+                (fun evt world -> (Cascade, evt.Subscriber.AnimateBones world))
                 (entity.ChangeEvent (nameof entity.AnimatedModel)) entity (nameof AnimatedModelFacet) world
         world
 
@@ -2793,7 +2792,7 @@ type AnimatedModelFacet () =
                 let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                 world
             | None -> world
-        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> tryComputeBoneTransforms time animations sceneOpt)
+        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
         World.enqueueJob 1.0f job world
         world
 

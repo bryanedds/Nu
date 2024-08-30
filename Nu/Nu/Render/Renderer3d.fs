@@ -453,17 +453,19 @@ type [<SymbolicExpansion>] Lighting3dConfig =
       SsaoDistanceMax : single
       SsrEnabled : bool
       SsrDetail : single
-      SsrDepthMax : single
-      SsrDistanceMax : single
       SsrRefinementsMax : int
-      SsrRoughnessMax : single
-      SsrSurfaceSlopeMax : single
       SsrRayThickness : single
-      SsrRoughnessCutoff : single
+      SsrTowardEyeCutoff : single
       SsrDepthCutoff : single
+      SsrDepthCutoffMargin : single
       SsrDistanceCutoff : single
-      SsrEdgeCutoffHorizontal : single
-      SsrEdgeCutoffVertical : single
+      SsrDistanceCutoffMargin : single
+      SsrRoughnessCutoff : single
+      SsrRoughnessCutoffMargin : single
+      SsrSlopeCutoff : single
+      SsrSlopeCutoffMargin : single
+      SsrEdgeHorizontalMargin : single
+      SsrEdgeVerticalMargin : single
       SsrLightColor : Color
       SsrLightBrightness : single }
 
@@ -475,19 +477,21 @@ type [<SymbolicExpansion>] Lighting3dConfig =
           SsaoBias = Constants.Render.SsaoBiasDefault
           SsaoRadius = Constants.Render.SsaoRadiusDefault
           SsaoDistanceMax = Constants.Render.SsaoDistanceMaxDefault
-          SsrEnabled = Constants.Render.SsrEnabledDefault
+          SsrEnabled = Constants.Render.SsrEnabledLocalDefault
           SsrDetail = Constants.Render.SsrDetailDefault
-          SsrDepthMax = Constants.Render.SsrDepthMaxDefault
-          SsrDistanceMax = Constants.Render.SsrDistanceMaxDefault
           SsrRefinementsMax = Constants.Render.SsrRefinementsMaxDefault
-          SsrRoughnessMax = Constants.Render.SsrRoughnessMaxDefault
-          SsrSurfaceSlopeMax = Constants.Render.SsrSurfaceSlopeMaxDefault
           SsrRayThickness = Constants.Render.SsrRayThicknessDefault
-          SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
+          SsrTowardEyeCutoff = Constants.Render.SsrTowardEyeCutoffDefault
           SsrDepthCutoff = Constants.Render.SsrDepthCutoffDefault
+          SsrDepthCutoffMargin = Constants.Render.SsrDepthCutoffMarginDefault
           SsrDistanceCutoff = Constants.Render.SsrDistanceCutoffDefault
-          SsrEdgeCutoffHorizontal = Constants.Render.SsrEdgeCutoffHorizontalDefault
-          SsrEdgeCutoffVertical = Constants.Render.SsrEdgeCutoffVerticalDefault
+          SsrDistanceCutoffMargin = Constants.Render.SsrDistanceCutoffMarginDefault
+          SsrRoughnessCutoff = Constants.Render.SsrRoughnessCutoffDefault
+          SsrRoughnessCutoffMargin = Constants.Render.SsrRoughnessCutoffMarginDefault
+          SsrSlopeCutoff = Constants.Render.SsrSlopeCutoffDefault
+          SsrSlopeCutoffMargin = Constants.Render.SsrSlopeCutoffMarginDefault
+          SsrEdgeHorizontalMargin = Constants.Render.SsrEdgeHorizontalMarginDefault
+          SsrEdgeVerticalMargin = Constants.Render.SsrEdgeVerticalMarginDefault
           SsrLightColor = Constants.Render.SsrLightColorDefault
           SsrLightBrightness = Constants.Render.SsrLightBrightnessDefault }
 
@@ -508,7 +512,7 @@ type [<SymbolicExpansion>] Renderer3dConfig =
           LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
-          SsrEnabled = Constants.Render.SsrEnabledDefault }
+          SsrEnabled = Constants.Render.SsrEnabledGlobalDefault }
 
 /// A message to the 3d renderer.
 type RenderMessage3d =
@@ -781,8 +785,6 @@ type Renderer3d =
     abstract RendererConfig : Renderer3dConfig
     /// Render a frame of the game.
     abstract Render : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> Vector2i -> RenderMessage3d List -> unit
-    /// Swap a rendered frame of the game.
-    abstract Swap : unit -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -794,7 +796,6 @@ type [<ReferenceEquality>] StubRenderer3d =
     interface Renderer3d with
         member renderer.RendererConfig = Renderer3dConfig.defaultConfig
         member renderer.Render _ _ _ _ _ _ _ _ = ()
-        member renderer.Swap () = ()
         member renderer.CleanUp () = ()
 
     static member make () =
@@ -2383,7 +2384,22 @@ type [<ReferenceEquality>] GlRenderer3d =
                     OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
                     renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
-        // collect light maps from cached light maps
+        // ensure light maps are synchronized with any light probe changes
+        for (lightMapId, lightMap) in renderer.LightMaps.Pairs do
+            match renderTasks.LightProbes.TryGetValue lightMapId with
+            | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+                if  lightMap.Enabled <> lightProbeEnabled ||
+                    lightMap.Origin <> lightProbeOrigin ||
+                    lightMap.Bounds <> lightProbeBounds then
+                    let lightMap =
+                        { lightMap with
+                            Enabled = lightProbeEnabled
+                            Origin = lightProbeOrigin
+                            Bounds = lightProbeBounds }
+                    renderer.LightMaps.[lightMapId] <- lightMap
+            | _ -> ()
+
+        // collect light maps from cached light maps and ensure they're up to date with 
         for lightMapKvp in renderer.LightMaps do
             let lightMap =
                 { SortableLightMapEnabled = lightMapKvp.Value.Enabled
@@ -2392,6 +2408,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                   SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
                   SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
                   SortableLightMapDistanceSquared = Single.MaxValue }
+            let lightMap =
+                match renderTasks.LightProbes.TryGetValue lightMapKvp.Key with
+                | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+                    if  lightMap.SortableLightMapEnabled <> lightProbeEnabled ||
+                        lightMap.SortableLightMapOrigin <> lightProbeOrigin ||
+                        lightMap.SortableLightMapBounds <> lightProbeBounds then
+                        { lightMap with
+                            SortableLightMapEnabled = lightProbeEnabled
+                            SortableLightMapOrigin = lightProbeOrigin
+                            SortableLightMapBounds = lightProbeBounds }
+                    else lightMap
+                | _ -> lightMap
             renderTasks.LightMaps.Add lightMap
 
         // filter light map according to enabledness and intersection with the geometry frustum
@@ -2716,8 +2744,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssrLightColor = Array.take 3 (renderer.LightingConfig.SsrLightColor.ToArray ())
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
             (eyeCenter, viewRelativeArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, lightAmbientColor, lightAmbientBrightness, renderer.LightingConfig.ShadowBiasAcne, renderer.LightingConfig.ShadowBiasBleed,
-             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrDepthMax, renderer.LightingConfig.SsrDistanceMax, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRoughnessMax, renderer.LightingConfig.SsrSurfaceSlopeMax,
-             renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrEdgeCutoffHorizontal, renderer.LightingConfig.SsrEdgeCutoffVertical,
+             ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
+             renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
+             renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
              ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
@@ -3409,12 +3438,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.ResetDrawCalls ()
             if renderMessages.Count > 0 then
                 GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation windowSize 0u 0u renderMessages renderer
-
-        member renderer.Swap () =
-            match renderer.Window with
-            | SglWindow window ->
-                OpenGL.Gl.Finish () // NOTE: some architectures seem to require that we call this before swapping.
-                SDL.SDL_GL_SwapWindow window.SglWindow
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader

@@ -1042,17 +1042,17 @@ module WorldModule2 =
             match World.getLiveness world with
             | Live ->
                 match integrationMessage with
-                | BodyCollisionMessage bodyCollisionMessage ->
-                    match bodyCollisionMessage.BodyShapeSource.BodyId.BodySource with
+                | BodyPenetrationMessage bodyPenetrationMessage ->
+                    match bodyPenetrationMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
                         if entity.GetExists world && entity.GetSelected world then
-                            let collisionData =
-                                { BodyShapeCollider = bodyCollisionMessage.BodyShapeSource
-                                  BodyShapeCollidee = bodyCollisionMessage.BodyShapeSource2
-                                  Normal = bodyCollisionMessage.Normal }
-                            let collisionAddress = entity.BodyCollisionEvent
+                            let penetrationData =
+                                { BodyShapePenetrator = bodyPenetrationMessage.BodyShapeSource
+                                  BodyShapePenetratee = bodyPenetrationMessage.BodyShapeSource2
+                                  Normal = bodyPenetrationMessage.Normal }
+                            let penetrationAddress = entity.BodyPenetrationEvent
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus collisionData collisionAddress eventTrace Nu.Game.Handle false false world
+                            World.publishPlus penetrationData penetrationAddress eventTrace Nu.Game.Handle false false world
                         else world
                     | _ -> world
                 | BodySeparationMessage bodySeparationMessage ->
@@ -2062,11 +2062,12 @@ module EntityPropertyDescriptor =
         let rigidBodyProperties = Reflection.getPropertyDefinitions typeof<RigidBodyFacet>
         if  propertyName = "Name" ||
             propertyName = "Surnames" ||
-            propertyName = "Model" ||
             propertyName = "MountOpt" ||
             propertyName = "PropagationSourceOpt" ||
             propertyName = "OverlayNameOpt" then
             "Ambient Properties"
+        elif propertyName = "Model" then
+            "Basic Model Properties"
         elif propertyName = "Degrees" || propertyName = "DegreesLocal" ||
              propertyName = "Elevation" || propertyName = "ElevationLocal" ||
              propertyName = "Offset" || propertyName = "Overflow" ||
@@ -2077,7 +2078,8 @@ module EntityPropertyDescriptor =
              propertyName = "Size" then
              "Basic Transform Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
-        elif propertyName = "MaterialProperties" || propertyName = "Material" then "Material Properties"
+        elif propertyName = "MaterialProperties" then "Material Properties"
+        elif propertyName = "Material" then "Material Properties 2"
         elif propertyName = "NavShape" || propertyName = "Nav3dConfig" then "Navigation Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
         else "Uncategorized Properties"

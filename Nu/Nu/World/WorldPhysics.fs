@@ -281,3 +281,13 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage3d jumpBodyMessage world
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
+
+        /// Unregister and register all selected physics bodies.
+        /// HACK: this is just a temporary workaround for Bullet Physics bug #856.
+        static member reregisterPhysics world =
+            match World.getSelectedScreenOpt world with
+            | Some selectedScreen ->
+                let world = WorldModule.unregisterScreenPhysics selectedScreen world
+                let world = WorldModule.registerScreenPhysics selectedScreen world
+                world
+            | None -> world

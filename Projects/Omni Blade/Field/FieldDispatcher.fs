@@ -78,7 +78,7 @@ type FieldDispatcher () =
          | Playing -> Screen.DeselectingEvent => FinishQuitting
          | Battling (battleData, prizePool) -> Screen.DeselectingEvent => CommenceBattle (battleData, prizePool) | _ -> ()
          Simulants.FieldAvatar.BodyTransformEvent =|> fun evt -> AvatarBodyTransform evt.Data |> signal
-         Simulants.FieldAvatar.BodyCollisionEvent =|> fun evt -> AvatarBodyCollision evt.Data |> signal
+         Simulants.FieldAvatar.BodyPenetrationEvent =|> fun evt -> AvatarBodyPenetration evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationExplicitEvent =|> fun evt -> AvatarBodySeparationExplicit evt.Data |> signal
          Simulants.FieldAvatar.BodySeparationImplicitEvent =|> fun evt -> AvatarBodySeparationImplicit evt.Data |> signal]
 
@@ -186,13 +186,13 @@ type FieldDispatcher () =
                 else Avatar.animate time IdleAnimation avatar
             just (Field.mapAvatar (constant avatar) field)
 
-        | AvatarBodyCollision collision ->
+        | AvatarBodyPenetration penetration ->
 
             // add collided body shape
             let field =
-                if isIntersectedProp collision.BodyShapeCollider collision.BodyShapeCollidee world then
-                    let field = Field.mapAvatarCollidedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
-                    let field = Field.mapAvatarIntersectedPropIds (List.cons ((collision.BodyShapeCollidee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                if isIntersectedProp penetration.BodyShapePenetrator penetration.BodyShapePenetratee world then
+                    let field = Field.mapAvatarCollidedPropIds (List.cons ((penetration.BodyShapePenetratee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
+                    let field = Field.mapAvatarIntersectedPropIds (List.cons ((penetration.BodyShapePenetratee.BodyId.BodySource :?> Entity).GetPropPlus world).Prop.PropId) field
                     field
                 else field
             just field

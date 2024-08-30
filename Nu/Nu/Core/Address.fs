@@ -86,7 +86,7 @@ module Address =
     /// TODO: have Address constructor throw if multiple wildcards or ellipses are used in Debug build mode.
     type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>)>] 'a Address =
         { Names : string array
-          HashCode : int // OPTIMIZATION: hash is cached for speed
+          HashCode : int // OPTIMIZATION: hash is cached for speed.
           Anonymous : bool } // HACK: allows for Nu to internally indicate the anonymity of an address.
 
         /// Get the length of an address by its names.
@@ -105,8 +105,8 @@ module Address =
 
         /// Equate Addresses.
         static member equals left right =
-            refEq left right || // OPTIMIZATION: first check ref equality
-            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible
+            refEq left right || // OPTIMIZATION: first check ref equality.
+            left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
             String.equateMany left.Names right.Names
 
         /// Compare Addresses.

@@ -21,6 +21,7 @@ type TerraFirmaMessage =
 
 // this is our top-level MMCC command type. Commands are used instead of messages when the world is to be transformed.
 type TerraFirmaCommand =
+    | Register
     | Exit
     interface Command
 
@@ -45,6 +46,7 @@ type MyGameDispatcher () =
             | Title -> Desire Simulants.Title
             | Credits -> Desire Simulants.Credits
             | Gameplay -> Desire Simulants.Gameplay
+         Game.RegisterEvent => Register
          if terraFirma = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
          Simulants.TitleCredits.ClickEvent => ShowCredits
          Simulants.TitlePlay.ClickEvent => ShowGameplay
@@ -62,6 +64,9 @@ type MyGameDispatcher () =
     // here we handle the above commands
     override this.Command (_, command, _, world) =
         match command with
+        | Register ->
+            let world = World.setRenderer3dConfig { Renderer3dConfig.defaultConfig with SsrEnabled = true } world
+            just world
         | Exit ->
             if world.Unaccompanied
             then just (World.exit world)

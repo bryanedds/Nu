@@ -73,7 +73,7 @@ type GameplayDispatcher () =
         match message with
         | StartPlaying ->
             let gameplay = Gameplay.initial
-            withSignal SetupScene gameplay
+            withSignals [SetupScene; TrackPlayer] gameplay
 
         | FinishQuitting ->
             let gameplay = Gameplay.empty
