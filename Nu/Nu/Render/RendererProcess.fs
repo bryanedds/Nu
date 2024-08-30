@@ -316,11 +316,11 @@ type RendererThread () =
     member private this.Run fonts windowOpt =
 
         // create renderers
-        let (glFinishRequired, renderer3d, renderer2d, rendererImGui) =
+        let (renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
             | Some window ->
                 
-                // NOTE: opengl rendering should retain functionality in RendererInline, at least up to a point
+                // NOTE: opengl rendering should retain functionality in RendererInline, at least up to a point.
                 
                 // create 3d renderer
                 let renderer3d = StubRenderer3d.make () :> Renderer3d
@@ -332,14 +332,14 @@ type RendererThread () =
                 let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
 
                 // fin
-                (false, renderer3d, renderer2d, rendererImGui)
+                (renderer3d, renderer2d, rendererImGui)
 
             // create stub renderers
             | None ->
                 let renderer3d = StubRenderer3d.make () :> Renderer3d
                 let renderer2d = StubRenderer2d.make () :> Renderer2d
                 let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-                (false, renderer3d, renderer2d, rendererImGui)
+                (renderer3d, renderer2d, rendererImGui)
 
         // mark as started
         started <- true
