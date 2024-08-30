@@ -603,6 +603,8 @@ module WorldImGui =
                              ty.GenericTypeArguments.[0] = typeof<Song AssetTag> ||
                              ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> ||
                              ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
+                             ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> ||
+                             ty.GenericTypeArguments.[0] = typeof<SongDescriptor> ||
                              ty.GenericTypeArguments.[0] = typeof<Entity> ||
                              (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array>) ||
                              (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list>) ||
@@ -635,6 +637,8 @@ module WorldImGui =
                                         elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Song :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.StaticModel :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|{ Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound } :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|{ FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song } :> obj|]))
                                         elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments.[0] []|]))
                                         elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments.[0] []|]))
                                         elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments.[0] []|]))
@@ -687,6 +691,8 @@ module WorldImGui =
                               ty.GenericTypeArguments.[0] = typeof<Song AssetTag> ||
                               ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> ||
                               ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> ||
+                              ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> ||
+                              ty.GenericTypeArguments.[0] = typeof<SongDescriptor> ||
                               ty.GenericTypeArguments.[0] = typeof<Entity> ||
                               (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array>) ||
                               (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list>) ||
@@ -719,6 +725,8 @@ module WorldImGui =
                                         elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Song :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.StaticModel :> obj|]))
                                         elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|{ Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound } :> obj|]))
+                                        elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|{ FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song } :> obj|]))
                                         elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments.[0] []|]))
                                         elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments.[0] []|]))
                                         elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments.[0] []|]))
