@@ -215,8 +215,9 @@ module WorldImGui =
                             else fieldInfo.Name
                         else fieldInfo.Name
                     let (focused', changed', field) =
-                        if FSharpType.IsRecord fieldInfo.PropertyType && fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name
-                        then World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldName fieldInfo.PropertyType field
+                        if  fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name &&
+                            (FSharpType.IsRecord fieldInfo.PropertyType || FSharpType.isRecordAbstract fieldInfo.PropertyType) then
+                            World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldName fieldInfo.PropertyType field
                         else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldName fieldInfo.PropertyType field
                     if focused' then focused <- true
                     if changed' then changed <- true
