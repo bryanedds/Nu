@@ -320,27 +320,19 @@ type RendererThread () =
             match windowOpt with
             | Some window ->
                 
-                // create gl context
-                let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
-                OpenGL.Hl.Assert ()
-
-                // initialize gl context
-                OpenGL.Hl.InitContext ()
-                OpenGL.Hl.Assert ()
-
+                // NOTE: opengl rendering should retain functionality in RendererInline, at least up to a point
+                
                 // create 3d renderer
-                let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
-                OpenGL.Hl.Assert ()
+                let renderer3d = StubRenderer3d.make () :> Renderer3d
 
                 // create 2d renderer
-                let renderer2d = GlRenderer2d.make window :> Renderer2d
-                OpenGL.Hl.Assert ()
+                let renderer2d = StubRenderer2d.make () :> Renderer2d
 
                 // create imgui renderer
-                let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
 
                 // fin
-                (glFinishRequired, renderer3d, renderer2d, rendererImGui)
+                (false, renderer3d, renderer2d, rendererImGui)
 
             // create stub renderers
             | None ->
@@ -365,30 +357,19 @@ type RendererThread () =
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
                 
-                // begin frame
-                OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
-                OpenGL.Hl.Assert ()
-
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
                 renderer3dConfig <- renderer3d.RendererConfig
-                OpenGL.Hl.Assert ()
 
                 // render 2d
                 renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
                 freeSpriteMessages messages2d
-                OpenGL.Hl.Assert ()
             
                 // render imgui
                 rendererImGui.Render drawData
-                OpenGL.Hl.Assert ()
-
-                // end frame
-                OpenGL.Hl.EndFrame ()
-                OpenGL.Hl.Assert ()
 
                 // loop until swap is requested
                 while not terminated && not swap do Thread.Sleep 1
@@ -398,13 +379,6 @@ type RendererThread () =
 
                     // acknowledge swap request
                     swap <- false
-
-                    // attempt to swap
-                    match windowOpt with
-                    | Some (SglWindow window) ->
-                        if glFinishRequired then OpenGL.Gl.Finish ()
-                        SDL.SDL_GL_SwapWindow window.SglWindow
-                    | None -> ()
 
         // clean up
         renderer2d.CleanUp ()
