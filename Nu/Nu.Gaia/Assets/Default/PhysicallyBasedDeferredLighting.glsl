@@ -399,6 +399,7 @@ void main()
         vec3 accumFog = vec3(0.0);
         const int NB_STEPS = 48;
         const float G_SCATTERING = 0.75;
+        const float X_SCALAR = 0.1;
         int shadowIndex = lightShadowIndices[0];
         if (lightsCount > 0 && lightDirectionals[0] != 0 && shadowIndex >= 0)
         {
@@ -426,12 +427,12 @@ void main()
                         // Mie scaterring approximated with Henyey-Greenstein phase function.
                         float result = 1.0 - G_SCATTERING * G_SCATTERING;
                         result /= (4.0 * PI * pow(1.0 + G_SCATTERING * G_SCATTERING - (2.0 * G_SCATTERING) * lightDotView, 1.5));
-                        accumFog += result * lightColors[0] * (lightBrightnesses[0] / 8.0);
+                        accumFog += result;
                     }
                 }
                 currentPosition += step;
             }
-            accumFog /= NB_STEPS;
+            accumFog = accumFog * lightColors[0] * lightBrightnesses[0] * X_SCALAR / NB_STEPS;
         }
 
         // compute color w/ tone mapping, gamma correction, and emission
