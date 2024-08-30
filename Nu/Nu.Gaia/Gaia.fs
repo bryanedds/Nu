@@ -621,6 +621,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         Seq.fold (fun world freezer -> freezer.SetFrozen false world) world
 
     let private reregisterPhysics world =
+        let world = snapshot ReregisterPhysics world
         World.reregisterPhysics world
 
     let private synchronizeNav world =
