@@ -210,17 +210,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 | _ -> None
             match navSpeedsOpt with
             | Some (moveSpeed, turnSpeed) ->
-                let nearest =
-                    let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
-                    let positionFlat = position.WithY 0.0f
-                    let playerPositionFlat = playerPosition.WithY 0.0f
-                    if rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) >= 0.1f then
-                        let sphere =
-                            if position.Y - playerPosition.Y >= 0.25f
-                            then Sphere (playerPosition, 0.1f) // when above player
-                            else Sphere (playerPosition, 0.7f) // when at or below player
-                        sphere.Nearest position
-                    else playerPosition // allow for infinite closeness while still needing to face player
+                let sphere =
+                    if position.Y - playerPosition.Y >= 0.25f
+                    then Sphere (playerPosition, 0.1f) // when above player
+                    else Sphere (playerPosition, 0.7f) // when at or below player
+                let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
             | None -> (position, rotation, v3Zero, v3Zero, character)
