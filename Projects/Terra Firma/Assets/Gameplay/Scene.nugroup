@@ -64,7 +64,7 @@
         [SsvfEnabled True]
         [SsvfSteps 48]
         [SsvfAsymmetry 0.1]
-        [SsvfIntensity 0.02]
+        [SsvfIntensity 0.04]
         [SsrEnabled True]
         [SsrDetail 0.41]
         [SsrRefinementsMax 24]

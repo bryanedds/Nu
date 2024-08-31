@@ -193,7 +193,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             }
             currentPosition += step;
         }
-        result = result / ssvfSteps * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+        result = smoothstep(0.0, 1.0, result / ssvfSteps) * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
     }
     return result;
 }
