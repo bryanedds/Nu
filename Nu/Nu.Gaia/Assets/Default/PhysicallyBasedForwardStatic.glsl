@@ -395,8 +395,8 @@ void main()
     // compute volumetric fog light accumulation
     vec3 fogAccum = vec3(0.0);
     const int ssvfSteps = 48;
-    const float ssvfScatterTerm = 0.75;
-    const float ssvfIntensity = 0.1;
+    const float ssvfScatterTerm = 0.5;
+    const float ssvfIntensity = 0.05;
     int shadowIndex = lightShadowIndices[0];
     if (lightsCount > 0 && lightDirectionals[0] != 0 && shadowIndex >= 0)
     {
