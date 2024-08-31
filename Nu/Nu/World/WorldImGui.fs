@@ -404,6 +404,10 @@ module WorldImGui =
                     let mutable ssaoBias = lighting3dConfig.SsaoBias
                     let mutable ssaoRadius = lighting3dConfig.SsaoRadius
                     let mutable ssaoDistanceMax = lighting3dConfig.SsaoDistanceMax
+                    let mutable ssvfEnabled = lighting3dConfig.SsvfEnabled
+                    let mutable ssvfSteps = lighting3dConfig.SsvfSteps
+                    let mutable ssvfAsymmetry = lighting3dConfig.SsvfAsymmetry
+                    let mutable ssvfIntensity = lighting3dConfig.SsvfIntensity
                     let mutable ssrEnabled = lighting3dConfig.SsrEnabled
                     let mutable ssrDetail = lighting3dConfig.SsrDetail
                     let mutable ssrRefinementsMax = lighting3dConfig.SsrRefinementsMax
@@ -428,6 +432,10 @@ module WorldImGui =
                     lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
@@ -454,6 +462,10 @@ module WorldImGui =
                               SsaoBias = ssaoBias
                               SsaoRadius = ssaoRadius
                               SsaoDistanceMax = ssaoDistanceMax
+                              SsvfEnabled = ssvfEnabled
+                              SsvfSteps = ssvfSteps
+                              SsvfAsymmetry = ssvfAsymmetry
+                              SsvfIntensity = ssvfIntensity
                               SsrEnabled = ssrEnabled
                               SsrDetail = ssrDetail
                               SsrRefinementsMax = ssrRefinementsMax

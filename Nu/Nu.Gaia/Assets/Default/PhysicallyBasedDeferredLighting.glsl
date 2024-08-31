@@ -22,9 +22,6 @@ const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const float SHADOW_FOV_MAX = 2.1;
 const int SHADOWS_MAX = 16;
-const int ssvfSteps = 48;
-const float ssvfScatterTerm = 0.5;
-const float ssvfIntensity = 0.05;
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
@@ -34,6 +31,10 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowBiasAcne;
 uniform float lightShadowBiasBleed;
+uniform int ssvfEnabled;
+uniform int ssvfSteps;
+uniform float ssvfAsymmetry;
+uniform float ssvfIntensity;
 uniform int ssrEnabled;
 uniform float ssrDetail;
 uniform int ssrRefinementsMax;
@@ -185,8 +186,8 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
-                float scatterTermSquared = ssvfScatterTerm * ssvfScatterTerm;
-                float fogMoment = (1.0 - scatterTermSquared) / (4.0 * PI * pow(1.0 + scatterTermSquared - 2.0 * ssvfScatterTerm * theta, 1.5));
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
                 result += fogMoment;
             }
             currentPosition += step;
@@ -405,8 +406,8 @@ void main()
             lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
         }
 
-        // compute directional fog accumulation from sun light
-        vec3 fogAccum = computeFogAccumDirectional(position, 0);
+        // compute directional fog accumulation from sun light when desired
+        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
 
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.

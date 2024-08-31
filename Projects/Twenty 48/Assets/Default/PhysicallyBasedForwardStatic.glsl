@@ -72,6 +72,10 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowBiasAcne;
 uniform float lightShadowBiasBleed;
+uniform int ssvfEnabled;
+uniform int ssvfSteps;
+uniform float ssvfAsymmetry;
+uniform float ssvfIntensity;
 uniform sampler2D albedoTexture;
 uniform sampler2D roughnessTexture;
 uniform sampler2D metallicTexture;
@@ -117,9 +121,9 @@ float linstep(float low, float high, float v)
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
-float computeShadowScalar(sampler2D shadowMap, vec2 shadowTexCoords, float shadowZ, float shadowBiasAcne, float shadowBiasBleed)
+float computeShadowScalar(sampler2D shadowTexture, vec2 shadowTexCoords, float shadowZ, float shadowBiasAcne, float shadowBiasBleed)
 {
-    vec2 moments = texture(shadowMap, shadowTexCoords).xy;
+    vec2 moments = texture(shadowTexture, shadowTexCoords).xy;
     float p = step(shadowZ, moments.x);
     float variance = max(moments.y - moments.x * moments.x, shadowBiasAcne);
     float delta = shadowZ - moments.x;
@@ -220,6 +224,54 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
+{
+    vec3 result = vec3(0.0);
+    int shadowIndex = lightShadowIndices[lightIndex];
+    if (lightsCount > 0 && lightDirectionals[lightIndex] != 0 && shadowIndex >= 0)
+    {
+        // compute shadow space
+        mat4 shadowMatrix = shadowMatrices[shadowIndex];
+
+        // compute ray info
+        vec3 startPosition = eyeCenter;
+        vec3 stopPosition = position.xyz;
+        vec3 rayVector = stopPosition - startPosition;
+        float rayLength = length(rayVector);
+        vec3 rayDirection = rayVector / rayLength;
+
+        // compute step info
+        float stepLength = rayLength / ssvfSteps;
+        vec3 step = rayDirection * stepLength;
+
+        // compute light view term
+        float theta = dot(-rayDirection, lightDirections[lightIndex]);
+
+        // march over ray, accumulating fog light value
+        vec3 currentPosition = startPosition;
+        for (int i = 0; i < ssvfSteps; i++)
+        {
+            // step through ray, accumulating fog light moment
+            vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
+            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
+            bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0;
+            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
+            if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
+            {
+                // mie scaterring approximated with Henyey-Greenstein phase function
+                float asymmetrySquared = ssvfAsymmetry * ssvfAsymmetry;
+                float fogMoment = (1.0 - asymmetrySquared) / (4.0 * PI * pow(1.0 + asymmetrySquared - 2.0 * ssvfAsymmetry * theta, 1.5));
+                result += fogMoment;
+            }
+            currentPosition += step;
+        }
+        result = result / ssvfSteps * lightColors[lightIndex] * lightBrightnesses[lightIndex] * ssvfIntensity;
+    }
+    return result;
+}
+
 void main()
 {
     // compute basic fragment data
@@ -262,7 +314,7 @@ void main()
     // compute ignore light maps
     bool ignoreLightMaps = heightPlusOut.y != 0.0;
 
-    // compute lightAccum term
+    // compute light accumulation
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - position.xyz);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
@@ -374,6 +426,9 @@ void main()
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
     }
 
+    // compute directional fog accumulation from sun light when desired
+    vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
+
     // compute light ambient terms
     vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
     vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
@@ -393,7 +448,7 @@ void main()
     vec3 ambient = diffuse + specular;
 
     // compute color w/ tone mapping, gamma correction, and emission
-    vec3 color = lightAccum + ambient;
+    vec3 color = lightAccum + fogAccum + ambient;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
     color = color + emission * albedo.rgb;
