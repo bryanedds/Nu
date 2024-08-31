@@ -243,6 +243,10 @@ module PhysicallyBased =
           LightAmbientBrightnessUniform : int
           LightShadowBiasAcneUniform : int
           LightShadowBiasBleedUniform : int
+          SsvfEnabledUniform : int
+          SsvfStepsUniform : int
+          SsvfAsymmetryUniform : int
+          SsvfIntensityUniform : int
           AlbedoTextureUniform : int
           RoughnessTextureUniform : int
           MetallicTextureUniform : int
@@ -348,6 +352,10 @@ module PhysicallyBased =
           LightAmbientBrightnessUniform : int
           LightShadowBiasAcneUniform : int
           LightShadowBiasBleedUniform : int
+          SsvfEnabledUniform : int
+          SsvfStepsUniform : int
+          SsvfAsymmetryUniform : int
+          SsvfIntensityUniform : int
           SsrEnabledUniform : int
           SsrDetailUniform : int
           SsrRefinementsMaxUniform : int
@@ -1383,6 +1391,10 @@ module PhysicallyBased =
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
         let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
+        let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
+        let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
+        let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
+        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
         let albedoTextureUniform = Gl.GetUniformLocation (shader, "albedoTexture")
         let roughnessTextureUniform = Gl.GetUniformLocation (shader, "roughnessTexture")
         let metallicTextureUniform = Gl.GetUniformLocation (shader, "metallicTexture")
@@ -1432,6 +1444,10 @@ module PhysicallyBased =
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
           LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
+          SsvfEnabledUniform = ssvfEnabledUniform
+          SsvfStepsUniform = ssvfStepsUniform
+          SsvfAsymmetryUniform = ssvfAsymmetryUniform
+          SsvfIntensityUniform = ssvfIntensityUniform
           AlbedoTextureUniform = albedoTextureUniform
           RoughnessTextureUniform = roughnessTextureUniform
           MetallicTextureUniform = metallicTextureUniform
@@ -1640,6 +1656,10 @@ module PhysicallyBased =
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
         let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
         let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
+        let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
+        let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
+        let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
+        let ssvfIntensityUniform = Gl.GetUniformLocation (shader, "ssvfIntensity")
         let ssrEnabledUniform = Gl.GetUniformLocation (shader, "ssrEnabled")
         let ssrDetailUniform = Gl.GetUniformLocation (shader, "ssrDetail")
         let ssrRefinementsMaxUniform = Gl.GetUniformLocation (shader, "ssrRefinementsMax")
@@ -1693,6 +1713,10 @@ module PhysicallyBased =
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
           LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
           LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
+          SsvfEnabledUniform = ssvfEnabledUniform
+          SsvfStepsUniform = ssvfStepsUniform
+          SsvfAsymmetryUniform = ssvfAsymmetryUniform
+          SsvfIntensityUniform = ssvfIntensityUniform
           SsrEnabledUniform = ssrEnabledUniform
           SsrDetailUniform = ssrDetailUniform
           SsrRefinementsMaxUniform = ssrRefinementsMaxUniform
@@ -1888,8 +1912,7 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup dynamic state
-        if not material.TwoSided then
-            Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // start batch
@@ -1947,8 +1970,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
         // teardown dynamic state
-        if not material.TwoSided then
-            Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
@@ -1964,8 +1986,7 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup dynamic state
-        if not material.TwoSided then
-            Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // start batch
@@ -2064,8 +2085,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
         // teardown dynamic state
-        if not material.TwoSided then
-            Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
@@ -2081,6 +2101,10 @@ module PhysicallyBased =
          lightAmbientBrightness : single,
          lightShadowBiasAcne : single,
          lightShadowBiasBleed : single,
+         ssvfEnabled : int,
+         ssvfSteps : int,
+         ssvfAsymmetry : single,
+         ssvfIntensity : single,
          brdfTexture : Texture.Texture,
          irradianceMap : Texture.Texture,
          environmentFilterMap : Texture.Texture,
@@ -2134,6 +2158,10 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
             Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
             Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
+            Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
+            Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
+            Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
+            Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
             Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
             Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
             Gl.Uniform1 (shader.MetallicTextureUniform, 2)
@@ -2640,6 +2668,10 @@ module PhysicallyBased =
          lightAmbientBrightness : single,
          lightShadowBiasAcne : single,
          lightShadowBiasBleed : single,
+         ssvfEnabled : int,
+         ssvfSteps : int,
+         ssvfAsymmetry : single,
+         ssvfIntensity : single,
          ssrEnabled : int,
          ssrDetail : single,
          ssrRefinementsMax : int,
@@ -2692,6 +2724,10 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
         Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
+        Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
+        Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
+        Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
+        Gl.Uniform1 (shader.SsvfIntensityUniform, ssvfIntensity)
         Gl.Uniform1 (shader.SsrEnabledUniform, ssrEnabled)
         Gl.Uniform1 (shader.SsrDetailUniform, ssrDetail)
         Gl.Uniform1 (shader.SsrRefinementsMaxUniform, ssrRefinementsMax)
