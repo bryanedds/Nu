@@ -79,6 +79,9 @@
 		<PackageReference Include="NUnit" Version="3.14.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
 		<PackageReference Include="Twizzle.ImPlot.NET" Version="1.89.4" />
+		<PackageReference Include="Vortice.ShaderCompiler" Version="1.7.3" />
+		<PackageReference Include="Vortice.Vulkan" Version="1.9.5" />
+		<PackageReference Include="Vortice.VulkanMemoryAllocator" Version="1.5.0" />
 	</ItemGroup>
 
 	<ItemGroup>

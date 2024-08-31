@@ -24,7 +24,6 @@ module Hl =
         let handle = handle
         let pointer = pointer
 
-        member private this.Handle = handle
         member this.Pointer = pointer
 
         new (array : 'a array) =
@@ -33,5 +32,4 @@ module Hl =
             new ArrayPin<'a> (handle, pointer)
 
         interface IDisposable with
-            // TODO: according to the warning this.Handle is being copied, it needs to NOT BE COPIED!
-            member this.Dispose() = this.Handle.Dispose()
+            member this.Dispose() = handle.Dispose()
