@@ -12,6 +12,8 @@ module Vulkan = let _ = ()
 namespace Vulkan
 open System
 open FSharp.NativeInterop
+open Vortice.Vulkan
+open type Vortice.Vulkan.Vulkan
 
 [<RequireQualifiedAccess>]
 module Hl =
@@ -33,3 +35,21 @@ module Hl =
 
         interface IDisposable with
             member this.Dispose() = handle.Dispose()
+
+    /// The Vulkan handles that must be globally accessible within the renderer.
+    type [<ReferenceEquality>] VulkanGlobal =
+        private
+            { Instance : VkInstance }
+
+        /// Make a VulkanGlobal.
+        static member make =
+
+            // create handle variables
+            let mutable instance = Unchecked.defaultof<VkInstance>
+
+            // make vulkanGlobal
+            let vulkanGlobal =
+                { Instance = instance }
+
+            // fin
+            vulkanGlobal
