@@ -20,8 +20,9 @@ const float REFLECTION_LOD_MAX = 7.0;
 const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
-const float SHADOW_FOV_MAX = 2.1;
 const int SHADOWS_MAX = 16;
+const float SHADOW_FOV_MAX = 2.1;
+const float SHADOW_SEAM_INSET = 0.002;
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
@@ -377,7 +378,11 @@ void main()
                 vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
                 vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
                 float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-                if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+                if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x <= 1.0 - SHADOW_SEAM_INSET &&
+                    shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y <= 1.0 - SHADOW_SEAM_INSET &&
+                    shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z <= 1.0 - SHADOW_SEAM_INSET &&
+                    shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0 &&
+                    shadowZ < 1.0f)
                 {
                     shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, lightShadowBiasAcne, lightShadowBiasBleed);
                     if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
