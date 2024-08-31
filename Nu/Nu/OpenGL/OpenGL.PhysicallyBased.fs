@@ -1912,8 +1912,7 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup dynamic state
-        if not material.TwoSided then
-            Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // start batch
@@ -1971,8 +1970,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
         // teardown dynamic state
-        if not material.TwoSided then
-            Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based deferred surfaces.
     let DrawPhysicallyBasedDeferredSurfaces
@@ -1988,8 +1986,7 @@ module PhysicallyBased =
          shader : PhysicallyBasedShader) =
 
         // setup dynamic state
-        if not material.TwoSided then
-            Gl.Enable EnableCap.CullFace
+        if not material.TwoSided then Gl.Enable EnableCap.CullFace
         Hl.Assert ()
 
         // start batch
@@ -2088,8 +2085,7 @@ module PhysicallyBased =
             Hl.Assert ()
 
         // teardown dynamic state
-        if not material.TwoSided then
-            Gl.Disable EnableCap.CullFace
+        if not material.TwoSided then Gl.Disable EnableCap.CullFace
 
     /// Draw a batch of physically-based forward surfaces.
     let DrawPhysicallyBasedForwardSurfaces
