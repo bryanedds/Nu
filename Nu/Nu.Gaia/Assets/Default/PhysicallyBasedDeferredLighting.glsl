@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 texCoords;
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -419,16 +419,13 @@ void main()
                 vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
                 vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
                 float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-                if (shadowZ < 1.0f && shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0)
+                float shadowDepth = texture(shadowTextures[0], shadowTexCoords).x;
+                if (shadowZ >= 1.0f || shadowTexCoords.x < 0.0 || shadowTexCoords.x > 1.0 || shadowTexCoords.y < 0.0 || shadowTexCoords.y > 1.0 || shadowDepth > shadowZ)
                 {
-                    float shadowDepth = texture(shadowTextures[0], shadowTexCoords).x;
-                    if (shadowDepth > shadowZ)
-                    {
-                        // Mie scaterring approximated with Henyey-Greenstein phase function.
-                        float result = 1.0 - ssvfScatterTerm * ssvfScatterTerm;
-                        result /= (4.0 * PI * pow(1.0 + ssvfScatterTerm * ssvfScatterTerm - (2.0 * ssvfScatterTerm) * lightDotView, 1.5));
-                        fogAccum += result;
-                    }
+                    // Mie scaterring approximated with Henyey-Greenstein phase function.
+                    float result = 1.0 - ssvfScatterTerm * ssvfScatterTerm;
+                    result /= (4.0 * PI * pow(1.0 + ssvfScatterTerm * ssvfScatterTerm - (2.0 * ssvfScatterTerm) * lightDotView, 1.5));
+                    fogAccum += result;
                 }
                 currentPosition += step;
             }
