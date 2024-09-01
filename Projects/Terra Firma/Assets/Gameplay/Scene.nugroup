@@ -108,18 +108,10 @@
              [Some [Default MaterialMetallic]]]
             [AmbientOcclusionImageOpt None]
             [EmissionImageOpt None]
-            [NormalImageOpt None]
+            [NormalImageOpt
+             [Some [Gameplay Slab_Normal]]]
             [HeightImageOpt None]
             [TwoSidedOpt None]]]
-          [MaterialProperties
-           [[AlbedoOpt None]
-            [RoughnessOpt [Some 0]]
-            [MetallicOpt None]
-            [AmbientOcclusionOpt None]
-            [EmissionOpt None]
-            [HeightOpt None]
-            [IgnoreLightMapsOpt None]
-            [OpaqueDistanceOpt None]]]
           [MountOpt [Some ^]]
           [Name Ground]
           [NavShape StaticModelNavShape]
@@ -1149,14 +1141,25 @@
           [Static True]
           [StaticModel [Gameplay PalmTree]]]
          []]
-        [RigidModelDispatcher
+        [RigidModelSurfaceDispatcher
          [[BodyShape
            [StaticModelShape
             [[Gameplay Container] True None None]]]
+          [Material
+           [[AlbedoImageOpt None]
+            [RoughnessImageOpt
+             [Some [Default LightProbeModelRoughness]]]
+            [MetallicImageOpt
+             [Some [Default Image]]]
+            [AmbientOcclusionImageOpt None]
+            [EmissionImageOpt None]
+            [NormalImageOpt None]
+            [HeightImageOpt None]
+            [TwoSidedOpt None]]]
           [MountOpt [Some ^]]
           [Name Container]
           [NavShape StaticModelNavShape]
-          [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+          [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
           [Position [0 3 -14.8]]
           [PositionLocal [0 1.36 -14.8]]
           [Presence Omnipresent]
@@ -1217,18 +1220,10 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt None]
+        [NormalImageOpt
+         [Some [Gameplay Slab_Normal]]]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
-      [MaterialProperties
-       [[AlbedoOpt None]
-        [RoughnessOpt [Some 0]]
-        [MetallicOpt None]
-        [AmbientOcclusionOpt None]
-        [EmissionOpt None]
-        [HeightOpt None]
-        [IgnoreLightMapsOpt None]
-        [OpaqueDistanceOpt None]]]
       [MountOpt [Some ^]]
       [Name Ground]
       [NavShape StaticModelNavShape]
@@ -2258,14 +2253,25 @@
       [Static True]
       [StaticModel [Gameplay PalmTree]]]
      []]
-    [RigidModelDispatcher
+    [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] True None None]]]
+      [Material
+       [[AlbedoImageOpt None]
+        [RoughnessImageOpt
+         [Some [Default LightProbeModelRoughness]]]
+        [MetallicImageOpt
+         [Some [Default Image]]]
+        [AmbientOcclusionImageOpt None]
+        [EmissionImageOpt None]
+        [NormalImageOpt None]
+        [HeightImageOpt None]
+        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Container]
       [NavShape StaticModelNavShape]
-      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
       [Position [0 3 -14.8]]
       [PositionLocal [0 1.36 -14.8]]
       [Presence Omnipresent]
@@ -2331,12 +2337,13 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt None]
+        [NormalImageOpt
+         [Some [Gameplay Slab_Normal]]]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
-        [RoughnessOpt [Some 0]]
+        [RoughnessOpt [Some 1.15]]
         [MetallicOpt None]
         [AmbientOcclusionOpt None]
         [EmissionOpt None]
@@ -3254,12 +3261,11 @@
        [StaticModelShape
         [[Gameplay Container] True None None]]]
       [Material
-       [[AlbedoImageOpt
-         [Some [Default LightProbeModelAlbedo]]]
+       [[AlbedoImageOpt None]
         [RoughnessImageOpt
          [Some [Default LightProbeModelRoughness]]]
         [MetallicImageOpt
-         [Some [Default LightProbeModelMetallic]]]
+         [Some [Default Image]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
         [NormalImageOpt None]
@@ -3268,7 +3274,7 @@
       [MountOpt [Some ^]]
       [Name Container]
       [NavShape StaticModelNavShape]
-      [Offset [1.1920929E-07 -0.055164337 -2.3841858E-07]]
+      [Offset [1.1920929E-07 -0.0909127 -2.3841858E-07]]
       [Position [6.5999994 2.6599998 27.5]]
       [PositionLocal [0 1.36 -14.8]]
       [Presence Omnipresent]
@@ -3325,12 +3331,13 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt None]
+        [NormalImageOpt
+         [Some [Gameplay Slab_Normal]]]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
-        [RoughnessOpt [Some 0]]
+        [RoughnessOpt [Some 1.15]]
         [MetallicOpt None]
         [AmbientOcclusionOpt None]
         [EmissionOpt None]
@@ -4222,14 +4229,25 @@
       [Static True]
       [StaticModel [Gameplay PalmTree]]]
      []]
-    [RigidModelDispatcher
+    [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] True None None]]]
+      [Material
+       [[AlbedoImageOpt None]
+        [RoughnessImageOpt
+         [Some [Default LightProbeModelRoughness]]]
+        [MetallicImageOpt
+         [Some [Default Image]]]
+        [AmbientOcclusionImageOpt None]
+        [EmissionImageOpt None]
+        [NormalImageOpt None]
+        [HeightImageOpt None]
+        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Container]
       [NavShape StaticModelNavShape]
-      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
       [Position [24.699999 3.46 37.5]]
       [PositionLocal [0 1.36 -14.8]]
       [Presence Omnipresent]
@@ -4284,12 +4302,13 @@
          [Some [Default MaterialMetallic]]]
         [AmbientOcclusionImageOpt None]
         [EmissionImageOpt None]
-        [NormalImageOpt None]
+        [NormalImageOpt
+         [Some [Gameplay Slab_Normal]]]
         [HeightImageOpt None]
         [TwoSidedOpt None]]]
       [MaterialProperties
        [[AlbedoOpt None]
-        [RoughnessOpt [Some 0]]
+        [RoughnessOpt [Some 1.15]]
         [MetallicOpt None]
         [AmbientOcclusionOpt None]
         [EmissionOpt None]
@@ -5187,14 +5206,25 @@
       [Static True]
       [StaticModel [Gameplay PalmTree]]]
      []]
-    [RigidModelDispatcher
+    [RigidModelSurfaceDispatcher
      [[BodyShape
        [StaticModelShape
         [[Gameplay Container] True None None]]]
+      [Material
+       [[AlbedoImageOpt None]
+        [RoughnessImageOpt
+         [Some [Default LightProbeModelRoughness]]]
+        [MetallicImageOpt
+         [Some [Default Image]]]
+        [AmbientOcclusionImageOpt None]
+        [EmissionImageOpt None]
+        [NormalImageOpt None]
+        [HeightImageOpt None]
+        [TwoSidedOpt None]]]
       [MountOpt [Some ^]]
       [Name Container]
       [NavShape StaticModelNavShape]
-      [Offset [1.1920929E-07 -0.067976475 -2.3841858E-07]]
+      [Offset [1.1920929E-07 -0.07810056 -2.3841858E-07]]
       [Position [24.800001 3.46 5.8]]
       [PositionLocal [0 1.36 -14.8]]
       [Presence Omnipresent]
@@ -5247,7 +5277,7 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Model
      ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]            
+      [[CharacterType Enemy]
        [PositionPrevious
         [[6.677379 3.431738 -14.550114] [6.672271 3.4235682 -14.519724] [6.66722 3.4124928 -14.489681] [6.662227 3.3983054 -14.459979]]]
        [RotationPrevious
