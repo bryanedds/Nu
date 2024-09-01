@@ -47,6 +47,6 @@ float linearizeDepth(float z, float n, float f)
 void main()
 {
     float depth = depthOut;//linearizeDepth(depthOut, 0.125, 4096.0);
-    float e_cz = exp(100.0 * depth);
+    float e_cz = exp(80.0 * depth);
     moments.x = e_cz;
 }

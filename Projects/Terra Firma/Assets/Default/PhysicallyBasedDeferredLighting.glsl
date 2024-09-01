@@ -380,7 +380,7 @@ void main()
                     shadowZ < 1.0f)
                 {
                     float d = shadowTexCoordsProj.z;//linearizeDepth(shadowTexCoordsProj.z, 0.125, 4096.0);
-                    float e_ncd = exp(-100.0 * d);
+                    float e_ncd = exp(-80.0 * d);
                     float e_cz = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).r;
                     shadowScalar = clamp(e_ncd * e_cz, 0.0, 1.0);
                     //shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
