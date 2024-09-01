@@ -37,6 +37,7 @@ module Hl =
 
             // get available instance layers
             let mutable layerCount = 0u
+            vkEnumerateInstanceLayerProperties (asPointer &layerCount, NativePtr.nullPtr) |> check
 
             // fin
             instance
