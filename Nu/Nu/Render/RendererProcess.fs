@@ -316,11 +316,14 @@ type RendererThread () =
     member private this.Run fonts windowOpt =
 
         // create renderers
-        let (renderer3d, renderer2d, rendererImGui) =
+        let (vulkanGlobalOpt, renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
             | Some window ->
                 
                 // NOTE: opengl rendering should retain functionality in RendererInline, at least up to a point.
+                
+                // create global vulkan object
+                let vulkanGlobal = Vulkan.Hl.VulkanGlobal.make window
                 
                 // create 3d renderer
                 let renderer3d = StubRenderer3d.make () :> Renderer3d
@@ -332,14 +335,14 @@ type RendererThread () =
                 let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
 
                 // fin
-                (renderer3d, renderer2d, rendererImGui)
+                (Some vulkanGlobal, renderer3d, renderer2d, rendererImGui)
 
             // create stub renderers
             | None ->
                 let renderer3d = StubRenderer3d.make () :> Renderer3d
                 let renderer2d = StubRenderer2d.make () :> Renderer2d
                 let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-                (renderer3d, renderer2d, rendererImGui)
+                (None, renderer3d, renderer2d, rendererImGui)
 
         // mark as started
         started <- true

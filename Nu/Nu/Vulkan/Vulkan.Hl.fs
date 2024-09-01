@@ -14,6 +14,7 @@ open System
 open FSharp.NativeInterop
 open Vortice.Vulkan
 open type Vortice.Vulkan.Vulkan
+open Nu
 
 [<RequireQualifiedAccess>]
 module Hl =
@@ -36,16 +37,24 @@ module Hl =
         interface IDisposable with
             member this.Dispose() = handle.Dispose()
 
+    /// Check the given Vulkan operation result, logging on non-Success.
+    let check (result : VkResult) =
+        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        elif int result < 0 then Log.error ("Vulkan error: " + string result)
+    
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
         private
             { Instance : VkInstance }
 
         /// Make a VulkanGlobal.
-        static member make =
+        static member make window =
 
             // create handle variables
             let mutable instance = Unchecked.defaultof<VkInstance>
+
+            // loads vulkan; not vulkan function
+            vkInitialize () |> check
 
             // make vulkanGlobal
             let vulkanGlobal =
