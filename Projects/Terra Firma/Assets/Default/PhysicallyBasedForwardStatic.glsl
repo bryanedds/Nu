@@ -122,16 +122,6 @@ float linstep(float low, float high, float v)
     return clamp((v - low) / (high - low), 0.0, 1.0);
 }
 
-float computeShadowScalar(sampler2D shadowTexture, vec2 shadowTexCoords, float shadowZ, float shadowBiasAcne, float shadowBiasBleed)
-{
-    vec2 moments = texture(shadowTexture, shadowTexCoords).xy;
-    float p = step(shadowZ, moments.x);
-    float variance = max(moments.y - moments.x * moments.x, shadowBiasAcne);
-    float delta = shadowZ - moments.x;
-    float pMax = linstep(shadowBiasBleed, 1.0, variance / (variance + delta * delta));
-    return max(p, pMax);
-}
-
 float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
 {
     vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
@@ -359,14 +349,17 @@ void main()
             vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x <= 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y <= 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z <= 1.0 - SHADOW_SEAM_INSET &&
+            if (//shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x <= 1.0 - SHADOW_SEAM_INSET &&
+                //shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y <= 1.0 - SHADOW_SEAM_INSET &&
+                //shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z <= 1.0 - SHADOW_SEAM_INSET &&
                 shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0 &&
                 shadowZ < 1.0f)
             {
-                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, lightShadowBiasAcne, lightShadowBiasBleed);
-                if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
+                float d = shadowTexCoordsProj.z;//linearizeDepth(shadowTexCoordsProj.z, 0.125, 4096.0);
+                float e_ncd = exp(-100.0 * d);
+                float e_cz = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).r;
+                shadowScalar = clamp(e_ncd * e_cz, 0.0, 1.0);
+                //shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
             }
         }
 
