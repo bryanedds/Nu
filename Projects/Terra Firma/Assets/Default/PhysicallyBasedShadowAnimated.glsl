@@ -35,7 +35,7 @@ void main()
 #shader fragment
 #version 410
 
-layout (location = 0) out vec2 moments;
+layout (location = 0) out vec2 depths;
 
 in float depthOut;
 
@@ -47,6 +47,7 @@ float linearizeDepth(float z, float n, float f)
 void main()
 {
     float depth = depthOut;//linearizeDepth(depthOut, 0.125, 4096.0);
-    float e_cz = exp(80.0 * depth);
-    moments.x = e_cz;
+    float depthExp = exp(80.0 * depth);
+    depths.x = gl_FragCoord.z;
+    depths.y = depthExp;
 }
