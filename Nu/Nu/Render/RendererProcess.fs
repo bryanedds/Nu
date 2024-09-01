@@ -322,6 +322,10 @@ type RendererThread () =
                 
                 // NOTE: opengl rendering should retain functionality in RendererInline, at least up to a point.
                 
+                // TODO: review window semantics.
+                // extract window
+                let window = match window with SglWindow window -> window.SglWindow
+
                 // create global vulkan object
                 let vulkanGlobal = Vulkan.Hl.VulkanGlobal.make window
                 

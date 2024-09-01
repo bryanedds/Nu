@@ -12,8 +12,10 @@ module Vulkan = let _ = ()
 namespace Vulkan
 open System
 open FSharp.NativeInterop
+open SDL2
 open Vortice.Vulkan
 open type Vulkan
+open Prime
 open Nu
 
 [<RequireQualifiedAccess>]
@@ -30,14 +32,28 @@ module Hl =
             { Instance : VkInstance }
 
         /// Create the Vulkan instance.
-        static member createInstance () =
+        static member createInstance window =
 
             // instance handle
             let mutable instance = Unchecked.defaultof<VkInstance>
 
+            // get sdl extensions
+            let mutable sdlExtensionCount = 0u
+            let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
+            if int result <> 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
+            let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
+            let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
+            if int result <> 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
+            let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
+            for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
+            use sdlExtensionsWrap = ArrayPin sdlExtensions
+            
             // get available instance layers
             let mutable layerCount = 0u
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, NativePtr.nullPtr) |> check
+            let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
+            use layersWrap = ArrayPin layers
+            vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersWrap.Pointer) |> check
 
             // fin
             instance
@@ -49,7 +65,7 @@ module Hl =
             vkInitialize () |> check
 
             // create instance
-            let instance = VulkanGlobal.createInstance ()
+            let instance = VulkanGlobal.createInstance window
 
             // make vulkanGlobal
             let vulkanGlobal =
