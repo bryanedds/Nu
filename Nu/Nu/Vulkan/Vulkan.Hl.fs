@@ -29,14 +29,26 @@ module Hl =
         private
             { Instance : VkInstance }
 
+        /// Create the Vulkan instance.
+        static member createInstance () =
+
+            // instance handle
+            let mutable instance = Unchecked.defaultof<VkInstance>
+
+            // get available instance layers
+            let mutable layerCount = 0u
+
+            // fin
+            instance
+        
         /// Make a VulkanGlobal.
         static member make window =
 
-            // create handle variables
-            let mutable instance = Unchecked.defaultof<VkInstance>
-
             // loads vulkan; not vulkan function
             vkInitialize () |> check
+
+            // create instance
+            let instance = VulkanGlobal.createInstance ()
 
             // make vulkanGlobal
             let vulkanGlobal =
