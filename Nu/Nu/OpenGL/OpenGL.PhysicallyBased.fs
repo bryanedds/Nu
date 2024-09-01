@@ -241,8 +241,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
-          LightShadowBiasAcneUniform : int
-          LightShadowBiasBleedUniform : int
+          LightShadowExponentUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
@@ -284,6 +283,7 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
+          LightShadowExponentUniform : int
           LayersCountUniform : int
           AlbedoTexturesUniforms : int array
           RoughnessTexturesUniforms : int array
@@ -350,8 +350,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
-          LightShadowBiasAcneUniform : int
-          LightShadowBiasBleedUniform : int
+          LightShadowExponentUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
@@ -1389,8 +1388,7 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
-        let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
-        let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
+        let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
@@ -1442,8 +1440,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-          LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
-          LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
+          LightShadowExponentUniform = lightShadowExponentUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -1491,6 +1488,7 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
         let albedoTexturesUniforms =
             Array.init Constants.Render.TerrainLayersMax $ fun i ->
@@ -1512,6 +1510,7 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
+          LightShadowExponentUniform = lightShadowExponentUniform
           LayersCountUniform = layersCountUniform
           AlbedoTexturesUniforms = albedoTexturesUniforms
           RoughnessTexturesUniforms = roughnessTexturesUniforms
@@ -1654,8 +1653,7 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
-        let lightShadowBiasAcneUniform = Gl.GetUniformLocation (shader, "lightShadowBiasAcne")
-        let lightShadowBiasBleedUniform = Gl.GetUniformLocation (shader, "lightShadowBiasBleed")
+        let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
@@ -1711,8 +1709,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-          LightShadowBiasAcneUniform = lightShadowBiasAcneUniform
-          LightShadowBiasBleedUniform = lightShadowBiasBleedUniform
+          LightShadowExponentUniform = lightShadowExponentUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -1907,8 +1904,9 @@ module PhysicallyBased =
          bones : single array array,
          surfacesCount : int,
          instanceFields : single array,
-         geometry : PhysicallyBasedGeometry,
+         lightShadowExponent : single,
          material : PhysicallyBasedMaterial,
+         geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
 
         // setup dynamic state
@@ -1929,6 +1927,7 @@ module PhysicallyBased =
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
+            Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Hl.Assert ()
 
         // only set up uniforms when there is a surface to render to avoid potentially utilizing destroyed textures
@@ -1981,6 +1980,7 @@ module PhysicallyBased =
          eyeCenter : Vector3,
          surfacesCount : int,
          instanceFields : single array,
+         lightShadowExponent : single,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -2004,6 +2004,7 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+            Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
             Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
             Gl.Uniform1 (shader.MetallicTextureUniform, 2)
@@ -2099,8 +2100,7 @@ module PhysicallyBased =
          lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
-         lightShadowBiasAcne : single,
-         lightShadowBiasBleed : single,
+         lightShadowExponent : single,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
@@ -2156,8 +2156,7 @@ module PhysicallyBased =
             if lightAmbientColor.Length = 3 then
                 Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
             Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-            Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
-            Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
+            Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
             Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
             Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
@@ -2303,6 +2302,7 @@ module PhysicallyBased =
          projection : single array,
          eyeCenter : Vector3,
          instanceFields : single array,
+         lightShadowExponent : single,
          elementsCount : int,
          materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
@@ -2322,6 +2322,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LayersCountUniform, layersCount)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
@@ -2666,8 +2667,7 @@ module PhysicallyBased =
          lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
-         lightShadowBiasAcne : single,
-         lightShadowBiasBleed : single,
+         lightShadowExponent : single,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
@@ -2722,8 +2722,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
         Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-        Gl.Uniform1 (shader.LightShadowBiasAcneUniform, lightShadowBiasAcne)
-        Gl.Uniform1 (shader.LightShadowBiasBleedUniform, lightShadowBiasBleed)
+        Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)

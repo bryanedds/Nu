@@ -35,13 +35,15 @@ void main()
 #shader fragment
 #version 410
 
+uniform float lightShadowExponent;
+
 layout (location = 0) out vec2 depths;
 
 in float depthOut;
 
 void main()
 {
-    float depthExp = exp(80.0 * depthOut);
+    float depthExp = exp(lightShadowExponent * depthOut);
     depths.x = gl_FragCoord.z;
     depths.y = depthExp;
 }

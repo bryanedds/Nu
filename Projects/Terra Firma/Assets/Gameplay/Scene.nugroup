@@ -55,8 +55,7 @@
     [Lighting3dConfigDispatcher
      [[Lighting3dConfig
        [[LightCutoffMargin 0.333]
-        [ShadowBiasAcne 2E-07]
-        [ShadowBiasBleed 0.5]
+        [LightShadowExponent 80]
         [SsaoIntensity 1.35]
         [SsaoBias 0.025]
         [SsaoRadius 0.125]
@@ -5248,7 +5247,7 @@
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
     [Model
      ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
+      [[CharacterType Enemy]            
        [PositionPrevious
         [[6.677379 3.431738 -14.550114] [6.672271 3.4235682 -14.519724] [6.66722 3.4124928 -14.489681] [6.662227 3.3983054 -14.459979]]]
        [RotationPrevious

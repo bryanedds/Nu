@@ -30,8 +30,7 @@ uniform mat4 projection;
 uniform float lightCutoffMargin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
-uniform float lightShadowBiasAcne;
-uniform float lightShadowBiasBleed;
+uniform float lightShadowExponent;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -377,7 +376,7 @@ void main()
                     shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
                 {
                     float shadowZ = shadowTexCoordsProj.z;
-                    float shadowZExp = exp(-80.0 * shadowZ);
+                    float shadowZExp = exp(-lightShadowExponent * shadowZ);
                     float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
                     shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
                     shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
