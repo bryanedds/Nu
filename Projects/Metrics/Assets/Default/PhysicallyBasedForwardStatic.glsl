@@ -65,14 +65,13 @@ const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.002;
+const float SHADOW_SEAM_INSET = 0.001;
 
 uniform vec3 eyeCenter;
 uniform float lightCutoffMargin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
-uniform float lightShadowBiasAcne;
-uniform float lightShadowBiasBleed;
+uniform float lightShadowExponent;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -120,16 +119,6 @@ layout (location = 0) out vec4 frag;
 float linstep(float low, float high, float v)
 {
     return clamp((v - low) / (high - low), 0.0, 1.0);
-}
-
-float computeShadowScalar(sampler2D shadowTexture, vec2 shadowTexCoords, float shadowZ, float shadowBiasAcne, float shadowBiasBleed)
-{
-    vec2 moments = texture(shadowTexture, shadowTexCoords).xy;
-    float p = step(shadowZ, moments.x);
-    float variance = max(moments.y - moments.x * moments.x, shadowBiasAcne);
-    float delta = shadowZ - moments.x;
-    float pMax = linstep(shadowBiasBleed, 1.0, variance / (variance + delta * delta));
-    return max(p, pMax);
 }
 
 float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
@@ -256,7 +245,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec4 positionShadow = shadowMatrix * vec4(currentPosition, 1.0);
             vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0;
+            bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
             float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
@@ -358,15 +347,15 @@ void main()
             vec4 positionShadow = shadowMatrices[shadowIndex] * position;
             vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x <= 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y <= 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z <= 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0 &&
-                shadowZ < 1.0f)
+            if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+                shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+                shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
             {
-                shadowScalar = computeShadowScalar(shadowTextures[shadowIndex], shadowTexCoords, shadowZ, lightShadowBiasAcne, lightShadowBiasBleed);
-                if (lightConeOuters[i] > SHADOW_FOV_MAX) shadowScalar = fadeShadowScalar(shadowTexCoords, shadowScalar);
+                float shadowZ = shadowTexCoordsProj.z;
+                float shadowZExp = exp(-lightShadowExponent * shadowZ);
+                float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
+                shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+                shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
             }
         }
 
