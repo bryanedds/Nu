@@ -39,15 +39,9 @@ layout (location = 0) out vec2 depths;
 
 in float depthOut;
 
-float linearizeDepth(float z, float n, float f)
-{
-    return -f * n / (f * z - n * z - f);
-}
-
 void main()
 {
-    float depth = depthOut;//linearizeDepth(depthOut, 0.125, 4096.0);
-    float depthExp = exp(80.0 * depth);
+    float depthExp = exp(80.0 * depthOut);
     depths.x = gl_FragCoord.z;
     depths.y = depthExp;
 }
