@@ -22,7 +22,7 @@ const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
-const float SHADOW_SEAM_INSET = 0.002;
+const float SHADOW_SEAM_INSET = 0.001;
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
@@ -373,9 +373,9 @@ void main()
                 vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
                 vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
                 float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-                if (//shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x <= 1.0 - SHADOW_SEAM_INSET &&
-                    //shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y <= 1.0 - SHADOW_SEAM_INSET &&
-                    //shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z <= 1.0 - SHADOW_SEAM_INSET &&
+                if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x <= 1.0 - SHADOW_SEAM_INSET &&
+                    shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y <= 1.0 - SHADOW_SEAM_INSET &&
+                    shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z <= 1.0 - SHADOW_SEAM_INSET &&
                     shadowTexCoords.x >= 0.0 && shadowTexCoords.x <= 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y <= 1.0 &&
                     shadowZ < 1.0f)
                 {
@@ -383,7 +383,7 @@ void main()
                     float e_ncd = exp(-80.0 * d);
                     float e_cz = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).r;
                     shadowScalar = clamp(e_ncd * e_cz, 0.0, 1.0);
-                    //shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+                    shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
                 }
             }
 
