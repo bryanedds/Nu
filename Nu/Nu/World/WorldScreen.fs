@@ -465,16 +465,18 @@ module WorldScreenModule =
                          SampleAreaModifications.SAMPLE_AREAMOD_WALKABLE, true)
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
-                let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig)
+                let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
                 let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
                 let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
                 match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
                 | null -> None // some sort of argument issue
                 | dtMeshData ->
                     DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
-                    let dtNavMesh = DtNavMesh (dtMeshData, 6, 0) // TODO: introduce constant?
-                    let dtQuery = DtNavMeshQuery dtNavMesh
-                    Some (navBuilderResultData, dtNavMesh, dtQuery)
+                    let dtNavMesh = DtNavMesh ()
+                    if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
+                        let dtQuery = DtNavMeshQuery dtNavMesh
+                        Some (navBuilderResultData, dtNavMesh, dtQuery)
+                    else None
 
             // geometry not found
             | None -> None
@@ -559,7 +561,7 @@ module WorldScreenModule =
                 let mutable path = List ()
                 let mutable pathStatus = DtStatus.DT_IN_PROGRESS
                 while pathStatus = DtStatus.DT_IN_PROGRESS do
-                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, &path)
+                    pathStatus <- navMeshTool.FindFollowPath (navMesh, query, startRef, endRef, startPosition, endPosition, filter, true, &polys, polys.Count, &path)
                 if pathStatus = DtStatus.DT_SUCCESS && path.Count > 0 then
                     let mutable pathIndex = 0
                     let mutable travel = 0.0f

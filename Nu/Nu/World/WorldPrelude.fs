@@ -147,7 +147,7 @@ type NavBuilderResultData =
     static member make (builderResult : RcBuilderResult) =
 
         // compute points
-        let dmesh = builderResult.GetMeshDetail ()
+        let dmesh = builderResult.MeshDetail
         let mutable pointsMinY = Single.MaxValue
         let mutable pointsMaxY = Single.MinValue
         let points =
