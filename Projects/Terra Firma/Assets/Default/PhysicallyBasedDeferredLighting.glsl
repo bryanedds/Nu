@@ -89,11 +89,6 @@ vec3 rotate(vec3 axis, float angle, vec3 v)
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
 }
 
-float linearizeDepth(float z, float n, float f)
-{
-    return -f * n / (f * z - n * z - f);
-}
-
 float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
 {
     vec2 normalized = abs(shadowTexCoords * 2.0 - 1.0);
