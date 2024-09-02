@@ -31,6 +31,7 @@ uniform float lightCutoffMargin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowExponent;
+uniform float lightShadowDensity;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -87,11 +88,6 @@ float linstep(float low, float high, float v)
 vec3 rotate(vec3 axis, float angle, vec3 v)
 {
     return mix(dot(axis, v) * axis, v, cos(angle)) + cross(axis, v) * sin(angle);
-}
-
-float linearizeDepth(float z, float n, float f)
-{
-    return -f * n / (f * z - n * z - f);
 }
 
 float fadeShadowScalar(vec2 shadowTexCoords, float shadowScalar)
@@ -379,6 +375,7 @@ void main()
                     float shadowZExp = exp(-lightShadowExponent * shadowZ);
                     float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
                     shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+                    shadowScalar = pow(shadowScalar, lightShadowDensity);
                     shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
                 }
             }
