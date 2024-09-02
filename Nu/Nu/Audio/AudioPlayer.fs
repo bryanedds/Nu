@@ -199,7 +199,7 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                     | None -> ()
 
                 // insert assets into package
-                for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                for assetEntry in assetsLoaded do
                     let assetName = assetEntry.Key
                     let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
                     audioPackage.Assets.[assetName] <- (lastWriteTime, filePath, audioAsset)

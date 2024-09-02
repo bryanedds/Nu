@@ -277,7 +277,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | None -> ()
 
                 // insert assets into package
-                for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                for assetEntry in assetsLoaded do
                     let assetName = assetEntry.Key
                     let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
                     renderPackage.Assets.[assetName] <- (lastWriteTime, filePath, renderAsset)
