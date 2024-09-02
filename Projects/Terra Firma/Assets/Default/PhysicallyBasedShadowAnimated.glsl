@@ -13,6 +13,8 @@ layout (location = 3) in vec4 boneIds;
 layout (location = 4) in vec4 weights;
 layout (location = 5) in mat4 model;
 
+out float depthOut;
+
 void main()
 {
     // compute blended bone influences
@@ -27,18 +29,21 @@ void main()
     vec4 positionBlended = boneBlended * vec4(position, 1.0);
     vec4 positionWorld = model * positionBlended;
     gl_Position = projection * view * positionWorld;
+    depthOut = gl_Position.z / gl_Position.w;
 }
 
 #shader fragment
 #version 410
 
-layout (location = 0) out vec2 moments;
+uniform float lightShadowExponent;
+
+layout (location = 0) out vec2 depths;
+
+in float depthOut;
 
 void main()
 {
-    float depth = gl_FragCoord.z;
-    moments.x = depth;
-    float dx = dFdx(depth);
-    float dy = dFdy(depth);
-    moments.y = depth * depth + 0.25 * (dx * dx + dy * dy);
+    float depthExp = exp(lightShadowExponent * depthOut);
+    depths.x = gl_FragCoord.z;
+    depths.y = depthExp;
 }

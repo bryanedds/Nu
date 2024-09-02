@@ -134,13 +134,12 @@ type GameplayDispatcher () =
             let position = Simulants.GameplayPlayer.GetPosition world
             let rotation = Simulants.GameplayPlayer.GetRotation world
             let positionInterp = player.PositionInterp position
-            let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
+            let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
             let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
             let world = World.setEye3dRotation rotationInterp world
 
             // update sun to shine over player
-            let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
-            let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
+            let world = Simulants.GameplaySun.SetPosition (positionInterp + v3Up * 12.0f) world
             just world
 
     // here we describe the content of the game including the hud group and the scene group

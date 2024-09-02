@@ -621,6 +621,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         Seq.fold (fun world freezer -> freezer.SetFrozen false world) world
 
     let private reregisterPhysics world =
+        let world = snapshot ReregisterPhysics world
         World.reregisterPhysics world
 
     let private synchronizeNav world =
@@ -3144,6 +3145,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
             let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
             let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
+            let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
             let mutable ssrEnabled = renderer3dConfig.SsrEnabled
             renderer3dChanged <- ImGui.Checkbox ("Static Surface Occlusion Pre-Pass Enabled", &staticSurfaceOcclusionPrePassEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.Checkbox ("Animated Surface Occlusion Pre-Pass Enabled", &animatedSurfaceOcclusionPrePassEnabled) || renderer3dChanged
@@ -3151,6 +3153,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             renderer3dChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dChanged
+            renderer3dChanged <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dChanged
             renderer3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dChanged
             if renderer3dChanged then
                 let renderer3dConfig =
@@ -3160,6 +3163,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                       LightMappingEnabled = lightMappingEnabled
                       SsaoEnabled = ssaoEnabled
                       SsaoSampleCount = ssaoSampleCount
+                      SsvfEnabled = ssvfEnabled
                       SsrEnabled = ssrEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
             world
