@@ -399,6 +399,7 @@ module WorldImGui =
                     let mutable lighting3dChanged = false
                     let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
                     let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
+                    let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
                     let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
                     let mutable ssaoBias = lighting3dConfig.SsaoBias
                     let mutable ssaoRadius = lighting3dConfig.SsaoRadius
@@ -426,6 +427,7 @@ module WorldImGui =
                     let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                     lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 87.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
@@ -455,6 +457,7 @@ module WorldImGui =
                         let lighting3dConfig =
                             { LightCutoffMargin = lightCutoffMargin
                               LightShadowExponent = lightShadowExponent
+                              LightShadowDensity = lightShadowDensity
                               SsaoIntensity = ssaoIntensity
                               SsaoBias = ssaoBias
                               SsaoRadius = ssaoRadius

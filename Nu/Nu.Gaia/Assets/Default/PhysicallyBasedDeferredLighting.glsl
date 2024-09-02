@@ -31,6 +31,7 @@ uniform float lightCutoffMargin;
 uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowExponent;
+uniform float lightShadowDensity;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -374,6 +375,7 @@ void main()
                     float shadowZExp = exp(-lightShadowExponent * shadowZ);
                     float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
                     shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+                    shadowScalar = pow(shadowScalar, lightShadowDensity);
                     shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
                 }
             }
