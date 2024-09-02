@@ -44,8 +44,8 @@ module Hl =
             let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
             let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
             if int result <> 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
-            let sdlExtensions = Array.zeroCreate<nativeptr<sbyte>> (int sdlExtensionCount)
-            for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<sbyte> sdlExtensionsOut[i]
+            let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
+            for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<byte> sdlExtensionsOut[i]
             use sdlExtensionsWrap = ArrayPin sdlExtensions
             
             // get available instance layers
@@ -54,6 +54,23 @@ module Hl =
             let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
             use layersWrap = ArrayPin layers
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersWrap.Pointer) |> check
+
+            // TODO: setup more advanced debug functionality (debug utils etc.) as motivation arises.
+            
+            (*
+            TODO: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
+            and check for available vulkan version as described in 
+            https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo
+            *)
+
+            // populate createinstance info
+            let mutable createInfo = VkInstanceCreateInfo ()
+            createInfo.enabledExtensionCount <- sdlExtensionCount
+            createInfo.ppEnabledExtensionNames <- sdlExtensionsWrap.Pointer
+
+            // load validation layer if available
+            let validationLayer = "VK_LAYER_KHRONOS_validation"
+
 
             // fin
             instance
