@@ -811,7 +811,7 @@ module WorldModule2 =
             let world = World.reloadSymbols world
             world
 
-        /// Attempt to reload the asset graph.
+        /// Attempt to reload asset graph, build assets, then reload built assets.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
         static member tryReloadAssetGraph inputDirectory outputDirectory refinementDirectory world =
@@ -837,7 +837,7 @@ module WorldModule2 =
                 | Left error -> (Left error, world)
             with exn -> (Left (scstring exn), World.switch world)
 
-        /// Reload asset graph, build assets, then reload built assets.
+        /// Attempt to reload asset graph, build assets, then reload built assets.
         /// Currently does not support reloading of song assets, and possibly others that are
         /// locked by the engine's subsystems.
         static member tryReloadAssets world =

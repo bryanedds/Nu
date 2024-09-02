@@ -2870,6 +2870,7 @@ module PhysicallyBased =
 
     /// Memoizes physically-based scene loads.
     type PhysicallyBasedSceneClient () =
+
         let scenes = Dictionary HashIdentity.Structural
 
         /// Memoized scenes.

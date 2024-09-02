@@ -166,7 +166,7 @@ module Assimp =
 [<AutoOpen>]
 module AssimpExtensions =
 
-    let private AnimationChannelsDict =
+    let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
 
     let private NodeEmpty =
@@ -221,6 +221,7 @@ module AssimpExtensions =
               Scaling = scaling
               Weight = weight }
 
+    /// Material extensions.
     type Assimp.Material with
 
         member this.RenderStyleOpt =
@@ -369,7 +370,7 @@ module AssimpExtensions =
                 | _ -> None
             | (false, _) -> None
 
-    /// Mesh extensions.
+    /// Scene extensions.
     type Assimp.Scene with
 
         member this.IndexDatasToMetadata () =
@@ -461,7 +462,7 @@ module AssimpExtensions =
 
             // pre-compute animation channels
             let animationChannels =
-                match AnimationChannelsDict.TryGetValue this with
+                match AnimationChannelsCached.TryGetValue this with
                 | (false, _) ->
                     let animationChannels = dictPlus HashIdentity.Structural []
                     for animationId in 0 .. dec this.Animations.Count do
@@ -470,7 +471,7 @@ module AssimpExtensions =
                             let channel = animation.NodeAnimationChannels.[channelId]
                             let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
                             animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
-                    AnimationChannelsDict.[this] <- animationChannels
+                    AnimationChannelsCached.[this] <- animationChannels
                     animationChannels
                 | (true, animationChannels) -> animationChannels
 
