@@ -145,6 +145,7 @@ module Render =
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
     let [<Literal>] LightShadowExponentDefault = 80.0f
+    let [<Literal>] LightShadowDensityDefault = 4.0f
     let [<Literal>] SsaoEnabledDefault = true
     let [<Literal>] SsaoSampleCountDefault = 12
     let [<Literal>] SsaoSampleCountMax = 128
