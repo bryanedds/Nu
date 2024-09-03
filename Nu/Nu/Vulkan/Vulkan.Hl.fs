@@ -77,6 +77,14 @@ module Hl =
 
             // load validation layer if available
             let validationLayer = "VK_LAYER_KHRONOS_validation"
+            if Array.exists (fun x -> getLayerName x = validationLayer) layers then
+                let vlayerArray = [|validationLayer|]
+                use vlayerArrayWrap = VkStringArray vlayerArray
+                createInfo.enabledLayerCount <- 1u
+                createInfo.ppEnabledLayerNames <- vlayerArrayWrap
+            else
+                createInfo.enabledLayerCount <- 0u
+                Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
 
 
             // fin
