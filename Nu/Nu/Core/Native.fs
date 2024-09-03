@@ -31,3 +31,9 @@ module Native =
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         let voidPtr = Unsafe.AsPointer &managedPtr
         NativePtr.ofVoidPtr<'a> voidPtr
+
+    /// Derive a byte pointer from an arbitrary object.
+    /// Used to access strings stored in C# fixed-size buffers, which are completely opaque in F#.
+    let asBytePointer<'a> (managedPtr : byref<'a>) : nativeptr<byte> =
+        let voidPtr = Unsafe.AsPointer &managedPtr
+        NativePtr.ofVoidPtr<byte> voidPtr

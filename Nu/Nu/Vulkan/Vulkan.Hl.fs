@@ -26,6 +26,13 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
     
+    /// Convert VkLayerProperties.layerName to a string.
+    let getLayerName (layerProps : VkLayerProperties) =
+        let mutable layerName = layerProps.layerName
+        let ptr = asBytePointer &layerName
+        let vkUtf8Str = new VkUtf8String (ptr)
+        vkUtf8Str.ToString ()
+    
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
         private
