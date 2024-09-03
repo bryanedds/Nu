@@ -131,17 +131,6 @@ type Tween2IKeyFrame =
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents different playback modes for an effect behavior.
-type Playback =
-    | Once
-    | Loop
-    | Bounce
-
-/// Represents different repetition modes for an effect behavior.
-type Repetition =
-    | Cycle of Cycles : int
-    | Iterate of Iterations : int
-
 /// Represents a rate of progress for an effect behavior.
 type Rate =
     Rate of single

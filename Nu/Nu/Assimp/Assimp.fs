@@ -8,11 +8,16 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 
-/// Determines how an animation is played.
+/// Determines how an animated behavior is executed.
 type [<Struct>] Playback =
     | Once
     | Loop
     | Bounce
+
+/// Represents different repetition modes for an animated behavior.
+type Repetition =
+    | Cycle of Cycles : int
+    | Iterate of Iterations : int
 
 /// Describes an animation.
 type [<SymbolicExpansion>] Animation =
