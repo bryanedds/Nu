@@ -138,8 +138,8 @@ type GameplayDispatcher () =
             let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
             let world = World.setEye3dRotation rotationInterp world
 
-            // update sun to shine over player as snapped to shadow map's texel grid in shadow space (similar in
-            // concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
+            // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
+            // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
             let sun = Simulants.GameplaySun
             let mutable shadowViewInverse = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion (sun.GetRotation world)
             shadowViewInverse.Translation <- sun.GetPosition world
