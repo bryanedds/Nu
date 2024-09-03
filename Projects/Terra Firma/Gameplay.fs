@@ -147,7 +147,7 @@ type GameplayDispatcher () =
             let shadowWidth = sun.GetLightCutoff world * 2.0f
             let shadowResolution = Constants.Render.ShadowResolution * Constants.Render.ShadowDetailedResolutionScalar
             let shadowTexelSize = shadowWidth / single shadowResolution.X // assuming square, of course
-            let positionShadow = positionInterp.Transform shadowView + v3Up * 12.0f // position of played + offset in shadow space
+            let positionShadow = positionInterp.Transform shadowView + v3Up * 12.0f // position of player + offset in shadow space
             let positionSnapped =
                 v3
                     (floor (positionShadow.X / shadowTexelSize) * shadowTexelSize)
