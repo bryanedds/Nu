@@ -94,9 +94,15 @@ module Hl =
             else
                 createInfo.enabledLayerCount <- 0u
 
+            // create instance
+            vkCreateInstance (&createInfo, NativePtr.nullPtr, &instance) |> check
 
             // fin
             instance
+        
+        /// Destroy Vulkan handles.
+        static member cleanup vulkanGlobal =
+            vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
         
         /// Make a VulkanGlobal.
         static member make window =
@@ -106,6 +112,9 @@ module Hl =
 
             // create instance
             let instance = VulkanGlobal.createInstance window
+
+            // loads instance commands; not vulkan function
+            vkLoadInstanceOnly instance
 
             // make vulkanGlobal
             let vulkanGlobal =

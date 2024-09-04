@@ -389,6 +389,9 @@ type RendererThread () =
 
         // clean up
         renderer2d.CleanUp ()
+        match vulkanGlobalOpt with
+        | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.cleanup vulkanGlobal
+        | None -> ()
 
     interface RendererProcess with
 
