@@ -25,7 +25,6 @@ open Nu
 // Custom properties in order of priority:                                          //
 //  Enums                                                                           //
 //  Flag Enums                                                                      //
-//  Animation                                                                       //
 //  CollisionMask                                                                   //
 //  CollisionCategories                                                             //
 //  CollisionDetection                                                              //
@@ -718,6 +717,18 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             let fieldValue = field.GetValue obj
                             scan fieldValue
         scan root
+
+    let private makeContext focusPropertyOpt unfocusPropertyOpt =
+        { Snapshot = snapshot
+          FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
+          UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
+          SearchAssetViewer = fun () -> ()
+          PropertyValueStrPreviousRef = ref PropertyValueStrPrevious
+          DragDropPayloadOpt = DragDropPayloadOpt
+          SnapDrag = SnapDrag
+          SelectedScreen = SelectedScreen
+          SelectedGroup = SelectedGroup
+          SelectedEntityOpt = SelectedEntityOpt }
 
     (* Nu Event Handling Functions *)
 
@@ -1673,7 +1684,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else
                             if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true world else world
                     | Some _ | None -> world
-                let operation = ContextHierarchy { Snapshot = snapshot }
+                let operation = ContextHierarchy { EditContext = makeContext None None }
                 let world = World.editGame operation Game world
                 let world = World.editScreen operation SelectedScreen world
                 let world = World.editGroup operation SelectedGroup world
@@ -1862,11 +1873,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         (propertyDescriptor : PropertyDescriptor)
         (simulant : Simulant)
         (world : World) =
-        let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
         let propertyValue = getProperty propertyDescriptor simulant world
-        let (focused, changed, propertyValue) = World.imGuiEditPropertyRecord searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedScreen SelectedGroup headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
-        PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
-        if focused then focusProperty ()
+        let context = makeContext (Some focusProperty) None
+        let (changed, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
+        PropertyValueStrPrevious <- context.PropertyValueStrPreviousRef.Value
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditProperty
@@ -1876,11 +1886,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         (propertyDescriptor : PropertyDescriptor)
         (simulant : Simulant)
         (world : World) =
-        let propertyValueStrPreviousRef = ref PropertyValueStrPrevious
         let propertyValue = getProperty propertyDescriptor simulant world
-        let (focused, changed, propertyValue) = World.imGuiEditProperty searchAssetViewer SnapDrag propertyValueStrPreviousRef DragDropPayloadOpt SelectedScreen SelectedGroup propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue
-        PropertyValueStrPrevious <- propertyValueStrPreviousRef.Value
-        if focused then focusProperty ()
+        let context = makeContext (Some focusProperty) None
+        let (changed, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
+        PropertyValueStrPrevious <- context.PropertyValueStrPreviousRef.Value
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =
@@ -2003,10 +2012,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let mutable replaced = false
                                     let replaceProperty =
                                         ReplaceProperty
-                                            { Snapshot = snapshot
-                                              FocusProperty = fun world -> focusProperty (); world
-                                              IndicateReplaced = fun world -> replaced <- true; world
-                                              PropertyDescriptor = propertyDescriptor }
+                                            { IndicateReplaced = fun () -> replaced <- true
+                                              PropertyDescriptor = propertyDescriptor
+                                              EditContext = makeContext (Some focusProperty) None }
                                     let world = World.edit replaceProperty simulant world
                                     if not replaced then
                                         if  FSharpType.IsRecord propertyDescriptor.PropertyType ||
@@ -2019,10 +2027,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     let mutable replaced = false
                                     let replaceProperty =
                                         ReplaceProperty
-                                            { Snapshot = snapshot
-                                              FocusProperty = fun world -> focusProperty (); world
-                                              IndicateReplaced = fun world -> replaced <- true; world
-                                              PropertyDescriptor = propertyDescriptor }
+                                            { IndicateReplaced = fun () -> replaced <- true
+                                              PropertyDescriptor = propertyDescriptor
+                                              EditContext = makeContext (Some focusProperty) None }
                                     let world = World.edit replaceProperty simulant world
                                     if not replaced
                                     then imGuiEditProperty getPropertyValue setPropertyValue focusProperty propertyDescriptor simulant world
@@ -2051,9 +2058,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         world
                 else world)
                 world propertyDescriptorses.Pairs
-        let appendProperties =
-            { Snapshot = snapshot
-              UnfocusProperty = fun world -> focusPropertyOpt None world; world }
+        let unfocusProperty () = focusPropertyOpt None world
+        let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
         World.edit (AppendProperties appendProperties) simulant world
 
     let private imGuiViewportManipulation world =
@@ -2070,11 +2076,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let projectionMatrix = viewport.Projection3d
             let projection = projectionMatrix.ToArray ()
             let operation =
-                OverlayViewport
-                    { Snapshot = snapshot
-                      ViewportView = viewport.View3d (false, World.getEye3dCenter world, World.getEye3dRotation world)
+                ViewportOverlay
+                    { ViewportView = viewport.View3d (false, World.getEye3dCenter world, World.getEye3dRotation world)
                       ViewportProjection = projectionMatrix
-                      ViewportBounds = box2 v2Zero io.DisplaySize }
+                      ViewportBounds = box2 v2Zero io.DisplaySize
+                      EditContext = makeContext None None }
             let world = World.editGame operation Game world
             let world = World.editScreen operation SelectedScreen world
             let world = World.editGroup operation SelectedGroup world
@@ -2082,11 +2088,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.GetIs3d world ->
                     let operation =
-                        OverlayViewport
-                            { Snapshot = snapshot
-                              ViewportView = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
+                        ViewportOverlay
+                            { ViewportView = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
                               ViewportProjection = projectionMatrix
-                              ViewportBounds = box2 v2Zero io.DisplaySize }
+                              ViewportBounds = box2 v2Zero io.DisplaySize
+                              EditContext = makeContext None None }
                     World.editEntity operation entity world
                 | Some _ | None -> world
 
@@ -3720,7 +3726,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.Button "Show in Hierarchy" then
                 ShowSelectedEntity <- true
                 ShowEntityContextMenu <- false
-            let operation = ContextViewport { Snapshot = snapshot; RightClickPosition = RightClickPosition }
+            let operation = ViewportContext { RightClickPosition = RightClickPosition; EditContext = makeContext None None }
             let world = World.editGame operation Game world
             let world = World.editScreen operation SelectedScreen world
             let world = World.editGroup operation SelectedGroup world
