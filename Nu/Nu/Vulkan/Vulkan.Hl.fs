@@ -21,6 +21,13 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    // enable validation layers in debug mode
+#if DEBUG
+    let validationLayersEnabled = true
+#else
+    let validationLayersEnabled = false
+#endif
+    
     /// Check the given Vulkan operation result, logging on non-Success.
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
@@ -55,6 +62,8 @@ module Hl =
             for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<byte> sdlExtensionsOut[i]
             use sdlExtensionsWrap = ArrayPin sdlExtensions
             
+            // TODO: setup message callback with debug utils *if* motivation arises.
+            
             // get available instance layers
             let mutable layerCount = 0u
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, NativePtr.nullPtr) |> check
@@ -62,29 +71,28 @@ module Hl =
             use layersWrap = ArrayPin layers
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersWrap.Pointer) |> check
 
-            // TODO: setup more advanced debug functionality (debug utils etc.) as motivation arises.
+            // check if validation layer exists
+            let validationLayer = "VK_LAYER_KHRONOS_validation"
+            let validationLayerExists = Array.exists (fun x -> getLayerName x = validationLayer) layers
+            if validationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
             
-            (*
-            TODO: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
-            and check for available vulkan version as described in 
-            https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo
-            *)
+            // TODO: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
+            // and check for available vulkan version as described in 
+            // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo
 
             // populate createinstance info
             let mutable createInfo = VkInstanceCreateInfo ()
             createInfo.enabledExtensionCount <- sdlExtensionCount
             createInfo.ppEnabledExtensionNames <- sdlExtensionsWrap.Pointer
 
-            // load validation layer if available
-            let validationLayer = "VK_LAYER_KHRONOS_validation"
-            if Array.exists (fun x -> getLayerName x = validationLayer) layers then
+            // load validation layer if enabled and available
+            if validationLayersEnabled && validationLayerExists then
                 let vlayerArray = [|validationLayer|]
                 use vlayerArrayWrap = VkStringArray vlayerArray
                 createInfo.enabledLayerCount <- 1u
                 createInfo.ppEnabledLayerNames <- vlayerArrayWrap
             else
                 createInfo.enabledLayerCount <- 0u
-                Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
 
 
             // fin
