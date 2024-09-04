@@ -1684,7 +1684,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else
                             if ImGui.MenuItem "Make Entity Family Static" then trySetSelectedEntityFamilyStatic true world else world
                     | Some _ | None -> world
-                let operation = ContextHierarchy { EditContext = makeContext None None }
+                let operation = HierarchyContext { EditContext = makeContext None None }
                 let world = World.editGame operation Game world
                 let world = World.editScreen operation SelectedScreen world
                 let world = World.editGroup operation SelectedGroup world

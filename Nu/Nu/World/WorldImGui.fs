@@ -639,7 +639,7 @@ module WorldImGui =
                         (fun name animation ->
                             let (changed, animation) = World.imGuiEditProperty name (typeof<Animation>) animation context world
                             (changed, animation :?> Animation))
-                        { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature|Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
+                        { StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
                         name animations context
                 ImGui.PopID ()
                 (changed, animations)

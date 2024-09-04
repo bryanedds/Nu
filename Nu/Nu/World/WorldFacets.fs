@@ -2743,7 +2743,7 @@ type AnimatedModelFacet () =
         [define Entity.StartTime GameTime.zero
          define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
-         define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature|Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
+         define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          nonPersistent Entity.BoneIdsOpt None
          nonPersistent Entity.BoneOffsetsOpt None
