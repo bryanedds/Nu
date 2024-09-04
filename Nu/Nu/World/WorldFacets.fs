@@ -1802,7 +1802,7 @@ type LayoutFacet () =
         let childRightX = childCenter.X + childHalfWidth + margin.X
         offsetX <- childCenter.X + childHalfWidth
         let world =
-            if childRightX >= leftX + wrapLimit then
+            if childRightX > leftX + wrapLimit then
                 offsetX <- leftX
                 offsetY <- offsetY + -margin.Y + -maximum
                 maximum <- 0.0f
@@ -1822,7 +1822,7 @@ type LayoutFacet () =
         let childBottomY = childCenter.Y + -childHalfHeight + -margin.Y
         offsetY <- childCenter.Y + -childHalfHeight
         let world =
-            if childBottomY <= topY + -wrapLimit then
+            if childBottomY < topY + -wrapLimit then
                 offsetX <- offsetX + margin.X + maximum
                 offsetY <- topY
                 maximum <- 0.0f
@@ -1845,7 +1845,7 @@ type LayoutFacet () =
                 match flowLimit with
                 | FlowParent -> perimeter.Width
                 | FlowUnlimited -> Single.MaxValue
-                | FlowTo flowLimit -> flowLimit
+                | FlowTo limit -> limit
             Array.fold (fun world child ->
                 flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
@@ -1854,12 +1854,16 @@ type LayoutFacet () =
                 match flowLimit with
                 | FlowParent -> perimeter.Height
                 | FlowUnlimited -> Single.MaxValue
-                | FlowTo flowLimit -> flowLimit
+                | FlowTo limit -> limit
             Array.fold (fun world child ->
                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
-        | FlowLeftward -> world
-        | FlowUpward -> world
+        | FlowLeftward ->
+            // TODO: P1: implement.
+            world
+        | FlowUpward ->
+            // TODO: P1: implement.
+            world
 
     static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =
         let perimeterWidthHalf = perimeter.Width * 0.5f

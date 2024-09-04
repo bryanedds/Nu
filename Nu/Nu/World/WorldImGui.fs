@@ -117,14 +117,14 @@ module WorldImGui =
 
         /// Edit an array value via ImGui.
         static member imGuiEditPropertyArray<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) =
-            let mutable focused = false
-            let mutable changed = false
+            let mutable focusedMut = false
+            let mutable changedMut = false
             let items =
                 if ImGui.SmallButton "+" then
-                    changed <- true
+                    changedMut <- true
                     Array.add defaultItemValue items
                 else items
-            if ImGui.IsAnyItemFocused () then focused <- true
+            if ImGui.IsAnyItemFocused () then focusedMut <- true
             let items =
                 ImGui.Indent ()
                 let itemOpts =
@@ -134,16 +134,16 @@ module WorldImGui =
                         ImGui.PushID itemName
                         let itemOpt =
                             if not (ImGui.SmallButton "x") then
-                                if ImGui.IsAnyItemFocused () then focused <- true
+                                if ImGui.IsAnyItemFocused () then focusedMut <- true
                                 ImGui.SameLine ()
-                                try let (changed', item) = editItem (fun () -> focused <- true) itemName item
-                                    changed <- changed || changed'
-                                    if ImGui.IsItemFocused () then focused <- true
+                                try let (changed, item) = editItem (fun () -> focusedMut <- true) itemName item
+                                    changedMut <- changedMut || changed
+                                    if ImGui.IsItemFocused () then focusedMut <- true
                                     Some item
                                 with _ -> Some item
                             else
-                                focused <- true
-                                changed <- true
+                                focusedMut <- true
+                                changedMut <- true
                                 None
                         ImGui.PopID ()
                         i <- inc i
@@ -152,18 +152,18 @@ module WorldImGui =
                 ImGui.Unindent ()
                 items
             ImGui.PopID ()
-            (focused, changed, items)
+            (focusedMut, changedMut, items)
 
         /// Edit a list value via ImGui.
         static member imGuiEditPropertyList<'a> (editItem : (unit -> unit) -> string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) =
-            let mutable focused = false
-            let mutable changed = false
+            let mutable focusedMut = false
+            let mutable changedMut = false
             let items =
                 if ImGui.SmallButton "+" then
-                    changed <- true
+                    changedMut <- true
                     items @ [defaultItemValue]
                 else items
-            if ImGui.IsAnyItemFocused () then focused <- true
+            if ImGui.IsAnyItemFocused () then focusedMut <- true
             let items =
                 ImGui.Indent ()
                 let itemOpts =
@@ -173,16 +173,16 @@ module WorldImGui =
                         ImGui.PushID itemName
                         let itemOpt =
                             if not (ImGui.SmallButton "x") then
-                                if ImGui.IsAnyItemFocused () then focused <- true
+                                if ImGui.IsAnyItemFocused () then focusedMut <- true
                                 ImGui.SameLine ()
-                                try let (changed', item) = editItem (fun () -> focused <- true) itemName item
-                                    changed <- changed || changed'
-                                    if ImGui.IsItemFocused () then focused <- true
+                                try let (changed, item) = editItem (fun () -> focusedMut <- true) itemName item
+                                    changedMut <- changedMut || changed
+                                    if ImGui.IsItemFocused () then focusedMut <- true
                                     Some item
                                 with _ -> Some item
                             else
-                                focused <- true
-                                changed <- true
+                                focusedMut <- true
+                                changedMut <- true
                                 None
                         ImGui.PopID ()
                         i <- inc i
@@ -191,7 +191,7 @@ module WorldImGui =
                 ImGui.Unindent ()
                 items
             ImGui.PopID ()
-            (focused, changed, items)
+            (focusedMut, changedMut, items)
 
         /// Edit a record value via ImGui.
         static member imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup headered (name : string) (ty : Type) (value : obj) =
@@ -199,8 +199,8 @@ module WorldImGui =
                 ImGui.Text name
                 ImGui.Indent ()
             ImGui.PushID name
-            let mutable focused = false
-            let mutable changed = false
+            let mutable focusedMut = false
+            let mutable changedMut = false
             let fields =
                 FSharpType.GetRecordFields (ty, true) |>
                 Array.zip (FSharpValue.GetRecordFields (value, true)) |>
@@ -214,18 +214,34 @@ module WorldImGui =
                                 else String.capitalize fieldInfo.Name
                             else fieldInfo.Name
                         else fieldInfo.Name
-                    let (focused', changed', field) =
+                    let (focused, changed, field) =
                         if  fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name &&
                             (FSharpType.IsRecord fieldInfo.PropertyType || FSharpType.isRecordAbstract fieldInfo.PropertyType) then
                             World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true fieldName fieldInfo.PropertyType field
                         else World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup fieldName fieldInfo.PropertyType field
-                    if focused' then focused <- true
-                    if changed' then changed <- true
+                    if focused then focusedMut <- true
+                    if changed then changedMut <- true
                     field)
             let value = FSharpValue.MakeRecord (ty, fields, true)
             if headered then ImGui.Unindent ()
             ImGui.PopID ()
-            (focused, changed, value)
+            (focusedMut, changedMut, value)
+
+        static member imGuiSelectCase name ty value =
+            let cases = FSharpType.GetUnionCases ty
+            let tag = getCaseTag value
+            let case = cases.[tag]
+            let mutable caseName = case.Name
+            let mutable caseNameChanged = false
+            if ImGui.BeginCombo (name, caseName) then
+                for case' in cases do
+                    let caseName' = case'.Name
+                    if ImGui.Selectable (caseName', strEq caseName' caseName) then
+                        if strNeq caseName caseName' then
+                            caseName <- caseName'
+                            caseNameChanged <- true
+                ImGui.EndCombo ()
+            (caseNameChanged, caseName)
 
         /// Edit a value via ImGui.
         /// TODO: split up this function.
@@ -240,7 +256,7 @@ module WorldImGui =
             (ty : Type)
             (value : obj) =
             let converter = SymbolicConverter (false, None, ty)
-            let mutable focused = false
+            let mutable focusedMut = false
             let (changed, value) =
                 match value with
                 | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj)
@@ -267,7 +283,7 @@ module WorldImGui =
                     let mutable min = v2 b.Min.X b.Min.Y
                     let mutable size = v2 b.Size.X b.Size.Y
                     let minChanged = ImGui.DragFloat2 (nameof b.Min, &min, snapDrag)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let sizeChanged = ImGui.DragFloat2 (nameof b.Size, &size, snapDrag)
                     ImGui.Unindent ()
                     (minChanged || sizeChanged, box2 min size :> obj)
@@ -278,7 +294,7 @@ module WorldImGui =
                     let mutable min = v3 b.Min.X b.Min.Y b.Min.Z
                     let mutable size = v3 b.Size.X b.Size.Y b.Size.Z
                     let minChanged = ImGui.DragFloat3 (nameof b.Min, &min, snapDrag)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let sizeChanged = ImGui.DragFloat3 (nameof b.Size, &size, snapDrag)
                     ImGui.Unindent ()
                     (minChanged || sizeChanged, box3 min size :> obj)
@@ -289,7 +305,7 @@ module WorldImGui =
                     let mutable min = v2i b.Min.X b.Min.Y
                     let mutable size = v2i b.Size.X b.Size.Y
                     let minChanged = ImGui.DragInt2 (nameof b.Min, &min.X, snapDrag)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let sizeChanged = ImGui.DragInt2 (nameof b.Size, &size.X, snapDrag)
                     ImGui.Unindent ()
                     (minChanged || sizeChanged, box2i min size :> obj)
@@ -300,7 +316,7 @@ module WorldImGui =
                     let mutable min = v3i b.Min.X b.Min.Y b.Min.Z
                     let mutable size = v3i b.Size.X b.Size.Y b.Size.Z
                     let minChanged = ImGui.DragInt3 (nameof b.Min, &min.X, snapDrag)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let sizeChanged = ImGui.DragInt3 (nameof b.Size, &size.X, snapDrag)
                     ImGui.Unindent ()
                     (minChanged || sizeChanged, box3i min size :> obj)
@@ -314,12 +330,12 @@ module WorldImGui =
                     let mutable v = v4 c.R c.G c.B c.A
                     (ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
                 | :? Transition as transition ->
-                    let (focused', changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Transition>) transition
-                    if focused' then focused <- true
+                    let (focused, changed, transition) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Transition>) transition
+                    if focused then focusedMut <- true
                     (changed, transition)
                 | :? Slide as slide ->
-                    let (focused', changed, slide) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Slide>) slide
-                    if focused' then focused <- true
+                    let (focused, changed, slide) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Slide>) slide
+                    if focused then focusedMut <- true
                     (changed, slide)
                 | :? RenderStyle as style ->
                     let mutable index = match style with Deferred -> 0 | Forward _ -> 1
@@ -327,7 +343,7 @@ module WorldImGui =
                         if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
                         then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
                         else (false, style)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let (changed, style) =
                         match index with
                         | 0 -> (changed, style)
@@ -338,7 +354,7 @@ module WorldImGui =
                                 let mutable (subsort, sort) = (subsort, sort)
                                 ImGui.Indent ()
                                 let subsortChanged = ImGui.DragFloat ("Subsort via " + name, &subsort, snapDrag)
-                                if ImGui.IsAnyItemFocused () then focused <- true
+                                if ImGui.IsAnyItemFocused () then focusedMut <- true
                                 let sortChanged = ImGui.DragFloat ("Sort via " + name, &sort, snapDrag)
                                 ImGui.Unindent ()
                                 (changed || subsortChanged || sortChanged, Forward (subsort, sort))
@@ -350,7 +366,7 @@ module WorldImGui =
                         if ImGui.Combo (name, &index, [|nameof PointLight; nameof DirectionalLight; nameof SpotLight|], 3)
                         then (true, match index with 0 -> PointLight | 1 -> DirectionalLight | 2 -> SpotLight (0.9f, 1.0f) | _ -> failwithumf ())
                         else (false, light)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let (changed, light) =
                         match index with
                         | 0 -> (changed, light)
@@ -363,7 +379,7 @@ module WorldImGui =
                                 let mutable (innerCone, outerCone) = (innerCone, outerCone)
                                 ImGui.Indent ()
                                 let innerConeChanged = ImGui.DragFloat ("InnerCone via " + name, &innerCone, snapDrag)
-                                if ImGui.IsAnyItemFocused () then focused <- true
+                                if ImGui.IsAnyItemFocused () then focusedMut <- true
                                 let outerConeChanged = ImGui.DragFloat ("OuterCone via " + name, &outerCone, snapDrag)
                                 ImGui.Unindent ()
                                 (changed || innerConeChanged || outerConeChanged, SpotLight (innerCone, outerCone))
@@ -372,7 +388,7 @@ module WorldImGui =
                 | :? Substance as substance ->
                     let mutable scalar = match substance with Mass m -> m | Density d -> d
                     let changed = ImGui.DragFloat ("##scalar via " + name, &scalar, snapDrag)
-                    if ImGui.IsAnyItemFocused () then focused <- true
+                    if ImGui.IsAnyItemFocused () then focusedMut <- true
                     let mutable index = match substance with Mass _ -> 0 | Density _ -> 1
                     ImGui.SameLine ()
                     if ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || changed then
@@ -380,21 +396,71 @@ module WorldImGui =
                         (true, substance :> obj)
                     else (false, substance :> obj)
                 | :? Animation as animation ->
-                    let (focused', changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Animation>) animation
-                    if focused' then focused <- true
+                    let (focused, changed, animation) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<Animation>) animation
+                    if focused then focusedMut <- true
                     (changed, animation)
                 | :? TerrainMaterialProperties as tmps ->
-                    let (focused', changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<TerrainMaterialProperties>) tmps
-                    if focused' then focused <- true
+                    let (focused, changed, tmps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup true name (typeof<TerrainMaterialProperties>) tmps
+                    if focused then focusedMut <- true
                     (changed, tmps)
                 | :? MaterialProperties as mps ->
-                    let (focused', changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup false name (typeof<MaterialProperties>) mps
-                    if focused' then focused <- true
+                    let (focused, changed, mps) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup false name (typeof<MaterialProperties>) mps
+                    if focused then focusedMut <- true
                     (changed, mps)
                 | :? Material as material ->
-                    let (focused', changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup false name (typeof<Material>) material
-                    if focused' then focused <- true
+                    let (focused, changed, material) = World.imGuiEditPropertyRecord searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup false name (typeof<Material>) material
+                    if focused then focusedMut <- true
                     (changed, material)
+                | :? FlowLimit as limit ->
+                    let (caseNameChanged, caseName) = World.imGuiSelectCase name ty limit
+                    let limit =
+                        if caseNameChanged then
+                            match caseName with
+                            | nameof FlowParent -> FlowParent
+                            | nameof FlowUnlimited -> FlowUnlimited
+                            | nameof FlowTo -> FlowTo 32.0f
+                            | _ -> failwithumf ()
+                        else limit
+                    match limit with
+                    | FlowParent -> (caseNameChanged, limit)
+                    | FlowUnlimited -> (caseNameChanged, limit)
+                    | FlowTo limit ->
+                        let (focused, changed, limit) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "Limit" (getType limit) limit
+                        if focused then focusedMut <- true
+                        (caseNameChanged || changed, FlowTo (limit :?> single))
+                | :? Layout as layout ->
+                    let (caseNameChanged, caseName) = World.imGuiSelectCase name ty layout
+                    let layout =
+                        if caseNameChanged then
+                            match caseName with
+                            | nameof Flow -> Flow (FlowDownward, FlowParent)
+                            | nameof Dock -> Dock (v4Dup 8.0f, false, true)
+                            | nameof Grid -> Grid (v2iDup 2, None, true)
+                            | _ -> failwithumf ()
+                        else layout
+                    ImGui.Indent ()
+                    let (changed, layout) =
+                        match layout with
+                        | Flow (direction, limit) ->
+                            let (focused, changed, direction) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "FlowDirection" (getType direction) direction
+                            let (focused2, changed2, limit) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "FlowLimit" (getType limit) limit
+                            if focused || focused2 then focusedMut <- true
+                            (caseNameChanged || changed || changed2, Flow (direction :?> FlowDirection, limit :?> FlowLimit))
+                        | Dock (margins, percentageBased, resizeChildren) ->
+                            let (focused, changed, margins) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "Margins" (getType margins) margins
+                            let (focused2, changed2, percentageBased) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "PercentageBased" (getType percentageBased) percentageBased
+                            let (focused3, changed3, resizeChildren) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "ResizeChildren" (getType resizeChildren) resizeChildren
+                            if focused || focused2 || focused3 then focusedMut <- true
+                            (caseNameChanged || changed || changed2 || changed3, Dock (margins :?> Vector4, percentageBased :?> bool, resizeChildren :?> bool))
+                        | Grid (dims, flowDirectionOpt, resizeChildren) ->
+                            let (focused, changed, dims) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "Dims" (getType dims) dims
+                            let (focused2, changed2, flowDirectionOpt) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "FlowDirectionOpt" (getType flowDirectionOpt) flowDirectionOpt
+                            let (focused3, changed3, resizeChildren) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "ResizeChildren" (getType resizeChildren) resizeChildren
+                            if focused || focused2 || focused3 then focusedMut <- true
+                            (caseNameChanged || changed || changed2 || changed3, Grid (dims :?> Vector2i, flowDirectionOpt :?> FlowDirection option, resizeChildren :?> bool))
+                        | Manual -> (caseNameChanged, layout)
+                    ImGui.Unindent ()
+                    (changed, layout)
                 | :? Lighting3dConfig as lighting3dConfig ->
                     let mutable lighting3dChanged = false
                     let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
@@ -425,33 +491,33 @@ module WorldImGui =
                     let mutable ssrEdgeVerticalMargin = lighting3dConfig.SsrEdgeVerticalMargin
                     let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
                     let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
-                    lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 87.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Toward Eye Cutoff", &ssrTowardEyeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff Margin", &ssrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff Margin", &ssrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff Margin", &ssrRoughnessCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Slope Cutoff", &ssrSlopeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Slope Cutoff Margin", &ssrSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
-                    lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; if ImGui.IsItemFocused () then focused <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 87.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssao Distance Max", &ssaoDistanceMax, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderInt ("Ssvf Steps", &ssvfSteps, 0, 128) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssvf Asymmetry", &ssvfAsymmetry, -1.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssvf Intensity", &ssvfIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Detail", &ssrDetail, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderInt ("Ssr Refinements Max", &ssrRefinementsMax, 0, 32) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Ray Thickness", &ssrRayThickness, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Toward Eye Cutoff", &ssrTowardEyeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff", &ssrDepthCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Depth Cutoff Margin", &ssrDepthCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff", &ssrDistanceCutoff, 0.0f, 128.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Distance Cutoff Margin", &ssrDistanceCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff", &ssrRoughnessCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Roughness Cutoff Margin", &ssrRoughnessCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Slope Cutoff", &ssrSlopeCutoff, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Slope Cutoff Margin", &ssrSlopeCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Horizontal Margin", &ssrEdgeHorizontalMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.SliderFloat ("Ssr Edge Vertical Margin", &ssrEdgeVerticalMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
+                    lighting3dChanged <- ImGui.ColorEdit4 ("Ssr Light Color", &ssrLightColor) || lighting3dChanged; if ImGui.IsItemFocused () then focusedMut <- true
                     lighting3dChanged <- ImGui.SliderFloat ("Ssr Light Brightness", &ssrLightBrightness, 0.0f, 32.0f) || lighting3dChanged
                     if lighting3dChanged then
                         let lighting3dConfig =
@@ -505,37 +571,37 @@ module WorldImGui =
                     let mutable filterWalkableLowHeightSpans = nav3dConfig.FilterWalkableLowHeightSpans
                     let mutable partitionTypeStr = scstring nav3dConfig.PartitionType
                     if ImGui.SliderFloat ("CellSize", &cellSize, 0.01f, 1.0f, "%.2f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("CellHeight", &cellHeight, 0.01f, 1.0f, "%.2f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("AgentHeight", &agentHeight, 0.1f, 5.0f, "%.2f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("AgentRadius", &agentRadius, 0.0f, 5.0f, "%.2f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("AgentClimbMax", &agentClimbMax, 0.1f, 5.0f, "%.2f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("AgentSlopeMax", &agentSlopeMax, 1.0f, 90.0f, "%.0f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderInt ("RegionSizeMin", &regionSizeMin, 1, 150) then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderInt ("RegionSizeMerge", &regionSizeMerge, 1, 150) then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("EdgeLengthMax", &edgeLengthMax, 0.0f, 50.0f, "%.1f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("EdgeErrorMax", &edgeErrorMax, 0.1f, 3f, "%.1f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderInt ("VertPerPoly", &vertsPerPolygon, 3, 12) then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("DetailSampleDistance", &detailSampleDistance, 0.0f, 16.0f, "%.1f") then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.SliderFloat ("DetailSampleErrorMax", &detailSampleErrorMax, 0.0f, 16.0f, "%.1f") then nav3dConfigChanged <- true        
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.Checkbox ("FilterLowHangingObstacles", &filterLowHangingObstacles) then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.Checkbox ("FilterLedgeSpans", &filterLedgeSpans) then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.Checkbox ("FilterWalkableLowHeightSpans", &filterWalkableLowHeightSpans) then nav3dConfigChanged <- true
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if ImGui.BeginCombo ("ParitionType", partitionTypeStr, ImGuiComboFlags.HeightLarge) then
                         let partitionTypeStrs = Array.map (fun (ptv : RcPartitionType) -> ptv.Name) RcPartitionType.Values
                         for partitionTypeStr' in partitionTypeStrs do
@@ -544,7 +610,7 @@ module WorldImGui =
                                     partitionTypeStr <- partitionTypeStr'
                                     nav3dConfigChanged <- true
                         ImGui.EndCombo ()
-                    if ImGui.IsItemFocused () then focused <- true
+                    if ImGui.IsItemFocused () then focusedMut <- true
                     if nav3dConfigChanged then
                         let nav3dConfig =
                             { CellSize = cellSize
@@ -570,7 +636,7 @@ module WorldImGui =
                     ImGui.Text name
                     ImGui.SameLine ()
                     ImGui.PushID name
-                    let (focused', changed, animations) =
+                    let (focused, changed, animations) =
                         World.imGuiEditPropertyArray
                             (fun focusProperty name animation ->
                                 let (focused, changed, animation) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name (typeof<Animation>) animation
@@ -579,7 +645,7 @@ module WorldImGui =
                             { StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
                             name
                             animations
-                    if focused' then focused <- true
+                    if focused then focusedMut <- true
                     ImGui.PopID ()
                     (changed, animations)
                 | _ ->
@@ -673,15 +739,15 @@ module WorldImGui =
                                         else (false, value)
                                     else (true, None)
                                 else (false, value)
-                            focused <- ImGui.IsItemFocused ()
+                            focusedMut <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
                                 ImGui.PushID name
-                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                let (focused, changed2, value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
                                 ImGui.PopID ()
                                 let value = Activator.CreateInstance (ty, [|value'|])
-                                if focused' then focused <- true
-                                (changed || changed', value)
+                                if focused then focusedMut <- true
+                                (changed || changed2, value)
                             else
                                 ImGui.SameLine ()
                                 ImGui.Text name
@@ -761,15 +827,15 @@ module WorldImGui =
                                         else failwithumf ()
                                     else (true, ValueNone)
                                 else (false, value)
-                            focused <- ImGui.IsItemFocused ()
+                            focusedMut <- ImGui.IsItemFocused ()
                             if isSome then
                                 ImGui.SameLine ()
                                 ImGui.PushID name
-                                let (focused', changed', value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
+                                let (focused, changed2, value') = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||]))
                                 ImGui.PopID ()
                                 let value = Activator.CreateInstance (ty, [|value'|])
-                                if focused' then focused <- true
-                                (changed || changed', value)
+                                if focused then focusedMut <- true
+                                (changed || changed2, value)
                             else
                                 ImGui.SameLine ()
                                 ImGui.Text name
@@ -783,7 +849,7 @@ module WorldImGui =
                                     with _ ->
                                         (false, value)
                                 else (false, value)
-                            if ImGui.IsItemFocused () then focused <- true
+                            if ImGui.IsItemFocused () then focusedMut <- true
                             let (changed, value) =
                                 if ImGui.BeginDragDropTarget () then
                                     let (changed, value) =
@@ -804,7 +870,7 @@ module WorldImGui =
                             ImGui.SameLine ()
                             ImGui.PushID ("##pickAsset" + name)
                             if ImGui.Button ("V", v2Dup 19.0f) then searchAssetViewer ()
-                            if ImGui.IsItemFocused () then focused <- true
+                            if ImGui.IsItemFocused () then focusedMut <- true
                             ImGui.PopID ()
                             ImGui.SameLine ()
                             ImGui.Text name
@@ -821,5 +887,5 @@ module WorldImGui =
                                 (changed, value)
                             else (false, value)
                     else (changed, value)
-            if ImGui.IsItemFocused () then focused <- true
-            (focused, changed, value)
+            if ImGui.IsItemFocused () then focusedMut <- true
+            (focusedMut, changed, value)

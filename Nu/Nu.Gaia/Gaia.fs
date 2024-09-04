@@ -25,7 +25,6 @@ open Nu
 // Custom properties in order of priority:                                          //
 //  Enums                                                                           //
 //  Flag Enums                                                                      //
-//  Layout                                                                          //
 //  Animation                                                                       //
 //  CollisionMask                                                                   //
 //  CollisionCategories                                                             //
