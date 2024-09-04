@@ -436,6 +436,7 @@ module WorldImGui =
                             | nameof Flow -> Flow (FlowDownward, FlowParent)
                             | nameof Dock -> Dock (v4Dup 8.0f, false, true)
                             | nameof Grid -> Grid (v2iDup 2, None, true)
+                            | nameof Manual -> Manual
                             | _ -> failwithumf ()
                         else layout
                     ImGui.Indent ()
@@ -443,13 +444,16 @@ module WorldImGui =
                         match layout with
                         | Flow (direction, limit) ->
                             let (focused, changed, direction) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "FlowDirection" (getType direction) direction
+                            if direction = FlowLeftward || direction = FlowUpward then ImGui.SameLine (); ImGui.Text "(not implemented)" // TODO: P1: remove this line when implemented.
                             let (focused2, changed2, limit) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "FlowLimit" (getType limit) limit
                             if focused || focused2 then focusedMut <- true
                             (caseNameChanged || changed || changed2, Flow (direction :?> FlowDirection, limit :?> FlowLimit))
                         | Dock (margins, percentageBased, resizeChildren) ->
                             let (focused, changed, margins) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "Margins" (getType margins) margins
                             let (focused2, changed2, percentageBased) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "PercentageBased" (getType percentageBased) percentageBased
+                            ImGui.SameLine (); ImGui.Text "(not implemented)" // TODO: P1: remove this line when implemented.
                             let (focused3, changed3, resizeChildren) = World.imGuiEditProperty searchAssetViewer snapDrag valueStrPreviousRef dragDropPayloadOpt selectedScreen selectedGroup "ResizeChildren" (getType resizeChildren) resizeChildren
+                            ImGui.SameLine (); ImGui.Text "(not implemented)" // TODO: P1: remove this line when implemented.
                             if focused || focused2 || focused3 then focusedMut <- true
                             (caseNameChanged || changed || changed2 || changed3, Dock (margins :?> Vector4, percentageBased :?> bool, resizeChildren :?> bool))
                         | Grid (dims, flowDirectionOpt, resizeChildren) ->
