@@ -2013,7 +2013,7 @@ module EntityDispatcherModule2 =
              define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
              define Entity.Presence Omnipresent
              define Entity.Absolute true
-             define Entity.DisabledColor Constants.Gui.DisabledColor
+             define Entity.DisabledColor Constants.Gui.DisabledColorDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
              define Entity.LayoutOrder 0

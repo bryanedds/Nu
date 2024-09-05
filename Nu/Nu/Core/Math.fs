@@ -670,6 +670,52 @@ module Box2 =
     let inline box2Eq (b : Box2) (b2 : Box2) = b.Equals b2
     let inline box2Neq (b : Box2) (b2 : Box2) = not (b.Equals b2)
 
+    let box2Slice sliceIndex (sliceMargin : Vector2) (perimeter : Box2) =
+        match sliceIndex with
+        | 0 -> // center slice
+            box2
+                (v2 (perimeter.Left.X + sliceMargin.X) (perimeter.Bottom.Y + sliceMargin.Y))
+                (v2 (perimeter.Width - sliceMargin.X - sliceMargin.X) (perimeter.Height - sliceMargin.Y - sliceMargin.Y))
+        | 1 -> // top slice
+            box2
+                (v2 (perimeter.Left.X + sliceMargin.X) (perimeter.Top.Y - sliceMargin.Y))
+                (v2 (perimeter.Width - sliceMargin.X - sliceMargin.X) sliceMargin.Y)
+        | 2 -> // top right slice
+            box2
+                (v2 (perimeter.Right.X - sliceMargin.X) (perimeter.Top.Y - sliceMargin.Y))
+                (v2 sliceMargin.X sliceMargin.Y)
+        | 3 -> // right slice
+            box2
+                (v2 (perimeter.Right.X - sliceMargin.X) (perimeter.Bottom.Y + sliceMargin.Y))
+                (v2 sliceMargin.X (perimeter.Height - sliceMargin.Y - sliceMargin.Y))
+        | 4 -> // bottom right slice
+            box2
+                (v2 (perimeter.Right.X - sliceMargin.X) perimeter.Bottom.Y)
+                (v2 sliceMargin.X sliceMargin.Y)
+        | 5 -> // bottom slice
+            box2
+                (v2 (perimeter.Left.X + sliceMargin.X) perimeter.Bottom.Y)
+                (v2 (perimeter.Width - sliceMargin.X - sliceMargin.X) sliceMargin.Y)
+        | 6 -> // bottom left slice
+            box2
+                (v2 perimeter.Left.X perimeter.Bottom.Y)
+                (v2 sliceMargin.X sliceMargin.Y)
+        | 7 -> // left slice
+            box2
+                (v2 perimeter.Left.X (perimeter.Bottom.Y + sliceMargin.Y))
+                (v2 sliceMargin.X (perimeter.Height - sliceMargin.Y - sliceMargin.Y))
+        | 8 -> // top left slice
+            box2
+                (v2 perimeter.Left.X (perimeter.Top.Y - sliceMargin.Y))
+                (v2 sliceMargin.X sliceMargin.Y)
+        | _ -> failwithumf ()
+
+    let box2SliceInverted sliceIndex sliceMargins perimeter =
+        let slice = box2Slice sliceIndex sliceMargins perimeter
+        box2
+            (v2 slice.Min.X (perimeter.Top.Y - (slice.Min.Y - perimeter.Bottom.Y) - slice.Size.Y))
+            (v2 slice.Size.X slice.Size.Y)
+
 /// Converts Box2 types.
 type Box2Converter () =
     inherit TypeConverter ()
@@ -769,6 +815,8 @@ module Box3 =
     let inline box3 min size = Box3 (min, size)
     let inline box3Eq (b : Box3) (b2 : Box3) = b.Equals b2
     let inline box3Neq (b : Box3) (b2 : Box3) = not (b.Equals b2)
+    let box3Slice sliceIndex sliceMargins (perimeter : Box3) = (box2Slice sliceIndex sliceMargins perimeter.Box2).Box3
+    let box3SliceInverted sliceIndex sliceMargins (perimeter : Box3) = (box2SliceInverted sliceIndex sliceMargins perimeter.Box2).Box3
 
 /// Converts Box3 types.
 type Box3Converter () =
