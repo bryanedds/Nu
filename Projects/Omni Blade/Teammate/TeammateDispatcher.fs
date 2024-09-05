@@ -79,6 +79,7 @@ type TeammateDispatcher () =
          Entity.TextColor == Color.White
          Entity.TextDisabledColor == color8Dup (byte 192) // TODO: make constant?
          Entity.Font == Assets.Gui.Font
+         Entity.FontSizing == Some 24
          Entity.DownOffset == v2 0.0f -3.0f
          Entity.UpImage == Assets.Gui.ButtonBigUpImage
          Entity.DownImage == Assets.Gui.ButtonBigDownImage
