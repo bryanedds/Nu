@@ -33,6 +33,12 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
     
+    /// Convert an array of strings to an array of NativePtr<byte>, at least until VkStringArray is fixed.
+    let toStrPtrArr (strs : string array) =
+        let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
+        for i in [0 .. dec strs.Length] do ptrs[i] <- VkStringInterop.ConvertToUnmanaged strs[i]
+        ptrs
+    
     /// Convert VkLayerProperties.layerName to a string.
     let getLayerName (layerProps : VkLayerProperties) =
         let mutable layerName = layerProps.layerName
@@ -87,10 +93,12 @@ module Hl =
 
             // load validation layer if enabled and available
             if validationLayersEnabled && validationLayerExists then
-                let vlayerArray = [|validationLayer|]
-                use vlayerArrayWrap = VkStringArray vlayerArray
+                
+                // TODO: get VkStringArray working!
+                let vlayerArray = toStrPtrArr [|validationLayer|]
+                use vlayerArrayWrap = ArrayPin vlayerArray
                 createInfo.enabledLayerCount <- 1u
-                createInfo.ppEnabledLayerNames <- vlayerArrayWrap
+                createInfo.ppEnabledLayerNames <- vlayerArrayWrap.Pointer
             else
                 createInfo.enabledLayerCount <- 0u
 
