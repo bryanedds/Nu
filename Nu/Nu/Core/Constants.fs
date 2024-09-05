@@ -190,7 +190,7 @@ module Render =
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
-    let [<Literal>] FontSizeDefault = 16
+    let [<Literal>] FontSizeDefault = 14
 
 [<RequireQualifiedAccess>]
 module Audio =
