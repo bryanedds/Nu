@@ -1998,7 +1998,7 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Presence Omnipresent
              define Entity.Absolute true
-             define Entity.DisabledColor Constants.Gui.DisabledColor
+             define Entity.DisabledColor Constants.Gui.DisabledColorDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
              define Entity.LayoutOrder 0

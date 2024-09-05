@@ -239,7 +239,8 @@ module Associations =
 [<RequireQualifiedAccess>]
 module Gui =
 
-    let [<Uniform>] DisabledColor = Color (0.75f, 0.75f, 0.75f, 0.75f)
+    let [<Uniform>] SliceMarginDefault = Vector2 (4.0f, 4.0f)
+    let [<Uniform>] DisabledColorDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
 
 [<RequireQualifiedAccess>]
 module TileMap =

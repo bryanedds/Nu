@@ -25,7 +25,7 @@ type GuiDispatcher () =
         [define Entity.Size Constants.Engine.EntityGuiSizeDefault
          define Entity.Absolute true
          define Entity.Presence Omnipresent
-         define Entity.DisabledColor Constants.Gui.DisabledColor]
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault]
 
 /// A 3d entity dispatcher.
 type Entity3dDispatcher (physical, lightProbe, light) =
