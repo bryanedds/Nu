@@ -94,7 +94,7 @@ type RenderOperation2d =
     | RenderTiles of TilesDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
-/// NOTE: mutation is used only for internal sprite descriptor caching.
+/// NOTE: mutation is used only for internal caching.
 type LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
