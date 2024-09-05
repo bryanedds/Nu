@@ -30,7 +30,7 @@ type GuiDispatcher () =
          define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
          define Entity.Absolute true
          define Entity.Presence Omnipresent
-         define Entity.DisabledColor Constants.Gui.DisabledColor]
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault]
 
 /// A 3d entity dispatcher.
 type Entity3dDispatcher (physical, lightProbe, light) =

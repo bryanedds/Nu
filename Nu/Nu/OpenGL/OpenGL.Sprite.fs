@@ -87,11 +87,11 @@ module Sprite =
             let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
             match insetOpt with
             | ValueSome inset ->
-                let px = inset.Min.X * texelWidth + borderWidth
-                let py = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
+                let mx = inset.Min.X * texelWidth + borderWidth
+                let my = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
                 let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
                 let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
-                Box2 (px, py, sx, sy)
+                Box2 (mx, my, sx, sy)
             | ValueNone ->
                 let mx = borderWidth
                 let my = 1.0f - borderHeight
