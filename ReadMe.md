@@ -1,7 +1,7 @@
 Nu Game Engine [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/bryanedds/Nu/blob/master/License.md)
 =
 
-UPDATE: **Omni Blade**, the first commercial game built with Nu, is **available on itch.io NOW!** - https://bryanedds.itch.io/omni-blade
+UPDATE: **Omni Blade**, the first commercial game built with Nu, is **available on Steam NOW!** - https://store.steampowered.com/app/3089800/Omni_Blade/
 =
 
 ![image](https://github.com/user-attachments/assets/81f64a06-ffac-487e-8a59-6ca827b4c67a)
