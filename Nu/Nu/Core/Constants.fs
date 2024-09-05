@@ -132,7 +132,7 @@ module Render =
     let [<Literal>] LightsMaxForward = 8
     let [<Literal>] ShadowsMaxShader = 16 // NOTE: remember to update SHADOWS_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowsMax = match ConfigurationManager.AppSettings.["ShadowsMax"] with null -> 8 | shadowsMax -> min (scvalue shadowsMax) ShadowsMaxShader
-    let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | scalar -> scvalue scalar
+    let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | count -> scvalue count
     let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 3 | scalar -> scvalue scalar
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ReflectionMapResolution = 1024
@@ -239,7 +239,7 @@ module Associations =
 [<RequireQualifiedAccess>]
 module Gui =
 
-    let [<Uniform>] SliceMarginDefault = Vector2 (4.0f, 4.0f)
+    let [<Uniform>] SliceMarginDefault = match ConfigurationManager.AppSettings.["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | marginDefault -> scvalue marginDefault
     let [<Uniform>] DisabledColorDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
 
 [<RequireQualifiedAccess>]
