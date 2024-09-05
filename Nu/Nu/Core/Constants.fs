@@ -239,7 +239,7 @@ module Associations =
 [<RequireQualifiedAccess>]
 module Gui =
 
-    let [<Uniform>] SliceMarginDefault = match ConfigurationManager.AppSettings.["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | marginDefault -> scvalue marginDefault
+    let [<Uniform>] mutable SliceMarginDefault = match ConfigurationManager.AppSettings.["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | marginDefault -> scvalue marginDefault
     let [<Uniform>] DisabledColorDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
 
 [<RequireQualifiedAccess>]

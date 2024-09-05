@@ -61,6 +61,7 @@ module Override =
                 | nameof Render.ShadowDetailedCount -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
+                | nameof Gui.SliceMarginDefault -> Gui.SliceMarginDefault <- scvalue value
                 | _ -> ()
             Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior
             Constants.Render.FarPlaneDistanceOmnipresent <- Constants.Render.FarPlaneDistanceImposter
