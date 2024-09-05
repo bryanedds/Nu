@@ -621,7 +621,7 @@ type Nav3dConfigDispatcher () =
 
     override this.Edit (op, entity, world) =
         match op with
-        | OverlayViewport _ ->
+        | ViewportOverlay _ ->
             let nav3d = World.getScreenNav3d entity.Screen world
             match nav3d.Nav3dMeshOpt with
             | Some (nbrData, _, _) ->

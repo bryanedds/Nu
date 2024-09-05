@@ -197,18 +197,18 @@ module Metadata =
                         let assetsLoaded = Dictionary ()
                         for asset in assetsToLoad do
                             match tryGenerateAssetMetadata asset with
-                            | Some audioAsset ->
+                            | Some assetMetadata ->
                                 let lastWriteTime =
                                     try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                                     with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                                assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
+                                assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, assetMetadata)
                             | None -> ()
 
                         // insert assets into package
-                        for assetEntry in Seq.append assetsToKeep assetsLoaded do
+                        for assetEntry in assetsLoaded do
                             let assetName = assetEntry.Key
                             let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                            metadataPackage.TryAdd (assetName, (lastWriteTime, filePath, audioAsset)) |> ignore<bool>
+                            metadataPackage.[assetName] <- (lastWriteTime, filePath, audioAsset)
 
                         // insert package
                         MetadataPackagesLoaded.TryAdd (metadataPackageName, metadataPackage) |> ignore<bool>

@@ -1807,7 +1807,7 @@ type LayoutFacet () =
         let childRightX = childCenter.X + childHalfWidth + margin.X
         offsetX <- childCenter.X + childHalfWidth
         let world =
-            if childRightX >= leftX + wrapLimit then
+            if childRightX > leftX + wrapLimit then
                 offsetX <- leftX
                 offsetY <- offsetY + -margin.Y + -maximum
                 maximum <- 0.0f
@@ -1827,7 +1827,7 @@ type LayoutFacet () =
         let childBottomY = childCenter.Y + -childHalfHeight + -margin.Y
         offsetY <- childCenter.Y + -childHalfHeight
         let world =
-            if childBottomY <= topY + -wrapLimit then
+            if childBottomY < topY + -wrapLimit then
                 offsetX <- offsetX + margin.X + maximum
                 offsetY <- topY
                 maximum <- 0.0f
@@ -1850,7 +1850,7 @@ type LayoutFacet () =
                 match flowLimit with
                 | FlowParent -> perimeter.Width
                 | FlowUnlimited -> Single.MaxValue
-                | FlowTo flowLimit -> flowLimit
+                | FlowTo limit -> limit
             Array.fold (fun world child ->
                 flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
@@ -1859,12 +1859,16 @@ type LayoutFacet () =
                 match flowLimit with
                 | FlowParent -> perimeter.Height
                 | FlowUnlimited -> Single.MaxValue
-                | FlowTo flowLimit -> flowLimit
+                | FlowTo limit -> limit
             Array.fold (fun world child ->
                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
-        | FlowLeftward -> world
-        | FlowUpward -> world
+        | FlowLeftward ->
+            // TODO: P1: implement.
+            world
+        | FlowUpward ->
+            // TODO: P1: implement.
+            world
 
     static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =
         let perimeterWidthHalf = perimeter.Width * 0.5f
@@ -2124,12 +2128,12 @@ type LightProbe3dFacet () =
         | AppendProperties append ->
             let world =
                 if ImGui.Button "Rerender Light Map" then
-                    let world = append.Snapshot RerenderLightMap world
+                    let world = append.EditContext.Snapshot RerenderLightMap world
                     entity.SetProbeStale true world
                 else world
             let world =
                 if ImGui.Button "Recenter in Probe Bounds" then
-                    let world = append.Snapshot RencenterInProbeBounds world
+                    let world = append.EditContext.Snapshot RencenterInProbeBounds world
                     let probeBounds = entity.GetProbeBounds world
                     if Option.isSome (entity.GetMountOpt world)
                     then entity.SetPositionLocal probeBounds.Center world
@@ -2137,7 +2141,7 @@ type LightProbe3dFacet () =
                 else world
             let world =
                 if ImGui.Button "Reset Probe Bounds" then
-                    let world = append.Snapshot ResetProbeBounds world
+                    let world = append.EditContext.Snapshot ResetProbeBounds world
                     entity.ResetProbeBounds world
                 else world
             world
@@ -2749,7 +2753,7 @@ type AnimatedModelFacet () =
         [define Entity.StartTime GameTime.zero
          define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
-         define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
+         define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          nonPersistent Entity.BoneIdsOpt None
          nonPersistent Entity.BoneOffsetsOpt None
@@ -2842,7 +2846,7 @@ type AnimatedModelFacet () =
 
     override this.Edit (op, entity, world) =
         match op with
-        | OverlayViewport _ ->
+        | ViewportOverlay _ ->
             match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
             | (Some offsets, Some transforms) ->
                 let affineMatrix = entity.GetAffineMatrix world

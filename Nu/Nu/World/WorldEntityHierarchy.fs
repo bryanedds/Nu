@@ -374,9 +374,8 @@ module StaticModelHierarchyDispatcherModule =
         override this.Edit (op, _, world) =
             match op with
             | ReplaceProperty replace ->
-                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded
-                then replace.IndicateReplaced world
-                else world
+                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then replace.IndicateReplaced ()
+                world
             | _ -> world
 
 [<AutoOpen>]
@@ -425,7 +424,6 @@ module RigidModelHierarchyDispatcherModule =
         override this.Edit (op, _, world) =
             match op with
             | ReplaceProperty replace ->
-                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded
-                then replace.IndicateReplaced world
-                else world
+                if replace.PropertyDescriptor.PropertyName = nameof Entity.Loaded then replace.IndicateReplaced ()
+                world
             | _ -> world

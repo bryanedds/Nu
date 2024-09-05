@@ -117,42 +117,53 @@ and SnapshotType =
         | Halt -> (scstringMemo this).Spaced
         | UserDefinedSnapshot (_, label) -> label
 
+/// Context for editing behavior.
+and EditContext =
+    { Snapshot : SnapshotType -> World -> World
+      FocusProperty : unit -> unit
+      UnfocusProperty : unit -> unit
+      SearchAssetViewer : unit -> unit
+      PropertyValueStrPreviousRef : string ref
+      DragDropPayloadOpt : string option
+      SnapDrag : single
+      SelectedScreen : Screen
+      SelectedGroup : Group
+      SelectedEntityOpt : Entity option }
+
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.
 and [<ReferenceEquality>] ReplaceProperty =
-    { Snapshot : SnapshotType -> World -> World
-      FocusProperty : World -> World
-      IndicateReplaced : World -> World
-      PropertyDescriptor : PropertyDescriptor }
+    { IndicateReplaced : unit -> unit
+      PropertyDescriptor : PropertyDescriptor
+      EditContext : EditContext }
 
 /// Details additional editing behavior for a simulant's properties.
 and AppendProperties =
-    { Snapshot : SnapshotType -> World -> World
-      UnfocusProperty : World -> World }
+    { EditContext : EditContext }
+
+/// Details additional editing behavior for hierarchy context menu.
+and HierarchyContext =
+    { EditContext : EditContext }
 
 /// Details additional editing behavior for viewport context menu.
-and ContextHierarchy =
-    { Snapshot : SnapshotType -> World -> World }
-
-/// Details additional editing behavior for viewport context menu.
-and ContextViewport =
-    { Snapshot : SnapshotType -> World -> World
-      RightClickPosition : Vector2 }
+and ViewportContext =
+    { RightClickPosition : Vector2
+      EditContext : EditContext }
 
 /// Details the additional editing behavior for a simulant in a viewport.
-and [<ReferenceEquality>] OverlayViewport =
-    { Snapshot : SnapshotType -> World -> World
-      ViewportView : Matrix4x4
+and [<ReferenceEquality>] ViewportOverlay =
+    { ViewportView : Matrix4x4
       ViewportProjection : Matrix4x4
-      ViewportBounds : Box2 }
+      ViewportBounds : Box2
+      EditContext : EditContext }
 
 /// Specifies an aspect of simulant editing to perform.
 and [<ReferenceEquality>] EditOperation =
     | ReplaceProperty of ReplaceProperty
     | AppendProperties of AppendProperties
-    | ContextHierarchy of ContextHierarchy
-    | ContextViewport of ContextViewport
-    | OverlayViewport of OverlayViewport
+    | HierarchyContext of HierarchyContext
+    | ViewportContext of ViewportContext
+    | ViewportOverlay of ViewportOverlay
 
 /// The data for a change in a simulant.
 and ChangeData =
