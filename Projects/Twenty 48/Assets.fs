@@ -12,7 +12,7 @@ module Assets =
     module Gui =
 
         let PackageName = "Gui"
-        let ClearSansFont = asset<Font> PackageName "ClearSansFont"
+        let ClearSansFont = asset<Font> PackageName "ClearSans"
 
     // these are assets from the Gameplay package.
     [<RequireQualifiedAccess>]
