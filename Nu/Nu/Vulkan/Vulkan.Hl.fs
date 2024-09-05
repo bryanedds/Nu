@@ -49,7 +49,8 @@ module Hl =
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
         private
-            { Instance : VkInstance }
+            { Instance : VkInstance
+              PhysicalDevice : VkPhysicalDevice }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -73,7 +74,7 @@ module Hl =
             // get available instance layers
             let mutable layerCount = 0u
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, NativePtr.nullPtr) |> check
-            let mutable layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
+            let layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
             use layersWrap = ArrayPin layers
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersWrap.Pointer) |> check
 
@@ -108,6 +109,30 @@ module Hl =
             // fin
             instance
         
+        /// Select physical device.
+        static member selectPhysicalDevice instance =
+            
+            // physical device handle
+            let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
+
+            // get available physical devices
+            let mutable deviceCount = 0u
+            vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, NativePtr.nullPtr) |> check
+            let devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
+            use devicesWrap = ArrayPin devices
+            vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesWrap.Pointer) |> check
+
+            // get the devices' props
+            let devicesProps = Array.zeroCreate<VkPhysicalDeviceProperties> devices.Length
+            for i in [0 .. dec devices.Length] do
+                let mutable props = Unchecked.defaultof<VkPhysicalDeviceProperties>
+                vkGetPhysicalDeviceProperties (devices[i], &props)
+                devicesProps[i] <- props
+                
+
+            // fin
+            physicalDevice
+        
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
             vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
@@ -124,9 +149,13 @@ module Hl =
             // loads instance commands; not vulkan function
             vkLoadInstanceOnly instance
 
+            // select physical device
+            let physicalDevice = VulkanGlobal.selectPhysicalDevice instance
+
             // make vulkanGlobal
             let vulkanGlobal =
-                { Instance = instance }
+                { Instance = instance
+                  PhysicalDevice = physicalDevice }
 
             // fin
             vulkanGlobal
