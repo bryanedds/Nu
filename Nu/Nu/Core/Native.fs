@@ -22,10 +22,13 @@ module Native =
     
         // TODO: see if implicit conversion can be used to remove the need to call this member directly.
         member this.Pointer = pointer
+
+        // make disposal publicly available without casting
+        member this.Dispose () = handle.Dispose ()
     
         interface IDisposable with
             member this.Dispose () =
-                handle.Dispose ()
+                this.Dispose ()
     
     /// Convert a managed pointer to a typed native pointer.
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =

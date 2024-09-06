@@ -53,10 +53,13 @@ module Hl =
     
         // TODO: see if implicit conversion can be used to remove the need to call this member directly.
         member this.Pointer = pin.Pointer
+
+        // make disposal publicly available without casting
+        member this.Dispose () = pin.Dispose ()
     
         interface IDisposable with
             member this.Dispose () =
-                (pin :> IDisposable).Dispose ()
+                this.Dispose ()
     
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
