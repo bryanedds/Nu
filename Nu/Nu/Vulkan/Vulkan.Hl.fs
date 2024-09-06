@@ -78,10 +78,10 @@ module Hl =
             // get sdl extensions
             let mutable sdlExtensionCount = 0u
             let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
-            if int result <> 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
+            if int result = 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
             let sdlExtensionsOut = Array.zeroCreate<nativeint> (int sdlExtensionCount)
             let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
-            if int result <> 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
+            if int result = 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<byte> sdlExtensionsOut[i]
             use sdlExtensionsWrap = ArrayPin sdlExtensions
@@ -131,7 +131,7 @@ module Hl =
 
             // get surface from sdl
             let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(Unsafe.As<VkSurfaceKHR, uint64> &surface))
-            if int result <> 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
+            if int result = 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
 
             // fin
             surface
