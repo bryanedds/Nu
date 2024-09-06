@@ -879,6 +879,7 @@ module BasicStaticSpriteEmitter =
         { Absolute = emitter.Absolute
           Elevation = emitter.Elevation
           Horizon = emitter.Body.Position.Y
+          ClipOpt = ValueNone // TODO: implement clip support for particles.
           Blend = emitter.Blend
           Image = emitter.Image
           Particles = particles' }

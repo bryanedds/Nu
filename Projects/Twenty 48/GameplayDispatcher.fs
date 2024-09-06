@@ -139,5 +139,5 @@ type GameplayDispatcher () =
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Font == Assets.Gui.ClearSansFont
                          Entity.FontSizing := if tile.Value < 16384 then Some 12 else Some 8
-                         Entity.TextColor := if tile.Value < 8 then Color.Gray else Color.GhostWhite
+                         Entity.TextColor == Color.GhostWhite
                          Entity.BackdropImageOpt := Some (Assets.Gameplay.TileImage tile.Value)]]]]

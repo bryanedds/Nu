@@ -84,6 +84,7 @@ type CharacterDispatcher () =
                     RenderSprite
                         { Transform = transform
                           InsetOpt = ValueSome (Character.getAnimationInset time character)
+                          ClipOpt = ValueNone
                           Image = character.AnimationSheet
                           Color = Character.getAnimationColor time character
                           Blend = Transparent
@@ -115,6 +116,7 @@ type CharacterDispatcher () =
                         RenderSprite
                             { Transform = afflictionTransform
                               InsetOpt = ValueSome afflictionInset
+                              ClipOpt = ValueNone
                               Image = afflictionImage
                               Color = Color.One
                               Blend = Transparent
@@ -147,6 +149,7 @@ type CharacterDispatcher () =
                         RenderSprite
                             { Transform = chargeOrbTransform
                               InsetOpt = ValueSome chargeOrbInset
+                              ClipOpt = ValueNone
                               Image = chargeOrbImage
                               Color = Color.One
                               Blend = Transparent

@@ -1380,6 +1380,7 @@ module WorldModule2 =
                             RenderSprite
                                 { Transform = transform
                                   InsetOpt = ValueNone
+                                  ClipOpt = ValueNone
                                   Image = dissolveImage
                                   Color = color
                                   Blend = Transparent

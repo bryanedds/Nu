@@ -12,13 +12,19 @@ module SpriteBatch =
 
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
+          ClipOpt : Box2 voption
           BlendingFactorSrc : BlendingFactor
           BlendingFactorDst : BlendingFactor
           BlendingEquation : BlendEquationMode
-          TextureOpt : Texture.Texture ValueOption }
+          TextureOpt : Texture.Texture voption }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
+            (match struct (state.ClipOpt, state2.ClipOpt) with
+             | struct (ValueSome _, ValueNone) -> true
+             | struct (ValueNone, ValueSome _) -> true
+             | struct (ValueNone, ValueNone) -> true
+             | struct (ValueSome c, ValueSome c2) -> c <> c2) ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
@@ -26,13 +32,13 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
-             | struct (ValueSome t, ValueSome t2) -> t.TextureId <> t2.TextureId) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
+             | struct (ValueSome t, ValueSome t2) -> t <> t2)
 
-        static member make absolute bfs bfd beq texture =
-            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }
+        static member inline make absolute clipOpt bfs bfd beq texture =
+            { Absolute = absolute; ClipOpt = clipOpt; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }
 
         static member defaultState =
-            { Absolute = false; BlendingFactorSrc = BlendingFactor.SrcAlpha; BlendingFactorDst = BlendingFactor.OneMinusSrcAlpha; BlendingEquation = BlendEquationMode.FuncAdd; TextureOpt = ValueNone }
+            { Absolute = false; ClipOpt = ValueNone; BlendingFactorSrc = BlendingFactor.SrcAlpha; BlendingFactorDst = BlendingFactor.OneMinusSrcAlpha; BlendingEquation = BlendEquationMode.FuncAdd; TextureOpt = ValueNone }
 
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
@@ -90,6 +96,16 @@ module SpriteBatch =
             Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
             Gl.Enable EnableCap.Blend
             Gl.Enable EnableCap.CullFace
+            match env.State.ClipOpt with
+            | ValueSome clip ->
+                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
+                let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
+                let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
+                let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
+                let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
+                Gl.Enable EnableCap.ScissorTest
+                Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
+            | ValueNone -> ()
             Hl.Assert ()
 
             // setup vao
@@ -128,6 +144,7 @@ module SpriteBatch =
             Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
             Gl.Disable EnableCap.Blend
             Gl.Disable EnableCap.CullFace
+            Gl.Disable EnableCap.ScissorTest
 
             // next batch
             env.SpriteIndex <- 0
@@ -183,10 +200,10 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, env) =
 
         // adjust to potential sprite batch state changes
-        let state = SpriteBatchState.make absolute bfs bfd beq texture
+        let state = SpriteBatchState.make absolute clipOpt bfs bfd beq texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state env
             Hl.Assert ()

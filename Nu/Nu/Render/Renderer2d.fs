@@ -14,7 +14,8 @@ open Prime
 /// A mutable sprite value.
 type [<Struct>] SpriteValue =
     { mutable Transform : Transform
-      mutable InsetOpt : Box2 ValueOption
+      mutable InsetOpt : Box2 voption
+      mutable ClipOpt : Box2 voption
       mutable Image : Image AssetTag
       mutable Color : Color
       mutable Blend : Blend
@@ -24,6 +25,7 @@ type [<Struct>] SpriteValue =
 /// A mutable text value.
 type [<Struct>] TextValue =
     { mutable Transform : Transform
+      mutable ClipOpt : Box2 voption
       mutable Text : string
       mutable Font : Font AssetTag
       mutable FontSizing : int option
@@ -34,7 +36,8 @@ type [<Struct>] TextValue =
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
     { mutable Transform : Transform
-      InsetOpt : Box2 ValueOption
+      InsetOpt : Box2 voption
+      ClipOpt : Box2 voption
       Image : Image AssetTag
       Color : Color
       Blend : Blend
@@ -56,6 +59,7 @@ type CachedSpriteDescriptor =
 /// Describes how to render tile map tiles to the rendering system.
 type [<NoEquality; NoComparison>] TilesDescriptor =
     { mutable Transform : Transform
+      ClipOpt : Box2 voption
       Color : Color
       Emission : Color
       MapSize : Vector2i
@@ -69,6 +73,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
     { Absolute : bool
       Elevation : single
       Horizon : single
+      ClipOpt : Box2 voption
       Blend : Blend
       Image : Image AssetTag
       Particles : Particle SArray }
@@ -76,6 +81,7 @@ type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
 /// Describes how to render text to a rendering subsystem.
 type TextDescriptor =
     { mutable Transform : Transform
+      ClipOpt : Box2 voption
       Text : string
       Font : Font AssetTag
       FontSizing : int option
@@ -94,7 +100,7 @@ type RenderOperation2d =
     | RenderTiles of TilesDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
-/// NOTE: mutation is used only for internal sprite descriptor caching.
+/// NOTE: mutation is used only for internal caching.
 type LayeredOperation2d =
     { mutable Elevation : single
       mutable Horizon : single
@@ -382,6 +388,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         pivot
         rotation
         (insetOpt : Box2 voption)
+        (clipOpt : Box2 voption)
         (texture : OpenGL.Texture.Texture)
         (color : Color)
         blend
@@ -437,16 +444,17 @@ type [<ReferenceEquality>] GlRenderer2d =
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.SpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, bfs, bfd, beq, texture, renderer.SpriteBatchEnv)
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.SpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.SpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
         (transform : Transform byref,
-         insetOpt : Box2 ValueOption inref,
+         insetOpt : Box2 voption inref,
+         clipOpt : Box2 voption inref,
          image : Image AssetTag,
          color : Color inref,
          blend : Blend,
@@ -464,12 +472,12 @@ type [<ReferenceEquality>] GlRenderer2d =
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
-                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
+                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
             | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render sprite particles.
-    static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
+    static member renderSpriteParticles (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
         match GlRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
@@ -489,7 +497,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let emission = &particle.Emission
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
                     index <- inc index
             | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -497,6 +505,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     /// Render tiles.
     static member renderTiles
         (transform : Transform byref,
+         clipOpt : Box2 voption inref,
          color : Color inref,
          emission : Color inref,
          mapSize : Vector2i,
@@ -587,7 +596,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) texture color Transparent emission flip renderer
+                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture color Transparent emission flip renderer
                         | ValueNone -> ()
 
                 // fin
@@ -597,6 +606,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     /// Render text.
     static member renderText
         (transform : Transform byref,
+         clipOpt : Box2 voption inref,
          text : string,
          font : Font AssetTag,
          fontSizing : int option,
@@ -611,6 +621,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         let color = color // copy to local for proprety access
         if color.A8 <> 0uy then
             let transform = transform // copy to local to make visible from lambda
+            let clipOpt = clipOpt // same
             flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
@@ -721,7 +732,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices, vao) = renderer.TextQuad
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
+                            let insetOpt : Box2 voption = ValueNone
+                            let color = Color.White
+                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, &viewProjection, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
                             OpenGL.Hl.Assert ()
 
                             // destroy texture
@@ -737,29 +750,32 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
         | RenderSprite descriptor ->
-            GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
+            GlRenderer2d.renderSprite
+                (&descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
-                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+                GlRenderer2d.renderSprite
+                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites.[index]
-                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+                GlRenderer2d.renderSprite
+                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
-            GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
+            GlRenderer2d.renderSpriteParticles
+                (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCachedSprite descriptor ->
-            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
+            GlRenderer2d.renderSprite
+                (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
-                (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
-                 descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
-                 eyeCenter, eyeSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do

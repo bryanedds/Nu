@@ -281,6 +281,7 @@ type PropDispatcher () =
                     RenderSprite
                         { Transform = transform
                           InsetOpt = insetOpt
+                          ClipOpt = ValueNone
                           Image = image
                           Color = color
                           Blend = blend

@@ -56,7 +56,7 @@ type SpiritOrbDispatcher () =
                 let colorFadeIn =
                     let distanceNormalized = (Constants.Field.SpiritRadius - distance) / Constants.Field.SpiritRadius
                     if distanceNormalized < 0.25f then color.MapA ((*) (distanceNormalized / 0.25f)) else color
-                let descriptor = { Transform = transform; InsetOpt = insetOpt; Image = image; Blend = Transparent; Color = colorFadeIn; Emission = Color.Zero; Flip = FlipNone }
+                let descriptor = { Transform = transform; InsetOpt = insetOpt; ClipOpt = ValueNone; Image = image; Blend = Transparent; Color = colorFadeIn; Emission = Color.Zero; Flip = FlipNone }
                 World.enqueueLayeredOperation2d
                     { Elevation = transform.Elevation
                       Horizon = transform.Horizon
@@ -67,7 +67,7 @@ type SpiritOrbDispatcher () =
     override this.Render (spiritOrb, _, entity, world) =
         let mutable orbTransform = entity.GetTransform world
         let orbImage = Assets.Field.SpiritOrbImage
-        let orbDescriptor = { Transform = orbTransform; InsetOpt = ValueNone; Image = orbImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
+        let orbDescriptor = { Transform = orbTransform; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = orbImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
         World.enqueueLayeredOperation2d
             { Elevation = orbTransform.Elevation
               Horizon = orbTransform.Horizon
@@ -80,7 +80,7 @@ type SpiritOrbDispatcher () =
         avatarTransform.Elevation <- orbTransform.Elevation + 1.0f
         avatarTransform.Absolute <- orbTransform.Absolute
         let avatarImage = Assets.Field.SpiritAvatarImage
-        let avatarDescriptor = { Transform = avatarTransform; InsetOpt = ValueNone; Image = avatarImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
+        let avatarDescriptor = { Transform = avatarTransform; InsetOpt = ValueNone; ClipOpt = ValueNone; Image = avatarImage; Color = Color.One; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
         World.enqueueLayeredOperation2d
             { Elevation = avatarTransform.Elevation
               Horizon = avatarTransform.Horizon

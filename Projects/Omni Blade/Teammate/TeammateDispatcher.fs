@@ -35,6 +35,7 @@ type TeammateDispatcher () =
                 RenderSprite
                     { Transform = borderTransform
                       InsetOpt = ValueNone
+                      ClipOpt = ValueNone
                       Image = borderImage
                       Color = borderImageColor
                       Blend = Transparent
@@ -63,6 +64,7 @@ type TeammateDispatcher () =
                 RenderSprite
                     { Transform = fillTransform
                       InsetOpt = ValueNone
+                      ClipOpt = ValueNone
                       Image = fillImage
                       Color = fillImageColor
                       Blend = Transparent

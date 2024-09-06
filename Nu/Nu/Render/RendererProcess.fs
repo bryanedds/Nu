@@ -28,7 +28,7 @@ type RendererProcess =
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
-        abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
         /// Clear enqueued render messages.
         abstract ClearMessages : unit -> unit
         /// Submit enqueued render messages for processing.
@@ -133,9 +133,9 @@ type RendererInline () =
             | Some _ -> messages2d.Add message 
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
-        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, image, color, blend, emission, flip) =
+        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
             match renderersOpt with
-            | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
+            | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
         member this.ClearMessages () =
@@ -543,6 +543,7 @@ type RendererThread () =
                             cachedOperation.AssetTag <- operation.AssetTag
                             descriptor.CachedSprite.Transform <- sprite.Transform
                             descriptor.CachedSprite.InsetOpt <- sprite.InsetOpt
+                            descriptor.CachedSprite.ClipOpt <- sprite.ClipOpt
                             descriptor.CachedSprite.Image <- sprite.Image
                             descriptor.CachedSprite.Color <- sprite.Color
                             descriptor.CachedSprite.Blend <- sprite.Blend
@@ -554,7 +555,7 @@ type RendererThread () =
                 | _ -> messageBuffers2d.[messageBufferIndex].Add message
             | _ -> messageBuffers2d.[messageBufferIndex].Add message
 
-        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, image, color, blend, emission, flip) =
+        member this.RenderLayeredSpriteFast (elevation, horizon, assetTag, transform, insetOpt, clipOpt, image, color, blend, emission, flip) =
             let cachedSpriteMessage = allocSpriteMessage ()
             match cachedSpriteMessage with
             | LayeredOperation2d cachedOperation ->
@@ -565,6 +566,7 @@ type RendererThread () =
                     cachedOperation.AssetTag <- assetTag
                     descriptor.CachedSprite.Transform <- transform
                     descriptor.CachedSprite.InsetOpt <- insetOpt
+                    descriptor.CachedSprite.ClipOpt <- clipOpt
                     descriptor.CachedSprite.Image <- image
                     descriptor.CachedSprite.Color <- color
                     descriptor.CachedSprite.Blend <- blend

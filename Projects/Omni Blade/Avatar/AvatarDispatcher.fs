@@ -50,6 +50,7 @@ type AvatarDispatcher () =
                     RenderSprite
                         { Transform = transform
                           InsetOpt = ValueSome (getSpriteInset entity world)
+                          ClipOpt = ValueNone
                           Image = avatar.AnimationSheet
                           Color = Color.One
                           Blend = Transparent
