@@ -2278,7 +2278,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | Some _ | None -> world
 
             // view manipulation
-            // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported here - https://github.com/CedricGuillemet/ImGuizmo/issues/304
+            // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported in #867.
             //if not io.WantCaptureMouseMinus then
             //    let eyeCenter = (World.getEye3dCenter world |> Matrix4x4.CreateTranslation).ToArray ()
             //    let eyeRotation = (World.getEye3dRotation world |> Matrix4x4.CreateFromQuaternion).ToArray ()
