@@ -11,6 +11,7 @@ module Vulkan = let _ = ()
 
 namespace Vulkan
 open System
+open System.Runtime.CompilerServices
 open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
@@ -65,6 +66,7 @@ module Hl =
     type [<ReferenceEquality>] VulkanGlobal =
         private
             { Instance : VkInstance
+              Surface : VkSurfaceKHR
               PhysicalDevice : VkPhysicalDevice }
 
         /// Create the Vulkan instance.
@@ -121,8 +123,21 @@ module Hl =
             // fin
             instance
         
+        /// Create surface.
+        static member createSurface window instance =
+
+            // surface handle
+            let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
+
+            // get surface from sdl
+            let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(Unsafe.As<VkSurfaceKHR, uint64> &surface))
+            if int result <> 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
+
+            // fin
+            surface
+        
         /// Select physical device.
-        static member selectPhysicalDevice instance =
+        static member selectPhysicalDevice surface instance =
             
             // physical device handle
             let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
@@ -147,6 +162,7 @@ module Hl =
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr) // access violation exception, not good
             vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
         
         /// Make a VulkanGlobal.
@@ -161,12 +177,16 @@ module Hl =
             // loads instance commands; not vulkan function
             vkLoadInstanceOnly instance
 
+            // create surface
+            let surface = VulkanGlobal.createSurface window instance
+            
             // select physical device
-            let physicalDevice = VulkanGlobal.selectPhysicalDevice instance
+            let physicalDevice = VulkanGlobal.selectPhysicalDevice surface instance
 
             // make vulkanGlobal
             let vulkanGlobal =
                 { Instance = instance
+                  Surface = surface
                   PhysicalDevice = physicalDevice }
 
             // fin
