@@ -10,8 +10,8 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b00000000000000000001u
-    let [<Literal>] DirtyMask =                     0b00000000000000000010u
+    let [<Literal>] ActiveMask =                    0b00000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b00000000000000000010u // for use as a component in an ECS or other data-oriented context
     let [<Literal>] InvalidatedMask =               0b00000000000000000100u
     let [<Literal>] AbsoluteMask =                  0b00000000000000001000u
     let [<Literal>] ImperativeMask =                0b00000000000000010000u
