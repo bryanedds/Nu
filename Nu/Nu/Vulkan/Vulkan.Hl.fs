@@ -33,18 +33,30 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
     
-    /// Convert an array of strings to an array of NativePtr<byte>, at least until VkStringArray is fixed.
-    let toStrPtrArr (strs : string array) =
-        let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
-        for i in [0 .. dec strs.Length] do ptrs[i] <- VkStringInterop.ConvertToUnmanaged strs[i]
-        ptrs
-    
     /// Convert VkLayerProperties.layerName to a string.
     let getLayerName (layerProps : VkLayerProperties) =
         let mutable layerName = layerProps.layerName
         let ptr = asBytePointer &layerName
         let vkUtf8Str = new VkUtf8String (ptr)
         vkUtf8Str.ToString ()
+    
+    /// A container for a pinned array of unmanaged strings.
+    type StringArrayWrap private (array : nativeptr<byte> array) =
+    
+        let array = array
+        let pin = ArrayPin array
+    
+        new (strs : string array) =
+            let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
+            for i in [0 .. dec strs.Length] do ptrs[i] <- VkStringInterop.ConvertToUnmanaged strs[i]
+            new StringArrayWrap (ptrs)
+    
+        // TODO: see if implicit conversion can be used to remove the need to call this member directly.
+        member this.Pointer = pin.Pointer
+    
+        interface IDisposable with
+            member this.Dispose () =
+                (pin :> IDisposable).Dispose ()
     
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
@@ -94,12 +106,9 @@ module Hl =
 
             // load validation layer if enabled and available
             if validationLayersEnabled && validationLayerExists then
-                
-                // TODO: get VkStringArray working!
-                let vlayerArray = toStrPtrArr [|validationLayer|]
-                use vlayerArrayWrap = ArrayPin vlayerArray
+                use layerWrap = StringArrayWrap [|validationLayer|]
                 createInfo.enabledLayerCount <- 1u
-                createInfo.ppEnabledLayerNames <- vlayerArrayWrap.Pointer
+                createInfo.ppEnabledLayerNames <- layerWrap.Pointer
             else
                 createInfo.enabledLayerCount <- 0u
 
