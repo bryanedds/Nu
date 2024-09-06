@@ -139,8 +139,10 @@ type CharacterDispatcher (character : Character) =
         match command with
         | Register ->
             let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+            let weapon = entity / Constants.Gameplay.CharacterWeaponName
             let world = animatedModel.SetAnimations [|Animation.loop GameTime.zero None "Armature|Idle"|] world
             let world = animatedModel.AnimateBones world
+            let world = weapon.AutoBounds world
             withSignal SyncWeaponTransform world
 
         | UpdateTransform (position, rotation) ->
