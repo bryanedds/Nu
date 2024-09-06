@@ -65,11 +65,12 @@ type StaticSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
         let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, staticImage, &color, blend, &emission, flip, world)
+        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -138,11 +139,12 @@ type AnimatedSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
         let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
+        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt, animationSheet, &color, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (entity, world) =
         AttributesInferred.important (entity.GetCelSize world).V3 v3Zero
@@ -464,6 +466,7 @@ type TextFacet () =
                   RenderOperation2d =
                     RenderText
                         { Transform = textTransform
+                          ClipOpt = ValueSome textTransform.Bounds2d.Box2
                           Text = text
                           Font = font
                           FontSizing = fontSizing

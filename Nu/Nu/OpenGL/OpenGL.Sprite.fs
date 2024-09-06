@@ -3,6 +3,7 @@
 
 namespace OpenGL
 open System
+open System.Numerics
 open System.Runtime.InteropServices
 open Prime
 open Nu
@@ -77,7 +78,24 @@ module Sprite =
         (vertexBuffer, indexBuffer, vao)
 
     /// Draw a sprite whose indices and vertices were created by Gl.CreateSpriteQuad and whose uniforms and shader match those of CreateSpriteShader.
-    let DrawSprite (vertices, indices, vao, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture : Texture.Texture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) =
+    let DrawSprite
+        (vertices,
+         indices,
+         vao,
+         viewProjection : Matrix4x4 inref,
+         modelViewProjection : single array,
+         insetOpt : Box2 voption inref,
+         clipOpt : Box2 voption inref,
+         color : Color inref,
+         flip,
+         textureWidth,
+         textureHeight,
+         texture : Texture.Texture,
+         modelViewProjectionUniform,
+         texCoords4Uniform,
+         colorUniform,
+         textureUniform,
+         shader) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -122,6 +140,15 @@ module Sprite =
         Gl.BlendFunc (BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha)
         Gl.Enable EnableCap.Blend
         Gl.Enable EnableCap.CullFace
+        match clipOpt with
+        | ValueSome clip ->
+            let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
+            let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
+            let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
+            Gl.Enable EnableCap.ScissorTest
+            Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
+        | ValueNone -> ()
         Hl.Assert ()
 
         // setup shader
@@ -165,3 +192,4 @@ module Sprite =
         Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
         Gl.Disable EnableCap.Blend
         Gl.Disable EnableCap.CullFace
+        Gl.Disable EnableCap.ScissorTest

@@ -15,12 +15,13 @@ module WorldDataToken =
 
             // render sprite
             | SpriteToken (elevation, horizon, assetTag, sprite) ->
-                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
+                World.renderLayeredSpriteFast (elevation, horizon, assetTag, &sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, world)
 
             // render text
             | TextToken (elevation, horizon, assetTag, text) ->
                 let renderText =
                     { Transform = text.Transform
+                      ClipOpt = text.ClipOpt
                       Text = text.Text
                       Font = text.Font
                       FontSizing = text.FontSizing

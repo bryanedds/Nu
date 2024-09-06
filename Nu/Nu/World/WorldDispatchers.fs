@@ -296,6 +296,7 @@ type Character2dDispatcher () =
                 RenderSprite
                     { Transform = transform
                       InsetOpt = insetOpt
+                      ClipOpt = ValueNone
                       Image = image
                       Color = Color.One
                       Blend = Transparent
