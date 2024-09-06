@@ -130,11 +130,11 @@ module Render =
     let [<Literal>] LightMapsMaxForward = 2
     let [<Literal>] LightsMaxDeferred = 64
     let [<Literal>] LightsMaxForward = 8
-    let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ShadowsMaxShader = 16 // NOTE: remember to update SHADOWS_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowsMax = match ConfigurationManager.AppSettings.["ShadowsMax"] with null -> 8 | shadowsMax -> min (scvalue shadowsMax) ShadowsMaxShader
-    let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | scalar -> scvalue scalar
-    let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 2 | scalar -> scvalue scalar
+    let [<Uniform>] mutable ShadowDetailedCount = match ConfigurationManager.AppSettings.["ShadowDetailedCount"] with null -> 1 | count -> scvalue count
+    let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 3 | scalar -> scvalue scalar
+    let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
     let [<Literal>] EnvironmentFilterResolution = 512
@@ -144,8 +144,8 @@ module Render =
     let [<Literal>] TerrainOcclusionPrePassEnabledDefault = false
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
-    let [<Literal>] ShadowBiasAcneDefault = 0.0000002f
-    let [<Literal>] ShadowBiasBleedDefault = 0.5f
+    let [<Literal>] LightShadowExponentDefault = 80.0f
+    let [<Literal>] LightShadowDensityDefault = 4.0f
     let [<Literal>] SsaoEnabledDefault = true
     let [<Literal>] SsaoSampleCountDefault = 12
     let [<Literal>] SsaoSampleCountMax = 128
@@ -153,6 +153,11 @@ module Render =
     let [<Literal>] SsaoBiasDefault = 0.025f
     let [<Literal>] SsaoRadiusDefault = 0.125f
     let [<Literal>] SsaoDistanceMaxDefault = 0.125f
+    let [<Literal>] SsvfEnabledGlobalDefault = false
+    let [<Literal>] SsvfEnabledLocalDefault = true
+    let [<Literal>] SsvfStepsDefault = 48
+    let [<Literal>] SsvfAsymmetryDefault = 0.5f
+    let [<Literal>] SsvfIntensityDefault = 0.5f
     let [<Literal>] SsrEnabledGlobalDefault = false
     let [<Literal>] SsrEnabledLocalDefault = true
     let [<Literal>] SsrDetailDefault = 0.41f
@@ -163,8 +168,8 @@ module Render =
     let [<Literal>] SsrDepthCutoffMarginDefault = 0.2f
     let [<Literal>] SsrDistanceCutoffDefault = 16.0f
     let [<Literal>] SsrDistanceCutoffMarginDefault = 0.2f
-    let [<Literal>] SsrRoughnessCutoffDefault = 0.6f
-    let [<Literal>] SsrRoughnessCutoffMarginDefault = 0.5f
+    let [<Literal>] SsrRoughnessCutoffDefault = 0.3f
+    let [<Literal>] SsrRoughnessCutoffMarginDefault = 0.3f
     let [<Literal>] SsrSlopeCutoffDefault = 0.1f
     let [<Literal>] SsrSlopeCutoffMarginDefault = 0.2f
     let [<Literal>] SsrEdgeHorizontalMarginDefault = 0.05f
@@ -185,7 +190,7 @@ module Render =
     let [<Literal>] HeightDefault = 1.0f
     let [<Literal>] IgnoreLightMapsDefault = false
     let [<Literal>] OpaqueDistanceDefault = 100000.0f
-    let [<Literal>] FontSizeDefault = 16
+    let [<Literal>] FontSizeDefault = 14
 
 [<RequireQualifiedAccess>]
 module Audio =
@@ -234,7 +239,8 @@ module Associations =
 [<RequireQualifiedAccess>]
 module Gui =
 
-    let [<Uniform>] DisabledColor = Color (0.75f, 0.75f, 0.75f, 0.75f)
+    let [<Uniform>] mutable SliceMarginDefault = match ConfigurationManager.AppSettings.["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | marginDefault -> scvalue marginDefault
+    let [<Uniform>] DisabledColorDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
 
 [<RequireQualifiedAccess>]
 module TileMap =

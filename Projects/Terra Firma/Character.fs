@@ -16,6 +16,9 @@ type JumpState =
         { LastTime = 0L
           LastTimeOnGround = 0L }
 
+type ObstructedState =
+    { ObstructedTime : int64 }
+
 type AttackState =
     { AttackTime : int64
       FollowUpBuffered : bool
@@ -26,10 +29,6 @@ type AttackState =
           FollowUpBuffered = false
           AttackedCharacters = Set.empty }
 
-type ObstructedState =
-    { ObstructedTime : int64
-      Severe : bool }
-
 type InjuryState =
     { InjuryTime : int64 }
 
@@ -38,8 +37,8 @@ type WoundState =
 
 type ActionState =
     | NormalState
-    | AttackState of AttackState
     | ObstructedState of ObstructedState
+    | AttackState of AttackState
     | InjuryState of InjuryState
     | WoundState of WoundState
 
@@ -52,6 +51,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
       HitPoints : int
       ActionState : ActionState
       JumpState : JumpState
+      CharacterCollisions : Entity Set
       WeaponCollisions : Entity Set
       WalkSpeed : single
       TurnSpeed : single
@@ -122,6 +122,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member private tryUpdateActionAnimation time character world =
         match character.ActionState with
         | NormalState -> None
+        | ObstructedState obstructed ->
+            let animation = Animation.loop obstructed.ObstructedTime None "Armature|Idle"
+            Some (animation, false)
         | AttackState attack ->
             let localTime = time - attack.AttackTime
             match localTime with
@@ -133,9 +136,6 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 then (attack.AttackTime, "Armature|AttackVertical")
                 else (attack.AttackTime + 55L, "Armature|AttackHorizontal")
             let animation = Animation.once animationTime None animationName
-            Some (animation, false)
-        | ObstructedState obstructed ->
-            let animation = Animation.once obstructed.ObstructedTime None "Armature|WalkForward"
             Some (animation, false)
         | InjuryState injury ->
             let animation = Animation.once injury.InjuryTime None "Armature|WalkBack"
@@ -203,24 +203,36 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         | Enemy ->
         
             // enemy traversal
-            let navSpeedsOpt =
+            let (navSpeedsOpt, character) =
                 match character.ActionState with
-                | NormalState -> Some (0.04f, 0.1f)
-                | ObstructedState obstructed -> if obstructed.Severe then Some (0.0f, 0.3f) else Some (0.02f, 0.2f)
-                | _ -> None
+                | NormalState | ObstructedState _ ->
+                    let order =
+                        character.CharacterCollisions |>
+                        Array.ofSeq |>
+                        Array.map (fun character -> (false, character.GetPosition world)) |>
+                        Array.cons (true, position) |>
+                        Array.sortBy (fun (_, position) -> Vector3.DistanceSquared (position, playerPosition)) |>
+                        Array.findIndex fst
+                    let canUnobstruct =
+                        match character.ActionState with
+                        | ObstructedState obstructed ->
+                            let localTime = time - obstructed.ObstructedTime
+                            order = 0 && localTime >= 10L
+                        | _ -> order = 0
+                    let character =
+                        if canUnobstruct then { character with ActionState = NormalState }
+                        elif character.ActionState = NormalState then { character with ActionState = ObstructedState { ObstructedTime = time }}
+                        else character
+                    let navSpeed = if character.ActionState = NormalState then (0.04f, 0.1f) else (0.0f, 0.3f)
+                    (Some navSpeed, character)
+                | _ -> (None, character)
             match navSpeedsOpt with
             | Some (moveSpeed, turnSpeed) ->
-                let nearest =
-                    let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
-                    let positionFlat = position.WithY 0.0f
-                    let playerPositionFlat = playerPosition.WithY 0.0f
-                    if rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) >= 0.1f then
-                        let sphere =
-                            if position.Y - playerPosition.Y >= 0.25f
-                            then Sphere (playerPosition, 0.1f) // when above player
-                            else Sphere (playerPosition, 0.7f) // when at or below player
-                        sphere.Nearest position
-                    else playerPosition // allow for infinite closeness while still needing to face player
+                let sphere =
+                    if position.Y - playerPosition.Y >= 0.25f
+                    then Sphere (playerPosition, 0.1f) // when above player
+                    else Sphere (playerPosition, 0.7f) // when at or below player
+                let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
                 (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
             | None -> (position, rotation, v3Zero, v3Zero, character)
@@ -250,18 +262,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member private updateState time character =
         match character.ActionState with
         | NormalState -> character
+        | ObstructedState _ -> character
         | AttackState attack ->
             let actionState =
                 let localTime = time - attack.AttackTime
                 if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
                 then AttackState attack
-                else NormalState
-            { character with ActionState = actionState }
-        | ObstructedState obstructed ->
-            let actionState =
-                let localTime = time - obstructed.ObstructedTime
-                if localTime < 30L
-                then ObstructedState obstructed
                 else NormalState
             { character with ActionState = actionState }
         | InjuryState injury ->
@@ -346,6 +352,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           HitPoints = 5
           ActionState = NormalState
           JumpState = JumpState.initial
+          CharacterCollisions = Set.empty
           WeaponCollisions = Set.empty
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f

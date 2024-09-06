@@ -10,8 +10,8 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b00000000000000000001u
-    let [<Literal>] DirtyMask =                     0b00000000000000000010u
+    let [<Literal>] ActiveMask =                    0b00000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b00000000000000000010u // for use as a component in an ECS or other data-oriented context
     let [<Literal>] InvalidatedMask =               0b00000000000000000100u
     let [<Literal>] AbsoluteMask =                  0b00000000000000001000u
     let [<Literal>] ImperativeMask =                0b00000000000000010000u
@@ -355,7 +355,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform
 
     /// Make a transform based on a perimeter.
-    static member makePerimeter (perimeter : Box3) offset elevation absolute =
+    static member makePerimeter absolute (perimeter : Box3) offset elevation =
         let mutable transform = Unchecked.defaultof<Transform>
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- perimeter.Center
@@ -368,7 +368,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform
 
     /// Make a transform based on human-intuited values.
-    static member makeIntuitive position scale offset size angles elevation absolute =
+    static member makeIntuitive absolute position scale offset size angles elevation =
         let mutable transform = Transform.makeDefault ()
         transform.Flags_ <- FlagsDefault ||| if absolute then AbsoluteMask else 0u
         transform.Position_ <- position

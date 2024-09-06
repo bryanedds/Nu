@@ -1291,15 +1291,16 @@ module WorldModuleEntity =
         static member internal setEntityElevation value entity world =
             let entityState = World.getEntityState entity world
             if value <> entityState.Transform.Elevation then
-                if entityState.Optimized then
-                    entityState.Transform.Elevation <- value
-                    let world = if entityState.Mounted then World.propagateEntityElevation entity world else world
-                    struct (true, world)
-                else
-                    let mutable transform = entityState.Transform
-                    transform.Elevation <- value
-                    let world = World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
-                    struct (true, world)
+                let world =
+                    if entityState.Optimized then
+                        entityState.Transform.Elevation <- value
+                        world
+                    else
+                        let mutable transform = entityState.Transform
+                        transform.Elevation <- value
+                        World.setEntityTransformByRef (&transform, entityState, entity, world) |> snd'
+                let world = if World.getEntityMounted entity world then World.propagateEntityElevation entity world else world
+                struct (true, world)
             else struct (false, world)
 
         static member internal setEntityElevationLocal value entity world =

@@ -134,13 +134,27 @@ type GameplayDispatcher () =
             let position = Simulants.GameplayPlayer.GetPosition world
             let rotation = Simulants.GameplayPlayer.GetRotation world
             let positionInterp = player.PositionInterp position
-            let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.2f)
+            let rotationInterp = player.RotationInterp rotation * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
             let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
             let world = World.setEye3dRotation rotationInterp world
 
-            // update sun to shine over player
-            let positionInterpFloor = positionInterp.MapX(MathF.Floor).MapY(MathF.Floor).MapZ(MathF.Floor)
-            let world = Simulants.GameplaySun.SetPosition (positionInterpFloor + v3Up * 12.0f) world
+            // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
+            // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
+            let sun = Simulants.GameplaySun
+            let mutable shadowViewInverse = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion (sun.GetRotation world)
+            shadowViewInverse.Translation <- sun.GetPosition world
+            let shadowView = shadowViewInverse.Inverted
+            let shadowWidth = sun.GetLightCutoff world * 2.0f
+            let shadowResolution = Constants.Render.ShadowResolution * Constants.Render.ShadowDetailedResolutionScalar
+            let shadowTexelSize = shadowWidth / single shadowResolution.X // assuming square, of course
+            let positionShadow = positionInterp.Transform shadowView + v3Up * 12.0f // position of player + offset in shadow space
+            let positionSnapped =
+                v3
+                    (floor (positionShadow.X / shadowTexelSize) * shadowTexelSize)
+                    (floor (positionShadow.Y / shadowTexelSize) * shadowTexelSize)
+                    (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
+            let position = positionSnapped.Transform shadowViewInverse
+            let world = sun.SetPosition position world
             just world
 
     // here we describe the content of the game including the hud group and the scene group

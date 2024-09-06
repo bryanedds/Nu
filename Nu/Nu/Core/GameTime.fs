@@ -4,7 +4,7 @@
 namespace Nu
 open System
 
-/// The desired frame rate.
+/// The targeted frame rate.
 type FrameRate =
     | StaticFrameRate of int64
     | DynamicFrameRate of int64

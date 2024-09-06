@@ -25,7 +25,7 @@ type GuiDispatcher () =
         [define Entity.Size Constants.Engine.EntityGuiSizeDefault
          define Entity.Absolute true
          define Entity.Presence Omnipresent
-         define Entity.DisabledColor Constants.Gui.DisabledColor]
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault]
 
 /// A 3d entity dispatcher.
 type Entity3dDispatcher (physical, lightProbe, light) =
@@ -296,6 +296,7 @@ type Character2dDispatcher () =
                 RenderSprite
                     { Transform = transform
                       InsetOpt = insetOpt
+                      ClipOpt = ValueNone
                       Image = image
                       Color = Color.One
                       Blend = Transparent
@@ -612,7 +613,7 @@ type Nav3dConfigDispatcher () =
 
     override this.Edit (op, entity, world) =
         match op with
-        | OverlayViewport _ ->
+        | ViewportOverlay _ ->
             let nav3d = World.getScreenNav3d entity.Screen world
             match nav3d.Nav3dMeshOpt with
             | Some (nbrData, _, _) ->

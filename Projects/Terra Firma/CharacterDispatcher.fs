@@ -6,9 +6,11 @@ open Nu
 
 type CharacterMessage =
     | CharacterPenetration of BodyPenetrationData
+    | CharacterSeparationExplicit of BodySeparationExplicitData
+    | CharacterSeparationImplicit of BodySeparationImplicitData
     | WeaponPenetration of BodyPenetrationData
-    | WeaponSeparateExplicit of BodySeparationExplicitData
-    | WeaponSeparateImplicit of BodySeparationImplicitData
+    | WeaponSeparationExplicit of BodySeparationExplicitData
+    | WeaponSeparationImplicit of BodySeparationImplicitData
     | UpdateInputKey of KeyboardKeyData
     | Update
     interface Message
@@ -51,6 +53,8 @@ type CharacterDispatcher (character : Character) =
          Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
          Entity.UpdateEvent => Update
          Entity.BodyPenetrationEvent =|> fun evt -> CharacterPenetration evt.Data
+         Entity.BodySeparationExplicitEvent =|> fun evt -> CharacterSeparationExplicit evt.Data
+         Entity.BodySeparationImplicitEvent =|> fun evt -> CharacterSeparationImplicit evt.Data
          Game.PostUpdateEvent => SyncWeaponTransform]
 
     override this.Message (character, message, entity, world) =
@@ -86,14 +90,24 @@ type CharacterDispatcher (character : Character) =
                 let characterPenetratee = penetratee.GetCharacter world
                 match (character.CharacterType, characterPenetratee.CharacterType) with
                 | (Enemy, Enemy) ->
-                    let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                    if  Vector3.DistanceSquared (entity.GetPosition world, playerPosition) >=
-                        Vector3.DistanceSquared (penetratee.GetPosition world, playerPosition) then
-                        let severe = match characterPenetratee.ActionState with AttackState _ | ObstructedState _ -> true | _ -> false
-                        let character = { character with ActionState = ObstructedState { ObstructedTime = world.UpdateTime; Severe = severe }}
-                        just character
-                    else just character
+                    if penetratee.Name = "Player" then Log.error "WTF"
+                    let character = { character with CharacterCollisions = Set.add penetratee character.CharacterCollisions }
+                    just character
                 | (_, _) -> just character
+            | _ -> just character
+
+        | CharacterSeparationExplicit separationData ->
+            match separationData.BodyShapeSeparatee.BodyId.BodySource with
+            | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                let character = { character with CharacterCollisions = Set.remove separatee character.CharacterCollisions }
+                just character
+            | _ -> just character
+
+        | CharacterSeparationImplicit separationData ->
+            match separationData.BodyId.BodySource with
+            | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                let character = { character with CharacterCollisions = Set.remove separatee character.CharacterCollisions }
+                just character
             | _ -> just character
 
         | WeaponPenetration penetrationData ->
@@ -106,14 +120,14 @@ type CharacterDispatcher (character : Character) =
                 else just character
             | _ -> just character
 
-        | WeaponSeparateExplicit separationData ->
+        | WeaponSeparationExplicit separationData ->
             match separationData.BodyShapeSeparatee.BodyId.BodySource with
             | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
                 let character = { character with WeaponCollisions = Set.remove separatee character.WeaponCollisions }
                 just character
             | _ -> just character
 
-        | WeaponSeparateImplicit separationData ->
+        | WeaponSeparationImplicit separationData ->
             match separationData.BodyId.BodySource with
             | :? Entity as separatee when separatee.Is<CharacterDispatcher> world ->
                 let character = { character with WeaponCollisions = Set.remove separatee character.WeaponCollisions }
@@ -125,8 +139,10 @@ type CharacterDispatcher (character : Character) =
         match command with
         | Register ->
             let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
+            let weapon = entity / Constants.Gameplay.CharacterWeaponName
             let world = animatedModel.SetAnimations [|Animation.loop GameTime.zero None "Armature|Idle"|] world
             let world = animatedModel.AnimateBones world
+            let world = weapon.AutoBounds world
             withSignal SyncWeaponTransform world
 
         | UpdateTransform (position, rotation) ->
@@ -211,8 +227,8 @@ type CharacterDispatcher (character : Character) =
              Entity.NavShape == EmptyNavShape
              Entity.Pickable == false
              Entity.BodyPenetrationEvent =|> fun evt -> WeaponPenetration evt.Data
-             Entity.BodySeparationExplicitEvent =|> fun evt -> WeaponSeparateExplicit evt.Data
-             Entity.BodySeparationImplicitEvent =|> fun evt -> WeaponSeparateImplicit evt.Data]]
+             Entity.BodySeparationExplicitEvent =|> fun evt -> WeaponSeparationExplicit evt.Data
+             Entity.BodySeparationImplicitEvent =|> fun evt -> WeaponSeparationImplicit evt.Data]]
 
 type EnemyDispatcher () =
     inherit CharacterDispatcher (Character.initialEnemy)

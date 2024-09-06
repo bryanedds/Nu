@@ -65,7 +65,7 @@ type MyGameDispatcher () =
     override this.Command (_, command, _, world) =
         match command with
         | Register ->
-            let world = World.setRenderer3dConfig { Renderer3dConfig.defaultConfig with SsrEnabled = true } world
+            let world = World.setRenderer3dConfig { Renderer3dConfig.defaultConfig with SsvfEnabled = true; SsrEnabled = true } world
             just world
         | Exit ->
             if world.Unaccompanied

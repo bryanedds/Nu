@@ -131,17 +131,6 @@ type Tween2IKeyFrame =
     interface KeyFrame with
         member this.KeyFrameLength = this.TweenLength
 
-/// Represents different playback modes for an effect behavior.
-type Playback =
-    | Once
-    | Loop
-    | Bounce
-
-/// Represents different repetition modes for an effect behavior.
-type Repetition =
-    | Cycle of Cycles : int
-    | Iterate of Iterations : int
-
 /// Represents a rate of progress for an effect behavior.
 type Rate =
     Rate of single
@@ -631,10 +620,11 @@ module EffectSystem =
         // build sprite tokens
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
+                let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
                 let sprite =
                     { SpriteValue.Transform = transform
                       InsetOpt = if slice.Inset.Equals box2Zero then ValueNone else ValueSome slice.Inset
+                      ClipOpt = ValueNone // TODO: implement clip support for effects.
                       Image = AssetTag.specialize<Image> image
                       Color = slice.Color
                       Blend = slice.Blend
@@ -668,10 +658,11 @@ module EffectSystem =
             let effectSystem =
                 if  slice.Enabled &&
                     not (playback = Once && cel >= celCount) then
-                    let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
+                    let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
                     let sprite =
                         { SpriteValue.Transform = transform
                           InsetOpt = ValueSome inset
+                          ClipOpt = ValueNone // TODO: implement clip support for effects.
                           Image = AssetTag.specialize<Image> image
                           Color = slice.Color
                           Blend = slice.Blend
@@ -698,9 +689,10 @@ module EffectSystem =
         // build text tokens
         let effectSystem =
             if slice.Enabled then
-                let mutable transform = Transform.makeIntuitive slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation effectSystem.EffectAbsolute
+                let mutable transform = Transform.makeIntuitive effectSystem.EffectAbsolute slice.Position slice.Scale slice.Offset slice.Size slice.Angles slice.Elevation
                 let text =
                     { TextValue.Transform = transform
+                      ClipOpt = ValueNone // TODO: implement clip support for effects.
                       Text = text
                       Font = AssetTag.specialize<Font> font
                       FontSizing = fontSizing

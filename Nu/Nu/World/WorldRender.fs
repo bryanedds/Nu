@@ -36,8 +36,8 @@ module WorldRender =
             for operation in operations do rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
 
         /// Send a message to the render system to render a static model using a fast path.
-        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
-            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, image, &color, blend, &emission, flip)
+        static member renderLayeredSpriteFast (elevation, horizon, assetTag, transform : Transform inref, insetOpt : Box2 ValueOption inref, clipOpt : Box2 ValueOption inref, image, color : Color inref, blend, emission : Color inref, flip, world) =
+            (World.getRendererProcess world).RenderLayeredSpriteFast (elevation, horizon, assetTag, &transform, &insetOpt, &clipOpt, image, &color, blend, &emission, flip)
 
         /// Load a 2d render asset package. Should be used to avoid loading assets at inconvenient times (such as in the
         /// middle of game play!)
@@ -116,3 +116,25 @@ module WorldRender =
         static member destroyUserDefinedStaticModel staticModel world =
             let message = DestroyUserDefinedStaticModel { StaticModel = staticModel }
             World.enqueueRenderMessage3d message world
+
+        /// Render a gui sprite.
+        static member renderGuiSprite absolute perimeter spriteImage offset elevation color world =
+            let mutable spriteTransform = Transform.makePerimeter absolute perimeter offset elevation // out-of-box gui ignores rotation
+            let descriptor = { Transform = spriteTransform; InsetOpt = ValueNone; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
+            let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
+            World.enqueueLayeredOperation2d operation world
+
+        /// Render a gui sprite with 9-way slicing.
+        static member renderGuiSpriteSliced absolute perimeter margins spriteImage offset elevation color world =
+            if margins <> v2Zero then
+                for i in 0 .. dec 9 do
+                    let slice = box3Slice i margins perimeter
+                    let insetOpt =
+                        match Metadata.tryGetTextureSizeF spriteImage with
+                        | Some imageSize -> ValueSome (box2SliceInverted i margins (box2 v2Zero imageSize))
+                        | None -> ValueNone
+                    let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
+                    let descriptor = { Transform = spriteTransform; InsetOpt = insetOpt; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
+                    let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
+                    World.enqueueLayeredOperation2d operation world
+            else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world

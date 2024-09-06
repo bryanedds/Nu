@@ -65,11 +65,12 @@ type StaticSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let staticImage = entity.GetStaticImage world
         let insetOpt = match entity.GetInsetOpt world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, staticImage, &color, blend, &emission, flip, world)
+        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, staticImage, &transform, &insetOpt, &clipOpt, staticImage, &color, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
@@ -138,11 +139,12 @@ type AnimatedSpriteFacet () =
         let mutable transform = entity.GetTransform world
         let animationSheet = entity.GetAnimationSheet world
         let insetOpt = match getSpriteInsetOpt entity world with Some inset -> ValueSome inset | None -> ValueNone
+        let clipOpt = ValueNone : Box2 voption
         let color = entity.GetColor world
         let blend = entity.GetBlend world
         let emission = entity.GetEmission world
         let flip = entity.GetFlip world
-        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, animationSheet, &color, blend, &emission, flip, world)
+        World.renderLayeredSpriteFast (transform.Elevation, transform.Horizon, animationSheet, &transform, &insetOpt, &clipOpt, animationSheet, &color, blend, &emission, flip, world)
 
     override this.GetAttributesInferred (entity, world) =
         AttributesInferred.important (entity.GetCelSize world).V3 v3Zero
@@ -464,6 +466,7 @@ type TextFacet () =
                   RenderOperation2d =
                     RenderText
                         { Transform = textTransform
+                          ClipOpt = ValueSome textTransform.Bounds2d.Box2
                           Text = text
                           Font = font
                           FontSizing = fontSizing
@@ -481,6 +484,9 @@ module BackdroppableFacetExtensions =
         member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
         member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
         member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetSliceMargin world : Vector2 = this.Get (nameof this.SliceMargin) world
+        member this.SetSliceMargin (value : Vector2) world = this.Set (nameof this.SliceMargin) value world
+        member this.SliceMargin = lens (nameof this.SliceMargin) this this.GetSliceMargin this.SetSliceMargin
         member this.GetBackdropImageOpt world : Image AssetTag option = this.Get (nameof this.BackdropImageOpt) world
         member this.SetBackdropImageOpt (value : Image AssetTag option) world = this.Set (nameof this.BackdropImageOpt) value world
         member this.BackdropImageOpt = lens (nameof this.BackdropImageOpt) this this.GetBackdropImageOpt this.SetBackdropImageOpt
@@ -490,29 +496,18 @@ type BackdroppableFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.Color Color.One
-         define Entity.DisabledColor Constants.Gui.DisabledColor
+        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+         define Entity.Color Color.One
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.BackdropImageOpt None]
 
     override this.Render (_, entity, world) =
         match entity.GetBackdropImageOpt world with
         | Some spriteImage ->
             let mutable transform = entity.GetTransform world
-            let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute
-            World.enqueueLayeredOperation2d
-                { Elevation = spriteTransform.Elevation
-                  Horizon = spriteTransform.Horizon
-                  AssetTag = spriteImage
-                  RenderOperation2d =
-                    RenderSprite
-                        { Transform = spriteTransform
-                          InsetOpt = ValueNone
-                          Image = spriteImage
-                          Color = if transform.Enabled then entity.GetColor world else entity.GetDisabledColor world
-                          Blend = Transparent
-                          Emission = Color.Zero
-                          Flip = FlipNone }}
-                world
+            let sliceMargin = entity.GetSliceMargin world
+            let color = if transform.Enabled then entity.GetColor world else entity.GetDisabledColor world
+            World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
         | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -593,7 +588,8 @@ type ButtonFacet () =
         else (Cascade, world)
 
     static member Properties =
-        [define Entity.DisabledColor Constants.Gui.DisabledColor
+        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.Down false
          define Entity.DownOffset v2Zero
          define Entity.UpImage Assets.Default.ButtonUp
@@ -608,22 +604,10 @@ type ButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute // gui currently ignore rotation
+        let sliceMargin = entity.GetSliceMargin world
         let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-        World.enqueueLayeredOperation2d
-            { Elevation = spriteTransform.Elevation
-              Horizon = spriteTransform.Horizon
-              AssetTag = spriteImage
-              RenderOperation2d =
-                RenderSprite
-                    { Transform = spriteTransform
-                      InsetOpt = ValueNone
-                      Image = spriteImage
-                      Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                      Blend = Transparent
-                      Emission = Color.Zero
-                      Flip = FlipNone }}
-            world
+        let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
@@ -705,7 +689,8 @@ type ToggleButtonFacet () =
         else (Cascade, world)
 
     static member Properties =
-        [define Entity.DisabledColor Constants.Gui.DisabledColor
+        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.Toggled false
          define Entity.ToggledOffset v2Zero
          define Entity.Pressed false
@@ -730,25 +715,13 @@ type ToggleButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute // gui currently ignores rotation
+        let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
             if entity.GetToggled world || entity.GetPressed world
             then entity.GetToggledImage world
             else entity.GetUntoggledImage world
-        World.enqueueLayeredOperation2d
-            { Elevation = spriteTransform.Elevation
-              Horizon = spriteTransform.Horizon
-              AssetTag = spriteImage
-              RenderOperation2d =
-                RenderSprite
-                    { Transform = spriteTransform
-                      InsetOpt = ValueNone
-                      Image = spriteImage
-                      Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                      Blend = Transparent
-                      Emission = Color.Zero
-                      Flip = FlipNone }}
-            world
+        let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
@@ -825,7 +798,8 @@ type RadioButtonFacet () =
         else (Cascade, world)
 
     static member Properties =
-        [define Entity.DisabledColor Constants.Gui.DisabledColor
+        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.Dialed false
          define Entity.DialedOffset v2Zero
          define Entity.Pressed false
@@ -850,25 +824,13 @@ type RadioButtonFacet () =
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
-        let mutable spriteTransform = Transform.makePerimeter transform.Perimeter transform.Offset transform.Elevation transform.Absolute // gui currently ignores rotation
+        let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
             if entity.GetDialed world || entity.GetPressed world
             then entity.GetDialedImage world
             else entity.GetUndialedImage world
-        World.enqueueLayeredOperation2d
-            { Elevation = spriteTransform.Elevation
-              Horizon = spriteTransform.Horizon
-              AssetTag = spriteImage
-              RenderOperation2d =
-                RenderSprite
-                    { Transform = spriteTransform
-                      InsetOpt = ValueNone
-                      Image = spriteImage
-                      Color = if transform.Enabled then Color.One else entity.GetDisabledColor world
-                      Blend = Transparent
-                      Emission = Color.Zero
-                      Flip = FlipNone }}
-            world
+        let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
@@ -902,7 +864,8 @@ type FillBarFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.DisabledColor Constants.Gui.DisabledColor
+        [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
+         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
          define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
@@ -914,61 +877,24 @@ type FillBarFacet () =
 
         // border sprite
         let mutable transform = entity.GetTransform world
-        let perimeter = transform.Perimeter // gui currently ignores rotation
-        let horizon = transform.Horizon
-        let mutable borderTransform = Transform.makeDefault ()
-        borderTransform.Position <- perimeter.Center
-        borderTransform.Size <- perimeter.Size
-        borderTransform.Offset <- transform.Offset
-        borderTransform.Elevation <- transform.Elevation + 0.5f
-        borderTransform.Absolute <- transform.Absolute
+        let sliceMargin = entity.GetSliceMargin world
+        let elevation = transform.Elevation + 0.5f
         let color = if transform.Enabled then Color.White else entity.GetDisabledColor world
         let borderImageColor = entity.GetBorderColor world * color
         let borderImage = entity.GetBorderImage world
-        World.enqueueLayeredOperation2d
-            { Elevation = borderTransform.Elevation
-              Horizon = horizon
-              AssetTag = borderImage
-              RenderOperation2d =
-                RenderSprite
-                    { Transform = borderTransform
-                      InsetOpt = ValueNone
-                      Image = borderImage
-                      Color = borderImageColor
-                      Blend = Transparent
-                      Emission = Color.Zero
-                      Flip = FlipNone }}
-            world
+        World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin borderImage transform.Offset elevation borderImageColor world
 
         // fill sprite
-        let fillSize = perimeter.Size
+        let fillSize = transform.Perimeter.Size
         let fillInset = fillSize.X * entity.GetFillInset world * 0.5f
-        let fillWidth = (fillSize.X - fillInset * 2.0f) * entity.GetFill world
-        let fillPosition = perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
+        let fillWidth = (fillSize.X - fillInset * 2.0f) * (entity.GetFill world |> min 1.0f |> max 0.0f)
+        let fillPosition = transform.Perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f
         let fillHeight = fillSize.Y - fillInset * 2.0f
         let fillSize = v3 fillWidth fillHeight 0.0f
-        let mutable fillTransform = Transform.makeDefault ()
-        fillTransform.Position <- fillPosition
-        fillTransform.Size <- fillSize
-        fillTransform.Offset <- transform.Offset
-        fillTransform.Elevation <- transform.Elevation
-        fillTransform.Absolute <- transform.Absolute
+        let fillPerimeter = box3 (fillPosition - fillSize * 0.5f) fillSize
         let fillImageColor = entity.GetFillColor world * color
         let fillImage = entity.GetFillImage world
-        World.enqueueLayeredOperation2d
-            { Elevation = fillTransform.Elevation
-              Horizon = horizon
-              AssetTag = fillImage
-              RenderOperation2d =
-                  RenderSprite
-                      { Transform = fillTransform
-                        InsetOpt = ValueNone
-                        Image = fillImage
-                        Color = fillImageColor
-                        Blend = Transparent
-                        Emission = Color.Zero
-                        Flip = FlipNone }}
-            world
+        World.renderGuiSpriteSliced transform.Absolute fillPerimeter sliceMargin fillImage transform.Offset transform.Elevation fillImageColor world
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
@@ -1802,7 +1728,7 @@ type LayoutFacet () =
         let childRightX = childCenter.X + childHalfWidth + margin.X
         offsetX <- childCenter.X + childHalfWidth
         let world =
-            if childRightX >= leftX + wrapLimit then
+            if childRightX > leftX + wrapLimit then
                 offsetX <- leftX
                 offsetY <- offsetY + -margin.Y + -maximum
                 maximum <- 0.0f
@@ -1822,7 +1748,7 @@ type LayoutFacet () =
         let childBottomY = childCenter.Y + -childHalfHeight + -margin.Y
         offsetY <- childCenter.Y + -childHalfHeight
         let world =
-            if childBottomY <= topY + -wrapLimit then
+            if childBottomY < topY + -wrapLimit then
                 offsetX <- offsetX + margin.X + maximum
                 offsetY <- topY
                 maximum <- 0.0f
@@ -1845,7 +1771,7 @@ type LayoutFacet () =
                 match flowLimit with
                 | FlowParent -> perimeter.Width
                 | FlowUnlimited -> Single.MaxValue
-                | FlowTo flowLimit -> flowLimit
+                | FlowTo limit -> limit
             Array.fold (fun world child ->
                 flowRightward false leftX margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
@@ -1854,12 +1780,16 @@ type LayoutFacet () =
                 match flowLimit with
                 | FlowParent -> perimeter.Height
                 | FlowUnlimited -> Single.MaxValue
-                | FlowTo flowLimit -> flowLimit
+                | FlowTo limit -> limit
             Array.fold (fun world child ->
                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
-        | FlowLeftward -> world
-        | FlowUpward -> world
+        | FlowLeftward ->
+            // TODO: P1: implement.
+            world
+        | FlowUpward ->
+            // TODO: P1: implement.
+            world
 
     static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =
         let perimeterWidthHalf = perimeter.Width * 0.5f
@@ -2114,12 +2044,12 @@ type LightProbe3dFacet () =
         | AppendProperties append ->
             let world =
                 if ImGui.Button "Rerender Light Map" then
-                    let world = append.Snapshot RerenderLightMap world
+                    let world = append.EditContext.Snapshot RerenderLightMap world
                     entity.SetProbeStale true world
                 else world
             let world =
                 if ImGui.Button "Recenter in Probe Bounds" then
-                    let world = append.Snapshot RencenterInProbeBounds world
+                    let world = append.EditContext.Snapshot RencenterInProbeBounds world
                     let probeBounds = entity.GetProbeBounds world
                     if Option.isSome (entity.GetMountOpt world)
                     then entity.SetPositionLocal probeBounds.Center world
@@ -2127,7 +2057,7 @@ type LightProbe3dFacet () =
                 else world
             let world =
                 if ImGui.Button "Reset Probe Bounds" then
-                    let world = append.Snapshot ResetProbeBounds world
+                    let world = append.EditContext.Snapshot ResetProbeBounds world
                     entity.ResetProbeBounds world
                 else world
             world
@@ -2739,7 +2669,7 @@ type AnimatedModelFacet () =
         [define Entity.StartTime GameTime.zero
          define Entity.InsetOpt None
          define Entity.MaterialProperties MaterialProperties.empty
-         define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = "Armature"; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
+         define Entity.Animations [|{ StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }|]
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          nonPersistent Entity.BoneIdsOpt None
          nonPersistent Entity.BoneOffsetsOpt None
@@ -2832,7 +2762,7 @@ type AnimatedModelFacet () =
 
     override this.Edit (op, entity, world) =
         match op with
-        | OverlayViewport _ ->
+        | ViewportOverlay _ ->
             match (entity.GetBoneOffsetsOpt world, entity.GetBoneTransformsOpt world) with
             | (Some offsets, Some transforms) ->
                 let affineMatrix = entity.GetAffineMatrix world
