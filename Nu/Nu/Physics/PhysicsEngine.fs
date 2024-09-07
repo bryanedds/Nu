@@ -432,6 +432,7 @@ type BodyProperties =
       CollisionMask : int
       Sensor : bool // sensor is always inherently observable
       Observable : bool
+      Awake : bool
       BodyIndex : int }
 
     member this.HasSensors =
