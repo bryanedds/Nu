@@ -33,11 +33,11 @@ type [<SymbolicExpansion>] GaiaState =
       CreationElevation : single
       CreationDistance : single
       AlternativeEyeTravelInput : bool
-      PhysicsReregisterWorkaround : bool }
+      ReloadPhysicsAssetsWorkaround : bool }
     static member make
         dllPath editModeOpt freshlyLoaded imperativeExecution editWhileAdvancing
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
-        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput physicsReregisterWorkaround =
+        snaps2dSelected snaps2d snaps3d creationElevation creationDistance alternativeEyeTravelInput reloadPhysicsAssetsWorkaround =
         { ProjectDllPath = dllPath
           ProjectEditModeOpt = editModeOpt
           ProjectFreshlyLoaded = freshlyLoaded
@@ -54,7 +54,7 @@ type [<SymbolicExpansion>] GaiaState =
           CreationElevation = creationElevation
           CreationDistance = creationDistance
           AlternativeEyeTravelInput = alternativeEyeTravelInput
-          PhysicsReregisterWorkaround = physicsReregisterWorkaround }
+          ReloadPhysicsAssetsWorkaround = reloadPhysicsAssetsWorkaround }
     static member defaultState =
         GaiaState.make
             "" None false false false

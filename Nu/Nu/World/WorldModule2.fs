@@ -805,6 +805,7 @@ module WorldModule2 =
 
         /// Send a message to the subsystems to reload their existing assets.
         static member reloadExistingAssets world =
+            let world = World.reloadPhysicsAssets world
             let world = World.reloadRenderAssets2d world
             let world = World.reloadRenderAssets3d world
             let world = World.reloadAudioAssets world
