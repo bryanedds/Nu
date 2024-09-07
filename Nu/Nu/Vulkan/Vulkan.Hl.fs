@@ -84,7 +84,7 @@ module Hl =
             if int result = 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<byte> sdlExtensionsOut[i]
-            use sdlExtensionsWrap = ArrayPin sdlExtensions
+            use sdlExtensionsPin = ArrayPin sdlExtensions
             
             // TODO: setup message callback with debug utils *if* motivation arises.
             
@@ -92,8 +92,8 @@ module Hl =
             let mutable layerCount = 0u
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, NativePtr.nullPtr) |> check
             let layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
-            use layersWrap = ArrayPin layers
-            vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersWrap.Pointer) |> check
+            use layersPin = ArrayPin layers
+            vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersPin.Pointer) |> check
 
             // check if validation layer exists
             let validationLayer = "VK_LAYER_KHRONOS_validation"
@@ -107,7 +107,7 @@ module Hl =
             // populate createinstance info
             let mutable createInfo = VkInstanceCreateInfo ()
             createInfo.enabledExtensionCount <- sdlExtensionCount
-            createInfo.ppEnabledExtensionNames <- sdlExtensionsWrap.Pointer
+            createInfo.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
 
             // load validation layer if enabled and available
             if validationLayersEnabled && validationLayerExists then
@@ -146,8 +146,8 @@ module Hl =
             let mutable deviceCount = 0u
             vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, NativePtr.nullPtr) |> check
             let devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
-            use devicesWrap = ArrayPin devices
-            vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesWrap.Pointer) |> check
+            use devicesPin = ArrayPin devices
+            vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesPin.Pointer) |> check
 
             // get the devices' props
             let devicesProps = Array.zeroCreate<VkPhysicalDeviceProperties> devices.Length
@@ -155,6 +155,16 @@ module Hl =
                 let mutable props = Unchecked.defaultof<VkPhysicalDeviceProperties>
                 vkGetPhysicalDeviceProperties (devices[i], &props)
                 devicesProps[i] <- props
+
+            // get the devices' queue families' props
+            let devicesQueueFamiliesProps = Array.zeroCreate<VkQueueFamilyProperties array> devices.Length
+            for i in [0 .. dec devices.Length] do
+                let mutable queueFamilyCount = 0u
+                vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, NativePtr.nullPtr)
+                let queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
+                use queueFamiliesPin = ArrayPin queueFamilies
+                vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, queueFamiliesPin.Pointer)
+                devicesQueueFamiliesProps[i] <- queueFamilies
                 
 
             // fin
