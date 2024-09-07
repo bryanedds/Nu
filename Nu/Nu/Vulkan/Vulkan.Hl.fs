@@ -162,7 +162,7 @@ module Hl =
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
-            vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr) // access violation exception, not good
+            vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr)
             vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
         
         /// Make a VulkanGlobal.
