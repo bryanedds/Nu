@@ -199,6 +199,23 @@ module Hl =
                     | Some _ -> ()
 
                 queueFamilyOpts[i] <- (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
+
+            // gather devices together with relevant data for selection
+            let candidates = [ for i in [0 .. dec devices.Length] -> (devices[i], generalProps[i], queueFamilyOpts[i]) ]
+
+            // compatibility criteria: device must support the essential queue operations and Vulkan 1.3
+            let isCompatible (_, props : VkPhysicalDeviceProperties, queueFamilyOpts) =
+                Option.isSome (fst queueFamilyOpts) &&
+                Option.isSome (snd queueFamilyOpts) &&
+                props.apiVersion.Minor >= 3u
+
+            // preferability criteria: device ought to be discrete
+            let isPreferable (_, props : VkPhysicalDeviceProperties, _) = props.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+            
+            // filter and order candidates according to criteria
+            let candidatesFiltered = List.filter isCompatible candidates
+            let (fstChoice, sndChoice) = List.partition isPreferable candidatesFiltered
+            let candidatesFilteredAndOrdered = List.append fstChoice sndChoice
                 
 
             // fin
