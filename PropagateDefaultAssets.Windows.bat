@@ -35,3 +35,5 @@ copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Terra Firma\Assets\Default" /Y
 
 del "Projects\Twenty 48\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Twenty 48\Assets\Default" /Y
+
+@pause
