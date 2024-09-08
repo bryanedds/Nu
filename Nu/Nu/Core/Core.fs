@@ -18,7 +18,7 @@ module Core =
     let getTimeStamp () =
         Stopwatch.GetTimestamp ()
 
-    /// Get a unique time stamp, spinning until the time stamp advances if need be. Thead-safe.
+    /// Get a unique time stamp, spinning until the time stamp advances if need be.
     /// Thread-safe.
     let getTimeStampUnique () =
         lock LastTimeStampLock $ fun () ->
