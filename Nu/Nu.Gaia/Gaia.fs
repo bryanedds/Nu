@@ -718,7 +718,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         { Snapshot = snapshot
           FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
           UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
-          SearchAssetViewer = fun () -> ()
+          SearchAssetViewer = fun () -> searchAssetViewer ()
           PropertyValueStrPreviousRef = ref PropertyValueStrPrevious
           DragDropPayloadOpt = DragDropPayloadOpt
           SnapDrag = SnapDrag
