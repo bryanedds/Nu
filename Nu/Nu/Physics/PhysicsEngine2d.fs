@@ -124,6 +124,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         body.SetCollisionCategories (enum<Category> bodyProperties.CollisionCategories)
         body.SetCollidesWith (enum<Category> bodyProperties.CollisionMask)
         body.SetIsSensor bodyProperties.Sensor
+        body.Awake <- bodyProperties.Awake
 
     static member private attachBoxBody bodySource (bodyProperties : BodyProperties) (boxShape : BoxShape) (body : Body) =
         let transform = Option.mapOrDefaultValue (fun (t : Affine) -> let mutable t = t in t.Matrix) m4Identity boxShape.TransformOpt

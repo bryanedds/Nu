@@ -318,6 +318,7 @@ module TmxMap =
               CollisionMask = Physics.categorizeCollisionMask collisionMask
               Sensor = false
               Observable = observable
+              Awake = false
               BodyIndex = bodyIndex }
         bodyProperties
 

@@ -152,6 +152,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         body.AngularFactor <- if bodyProperties.BodyType = Static then v3Zero else bodyProperties.AngularFactor
         body.SetDamping (bodyProperties.LinearDamping, bodyProperties.AngularDamping)
         body.Gravity <- match bodyProperties.GravityOverride with Some gravityOverride -> gravityOverride | None -> gravity
+        if bodyProperties.Awake then body.Activate true
 
     static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
         let box = new BoxShape (boxShape.Size * 0.5f)

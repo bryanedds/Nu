@@ -809,6 +809,7 @@ module WorldModule2 =
 
         /// Send a message to the subsystems to reload their existing assets.
         static member reloadExistingAssets world =
+            let world = World.reloadPhysicsAssets world
             let world = World.reloadRenderAssets2d world
             let world = World.reloadRenderAssets3d world
             let world = World.reloadAudioAssets world
@@ -1074,20 +1075,17 @@ module WorldModule2 =
                         if entity.GetExists world && entity.GetSelected world then
                             let center = bodyTransformMessage.Center
                             if not (Single.IsNaN center.X) then
-                                let rotation = bodyTransformMessage.Rotation
-                                let linearVelocity = bodyTransformMessage.LinearVelocity
-                                let angularVelocity = bodyTransformMessage.AngularVelocity
-                                let physicsMotion = entity.GetPhysicsMotion world
-                                if physicsMotion = ManualMotion || bodyId.BodyIndex <> Constants.Physics.InternalIndex then
+                                let world = entity.SetXtensionPropertyWithoutEvent "AwakeTimeStamp" world.UpdateTime world
+                                if  entity.GetPhysicsMotion world = ManualMotion ||
+                                    bodyId.BodyIndex <> Constants.Physics.InternalIndex then
                                     let transformData =
                                         { BodyCenter = center
-                                          BodyRotation = rotation
-                                          BodyLinearVelocity = linearVelocity
-                                          BodyAngularVelocity = angularVelocity }
-                                    let transformAddress = entity.BodyTransformEvent
+                                          BodyRotation = bodyTransformMessage.Rotation
+                                          BodyLinearVelocity = bodyTransformMessage.LinearVelocity
+                                          BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
                                     let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                                    World.publishPlus transformData transformAddress eventTrace Nu.Game.Handle false false world
-                                else entity.ApplyPhysics center rotation linearVelocity angularVelocity world
+                                    World.publishPlus transformData entity.BodyTransformEvent eventTrace Nu.Game.Handle false false world
+                                else entity.ApplyPhysics center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity world
                             else world
                         else world
                     | _ -> world
