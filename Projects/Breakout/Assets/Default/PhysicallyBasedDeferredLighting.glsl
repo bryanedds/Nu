@@ -188,7 +188,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
     return result;
 }
 
-void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularSS, out float specularWeight)
+void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 normal, float slope, out vec3 specularScreen, out float specularScreenWeight)
 {
     // compute view values
     vec4 positionView = view * position;
@@ -275,8 +275,8 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularSS = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
-                    specularWeight =
+                    specularScreen = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
+                    specularScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
@@ -284,7 +284,7 @@ void ssr(vec4 position, vec3 albedo, float roughness, float metallic, vec3 norma
                         smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
                         smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentUV.x, 1.0 - currentUV.x)) *
                         smoothstep(0.0, ssrEdgeVerticalMargin, min(currentUV.y, 1.0 - currentUV.y));
-                    specularWeight = clamp(specularWeight, 0.0, 1.0);
+                    specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
                     break;
                 }
 
@@ -420,12 +420,12 @@ void main()
 
         // compute specular term from light map
         vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-        vec3 specularSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularLM = environmentFilter * specularSubterm * lightAmbientSpecular;
+        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
+        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
 
         // compute specular term and weight from screen-space
-        vec3 specularSS = vec3(0.0);
-        float specularWeight = 0.0;
+        vec3 specularScreen = vec3(0.0);
+        float specularScreenWeight = 0.0;
         vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
         float towardEye = dot(forward, normal);
         float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
@@ -437,11 +437,11 @@ void main()
             vec2 texCoordsBelow = texCoordsOut + vec2(0.0, -texelHeight); // using tex coord below current pixel reduces 'cracks' on floor reflections
             texCoordsBelow.y = max(0.0, texCoordsBelow.y);
             vec4 positionBelow = texture(positionTexture, texCoordsBelow);
-            ssr(positionBelow, albedo, roughness, metallic, normal, slope, specularSS, specularWeight);
+            computeSsr(positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
 
         // compute specular term
-        vec3 specular = (1.0 - specularWeight) * specularLM + specularWeight * specularSS;
+        vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
         // compute ambient term
         vec3 ambient = diffuse + specular;
