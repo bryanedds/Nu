@@ -3211,12 +3211,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiAssetViewerWindow () =
         if ImGui.Begin "Asset Viewer" then
+            ImGui.SetNextItemWidth -1.0f
+            let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             if AssetViewerSearchRequested then
                 ImGui.SetKeyboardFocusHere ()
                 AssetViewerSearchStr <- ""
                 AssetViewerSearchRequested <- false
-            ImGui.SetNextItemWidth -1.0f
-            let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             ImGui.InputTextWithHint ("##assetViewerSearchStr", "[enter search text]", &AssetViewerSearchStr, 4096u) |> ignore<bool>
             let searchActiveCurrent = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             let searchDeactivated = searchActivePrevious && not searchActiveCurrent
