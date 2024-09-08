@@ -102,7 +102,7 @@ module Hl =
             
             // TODO: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
             // and check for available vulkan version as described in 
-            // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo
+            // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
 
             // populate createinstance info
             let mutable createInfo = VkInstanceCreateInfo ()
@@ -150,21 +150,55 @@ module Hl =
             vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesPin.Pointer) |> check
 
             // get the devices' props
-            let devicesProps = Array.zeroCreate<VkPhysicalDeviceProperties> devices.Length
+            let generalProps = Array.zeroCreate<VkPhysicalDeviceProperties> devices.Length
             for i in [0 .. dec devices.Length] do
                 let mutable props = Unchecked.defaultof<VkPhysicalDeviceProperties>
                 vkGetPhysicalDeviceProperties (devices[i], &props)
-                devicesProps[i] <- props
+                generalProps[i] <- props
 
             // get the devices' queue families' props
-            let devicesQueueFamiliesProps = Array.zeroCreate<VkQueueFamilyProperties array> devices.Length
+            let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties array> devices.Length
             for i in [0 .. dec devices.Length] do
                 let mutable queueFamilyCount = 0u
                 vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, NativePtr.nullPtr)
                 let queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
                 use queueFamiliesPin = ArrayPin queueFamilies
                 vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, queueFamiliesPin.Pointer)
-                devicesQueueFamiliesProps[i] <- queueFamilies
+                queueFamilyProps[i] <- queueFamilies
+
+            // try find graphics and present queue families
+            let queueFamilyOpts = Array.zeroCreate<uint option * uint option> devices.Length
+            for i in [0 .. dec devices.Length] do
+                
+                (* It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
+                   I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
+
+                   https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
+
+                   general lesson: trust level for vendors is too low for deviation from common practices to be advisable. *)
+                
+                let mutable graphicsQueueFamilyOpt = None
+                let mutable presentQueueFamilyOpt = None
+                for j in [0 .. dec queueFamilyProps[i].Length] do
+                    
+                    // try get graphics queue family
+                    match graphicsQueueFamilyOpt with
+                    | None ->
+                        let queueFamily = queueFamilyProps[i][j]
+                        if queueFamily.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
+                            graphicsQueueFamilyOpt <- Some (uint j)
+                    | Some _ -> ()
+
+                    // try get present queue family
+                    match presentQueueFamilyOpt with
+                    | None ->
+                        let mutable presentSupport = VkBool32.False
+                        vkGetPhysicalDeviceSurfaceSupportKHR (devices[i], uint j, surface, &presentSupport) |> check
+                        if (presentSupport = VkBool32.True) then
+                            presentQueueFamilyOpt <- Some (uint j)
+                    | Some _ -> ()
+
+                queueFamilyOpts[i] <- (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
                 
 
             // fin
