@@ -1,7 +1,5 @@
 echo "Propagating default assets..."
 
-# Remove all files in target directories and copy from source to target
-
 rm -f Nu/Nu.Pipe/Assets/Default/*
 cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Pipe/Assets/Default/
 
