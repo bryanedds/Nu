@@ -23,6 +23,12 @@ const int LIGHTS_MAX = 64;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const vec4 SSVF_DITHERING[4] =
+    vec4[4](
+        vec4(0.0, 0.5, 0.125, 0.625),
+        vec4(0.75, 0.22, 0.875, 0.375),
+        vec4(0.1875, 0.6875, 0.0625, 0.5625),
+        vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
@@ -140,9 +146,10 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
+vec3 computeFogAccumDirectional(vec4 position, vec2 texCoords, int lightIndex)
 {
     vec3 result = vec3(0.0);
+    vec2 texSize = textureSize(positionTexture, 0).xy;
     int shadowIndex = lightShadowIndices[lightIndex];
     if (lightsCount > 0 && lightDirectionals[lightIndex] != 0 && shadowIndex >= 0)
     {
@@ -163,8 +170,11 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         // compute light view term
         float theta = dot(-rayDirection, lightDirections[lightIndex]);
 
+        // compute dithering
+        float dithering = SSVF_DITHERING[int(texCoords.x * texSize.x) % 4][int(texCoords.y * texSize.y) % 4];
+
         // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition;
+        vec3 currentPosition = startPosition + step * dithering;
         for (int i = 0; i < ssvfSteps; i++)
         {
             // step through ray, accumulating fog light moment
@@ -403,7 +413,7 @@ void main()
         }
 
         // compute directional fog accumulation from sun light when desired
-        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
+        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, texCoordsOut, 0) : vec3(0.0);
 
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
