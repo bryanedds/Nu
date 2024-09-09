@@ -326,21 +326,29 @@ type RendererThread () =
                 // extract window
                 let window = match window with SglWindow window -> window.SglWindow
 
-                // create global vulkan object
-                let vulkanGlobal = Vulkan.Hl.VulkanGlobal.make window
-                
-                // create 3d renderer
-                let renderer3d = StubRenderer3d.make () :> Renderer3d
+                // try create global vulkan object
+                match Vulkan.Hl.VulkanGlobal.tryMake window with
+                | Some vulkanGlobal ->
+                    
+                    // create 3d renderer
+                    let renderer3d = StubRenderer3d.make () :> Renderer3d
 
-                // create 2d renderer
-                let renderer2d = StubRenderer2d.make () :> Renderer2d
+                    // create 2d renderer
+                    let renderer2d = StubRenderer2d.make () :> Renderer2d
 
-                // create imgui renderer
-                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
+                    // create imgui renderer
+                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
 
-                // fin
-                (Some vulkanGlobal, renderer3d, renderer2d, rendererImGui)
+                    // fin
+                    (Some vulkanGlobal, renderer3d, renderer2d, rendererImGui)
 
+                // create stub renderers
+                | None ->
+                    let renderer3d = StubRenderer3d.make () :> Renderer3d
+                    let renderer2d = StubRenderer2d.make () :> Renderer2d
+                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
+                    (None, renderer3d, renderer2d, rendererImGui)
+            
             // create stub renderers
             | None ->
                 let renderer3d = StubRenderer3d.make () :> Renderer3d

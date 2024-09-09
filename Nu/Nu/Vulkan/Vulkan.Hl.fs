@@ -66,8 +66,7 @@ module Hl =
     type [<ReferenceEquality>] VulkanGlobal =
         private
             { Instance : VkInstance
-              Surface : VkSurfaceKHR
-              PhysicalDevice : VkPhysicalDevice }
+              Surface : VkSurfaceKHR }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -136,12 +135,9 @@ module Hl =
             // fin
             surface
         
-        /// Select physical device.
-        static member selectPhysicalDevice surface instance =
+        /// Select compatible physical device if available.
+        static member trySelectPhysicalDevice surface instance =
             
-            // physical device handle
-            let mutable physicalDevice = Unchecked.defaultof<VkPhysicalDevice>
-
             // get available physical devices
             let mutable deviceCount = 0u
             vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, NativePtr.nullPtr) |> check
@@ -217,17 +213,27 @@ module Hl =
             let (fstChoice, sndChoice) = List.partition isPreferable candidatesFiltered
             let candidatesFilteredAndOrdered = List.append fstChoice sndChoice
                 
+            // if compatible devices exist then return the first along with its queue families
+            let physicalDeviceOpt =
+                if candidatesFilteredAndOrdered.Length > 0 then
+                    let (physicalDevice, _, queueFamilyOpts) = List.head candidatesFilteredAndOrdered
+                    let graphicsQueueFamily = fst queueFamilyOpts |> Option.get
+                    let presentQueueFamily = snd queueFamilyOpts |> Option.get
+                    Some (physicalDevice, graphicsQueueFamily, presentQueueFamily)
+                else
+                    Log.info "Could not find a suitable graphics device for Vulkan."
+                    None
 
             // fin
-            physicalDevice
+            physicalDeviceOpt
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
             vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr)
             vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
         
-        /// Make a VulkanGlobal.
-        static member make window =
+        /// Try to make a VulkanGlobal.
+        static member tryMake window =
 
             // loads vulkan; not vulkan function
             vkInitialize () |> check
@@ -241,14 +247,17 @@ module Hl =
             // create surface
             let surface = VulkanGlobal.createSurface window instance
             
-            // select physical device
-            let physicalDevice = VulkanGlobal.selectPhysicalDevice surface instance
+            // try select physical device
+            match VulkanGlobal.trySelectPhysicalDevice surface instance with
+            | Some (physicalDevice, graphicsQueueFamily, presentQueueFamily) ->
 
-            // make vulkanGlobal
-            let vulkanGlobal =
-                { Instance = instance
-                  Surface = surface
-                  PhysicalDevice = physicalDevice }
+                // make vulkanGlobal
+                let vulkanGlobal =
+                    { Instance = instance
+                      Surface = surface }
 
-            // fin
-            vulkanGlobal
+                // fin
+                Some vulkanGlobal
+
+            // abort vulkan
+            | None -> None
