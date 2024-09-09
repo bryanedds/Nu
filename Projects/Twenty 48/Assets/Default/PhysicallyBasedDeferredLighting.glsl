@@ -456,11 +456,10 @@ void main()
         // compute ambient term
         vec3 ambient = diffuse + specular;
 
-        // compute color w/ tone mapping, gamma correction, and emission
-        vec3 color = lightAccum + fogAccum + ambient;
+        // compute color w/ emission, tone mapping, and gamma correction
+        vec3 color = lightAccum + fogAccum + ambient + emission * albedo;
         color = color / (color + vec3(1.0));
         color = pow(color, vec3(1.0 / GAMMA));
-        color = color + emission * albedo;
 
         // write color
         frag = vec4(color, 1.0);
