@@ -246,6 +246,12 @@ module Hl =
             let mutable queuePriority = 1.0f
             let queueCreateInfos = Array.zeroCreate<VkDeviceQueueCreateInfo> uniqueQueueFamilies.Length
             use queueCreateInfosPin = ArrayPin queueCreateInfos
+            for i in [0 .. dec (uniqueQueueFamilies.Length)] do
+                let mutable createInfo = VkDeviceQueueCreateInfo ()
+                createInfo.queueFamilyIndex <- uniqueQueueFamilies[i]
+                createInfo.queueCount <- 1u
+                createInfo.pQueuePriorities <- asPointer &queuePriority
+                queueCreateInfos[i] <- createInfo
 
 
             // fin
