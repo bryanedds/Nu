@@ -562,11 +562,11 @@ module WorldModule =
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
                             UMap.add eventAddressObj subscriptionEntries subscriptions
                         | None ->
-                            let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber; SubscriptionId = subscriptionId }
+                            let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
                             UMap.add eventAddressObj subscriptionEntries subscriptions
                     | None ->
-                        let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber; SubscriptionId = subscriptionId }
+                        let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                         UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
                 let unsubscriptions = UMap.add subscriptionId (eventAddressObj, subscriber :> Simulant) unsubscriptions
                 let world = World.setSubscriptions subscriptions world
