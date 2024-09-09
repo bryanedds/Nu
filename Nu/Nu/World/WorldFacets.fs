@@ -1333,7 +1333,7 @@ type RigidBodyFacet () =
 
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
         // OPTIMIZATION: share lambdas to reduce live object count.
-        let subIds = Array.init 24 (fun _ -> makeGuid ())
+        let subIds = Array.init 24 (fun _ -> Gen.id64)
         let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
@@ -2984,7 +2984,7 @@ type NavBodyFacet () =
     override this.Register (entity, world) =
 
         // OPTIMIZATION: conditionally subscribe to transform change event.
-        let subId = Gen.id
+        let subId = Gen.id64
         let subscribe world =
             World.subscribePlus subId (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> snd
         let unsubscribe world =

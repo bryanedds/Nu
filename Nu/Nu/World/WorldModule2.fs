@@ -16,12 +16,12 @@ open Prime
 module WorldModule2 =
 
     (* Transition Values *)
-    let private ScreenTransitionMouseLeftId = Gen.id
-    let private ScreenTransitionMouseMiddleId = Gen.id
-    let private ScreenTransitionMouseRightId = Gen.id
-    let private ScreenTransitionMouseX1Id = Gen.id
-    let private ScreenTransitionMouseX2Id = Gen.id
-    let private ScreenTransitionKeyboardKeyId = Gen.id
+    let private ScreenTransitionMouseLeftId = Gen.id64
+    let private ScreenTransitionMouseMiddleId = Gen.id64
+    let private ScreenTransitionMouseRightId = Gen.id64
+    let private ScreenTransitionMouseX1Id = Gen.id64
+    let private ScreenTransitionMouseX2Id = Gen.id64
+    let private ScreenTransitionKeyboardKeyId = Gen.id64
 
     (* Cached HashSets *)
     let private HashSet2dNormalCached = HashSet (QuadelementEqualityComparer ())

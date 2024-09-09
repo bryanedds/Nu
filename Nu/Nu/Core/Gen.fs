@@ -9,11 +9,10 @@ open Prime
 [<RequireQualifiedAccess>]
 module Gen =
 
+    let private Lock = obj ()
     let private Random = Random ()
-    let private RandomLock = obj ()
     let mutable private Id32 = 0u
     let mutable private Id64 = 0UL
-    let mutable private IdForInternal = 0UL
     let mutable private IdForEditor = 0UL
 
     /// The prefix of a generated name
@@ -29,67 +28,67 @@ module Gen =
         /// Get the next random number integer.
         /// Thread-safe.
         static member random =
-            lock RandomLock (fun () -> Random.Next ())
+            lock Lock (fun () -> Random.Next ())
 
         /// Get the next random boolean.
         /// Thread-safe.
         static member randomb =
-            lock RandomLock (fun () -> Random.Next () < Int32.MaxValue / 2)
+            lock Lock (fun () -> Random.Next () < Int32.MaxValue / 2)
 
         /// Get the next random byte.
         /// Thread-safe.
         static member randomy =
-            lock RandomLock (fun () -> byte (Random.Next ()))
+            lock Lock (fun () -> byte (Random.Next ()))
 
         /// Get the next random unsigned.
         /// Thread-safe.
         static member randomu =
-            lock RandomLock (fun () -> uint (Random.Next ()))
+            lock Lock (fun () -> uint (Random.Next ()))
 
         /// Get the next random long.
         /// Thread-safe.
         static member randoml =
-            lock RandomLock (fun () -> int64 (Random.Next () <<< 32 ||| Random.Next ()))
+            lock Lock (fun () -> int64 (Random.Next () <<< 32 ||| Random.Next ()))
 
         /// Get the next random unsigned long.
         /// Thread-safe.
         static member randomul =
-            lock RandomLock (fun () -> uint64 (Random.Next () <<< 32 ||| Random.Next ()))
+            lock Lock (fun () -> uint64 (Random.Next () <<< 32 ||| Random.Next ()))
 
         /// Get the next random single >= 0.0f and < 1.0f.
         /// Thread-safe.
         static member randomf =
-            lock RandomLock (fun () -> single (Random.NextDouble ()))
+            lock Lock (fun () -> single (Random.NextDouble ()))
 
         /// Get the next random double >= 0.0 and < 1.0.
         /// Thread-safe.
         static member randomd =
-            lock RandomLock (fun () -> Random.NextDouble ())
+            lock Lock (fun () -> Random.NextDouble ())
             
         /// Get the next random number integer below ceiling.
         /// Thread-safe.
         static member random1 ceiling =
-            lock RandomLock (fun () -> Random.Next ceiling)
+            lock Lock (fun () -> Random.Next ceiling)
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomy1 (ceiling : byte) =
-            lock RandomLock (fun () -> byte (Random.Next (int ceiling)))
+            lock Lock (fun () -> byte (Random.Next (int ceiling)))
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomf1 ceiling =
-            lock RandomLock (fun () -> single (Random.NextDouble ()) * ceiling)
+            lock Lock (fun () -> single (Random.NextDouble ()) * ceiling)
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomd1 ceiling =
-            lock RandomLock (fun () -> Random.NextDouble () * ceiling)
+            lock Lock (fun () -> Random.NextDouble () * ceiling)
 
         /// Get the next random number integer GTE minValue and LT ceiling.
         /// Thread-safe.
         static member random2 minValue ceiling =
-            lock RandomLock (fun () -> Random.Next (minValue, ceiling))
+            lock Lock (fun () -> Random.Next (minValue, ceiling))
 
         /// Get a random element from a sequence if there are any elements or None.
         /// If seq is large, this may allocate to the LOH.
@@ -97,7 +96,7 @@ module Gen =
         static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
-            then lock RandomLock (fun () -> Some arr.[Gen.random1 arr.Length])
+            then lock Lock (fun () -> Some arr.[Gen.random1 arr.Length])
             else None
 
         /// Get a random element from a sequence or a default if sequence is empty.
@@ -127,7 +126,7 @@ module Gen =
         /// If seq is large, this may allocate to the LOH and block other threads.
         /// Thread-safe.
         static member randomize (seq : 'a seq) =
-            lock RandomLock (fun () ->
+            lock Lock (fun () ->
                 seq |>
                 Array.ofSeq |>
                 Array.map (fun a -> (Random.Next (), a)) |>
@@ -172,14 +171,14 @@ module Gen =
         /// Generate a unique non-zero 64-bit id.
         /// Thread-safe.
         static member id32 =
-            lock RandomLock (fun () ->
+            lock Lock (fun () ->
                 if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
                 Id32 <- inc Id32; Id32)
 
         /// Generate a unique non-zero 64-bit id.
         /// Thread-safe.
         static member id64 =
-            lock RandomLock (fun () -> Id64 <- inc Id64; Id64)
+            lock Lock (fun () -> Id64 <- inc Id64; Id64)
 
         /// Derive a unique id and name if given none.
         /// Thread-safe.
@@ -222,20 +221,10 @@ module Gen =
                 let name = NamePrefix + string id
                 (id, [|name|])
 
-        /// Generate a unique non-zero 64-bit id for internal engine use as to not consume as many user-visible ids.
-        /// Thread-safe.
-        static member internal idForInternal =
-            lock RandomLock (fun () -> IdForInternal <- inc IdForInternal; IdForInternal)
-
-        /// Generate a unique non-zero 64-bit id for use in editor naming.
-        /// Thread-safe.
-        static member idForEditor =
-            lock RandomLock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
-
         /// Generate a unique name for use in an editor.
         /// Thread-safe.
         static member nameForEditor (dispatcherName : string) =
-            let id = Gen.idForEditor
+            let id = lock Lock (fun () -> IdForEditor <- inc IdForEditor; IdForEditor)
             let truncatedName = dispatcherName.Replace ("Dispatcher", "")
             truncatedName + NameSeparator + id.ToString "D4"
 

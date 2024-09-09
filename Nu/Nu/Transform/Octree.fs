@@ -101,7 +101,7 @@ module internal Octnode =
                             let childBounds = box3 childMin childSize
                             let child =
                                 { ElementsCount_ = 0
-                                  Id_ = Gen.idForInternal
+                                  Id_ = Gen.id64
                                   Depth_ = childDepth
                                   Bounds_ = childBounds
                                   Children_ = NoChildren
@@ -472,7 +472,7 @@ module internal Octnode =
         if depth < 1 then failwith "Invalid depth for Octnode. Expected value of at least 1."
         let node =
             { ElementsCount_ = 0
-              Id_ = Gen.idForInternal
+              Id_ = Gen.id64
               Depth_ = depth
               Bounds_ = bounds
               Children_ = NoChildren
