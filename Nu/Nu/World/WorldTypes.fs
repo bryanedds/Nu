@@ -768,8 +768,8 @@ and SimulantContent =
     abstract DispatcherNameOpt : string option
     abstract SimulantNameOpt : string option
     abstract SimulantCachedOpt : Simulant with get, set
-    abstract EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid>
-    abstract EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)>
+    abstract EventSignalContentsOpt : OrderedDictionary<obj Address * obj, uint64>
+    abstract EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)>
     abstract PropertyContentsOpt : List<PropertyContent>
     abstract GetChildContentsOpt<'v when 'v :> SimulantContent> : unit -> OrderedDictionary<string, 'v>
 
@@ -777,8 +777,8 @@ and SimulantContent =
 and [<ReferenceEquality>] GameContent =
     { InitialScreenNameOpt : string option
       mutable SimulantCachedOpt : Simulant
-      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, uint64> // OPTIMIZATION: lazily created.
+      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       ScreenContents : OrderedDictionary<string, ScreenContent> }
     interface SimulantContent with
@@ -804,8 +804,8 @@ and [<ReferenceEquality>] ScreenContent =
       ScreenBehavior : ScreenBehavior
       GroupFilePathOpt : string option
       mutable SimulantCachedOpt : Simulant
-      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, uint64> // OPTIMIZATION: lazily created.
+      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       GroupContents : OrderedDictionary<string, GroupContent> }
     interface SimulantContent with
@@ -833,8 +833,8 @@ and [<ReferenceEquality>] GroupContent =
       GroupName : string
       GroupFilePathOpt : string option
       mutable SimulantCachedOpt : Simulant
-      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, uint64> // OPTIMIZATION: lazily created.
+      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
     interface SimulantContent with
@@ -861,8 +861,8 @@ and [<ReferenceEquality>] EntityContent =
       EntityName : string
       EntityFilePathOpt : string option
       mutable EntityCachedOpt : Entity // OPTIMIZATION: allows us to more often hit the EntityStateOpt cache. May be null.
-      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, Guid> // OPTIMIZATION: lazily created.
-      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, Guid * (Event -> obj)> // OPTIMIZATION: lazily created.
+      mutable EventSignalContentsOpt : OrderedDictionary<obj Address * obj, uint64> // OPTIMIZATION: lazily created.
+      mutable EventHandlerContentsOpt : OrderedDictionary<int * obj Address, uint64 * (Event -> obj)> // OPTIMIZATION: lazily created.
       mutable PropertyContentsOpt : List<PropertyContent> // OPTIMIZATION: lazily created.
       mutable EntityContentsOpt : OrderedDictionary<string, EntityContent> } // OPTIMIZATION: lazily created.
     interface SimulantContent with
@@ -906,7 +906,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
       Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
       Order : int64
-      Id : Guid }
+      Id : uint64 }
 
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
@@ -961,7 +961,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation)
           Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation)
           Order = Core.getTimeStampUnique ()
-          Id = Gen.id }
+          Id = Gen.id64 }
 
     interface SimulantState with
         member this.GetXtension () = this.Xtension
