@@ -128,7 +128,9 @@ and EditContext =
       SnapDrag : single
       SelectedScreen : Screen
       SelectedGroup : Group
-      SelectedEntityOpt : Entity option }
+      SelectedEntityOpt : Entity option
+      ToSymbolMemo : IDictionary<struct (Type * obj), Symbol>
+      OfSymbolMemo : IDictionary<struct (Type * Symbol), obj> }
 
 /// Details replacement for editing behavior for a simulant property, allowing the user to indicate that a property was
 /// replaced.

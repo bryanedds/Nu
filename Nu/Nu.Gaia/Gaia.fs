@@ -724,7 +724,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
           SnapDrag = SnapDrag
           SelectedScreen = SelectedScreen
           SelectedGroup = SelectedGroup
-          SelectedEntityOpt = SelectedEntityOpt }
+          SelectedEntityOpt = SelectedEntityOpt
+          ToSymbolMemo = ToSymbolMemo
+          OfSymbolMemo = OfSymbolMemo }
 
     (* Nu Event Handling Functions *)
 
