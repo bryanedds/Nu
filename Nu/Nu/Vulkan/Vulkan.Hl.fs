@@ -12,6 +12,7 @@ module Vulkan = let _ = ()
 namespace Vulkan
 open System
 open System.Runtime.CompilerServices
+open System.Collections.Generic
 open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
@@ -66,7 +67,8 @@ module Hl =
     type [<ReferenceEquality>] VulkanGlobal =
         private
             { Instance : VkInstance
-              Surface : VkSurfaceKHR }
+              Surface : VkSurfaceKHR
+              Device : VkDevice }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -227,6 +229,28 @@ module Hl =
             // fin
             physicalDeviceOpt
         
+        /// Create the logical device.
+        static member createDevice graphicsQueueFamily presentQueueFamily physicalDevice =
+
+            // device handle
+            let mutable device = Unchecked.defaultof<VkDevice>
+
+            // get unique queue family array
+            let uniqueQueueFamiliesSet = new HashSet<uint> ()
+            uniqueQueueFamiliesSet.Add graphicsQueueFamily |> ignore
+            uniqueQueueFamiliesSet.Add presentQueueFamily |> ignore
+            let uniqueQueueFamilies = Array.zeroCreate<uint> uniqueQueueFamiliesSet.Count
+            uniqueQueueFamiliesSet.CopyTo (uniqueQueueFamilies)
+
+            // populate queue create infos
+            let mutable queuePriority = 1.0f
+            let queueCreateInfos = Array.zeroCreate<VkDeviceQueueCreateInfo> uniqueQueueFamilies.Length
+            use queueCreateInfosPin = ArrayPin queueCreateInfos
+
+
+            // fin
+            device
+        
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
             vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr)
@@ -251,10 +275,14 @@ module Hl =
             match VulkanGlobal.trySelectPhysicalDevice surface instance with
             | Some (physicalDevice, graphicsQueueFamily, presentQueueFamily) ->
 
+                // create device
+                let device = VulkanGlobal.createDevice graphicsQueueFamily presentQueueFamily physicalDevice
+                
                 // make vulkanGlobal
                 let vulkanGlobal =
                     { Instance = instance
-                      Surface = surface }
+                      Surface = surface
+                      Device = device }
 
                 // fin
                 Some vulkanGlobal
