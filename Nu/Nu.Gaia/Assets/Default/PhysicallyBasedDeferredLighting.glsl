@@ -146,10 +146,9 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-vec3 computeFogAccumDirectional(vec4 position, vec2 texCoords, int lightIndex)
+vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     vec3 result = vec3(0.0);
-    vec2 texSize = textureSize(positionTexture, 0).xy;
     int shadowIndex = lightShadowIndices[lightIndex];
     if (lightsCount > 0 && lightDirectionals[lightIndex] != 0 && shadowIndex >= 0)
     {
@@ -171,7 +170,7 @@ vec3 computeFogAccumDirectional(vec4 position, vec2 texCoords, int lightIndex)
         float theta = dot(-rayDirection, lightDirections[lightIndex]);
 
         // compute dithering
-        float dithering = SSVF_DITHERING[int(texCoords.x * texSize.x) % 4][int(texCoords.y * texSize.y) % 4];
+        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
 
         // march over ray, accumulating fog light value
         vec3 currentPosition = startPosition + step * dithering;
@@ -413,7 +412,7 @@ void main()
         }
 
         // compute directional fog accumulation from sun light when desired
-        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, texCoordsOut, 0) : vec3(0.0);
+        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
 
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.

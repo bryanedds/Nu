@@ -66,6 +66,12 @@ const int LIGHTS_MAX = 8;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const vec4 SSVF_DITHERING[4] =
+vec4[4](
+    vec4(0.0, 0.5, 0.125, 0.625),
+    vec4(0.75, 0.22, 0.875, 0.375),
+    vec4(0.1875, 0.6875, 0.0625, 0.5625),
+    vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform float lightCutoffMargin;
@@ -115,7 +121,7 @@ flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 
-layout (location = 0) out vec4 frag;
+layout(location = 0) out vec4 frag;
 
 float linstep(float low, float high, float v)
 {
@@ -238,8 +244,11 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         // compute light view term
         float theta = dot(-rayDirection, lightDirections[lightIndex]);
 
+        // compute dithering
+        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
         // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition;
+        vec3 currentPosition = startPosition + step * dithering;
         for (int i = 0; i < ssvfSteps; i++)
         {
             // step through ray, accumulating fog light moment
@@ -395,7 +404,7 @@ void main()
     if (lm1 == -1 && lm2 == -1)
     {
         irradiance = texture(irradianceMap, n).rgb;
-        vec3 r = reflect(-v, n);    
+        vec3 r = reflect(-v, n);
         environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
     }
     else if (lm2 == -1)
