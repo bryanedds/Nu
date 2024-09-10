@@ -13,6 +13,7 @@ namespace Vulkan
 open System
 open System.Runtime.CompilerServices
 open System.Collections.Generic
+open System.Text
 open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
@@ -52,7 +53,7 @@ module Hl =
             let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
             for i in [0 .. dec strs.Length] do ptrs[i] <- VkStringInterop.ConvertToUnmanaged strs[i]
             new StringArrayWrap (ptrs)
-    
+
         // TODO: see if implicit conversion can be used to remove the need to call this member directly.
         member this.Pointer = pin.Pointer
 
@@ -256,6 +257,10 @@ module Hl =
                 createInfo.queueCount <- 1u
                 createInfo.pQueuePriorities <- asPointer &queuePriority
                 queueCreateInfos[i] <- createInfo
+
+            // get swapchain extension
+            let swapchainExtensionName = Encoding.UTF8.GetString VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            use extensionArrayWrap = StringArrayWrap [|swapchainExtensionName|]
 
 
             // fin
