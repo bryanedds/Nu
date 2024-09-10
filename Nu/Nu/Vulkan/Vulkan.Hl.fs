@@ -262,12 +262,25 @@ module Hl =
             let swapchainExtensionName = Encoding.UTF8.GetString VK_KHR_SWAPCHAIN_EXTENSION_NAME
             use extensionArrayWrap = StringArrayWrap [|swapchainExtensionName|]
 
+            // NOTE: for particularly dated implementations of Vulkan, validation depends on device layers which are
+            // deprecated. These must be enabled if validation support for said implementations is desired.
+            
+            // populate createdevice info
+            let mutable createInfo = VkDeviceCreateInfo ()
+            createInfo.queueCreateInfoCount <- uint queueCreateInfos.Length
+            createInfo.pQueueCreateInfos <- queueCreateInfosPin.Pointer
+            createInfo.enabledExtensionCount <- 1u
+            createInfo.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
+
+            // create device
+            vkCreateDevice (physicalDevice, asPointer &createInfo, NativePtr.nullPtr, &device) |> check
 
             // fin
             device
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            vkDestroyDevice (vulkanGlobal.Device, NativePtr.nullPtr) // why is this causing access violation exception even though device handle looks perfectly valid?
             vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr)
             vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
         
