@@ -17,7 +17,6 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
-const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOWS_MAX = 16;
@@ -84,7 +83,11 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
-layout(location = 0) out vec4 frag;
+layout (location = 0) out vec4 diffuseLit;
+layout (location = 1) out vec4 specularEnvironment;
+layout (location = 2) out vec4 specularScreenAndWeight;
+layout (location = 3) out vec4 fogAccum;
+layout (location = 4) out float depth;
 
 float linstep(float low, float high, float v)
 {
@@ -144,6 +147,11 @@ vec3 fresnelSchlick(float cosTheta, vec3 f0)
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 {
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float depthViewToDepthBuffer(float depthView, float nearPlane, float farPlane)
+{
+    return (-depthView - nearPlane) / (farPlane - nearPlane);
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -411,9 +419,6 @@ void main()
             lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
         }
 
-        // compute directional fog accumulation from sun light when desired
-        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
         // TODO: use a better means of computing specular occlusion as this one isn't very effective.
@@ -427,10 +432,9 @@ void main()
         kD *= 1.0 - metallic;
         vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
 
-        // compute specular term from light map
+        // compute specular environment subterm term from light map
         vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
         vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
 
         // compute specular term and weight from screen-space
         vec3 specularScreen = vec3(0.0);
@@ -449,19 +453,18 @@ void main()
             computeSsr(positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
 
-        // compute specular term
-        vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
+        // compute near and far planes (these _should_ get baked down to fragment constants)
+        float p2z = projection[2].z;
+        float p2w = projection[2].w;
+        float nearPlane = p2w / (p2z - 1.0);
+        float farPlane = p2w / (p2z + 1.0);
 
-        // compute ambient term
-        vec3 ambient = diffuse + specular;
-
-        // compute color w/ emission, tone mapping, and gamma correction
-        vec3 color = lightAccum + fogAccum + ambient + emission * albedo;
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0 / GAMMA));
-
-        // write color
-        frag = vec4(color, 1.0);
+        // populate lighting values
+        diffuseLit.xyz = lightAccum + diffuse + emission * albedo;
+        diffuseLit.w = 1.0; // signify valid color
+        specularEnvironment.xyz = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
+        specularScreenAndWeight = vec4(specularScreen, specularScreenWeight);
+        fogAccum.xyz = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
+        depth = depthViewToDepthBuffer(positionView.z, nearPlane, farPlane);
     }
-    else frag = vec4(0.0); // write zero
 }

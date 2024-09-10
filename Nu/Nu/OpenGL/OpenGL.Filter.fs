@@ -20,6 +20,19 @@ module Filter =
           InputTextureUniform : int
           FilterGaussianShader : uint }
 
+    /// Describes an box down-sampling filter shader that's loaded into GPU.
+    type FilterDownSampleBilateralShader =
+        { ColorTextureUniform : int
+          DepthTextureUniform : int
+          FilterDownSampleBilateralShader : uint }
+
+    /// Describes an bilateral up-sampling filter shader that's loaded into GPU.
+    type FilterUpSampleBilateralShader =
+        { ColorDownSampledTextureUniform : int
+          DepthDownSampledTextureUniform : int
+          DepthTextureUniform : int
+          FilterUpSampleBilateralShader : uint }
+
     /// Describes an fxaa shader that's loaded into GPU.
     type FilterFxaaShader =
         { InputTextureUniform : int
@@ -54,6 +67,40 @@ module Filter =
         { ScaleUniform = scaleUniform
           InputTextureUniform = inputTextureUniform
           FilterGaussianShader = shader }
+
+    /// Create a filter bilateral down-sample shader.
+    let CreateFilterDownSampleBilateralShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
+
+        // make shader record
+        { ColorTextureUniform = colorTextureUniform
+          DepthTextureUniform = depthTextureUniform
+          FilterDownSampleBilateralShader = shader }
+
+    /// Create a filter bilateral up-sample shader.
+    let CreateFilterUpSampleBilateralShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let colorDownSampledTextureUniform = Gl.GetUniformLocation (shader, "colorDownSampledTexture")
+        let depthDownSampledTextureUniform = Gl.GetUniformLocation (shader, "depthDownSampledTexture")
+        let depthTextureUniform = Gl.GetUniformLocation (shader, "depthTexture")
+
+        // make shader record
+        { ColorDownSampledTextureUniform = colorDownSampledTextureUniform
+          DepthDownSampledTextureUniform = depthDownSampledTextureUniform
+          DepthTextureUniform = depthTextureUniform
+          FilterUpSampleBilateralShader = shader }
 
     /// Create a filter fxaa shader.
     let CreateFilterFxaaShader (shaderFilePath : string) =
