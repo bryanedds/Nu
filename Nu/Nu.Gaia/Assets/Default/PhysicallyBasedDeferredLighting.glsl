@@ -232,7 +232,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
 
     // initialize current fragment
     vec2 currentFrag = startFrag;
-    vec2 currentUV = currentFrag / texSize;
+    vec2 currentTexCoords = currentFrag / texSize;
     vec4 currentPosition = position;
     vec4 currentPositionView = positionView;
 
@@ -247,12 +247,12 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
     float currentProgressA = 0.0;
     float currentProgressB = 0.0;
     float currentDepthView = 0.0;
-    for (int i = 0; i < stepCount && currentUV.x >= 0.0 && currentUV.x < 1.0 && currentUV.y >= 0.0 && currentUV.y < 1.0; ++i)
+    for (int i = 0; i < stepCount && currentTexCoords.x >= 0.0 && currentTexCoords.x < 1.0 && currentTexCoords.y >= 0.0 && currentTexCoords.y < 1.0; ++i)
     {
         // advance frag values
         currentFrag += stepAmount;
-        currentUV = currentFrag / texSize;
-        currentPosition = texture(positionTexture, currentUV);
+        currentTexCoords = currentFrag / texSize;
+        currentPosition = texture(positionTexture, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
@@ -272,8 +272,8 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
             {
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
-                currentUV = currentFrag / texSize;
-                currentPosition = texture(positionTexture, currentUV);
+                currentTexCoords = currentFrag / texSize;
+                currentPosition = texture(positionTexture, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
 
@@ -292,15 +292,15 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
+                    specularScreen = vec3(texture(albedoTexture, currentTexCoords).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
                     specularScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         (1.0 - smoothstep(1.0 - ssrSlopeCutoffMargin, 1.0, slope / ssrSlopeCutoff)) * // filter out as slope nears cutoff
                         smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentUV.x, 1.0 - currentUV.x)) *
-                        smoothstep(0.0, ssrEdgeVerticalMargin, min(currentUV.y, 1.0 - currentUV.y));
+                        smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
+                        smoothstep(0.0, ssrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
                     break;
                 }
