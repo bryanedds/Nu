@@ -280,20 +280,20 @@ module Hl =
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
-            vkDestroyDevice (vulkanGlobal.Device, NativePtr.nullPtr) // why is this causing access violation exception even though device handle looks perfectly valid?
+            vkDestroyDevice (vulkanGlobal.Device, NativePtr.nullPtr)
             vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr)
             vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
         
         /// Try to make a VulkanGlobal.
         static member tryMake window =
 
-            // loads vulkan; not vulkan function
+            // load vulkan; not vulkan function
             vkInitialize () |> check
 
             // create instance
             let instance = VulkanGlobal.createInstance window
 
-            // loads instance commands; not vulkan function
+            // load instance commands; not vulkan function
             vkLoadInstanceOnly instance
 
             // create surface
@@ -305,6 +305,9 @@ module Hl =
 
                 // create device
                 let device = VulkanGlobal.createDevice graphicsQueueFamily presentQueueFamily physicalDevice
+
+                // load device commands; not vulkan function
+                vkLoadDevice device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
