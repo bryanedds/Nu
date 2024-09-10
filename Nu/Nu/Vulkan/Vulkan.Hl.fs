@@ -57,7 +57,9 @@ module Hl =
         member this.Pointer = pin.Pointer
 
         // make disposal publicly available without casting
-        member this.Dispose () = pin.Dispose ()
+        member this.Dispose () =
+            for i in [0 .. dec array.Length] do VkStringInterop.Free array[i]
+            pin.Dispose ()
     
         interface IDisposable with
             member this.Dispose () =
@@ -110,9 +112,11 @@ module Hl =
             createInfo.enabledExtensionCount <- sdlExtensionCount
             createInfo.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
 
+            // must be assigned outside conditional to remain in scope until vkCreateInstance
+            use layerWrap = StringArrayWrap [|validationLayer|]
+            
             // load validation layer if enabled and available
             if validationLayersEnabled && validationLayerExists then
-                use layerWrap = StringArrayWrap [|validationLayer|]
                 createInfo.enabledLayerCount <- 1u
                 createInfo.ppEnabledLayerNames <- layerWrap.Pointer
             else
