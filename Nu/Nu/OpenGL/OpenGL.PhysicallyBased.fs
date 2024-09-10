@@ -401,9 +401,7 @@ module PhysicallyBased =
 
     /// Describes the composition pass of a deferred physically-based shader that's loaded into GPU.
     type PhysicallyBasedDeferredCompositionShader =
-        { DiffuseLitTextureUniform : int
-          SpecularEnvironmentTextureUniform : int
-          SpecularScreenAndWeightTextureUniform : int
+        { ColorTextureUniform : int
           FogAccumTextureUniform : int
           PhysicallyBasedDeferredCompositionShader : uint }
 
@@ -1780,15 +1778,11 @@ module PhysicallyBased =
         Hl.Assert ()
 
         // retrieve uniforms
-        let diffuseLitTextureUniform = Gl.GetUniformLocation (shader, "diffuseLitTexture")
-        let specularEnvironmentTextureUniform = Gl.GetUniformLocation (shader, "specularEnvironmentTexture")
-        let specularScreenAndWeightTextureUniform = Gl.GetUniformLocation (shader, "specularScreenAndWeightTexture")
+        let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
         let fogAccumTextureUniform = Gl.GetUniformLocation (shader, "fogAccumTexture")
 
         // make shader record
-        { DiffuseLitTextureUniform = diffuseLitTextureUniform
-          SpecularEnvironmentTextureUniform = specularEnvironmentTextureUniform
-          SpecularScreenAndWeightTextureUniform = specularScreenAndWeightTextureUniform
+        { ColorTextureUniform = colorTextureUniform
           FogAccumTextureUniform = fogAccumTextureUniform
           PhysicallyBasedDeferredCompositionShader = shader }
 
@@ -2972,29 +2966,21 @@ module PhysicallyBased =
 
     /// Draw the bilateral up-sample pass of a deferred physically-based surface.
     let DrawPhysicallyBasedDeferredCompositionSurface
-        (diffuseLitTexture : Texture.Texture,
-         specularEnvironmentTexture : Texture.Texture,
-         specularScreenAndWeightTexture : Texture.Texture,
+        (colorTexture : Texture.Texture,
          fogAccumTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedDeferredCompositionShader) =
 
         // setup shader
         Gl.UseProgram shader.PhysicallyBasedDeferredCompositionShader
-        Gl.Uniform1 (shader.DiffuseLitTextureUniform, 0)
-        Gl.Uniform1 (shader.SpecularEnvironmentTextureUniform, 1)
-        Gl.Uniform1 (shader.SpecularScreenAndWeightTextureUniform, 2)
-        Gl.Uniform1 (shader.FogAccumTextureUniform, 3)
+        Gl.Uniform1 (shader.ColorTextureUniform, 0)
+        Gl.Uniform1 (shader.FogAccumTextureUniform, 1)
         Hl.Assert ()
 
         // setup textures
         Gl.ActiveTexture TextureUnit.Texture0
-        Gl.BindTexture (TextureTarget.Texture2d, diffuseLitTexture.TextureId)
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, specularEnvironmentTexture.TextureId)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, specularScreenAndWeightTexture.TextureId)
-        Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, fogAccumTexture.TextureId)
         Hl.Assert ()
 
@@ -3017,10 +3003,6 @@ module PhysicallyBased =
         Gl.ActiveTexture TextureUnit.Texture0
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture1
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture2
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Gl.ActiveTexture TextureUnit.Texture3
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 

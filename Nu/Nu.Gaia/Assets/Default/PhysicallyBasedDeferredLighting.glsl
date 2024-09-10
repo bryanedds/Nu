@@ -83,11 +83,9 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec4 diffuseLit;
-layout (location = 1) out vec4 specularEnvironment;
-layout (location = 2) out vec4 specularScreenAndWeight;
-layout (location = 3) out vec4 fogAccum;
-layout (location = 4) out float depth;
+layout (location = 0) out vec4 color;
+layout (location = 1) out vec4 fogAccum;
+layout (location = 2) out float depth;
 
 float linstep(float low, float high, float v)
 {
@@ -432,10 +430,6 @@ void main()
         kD *= 1.0 - metallic;
         vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
 
-        // compute specular environment subterm term from light map
-        vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-
         // compute specular term and weight from screen-space
         vec3 specularScreen = vec3(0.0);
         float specularScreenWeight = 0.0;
@@ -453,6 +447,12 @@ void main()
             computeSsr(positionBelow, albedo, roughness, metallic, normal, slope, specularScreen, specularScreenWeight);
         }
 
+        // compute specular term
+        vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
+        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
+        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
+        vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
+
         // compute near and far planes (these _should_ get baked down to fragment constants)
         float p2z = projection[2].z;
         float p2w = projection[2].w;
@@ -460,10 +460,8 @@ void main()
         float farPlane = p2w / (p2z + 1.0);
 
         // populate lighting values
-        diffuseLit.xyz = lightAccum + diffuse + emission * albedo;
-        diffuseLit.w = 1.0; // signify valid color
-        specularEnvironment.xyz = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
-        specularScreenAndWeight = vec4(specularScreen, specularScreenWeight);
+        color.xyz = lightAccum + diffuse + emission * albedo + specular;
+        color.w = 1.0; // signify valid fragment
         fogAccum.xyz = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
         depth = depthViewToDepthBuffer(positionView.z, nearPlane, farPlane);
     }

@@ -851,7 +851,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterBuffers : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersUnfiltered : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersFiltered : OpenGL.Texture.Texture * uint * uint
-          LightingBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          LightingBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           SpecularScreenDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           SpecularScreenUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
           FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
@@ -2743,7 +2743,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             else renderer.WhiteTexture
 
         // setup lighting buffers and viewport
-        let (diffuseLitTexture, specularEnvironmentTexture, specularScreenAndWeightTexture, fogAccumTexture, depthTexture, lightingRenderbuffer, lightingFramebuffer) = renderer.LightingBuffers
+        let (colorTexture, fogAccumTexture, depthTexture, lightingRenderbuffer, lightingFramebuffer) = renderer.LightingBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, lightingRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, lightingFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
@@ -2765,30 +2765,6 @@ type [<ReferenceEquality>] GlRenderer3d =
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
-
-        // setup specular screen down-sample buffers and viewport
-        let (specularScreenAndWeightDownSampleTexture, depthDownSampleTexture, specularScreenDownSampleRenderbuffer, specularScreenDownSampleFramebuffer) = renderer.SpecularScreenDownSampleBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, specularScreenDownSampleRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, specularScreenDownSampleFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2)
-        OpenGL.Hl.Assert ()
-
-        // deferred render specular screen quad to down-sample buffers
-        OpenGL.PhysicallyBased.DrawFilterDownSampleBilateralSurface (specularScreenAndWeightTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterDownSampleBilateral4dShader)
-
-        // setup specular screen up-sample buffers and viewport
-        let (specularScreenAndWeightUpSampleTexture, specularScreenUpSampleRenderbuffer, specularScreenUpSampleFramebuffer) = renderer.SpecularScreenUpSampleBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, specularScreenUpSampleRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, specularScreenUpSampleFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-
-        // deferred render specular screen quad to up-sample buffers
-        OpenGL.PhysicallyBased.DrawFilterUpSampleBilateralSurface (specularScreenAndWeightDownSampleTexture, depthDownSampleTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterUpSampleBilateral4dShader)
 
         // setup fog accum down-sample buffers and viewport
         let (fogAccumDownSampleTexture, depthDownSampleTexture, fogAccumDownSampleRenderbuffer, fogAccumDownSampleFramebuffer) = renderer.FogAccumDownSampleBuffers
@@ -2825,7 +2801,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render composition quad to composition buffers
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface (diffuseLitTexture, specularEnvironmentTexture, specularScreenAndWeightUpSampleTexture, fogAccumUpSampleTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredCompositionShader)
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface (colorTexture, fogAccumUpSampleTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredCompositionShader)
 
         // copy depths from geometry framebuffer to composition framebuffer
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)

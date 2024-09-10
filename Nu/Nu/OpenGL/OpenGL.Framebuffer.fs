@@ -586,33 +586,13 @@ module Framebuffer =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Hl.Assert ()
 
-        // create diffuse lit buffer
-        let diffuseLitId = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, diffuseLitId)
+        // create color buffer
+        let colorId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.Texture2d, colorId)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.Resolution.X, Constants.Render.Resolution.Y, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, diffuseLitId, 0)
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
-        // create specular environment buffer
-        let specularEnvironmentId = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, specularEnvironmentId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.Resolution.X, Constants.Render.Resolution.Y, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Nearest)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Nearest)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, specularEnvironmentId, 0)
-        Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        Hl.Assert ()
-
-        // create specular screen and weight buffer (using linear filtering since it's the source for a down-sampling filter)
-        let specularScreenAndWeightId = Gl.GenTexture ()
-        Gl.BindTexture (TextureTarget.Texture2d, specularScreenAndWeightId)
-        Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.Resolution.X, Constants.Render.Resolution.Y, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
-        Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, specularScreenAndWeightId, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, colorId, 0)
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
@@ -622,7 +602,7 @@ module Framebuffer =
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.Resolution.X, Constants.Render.Resolution.Y, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment3, TextureTarget.Texture2d, fogAccumId, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2d, fogAccumId, 0)
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
@@ -632,7 +612,7 @@ module Framebuffer =
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.R32f, Constants.Render.Resolution.X, Constants.Render.Resolution.Y, 0, PixelFormat.Red, PixelType.Float, nativeint 0)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
-        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment4, TextureTarget.Texture2d, depthId, 0)
+        Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment2, TextureTarget.Texture2d, depthId, 0)
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
@@ -640,9 +620,7 @@ module Framebuffer =
         Gl.DrawBuffers
             [|int FramebufferAttachment.ColorAttachment0
               int FramebufferAttachment.ColorAttachment1
-              int FramebufferAttachment.ColorAttachment2
-              int FramebufferAttachment.ColorAttachment3
-              int FramebufferAttachment.ColorAttachment4|]
+              int FramebufferAttachment.ColorAttachment2|]
         Hl.Assert ()
 
         // create render buffer with depth and stencil
@@ -654,20 +632,16 @@ module Framebuffer =
 
         // ensure framebuffer is complete
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
-            let diffuseLit = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = diffuseLitId }
-            let specularEnvironment = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = specularEnvironmentId }
-            let specularScreenAndWeight = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = specularScreenAndWeightId }
+            let color = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = colorId }
             let fogAccum = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = fogAccumId }
             let depth = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = depthId }
-            Right (diffuseLit, specularEnvironment, specularScreenAndWeight, fogAccum, depth, framebuffer, renderbuffer)
-        else Left ("Could not create complete post-lighting framebuffer.")
+            Right (color, fogAccum, depth, framebuffer, renderbuffer)
+        else Left ("Could not create complete lighting framebuffer.")
 
     /// Destroy lighting buffers.
-    let DestroyLightingBuffers (diffuseLit : Texture.Texture, specularEnvironment : Texture.Texture, specularScreenAndWeight : Texture.Texture, fogAccum : Texture.Texture, depth : Texture.Texture, framebuffer, renderbuffer) =
+    let DestroyLightingBuffers (color : Texture.Texture, fogAccum : Texture.Texture, depth : Texture.Texture, framebuffer, renderbuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
-        diffuseLit.Destroy ()
-        specularEnvironment.Destroy ()
-        specularScreenAndWeight.Destroy ()
+        color.Destroy ()
         fogAccum.Destroy ()
         depth.Destroy ()
