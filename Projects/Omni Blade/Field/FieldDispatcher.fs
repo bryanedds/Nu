@@ -1075,14 +1075,14 @@ type FieldDispatcher () =
                                 | None -> Some Assets.Default.EmptyImage
                             | None -> Some Assets.Default.EmptyImage]
                      Content.text "CharacterType"
-                        [Entity.PositionLocal == v3 606.0f 414.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 606.0f 414.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 32.0f 0.0f
                          Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetCharacterData field.Team menuTeam with
                             | Some characterData -> characterData.CharacterType.Name
                             | None -> ""]
                      Content.text "ArchetypeType"
-                        [Entity.PositionLocal == v3 606.0f 378.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 606.0f 378.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 32.0f 0.0f
                          Entity.Justification == Unjustified false
                          Entity.Text :=
                             match MenuTeam.tryGetTeammate field.Team menuTeam with
@@ -1522,11 +1522,11 @@ type FieldDispatcher () =
                          Entity.DownImage == asset "Field" "ConfirmButtonDown"
                          Entity.ClickEvent => PartyMenuClose]
                      Content.text "Select"
-                        [Entity.PositionLocal == v3 168.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 126.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 32.0f 0.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Select Party:"]
                      Content.text "Current"
-                        [Entity.PositionLocal == v3 516.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 480.0f 429.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 32.0f 0.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text == "Current Party:"]
                      for (teamIndex, teammate) in field.Team.Pairs do
