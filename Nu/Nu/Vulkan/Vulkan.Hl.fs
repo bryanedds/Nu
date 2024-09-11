@@ -43,6 +43,8 @@ module Hl =
         let vkUtf8Str = new VkUtf8String (ptr)
         vkUtf8Str.ToString ()
     
+    // TODO: implement VkStringInterop helpers to remove Vortice.Vulkan dependence and move gems like this into Native.fs.
+
     /// A container for a pinned array of unmanaged strings.
     type StringArrayWrap private (array : nativeptr<byte> array) =
     
