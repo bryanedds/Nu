@@ -891,7 +891,7 @@ type FillBarFacet () =
         let fillPosition = if transform.PerimeterCentered then transform.Perimeter.Left + v3 (fillWidth * 0.5f) 0.0f 0.0f + v3 fillInset 0.0f 0.0f else transform.Perimeter.Min + v3 fillInset fillInset 0.0f
         let fillHeight = fillSize.Y - fillInset * 2.0f
         let fillSize = v3 fillWidth fillHeight 0.0f
-        let fillPerimeter = box3 (fillPosition - fillSize * 0.5f) fillSize
+        let fillPerimeter = box3 (if transform.PerimeterCentered then fillPosition - fillSize * 0.5f else fillPosition) fillSize
         let fillImageColor = entity.GetFillColor world * color
         let fillImage = entity.GetFillImage world
         World.renderGuiSpriteSliced transform.Absolute fillPerimeter sliceMargin fillImage transform.Offset transform.Elevation transform.PerimeterCentered fillImageColor world
