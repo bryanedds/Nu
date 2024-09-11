@@ -166,7 +166,7 @@ module Hl =
     /// Save the current bound RGBA framebuffer to an image file.
     /// Only works on Windows platforms for now.
     /// TODO: make this work on non-Windows platforms!
-    let SaveFramebufferRgbaToBitmap width height (filePath : string) =
+    let SaveFramebufferRgbaToBitmap (width, height, filePath : string) =
         let platform = Environment.OSVersion.Platform
         if platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
             let pixelFloats = Array.zeroCreate<single> (width * height * 4)
@@ -190,7 +190,7 @@ module Hl =
     /// Save the current bound framebuffer to an image file.
     /// Only works on Windows platforms for now.
     /// TODO: make this work on non-Windows platforms!
-    let SaveFramebufferDepthToBitmap width height (filePath : string) =
+    let SaveFramebufferDepthToBitmap (width, height, filePath : string) =
         let pixelFloats = Array.zeroCreate<single> (width * height)
         let handle = GCHandle.Alloc (pixelFloats, GCHandleType.Pinned)
         try try let pixelDataPtr = handle.AddrOfPinnedObject ()
