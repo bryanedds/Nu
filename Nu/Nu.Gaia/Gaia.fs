@@ -1527,10 +1527,10 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let position = World.getEye3dCenter world
             let rotation = World.getEye3dRotation world
             let moveSpeed =
-                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 300.0f * seconds
-                elif ImGui.IsEnterDown () then 30.0f * seconds
-                elif ImGui.IsShiftDown () then 2.1f * seconds
-                else 7.2f * seconds
+                if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 512.0f * seconds
+                elif ImGui.IsEnterDown () then 64.0f * seconds
+                elif ImGui.IsShiftDown () then 1.0f * seconds
+                else 8.0f * seconds
             let turnSpeed =
                 if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
                 else 3.0f * seconds
