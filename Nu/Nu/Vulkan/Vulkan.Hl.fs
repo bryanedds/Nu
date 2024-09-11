@@ -277,6 +277,20 @@ module Hl =
 
             // fin
             device
+
+        /// Get command queues.
+        static member getQueues graphicsQueueFamily presentQueueFamily device =
+
+            // queue handles
+            let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
+            let mutable presentQueue = Unchecked.defaultof<VkQueue>
+
+            // get queues
+            vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
+            vkGetDeviceQueue (device, presentQueueFamily, 0u, &presentQueue)
+
+            // fin
+            (graphicsQueue, presentQueue)
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
@@ -308,6 +322,9 @@ module Hl =
 
                 // load device commands; not vulkan function
                 vkLoadDevice device
+
+                // get queues
+                let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues graphicsQueueFamily presentQueueFamily device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
