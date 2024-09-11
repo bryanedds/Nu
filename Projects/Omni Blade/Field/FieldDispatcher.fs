@@ -1251,11 +1251,11 @@ type FieldDispatcher () =
                                   Entity.DownImage == asset "Field" "CloseButtonDown"
                                   Entity.ClickEvent => MenuTeamEquipMenuUseClose]
                              Content.text "Line1"
-                                 [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                 [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                                   Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                   Entity.Text := menuUse.MenuUseLine1]
                              Content.text "Line2"
-                                 [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                 [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                                   Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                   Entity.Text := menuUse.MenuUseLine2]
                              Content.text "Line3"
@@ -1419,7 +1419,7 @@ type FieldDispatcher () =
                     [Content.sidebar "Sidebar" (v3 24.0f 417.0f 0.0f) field (fun () -> MenuTeamOpen) (fun () -> MenuInventoryOpen) (fun () -> MenuTechsOpen) (fun () -> MenuKeyItemsOpen) (fun () -> MenuOptionsOpen) (fun () -> MenuClose)
                      if not quitPrompt then
                         Content.text "BattleSpeed"
-                            [Entity.PositionLocal == v3 414.0f 444.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 336.0f 444.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Battle Speed"]
                         Content.radioButton "Wait"
@@ -1444,7 +1444,7 @@ type FieldDispatcher () =
                              Entity.Dialed := match field.Options.BattleSpeed with SwiftSpeed -> true | _ -> false
                              Entity.DialedEvent => MenuOptionsSelectBattleSpeed SwiftSpeed]
                         Content.text "SongVolume"
-                            [Entity.PositionLocal == v3 414.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 336.0f 336.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Song Volume"]
                         Content.button "SongVolumeDown"
@@ -1465,7 +1465,7 @@ type FieldDispatcher () =
                              Entity.Text == "+"
                              Entity.ClickEvent => MenuOptionsSongVolumeUp]
                         Content.text "FullScreen"
-                            [Entity.PositionLocal == v3 414.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 336.0f 228.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Full Screen"]
                         Content.button "ToggleFullScreen"
@@ -1475,7 +1475,7 @@ type FieldDispatcher () =
                              Entity.Text == "Toggle"
                              Entity.ClickEvent => MenuOptionsToggleFullScreen]
                         Content.text "QuitGame"
-                            [Entity.PositionLocal == v3 414.0f 120.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 336.0f 120.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Quit Game"]
                         Content.button "Quit"
@@ -1485,12 +1485,12 @@ type FieldDispatcher () =
                              Entity.Text == "Quit"
                              Entity.ClickEvent => MenuOptionsQuitPrompt]
                         Content.text "About"
-                            [Entity.PositionLocal == v3 320.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 320.0f 48.0f 0.0f
+                            [Entity.PositionLocal == v3 262.0f 6.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 432.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Omni Blade Demo v1.0.1"]
                      else
                         Content.text "QuitConfirmation"
-                            [Entity.PositionLocal == v3 414.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 336.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 288.0f 48.0f 0.0f
                              Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                              Entity.Text == "Confirm Quit?"]
                         Content.button "QuitConfirm"
@@ -1577,11 +1577,11 @@ type FieldDispatcher () =
                              Entity.DownImage == asset "Field" "CloseButtonDown"
                              Entity.ClickEvent => MenuInventoryCancel]
                          Content.text "Line1"
-                            [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 36.0f 354.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                              Entity.Text := menuUse.MenuUseLine1]
                          Content.text "Line2"
-                            [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 66.0f 312.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                              Entity.Text := menuUse.MenuUseLine2]
                          Content.text "Line3"
@@ -1603,11 +1603,11 @@ type FieldDispatcher () =
                              Entity.DownImage == asset "Field" "CloseButtonDown"
                              Entity.ClickEvent => MenuInventoryCancel]
                         Content.text "Line1"
-                            [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                              Entity.Text := menuUse.MenuUseLine1]
                         Content.text "Line2"
-                            [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f
+                            [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                              Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                              Entity.Text := menuUse.MenuUseLine2]
                         Content.text "Line3"
@@ -1641,15 +1641,15 @@ type FieldDispatcher () =
                                      Entity.DownImage == asset "Field" "CloseButtonDown"
                                      Entity.ClickEvent => MenuTechClose]
                                  Content.text "Line1"
-                                    [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                    [Entity.PositionLocal == v3 36.0f 174.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                      Entity.Text := tech.TechType.Name]
                                  Content.text "Line2"
-                                    [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f
+                                    [Entity.PositionLocal == v3 66.0f 132.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                                      Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                                      Entity.Text := "TP Cost: " + string tech.TechCost]
                                  Content.text "Line3"
-                                    [Entity.PositionLocal == v3 66.0f -66.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 800.0f 192.0f 0.0f
+                                    [Entity.PositionLocal == v3 66.0f -66.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 810.0f 192.0f 0.0f
                                      Entity.Justification == Unjustified true
                                      Entity.Text := tech.Description]]
                         | (false, _) -> ()
@@ -1709,7 +1709,7 @@ type FieldDispatcher () =
                          Entity.DownImage == Assets.Gui.ButtonSmallDownImage
                          Entity.ClickEvent => ShopPageDown]
                      Content.text "Gold"
-                        [Entity.PositionLocal == v3 352.0f 3.0f 0.0f; Entity.ElevationLocal == 1.0f
+                        [Entity.PositionLocal == v3 198.0f 3.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 512.0f 32.0f 0.0f
                          Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
                          Entity.Text := string field.Inventory.Gold + "G"]]
              | None -> ()
@@ -1731,15 +1731,15 @@ type FieldDispatcher () =
                             Entity.Text == "Decline"
                             Entity.ClickEvent => ShopConfirmDecline]
                         Content.text "Offer"
-                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 30.0f 180.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                             Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmOffer]
                         Content.text "Line1"
-                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 60.0f 138.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                             Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmLine1]
                         Content.text "Line2"
-                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f
+                           [Entity.PositionLocal == v3 60.0f 96.0f 0.0f; Entity.ElevationLocal == 1.0f; Entity.Size == v3 768.0f 32.0f 0.0f
                             Entity.Justification == Justified (JustifyLeft, JustifyMiddle)
                             Entity.Text := shopConfirm.ShopConfirmLine2]]
                 | None -> ()
