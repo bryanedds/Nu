@@ -30,6 +30,9 @@ module Native =
             member this.Dispose () =
                 this.Dispose ()
     
+    /// Null Pointer.
+    let nullPtr = NativePtr.nullPtr
+    
     /// Convert a managed pointer to a typed native pointer.
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         let voidPtr = Unsafe.AsPointer &managedPtr

@@ -94,7 +94,7 @@ module Hl =
             
             // get available instance layers
             let mutable layerCount = 0u
-            vkEnumerateInstanceLayerProperties (asPointer &layerCount, NativePtr.nullPtr) |> check
+            vkEnumerateInstanceLayerProperties (asPointer &layerCount, nullPtr) |> check
             let layers = Array.zeroCreate<VkLayerProperties> (int layerCount)
             use layersPin = ArrayPin layers
             vkEnumerateInstanceLayerProperties (asPointer &layerCount, layersPin.Pointer) |> check
@@ -124,7 +124,7 @@ module Hl =
                 createInfo.enabledLayerCount <- 0u
 
             // create instance
-            vkCreateInstance (&createInfo, NativePtr.nullPtr, &instance) |> check
+            vkCreateInstance (&createInfo, nullPtr, &instance) |> check
 
             // fin
             instance
@@ -147,7 +147,7 @@ module Hl =
             
             // get available physical devices
             let mutable deviceCount = 0u
-            vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, NativePtr.nullPtr) |> check
+            vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, nullPtr) |> check
             let devices = Array.zeroCreate<VkPhysicalDevice> (int deviceCount)
             use devicesPin = ArrayPin devices
             vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesPin.Pointer) |> check
@@ -163,7 +163,7 @@ module Hl =
             let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties array> devices.Length
             for i in [0 .. dec devices.Length] do
                 let mutable queueFamilyCount = 0u
-                vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, NativePtr.nullPtr)
+                vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, nullPtr)
                 let queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
                 use queueFamiliesPin = ArrayPin queueFamilies
                 vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, queueFamiliesPin.Pointer)
@@ -273,7 +273,7 @@ module Hl =
             createInfo.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
 
             // create device
-            vkCreateDevice (physicalDevice, asPointer &createInfo, NativePtr.nullPtr, &device) |> check
+            vkCreateDevice (physicalDevice, asPointer &createInfo, nullPtr, &device) |> check
 
             // fin
             device
@@ -294,9 +294,9 @@ module Hl =
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
-            vkDestroyDevice (vulkanGlobal.Device, NativePtr.nullPtr)
-            vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, NativePtr.nullPtr)
-            vkDestroyInstance (vulkanGlobal.Instance, NativePtr.nullPtr)
+            vkDestroyDevice (vulkanGlobal.Device, nullPtr)
+            vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, nullPtr)
+            vkDestroyInstance (vulkanGlobal.Instance, nullPtr)
         
         /// Try to make a VulkanGlobal.
         static member tryMake window =
