@@ -466,7 +466,7 @@ type TextFacet () =
                   RenderOperation2d =
                     RenderText
                         { Transform = textTransform
-                          ClipOpt = ValueSome textTransform.Bounds2d.Box2
+                          ClipOpt = ValueSome transform.Bounds2d.Box2
                           Text = text
                           Font = font
                           FontSizing = fontSizing
