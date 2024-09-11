@@ -17,7 +17,6 @@ void main()
 
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
-const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 64;
 const int SHADOWS_MAX = 16;
@@ -84,7 +83,9 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
-layout(location = 0) out vec4 frag;
+layout (location = 0) out vec4 color;
+layout (location = 1) out vec4 fogAccum;
+layout (location = 2) out float depth;
 
 float linstep(float low, float high, float v)
 {
@@ -144,6 +145,11 @@ vec3 fresnelSchlick(float cosTheta, vec3 f0)
 vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
 {
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float depthViewToDepthBuffer(float depthView, float nearPlane, float farPlane)
+{
+    return (-depthView - nearPlane) / (farPlane - nearPlane);
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -224,7 +230,7 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
 
     // initialize current fragment
     vec2 currentFrag = startFrag;
-    vec2 currentUV = currentFrag / texSize;
+    vec2 currentTexCoords = currentFrag / texSize;
     vec4 currentPosition = position;
     vec4 currentPositionView = positionView;
 
@@ -239,12 +245,12 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
     float currentProgressA = 0.0;
     float currentProgressB = 0.0;
     float currentDepthView = 0.0;
-    for (int i = 0; i < stepCount && currentUV.x >= 0.0 && currentUV.x < 1.0 && currentUV.y >= 0.0 && currentUV.y < 1.0; ++i)
+    for (int i = 0; i < stepCount && currentTexCoords.x >= 0.0 && currentTexCoords.x < 1.0 && currentTexCoords.y >= 0.0 && currentTexCoords.y < 1.0; ++i)
     {
         // advance frag values
         currentFrag += stepAmount;
-        currentUV = currentFrag / texSize;
-        currentPosition = texture(positionTexture, currentUV);
+        currentTexCoords = currentFrag / texSize;
+        currentPosition = texture(positionTexture, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
@@ -264,8 +270,8 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
             {
                 // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
-                currentUV = currentFrag / texSize;
-                currentPosition = texture(positionTexture, currentUV);
+                currentTexCoords = currentFrag / texSize;
+                currentPosition = texture(positionTexture, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
 
@@ -284,15 +290,15 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
                     vec3 h = normalize(v + normal);
                     vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
                     vec3 specularIntensity = f * (1.0 - roughness);
-                    specularScreen = vec3(texture(albedoTexture, currentUV).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
+                    specularScreen = vec3(texture(albedoTexture, currentTexCoords).rgb * ssrLightColor * ssrLightBrightness * specularIntensity);
                     specularScreenWeight =
                         (1.0 - smoothstep(1.0 - ssrRoughnessCutoffMargin, 1.0, roughness / ssrRoughnessCutoff)) * // filter out as fragment reaches max roughness
                         (1.0 - smoothstep(1.0 - ssrDepthCutoffMargin, 1.0, positionView.z / -ssrDepthCutoff)) * // filter out as fragment reaches max depth
                         (1.0 - smoothstep(1.0 - ssrDistanceCutoffMargin, 1.0, length(currentPositionView - positionView) / ssrDistanceCutoff)) * // filter out as reflection point reaches max distance from fragment
                         (1.0 - smoothstep(1.0 - ssrSlopeCutoffMargin, 1.0, slope / ssrSlopeCutoff)) * // filter out as slope nears cutoff
                         smoothstep(0.0, 1.0, eyeDistanceFromPlane) * // filter out as eye nears plane
-                        smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentUV.x, 1.0 - currentUV.x)) *
-                        smoothstep(0.0, ssrEdgeVerticalMargin, min(currentUV.y, 1.0 - currentUV.y));
+                        smoothstep(0.0, ssrEdgeHorizontalMargin, min(currentTexCoords.x, 1.0 - currentTexCoords.x)) *
+                        smoothstep(0.0, ssrEdgeVerticalMargin, min(currentTexCoords.y, 1.0 - currentTexCoords.y));
                     specularScreenWeight = clamp(specularScreenWeight, 0.0, 1.0);
                     break;
                 }
@@ -411,9 +417,6 @@ void main()
             lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
         }
 
-        // compute directional fog accumulation from sun light when desired
-        vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
         // TODO: use a better means of computing specular occlusion as this one isn't very effective.
@@ -426,11 +429,6 @@ void main()
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
         vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
-
-        // compute specular term from light map
-        vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
-        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
 
         // compute specular term and weight from screen-space
         vec3 specularScreen = vec3(0.0);
@@ -450,18 +448,21 @@ void main()
         }
 
         // compute specular term
+        vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
+        vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
+        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
-        // compute ambient term
-        vec3 ambient = diffuse + specular;
+        // compute near and far planes (these _should_ get baked down to fragment constants)
+        float p2z = projection[2].z;
+        float p2w = projection[2].w;
+        float nearPlane = p2w / (p2z - 1.0);
+        float farPlane = p2w / (p2z + 1.0);
 
-        // compute color w/ emission, tone mapping, and gamma correction
-        vec3 color = lightAccum + fogAccum + ambient + emission * albedo;
-        color = color / (color + vec3(1.0));
-        color = pow(color, vec3(1.0 / GAMMA));
-
-        // write color
-        frag = vec4(color, 1.0);
+        // populate lighting values
+        color.xyz = lightAccum + diffuse + emission * albedo + specular;
+        color.w = 1.0; // signify valid fragment
+        fogAccum.xyz = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
+        depth = depthViewToDepthBuffer(positionView.z, nearPlane, farPlane);
     }
-    else frag = vec4(0.0); // write zero
 }

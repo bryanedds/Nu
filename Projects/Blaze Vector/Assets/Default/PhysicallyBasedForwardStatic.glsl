@@ -431,9 +431,6 @@ void main()
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
     }
 
-    // compute directional fog accumulation from sun light when desired
-    vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-
     // compute light ambient terms
     vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
     vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
@@ -449,11 +446,11 @@ void main()
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
-    // compute ambient term
-    vec3 ambient = diffuse + specular;
+    // compute directional fog accumulation from sun light when desired
+    vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
 
-    // compute color w/ emission, tone mapping, and gamma correction
-    vec3 color = lightAccum + fogAccum + ambient + emission * albedo.rgb;
+    // compute color composition with tone mapping and gamma correction
+    vec3 color = lightAccum + diffuse + emission * albedo.rgb + specular + fogAccum;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
 

@@ -67,5 +67,5 @@ void main()
         // write
         frag = vec4(irradiance, 1.0);
     }
-    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white irradiance
+    else frag = vec4(1.0); // white irradiance
 }

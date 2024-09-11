@@ -88,5 +88,5 @@ void main()
         // write
         frag = vec4(environmentFilter, 1.0);
     }
-    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white environment filter
+    else frag = vec4(1.0); // white environment filter
 }
