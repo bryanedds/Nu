@@ -21,17 +21,17 @@ module Filter =
           FilterGaussianShader : uint }
 
     /// Describes an box down-sampling filter shader that's loaded into GPU.
-    type FilterDownSampleBilateralShader =
+    type FilterBilateralDownSampleShader =
         { ColorTextureUniform : int
           DepthTextureUniform : int
-          FilterDownSampleBilateralShader : uint }
+          FilterBilateralDownSampleShader : uint }
 
     /// Describes an bilateral up-sampling filter shader that's loaded into GPU.
-    type FilterUpSampleBilateralShader =
+    type FilterBilateralUpSampleShader =
         { ColorDownSampledTextureUniform : int
           DepthDownSampledTextureUniform : int
           DepthTextureUniform : int
-          FilterUpSampleBilateralShader : uint }
+          FilterBilateralUpSampleShader : uint }
 
     /// Describes an fxaa shader that's loaded into GPU.
     type FilterFxaaShader =
@@ -69,7 +69,7 @@ module Filter =
           FilterGaussianShader = shader }
 
     /// Create a filter bilateral down-sample shader.
-    let CreateFilterDownSampleBilateralShader (shaderFilePath : string) =
+    let CreateFilterBilateralDownSampleShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -82,10 +82,10 @@ module Filter =
         // make shader record
         { ColorTextureUniform = colorTextureUniform
           DepthTextureUniform = depthTextureUniform
-          FilterDownSampleBilateralShader = shader }
+          FilterBilateralDownSampleShader = shader }
 
     /// Create a filter bilateral up-sample shader.
-    let CreateFilterUpSampleBilateralShader (shaderFilePath : string) =
+    let CreateFilterBilateralUpSampleShader (shaderFilePath : string) =
 
         // create shader
         let shader = Shader.CreateShaderFromFilePath shaderFilePath
@@ -100,7 +100,7 @@ module Filter =
         { ColorDownSampledTextureUniform = colorDownSampledTextureUniform
           DepthDownSampledTextureUniform = depthDownSampledTextureUniform
           DepthTextureUniform = depthTextureUniform
-          FilterUpSampleBilateralShader = shader }
+          FilterBilateralUpSampleShader = shader }
 
     /// Create a filter fxaa shader.
     let CreateFilterFxaaShader (shaderFilePath : string) =

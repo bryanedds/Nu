@@ -1895,14 +1895,14 @@ module PhysicallyBased =
         Gl.UseProgram 0u
 
     /// Draw the filter bilateral down-sample pass using a physically-based surface.
-    let DrawFilterDownSampleBilateralSurface
+    let DrawFilterBilateralDownSampleSurface
         (colorTexture : Texture.Texture,
          depthTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterDownSampleBilateralShader) =
+         shader : Filter.FilterBilateralDownSampleShader) =
 
         // setup shader
-        Gl.UseProgram shader.FilterDownSampleBilateralShader
+        Gl.UseProgram shader.FilterBilateralDownSampleShader
         Gl.Uniform1 (shader.ColorTextureUniform, 0)
         Gl.Uniform1 (shader.DepthTextureUniform, 1)
         Hl.Assert ()
@@ -1937,15 +1937,15 @@ module PhysicallyBased =
         Gl.UseProgram 0u
 
     /// Draw the filter bilateral up-sample pass using a physically-based surface.
-    let DrawFilterUpSampleBilateralSurface
+    let DrawFilterBilateralUpSampleSurface
         (colorDownSampledTexture : Texture.Texture,
          depthDownSampledTexture : Texture.Texture,
          depthTexture : Texture.Texture,
          geometry : PhysicallyBasedGeometry,
-         shader : Filter.FilterUpSampleBilateralShader) =
+         shader : Filter.FilterBilateralUpSampleShader) =
 
         // setup shader
-        Gl.UseProgram shader.FilterUpSampleBilateralShader
+        Gl.UseProgram shader.FilterBilateralUpSampleShader
         Gl.Uniform1 (shader.ColorDownSampledTextureUniform, 0)
         Gl.Uniform1 (shader.DepthDownSampledTextureUniform, 1)
         Gl.Uniform1 (shader.DepthTextureUniform, 2)

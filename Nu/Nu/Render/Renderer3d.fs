@@ -822,8 +822,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
           FilterBox1dShader : OpenGL.Filter.FilterBoxShader
           FilterGaussian2dShader : OpenGL.Filter.FilterGaussianShader
-          FilterDownSampleBilateral4dShader : OpenGL.Filter.FilterDownSampleBilateralShader
-          FilterUpSampleBilateral4dShader : OpenGL.Filter.FilterUpSampleBilateralShader
+          FilterBilateralDownSample4dShader : OpenGL.Filter.FilterBilateralDownSampleShader
+          FilterBilateralUpSample4dShader : OpenGL.Filter.FilterBilateralUpSampleShader
           FilterFxaaShader : OpenGL.Filter.FilterFxaaShader
           PhysicallyBasedShadowStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
@@ -2777,7 +2777,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // deferred render fog accum quad to down-sample buffers
         // NOTE: the depthTexture gets rendered redundantly here, but we're ignoring that inefficiency for now.
-        OpenGL.PhysicallyBased.DrawFilterDownSampleBilateralSurface (fogAccumTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterDownSampleBilateral4dShader)
+        OpenGL.PhysicallyBased.DrawFilterBilateralDownSampleSurface (fogAccumTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterBilateralDownSample4dShader)
 
         // setup fog accum up-sample buffers and viewport
         let (fogAccumUpSampleTexture, fogAccumUpSampleRenderbuffer, fogAccumUpSampleFramebuffer) = renderer.FogAccumUpSampleBuffers
@@ -2789,7 +2789,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // deferred render fog accum quad to up-sample buffers
-        OpenGL.PhysicallyBased.DrawFilterUpSampleBilateralSurface (fogAccumDownSampleTexture, depthDownSampleTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterUpSampleBilateral4dShader)
+        OpenGL.PhysicallyBased.DrawFilterBilateralUpSampleSurface (fogAccumDownSampleTexture, depthDownSampleTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterBilateralUpSample4dShader)
 
         // setup composition buffer and viewport
         let (compositionTexture, compositionRenderbuffer, compositionFramebuffer) = renderer.CompositionBuffers
@@ -3180,11 +3180,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create filter bilateral down-sample shader
-        let filterDownSampleBilateral4dShader = OpenGL.Filter.CreateFilterDownSampleBilateralShader Constants.Paths.FilterDownSampleBilateral4dShaderFilePath
+        let filterBilateralDownSample4dShader = OpenGL.Filter.CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create filter bilateral up-sample shader
-        let filterUpSampleBilateral4dShader = OpenGL.Filter.CreateFilterUpSampleBilateralShader Constants.Paths.FilterUpSampleBilateral4dShaderFilePath
+        let filterBilateralUpSample4dShader = OpenGL.Filter.CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
         OpenGL.Hl.Assert ()
 
         // create filter fxaa shader
@@ -3298,7 +3298,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create specular screen down-sample buffers
         let specularScreenDownSampleBuffers =
-            match OpenGL.Framebuffer.TryCreateFilterDownSampleBilateralBuffers () with
+            match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers () with
             | Right specularScreenDownSampleBuffers -> specularScreenDownSampleBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
@@ -3312,7 +3312,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create fog accum down-sample buffers
         let fogAccumDownSampleBuffers =
-            match OpenGL.Framebuffer.TryCreateFilterDownSampleBilateralBuffers () with
+            match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers () with
             | Right fogAccumDownSampleBuffers -> fogAccumDownSampleBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
@@ -3479,8 +3479,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterShader = environmentFilterShader
               FilterBox1dShader = filterBox1dShader
               FilterGaussian2dShader = filterGaussian2dShader
-              FilterDownSampleBilateral4dShader = filterDownSampleBilateral4dShader
-              FilterUpSampleBilateral4dShader = filterUpSampleBilateral4dShader
+              FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
+              FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
               FilterFxaaShader = filterFxaaShader
               PhysicallyBasedShadowStaticShader = shadowStaticShader
               PhysicallyBasedShadowAnimatedShader = shadowAnimatedShader

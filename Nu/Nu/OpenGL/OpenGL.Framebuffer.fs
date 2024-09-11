@@ -132,7 +132,7 @@ module Framebuffer =
         filterGaussianTexture.Destroy ()
 
     /// Create filter bilateral down-sample buffers.
-    let TryCreateFilterDownSampleBilateralBuffers () =
+    let TryCreateFilterBilateralDownSampleBuffers () =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
