@@ -35,7 +35,7 @@ module EffectDescriptors =
           Content =
             TextSprite
                 (Resource (AssetTag.toPair Assets.Gui.Font),
-                 scstring (abs delta), None, Set.empty,
+                 scstring (abs delta), Some 24, Set.empty,
                  [|Positions
                     (Sum, Linear, Bounce,
                      [|{ TweenValue = v3Zero; TweenLength = 10L }
