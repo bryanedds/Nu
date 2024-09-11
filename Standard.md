@@ -17,20 +17,18 @@ Correctness, Consistency, Simplicity
 
 6) Avoid trading away type inference unless you have a specific need.
 
-7) Avoid creating object and struct types, as well as instance members, and properties for all but the most trivial getters, unless you have a specific need (such as for creating a plug-in, a DSL, for interop, for efficiency, or etc).
+7) Avoid creating class and struct types, as well as instance members, and properties for all but the most trivial getters, unless you have a specific need (such as for creating a plug-in, a DSL, for interop, for efficiency, or etc).
 
 8) Try to preserve debuggability of code by -
 
 -   introducing local bindings to potentially-interesting intermediate results,
--   avoiding unnecessary laziness and asynchrony (but since async being woven throughout code is rarely avoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead).
+-   avoiding unnecessary laziness and asynchrony (but since async being woven throughout code is sometime unavoidable, consider using the [*Vsync monad*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/Vsync.fs) instead).
 
 9) Suffix option bindings, choice bindings, either bindings, and bindings to potentially null values with `Opt`.
 
 10) Prefix functions that return an option, choice, either, or potential null with `try`.
 
 11) Try to use unique names for public fields and discriminated union cases to avoid ambiguating type inference. For example, `Id` is not a good public field name, but `ProductId` might be.
-
-12) Avoid use of NoEquality attribute except where unavoidable. It's better to force yourself to make a decision on equality semantics when you can.
 
 **B) Consistency**
 
@@ -170,16 +168,14 @@ Correctness, Consistency, Simplicity
 
 1) Use F\# as a functional-first language, rather than an object-oriented one. [*Here's our friend Rich Hickey on why object-orientation in inherently complex.*](http://www.infoq.com/presentations/Simple-Made-Easy)
 
-2) For mutation that you can't avoid, try to encapsulate it behind a referentially-transparent interface wherever feasible. For example, consider wrapping your mutable constructs with [*KeyedCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/KeyedCache.fs) or [*MutantCache*](https://github.com/bryanedds/Nu/blob/master/Prime/Prime/MutantCache.fs)
+2) Avoid dependencies on untested, incomplete, or unnecessarily complex libraries / frameworks.
 
-3) Avoid dependencies on untested, incomplete, or unnecessarily complex libraries / frameworks.
+3) Avoid checking in dead / commented-out code. If unavoidable, leave a comment above the code explaining why it's commented out and / or when it will be useful again.
 
-4) Avoid checking in dead / commented-out code. If unavoidable, leave a comment above the code explaining why it's commented out and / or when it will be useful again.
+4) Consider passing around multiple dependency references in a single container (usually a record) rather than individually.
 
-5) Consider passing around multiple dependency references in a single container (usually a record) rather than individually.
-
-6) Consider making such a container an *abstract data type* by -
+5) Consider making such a container an *abstract data type* by -
 
 -   privatizing all of its fields like so - `type MyContainer = private { ... }`
 -   exposing a narrow set of static member functions that provide only the desired functionality in a more abstract way.
--   either use PascalCasing for private record fields with a trailing underscore (such as either `MyField_`) OR use camelCasing (such as `myField`). Prime's symbolic serializer will detect the trailing underscore or lowercasing when the SymbolicExpansion attribute is used in order to normalize the field name (such as making it `MyField`).
+-   either use PascalCasing for private record fields with a trailing underscore (such as either `MyField_`) OR use camelCasing (such as `myField`). Prime's symbolic serializer will detect the trailing underscore or lower-casing when the SymbolicExpansion attribute is used in order to normalize the field name (such as making it `MyField`).

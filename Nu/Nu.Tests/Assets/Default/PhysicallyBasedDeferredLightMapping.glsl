@@ -110,5 +110,4 @@ void main()
         // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
         frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0f);
     }
-    else frag = vec4(0.0, 0.0, 0.0, 0.0); // zero map
 }

@@ -822,6 +822,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterShader : OpenGL.LightMap.EnvironmentFilterShader
           FilterBox1dShader : OpenGL.Filter.FilterBoxShader
           FilterGaussian2dShader : OpenGL.Filter.FilterGaussianShader
+          FilterBilateralDownSample4dShader : OpenGL.Filter.FilterBilateralDownSampleShader
+          FilterBilateralUpSample4dShader : OpenGL.Filter.FilterBilateralUpSampleShader
           FilterFxaaShader : OpenGL.Filter.FilterFxaaShader
           PhysicallyBasedShadowStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
@@ -837,6 +839,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
           PhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           PhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
+          PhysicallyBasedDeferredCompositionShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredCompositionShader
           PhysicallyBasedForwardStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           ShadowBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
@@ -848,7 +851,12 @@ type [<ReferenceEquality>] GlRenderer3d =
           EnvironmentFilterBuffers : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersUnfiltered : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersFiltered : OpenGL.Texture.Texture * uint * uint
-          FilterBuffers : OpenGL.Texture.Texture * uint * uint
+          LightingBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          SpecularScreenDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          SpecularScreenUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
+          FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
+          CompositionBuffers : OpenGL.Texture.Texture * uint * uint
           CubeMapGeometry : OpenGL.CubeMap.CubeMapGeometry
           BillboardGeometry : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
           PhysicallyBasedQuad : OpenGL.PhysicallyBased.PhysicallyBasedGeometry
@@ -2734,32 +2742,16 @@ type [<ReferenceEquality>] GlRenderer3d =
             // just use white texture
             else renderer.WhiteTexture
 
-        // setup filter buffer and viewport
-        let (filterTexture, filterRenderbuffer, filterFramebuffer) = renderer.FilterBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
+        // setup lighting buffers and viewport
+        let (colorTexture, fogAccumTexture, depthTexture, lightingRenderbuffer, lightingFramebuffer) = renderer.LightingBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, lightingRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, lightingFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
-        // copy depths from geometry framebuffer to filter framebuffer
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, filterFramebuffer)
-        OpenGL.Gl.BlitFramebuffer
-            (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
-             geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
-             OpenGL.ClearBufferMask.DepthBufferBit,
-             OpenGL.BlitFramebufferFilter.Nearest)
-        OpenGL.Hl.Assert ()
-
-        // restore filter buffer
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, filterRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, filterFramebuffer)
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-
-        // deferred render lighting quad to filter buffer
+        // deferred render lighting quad to lighting buffers
         let ssvfEnabled = if renderer.RendererConfig.SsvfEnabled && renderer.LightingConfig.SsvfEnabled then 1 else 0
         let ssrEnabled = if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0
         let ssrLightColor = Array.take 3 (renderer.LightingConfig.SsrLightColor.ToArray ())
@@ -2774,7 +2766,64 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
 
-        // attempt to render sky box to filter buffer
+        // run fog accum blur pass
+        let fogAccumTexture =
+
+            // but only if needed
+            if renderer.LightingConfig.SsvfEnabled then
+
+                // setup fog accum down-sample buffers and viewport
+                let (fogAccumDownSampleTexture, depthDownSampleTexture, fogAccumDownSampleRenderbuffer, fogAccumDownSampleFramebuffer) = renderer.FogAccumDownSampleBuffers
+                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, fogAccumDownSampleRenderbuffer)
+                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, fogAccumDownSampleFramebuffer)
+                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+                OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2)
+                OpenGL.Hl.Assert ()
+
+                // deferred render fog accum quad to down-sample buffers
+                // NOTE: the depthTexture gets rendered redundantly here, but we're ignoring that inefficiency for now.
+                OpenGL.PhysicallyBased.DrawFilterBilateralDownSampleSurface (fogAccumTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterBilateralDownSample4dShader)
+
+                // setup fog accum up-sample buffers and viewport
+                let (fogAccumUpSampleTexture, fogAccumUpSampleRenderbuffer, fogAccumUpSampleFramebuffer) = renderer.FogAccumUpSampleBuffers
+                OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, fogAccumUpSampleRenderbuffer)
+                OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, fogAccumUpSampleFramebuffer)
+                OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+                OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+                OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
+                OpenGL.Hl.Assert ()
+
+                // deferred render fog accum quad to up-sample buffers
+                OpenGL.PhysicallyBased.DrawFilterBilateralUpSampleSurface (fogAccumDownSampleTexture, depthDownSampleTexture, depthTexture, renderer.PhysicallyBasedQuad, renderer.FilterBilateralUpSample4dShader)
+                fogAccumUpSampleTexture
+
+            // just use black texture
+            else renderer.BlackTexture
+
+        // setup composition buffer and viewport
+        let (compositionTexture, compositionRenderbuffer, compositionFramebuffer) = renderer.CompositionBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, compositionRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
+        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
+        OpenGL.Hl.Assert ()
+
+        // deferred render composition quad to composition buffers
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredCompositionSurface (colorTexture, fogAccumTexture, renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredCompositionShader)
+
+        // copy depths from geometry framebuffer to composition framebuffer
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
+        OpenGL.Gl.BlitFramebuffer
+            (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
+             geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y,
+             OpenGL.ClearBufferMask.DepthBufferBit,
+             OpenGL.BlitFramebufferFilter.Nearest)
+        OpenGL.Hl.Assert ()
+
+        // attempt to render sky box to composition buffer
         match skyBoxOpt with
         | Some (cubeMapColor, cubeMapBrightness, cubeMap, _) ->
             let cubeMapColor = [|cubeMapColor.R; cubeMapColor.G; cubeMapColor.B|]
@@ -2782,9 +2831,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Hl.Assert ()
         | None -> ()
 
-        // forward render static surfaces w/ absolute transforms to filter buffer if in top level render
+        // forward render static surfaces w/ absolute transforms to composition buffer if in top level render
         if topLevelRender then
             for (model, presence, texCoordsOffset, properties, surface) in renderTasks.ForwardStaticAbsoluteSorted do
+                let ssvfSteps =
+                    renderer.LightingConfig.SsvfSteps * 2; // HACK: need an increase in forward-rendered steps since they don't get blurred.
                 let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                     let surfaceBounds = surface.SurfaceBounds.Transform model
                     SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
@@ -2795,14 +2846,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                     true viewAbsoluteArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
                     eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    ssvfEnabled renderer.LightingConfig.SsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
+                    ssvfEnabled ssvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
                     renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                     lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                     surface renderer.PhysicallyBasedForwardStaticShader renderer
                 OpenGL.Hl.Assert ()
 
-        // forward render static surfaces w/ relative transforms to filter buffer
+        // forward render static surfaces w/ relative transforms to composition buffer
         for (model, presence, texCoordsOffset, properties, surface) in renderTasks.ForwardStaticRelativeSorted do
+            let ssvfSteps =
+                renderer.LightingConfig.SsvfSteps * 2; // HACK: need an increase in forward-rendered steps since they don't get blurred.
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
                 SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
@@ -2813,7 +2866,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 true viewRelativeArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
                 eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                ssvfEnabled renderer.LightingConfig.SsvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
+                ssvfEnabled ssvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
                 renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures lightMapOrigins lightMapMins lightMapSizes lightMapsCount
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightDirectionals lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
                 surface renderer.PhysicallyBasedForwardStaticShader renderer
@@ -2826,7 +2879,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // render filter quad via fxaa
-        OpenGL.PhysicallyBased.DrawFilterFxaaSurface (filterTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader)
+        OpenGL.PhysicallyBased.DrawFilterFxaaSurface (compositionTexture, renderer.PhysicallyBasedQuad, renderer.FilterFxaaShader)
         OpenGL.Hl.Assert ()
 
         // destroy cached geometries that weren't rendered this frame
@@ -3140,6 +3193,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         let filterGaussian2dShader = OpenGL.Filter.CreateFilterGaussianShader Constants.Paths.FilterGaussian2dShaderFilePath
         OpenGL.Hl.Assert ()
 
+        // create filter bilateral down-sample shader
+        let filterBilateralDownSample4dShader = OpenGL.Filter.CreateFilterBilateralDownSampleShader Constants.Paths.FilterBilateralDownSample4dShaderFilePath
+        OpenGL.Hl.Assert ()
+
+        // create filter bilateral up-sample shader
+        let filterBilateralUpSample4dShader = OpenGL.Filter.CreateFilterBilateralUpSampleShader Constants.Paths.FilterBilateralUpSample4dShaderFilePath
+        OpenGL.Hl.Assert ()
+
         // create filter fxaa shader
         let filterFxaaShader = OpenGL.Filter.CreateFilterFxaaShader Constants.Paths.FilterFxaaShaderFilePath
         OpenGL.Hl.Assert ()
@@ -3161,7 +3222,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
-        let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader) =
+        let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader, deferredLightingShader, deferredCompositionShader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
                 (Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath,
@@ -3170,7 +3231,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath)
+                 Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath,
+                 Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create forward shader
@@ -3241,10 +3303,45 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
-        // create filter buffers
-        let filterBuffers =
-            match OpenGL.Framebuffer.TryCreateFilterBuffers (Constants.Render.Resolution.X, Constants.Render.Resolution.Y) with
-            | Right filterBuffers -> filterBuffers
+        // create lighting buffers
+        let lightingBuffers =
+            match OpenGL.Framebuffer.TryCreateLightingBuffers () with
+            | Right lightingBuffers -> lightingBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create specular screen down-sample buffers
+        let specularScreenDownSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers () with
+            | Right specularScreenDownSampleBuffers -> specularScreenDownSampleBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create specular screen up-sample buffers
+        let specularScreenUpSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers () with
+            | Right specularScreenUpSampleBuffers -> specularScreenUpSampleBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create fog accum down-sample buffers
+        let fogAccumDownSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers () with
+            | Right fogAccumDownSampleBuffers -> fogAccumDownSampleBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create fog accum up-sample buffers
+        let fogAccumUpSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers () with
+            | Right fogAccumUpSampleBuffers -> fogAccumUpSampleBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create composition buffers
+        let compositionBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers () with
+            | Right filterFogAccumBuffers -> filterFogAccumBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
@@ -3396,6 +3493,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterShader = environmentFilterShader
               FilterBox1dShader = filterBox1dShader
               FilterGaussian2dShader = filterGaussian2dShader
+              FilterBilateralDownSample4dShader = filterBilateralDownSample4dShader
+              FilterBilateralUpSample4dShader = filterBilateralUpSample4dShader
               FilterFxaaShader = filterFxaaShader
               PhysicallyBasedShadowStaticShader = shadowStaticShader
               PhysicallyBasedShadowAnimatedShader = shadowAnimatedShader
@@ -3411,6 +3510,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedDeferredEnvironmentFilterShader = deferredEnvironmentFilterShader
               PhysicallyBasedDeferredSsaoShader = deferredSsaoShader
               PhysicallyBasedDeferredLightingShader = deferredLightingShader
+              PhysicallyBasedDeferredCompositionShader = deferredCompositionShader
               PhysicallyBasedForwardStaticShader = forwardStaticShader
               ShadowBuffersArray = shadowBuffersArray
               ShadowBuffers2Array = shadowBuffers2Array
@@ -3422,7 +3522,12 @@ type [<ReferenceEquality>] GlRenderer3d =
               EnvironmentFilterBuffers = environmentFilterBuffers
               SsaoBuffersUnfiltered = ssaoBuffersUnfiltered
               SsaoBuffersFiltered = ssaoBuffersFiltered
-              FilterBuffers = filterBuffers
+              LightingBuffers = lightingBuffers
+              SpecularScreenDownSampleBuffers = specularScreenDownSampleBuffers
+              SpecularScreenUpSampleBuffers = specularScreenUpSampleBuffers
+              FogAccumDownSampleBuffers = fogAccumDownSampleBuffers
+              FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
+              CompositionBuffers = compositionBuffers
               CubeMapGeometry = cubeMapGeometry
               BillboardGeometry = billboardGeometry
               PhysicallyBasedQuad = physicallyBasedQuad
@@ -3505,6 +3610,11 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers renderer.EnvironmentFilterBuffers
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.SsaoBuffersUnfiltered
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.SsaoBuffersFiltered
-            OpenGL.Framebuffer.DestroyFilterBuffers renderer.FilterBuffers
+            OpenGL.Framebuffer.DestroyLightingBuffers renderer.LightingBuffers
+            OpenGL.Framebuffer.DestroyFilterBilateralBuffers renderer.SpecularScreenDownSampleBuffers
+            OpenGL.Framebuffer.DestroyHdrBuffers renderer.SpecularScreenUpSampleBuffers
+            OpenGL.Framebuffer.DestroyFilterBilateralBuffers renderer.FogAccumDownSampleBuffers
+            OpenGL.Framebuffer.DestroyHdrBuffers renderer.FogAccumUpSampleBuffers
+            OpenGL.Framebuffer.DestroyHdrBuffers renderer.CompositionBuffers
             for shadowBuffers in renderer.ShadowBuffersArray do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers
             for shadowBuffers2 in renderer.ShadowBuffers2Array do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers2

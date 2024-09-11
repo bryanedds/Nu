@@ -399,6 +399,12 @@ module PhysicallyBased =
           ShadowMatricesUniforms : int array
           PhysicallyBasedDeferredLightingShader : uint }
 
+    /// Describes the composition pass of a deferred physically-based shader that's loaded into GPU.
+    type PhysicallyBasedDeferredCompositionShader =
+        { ColorTextureUniform : int
+          FogAccumTextureUniform : int
+          PhysicallyBasedDeferredCompositionShader : uint }
+
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
     /// files can't be located.
@@ -1764,6 +1770,44 @@ module PhysicallyBased =
           ShadowMatricesUniforms = shadowMatricesUniforms
           PhysicallyBasedDeferredLightingShader = shader }
 
+    /// Create a physically-based shader for the composition pass of deferred rendering.
+    let CreatePhysicallyBasedDeferredCompositionShader (shaderFilePath : string) =
+
+        // create shader
+        let shader = Shader.CreateShaderFromFilePath shaderFilePath
+        Hl.Assert ()
+
+        // retrieve uniforms
+        let colorTextureUniform = Gl.GetUniformLocation (shader, "colorTexture")
+        let fogAccumTextureUniform = Gl.GetUniformLocation (shader, "fogAccumTexture")
+
+        // make shader record
+        { ColorTextureUniform = colorTextureUniform
+          FogAccumTextureUniform = fogAccumTextureUniform
+          PhysicallyBasedDeferredCompositionShader = shader }
+
+    /// Create the shaders for physically-based deferred rendering.
+    let CreatePhysicallyBasedDeferredShaders
+        (shaderStaticFilePath,
+         shaderAnimatedFilePath,
+         terrainShaderFilePath,
+         shaderLightMappingFilePath,
+         shaderIrradianceFilePath,
+         shaderEnvironmentFilterFilePath,
+         shaderSsaoFilePath,
+         shaderLightingFilePath,
+         shaderCompositionFilePath) =
+        let shaderStatic = CreatePhysicallyBasedShader shaderStaticFilePath in Hl.Assert ()
+        let shaderAnimated = CreatePhysicallyBasedShader shaderAnimatedFilePath in Hl.Assert ()
+        let shaderTerrain = CreatePhysicallyBasedTerrainShader terrainShaderFilePath in Hl.Assert ()
+        let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath in Hl.Assert ()
+        let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath in Hl.Assert ()
+        let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath in Hl.Assert ()
+        let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath in Hl.Assert ()
+        let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
+        let shaderComposition = CreatePhysicallyBasedDeferredCompositionShader shaderCompositionFilePath
+        (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting, shaderComposition)
+
     /// Create the shaders for physically-based depth rendering (such as for occlusion or shadow rendering).
     let CreatePhysicallyBasedDepthShaders (shaderStaticDepthFilePath, shaderAnimatedDepthFilePath, shaderTerrainDepthFilePath) =
         let shaderStaticShadow = CreatePhysicallyBasedShader shaderStaticDepthFilePath
@@ -1772,25 +1816,6 @@ module PhysicallyBased =
         Hl.Assert ()
         let shaderTerrainShadow = CreatePhysicallyBasedTerrainShader shaderTerrainDepthFilePath
         (shaderStaticShadow, shaderAnimatedShadow, shaderTerrainShadow)
-
-    /// Create the shaders for physically-based deferred rendering.
-    let CreatePhysicallyBasedDeferredShaders (shaderStaticFilePath, shaderAnimatedFilePath, terrainShaderFilePath, shaderLightMappingFilePath, shaderIrradianceFilePath, shaderEnvironmentFilterFilePath, shaderSsaoFilePath, shaderLightingFilePath) =
-        let shaderStatic = CreatePhysicallyBasedShader shaderStaticFilePath
-        Hl.Assert ()
-        let shaderAnimated = CreatePhysicallyBasedShader shaderAnimatedFilePath
-        Hl.Assert ()
-        let shaderTerrain = CreatePhysicallyBasedTerrainShader terrainShaderFilePath
-        Hl.Assert ()
-        let shaderLightMapping = CreatePhysicallyBasedDeferredLightMappingShader shaderLightMappingFilePath
-        Hl.Assert ()
-        let shaderIrradiance = CreatePhysicallyBasedDeferredIrradianceShader shaderIrradianceFilePath
-        Hl.Assert ()
-        let shaderEnvironmentFilter = CreatePhysicallyBasedDeferredEnvironmentFilterShader shaderEnvironmentFilterFilePath
-        Hl.Assert ()
-        let shaderSsao = CreatePhysicallyBasedDeferredSsaoShader shaderSsaoFilePath
-        Hl.Assert ()
-        let shaderLighting = CreatePhysicallyBasedDeferredLightingShader shaderLightingFilePath
-        (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting)
 
     /// Draw the filter box pass using a physically-based surface.
     let DrawFilterBoxSurface
@@ -1866,6 +1891,96 @@ module PhysicallyBased =
 
         // teardown shader
         Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.UseProgram 0u
+
+    /// Draw the filter bilateral down-sample pass using a physically-based surface.
+    let DrawFilterBilateralDownSampleSurface
+        (colorTexture : Texture.Texture,
+         depthTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBilateralDownSampleShader) =
+
+        // setup shader
+        Gl.UseProgram shader.FilterBilateralDownSampleShader
+        Gl.Uniform1 (shader.ColorTextureUniform, 0)
+        Gl.Uniform1 (shader.DepthTextureUniform, 1)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.UseProgram 0u
+
+    /// Draw the filter bilateral up-sample pass using a physically-based surface.
+    let DrawFilterBilateralUpSampleSurface
+        (colorDownSampledTexture : Texture.Texture,
+         depthDownSampledTexture : Texture.Texture,
+         depthTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : Filter.FilterBilateralUpSampleShader) =
+
+        // setup shader
+        Gl.UseProgram shader.FilterBilateralUpSampleShader
+        Gl.Uniform1 (shader.ColorDownSampledTextureUniform, 0)
+        Gl.Uniform1 (shader.DepthDownSampledTextureUniform, 1)
+        Gl.Uniform1 (shader.DepthTextureUniform, 2)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, colorDownSampledTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, depthDownSampledTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture2
+        Gl.BindTexture (TextureTarget.Texture2d, depthTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture2
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.UseProgram 0u
 
@@ -2844,6 +2959,51 @@ module PhysicallyBased =
         for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 8 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Hl.Assert ()
+
+        // teardown shader
+        Gl.UseProgram 0u
+
+    /// Draw the bilateral up-sample pass of a deferred physically-based surface.
+    let DrawPhysicallyBasedDeferredCompositionSurface
+        (colorTexture : Texture.Texture,
+         fogAccumTexture : Texture.Texture,
+         geometry : PhysicallyBasedGeometry,
+         shader : PhysicallyBasedDeferredCompositionShader) =
+
+        // setup shader
+        Gl.UseProgram shader.PhysicallyBasedDeferredCompositionShader
+        Gl.Uniform1 (shader.ColorTextureUniform, 0)
+        Gl.Uniform1 (shader.FogAccumTextureUniform, 1)
+        Hl.Assert ()
+
+        // setup textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, colorTexture.TextureId)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, fogAccumTexture.TextureId)
+        Hl.Assert ()
+
+        // setup geometry
+        Gl.BindVertexArray geometry.PhysicallyBasedVao
+        Gl.BindBuffer (BufferTarget.ArrayBuffer, geometry.VertexBuffer)
+        Gl.BindBuffer (BufferTarget.ElementArrayBuffer, geometry.IndexBuffer)
+        Hl.Assert ()
+
+        // draw geometry
+        Gl.DrawElements (geometry.PrimitiveType, geometry.ElementCount, DrawElementsType.UnsignedInt, nativeint 0)
+        Hl.ReportDrawCall 1
+        Hl.Assert ()
+
+        // teardown geometry
+        Gl.BindVertexArray 0u
+        Hl.Assert ()
+
+        // teardown textures
+        Gl.ActiveTexture TextureUnit.Texture0
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        Gl.ActiveTexture TextureUnit.Texture1
+        Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Hl.Assert ()
 
         // teardown shader

@@ -15,12 +15,12 @@ type [<Struct>] Playback =
     | Bounce
 
 /// Represents different repetition modes for an animated behavior.
-type Repetition =
+type [<DefaultValue "[Cycle 1]">] Repetition =
     | Cycle of Cycles : int
     | Iterate of Iterations : int
 
 /// Describes an animation.
-type [<SymbolicExpansion>] Animation =
+type [<SymbolicExpansion; DefaultValue "[[StartTime 0] [LifeTimeOpt None] [Name \"\"] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]">] Animation =
     { StartTime : GameTime
       LifeTimeOpt : GameTime option
       Name : string
