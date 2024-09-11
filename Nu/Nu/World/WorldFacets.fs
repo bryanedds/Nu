@@ -1325,7 +1325,7 @@ type RigidBodyFacet () =
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.Sensor false
          define Entity.Observable false
-         define Entity.AwakeTimeStamp 0L
+         nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalIndex }) None]
 
@@ -1522,7 +1522,7 @@ type TileMapFacet () =
          define Entity.TileIndexOffset 0
          define Entity.TileIndexOffsetRange (0, 0)
          define Entity.TileMap Assets.Default.TileMap
-         define Entity.AwakeTimeStamp 0L
+         nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
@@ -1631,7 +1631,7 @@ type TmxMapFacet () =
          define Entity.TileIndexOffset 0
          define Entity.TileIndexOffsetRange (0, 0)
          nonPersistent Entity.TmxMap (TmxMap.makeDefault ())
-         define Entity.AwakeTimeStamp 0L
+         nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
@@ -2868,7 +2868,7 @@ type TerrainFacet () =
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
          define Entity.Segments v2iOne
          define Entity.Observable false
-         define Entity.AwakeTimeStamp 0L
+         nonPersistent Entity.AwakeTimeStamp 0L
          computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
