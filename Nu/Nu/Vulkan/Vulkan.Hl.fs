@@ -68,6 +68,76 @@ module Hl =
             member this.Dispose () =
                 this.Dispose ()
     
+    /// A physical device and associated data.
+    type PhysicalDeviceData =
+        { PhysicalDevice : VkPhysicalDevice
+          Properties : VkPhysicalDeviceProperties
+          GraphicsQueueFamilyOpt : uint option
+          PresentQueueFamilyOpt : uint option }
+
+        /// Get properties.
+        static member getProperties physicalDevice =
+            let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
+            vkGetPhysicalDeviceProperties (physicalDevice, &properties)
+            properties
+        
+        /// Get queue family opts.
+        static member getQueueFamilyOpts physicalDevice surface =
+            
+            // get queue families' properties
+            let mutable queueFamilyCount = 0u
+            vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, asPointer &queueFamilyCount, nullPtr)
+            let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
+            use queueFamilyPropsPin = ArrayPin queueFamilyProps
+            vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
+
+            (* It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
+               I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
+
+               https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
+
+               general lesson: trust level for vendors is too low for deviation from common practices to be advisable. *)
+            
+            let mutable graphicsQueueFamilyOpt = None
+            let mutable presentQueueFamilyOpt = None
+            for i in [0 .. dec queueFamilyProps.Length] do
+                
+                // try get graphics queue family
+                match graphicsQueueFamilyOpt with
+                | None ->
+                    let props = queueFamilyProps[i]
+                    if props.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
+                        graphicsQueueFamilyOpt <- Some (uint i)
+                | Some _ -> ()
+
+                // try get present queue family
+                match presentQueueFamilyOpt with
+                | None ->
+                    let mutable presentSupport = VkBool32.False
+                    vkGetPhysicalDeviceSurfaceSupportKHR (physicalDevice, uint i, surface, &presentSupport) |> check
+                    if (presentSupport = VkBool32.True) then
+                        presentQueueFamilyOpt <- Some (uint i)
+                | Some _ -> ()
+
+            (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
+        
+        /// Make PhysicalDeviceData.
+        static member make physicalDevice surface =
+            
+            // get data
+            let properties = PhysicalDeviceData.getProperties physicalDevice
+            let (graphicsQueueFamilyOpt, presentQueueFamilyOpt) = PhysicalDeviceData.getQueueFamilyOpts physicalDevice surface
+
+            // make physicalDeviceData
+            let physicalDeviceData =
+                { PhysicalDevice = physicalDevice
+                  Properties = properties
+                  GraphicsQueueFamilyOpt = graphicsQueueFamilyOpt
+                  PresentQueueFamilyOpt = presentQueueFamilyOpt }
+
+            // fin
+            physicalDeviceData
+    
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
         private
