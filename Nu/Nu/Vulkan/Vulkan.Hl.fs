@@ -36,12 +36,19 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
     
+    /// Extract the string from a C# fixed-size buffer.
+    let getBufferString fixedBuffer =
+        let mutable fixedBuffer = fixedBuffer
+        let ptr = asBytePointer &fixedBuffer
+        VkStringInterop.ConvertToManaged ptr
+    
+    /// Convert VkExtensionProperties.extensionName to a string.
+    let getExtensionName (extensionProps : VkExtensionProperties) =
+        getBufferString extensionProps.extensionName
+    
     /// Convert VkLayerProperties.layerName to a string.
     let getLayerName (layerProps : VkLayerProperties) =
-        let mutable layerName = layerProps.layerName
-        let ptr = asBytePointer &layerName
-        let vkUtf8Str = new VkUtf8String (ptr)
-        vkUtf8Str.ToString ()
+        getBufferString layerProps.layerName
     
     // TODO: implement VkStringInterop helpers to remove Vortice.Vulkan dependence and move gems like this into Native.fs.
 
@@ -245,8 +252,15 @@ module Hl =
             // gather devices together with relevant data for selection
             let candidates = [ for i in [0 .. dec devices.Length] -> PhysicalDeviceData.make devices[i] surface ]
 
-            // compatibility criteria: device must support the essential queue operations and Vulkan 1.3
+            // compatibility criteria: device must support essential queue operations, swapchain and Vulkan 1.3
             let isCompatible physicalDeviceData =
+                
+                // determine swapchain support
+                let swapchainExtensionName = Encoding.UTF8.GetString VK_KHR_SWAPCHAIN_EXTENSION_NAME
+                let swapchainSupported = Array.exists (fun x -> getExtensionName x = swapchainExtensionName) physicalDeviceData.Extensions
+                
+                // checklist
+                swapchainSupported &&
                 Option.isSome physicalDeviceData.GraphicsQueueFamilyOpt &&
                 Option.isSome physicalDeviceData.PresentQueueFamilyOpt &&
                 physicalDeviceData.Properties.apiVersion.Minor >= 3u
