@@ -72,6 +72,7 @@ module Hl =
     type PhysicalDeviceData =
         { PhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
+          Extensions : VkExtensionProperties array
           GraphicsQueueFamilyOpt : uint option
           PresentQueueFamilyOpt : uint option }
 
@@ -86,6 +87,15 @@ module Hl =
             let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
             vkGetPhysicalDeviceProperties (physicalDevice, &properties)
             properties
+        
+        /// Get available extensions.
+        static member getExtensions physicalDevice =
+            let mutable extensionCount = 0u
+            vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> check
+            let extensions = Array.zeroCreate<VkExtensionProperties> (int extensionCount)
+            use extensionsPin = ArrayPin extensions
+            vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> check
+            extensions
         
         /// Get queue family opts.
         static member getQueueFamilyOpts physicalDevice surface =
@@ -132,12 +142,14 @@ module Hl =
             
             // get data
             let properties = PhysicalDeviceData.getProperties physicalDevice
+            let extensions = PhysicalDeviceData.getExtensions physicalDevice
             let (graphicsQueueFamilyOpt, presentQueueFamilyOpt) = PhysicalDeviceData.getQueueFamilyOpts physicalDevice surface
 
             // make physicalDeviceData
             let physicalDeviceData =
                 { PhysicalDevice = physicalDevice
                   Properties = properties
+                  Extensions = extensions
                   GraphicsQueueFamilyOpt = graphicsQueueFamilyOpt
                   PresentQueueFamilyOpt = presentQueueFamilyOpt }
 
