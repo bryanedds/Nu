@@ -75,6 +75,12 @@ module Hl =
           GraphicsQueueFamilyOpt : uint option
           PresentQueueFamilyOpt : uint option }
 
+        /// Graphics queue family, whose existence must be established.
+        member this.GraphicsQueueFamily = Option.get this.GraphicsQueueFamilyOpt
+
+        /// Present queue family, whose existence must be established.
+        member this.PresentQueueFamily = Option.get this.PresentQueueFamilyOpt
+        
         /// Get properties.
         static member getProperties physicalDevice =
             let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
@@ -224,68 +230,17 @@ module Hl =
             use devicesPin = ArrayPin devices
             vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, devicesPin.Pointer) |> check
 
-            // get the devices' props
-            let generalProps = Array.zeroCreate<VkPhysicalDeviceProperties> devices.Length
-            for i in [0 .. dec devices.Length] do
-                let mutable props = Unchecked.defaultof<VkPhysicalDeviceProperties>
-                vkGetPhysicalDeviceProperties (devices[i], &props)
-                generalProps[i] <- props
-
-            // get the devices' queue families' props
-            let queueFamilyProps = Array.zeroCreate<VkQueueFamilyProperties array> devices.Length
-            for i in [0 .. dec devices.Length] do
-                let mutable queueFamilyCount = 0u
-                vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, nullPtr)
-                let queueFamilies = Array.zeroCreate<VkQueueFamilyProperties> (int queueFamilyCount)
-                use queueFamiliesPin = ArrayPin queueFamilies
-                vkGetPhysicalDeviceQueueFamilyProperties (devices[i], asPointer &queueFamilyCount, queueFamiliesPin.Pointer)
-                queueFamilyProps[i] <- queueFamilies
-
-            // try find graphics and present queue families
-            let queueFamilyOpts = Array.zeroCreate<uint option * uint option> devices.Length
-            for i in [0 .. dec devices.Length] do
-                
-                (* It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
-                   I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
-
-                   https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
-
-                   general lesson: trust level for vendors is too low for deviation from common practices to be advisable. *)
-                
-                let mutable graphicsQueueFamilyOpt = None
-                let mutable presentQueueFamilyOpt = None
-                for j in [0 .. dec queueFamilyProps[i].Length] do
-                    
-                    // try get graphics queue family
-                    match graphicsQueueFamilyOpt with
-                    | None ->
-                        let queueFamily = queueFamilyProps[i][j]
-                        if queueFamily.queueFlags &&& VkQueueFlags.Graphics <> VkQueueFlags.None then
-                            graphicsQueueFamilyOpt <- Some (uint j)
-                    | Some _ -> ()
-
-                    // try get present queue family
-                    match presentQueueFamilyOpt with
-                    | None ->
-                        let mutable presentSupport = VkBool32.False
-                        vkGetPhysicalDeviceSurfaceSupportKHR (devices[i], uint j, surface, &presentSupport) |> check
-                        if (presentSupport = VkBool32.True) then
-                            presentQueueFamilyOpt <- Some (uint j)
-                    | Some _ -> ()
-
-                queueFamilyOpts[i] <- (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
-
             // gather devices together with relevant data for selection
-            let candidates = [ for i in [0 .. dec devices.Length] -> (devices[i], generalProps[i], queueFamilyOpts[i]) ]
+            let candidates = [ for i in [0 .. dec devices.Length] -> PhysicalDeviceData.make devices[i] surface ]
 
             // compatibility criteria: device must support the essential queue operations and Vulkan 1.3
-            let isCompatible (_, props : VkPhysicalDeviceProperties, queueFamilyOpts) =
-                Option.isSome (fst queueFamilyOpts) &&
-                Option.isSome (snd queueFamilyOpts) &&
-                props.apiVersion.Minor >= 3u
+            let isCompatible physicalDeviceData =
+                Option.isSome physicalDeviceData.GraphicsQueueFamilyOpt &&
+                Option.isSome physicalDeviceData.PresentQueueFamilyOpt &&
+                physicalDeviceData.Properties.apiVersion.Minor >= 3u
 
             // preferability criteria: device ought to be discrete
-            let isPreferable (_, props : VkPhysicalDeviceProperties, _) = props.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+            let isPreferable physicalDeviceData = physicalDeviceData.Properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
             
             // filter and order candidates according to criteria
             let candidatesFiltered = List.filter isCompatible candidates
@@ -295,10 +250,8 @@ module Hl =
             // if compatible devices exist then return the first along with its queue families
             let physicalDeviceOpt =
                 if candidatesFilteredAndOrdered.Length > 0 then
-                    let (physicalDevice, _, queueFamilyOpts) = List.head candidatesFilteredAndOrdered
-                    let graphicsQueueFamily = fst queueFamilyOpts |> Option.get
-                    let presentQueueFamily = snd queueFamilyOpts |> Option.get
-                    Some (physicalDevice, graphicsQueueFamily, presentQueueFamily)
+                    let physicalDeviceData = List.head candidatesFilteredAndOrdered
+                    Some (physicalDeviceData.PhysicalDevice, physicalDeviceData.GraphicsQueueFamily, physicalDeviceData.PresentQueueFamily)
                 else
                     Log.info "Could not find a suitable graphics device for Vulkan."
                     None
