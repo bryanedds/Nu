@@ -80,6 +80,7 @@ module Hl =
         { PhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
           Extensions : VkExtensionProperties array
+          Formats : VkSurfaceFormatKHR array
           GraphicsQueueFamilyOpt : uint option
           PresentQueueFamilyOpt : uint option }
 
@@ -103,6 +104,15 @@ module Hl =
             use extensionsPin = ArrayPin extensions
             vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> check
             extensions
+
+        /// Get available surface formats.
+        static member getFormats physicalDevice surface =
+            let mutable formatCount = 0u
+            vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, asPointer &formatCount, nullPtr) |> check
+            let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
+            use formatsPin = ArrayPin formats
+            vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, asPointer &formatCount, formatsPin.Pointer) |> check
+            formats
         
         /// Get queue family opts.
         static member getQueueFamilyOpts physicalDevice surface =
@@ -150,6 +160,7 @@ module Hl =
             // get data
             let properties = PhysicalDeviceData.getProperties physicalDevice
             let extensions = PhysicalDeviceData.getExtensions physicalDevice
+            let formats = PhysicalDeviceData.getFormats physicalDevice surface
             let (graphicsQueueFamilyOpt, presentQueueFamilyOpt) = PhysicalDeviceData.getQueueFamilyOpts physicalDevice surface
 
             // make physicalDeviceData
@@ -157,6 +168,7 @@ module Hl =
                 { PhysicalDevice = physicalDevice
                   Properties = properties
                   Extensions = extensions
+                  Formats = formats
                   GraphicsQueueFamilyOpt = graphicsQueueFamilyOpt
                   PresentQueueFamilyOpt = presentQueueFamilyOpt }
 
@@ -252,7 +264,7 @@ module Hl =
             // gather devices together with relevant data for selection
             let candidates = [ for i in [0 .. dec devices.Length] -> PhysicalDeviceData.make devices[i] surface ]
 
-            // compatibility criteria: device must support essential queue operations, swapchain and Vulkan 1.3
+            // compatibility criteria: device must support essential rendering components and Vulkan 1.3
             let isCompatible physicalDeviceData =
                 
                 // determine swapchain support
@@ -261,6 +273,7 @@ module Hl =
                 
                 // checklist
                 swapchainSupported &&
+                physicalDeviceData.Formats.Length > 0 &&
                 Option.isSome physicalDeviceData.GraphicsQueueFamilyOpt &&
                 Option.isSome physicalDeviceData.PresentQueueFamilyOpt &&
                 physicalDeviceData.Properties.apiVersion.Minor >= 3u
