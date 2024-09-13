@@ -286,11 +286,9 @@ module Hl =
             let (fstChoice, sndChoice) = List.partition isPreferable candidatesFiltered
             let candidatesFilteredAndOrdered = List.append fstChoice sndChoice
                 
-            // if compatible devices exist then return the first along with its queue families
+            // if compatible devices exist then return the first along with its data
             let physicalDeviceOpt =
-                if candidatesFilteredAndOrdered.Length > 0 then
-                    let physicalDeviceData = List.head candidatesFilteredAndOrdered
-                    Some (physicalDeviceData.PhysicalDevice, physicalDeviceData.GraphicsQueueFamily, physicalDeviceData.PresentQueueFamily)
+                if candidatesFilteredAndOrdered.Length > 0 then Some (List.head candidatesFilteredAndOrdered)
                 else
                     Log.info "Could not find a suitable graphics device for Vulkan."
                     None
@@ -299,15 +297,15 @@ module Hl =
             physicalDeviceOpt
         
         /// Create the logical device.
-        static member createDevice graphicsQueueFamily presentQueueFamily physicalDevice =
+        static member createDevice (physicalDeviceData : PhysicalDeviceData) =
 
             // device handle
             let mutable device = Unchecked.defaultof<VkDevice>
 
             // get unique queue family array
             let uniqueQueueFamiliesSet = new HashSet<uint> ()
-            uniqueQueueFamiliesSet.Add graphicsQueueFamily |> ignore
-            uniqueQueueFamiliesSet.Add presentQueueFamily |> ignore
+            uniqueQueueFamiliesSet.Add physicalDeviceData.GraphicsQueueFamily |> ignore
+            uniqueQueueFamiliesSet.Add physicalDeviceData.PresentQueueFamily |> ignore
             let uniqueQueueFamilies = Array.zeroCreate<uint> uniqueQueueFamiliesSet.Count
             uniqueQueueFamiliesSet.CopyTo (uniqueQueueFamilies)
 
@@ -337,24 +335,44 @@ module Hl =
             createInfo.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
 
             // create device
-            vkCreateDevice (physicalDevice, asPointer &createInfo, nullPtr, &device) |> check
+            vkCreateDevice (physicalDeviceData.PhysicalDevice, asPointer &createInfo, nullPtr, &device) |> check
 
             // fin
             device
 
         /// Get command queues.
-        static member getQueues graphicsQueueFamily presentQueueFamily device =
+        static member getQueues (physicalDeviceData : PhysicalDeviceData) device =
 
             // queue handles
             let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
             let mutable presentQueue = Unchecked.defaultof<VkQueue>
 
             // get queues
-            vkGetDeviceQueue (device, graphicsQueueFamily, 0u, &graphicsQueue)
-            vkGetDeviceQueue (device, presentQueueFamily, 0u, &presentQueue)
+            vkGetDeviceQueue (device, physicalDeviceData.GraphicsQueueFamily, 0u, &graphicsQueue)
+            vkGetDeviceQueue (device, physicalDeviceData.PresentQueueFamily, 0u, &presentQueue)
 
             // fin
             (graphicsQueue, presentQueue)
+        
+        /// Get surface format.
+        static member getSurfaceFormat physicalDeviceData =
+            
+            // specify preferred format and color space
+            let isPreferred (format : VkSurfaceFormatKHR) =
+                format.format = VK_FORMAT_B8G8R8A8_SRGB &&
+                
+                // NOTE: in older implementations this color space is called VK_COLORSPACE_SRGB_NONLINEAR_KHR.
+                // See https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Surface-format.
+                format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+
+            // default to first format if preferred is unavailable
+            let format =
+                match Array.tryFind isPreferred physicalDeviceData.Formats with
+                | Some format -> format
+                | None -> physicalDeviceData.Formats[0]
+
+            // fin
+            format
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
@@ -379,16 +397,17 @@ module Hl =
             
             // try select physical device
             match VulkanGlobal.trySelectPhysicalDevice surface instance with
-            | Some (physicalDevice, graphicsQueueFamily, presentQueueFamily) ->
+            | Some physicalDeviceData ->
 
                 // create device
-                let device = VulkanGlobal.createDevice graphicsQueueFamily presentQueueFamily physicalDevice
+                let device = VulkanGlobal.createDevice physicalDeviceData
 
                 // load device commands; not vulkan function
                 vkLoadDevice device
 
-                // get queues
-                let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues graphicsQueueFamily presentQueueFamily device
+                // get queues and surface format
+                let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues physicalDeviceData device
+                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
