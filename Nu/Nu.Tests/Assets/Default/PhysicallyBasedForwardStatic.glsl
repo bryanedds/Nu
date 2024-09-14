@@ -339,6 +339,7 @@ void main()
     // compute light accumulation
     vec3 n = normalize(toWorld * (texture(normalTexture, texCoords).xyz * 2.0 - 1.0));
     vec3 v = normalize(eyeCenter - position.xyz);
+    float nDotV = max(dot(n, v), 0.0);
     vec3 f0 = mix(vec3(0.04), albedo.rgb, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
     vec3 lightAccum = vec3(0.0);
     for (int i = 0; i < lightsCount; ++i)
@@ -380,22 +381,21 @@ void main()
             1.0;
 
         // cook-torrance brdf
+        float hDotV = max(dot(h, v), 0.0);
         float ndf = distributionGGX(n, h, roughness);
         float g = geometrySchlick(n, v, l, roughness);
-        vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
+        vec3 f = fresnelSchlick(hDotV, f0);
 
         // compute specularity
         vec3 numerator = ndf * g * f;
-        float denominator = 4.0 * max(dot(n, v), 0.0) * max(dot(n, l), 0.0) + 0.0001; // add epsilon to prevent division by zero
+        float nDotL = max(dot(n, l), 0.0);
+        float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
         vec3 specular = numerator / denominator;
 
         // compute diffusion
         vec3 kS = f;
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;
-
-        // compute light scalar
-        float nDotL = max(dot(n, l), 0.0);
 
         // add to outgoing lightAccum
         lightAccum += (kD * albedo.rgb / PI + specular) * radiance * nDotL * shadowScalar;
@@ -445,14 +445,14 @@ void main()
     vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
 
     // compute diffuse term
-    vec3 f = fresnelSchlickRoughness(max(dot(n, v), 0.0), f0, roughness);
+    vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
     vec3 kS = f;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
     vec3 diffuse = kD * irradiance * albedo.rgb * lightAmbientDiffuse;
 
     // compute specular term
-    vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
+    vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
     // compute directional fog accumulation from sun light when desired
