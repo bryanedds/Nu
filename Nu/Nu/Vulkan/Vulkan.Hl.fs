@@ -80,6 +80,7 @@ module Hl =
         { PhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
           Extensions : VkExtensionProperties array
+          SurfaceCapabilities : VkSurfaceCapabilitiesKHR
           Formats : VkSurfaceFormatKHR array
           GraphicsQueueFamilyOpt : uint option
           PresentQueueFamilyOpt : uint option }
@@ -105,6 +106,12 @@ module Hl =
             vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, extensionsPin.Pointer) |> check
             extensions
 
+        /// Get surface capabilities.
+        static member getSurfaceCapabilities physicalDevice surface =
+            let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
+            vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &capabilities) |> check
+            capabilities
+        
         /// Get available surface formats.
         static member getFormats physicalDevice surface =
             let mutable formatCount = 0u
@@ -160,6 +167,7 @@ module Hl =
             // get data
             let properties = PhysicalDeviceData.getProperties physicalDevice
             let extensions = PhysicalDeviceData.getExtensions physicalDevice
+            let surfaceCapabilities = PhysicalDeviceData.getSurfaceCapabilities physicalDevice surface
             let formats = PhysicalDeviceData.getFormats physicalDevice surface
             let (graphicsQueueFamilyOpt, presentQueueFamilyOpt) = PhysicalDeviceData.getQueueFamilyOpts physicalDevice surface
 
@@ -168,6 +176,7 @@ module Hl =
                 { PhysicalDevice = physicalDevice
                   Properties = properties
                   Extensions = extensions
+                  SurfaceCapabilities = surfaceCapabilities
                   Formats = formats
                   GraphicsQueueFamilyOpt = graphicsQueueFamilyOpt
                   PresentQueueFamilyOpt = presentQueueFamilyOpt }
@@ -355,7 +364,7 @@ module Hl =
             (graphicsQueue, presentQueue)
         
         /// Get surface format.
-        static member getSurfaceFormat physicalDeviceData =
+        static member getSurfaceFormat formats =
             
             // specify preferred format and color space
             let isPreferred (format : VkSurfaceFormatKHR) =
@@ -367,12 +376,37 @@ module Hl =
 
             // default to first format if preferred is unavailable
             let format =
-                match Array.tryFind isPreferred physicalDeviceData.Formats with
+                match Array.tryFind isPreferred formats with
                 | Some format -> format
-                | None -> physicalDeviceData.Formats[0]
+                | None -> formats[0]
 
             // fin
             format
+
+        /// Get swap extent.
+        static member getSwapExtent (surfaceCapabilities : VkSurfaceCapabilitiesKHR) window =
+            
+            // swap extent
+            let extent =
+                if surfaceCapabilities.currentExtent.width <> UInt32.MaxValue then surfaceCapabilities.currentExtent
+                else
+                    
+                    // get pixel resolution from sdl
+                    let mutable width = Unchecked.defaultof<int>
+                    let mutable height = Unchecked.defaultof<int>
+                    SDL.SDL_Vulkan_GetDrawableSize (window, &width, &height)
+
+                    // clamp resolution to size limits
+                    width <- max width (int surfaceCapabilities.minImageExtent.width)
+                    width <- min width (int surfaceCapabilities.maxImageExtent.width)
+                    height <- max height (int surfaceCapabilities.minImageExtent.height)
+                    height <- min height (int surfaceCapabilities.maxImageExtent.height)
+
+                    // make extent
+                    VkExtent2D (width, height)
+
+            // fin
+            extent
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
@@ -405,9 +439,10 @@ module Hl =
                 // load device commands; not vulkan function
                 vkLoadDevice device
 
-                // get queues and surface format
+                // get queues, surface format and swap extent
                 let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues physicalDeviceData device
-                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData
+                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
+                let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
