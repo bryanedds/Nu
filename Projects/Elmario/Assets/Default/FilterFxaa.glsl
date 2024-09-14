@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -23,7 +23,7 @@ uniform sampler2D inputTexture;
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec4 frag;
+layout(location = 0) out vec4 frag;
 
 void main()
 {
@@ -46,17 +46,17 @@ void main()
     float inverseDirAdjustment = 1.0/(min(abs(dir.x), abs(dir.y)) + dirReduce);
     dir = min(vec2(FXAA_SPAN_MAX, FXAA_SPAN_MAX), max(vec2(-FXAA_SPAN_MAX, -FXAA_SPAN_MAX), dir * inverseDirAdjustment)) * texelSize;
 
-    // 
+    // sample the texture in two locations along the computed direction to create an initial blurred color
     vec3 result1 = 0.5 * (
         texture(inputTexture, dir * vec2(1.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz +
         texture(inputTexture, dir * vec2(2.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz);
 
-    // 
+    // sample the texture at additional points and blend them with the initial blur to refine the result
     vec3 result2 = result1 * 0.5 + 0.25 * (
         texture(inputTexture, dir * vec2(0.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz +
         texture(inputTexture, dir * vec2(3.0 / 3.0 - 0.5) + texCoordsOut.xy).xyz);
 
-    // 
+    // compute the minimum and maximum luminosity of the surrounding texels to use for edge detection
     float lumMin = min(lumCC, min(min(lumTL, lumTR), min(lumBL, lumBR)));
     float lumMax = max(lumCC, max(max(lumTL, lumTR), max(lumBL, lumBR)));
     float lumResult2 = dot(lum, result2);

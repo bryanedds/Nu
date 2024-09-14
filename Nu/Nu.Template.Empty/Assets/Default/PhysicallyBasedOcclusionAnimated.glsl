@@ -8,10 +8,10 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 bones[BONES_MAX];
 
-layout (location = 0) in vec3 position;
-layout (location = 3) in vec4 boneIds;
-layout (location = 4) in vec4 weights;
-layout (location = 5) in mat4 model;
+layout(location = 0) in vec3 position;
+layout(location = 3) in vec4 boneIds;
+layout(location = 4) in vec4 weights;
+layout(location = 5) in mat4 model;
 
 void main()
 {

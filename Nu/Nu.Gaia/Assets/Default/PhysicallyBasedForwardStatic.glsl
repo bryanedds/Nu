@@ -24,14 +24,14 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 uniform mat4 view;
 uniform mat4 projection;
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
-layout (location = 2) in vec3 normal;
-layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 texCoordsOffset;
-layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec4 material;
-layout (location = 10) in vec4 heightPlus;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
+layout(location = 2) in vec3 normal;
+layout(location = 3) in mat4 model;
+layout(location = 7) in vec4 texCoordsOffset;
+layout(location = 8) in vec4 albedo;
+layout(location = 9) in vec4 material;
+layout(location = 10) in vec4 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -67,11 +67,11 @@ const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
 const vec4 SSVF_DITHERING[4] =
-vec4[4](
-    vec4(0.0, 0.5, 0.125, 0.625),
-    vec4(0.75, 0.22, 0.875, 0.375),
-    vec4(0.1875, 0.6875, 0.0625, 0.5625),
-    vec4(0.9375, 0.4375, 0.8125, 0.3125));
+    vec4[4](
+        vec4(0.0, 0.5, 0.125, 0.625),
+        vec4(0.75, 0.22, 0.875, 0.375),
+        vec4(0.1875, 0.6875, 0.0625, 0.5625),
+        vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform float lightCutoffMargin;

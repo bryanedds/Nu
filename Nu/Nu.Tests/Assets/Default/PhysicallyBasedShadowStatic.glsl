@@ -4,8 +4,8 @@
 uniform mat4 view;
 uniform mat4 projection;
 
-layout (location = 0) in vec3 position;
-layout (location = 3) in mat4 model;
+layout(location = 0) in vec3 position;
+layout(location = 3) in mat4 model;
 
 out float depthDirectionalOut;
 
@@ -22,7 +22,7 @@ void main()
 uniform int lightShadowDirectional;
 uniform float lightShadowExponent;
 
-layout (location = 0) out vec2 depths;
+layout(location = 0) out vec2 depths;
 
 in float depthDirectionalOut;
 

@@ -2,7 +2,6 @@
 #version 410
 
 const int VERTS = 4;
-
 const vec4 FILTERS[VERTS] =
     vec4[VERTS](
         vec4(1.0, 1.0, 0.0, 0.0),
@@ -10,10 +9,13 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 1.0, 1.0),
         vec4(1.0, 1.0, 0.0, 1.0));
 
-in vec2 position;
 uniform mat4 modelViewProjection;
 uniform vec4 texCoords4;
+
+in vec2 position;
+
 out vec2 texCoords;
+
 void main()
 {
     int vertexId = gl_VertexID % VERTS;
@@ -24,10 +26,14 @@ void main()
 
 #shader fragment
 #version 410
+
 uniform sampler2D tex;
 uniform vec4 color;
+
 in vec2 texCoords;
-layout (location = 0) out vec4 frag;
+
+layout(location = 0) out vec4 frag;
+
 void main()
 {
     frag = color * texture(tex, texCoords);

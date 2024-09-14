@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -85,9 +85,9 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec4 color;
-layout (location = 1) out vec4 fogAccum;
-layout (location = 2) out float depth;
+layout(location = 0) out vec4 color;
+layout(location = 1) out vec4 fogAccum;
+layout(location = 2) out float depth;
 
 float linstep(float low, float high, float v)
 {
