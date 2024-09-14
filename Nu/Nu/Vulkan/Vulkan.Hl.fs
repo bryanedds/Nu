@@ -189,7 +189,8 @@ module Hl =
         private
             { Instance : VkInstance
               Surface : VkSurfaceKHR
-              Device : VkDevice }
+              Device : VkDevice
+              Swapchain : VkSwapchainKHR }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -411,6 +412,9 @@ module Hl =
         /// Create the swapchain.
         static member createSwapchain physicalDeviceData surface window device =
             
+            // swapchain handle
+            let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
+            
             // get capabilities for cleaner code
             let capabilities = physicalDeviceData.SurfaceCapabilities
             
@@ -443,12 +447,31 @@ module Hl =
             createInfo.imageExtent <- swapExtent
             createInfo.imageArrayLayers <- 1u
             createInfo.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            
+            if (physicalDeviceData.GraphicsQueueFamily = physicalDeviceData.PresentQueueFamily) then
+                createInfo.imageSharingMode <- VK_SHARING_MODE_EXCLUSIVE
+                createInfo.queueFamilyIndexCount <- 0u
+                createInfo.pQueueFamilyIndices <- nullPtr
+            else
+                createInfo.imageSharingMode <- VK_SHARING_MODE_CONCURRENT
+                createInfo.queueFamilyIndexCount <- 2u
+                createInfo.pQueueFamilyIndices <- indicesArrayPin.Pointer
 
+            createInfo.preTransform <- capabilities.currentTransform
+            createInfo.compositeAlpha <- VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+            createInfo.presentMode <- presentMode
+            createInfo.clipped <- true
+            createInfo.oldSwapchain <- VkSwapchainKHR.Null
 
-            ()
+            // create swapchain
+            vkCreateSwapchainKHR (device, asPointer &createInfo, nullPtr, &swapchain) |> check
+
+            // fin
+            swapchain
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            vkDestroySwapchainKHR (vulkanGlobal.Device, vulkanGlobal.Swapchain, nullPtr)
             vkDestroyDevice (vulkanGlobal.Device, nullPtr)
             vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, nullPtr)
             vkDestroyInstance (vulkanGlobal.Instance, nullPtr)
@@ -482,13 +505,14 @@ module Hl =
                 let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues physicalDeviceData device
 
                 // create swapchain
-                VulkanGlobal.createSwapchain physicalDeviceData surface window device
+                let swapchain = VulkanGlobal.createSwapchain physicalDeviceData surface window device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
                     { Instance = instance
                       Surface = surface
-                      Device = device }
+                      Device = device
+                      Swapchain = swapchain }
 
                 // fin
                 Some vulkanGlobal
