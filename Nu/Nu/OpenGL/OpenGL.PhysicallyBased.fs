@@ -244,8 +244,6 @@ module PhysicallyBased =
           LightShadowDirectionalUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
-          LightShadowBleedFilterUniform : int
-          LightShadowVarianceMinUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
@@ -290,8 +288,6 @@ module PhysicallyBased =
           LightShadowDirectionalUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
-          LightShadowBleedFilterUniform : int
-          LightShadowVarianceMinUniform : int
           LayersCountUniform : int
           AlbedoTexturesUniforms : int array
           RoughnessTexturesUniforms : int array
@@ -361,8 +357,6 @@ module PhysicallyBased =
           LightShadowDirectionalUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
-          LightShadowBleedFilterUniform : int
-          LightShadowVarianceMinUniform : int
           SsvfEnabledUniform : int
           SsvfStepsUniform : int
           SsvfAsymmetryUniform : int
@@ -1409,8 +1403,6 @@ module PhysicallyBased =
         let lightShadowDirectionalUniform = Gl.GetUniformLocation (shader, "lightShadowDirectional")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
-        let lightShadowBleedFilterUniform = Gl.GetUniformLocation (shader, "lightShadowBleedFilter")
-        let lightShadowVarianceMinUniform = Gl.GetUniformLocation (shader, "lightShadowVarianceMin")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
@@ -1465,8 +1457,6 @@ module PhysicallyBased =
           LightShadowDirectionalUniform = lightShadowDirectionalUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
-          LightShadowBleedFilterUniform = lightShadowBleedFilterUniform
-          LightShadowVarianceMinUniform = lightShadowVarianceMinUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -1517,8 +1507,6 @@ module PhysicallyBased =
         let lightShadowDirectionalUniform = Gl.GetUniformLocation (shader, "lightShadowDirectional")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
-        let lightShadowBleedFilterUniform = Gl.GetUniformLocation (shader, "lightShadowBleedFilter")
-        let lightShadowVarianceMinUniform = Gl.GetUniformLocation (shader, "lightShadowVarianceMin")
         let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
         let albedoTexturesUniforms =
             Array.init Constants.Render.TerrainLayersMax $ fun i ->
@@ -1543,8 +1531,6 @@ module PhysicallyBased =
           LightShadowDirectionalUniform = lightShadowDirectionalUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
-          LightShadowBleedFilterUniform = lightShadowBleedFilterUniform
-          LightShadowVarianceMinUniform = lightShadowVarianceMinUniform
           LayersCountUniform = layersCountUniform
           AlbedoTexturesUniforms = albedoTexturesUniforms
           RoughnessTexturesUniforms = roughnessTexturesUniforms
@@ -1690,8 +1676,6 @@ module PhysicallyBased =
         let lightShadowDirectionalUniform = Gl.GetUniformLocation (shader, "lightShadowDirectional")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
-        let lightShadowBleedFilterUniform = Gl.GetUniformLocation (shader, "lightShadowBleedFilter")
-        let lightShadowVarianceMinUniform = Gl.GetUniformLocation (shader, "lightShadowVarianceMin")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
         let ssvfStepsUniform = Gl.GetUniformLocation (shader, "ssvfSteps")
         let ssvfAsymmetryUniform = Gl.GetUniformLocation (shader, "ssvfAsymmetry")
@@ -1750,8 +1734,6 @@ module PhysicallyBased =
           LightShadowDirectionalUniform = lightShadowDirectionalUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
-          LightShadowBleedFilterUniform = lightShadowBleedFilterUniform
-          LightShadowVarianceMinUniform = lightShadowVarianceMinUniform
           SsvfEnabledUniform = ssvfEnabledUniform
           SsvfStepsUniform = ssvfStepsUniform
           SsvfAsymmetryUniform = ssvfAsymmetryUniform
@@ -2136,8 +2118,6 @@ module PhysicallyBased =
          lightShadowDirectional : int,
          lightShadowExponent : single,
          lightShadowDensity : single,
-         lightShadowBleedFilter : single,
-         lightShadowVarianceMin : single,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
          shader : PhysicallyBasedShader) =
@@ -2164,8 +2144,6 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
-            Gl.Uniform1 (shader.LightShadowBleedFilterUniform, lightShadowBleedFilter)
-            Gl.Uniform1 (shader.LightShadowVarianceMinUniform, lightShadowVarianceMin)
             Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
             Gl.Uniform1 (shader.RoughnessTextureUniform, 1)
             Gl.Uniform1 (shader.MetallicTextureUniform, 2)
@@ -2264,8 +2242,6 @@ module PhysicallyBased =
          lightShadowDirectional : int,
          lightShadowExponent : single,
          lightShadowDensity : single,
-         lightShadowBleedFilter : single,
-         lightShadowVarianceMin : single,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
@@ -2324,8 +2300,6 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
-            Gl.Uniform1 (shader.LightShadowBleedFilterUniform, lightShadowBleedFilter)
-            Gl.Uniform1 (shader.LightShadowVarianceMinUniform, lightShadowVarianceMin)
             Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
             Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
             Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)
@@ -2474,8 +2448,6 @@ module PhysicallyBased =
          lightShadowDirectional : int,
          lightShadowExponent : single,
          lightShadowDensity : single,
-         lightShadowBleedFilter : single,
-         lightShadowVarianceMin : single,
          elementsCount : int,
          materials : PhysicallyBasedMaterial array,
          geometry : PhysicallyBasedGeometry,
@@ -2498,8 +2470,6 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
-        Gl.Uniform1 (shader.LightShadowBleedFilterUniform, lightShadowBleedFilter)
-        Gl.Uniform1 (shader.LightShadowVarianceMinUniform, lightShadowVarianceMin)
         Gl.Uniform1 (shader.LayersCountUniform, layersCount)
         for i in 0 .. dec Constants.Render.TerrainLayersMax do
             Gl.Uniform1 (shader.AlbedoTexturesUniforms.[i], i)
@@ -2846,8 +2816,6 @@ module PhysicallyBased =
          lightAmbientBrightness : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
-         lightShadowBleedFilter : single,
-         lightShadowVarianceMin : single,
          ssvfEnabled : int,
          ssvfSteps : int,
          ssvfAsymmetry : single,
@@ -2904,8 +2872,6 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
-        Gl.Uniform1 (shader.LightShadowBleedFilterUniform, lightShadowBleedFilter)
-        Gl.Uniform1 (shader.LightShadowVarianceMinUniform, lightShadowVarianceMin)
         Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
         Gl.Uniform1 (shader.SsvfStepsUniform, ssvfSteps)
         Gl.Uniform1 (shader.SsvfAsymmetryUniform, ssvfAsymmetry)

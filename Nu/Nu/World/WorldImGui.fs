@@ -480,8 +480,6 @@ module WorldImGui =
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
-                let mutable lightShadowBleedFilter = lighting3dConfig.LightShadowBleedFilter
-                let mutable lightShadowVarianceMinStr = lighting3dConfig.LightShadowVarianceMin.ToString "0.00000000"
                 let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
                 let mutable ssaoBias = lighting3dConfig.SsaoBias
                 let mutable ssaoRadius = lighting3dConfig.SsaoRadius
@@ -510,8 +508,6 @@ module WorldImGui =
                 lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 87.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Bleed Filter", &lightShadowBleedFilter, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dChanged <- ImGui.InputText ("Light Shadow Variance Min", &lightShadowVarianceMinStr, 4096u) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Ssao Bias", &ssaoBias, 0.0f, 0.1f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Ssao Radius", &ssaoRadius, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -542,8 +538,6 @@ module WorldImGui =
                         { LightCutoffMargin = lightCutoffMargin
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
-                          LightShadowBleedFilter = lightShadowBleedFilter
-                          LightShadowVarianceMin = match Single.TryParse lightShadowVarianceMinStr with (true, s) -> s | (false, _) -> lighting3dConfig.LightShadowVarianceMin
                           SsaoIntensity = ssaoIntensity
                           SsaoBias = ssaoBias
                           SsaoRadius = ssaoRadius
