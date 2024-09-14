@@ -408,6 +408,45 @@ module Hl =
             // fin
             extent
         
+        /// Create the swapchain.
+        static member createSwapchain physicalDeviceData surface window device =
+            
+            // get capabilities for cleaner code
+            let capabilities = physicalDeviceData.SurfaceCapabilities
+            
+            // get surface format and swap extent
+            let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
+            let swapExtent = VulkanGlobal.getSwapExtent capabilities window
+
+            // present mode; VK_PRESENT_MODE_FIFO_KHR is guaranteed by the spec and seems most appropriate for nu
+            let presentMode = VK_PRESENT_MODE_FIFO_KHR
+
+            (* Decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
+               at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
+               https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain. *)
+
+            let minImageCount =
+                if capabilities.maxImageCount = 0u then capabilities.minImageCount + 1u
+                else min (capabilities.minImageCount + 1u) capabilities.maxImageCount
+
+            // in case graphics and present queue families differ
+            // TODO: as part of optimization, the sharing mode in this case should probably be VK_SHARING_MODE_EXCLUSIVE (see below).
+            let indicesArray = [|physicalDeviceData.GraphicsQueueFamily; physicalDeviceData.PresentQueueFamily|]
+            use indicesArrayPin = ArrayPin indicesArray
+
+            // populate create swapchain info
+            let mutable createInfo = VkSwapchainCreateInfoKHR ()
+            createInfo.surface <- surface
+            createInfo.minImageCount <- minImageCount
+            createInfo.imageFormat <- surfaceFormat.format
+            createInfo.imageColorSpace <- surfaceFormat.colorSpace
+            createInfo.imageExtent <- swapExtent
+            createInfo.imageArrayLayers <- 1u
+            createInfo.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+
+
+            ()
+        
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
             vkDestroyDevice (vulkanGlobal.Device, nullPtr)
@@ -439,10 +478,11 @@ module Hl =
                 // load device commands; not vulkan function
                 vkLoadDevice device
 
-                // get queues, surface format and swap extent
+                // get queues
                 let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues physicalDeviceData device
-                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
-                let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
+
+                // create swapchain
+                VulkanGlobal.createSwapchain physicalDeviceData surface window device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
