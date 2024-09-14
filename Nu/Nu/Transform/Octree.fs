@@ -357,7 +357,7 @@ module internal Octnode =
                     getLightsInBox box set node
         | ElementChildren elements ->
             for element in elements do
-                if element.Light then
+                if element.Light && element.Visible then
                     let bounds = element.Bounds
                     if bounds.Intersects box then
                         set.Add element |> ignore
@@ -635,35 +635,35 @@ module Octree =
     let getLightProbesInFrustum frustum (set : _ HashSet) tree =
         Octnode.getLightProbesInViewFrustum frustum set tree.Node
         for omnipresent in tree.Omnipresent do
-            if omnipresent.LightProbe then
+            if omnipresent.LightProbe && omnipresent.Visible then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light probe elements in the given box.
     let getLightProbesInBox box (set : _ HashSet) tree =
         Octnode.getLightProbesInViewBox box set tree.Node
         for omnipresent in tree.Omnipresent do
-            if omnipresent.LightProbe then
+            if omnipresent.LightProbe && omnipresent.Visible then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light probe elements.
     let getLightProbes (set : _ HashSet) tree =
         Octnode.getLightProbes set tree.Node
         for omnipresent in tree.Omnipresent do
-            if omnipresent.LightProbe then
+            if omnipresent.LightProbe && omnipresent.Visible then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light elements in the given frustum.
     let getLightsInFrustum frustum (set : _ HashSet) tree =
         Octnode.getLightsInViewFrustum frustum set tree.Node
         for omnipresent in tree.Omnipresent do
-            if omnipresent.Light then
+            if omnipresent.Light && omnipresent.Visible then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get all of the light elements in the given box.
     let getLightsInBox box (set : _ HashSet) tree =
         Octnode.getLightsInViewBox box set tree.Node
         for omnipresent in tree.Omnipresent do
-            if omnipresent.Light then
+            if omnipresent.Light && omnipresent.Visible then
                 set.Add omnipresent |> ignore<bool>
 
     /// Get the size of the tree's leaves.
