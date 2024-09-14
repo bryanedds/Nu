@@ -19,12 +19,11 @@ type [<Struct>] Handling =
 /// An entry in the subscription map.
 type [<ReferenceEquality>] SubscriptionEntry =
     { SubscriptionCallback : obj
-      SubscriptionSubscriber : Simulant
-      SubscriptionId : Guid }
+      SubscriptionSubscriber : Simulant }
 
 /// Abstracts over a subscription sorting procedure.
 type SubscriptionSorter =
-    (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq
+    (uint64 * SubscriptionEntry) seq -> obj -> (uint64 * SubscriptionEntry) seq
 
 /// Describes an event subscription that can be boxed / unboxed.
 type 'w BoxableSubscription =
@@ -32,11 +31,11 @@ type 'w BoxableSubscription =
 
 /// A map of event subscriptions.
 type SubscriptionEntries =
-    UMap<obj Address, OMap<Guid, SubscriptionEntry>>
+    UMap<obj Address, OMap<uint64, SubscriptionEntry>>
 
 /// A map of subscription keys to unsubscription data.
 type UnsubscriptionEntries =
-    UMap<Guid, obj Address * Simulant>
+    UMap<uint64, obj Address * Simulant>
 
 [<RequireQualifiedAccess>]
 module EventGraph =
@@ -53,7 +52,7 @@ module EventGraph =
             { // cache line 1 (assuming 16 byte header)
               Subscriptions : SubscriptionEntries
               Unsubscriptions : UnsubscriptionEntries
-              EventStates : SUMap<Guid, obj>
+              EventStates : SUMap<uint64, obj>
               EventTracerOpt : (string -> unit) option
               EventFilter : EventFilter
               GlobalSimulantGeneralized : GlobalSimulantGeneralized }
@@ -228,14 +227,14 @@ module EventGraph =
     /// Get the subscriptions with the given sorting criteria.
     let getSortableSubscriptions
         (getSortPriority : Simulant -> 'w -> IComparable)
-        (subscriptionEntries : (Guid * SubscriptionEntry) seq)
+        (subscriptionEntries : (uint64 * SubscriptionEntry) seq)
         (world : 'w) =
         Seq.map
-            (fun (_, subscription : SubscriptionEntry) ->
+            (fun (subscriptionId, subscription : SubscriptionEntry) ->
                 // NOTE: we just take the sort priority of the first callback found when callbacks are compressed. This
                 // is semantically sub-optimal, but should be fine for all of our cases.
                 let priority = getSortPriority subscription.SubscriptionSubscriber world
-                struct (priority, subscription))
+                struct (priority, subscriptionId, subscription))
             subscriptionEntries
 
     /// Publish an event.
@@ -246,11 +245,11 @@ module EventGraph =
         callableSubscription evt world
 
     /// Sort subscriptions using categorization via the 'by' procedure.
-    let sortSubscriptionsBy by (subscriptions : (Guid * SubscriptionEntry) seq) (world : 'w) : seq<Guid * SubscriptionEntry> =
+    let sortSubscriptionsBy by (subscriptions : (uint64 * SubscriptionEntry) seq) (world : 'w) : seq<uint64 * SubscriptionEntry> =
         getSortableSubscriptions by subscriptions world |>
         Array.ofSeq |>
-        Array.sortWith (fun (struct ((p : IComparable), _)) (struct ((p2 : IComparable), _)) -> p.CompareTo p2) |>
-        Array.map (fun (struct (_, subscription)) -> (subscription.SubscriptionId, subscription)) |>
+        Array.sortWith (fun (struct (p : IComparable, _, _)) (struct (p2 : IComparable, _, _)) -> p.CompareTo p2) |>
+        Array.map (fun (struct (_, subscriptionId, subscription)) -> (subscriptionId, subscription)) |>
         Array.toSeq
 
     /// A 'no-op' for subscription sorting - that is, performs no sorting at all.

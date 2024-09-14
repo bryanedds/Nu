@@ -466,7 +466,7 @@ type TextFacet () =
                   RenderOperation2d =
                     RenderText
                         { Transform = textTransform
-                          ClipOpt = ValueSome textTransform.Bounds2d.Box2
+                          ClipOpt = ValueSome transform.Bounds2d.Box2
                           Text = text
                           Font = font
                           FontSizing = fontSizing
@@ -1242,6 +1242,11 @@ module RigidBodyFacetExtensions =
         member this.GetObservable world : bool = this.Get (nameof this.Observable) world
         member this.SetObservable (value : bool) world = this.Set (nameof this.Observable) value world
         member this.Observable = lens (nameof this.Observable) this this.GetObservable this.SetObservable
+        member this.GetAwakeTimeStamp world : int64 = this.Get (nameof this.AwakeTimeStamp) world
+        member this.SetAwakeTimeStamp (value : int64) world = this.Set (nameof this.AwakeTimeStamp) value world
+        member this.AwakeTimeStamp = lens (nameof this.AwakeTimeStamp) this this.GetAwakeTimeStamp this.SetAwakeTimeStamp
+        member this.GetAwake world : bool = this.Get (nameof this.Awake) world
+        member this.Awake = lensReadOnly (nameof this.Awake) this this.GetAwake
         member this.GetBodyId world : BodyId = this.Get (nameof this.BodyId) world
         member this.BodyId = lensReadOnly (nameof this.BodyId) this this.GetBodyId
         member this.BodyPenetrationEvent = Events.BodyPenetrationEvent --> this
@@ -1320,13 +1325,15 @@ type RigidBodyFacet () =
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.Sensor false
          define Entity.Observable false
+         nonPersistent Entity.AwakeTimeStamp 0L
+         computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = Constants.Physics.InternalIndex }) None]
 
     override this.Register (entity, world) =
 
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
         // OPTIMIZATION: share lambdas to reduce live object count.
-        let subIds = Array.init 24 (fun _ -> makeGuid ())
+        let subIds = Array.init 24 (fun _ -> Gen.id64)
         let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
@@ -1362,6 +1369,7 @@ type RigidBodyFacet () =
             (Cascade, unsubscribe world)
         let world = World.sense callback entity.FacetNames.ChangeEvent entity (nameof RigidBodyFacet) world
         let world = World.sense callback2 entity.UnregisteringEvent entity (nameof RigidBodyFacet) world
+        let world = entity.SetAwakeTimeStamp world.UpdateTime world
         world
 
     override this.RegisterPhysics (entity, world) =
@@ -1389,6 +1397,7 @@ type RigidBodyFacet () =
               CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
               Sensor = entity.GetSensor world
               Observable = entity.GetObservable world
+              Awake = entity.GetAwake world
               BodyIndex = (entity.GetBodyId world).BodyIndex }
         World.createBody (entity.GetIs2d world) (entity.GetBodyId world) bodyProperties world
 
@@ -1513,6 +1522,8 @@ type TileMapFacet () =
          define Entity.TileIndexOffset 0
          define Entity.TileIndexOffsetRange (0, 0)
          define Entity.TileMap Assets.Default.TileMap
+         nonPersistent Entity.AwakeTimeStamp 0L
+         computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
@@ -1620,6 +1631,8 @@ type TmxMapFacet () =
          define Entity.TileIndexOffset 0
          define Entity.TileIndexOffsetRange (0, 0)
          nonPersistent Entity.TmxMap (TmxMap.makeDefault ())
+         nonPersistent Entity.AwakeTimeStamp 0L
+         computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
@@ -2855,6 +2868,8 @@ type TerrainFacet () =
          define Entity.HeightMap (RawHeightMap { Resolution = v2i 513 513; RawFormat = RawUInt16 LittleEndian; RawAsset = Assets.Default.HeightMap })
          define Entity.Segments v2iOne
          define Entity.Observable false
+         nonPersistent Entity.AwakeTimeStamp 0L
+         computed Entity.Awake (fun (entity : Entity) world -> entity.GetAwakeTimeStamp world = world.UpdateTime) None
          computed Entity.BodyId (fun (entity : Entity) _ -> { BodySource = entity; BodyIndex = 0 }) None]
 
     override this.Register (entity, world) =
@@ -2865,6 +2880,7 @@ type TerrainFacet () =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity (nameof TerrainFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollisionMask)) entity (nameof TerrainFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.HeightMap)) entity (nameof TerrainFacet) world
+        let world = entity.SetAwakeTimeStamp world.UpdateTime world
         world
 
     override this.RegisterPhysics (entity, world) =
@@ -2900,6 +2916,7 @@ type TerrainFacet () =
                   CollisionMask = Physics.categorizeCollisionMask (entity.GetCollisionMask world)
                   Sensor = false
                   Observable = entity.GetObservable world
+                  Awake = entity.GetAwake world
                   BodyIndex = (entity.GetBodyId world).BodyIndex }
             World.createBody false (entity.GetBodyId world) bodyProperties world
         | None -> world
@@ -2967,7 +2984,7 @@ type NavBodyFacet () =
     override this.Register (entity, world) =
 
         // OPTIMIZATION: conditionally subscribe to transform change event.
-        let subId = Gen.id
+        let subId = Gen.id64
         let subscribe world =
             World.subscribePlus subId (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.Bounds)) entity world |> snd
         let unsubscribe world =

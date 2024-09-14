@@ -71,11 +71,11 @@ const int TERRAIN_LAYERS_MAX = 8;
 
 uniform vec3 eyeCenter;
 uniform int layersCount;
-layout (bindless_sampler) uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
-layout (bindless_sampler) uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
-layout (bindless_sampler) uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
-layout (bindless_sampler) uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
-layout (bindless_sampler) uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
+layout(bindless_sampler) uniform sampler2D albedoTextures[TERRAIN_LAYERS_MAX];
+layout(bindless_sampler) uniform sampler2D roughnessTextures[TERRAIN_LAYERS_MAX];
+layout(bindless_sampler) uniform sampler2D ambientOcclusionTextures[TERRAIN_LAYERS_MAX];
+layout(bindless_sampler) uniform sampler2D normalTextures[TERRAIN_LAYERS_MAX];
+layout(bindless_sampler) uniform sampler2D heightTextures[TERRAIN_LAYERS_MAX];
 
 in vec4 positionOut;
 in vec2 texCoordsOut;

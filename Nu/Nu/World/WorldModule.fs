@@ -46,7 +46,7 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for sorting subscriptions by elevation.
-    let mutable internal sortSubscriptionsByElevation : (Guid * SubscriptionEntry) seq -> obj -> (Guid * SubscriptionEntry) seq =
+    let mutable internal sortSubscriptionsByElevation : (uint64 * SubscriptionEntry) seq -> obj -> (uint64 * SubscriptionEntry) seq =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
@@ -545,7 +545,7 @@ module WorldModule =
 
         /// Subscribe to an event using the given subscriptionId and be provided with an unsubscription callback.
         static member subscribePlus<'a, 's when 's :> Simulant>
-            (subscriptionId : Guid)
+            (subscriptionId : uint64)
             (callback : Event<'a, 's> -> World -> Handling * World)
             (eventAddress : 'a Address)
             (subscriber : 's)
@@ -562,11 +562,11 @@ module WorldModule =
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
                             UMap.add eventAddressObj subscriptionEntries subscriptions
                         | None ->
-                            let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber; SubscriptionId = subscriptionId }
+                            let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
                             UMap.add eventAddressObj subscriptionEntries subscriptions
                     | None ->
-                        let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber; SubscriptionId = subscriptionId }
+                        let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                         UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
                 let unsubscriptions = UMap.add subscriptionId (eventAddressObj, subscriber :> Simulant) unsubscriptions
                 let world = World.setSubscriptions subscriptions world
@@ -578,7 +578,7 @@ module WorldModule =
         /// Subscribe to an event.
         static member subscribe<'a, 's when 's :> Simulant>
             (callback : Event<'a, 's> -> World -> Handling * World) (eventAddress : 'a Address) (subscriber : 's) world =
-            World.subscribePlus (makeGuid ()) callback eventAddress subscriber world |> snd
+            World.subscribePlus Gen.id64 callback eventAddress subscriber world |> snd
 
         /// Keep active a subscription for the life span of a simulant.
         static member monitorPlus<'a, 's when 's :> Simulant>
@@ -586,8 +586,8 @@ module WorldModule =
             (eventAddress : 'a Address)
             (subscriber : 's)
             (world : World) =
-            let removalId = makeGuid ()
-            let monitorId = makeGuid ()
+            let removalId = Gen.id64
+            let monitorId = Gen.id64
             let world = World.subscribePlus<'a, 's> monitorId callback eventAddress subscriber world |> snd
             let unsubscribe = fun (world : World) ->
                 let world = World.unsubscribe removalId world
@@ -610,9 +610,9 @@ module WorldModule =
             (entity : Entity)
             (facetName : string)
             (world : World) =
-            let removalId = makeGuid ()
-            let fastenId = makeGuid ()
-            let senseId = makeGuid ()
+            let removalId = Gen.id64
+            let fastenId = Gen.id64
+            let senseId = Gen.id64
             let world = World.subscribePlus<'a, Entity> senseId callback eventAddress entity world |> snd
             let unsubscribe = fun (world : World) ->
                 let world = World.unsubscribe removalId world

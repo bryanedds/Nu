@@ -21,12 +21,12 @@ const float REFLECTION_LOD_MAX = 7.0;
 const int LIGHT_MAPS_MAX = 27;
 
 uniform vec3 eyeCenter;
-layout (bindless_sampler) uniform sampler2D positionTexture;
-layout (bindless_sampler) uniform sampler2D materialTexture;
-layout (bindless_sampler) uniform sampler2D normalPlusTexture;
-layout (bindless_sampler) uniform sampler2D lightMappingTexture;
-layout (bindless_sampler) uniform samplerCube environmentFilterMap;
-layout (bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
+layout(bindless_sampler) uniform sampler2D positionTexture;
+layout(bindless_sampler) uniform sampler2D materialTexture;
+layout(bindless_sampler) uniform sampler2D normalPlusTexture;
+layout(bindless_sampler) uniform sampler2D lightMappingTexture;
+layout(bindless_sampler) uniform samplerCube environmentFilterMap;
+layout(bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -89,5 +89,5 @@ void main()
         // write
         frag = vec4(environmentFilter, 1.0);
     }
-    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white environment filter
+    else frag = vec4(1.0); // white environment filter
 }

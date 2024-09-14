@@ -247,7 +247,7 @@ module WorldImGui =
         /// Edit a value via ImGui.
         /// TODO: split up this function.
         static member imGuiEditProperty (name : string) (ty : Type) (value : obj) (context : EditContext) world =
-            let converter = SymbolicConverter (false, None, ty)
+            let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
             match value with
             | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
             | :? int8 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result

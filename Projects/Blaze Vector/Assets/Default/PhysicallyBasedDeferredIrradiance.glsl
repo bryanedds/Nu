@@ -19,11 +19,11 @@ void main()
 const float PI = 3.141592654;
 const int LIGHT_MAPS_MAX = 27;
 
-layout (bindless_sampler) uniform sampler2D positionTexture;
-layout (bindless_sampler) uniform sampler2D normalPlusTexture;
-layout (bindless_sampler) uniform sampler2D lightMappingTexture;
-layout (bindless_sampler) uniform samplerCube irradianceMap;
-layout (bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
+layout(bindless_sampler) uniform sampler2D positionTexture;
+layout(bindless_sampler) uniform sampler2D normalPlusTexture;
+layout(bindless_sampler) uniform sampler2D lightMappingTexture;
+layout(bindless_sampler) uniform samplerCube irradianceMap;
+layout(bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -68,5 +68,5 @@ void main()
         // write
         frag = vec4(irradiance, 1.0);
     }
-    else frag = vec4(1.0, 1.0, 1.0, 1.0); // white irradiance
+    else frag = vec4(1.0); // white irradiance
 }

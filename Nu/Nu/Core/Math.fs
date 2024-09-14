@@ -38,7 +38,8 @@ module Vector2 =
         member this.AngleBetween (that : Vector2) =
             let a = this.Normalized
             let b = that.Normalized
-            acos (Vector2.Dot (a, b))
+            let c = a.Dot b
+            c |> min 1.0f |> max 0.0f |> acos
 
         /// Compute power of vector components.
         static member Pow (a : Vector2, b : Vector2) =
@@ -129,7 +130,8 @@ module Vector3 =
         member this.AngleBetween (that : Vector3) =
             let a = this.Normalized
             let b = that.Normalized
-            acos (a.Dot b)
+            let c = a.Dot b
+            c |> min 1.0f |> max 0.0f |> acos
 
         /// Compute power of vector components.
         static member Pow (a : Vector3, b : Vector3) =

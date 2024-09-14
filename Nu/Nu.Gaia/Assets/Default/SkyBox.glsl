@@ -20,7 +20,7 @@ void main()
 
 uniform vec3 color;
 uniform float brightness;
-layout (bindless_sampler) uniform samplerCube cubeMap;
+layout(bindless_sampler) uniform samplerCube cubeMap;
 
 in vec3 texCoordsOut;
 

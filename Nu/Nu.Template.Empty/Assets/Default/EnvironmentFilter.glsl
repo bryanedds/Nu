@@ -24,7 +24,7 @@ const float TONE_UNMAP_SCALAR = 1.6225;
 
 uniform float roughness;
 uniform float resolution; // resolution of cube map face
-layout (bindless_sampler) uniform samplerCube cubeMap;
+layout(bindless_sampler) uniform samplerCube cubeMap;
 
 in vec3 positionOut;
 

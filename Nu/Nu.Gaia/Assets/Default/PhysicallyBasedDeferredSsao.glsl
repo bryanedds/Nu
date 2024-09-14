@@ -62,8 +62,8 @@ const vec3[SSAO_SAMPLES_MAX] SSAO_SAMPLING_DIRECTIONS = vec3[](
 
 uniform mat4 view;
 uniform mat4 projection;
-layout (bindless_sampler) uniform sampler2D positionTexture;
-layout (bindless_sampler) uniform sampler2D normalPlusTexture;
+layout(bindless_sampler) uniform sampler2D positionTexture;
+layout(bindless_sampler) uniform sampler2D normalPlusTexture;
 uniform ivec2 ssaoResolution;
 uniform float ssaoIntensity;
 uniform float ssaoBias;

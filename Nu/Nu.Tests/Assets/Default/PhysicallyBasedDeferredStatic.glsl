@@ -61,13 +61,13 @@ void main()
 const float GAMMA = 2.2;
 
 uniform vec3 eyeCenter;
-layout (bindless_sampler) uniform sampler2D albedoTexture;
-layout (bindless_sampler) uniform sampler2D roughnessTexture;
-layout (bindless_sampler) uniform sampler2D metallicTexture;
-layout (bindless_sampler) uniform sampler2D emissionTexture;
-layout (bindless_sampler) uniform sampler2D ambientOcclusionTexture;
-layout (bindless_sampler) uniform sampler2D normalTexture;
-layout (bindless_sampler) uniform sampler2D heightTexture;
+layout(bindless_sampler) uniform sampler2D albedoTexture;
+layout(bindless_sampler) uniform sampler2D roughnessTexture;
+layout(bindless_sampler) uniform sampler2D metallicTexture;
+layout(bindless_sampler) uniform sampler2D emissionTexture;
+layout(bindless_sampler) uniform sampler2D ambientOcclusionTexture;
+layout(bindless_sampler) uniform sampler2D normalTexture;
+layout(bindless_sampler) uniform sampler2D heightTexture;
 
 in vec4 positionOut;
 in vec2 texCoordsOut;

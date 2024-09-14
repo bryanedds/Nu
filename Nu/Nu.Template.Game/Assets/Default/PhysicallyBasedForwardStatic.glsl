@@ -67,6 +67,12 @@ const int LIGHTS_MAX = 8;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const vec4 SSVF_DITHERING[4] =
+vec4[4](
+    vec4(0.0, 0.5, 0.125, 0.625),
+    vec4(0.75, 0.22, 0.875, 0.375),
+    vec4(0.1875, 0.6875, 0.0625, 0.5625),
+    vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform float lightCutoffMargin;
@@ -74,23 +80,25 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
+uniform float lightShadowBleedFilter;
+uniform float lightShadowVarianceMin;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
 uniform float ssvfIntensity;
-layout (bindless_sampler) uniform sampler2D albedoTexture;
-layout (bindless_sampler) uniform sampler2D roughnessTexture;
-layout (bindless_sampler) uniform sampler2D metallicTexture;
-layout (bindless_sampler) uniform sampler2D emissionTexture;
-layout (bindless_sampler) uniform sampler2D ambientOcclusionTexture;
-layout (bindless_sampler) uniform sampler2D normalTexture;
-layout (bindless_sampler) uniform sampler2D heightTexture;
-layout (bindless_sampler) uniform sampler2D brdfTexture;
-layout (bindless_sampler) uniform samplerCube irradianceMap;
-layout (bindless_sampler) uniform samplerCube environmentFilterMap;
-layout (bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
-layout (bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
-layout (bindless_sampler) uniform sampler2D shadowTextures[SHADOWS_MAX];
+layout(bindless_sampler) uniform sampler2D albedoTexture;
+layout(bindless_sampler) uniform sampler2D roughnessTexture;
+layout(bindless_sampler) uniform sampler2D metallicTexture;
+layout(bindless_sampler) uniform sampler2D emissionTexture;
+layout(bindless_sampler) uniform sampler2D ambientOcclusionTexture;
+layout(bindless_sampler) uniform sampler2D normalTexture;
+layout(bindless_sampler) uniform sampler2D heightTexture;
+layout(bindless_sampler) uniform sampler2D brdfTexture;
+layout(bindless_sampler) uniform samplerCube irradianceMap;
+layout(bindless_sampler) uniform samplerCube environmentFilterMap;
+layout(bindless_sampler) uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
+layout(bindless_sampler) uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
+layout(bindless_sampler) uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -216,6 +224,26 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+float computeShadowScalar(vec4 position, bool lightDirectional, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
+{
+    vec4 positionShadow = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+    if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        return shadowScalar;
+    }
+    return 1.0;
+}
+
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     vec3 result = vec3(0.0);
@@ -239,8 +267,11 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
         // compute light view term
         float theta = dot(-rayDirection, lightDirections[lightIndex]);
 
+        // compute dithering
+        float dithering = SSVF_DITHERING[int(gl_FragCoord.x) % 4][int(gl_FragCoord.y) % 4];
+
         // march over ray, accumulating fog light value
-        vec3 currentPosition = startPosition;
+        vec3 currentPosition = startPosition + step * dithering;
         for (int i = 0; i < ssvfSteps; i++)
         {
             // step through ray, accumulating fog light moment
@@ -314,8 +345,9 @@ void main()
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
+        bool lightDirectional = lightDirectionals[i] == 1;
         vec3 l, h, radiance;
-        if (lightDirectionals[i] == 0)
+        if (!lightDirectional)
         {
             vec3 d = lightOrigins[i] - position.xyz;
             l = normalize(d);
@@ -343,24 +375,10 @@ void main()
 
         // shadow scalar
         int shadowIndex = lightShadowIndices[i];
-        float shadowScalar = 1.0;
-        if (shadowIndex >= 0)
-        {
-            vec4 positionShadow = shadowMatrices[shadowIndex] * position;
-            vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-            vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-            if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-                shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
-            {
-                float shadowZ = shadowTexCoordsProj.z;
-                float shadowZExp = exp(-lightShadowExponent * shadowZ);
-                float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
-                shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-                shadowScalar = pow(shadowScalar, lightShadowDensity);
-                shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
-            }
-        }
+        float shadowScalar =
+            shadowIndex >= 0 ?
+            computeShadowScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+            1.0;
 
         // cook-torrance brdf
         float ndf = distributionGGX(n, h, roughness);
@@ -396,7 +414,7 @@ void main()
     if (lm1 == -1 && lm2 == -1)
     {
         irradiance = texture(irradianceMap, n).rgb;
-        vec3 r = reflect(-v, n);    
+        vec3 r = reflect(-v, n);
         environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
     }
     else if (lm2 == -1)
@@ -423,9 +441,6 @@ void main()
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
     }
 
-    // compute directional fog accumulation from sun light when desired
-    vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-
     // compute light ambient terms
     vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
     vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
@@ -441,15 +456,14 @@ void main()
     vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(n, v), 0.0), roughness)).rg;
     vec3 specular = environmentFilter * (f * environmentBrdf.x + environmentBrdf.y) * lightAmbientSpecular;
 
-    // compute ambient term
-    vec3 ambient = diffuse + specular;
+    // compute directional fog accumulation from sun light when desired
+    vec3 fogAccum = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
 
-    // compute color w/ tone mapping, gamma correction, and emission
-    vec3 color = lightAccum + fogAccum + ambient;
+    // compute color composition with tone mapping and gamma correction
+    vec3 color = lightAccum + diffuse + emission * albedo.rgb + specular + fogAccum;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / GAMMA));
-    color = color + emission * albedo.rgb;
 
-    // write
+    // write fragment
     frag = vec4(color, albedo.a);
 }
