@@ -149,9 +149,36 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float depthViewToDepthBuffer(float depthView, float nearPlane, float farPlane)
+float depthViewToDepthBuffer(float depthView)
 {
+    // compute near and far planes (these _should_ get baked down to fragment constants)
+    float p2z = projection[2].z;
+    float p2w = projection[2].w;
+    float nearPlane = p2w / (p2z - 1.0);
+    float farPlane = p2w / (p2z + 1.0);
+
+    // compute depth
     return (-depthView - nearPlane) / (farPlane - nearPlane);
+}
+
+float computeShadowScalar(vec4 position, bool lightDirectional, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
+{
+    vec4 positionShadow = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+    if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        return shadowScalar;
+    }
+    return 1.0;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -379,24 +406,10 @@ void main()
 
             // shadow scalar
             int shadowIndex = lightShadowIndices[i];
-            float shadowScalar = 1.0;
-            if (shadowIndex >= 0)
-            {
-                vec4 positionShadow = shadowMatrices[shadowIndex] * position;
-                vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-                if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-                    shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-                    shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
-                {
-                    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
-                    float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
-                    float shadowZExp = exp(-lightShadowExponent * shadowZ);
-                    float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
-                    shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-                    shadowScalar = pow(shadowScalar, lightShadowDensity);
-                    shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
-                }
-            }
+            float shadowScalar =
+                shadowIndex >= 0 ?
+                computeShadowScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                1.0;
 
             // cook-torrance brdf
             float ndf = distributionGGX(normal, h, roughness);
@@ -434,12 +447,12 @@ void main()
         vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
 
         // compute specular term and weight from screen-space
-        vec3 specularScreen = vec3(0.0);
-        float specularScreenWeight = 0.0;
         vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
         float towardEye = dot(forward, normal);
         float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
         vec4 positionView = view * position;
+        vec3 specularScreen = vec3(0.0);
+        float specularScreenWeight = 0.0;
         if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
         {
             vec2 texSize = textureSize(positionTexture, 0).xy;
@@ -456,16 +469,9 @@ void main()
         vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
-        // compute near and far planes (these _should_ get baked down to fragment constants)
-        float p2z = projection[2].z;
-        float p2w = projection[2].w;
-        float nearPlane = p2w / (p2z - 1.0);
-        float farPlane = p2w / (p2z + 1.0);
-
-        // populate lighting values
-        color.xyz = lightAccum + diffuse + emission * albedo + specular;
-        color.w = 1.0; // signify valid fragment
-        fogAccum.xyz = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-        depth = depthViewToDepthBuffer(positionView.z, nearPlane, farPlane);
+        // write lighting values
+        color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+        fogAccum = ssvfEnabled == 1 ? vec4(computeFogAccumDirectional(position, 0), 1.0) : vec4(0.0);
+        depth = depthViewToDepthBuffer(positionView.z);
     }
 }
