@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -21,7 +21,7 @@ layout(bindless_sampler) uniform sampler2D inputTexture;
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec2 frag;
+layout(location = 0) out vec2 frag;
 
 void main()
 {
