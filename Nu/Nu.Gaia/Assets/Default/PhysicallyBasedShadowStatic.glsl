@@ -28,17 +28,6 @@ in float depthDirectionalOut;
 
 void main()
 {
-	if (lightShadowDirectional == 0)
-	{
-		float depth = gl_FragCoord.z;
-		depths.x = depth;
-		float dx = dFdx(depth);
-		float dy = dFdy(depth);
-		depths.y = depth * depth + 0.25 * (dx * dx + dy * dy);
-	}
-	else
-	{
-		depths.x = gl_FragCoord.z;
-		depths.y = exp(lightShadowExponent * depthDirectionalOut);
-	}
+	depths.x = gl_FragCoord.z;
+	depths.y = exp(lightShadowExponent * (lightShadowDirectional == 0 ? gl_FragCoord.z : depthDirectionalOut));
 }
