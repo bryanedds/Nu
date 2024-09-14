@@ -24,7 +24,7 @@ layout (location = 0) out vec2 frag;
 
 void main()
 {
-    vec2 moments =
+    vec2 depths =
         texture(inputTexture, texCoordsOut + vec2(-3.0) * scale).xy * (1.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(-2.0) * scale).xy * (6.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(-1.0) * scale).xy * (15.0 / 64.0) +
@@ -32,5 +32,5 @@ void main()
         texture(inputTexture, texCoordsOut + vec2(1.0) * scale).xy * (15.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(2.0) * scale).xy * (6.0 / 64.0) +
         texture(inputTexture, texCoordsOut + vec2(3.0) * scale).xy * (1.0 / 64.0);
-    frag = moments;
+    frag = depths;
 }

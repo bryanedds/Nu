@@ -37,6 +37,8 @@ uniform vec3 lightAmbientColor;
 uniform float lightAmbientBrightness;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
+uniform float lightShadowBleedFilter;
+uniform float lightShadowVarianceMin;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -188,7 +190,7 @@ vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
             vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
             bool shadowTexCoordsInRange = shadowTexCoords.x >= 0.0 && shadowTexCoords.x < 1.0 && shadowTexCoords.y >= 0.0 && shadowTexCoords.y < 1.0;
             float shadowZ = shadowTexCoordsProj.z * 0.5 + 0.5;
-            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).r : 1.0;
+            float shadowDepth = shadowTexCoordsInRange ? texture(shadowTextures[shadowIndex], shadowTexCoords).x : 1.0;
             if (shadowZ <= shadowDepth || shadowZ >= 1.0f)
             {
                 // mie scaterring approximated with Henyey-Greenstein phase function
@@ -347,8 +349,9 @@ void main()
         for (int i = 0; i < lightsCount; ++i)
         {
             // per-light radiance
+            bool lightDirectional = lightDirectionals[i] == 1;
             vec3 l, h, radiance;
-            if (lightDirectionals[i] == 0)
+            if (!lightDirectional)
             {
                 vec3 d = lightOrigins[i] - position.xyz;
                 l = normalize(d);
@@ -381,14 +384,14 @@ void main()
             {
                 vec4 positionShadow = shadowMatrices[shadowIndex] * position;
                 vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-                vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
                 if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
                     shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
                     shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
                 {
-                    float shadowZ = shadowTexCoordsProj.z;
+                    vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+                    float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
                     float shadowZExp = exp(-lightShadowExponent * shadowZ);
-                    float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
+                    float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords).y;
                     shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
                     shadowScalar = pow(shadowScalar, lightShadowDensity);
                     shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
