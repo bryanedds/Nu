@@ -18,7 +18,7 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
 const float ATTENUATION_CONSTANT = 1.0;
-const int LIGHTS_MAX = 64;
+const int LIGHTS_MAX = 32;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
