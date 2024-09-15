@@ -11,13 +11,11 @@ open Prime
 [<AutoOpen>]
 module WorldModuleEntity =
 
-    /// A reflective property getter.
+    /// Dynamic property getter and setter.
     type private PropertyGetter = Entity -> World -> Property
-
-    /// A reflective property setter.
     type private PropertySetter = Property -> Entity -> World -> struct (bool * World)
 
-    /// Reflective property getters / setters.
+    /// Dynamic property getters / setters.
     let private EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
     let private EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
