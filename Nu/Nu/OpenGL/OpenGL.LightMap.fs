@@ -11,7 +11,7 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, geometryResolution, ssaoResolution, rasterResolution, origin) =
+    let CreateReflectionMap (render, geometryResolution, ssaoResolution, rasterResolution, origin, ambientColor, ambientBrightness) =
 
         // create reflection renderbuffer
         let rasterRenderbuffer = Gl.GenRenderbuffer ()
@@ -93,7 +93,7 @@ module LightMap =
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
             render
-                false origin eyeRotation
+                false (Some (ambientColor, ambientBrightness)) origin eyeRotation
                 viewAbsolute viewRelative viewSkyBox
                 geometryViewport geometryProjection
                 ssaoViewport
@@ -364,13 +364,17 @@ module LightMap =
         { Enabled : bool
           Origin : Vector3
           Bounds : Box3
+          AmbientColor : Color
+          AmbientBrightness : single
           IrradianceMap : Texture.Texture
           EnvironmentFilterMap : Texture.Texture }
 
     /// Create a light map with existing irradiance and environment filter maps.
-    let CreateLightMap enabled origin bounds irradianceMap environmentFilterMap =
+    let CreateLightMap enabled origin ambientColor ambientBrightness bounds irradianceMap environmentFilterMap =
         { Enabled = enabled
           Origin = origin
+          AmbientColor = ambientColor
+          AmbientBrightness = ambientBrightness
           Bounds = bounds
           IrradianceMap = irradianceMap
           EnvironmentFilterMap = environmentFilterMap }

@@ -328,6 +328,8 @@ type RenderLightProbe3d =
     { LightProbeId : uint64
       Enabled : bool
       Origin : Vector3
+      AmbientColor : Color
+      AmbientBrightness : single
       Bounds : Box3
       RenderPass : RenderPass }
 
@@ -556,6 +558,8 @@ type RenderMessage3d =
 type private SortableLightMap =
     { SortableLightMapEnabled : bool
       SortableLightMapOrigin : Vector3
+      SortableLightMapAmbientColor : Color
+      SortableLightMapAmbientBrightness : single
       SortableLightMapBounds : Box3
       SortableLightMapIrradianceMap : OpenGL.Texture.Texture
       SortableLightMapEnvironmentFilterMap : OpenGL.Texture.Texture
@@ -711,7 +715,7 @@ type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
 /// A collection of tasks in a render pass.
 type [<ReferenceEquality>] private RenderTasks =
     { SkyBoxes : (Color * single * Color * single * CubeMap AssetTag) List
-      LightProbes : Dictionary<uint64, struct (bool * Vector3 * Box3)>
+      LightProbes : Dictionary<uint64, struct (bool * Vector3 * Color * single * Box3)>
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
@@ -2366,7 +2370,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderPass
         renderTasks
         renderer
-        (topLevelRender : bool)
+        topLevelRender
+        lightAmbientOverride
         (eyeCenter : Vector3)
         (eyeRotation : Quaternion)
         (viewAbsolute : Matrix4x4)
@@ -2390,18 +2395,19 @@ type [<ReferenceEquality>] GlRenderer3d =
         let geometryProjectionArray = geometryProjection.ToArray ()
         let rasterProjectionArray = rasterProjection.ToArray ()
 
-        // get sky box opt and fallback light map
+        // get ambient lighting, sky box opt, and fallback light map
         let (lightAmbientColor, lightAmbientBrightness, skyBoxOpt) = GlRenderer3d.getLastSkyBoxOpt renderPass renderer
+        let (lightAmbientColor, lightAmbientBrightness) = Option.defaultValue (lightAmbientColor, lightAmbientBrightness) lightAmbientOverride
         let lightAmbientColor = [|lightAmbientColor.R; lightAmbientColor.G; lightAmbientColor.B|]
         let lightMapFallback =
             match skyBoxOpt with
-            | Some (_, _, _, irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref) ->
+            | Some (ambientColor, ambientBrightness, _, (irradianceAndEnvironmentMapsOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref)) ->
                 let (irradianceMap, environmentFilterMap) =
                     match irradianceAndEnvironmentMapsOptRef.Value with
                     | Some irradianceAndEnvironmentMaps -> irradianceAndEnvironmentMaps
                     | None -> (renderer.IrradianceMap, renderer.EnvironmentFilterMap)
-                OpenGL.LightMap.CreateLightMap true v3Zero box3Zero irradianceMap environmentFilterMap
-            | None -> OpenGL.LightMap.CreateLightMap true v3Zero box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
+                OpenGL.LightMap.CreateLightMap true v3Zero ambientColor ambientBrightness box3Zero irradianceMap environmentFilterMap
+            | None -> OpenGL.LightMap.CreateLightMap true v3Zero Color.White 1.0f box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
 
         // destroy cached light maps whose originating probe no longer exists
         for lightMapKvp in renderer.LightMaps do
@@ -2412,14 +2418,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         // ensure light maps are synchronized with any light probe changes
         for (lightMapId, lightMap) in renderer.LightMaps.Pairs do
             match renderTasks.LightProbes.TryGetValue lightMapId with
-            | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+            | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
                 if  lightMap.Enabled <> lightProbeEnabled ||
                     lightMap.Origin <> lightProbeOrigin ||
+                    lightMap.AmbientColor <> lightProbeAmbientColor ||
+                    lightMap.AmbientBrightness <> lightProbeAmbientBrightness ||
                     lightMap.Bounds <> lightProbeBounds then
                     let lightMap =
                         { lightMap with
                             Enabled = lightProbeEnabled
                             Origin = lightProbeOrigin
+                            AmbientColor = lightProbeAmbientColor
+                            AmbientBrightness = lightProbeAmbientBrightness
                             Bounds = lightProbeBounds }
                     renderer.LightMaps.[lightMapId] <- lightMap
             | _ -> ()
@@ -2430,18 +2440,24 @@ type [<ReferenceEquality>] GlRenderer3d =
                 { SortableLightMapEnabled = lightMapKvp.Value.Enabled
                   SortableLightMapOrigin = lightMapKvp.Value.Origin
                   SortableLightMapBounds = lightMapKvp.Value.Bounds
+                  SortableLightMapAmbientColor = lightMapKvp.Value.AmbientColor
+                  SortableLightMapAmbientBrightness = lightMapKvp.Value.AmbientBrightness
                   SortableLightMapIrradianceMap = lightMapKvp.Value.IrradianceMap
                   SortableLightMapEnvironmentFilterMap = lightMapKvp.Value.EnvironmentFilterMap
                   SortableLightMapDistanceSquared = Single.MaxValue }
             let lightMap =
                 match renderTasks.LightProbes.TryGetValue lightMapKvp.Key with
-                | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+                | (true, (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
                     if  lightMap.SortableLightMapEnabled <> lightProbeEnabled ||
                         lightMap.SortableLightMapOrigin <> lightProbeOrigin ||
+                        lightMap.SortableLightMapAmbientColor <> lightProbeAmbientColor ||
+                        lightMap.SortableLightMapAmbientBrightness <> lightProbeAmbientBrightness ||
                         lightMap.SortableLightMapBounds <> lightProbeBounds then
                         { lightMap with
                             SortableLightMapEnabled = lightProbeEnabled
                             SortableLightMapOrigin = lightProbeOrigin
+                            SortableLightMapAmbientColor = lightProbeAmbientColor
+                            SortableLightMapAmbientBrightness = lightProbeAmbientBrightness
                             SortableLightMapBounds = lightProbeBounds }
                     else lightMap
                 | _ -> lightMap
@@ -2915,7 +2931,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 if renderTasks.LightProbes.ContainsKey rlp.LightProbeId then
                     Log.infoOnce ("Multiple light probe messages coming in with the same id of '" + string rlp.LightProbeId + "'.")
                     renderTasks.LightProbes.Remove rlp.LightProbeId |> ignore<bool>
-                renderTasks.LightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.Bounds))
+                renderTasks.LightProbes.Add (rlp.LightProbeId, struct (rlp.Enabled, rlp.Origin, rlp.AmbientColor, rlp.AmbientBrightness, rlp.Bounds))
             | RenderLightMap3d rlm ->
                 let renderTasks = GlRenderer3d.getRenderTasks rlm.RenderPass renderer
                 renderTasks.LightMapRenders.Add rlm.LightProbeId |> ignore<bool>
@@ -3046,7 +3062,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     // create new light map
                     match renderTasks.LightProbes.TryGetValue lightProbeId with
-                    | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
+                    | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeAmbientColor, lightProbeAmbientBrightness, lightProbeBounds)) ->
 
                         // create reflection map
                         let reflectionMap =
@@ -3055,7 +3071,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                                  Constants.Render.Resolution,
                                  Constants.Render.SsaoResolution,
                                  Constants.Render.ReflectionMapResolution,
-                                 lightProbeOrigin)
+                                 lightProbeOrigin,
+                                 lightProbeAmbientColor,
+                                 lightProbeAmbientBrightness)
 
                         // create irradiance map
                         let irradianceMap =
@@ -3075,7 +3093,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         reflectionMap.Destroy ()
 
                         // create light map
-                        let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds irradianceMap environmentFilterMap
+                        let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeAmbientColor lightProbeAmbientBrightness lightProbeBounds irradianceMap environmentFilterMap
 
                         // add light map to cache
                         renderer.LightMaps.[lightProbeId] <- lightMap
@@ -3145,7 +3163,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // top-level geometry pass
         let renderPass = NormalPass
         let normalTasks = GlRenderer3d.getRenderTasks renderPass renderer
-        GlRenderer3d.renderGeometry renderPass normalTasks renderer true eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
+        GlRenderer3d.renderGeometry renderPass normalTasks renderer true None eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
