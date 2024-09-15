@@ -190,7 +190,8 @@ module Hl =
             { Instance : VkInstance
               Surface : VkSurfaceKHR
               Device : VkDevice
-              Swapchain : VkSwapchainKHR }
+              Swapchain : VkSwapchainKHR
+              SwapchainImageViews : VkImageView array }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -474,8 +475,38 @@ module Hl =
             vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, imagesPin.Pointer) |> check
             images
         
+        /// Create swapchain image views.
+        static member createSwapchainImageViews format (images : VkImage array) device =
+            
+            // image view handle array
+            let imageViews = Array.zeroCreate<VkImageView> images.Length
+
+            // populate create infos
+            for i in [0 .. dec imageViews.Length] do
+                let mutable createInfo = VkImageViewCreateInfo ()
+                createInfo.image <- images[i]
+                createInfo.viewType <- VK_IMAGE_VIEW_TYPE_2D
+                createInfo.format <- format
+                createInfo.components.r <- VK_COMPONENT_SWIZZLE_IDENTITY
+                createInfo.components.g <- VK_COMPONENT_SWIZZLE_IDENTITY
+                createInfo.components.b <- VK_COMPONENT_SWIZZLE_IDENTITY
+                createInfo.components.a <- VK_COMPONENT_SWIZZLE_IDENTITY
+                createInfo.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+                createInfo.subresourceRange.baseMipLevel <- 0u
+                createInfo.subresourceRange.levelCount <- 1u
+                createInfo.subresourceRange.baseArrayLayer <- 0u
+                createInfo.subresourceRange.layerCount <- 1u
+
+                // create image view
+                vkCreateImageView (device, asPointer &createInfo, nullPtr, &imageViews[i]) |> check
+
+            // fin
+            imageViews
+        
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            for i in [0 .. dec vulkanGlobal.SwapchainImageViews.Length] do
+                vkDestroyImageView (vulkanGlobal.Device, vulkanGlobal.SwapchainImageViews[i], nullPtr)
             vkDestroySwapchainKHR (vulkanGlobal.Device, vulkanGlobal.Swapchain, nullPtr)
             vkDestroyDevice (vulkanGlobal.Device, nullPtr)
             vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, nullPtr)
@@ -518,13 +549,17 @@ module Hl =
 
                 // get swapchain images
                 let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
+
+                // create swapchain image views
+                let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
                     { Instance = instance
                       Surface = surface
                       Device = device
-                      Swapchain = swapchain }
+                      Swapchain = swapchain
+                      SwapchainImageViews = swapchainImageViews }
 
                 // fin
                 Some vulkanGlobal
