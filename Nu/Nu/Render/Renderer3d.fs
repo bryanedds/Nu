@@ -2404,11 +2404,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> OpenGL.LightMap.CreateLightMap true v3Zero box3Zero renderer.IrradianceMap renderer.EnvironmentFilterMap
 
         // destroy cached light maps whose originating probe no longer exists
-        if topLevelRender then
-            for lightMapKvp in renderer.LightMaps do
-                if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
-                    OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
-                    renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
+        for lightMapKvp in renderer.LightMaps do
+            if not (renderTasks.LightProbes.ContainsKey lightMapKvp.Key) then
+                OpenGL.LightMap.DestroyLightMap lightMapKvp.Value
+                renderer.LightMaps.Remove lightMapKvp.Key |> ignore<bool>
 
         // ensure light maps are synchronized with any light probe changes
         for (lightMapId, lightMap) in renderer.LightMaps.Pairs do
@@ -2425,7 +2424,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.LightMaps.[lightMapId] <- lightMap
             | _ -> ()
 
-        // collect light maps from cached light maps and ensure they're up to date with 
+        // collect light maps from cached light maps and ensure they're up to date with their light probes
         for lightMapKvp in renderer.LightMaps do
             let lightMap =
                 { SortableLightMapEnabled = lightMapKvp.Value.Enabled
@@ -2448,7 +2447,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | _ -> lightMap
             renderTasks.LightMaps.Add lightMap
 
-        // filter light map according to enabledness and intersection with the geometry frustum
+        // filter light maps according to enabledness and intersection with the geometry frustum
         let lightMaps =
             renderTasks.LightMaps |>
             Array.ofSeq |>
@@ -3038,13 +3037,14 @@ type [<ReferenceEquality>] GlRenderer3d =
             | LightMapPass (lightProbeId, _) ->
                 if renderTasks.LightMapRenders.Contains lightProbeId then
 
-                    // destroy any existing light map
-                    match renderer.LightMaps.TryGetValue lightProbeId with
-                    | (true, lightMap) ->
-                        OpenGL.LightMap.DestroyLightMap lightMap
-                        renderer.LightMaps.Remove lightProbeId |> ignore<bool>
-                    | (false, _) -> ()
+                    //// destroy any existing light map
+                    //match renderer.LightMaps.TryGetValue lightProbeId with
+                    //| (true, lightMap) ->
+                    //    OpenGL.LightMap.DestroyLightMap lightMap
+                    //    renderer.LightMaps.Remove lightProbeId |> ignore<bool>
+                    //| (false, _) -> ()
 
+                    // create new light map
                     match renderTasks.LightProbes.TryGetValue lightProbeId with
                     | (true, struct (lightProbeEnabled, lightProbeOrigin, lightProbeBounds)) ->
 
@@ -3078,7 +3078,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         let lightMap = OpenGL.LightMap.CreateLightMap lightProbeEnabled lightProbeOrigin lightProbeBounds irradianceMap environmentFilterMap
 
                         // add light map to cache
-                        renderer.LightMaps.Add (lightProbeId, lightMap)
+                        renderer.LightMaps.[lightProbeId] <- lightMap
 
                     | (false, _) -> ()
 
