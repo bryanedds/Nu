@@ -3037,12 +3037,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | LightMapPass (lightProbeId, _) ->
                 if renderTasks.LightMapRenders.Contains lightProbeId then
 
-                    //// destroy any existing light map
-                    //match renderer.LightMaps.TryGetValue lightProbeId with
-                    //| (true, lightMap) ->
-                    //    OpenGL.LightMap.DestroyLightMap lightMap
-                    //    renderer.LightMaps.Remove lightProbeId |> ignore<bool>
-                    //| (false, _) -> ()
+                    // destroy any existing light map
+                    match renderer.LightMaps.TryGetValue lightProbeId with
+                    | (true, lightMap) ->
+                        OpenGL.LightMap.DestroyLightMap lightMap
+                        renderer.LightMaps.Remove lightProbeId |> ignore<bool>
+                    | (false, _) -> ()
 
                     // create new light map
                     match renderTasks.LightProbes.TryGetValue lightProbeId with
