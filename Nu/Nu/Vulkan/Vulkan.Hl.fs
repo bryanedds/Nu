@@ -410,7 +410,7 @@ module Hl =
             extent
         
         /// Create the swapchain.
-        static member createSwapchain physicalDeviceData surface window device =
+        static member createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
             
             // swapchain handle
             let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
@@ -418,10 +418,6 @@ module Hl =
             // get capabilities for cleaner code
             let capabilities = physicalDeviceData.SurfaceCapabilities
             
-            // get surface format and swap extent
-            let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
-            let swapExtent = VulkanGlobal.getSwapExtent capabilities window
-
             // present mode; VK_PRESENT_MODE_FIFO_KHR is guaranteed by the spec and seems most appropriate for nu
             let presentMode = VK_PRESENT_MODE_FIFO_KHR
 
@@ -468,6 +464,15 @@ module Hl =
 
             // fin
             swapchain
+
+        /// Get swapchain images.
+        static member getSwapchainImages swapchain device =
+            let mutable imageCount = 0u
+            vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, nullPtr) |> check
+            let images = Array.zeroCreate<VkImage> (int imageCount)
+            use imagesPin = ArrayPin images
+            vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, imagesPin.Pointer) |> check
+            images
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
@@ -504,8 +509,15 @@ module Hl =
                 // get queues
                 let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues physicalDeviceData device
 
+                // get surface format and swap extent
+                let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
+                let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
+
                 // create swapchain
-                let swapchain = VulkanGlobal.createSwapchain physicalDeviceData surface window device
+                let swapchain = VulkanGlobal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
+
+                // get swapchain images
+                let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
