@@ -409,7 +409,7 @@ void main()
     if (lm1 != -1 && !inBounds(position.xyz, lightMapMins[lm1], lightMapSizes[lm1])) { lm1 = lm2; lm2 = -1; }
     if (lm2 != -1 && !inBounds(position.xyz, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
-    // compute irradiance and environment filter terms
+    // compute light mapping terms
     vec3 ambientColor = vec3(0.0);
     float ambientBrightness = 0.0;
     vec3 irradiance = vec3(0.0);
