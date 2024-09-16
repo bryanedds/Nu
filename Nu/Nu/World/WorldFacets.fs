@@ -1972,7 +1972,7 @@ type SkyBoxFacet () =
          define Entity.Presence Omnipresent
          define Entity.Static true
          define Entity.AmbientColor Color.White
-         define Entity.AmbientBrightness 1.0f
+         define Entity.AmbientBrightness 0.5f
          define Entity.Color Color.White
          define Entity.Brightness 1.0f
          define Entity.CubeMap Assets.Default.SkyBoxMap]
@@ -2031,7 +2031,7 @@ type LightProbe3dFacet () =
          define Entity.Presence Omnipresent
          define Entity.Static true
          define Entity.AmbientColor Color.White
-         define Entity.AmbientBrightness 1.0f
+         define Entity.AmbientBrightness 0.5f
          define Entity.ProbeBounds (box3 (v3Dup Constants.Render.LightProbeSizeDefault * -0.5f) (v3Dup Constants.Render.LightProbeSizeDefault))
          nonPersistent Entity.ProbeStale false]
 
