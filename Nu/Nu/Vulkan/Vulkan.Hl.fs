@@ -191,7 +191,9 @@ module Hl =
               Surface : VkSurfaceKHR
               Device : VkDevice
               Swapchain : VkSwapchainKHR
-              SwapchainImageViews : VkImageView array }
+              SwapchainImageViews : VkImageView array
+              CommandPool : VkCommandPool
+              CommandBuffer : VkCommandBuffer }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -502,9 +504,45 @@ module Hl =
 
             // fin
             imageViews
+
+        /// Create the command pool.
+        static member createCommandPool queueFamilyIndex device =
+            
+            // command pool handle
+            let mutable commandPool = Unchecked.defaultof<VkCommandPool>
+
+            // populate create info
+            let mutable createInfo = VkCommandPoolCreateInfo ()
+            createInfo.flags <- VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+            createInfo.queueFamilyIndex <- queueFamilyIndex
+
+            // create command pool
+            vkCreateCommandPool (device, asPointer &createInfo, nullPtr, &commandPool) |> check
+
+            // fin
+            commandPool
+
+        /// Allocate the command buffer.
+        static member allocateCommandBuffer commandPool device =
+            
+            // command buffer handle
+            let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
+
+            // populate allocate info
+            let mutable allocateInfo = VkCommandBufferAllocateInfo ()
+            allocateInfo.commandPool <- commandPool
+            allocateInfo.level <- VK_COMMAND_BUFFER_LEVEL_PRIMARY
+            allocateInfo.commandBufferCount <- 1u
+
+            // allocate command buffer
+            vkAllocateCommandBuffers (device, asPointer &allocateInfo, asPointer &commandBuffer) |> check
+
+            // fin
+            commandBuffer
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            vkDestroyCommandPool (vulkanGlobal.Device, vulkanGlobal.CommandPool, nullPtr)
             for i in [0 .. dec vulkanGlobal.SwapchainImageViews.Length] do
                 vkDestroyImageView (vulkanGlobal.Device, vulkanGlobal.SwapchainImageViews[i], nullPtr)
             vkDestroySwapchainKHR (vulkanGlobal.Device, vulkanGlobal.Swapchain, nullPtr)
@@ -544,14 +582,14 @@ module Hl =
                 let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
                 let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
 
-                // create swapchain
+                // setup swapchain and its assets
                 let swapchain = VulkanGlobal.createSwapchain surfaceFormat swapExtent physicalDeviceData surface device
-
-                // get swapchain images
                 let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
-
-                // create swapchain image views
                 let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
+
+                // setup command pool and buffer
+                let commandPool = VulkanGlobal.createCommandPool physicalDeviceData.GraphicsQueueFamily device
+                let commandBuffer = VulkanGlobal.allocateCommandBuffer commandPool device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
@@ -559,7 +597,9 @@ module Hl =
                       Surface = surface
                       Device = device
                       Swapchain = swapchain
-                      SwapchainImageViews = swapchainImageViews }
+                      SwapchainImageViews = swapchainImageViews
+                      CommandPool = commandPool
+                      CommandBuffer = commandBuffer }
 
                 // fin
                 Some vulkanGlobal
