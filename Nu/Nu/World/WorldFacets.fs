@@ -2060,9 +2060,8 @@ type LightProbe3dFacet () =
         match op with
         | AppendProperties append ->
             let world =
-                if ImGui.Button "Rerender Light Map" then
-                    let world = append.EditContext.Snapshot RerenderLightMap world
-                    entity.SetProbeStale true world
+                if ImGui.Button "Rerender Light Map"
+                then entity.SetProbeStale true world // this isn't undoable
                 else world
             let world =
                 if ImGui.Button "Recenter in Probe Bounds" then
@@ -2105,6 +2104,7 @@ type Light3dFacet () =
 
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
+         define Entity.Static true
          define Entity.Light true
          define Entity.Color Color.White
          define Entity.Brightness Constants.Render.BrightnessDefault
