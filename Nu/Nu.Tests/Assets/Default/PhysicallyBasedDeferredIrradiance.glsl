@@ -46,7 +46,7 @@ void main()
         int lm2 = int(lmData.g) - 1;
         float lmRatio = lmData.b;
 
-        // compute irradiance terms
+        // compute irradiance
         vec3 irradiance = vec3(0.0);
         if (lm1 == -1 && lm2 == -1)
         {

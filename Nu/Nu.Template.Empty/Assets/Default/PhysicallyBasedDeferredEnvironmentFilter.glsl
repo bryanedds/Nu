@@ -62,7 +62,7 @@ void main()
         int lm2 = int(lmData.g) - 1;
         float lmRatio = lmData.b;
 
-        // compute environment filter term
+        // compute environment filter
         vec3 v = normalize(eyeCenter - position.xyz);
         vec3 environmentFilter = vec3(0.0);
         if (lm1 == -1 && lm2 == -1)

@@ -33,8 +33,6 @@ uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float lightCutoffMargin;
-uniform vec3 lightAmbientColor;
-uniform float lightAmbientBrightness;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
 uniform float lightShadowBleedFilter;
@@ -67,6 +65,7 @@ uniform sampler2D normalPlusTexture;
 uniform sampler2D brdfTexture;
 uniform sampler2D irradianceTexture;
 uniform sampler2D environmentFilterTexture;
+uniform sampler2D ambientTexture;
 uniform sampler2D ssaoTexture;
 uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
@@ -436,6 +435,9 @@ void main()
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
         // TODO: use a better means of computing specular occlusion as this one isn't very effective.
+        vec4 lightAmbient = texture(ambientTexture, texCoordsOut);
+        vec3 lightAmbientColor = lightAmbient.rgb;
+        float lightAmbientBrightness = lightAmbient.a;
         vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
         vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
 
