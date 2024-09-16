@@ -3672,6 +3672,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroyLightMappingBuffers renderer.LightMappingBuffers
             OpenGL.Framebuffer.DestroyIrradianceBuffers renderer.IrradianceBuffers
             OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers renderer.EnvironmentFilterBuffers
+            OpenGL.Framebuffer.DestroyHdrBuffers renderer.AmbientBuffers
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.SsaoBuffersUnfiltered
             OpenGL.Framebuffer.DestroySsaoBuffers renderer.SsaoBuffersFiltered
             OpenGL.Framebuffer.DestroyLightingBuffers renderer.LightingBuffers
