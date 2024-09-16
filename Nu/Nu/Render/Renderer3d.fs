@@ -848,9 +848,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           PhysicallyBasedDeferredLightMappingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightMappingShader
+          PhysicallyBasedDeferredAmbientShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredAmbientShader
           PhysicallyBasedDeferredIrradianceShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredIrradianceShader
           PhysicallyBasedDeferredEnvironmentFilterShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredEnvironmentFilterShader
-          PhysicallyBasedDeferredAmbientShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredAmbientShader
           PhysicallyBasedDeferredSsaoShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredSsaoShader
           PhysicallyBasedDeferredLightingShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredLightingShader
           PhysicallyBasedDeferredCompositionShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredCompositionShader
@@ -861,9 +861,9 @@ type [<ReferenceEquality>] GlRenderer3d =
           LightShadowIndices : Dictionary<uint64, int>
           GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
+          AmbientBuffers : OpenGL.Texture.Texture * uint * uint
           IrradianceBuffers : OpenGL.Texture.Texture * uint * uint
           EnvironmentFilterBuffers : OpenGL.Texture.Texture * uint * uint
-          AmbientBuffers : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersUnfiltered : OpenGL.Texture.Texture * uint * uint
           SsaoBuffersFiltered : OpenGL.Texture.Texture * uint * uint
           LightingBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
@@ -2699,6 +2699,22 @@ type [<ReferenceEquality>] GlRenderer3d =
             // just use black texture
             else renderer.BlackTexture
 
+        // setup ambient buffer and viewport
+        let (ambientTexture, ambientRenderbuffer, ambientFramebuffer) = renderer.AmbientBuffers
+        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ambientRenderbuffer)
+        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ambientFramebuffer)
+        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
+        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
+        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
+        OpenGL.Hl.Assert ()
+
+        // deferred render ambient quad
+        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredAmbientSurface
+            (positionTexture, lightMappingTexture,
+             lightAmbientColor, lightAmbientBrightness, lightMapAmbientColors, lightMapAmbientBrightnesses,
+             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredAmbientShader)
+        OpenGL.Hl.Assert ()
+
         // setup irradiance buffer and viewport
         let (irradianceTexture, irradianceRenderbuffer, irradianceFramebuffer) = renderer.IrradianceBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, irradianceRenderbuffer)
@@ -2731,22 +2747,6 @@ type [<ReferenceEquality>] GlRenderer3d =
              lightMapFallback.EnvironmentFilterMap, lightMapEnvironmentFilterMaps,
              lightMapOrigins, lightMapMins, lightMapSizes,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredEnvironmentFilterShader)
-        OpenGL.Hl.Assert ()
-
-        // setup ambient buffer and viewport
-        let (ambientTexture, ambientRenderbuffer, ambientFramebuffer) = renderer.AmbientBuffers
-        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ambientRenderbuffer)
-        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ambientFramebuffer)
-        OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
-        OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
-        OpenGL.Hl.Assert ()
-
-        // deferred render ambient quad
-        OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredAmbientSurface
-            (positionTexture, lightMappingTexture,
-             lightAmbientColor, lightAmbientBrightness, lightMapAmbientColors, lightMapAmbientBrightnesses,
-             renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredAmbientShader)
         OpenGL.Hl.Assert ()
 
         // run ssao pass
@@ -2809,7 +2809,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
              renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
              renderer.LightingConfig.SsrSlopeCutoff, renderer.LightingConfig.SsrSlopeCutoffMargin, renderer.LightingConfig.SsrEdgeHorizontalMargin, renderer.LightingConfig.SsrEdgeVerticalMargin,
-             ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, irradianceTexture, environmentFilterTexture, ambientTexture, ssaoTextureFiltered, shadowTextures,
+             ssrLightColor, renderer.LightingConfig.SsrLightBrightness, positionTexture, albedoTexture, materialTexture, normalPlusTexture, renderer.BrdfTexture, ambientTexture, irradianceTexture, environmentFilterTexture, ssaoTextureFiltered, shadowTextures,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              renderer.PhysicallyBasedQuad, renderer.PhysicallyBasedDeferredLightingShader)
         OpenGL.Hl.Assert ()
@@ -3275,16 +3275,16 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create deferred shaders
         let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader,
-             deferredIrradianceShader, deferredEnvironmentFilterShader, deferredAmbientShader, deferredSsaoShader,
+             deferredAmbientShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader,
              deferredLightingShader, deferredCompositionShader) =
             OpenGL.PhysicallyBased.CreatePhysicallyBasedDeferredShaders
                 (Constants.Paths.PhysicallyBasedDeferredStaticShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredAnimatedShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredTerrainShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredLightMappingShaderFilePath,
+                 Constants.Paths.PhysicallyBasedDeferredAmbientShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredIrradianceShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredEnvironmentFilterShaderFilePath,
-                 Constants.Paths.PhysicallyBasedDeferredAmbientShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredSsaoShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredLightingShaderFilePath,
                  Constants.Paths.PhysicallyBasedDeferredCompositionShaderFilePath)
@@ -3330,6 +3330,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 
+        // create ambient buffers
+        let ambientBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers () with
+            | Right ambientBuffers -> ambientBuffers
+            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
         // create irradiance buffers
         let irradianceBuffers =
             match OpenGL.Framebuffer.TryCreateIrradianceBuffers () with
@@ -3341,13 +3348,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         let environmentFilterBuffers =
             match OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers () with
             | Right environmentFilterBuffers -> environmentFilterBuffers
-            | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
-        OpenGL.Hl.Assert ()
-
-        // create ambient buffers
-        let ambientBuffers =
-            match OpenGL.Framebuffer.TryCreateHdrBuffers () with
-            | Right ambientBuffers -> ambientBuffers
             | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")
         OpenGL.Hl.Assert ()
 

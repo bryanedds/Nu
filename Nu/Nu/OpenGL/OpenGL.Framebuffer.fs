@@ -500,7 +500,7 @@ module Framebuffer =
         Gl.BindFramebuffer (FramebufferTarget.Framebuffer, framebuffer)
         Hl.Assert ()
 
-        // create environmentFilter buffer
+        // create environment filter buffer
         let environmentFilterId = Gl.GenTexture ()
         Gl.BindTexture (TextureTarget.Texture2d, environmentFilterId)
         Gl.TexImage2D (TextureTarget.Texture2d, 0, InternalFormat.Rgba32f, Constants.Render.Resolution.X, Constants.Render.Resolution.Y, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)

@@ -63,9 +63,9 @@ uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
 uniform sampler2D brdfTexture;
+uniform sampler2D ambientTexture;
 uniform sampler2D irradianceTexture;
 uniform sampler2D environmentFilterTexture;
-uniform sampler2D ambientTexture;
 uniform sampler2D ssaoTexture;
 uniform sampler2D shadowTextures[SHADOWS_MAX];
 uniform vec3 lightOrigins[LIGHTS_MAX];
@@ -358,6 +358,7 @@ void main()
         vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
         // retrieve data from intermediate buffers
+        vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
         vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
         vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
         float ssao = texture(ssaoTexture, texCoordsOut).r;
@@ -435,9 +436,8 @@ void main()
         // compute light ambient terms
         // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
         // TODO: use a better means of computing specular occlusion as this one isn't very effective.
-        vec4 lightAmbient = texture(ambientTexture, texCoordsOut);
-        vec3 lightAmbientColor = lightAmbient.rgb;
-        float lightAmbientBrightness = lightAmbient.a;
+        vec3 lightAmbientColor = ambientColorAndBrightness.rgb;
+        float lightAmbientBrightness = ambientColorAndBrightness.a;
         vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
         vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
 

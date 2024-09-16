@@ -410,30 +410,38 @@ void main()
     if (lm2 != -1 && !inBounds(position.xyz, lightMapMins[lm2], lightMapSizes[lm2])) lm2 = -1;
 
     // compute irradiance and environment filter terms
-    vec3 irradiance = vec3(0.0);
-    vec3 environmentFilter = vec3(0.0);
     vec3 ambientColor = vec3(0.0);
     float ambientBrightness = 0.0;
+    vec3 irradiance = vec3(0.0);
+    vec3 environmentFilter = vec3(0.0);
     if (lm1 == -1 && lm2 == -1)
     {
+        ambientColor = lightAmbientColor;
+        ambientBrightness = lightAmbientBrightness;
         irradiance = texture(irradianceMap, n).rgb;
         vec3 r = reflect(-v, n);
         environmentFilter = textureLod(environmentFilterMap, r, roughness * REFLECTION_LOD_MAX).rgb;
-        ambientColor = lightAmbientColor;
-        ambientBrightness = lightAmbientBrightness;
     }
     else if (lm2 == -1)
     {
+        ambientColor = lightMapAmbientColors[lm1];
+        ambientBrightness = lightMapAmbientBrightnesses[lm1];
         irradiance = texture(irradianceMaps[lm1], n).rgb;
         vec3 r = parallaxCorrection(environmentFilterMaps[lm1], lightMapOrigins[lm1], lightMapMins[lm1], lightMapSizes[lm1], position.xyz, n);
         environmentFilter = textureLod(environmentFilterMaps[lm1], r, roughness * REFLECTION_LOD_MAX).rgb;
-        ambientColor = lightMapAmbientColors[lm1];
-        ambientBrightness = lightMapAmbientBrightnesses[lm1];
     }
     else
     {
         // compute blending
         float ratio = computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, n);
+
+        // compute blended ambient values
+        vec3 ambientColor1 = lightMapAmbientColors[lm1];
+        vec3 ambientColor2 = lightMapAmbientColors[lm2];
+        float ambientBrightness1 = lightMapAmbientBrightnesses[lm1];
+        float ambientBrightness2 = lightMapAmbientBrightnesses[lm2];
+        ambientColor = mix(ambientColor1, ambientColor2, ratio);
+        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
 
         // compute blended irradiance
         vec3 irradiance1 = texture(irradianceMaps[lm1], n).rgb;
@@ -446,14 +454,6 @@ void main()
         vec3 environmentFilter1 = textureLod(environmentFilterMaps[lm1], r1, roughness * REFLECTION_LOD_MAX).rgb;
         vec3 environmentFilter2 = textureLod(environmentFilterMaps[lm2], r2, roughness * REFLECTION_LOD_MAX).rgb;
         environmentFilter = mix(environmentFilter1, environmentFilter2, ratio);
-
-        // compute blended irradiance
-        vec3 ambientColor1 = lightMapAmbientColors[lm1];
-        vec3 ambientColor2 = lightMapAmbientColors[lm2];
-        float ambientBrightness1 = lightMapAmbientBrightnesses[lm1];
-        float ambientBrightness2 = lightMapAmbientBrightnesses[lm2];
-        ambientColor = mix(ambientColor1, ambientColor2, ratio);
-        ambientBrightness = mix(ambientBrightness1, ambientBrightness2, ratio);
     }
 
     // compute light ambient terms

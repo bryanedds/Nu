@@ -340,11 +340,6 @@ module LightMap =
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
 
-                //// take a snapshot for testing
-                //if mip = 0 then
-                //    Hl.SaveFramebufferRgbaToBitmap resolution resolution ("EnvironmentFilter." + string cubeMapId + "." + string mip + "." + string i + ".bmp")
-                //    Hl.Assert ()
-
         // teardown attachments
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
