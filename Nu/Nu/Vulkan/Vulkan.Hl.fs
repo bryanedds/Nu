@@ -11,10 +11,7 @@ module Vulkan = let _ = ()
 
 namespace Vulkan
 open System
-open System.Runtime.CompilerServices
 open System.Collections.Generic
-open System.Text
-open FSharp.NativeInterop
 open SDL2
 open Vortice.Vulkan
 open type Vulkan
@@ -178,7 +175,7 @@ module Hl =
             let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, sdlExtensionsOut)
             if int result = 0 then Log.error "SDL error, SDL_Vulkan_GetInstanceExtensions failed."
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
-            for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- NativePtr.ofNativeInt<byte> sdlExtensionsOut[i]
+            for i in [0 .. dec (int sdlExtensionCount)] do sdlExtensions[i] <- nintToBytePointer sdlExtensionsOut[i]
             use sdlExtensionsPin = ArrayPin sdlExtensions
             
             // TODO: setup message callback with debug utils *if* motivation arises.
@@ -227,7 +224,7 @@ module Hl =
             let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
 
             // get surface from sdl
-            let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(Unsafe.As<VkSurfaceKHR, uint64> &surface))
+            let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(asRefType<VkSurfaceKHR, uint64> &surface))
             if int result = 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
 
             // fin
@@ -250,7 +247,7 @@ module Hl =
             let isCompatible physicalDeviceData =
                 
                 // determine swapchain support
-                let swapchainExtensionName = Encoding.UTF8.GetString VK_KHR_SWAPCHAIN_EXTENSION_NAME
+                let swapchainExtensionName = spanToString VK_KHR_SWAPCHAIN_EXTENSION_NAME
                 let swapchainSupported = Array.exists (fun x -> getExtensionName x = swapchainExtensionName) physicalDeviceData.Extensions
                 
                 // checklist
@@ -303,7 +300,7 @@ module Hl =
                 queueCreateInfos[i] <- createInfo
 
             // get swapchain extension
-            let swapchainExtensionName = Encoding.UTF8.GetString VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            let swapchainExtensionName = spanToString VK_KHR_SWAPCHAIN_EXTENSION_NAME
             use extensionArrayWrap = StringArrayWrap [|swapchainExtensionName|]
 
             // NOTE: for particularly dated implementations of Vulkan, validation depends on device layers which are

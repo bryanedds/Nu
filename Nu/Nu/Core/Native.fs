@@ -32,6 +32,10 @@ module Native =
         let voidPtr = NativePtr.toVoidPtr ptr
         NativeMemory.Free voidPtr
     
+    /// Converts the type of a managed pointer from 'a to 'b.
+    /// Because of automatic dereferencing, the result must be *re*referenced after calling.
+    let asRefType<'a, 'b> (source : byref<'a>) : byref<'b> = &(Unsafe.As<'a, 'b> &source)
+    
     /// Null Pointer.
     let nullPtr = NativePtr.nullPtr
     
@@ -46,11 +50,17 @@ module Native =
         let voidPtr = Unsafe.AsPointer &managedPtr
         NativePtr.ofVoidPtr<byte> voidPtr
 
+    /// Convert nativeint to byte pointer.
+    let nintToBytePointer nint = NativePtr.ofNativeInt<byte> nint
+
     /// Extract the string from a C# fixed-size buffer.
     let getBufferString fixedBuffer =
         let mutable fixedBuffer = fixedBuffer
         let ptr = asBytePointer &fixedBuffer
         convertToManaged ptr
+
+    /// Convert a ReadOnlySpan<byte> to a string.
+    let spanToString (span : ReadOnlySpan<byte>) = Encoding.UTF8.GetString span
     
     /// Abstraction for native pointer pinning for arrays.
     type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, pointer : nativeptr<'a>) =
