@@ -36,12 +36,6 @@ module Hl =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
     
-    /// Extract the string from a C# fixed-size buffer.
-    let getBufferString fixedBuffer =
-        let mutable fixedBuffer = fixedBuffer
-        let ptr = asBytePointer &fixedBuffer
-        convertToManaged ptr
-    
     /// Convert VkExtensionProperties.extensionName to a string.
     let getExtensionName (extensionProps : VkExtensionProperties) =
         getBufferString extensionProps.extensionName
@@ -49,29 +43,6 @@ module Hl =
     /// Convert VkLayerProperties.layerName to a string.
     let getLayerName (layerProps : VkLayerProperties) =
         getBufferString layerProps.layerName
-    
-    /// A container for a pinned array of unmanaged strings.
-    type StringArrayWrap private (array : nativeptr<byte> array) =
-    
-        let array = array
-        let pin = ArrayPin array
-    
-        new (strs : string array) =
-            let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
-            for i in [0 .. dec strs.Length] do ptrs[i] <- convertToUnmanaged strs[i]
-            new StringArrayWrap (ptrs)
-
-        // TODO: see if implicit conversion can be used to remove the need to call this member directly.
-        member this.Pointer = pin.Pointer
-
-        // make disposal publicly available without casting
-        member this.Dispose () =
-            for i in [0 .. dec array.Length] do freeUnmanaged array[i]
-            pin.Dispose ()
-    
-        interface IDisposable with
-            member this.Dispose () =
-                this.Dispose ()
     
     /// A physical device and associated data.
     type PhysicalDeviceData =
