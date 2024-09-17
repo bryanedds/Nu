@@ -43,7 +43,7 @@ Animated 3D model rendering with physically-based, deferred rendering with soft 
 ![image](https://github.com/user-attachments/assets/58e5fb9b-372a-4674-af4a-0b937268b3b4)
 Work continues on photo-realistic yet user-friendly rendering.
 
-![image](https://github.com/user-attachments/assets/409cdc6b-36ed-42a3-8dff-79f54ef44333)
+![image](https://github.com/user-attachments/assets/fbba00a1-02a6-43ce-8a39-688797174009)
 Editing the above photo-realistic scene in real-time.
 
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
