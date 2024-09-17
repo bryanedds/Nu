@@ -46,7 +46,7 @@ Work continues on photo-realistic yet user-friendly rendering.
 ![image](https://github.com/user-attachments/assets/555d9b1c-6266-4e44-a32a-d84be6dc63d3)
 Editing the above photo-realistic scene in real-time.
 
-![image](https://github.com/user-attachments/assets/b6825003-155b-412f-8b13-12cf990b3506)
+![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
 Our new shadowing and volumetric fog systems!
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
