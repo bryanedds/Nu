@@ -34,6 +34,16 @@ module Native =
         let length = Encoding.UTF8.GetBytes (readOnlySpan, span)
         span[length] <- byte 0
         NativePtr.ofVoidPtr<byte> voidPtr
+
+    /// Convert an unmanaged string to a managed string.
+    let convertToManaged (ptr : nativeptr<byte>) =
+        let readOnlySpan = MemoryMarshal.CreateReadOnlySpanFromNullTerminated ptr
+        Encoding.UTF8.GetString readOnlySpan
+
+    /// Free an unmanaged string.
+    let freeUnmanaged ptr =
+        let voidPtr = NativePtr.toVoidPtr ptr
+        NativeMemory.Free voidPtr
     
     /// Abstraction for native pointer pinning for arrays.
     type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, pointer : nativeptr<'a>) =

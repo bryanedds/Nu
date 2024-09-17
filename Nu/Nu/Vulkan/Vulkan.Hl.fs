@@ -40,7 +40,7 @@ module Hl =
     let getBufferString fixedBuffer =
         let mutable fixedBuffer = fixedBuffer
         let ptr = asBytePointer &fixedBuffer
-        VkStringInterop.ConvertToManaged ptr
+        convertToManaged ptr
     
     /// Convert VkExtensionProperties.extensionName to a string.
     let getExtensionName (extensionProps : VkExtensionProperties) =
@@ -50,8 +50,6 @@ module Hl =
     let getLayerName (layerProps : VkLayerProperties) =
         getBufferString layerProps.layerName
     
-    // TODO: implement VkStringInterop helpers to remove Vortice.Vulkan dependence and move gems like this into Native.fs.
-
     /// A container for a pinned array of unmanaged strings.
     type StringArrayWrap private (array : nativeptr<byte> array) =
     
@@ -68,7 +66,7 @@ module Hl =
 
         // make disposal publicly available without casting
         member this.Dispose () =
-            for i in [0 .. dec array.Length] do VkStringInterop.Free array[i]
+            for i in [0 .. dec array.Length] do freeUnmanaged array[i]
             pin.Dispose ()
     
         interface IDisposable with
