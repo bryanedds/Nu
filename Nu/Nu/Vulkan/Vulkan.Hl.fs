@@ -60,7 +60,7 @@ module Hl =
     
         new (strs : string array) =
             let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
-            for i in [0 .. dec strs.Length] do ptrs[i] <- VkStringInterop.ConvertToUnmanaged strs[i]
+            for i in [0 .. dec strs.Length] do ptrs[i] <- convertToUnmanaged strs[i]
             new StringArrayWrap (ptrs)
 
         // TODO: see if implicit conversion can be used to remove the need to call this member directly.

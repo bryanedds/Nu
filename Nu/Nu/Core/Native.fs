@@ -4,11 +4,37 @@
 namespace Nu
 open System
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
+open System.Text
 open FSharp.NativeInterop
 
 [<AutoOpen>]
 module Native =
 
+    /// Null Pointer.
+    let nullPtr = NativePtr.nullPtr
+    
+    /// Convert a managed pointer to a typed native pointer.
+    let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
+        let voidPtr = Unsafe.AsPointer &managedPtr
+        NativePtr.ofVoidPtr<'a> voidPtr
+
+    /// Derive a byte pointer from an arbitrary object.
+    /// Used to access strings stored in C# fixed-size buffers, which are completely opaque in F#.
+    let asBytePointer<'a> (managedPtr : byref<'a>) : nativeptr<byte> =
+        let voidPtr = Unsafe.AsPointer &managedPtr
+        NativePtr.ofVoidPtr<byte> voidPtr
+
+    /// Convert a managed string to an unmanaged string that must be manually freed.
+    let convertToUnmanaged (str : string) =
+        let lengthPlus1 = Encoding.UTF8.GetByteCount str + 1
+        let voidPtr = NativeMemory.Alloc (unativeint lengthPlus1)
+        let span = Span<byte> (voidPtr, lengthPlus1)
+        let readOnlySpan = str.AsSpan ()
+        let length = Encoding.UTF8.GetBytes (readOnlySpan, span)
+        span[length] <- byte 0
+        NativePtr.ofVoidPtr<byte> voidPtr
+    
     /// Abstraction for native pointer pinning for arrays.
     type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, pointer : nativeptr<'a>) =
     
@@ -30,16 +56,4 @@ module Native =
             member this.Dispose () =
                 this.Dispose ()
     
-    /// Null Pointer.
-    let nullPtr = NativePtr.nullPtr
     
-    /// Convert a managed pointer to a typed native pointer.
-    let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
-        let voidPtr = Unsafe.AsPointer &managedPtr
-        NativePtr.ofVoidPtr<'a> voidPtr
-
-    /// Derive a byte pointer from an arbitrary object.
-    /// Used to access strings stored in C# fixed-size buffers, which are completely opaque in F#.
-    let asBytePointer<'a> (managedPtr : byref<'a>) : nativeptr<byte> =
-        let voidPtr = Unsafe.AsPointer &managedPtr
-        NativePtr.ofVoidPtr<byte> voidPtr
