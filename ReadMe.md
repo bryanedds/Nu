@@ -40,6 +40,12 @@ Real-time WYSIWYG editing with hot asset and live code reloading, and the abilit
 ![image](https://github.com/bryanedds/Nu/assets/1625560/0b4778aa-c493-4d9d-9a8a-00e527c831ad)
 Animated 3D model rendering with physically-based, deferred rendering with soft shadows.
 
+![image](https://github.com/user-attachments/assets/e199154a-a082-4ca1-9989-d6750aa3e5bc)
+Work continues on photo-realistic yet user-friendly rendering.
+
+![image](https://github.com/user-attachments/assets/555d9b1c-6266-4e44-a32a-d84be6dc63d3)
+Editing the above photo-realistic scene in real-time.
+
 ![image](https://github.com/user-attachments/assets/b6825003-155b-412f-8b13-12cf990b3506)
 Our new shadowing and volumetric fog systems!
 
