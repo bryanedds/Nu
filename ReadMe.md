@@ -37,11 +37,8 @@ Some Media on the Nu Game Engine
 ![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/0b4778aa-c493-4d9d-9a8a-00e527c831ad)
-Animated 3D model rendering with physically-based, deferred rendering with soft shadows.
-
 ![image](https://github.com/user-attachments/assets/58e5fb9b-372a-4674-af4a-0b937268b3b4)
-Photo-realistic yet user-friendly 3D rendering.
+Photo-realistic yet user-friendly deferred, physically-based rendering.
 
 ![image](https://github.com/user-attachments/assets/fbba00a1-02a6-43ce-8a39-688797174009)
 Editing the above photo-realistic scene in real-time.
