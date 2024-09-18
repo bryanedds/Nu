@@ -30,7 +30,6 @@ open Nu
 //  CollisionDetection                                                              //
 //  BodyShape                                                                       //
 //  BodyJoint                                                                       //
-//  NormalOpt (for terrain)                                                         //
 //  BlendMaterial                                                                   //
 //  TerrainMaterial                                                                 //
 //  DateTimeOffset?                                                                 //
