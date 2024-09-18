@@ -36,7 +36,7 @@ module Effect =
             | :? Effect -> source
             | _ -> failconv "Invalid EffectConverter conversion from source." None
 
-    /// An effect.
+    /// A time-based effect.
     and [<ReferenceEquality; NoComparison; TypeConverter (typeof<EffectConverter>)>] Effect =
         private
             { StartTime_ : GameTime
