@@ -47,7 +47,7 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 Editing the above photo-realistic scene in real-time.
 
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
-Our new sof-shadow, screen-space reflection, and volumetric fog systems.
+Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
