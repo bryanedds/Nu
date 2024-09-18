@@ -6,7 +6,7 @@ open System
 open System.Diagnostics
 open Prime
 
-/// The Stream comonad.
+/// The Stream construct.
 type [<ReferenceEquality>] Stream<'a> =
     { Subscribe : World -> 'a Address * (World -> World) * World }
 
