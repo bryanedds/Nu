@@ -17,7 +17,7 @@ type Credits =
 
     static member make quitVisible =
         { Credits.empty with
-            ScrollPosition = v3 -72.0f -1800.0f 0.0f
+            ScrollPosition = v3 -960.0f -1800.0f 0.0f
             QuitVisible = quitVisible }
 
 type CreditsMessage =
@@ -61,7 +61,7 @@ type CreditsDispatcher () =
                 Assets.Gui.CreditsSong.Volume
                 Assets.Gui.CreditsSong.Song
                 world
-            let credits = { credits with ScrollPosition = v3 -72.0f -1800.0f 0.0f }
+            let credits = { credits with ScrollPosition = v3 -480.0f -1800.0f 0.0f }
             just credits
 
         | Scroll ->
@@ -95,52 +95,52 @@ type CreditsDispatcher () =
                  Entity.Size == v3 0.0f 3000.0f 0.0f
                  Entity.PerimeterCentered == true
                  Entity.Layout == Flow (FlowDownward, FlowUnlimited)]
-                [Content.text "OmniBlade" [Entity.Text == "Omni Blade"]
+                [Content.text "OmniBlade" [Entity.Text == "Omni Blade"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "SeparatorA" []
                  Content.text "SeparatorA2" []
                  Content.text "SeparatorA3" []
                  Content.text "SeparatorA4" []
-                 Content.text "DirectionAndDesign" [Entity.Text == "- Direction & Design -"]
-                 Content.text "BryanEdds" [Entity.Text == "Bryan Edds"]
+                 Content.text "DirectionAndDesign" [Entity.Text == "- Direction & Design -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "BryanEdds" [Entity.Text == "Bryan Edds"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "Space" []
-                 Content.text "EngineAndGameProgramming" [Entity.Text == "- Engine & Game Programming -"]
-                 Content.text "BryanEdds2" [Entity.Text == "Bryan Edds"]
-                 Content.text "DeanJLee" [Entity.Text == "Dean J. Lee"]
+                 Content.text "EngineAndGameProgramming" [Entity.Text == "- Engine & Game Programming -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "BryanEdds2" [Entity.Text == "Bryan Edds"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "DeanJLee" [Entity.Text == "Dean J. Lee"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "Space2" []
-                 Content.text "Art" [Entity.Text == "- Art -"]
-                 Content.text "Ansimuz" [Entity.Text == "Ansimuz"]
-                 Content.text "CreativeKind" [Entity.Text == "Creative Kind"]
-                 Content.text "FinalBossBlues" [Entity.Text == "Final Boss Blues"]
-                 Content.text "Narehop" [Entity.Text == "Narehop"]
-                 Content.text "PimenArt" [Entity.Text == "Pimen Art"]
-                 Content.text "SelielTheShaper" [Entity.Text == "Seliel the Shaper"]
-                 Content.text "SzadiArt" [Entity.Text == "Szadi Art"]
+                 Content.text "Art" [Entity.Text == "- Art -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "Ansimuz" [Entity.Text == "Ansimuz"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "CreativeKind" [Entity.Text == "Creative Kind"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "FinalBossBlues" [Entity.Text == "Final Boss Blues"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "Narehop" [Entity.Text == "Narehop"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "PimenArt" [Entity.Text == "Pimen Art"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "SelielTheShaper" [Entity.Text == "Seliel the Shaper"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "SzadiArt" [Entity.Text == "Szadi Art"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "Space3" []
-                 Content.text "Music" [Entity.Text == "- Music -"]
-                 Content.text "ClementPanchout" [Entity.Text == "Clement Panchout"]
-                 Content.text "DrassRayJacobMann" [Entity.Text == "Drass Ray - Jacob Mann"]
-                 Content.text "JPSoundworks" [Entity.Text == "JP Soundworks"]
-                 Content.text "OwlTheoryMusic" [Entity.Text == "Owl Theory Music"]
-                 Content.text "PdkMusic" [Entity.Text == "Pdk Music"]
-                 Content.text "PeriTune" [Entity.Text == "Peri Tune"]
-                 Content.text "PjotrKolster" [Entity.Text == "Pjotr Kolster"]
-                 Content.text "Suat" [Entity.Text == "Suat"]
-                 Content.text "ThomasBrunet" [Entity.Text == "Thomas Brunet"]
+                 Content.text "Music" [Entity.Text == "- Music -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "ClementPanchout" [Entity.Text == "Clement Panchout"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "DrassRayJacobMann" [Entity.Text == "Drass Ray - Jacob Mann"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "JPSoundworks" [Entity.Text == "JP Soundworks"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "OwlTheoryMusic" [Entity.Text == "Owl Theory Music"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "PdkMusic" [Entity.Text == "Pdk Music"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "PeriTune" [Entity.Text == "Peri Tune"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "PjotrKolster" [Entity.Text == "Pjotr Kolster"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "Suat" [Entity.Text == "Suat"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "ThomasBrunet" [Entity.Text == "Thomas Brunet"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "Space4" []
-                 Content.text "Sound" [Entity.Text == "- Sound -"]
-                 Content.text "Kronbits" [Entity.Text == "Kronbits"]
-                 Content.text "Simon1366" [Entity.Text == "Simon 1366"]
-                 Content.text "SoundWorks12" [Entity.Text == "Sound Works 12"]
+                 Content.text "Sound" [Entity.Text == "- Sound -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "Kronbits" [Entity.Text == "Kronbits"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "Simon1366" [Entity.Text == "Simon 1366"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "SoundWorks12" [Entity.Text == "Sound Works 12"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "Space5" []
-                 Content.text "Testing" [Entity.Text == "- Testing -"]
-                 Content.text "ChosenWolf" [Entity.Text == "Chosen Wolf"]
+                 Content.text "Testing" [Entity.Text == "- Testing -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "ChosenWolf" [Entity.Text == "Chosen Wolf"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "Space6" []
-                 Content.text "Supporters" [Entity.Text == "- Supporters -"]
-                 Content.text "ReiMiyasaka" [Entity.Text == "Rei Miyasaka"]
-                 Content.text "pauloud" [Entity.Text == "pauloud"]
-                 Content.text "ChrisReynolds" [Entity.Text == "Chris Reynolds"]
-                 Content.text "arsmilitaris" [Entity.Text == "arsmilitaris"]
-                 Content.text "ibrahim324" [Entity.Text == "ibrahim324"]
+                 Content.text "Supporters" [Entity.Text == "- Supporters -"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "ReiMiyasaka" [Entity.Text == "Rei Miyasaka"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "pauloud" [Entity.Text == "pauloud"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "ChrisReynolds" [Entity.Text == "Chris Reynolds"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "arsmilitaris" [Entity.Text == "arsmilitaris"; Entity.Size == v3 960.0f 32.0f 0.0f]
+                 Content.text "ibrahim324" [Entity.Text == "ibrahim324"; Entity.Size == v3 960.0f 32.0f 0.0f]
                  Content.text "SeparatorB" []
                  Content.text "SeparatorB2" []
                  Content.text "SeparatorB3" []
@@ -151,4 +151,4 @@ type CreditsDispatcher () =
                  Content.text "SeparatorB8" []
                  Content.text "SeparatorB9" []
                  Content.text "SeparatorB10" []
-                 Content.text "ThankYouForPlaying." [Entity.Text == "Thank you for playing."]]]]
+                 Content.text "ThankYouForPlaying." [Entity.Text == "Thank you for playing."; Entity.Size == v3 960.0f 32.0f 0.0f]]]]

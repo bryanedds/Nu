@@ -5,8 +5,8 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Position [-320 -32 0]]
-    [Size [640 64 0]]
+    [Position [-480 -32 0]]
+    [Size [960 64 0]]
     [Text "But its treasures will be mine..."]]
    []]
   [StaticSpriteDispatcher
