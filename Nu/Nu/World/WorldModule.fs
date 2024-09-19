@@ -219,6 +219,23 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
+        /// Get the current immediate-mode context.
+        static member getImCurrent (world : World) =
+            world.ImCurrent
+
+        /// Get the most recent but non-current immediate-mode context.
+        static member getImRecent (world : World) =
+            world.ImRecent
+
+        static member internal setImCurrent context (world : World) =
+            if world.Imperative then
+                world.WorldExtension.ImRecent <- world.WorldExtension.ImCurrent
+                world.WorldExtension.ImCurrent <- context
+                world
+            else
+                let worldExtension = { world.WorldExtension with ImRecent = world.WorldExtension.ImCurrent; ImCurrent = context }
+                World.choose { world with WorldExtension = worldExtension }
+
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =
             World.choose { world with AmbientState = AmbientState.switch world.AmbientState }

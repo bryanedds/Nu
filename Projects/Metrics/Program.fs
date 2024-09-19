@@ -54,10 +54,24 @@ type MyGameDispatcher () =
         World.selectScreen (IdlingState world.GameTime) screen world
 
     override this.Update (game, world) =
-        let world = base.Update (game, world)        
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
+        let world = base.Update (game, world)
+
+        let world =
+            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+            then World.exit world
+            else world
+
+        let world = World.imBeginGame world
+        let world = World.imBeginScreen ("Screen", world)
+        let world = World.imBeginGroup ("Group", world)
+        let world =
+            match World.imButton ("Button", world, Entity.Text == "Hello, WorldIm!") with
+            | (true, world) -> World.playSound 1.0f Assets.Default.Sound world; world
+            | (false, world) -> world
+        let world = World.imEndGroup world
+        let world = World.imEndScreen world
+        let world = World.imEndGame world
+        world
 #else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }

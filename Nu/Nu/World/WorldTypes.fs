@@ -1781,7 +1781,9 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { DestructionListRev : Simulant list
+    { mutable ImCurrent : Address
+      mutable ImRecent : Address
+      DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
       PropagationTargets : UMap<Entity, Entity USet> }
@@ -1874,6 +1876,14 @@ and [<ReferenceEquality>] World =
     /// Get the timers.
     member this.Timers =
         AmbientState.getTimers this.AmbientState
+
+    /// The current immediate-mode context.
+    member this.ImCurrent =
+        this.WorldExtension.ImCurrent
+
+    /// The most recent but non-current immediate-mode context.
+    member this.ImRecent =
+        this.WorldExtension.ImRecent
 
 #if DEBUG
     member internal this.Choose () =
