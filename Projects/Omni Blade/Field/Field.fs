@@ -706,7 +706,8 @@ module Field =
         let field = mapShopOpt (constant (Some shop)) field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Gui.AffirmSound)) field
 
-    let private interactSeal cue (field : Field) =
+    let private interactSeal cue (prop : Prop) (field : Field) =
+        let field = mapAvatar (Avatar.lookAt prop.Perimeter.Center) field
         let field = setCue cue field
         withSignal (ScheduleSound (0L, Constants.Audio.SoundVolumeDefault, Assets.Field.SealedSound)) field
 
@@ -735,7 +736,7 @@ module Field =
                     | Npc (_, _, cue, requirements) -> interactNpc [{ CueSystem.Cue = cue; CueSystem.Requirements = Set.empty }] requirements prop field
                     | NpcBranching (_, _, branches, requirements) -> interactNpc branches requirements prop field
                     | Shopkeep (_, _, shopType, _) -> interactShopkeep shopType prop field
-                    | Seal (_, cue, _) -> interactSeal cue field
+                    | Seal (_, cue, _) -> interactSeal cue prop field
                     | Flame _ -> just field
                     | SavePoint -> just field
                     | ChestSpawn -> just field
