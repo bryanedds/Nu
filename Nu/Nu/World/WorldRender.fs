@@ -138,3 +138,14 @@ module WorldRender =
                     let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
                     World.enqueueLayeredOperation2d operation world
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation color world
+
+        static member renderGuiText absolute (perimeter : Box3) (textMargin : Vector3) offset shift clipOpt elevation font fontSizing fontStyling justification color text =
+            if not (String.IsNullOrWhiteSpace text) then
+                let mutable textTransform = Transform.makeDefault ()
+                textTransform.Position <- perimeter.Center + textMargin + offset // out-of-box gui ignores rotation and scale
+                textTransform.Size <- perimeter.Size - textMargin * 2.0f
+                textTransform.Elevation <- elevation + shift
+                textTransform.Absolute <- absolute
+                let descriptor = { Transform = textTransform; ClipOpt = clipOpt; Text = text; Font = font; FontSizing = fontSizing; FontStyling = fontStyling; Color = color; Justification = justification }
+                let operation = { Elevation = textTransform.Elevation; Horizon = perimeter.Center.Y; AssetTag = font; RenderOperation2d = RenderText descriptor }
+                rendererProcess.EnqueueMessage2d (LayeredOperation2d operation)
