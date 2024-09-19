@@ -1761,6 +1761,10 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
+and [<NoEquality; NoComparison>] ImSimulant =
+    { mutable Utilized : bool
+      Subs : (uint64 * obj) array }
+
 /// The world's dispatchers (including facets).
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
 /// parameters of World.make, which is already rather long.
@@ -1781,7 +1785,8 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { mutable ImCurrent : Address
+    { mutable ImSimulants : OMap<Simulant, ImSimulant>
+      mutable ImCurrent : Address
       mutable ImRecent : Address
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
@@ -1876,6 +1881,9 @@ and [<ReferenceEquality>] World =
     /// Get the timers.
     member this.Timers =
         AmbientState.getTimers this.AmbientState
+
+    member internal this.ImSimulants =
+        this.WorldExtension.ImSimulants
 
     /// The current immediate-mode context.
     member this.ImCurrent =

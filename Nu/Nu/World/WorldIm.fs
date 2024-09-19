@@ -3,35 +3,32 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
 
-#nowarn "0052"
-
 [<AutoOpen>]
-module ImWorld =
-
-    let mutable private context = Address.empty :> Address
-    let mutable private contextRecent = context
-    let private entities = Dictionary<Entity, (uint64 * obj) array> ()
+module WorldIm =
 
     type World with
 
-        static member private imUpdate world =
-            Seq.fold (fun world (entry : KeyValuePair<Entity, _>) ->
-                let entity = entry.Key
-                if entity.GetExists world then
-                    if not (entity.GetActive world)
-                    then World.destroyEntityImmediate entity world
-                    else entity.SetActive false world
-                else world)
-                world
-                entities
+        static member imUpdate world =
+            OMap.fold (fun (world : World) simulant imSimulant ->
+                if not imSimulant.Utilized then
+                    let world = World.destroyImmediate simulant world
+                    let imSimulants = OMap.remove simulant world.ImSimulants
+                    World.setImSimulants imSimulants world
+                else
+                    if world.Imperative then
+                        imSimulant.Utilized <- false
+                        world
+                    else
+                        let imSimulants = OMap.add simulant { imSimulant with Utilized = false } world.ImSimulants
+                        World.setImSimulants imSimulants world)
+                world world.ImSimulants
 
         static member imBeginGame (world : World, [<ParamArray>] args : DefinitionContent array) =
-            let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName context.Names)
+            let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
             Array.fold
@@ -43,12 +40,12 @@ module ImWorld =
 
         static member imEndGame (world : World) =
             match world.ImCurrent with
-            | :? (Game Address) as gameAddress ->
+            | :? (Game Address) ->
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndGame mismatch.")
 
         static member imBeginScreen (screenName, world : World, [<ParamArray>] args : DefinitionContent array) =
-            let screenAddress = Address.makeFromArray (Array.add screenName context.Names)
+            let screenAddress = Address.makeFromArray (Array.add screenName world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
             Array.fold
@@ -60,46 +57,64 @@ module ImWorld =
 
         static member imEndScreen (world : World) =
             match world.ImCurrent with
-            | :? (Screen Address) as screenAddress ->
+            | :? (Screen Address) ->
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
 
         static member imBeginGroup<'d when 'd :> GroupDispatcher> (groupName : string, world : World, [<ParamArray>] args : DefinitionContent array) : World =
-            let groupAddress = Address.makeFromArray (Array.add groupName context.Names)
+            let groupAddress = Address.makeFromArray (Array.add groupName world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
             let world =
-                if not (group.GetExists world)
-                then World.createGroup<'d> (Some groupName) group.Screen world |> snd
-                else world
-            let world =
-                Array.fold
-                    (fun world arg ->
-                        match arg with
-                        | PropertyContent pc when group.GetExists world -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                        | _ -> world)
-                    world args
-            if group.GetExists world
-            then group.SetActive true world
-            else world
+                let imSimulants = world.ImSimulants
+                match imSimulants.TryGetValue group with
+                | (true, imGroup) ->
+                    if world.Imperative then
+                        imGroup.Utilized <- true
+                        world
+                    else
+                        let imSimulants = OMap.add (group :> Simulant) { imGroup with Utilized = true } imSimulants
+                        World.setImSimulants imSimulants world
+                | (false, _) ->
+                    let world = World.createGroup<'d> (Some groupName) group.Screen world |> snd
+                    let imGroup = { Utilized = true; Subs = [||] }
+                    let imSimulants = OMap.add (group :> Simulant) imGroup imSimulants
+                    World.setImSimulants imSimulants world
+            Array.fold
+                (fun world arg ->
+                    match arg with
+                    | PropertyContent pc when group.GetExists world -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                    | _ -> world)
+                world args
 
         static member imEndGroup (world : World) =
             match world.ImCurrent with
-            | :? (Group Address) as groupAddress ->
+            | :? (Group Address) ->
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
 
         static member imBeginEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : DefinitionContent array) : 'r * World =
-            let entityAddress = Address.makeFromArray (Array.add entityName context.Names)
+            let entityAddress = Address.makeFromArray (Array.add entityName world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
             let (subs, world) =
-                if not (entity.GetExists world) then
+                let imSimulants = world.ImSimulants
+                match imSimulants.TryGetValue entity with
+                | (true, imEntity) ->
+                    if world.Imperative then
+                        imEntity.Utilized <- true
+                        (imEntity.Subs, world)
+                    else
+                        let imSimulants = OMap.add (entity :> Simulant) { imEntity with Utilized = true } imSimulants
+                        let world = World.setImSimulants imSimulants world
+                        (imEntity.Subs, world)
+                | (false, _) ->
                     let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                     let (subs, world) = init entity world
-                    entities.[entity] <- subs
+                    let imEntity = { Utilized = true; Subs = subs }
+                    let imSimulants = OMap.add (entity :> Simulant) imEntity imSimulants
+                    let world = World.setImSimulants imSimulants world
                     (subs, world)
-                else ([||], world)
             let world =
                 Array.fold
                     (fun world arg ->
@@ -107,15 +122,11 @@ module ImWorld =
                         | PropertyContent pc when entity.GetExists world -> entity.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
                         | _ -> world)
                     world args
-            if entity.GetExists world then
-                let result = inspect subs
-                let world = entity.SetActive true world
-                (result, world)
-            else (Activator.CreateInstance<'r> (), world)
+            (inspect subs, world)
 
         static member imEndEntity (world : World) =
             match world.ImCurrent with
-            | :? (Entity Address) as entityAddress ->
+            | :? (Entity Address) ->
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
@@ -125,21 +136,11 @@ module ImWorld =
             (result, world)
 
         static member imButton (buttonName : string, world : World, [<ParamArray>] args : DefinitionContent array) =
-            let init (button : Entity) world =
-                let result = ref false
-                let world = World.createEntity<ButtonDispatcher> OverlayNameDescriptor.DefaultOverlay (Some button.Surnames) button.Group world |> snd
-                let subKey = Gen.id64
-                let world = World.subscribePlus subKey (fun evt world -> result.Value <- true; (Cascade, world)) button.ClickEvent Game world |> snd
-                ([|(subKey, result :> obj)|], world)
-            let inspect button (subs : (uint64 * obj) array) =
-                let resultRef = snd subs.[0] :?> bool ref
-                let result = resultRef.Value
-                resultRef.Value <- false
             World.imEntity<ButtonDispatcher, _>
                 ((fun button world ->
                     let result = ref false
                     let subKey = Gen.id64
-                    let world = World.subscribePlus subKey (fun evt world -> result.Value <- true; (Cascade, world)) button.ClickEvent Game world |> snd
+                    let world = World.subscribePlus subKey (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent Game world |> snd
                     ([|(subKey, result :> obj)|], world)),
                  (fun subs ->
                     let resultRef = snd subs.[0] :?> bool ref
