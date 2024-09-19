@@ -3409,7 +3409,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create white cube map
         let cubeMap =
-            let white = "Assets/Default/White.bmp"
+            let white = "Assets/Default/White.png"
             match OpenGL.CubeMap.TryCreateCubeMap (white, white, white, white, white, white) with
             | Right cubeMap -> cubeMap
             | Left error -> failwith error
@@ -3433,14 +3433,14 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create white texture
         let whiteTexture =
-            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, false, "Assets/Default/White.bmp") with
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, false, "Assets/Default/White.png") with
             | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
             | Left error -> failwith ("Could not load white texture due to: " + error)
         OpenGL.Hl.Assert ()
 
         // create black texture
         let blackTexture =
-            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, false, "Assets/Default/Black.bmp") with
+            match OpenGL.Texture.TryCreateTextureGl (false, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, false, "Assets/Default/Black.png") with
             | Right (metadata, textureId) -> OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
             | Left error -> failwith ("Could not load black texture due to: " + error)
         OpenGL.Hl.Assert ()
