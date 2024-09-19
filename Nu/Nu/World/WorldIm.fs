@@ -44,6 +44,16 @@ module ImWorld =
                     | _ -> world)
                 world args
 
+        static member imScreen (world : World, [<ParamArray>] args : DefinitionContent array) =
+            let screenAddress = Address.makeFromArray (Array.add Constants.Engine.GameName context.Names)
+            let screen = Nu.Screen screenAddress
+            Array.fold
+                (fun world arg ->
+                    match arg with
+                    | PropertyContent pc when screen.GetExists world -> screen.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                    | _ -> world)
+                world args
+
         static member imGroup<'d when 'd :> GroupDispatcher> (groupName : string, world : World, [<ParamArray>] args : DefinitionContent array) : World =
             let groupAddress = Address.makeFromArray (Array.add groupName context.Names)
             let group = Nu.Group groupAddress
@@ -55,14 +65,14 @@ module ImWorld =
                 Array.fold
                     (fun world arg ->
                         match arg with
-                        | PropertyContent pc -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                        | PropertyContent pc when group.GetExists world -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
                         | _ -> world)
                     world args
             if group.GetExists world
             then group.SetActive true world
             else world
 
-        static member imEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : ImArg array) : 'r * World =
+        static member imEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : DefinitionContent array) : 'r * World =
             let entityAddress = Address.makeFromArray (Array.add entityName context.Names)
             let entity = Nu.Entity entityAddress
             let (subs, world) =
@@ -76,7 +86,7 @@ module ImWorld =
                 Array.fold
                     (fun world arg ->
                         match arg with
-                        | PropertyContent pc -> entity.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                        | PropertyContent pc when entity.GetExists world -> entity.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
                         | _ -> world)
                     world args
             if entity.GetExists world then
@@ -85,7 +95,7 @@ module ImWorld =
                 (result, world)
             else (Activator.CreateInstance<'r> (), world)
 
-        static member imButton (buttonName : string, world : World, [<ParamArray>] args : ImArg array) =
+        static member imButton (buttonName : string, world : World, [<ParamArray>] args : DefinitionContent array) =
             let init (button : Entity) world =
                 let result = ref false
                 let world = World.createEntity<ButtonDispatcher> OverlayNameDescriptor.DefaultOverlay (Some button.Surnames) button.Group world |> snd
