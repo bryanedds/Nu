@@ -461,46 +461,48 @@ type [<ReferenceEquality>] GlRenderer2d =
          emission : Color inref,
          flip : Flip,
          renderer) =
-        let absolute = transform.Absolute
-        let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
-        let min = perimeter.Min.V2 * virtualScalar
-        let size = perimeter.Size.V2 * virtualScalar
-        let pivot = transform.PerimeterPivot.V2 * virtualScalar
-        let rotation = -transform.Angles.Z
-        match GlRenderer2d.tryGetRenderAsset image renderer with
-        | ValueSome renderAsset ->
-            match renderAsset with
-            | TextureAsset texture ->
-                GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
-            | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
-        | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
+        if not (image.PackageName = Assets.Default.PackageName && image.AssetName = Assets.Default.EmptyImageName) then // HACK: for AMD rendering on Proton, we can't assume that a black texture with alpha = 0.0 won't render as if alpha = 1.0.
+            let absolute = transform.Absolute
+            let perimeter = transform.Perimeter
+            let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+            let min = perimeter.Min.V2 * virtualScalar
+            let size = perimeter.Size.V2 * virtualScalar
+            let pivot = transform.PerimeterPivot.V2 * virtualScalar
+            let rotation = -transform.Angles.Z
+            match GlRenderer2d.tryGetRenderAsset image renderer with
+            | ValueSome renderAsset ->
+                match renderAsset with
+                | TextureAsset texture ->
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
+                | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
+            | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render sprite particles.
     static member renderSpriteParticles (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
-        match GlRenderer2d.tryGetRenderAsset image renderer with
-        | ValueSome renderAsset ->
-            match renderAsset with
-            | TextureAsset texture ->
-                let mutable index = 0
-                while index < particles.Length do
-                    let particle = &particles.[index]
-                    let transform = &particle.Transform
-                    let absolute = transform.Absolute
-                    let perimeter = transform.Perimeter
-                    let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
-                    let min = perimeter.Min.V2 * virtualScalar
-                    let size = perimeter.Size.V2 * virtualScalar
-                    let pivot = transform.PerimeterPivot.V2 * virtualScalar
-                    let rotation = -transform.Angles.Z
-                    let color = &particle.Color
-                    let emission = &particle.Emission
-                    let flip = particle.Flip
-                    let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
-                    index <- inc index
-            | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
-        | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
+        if not (image.PackageName = Assets.Default.PackageName && image.AssetName = Assets.Default.EmptyImageName) then // HACK: for AMD rendering on Proton, we can't assume that a black texture with alpha = 0.0 won't render as if alpha = 1.0.
+            match GlRenderer2d.tryGetRenderAsset image renderer with
+            | ValueSome renderAsset ->
+                match renderAsset with
+                | TextureAsset texture ->
+                    let mutable index = 0
+                    while index < particles.Length do
+                        let particle = &particles.[index]
+                        let transform = &particle.Transform
+                        let absolute = transform.Absolute
+                        let perimeter = transform.Perimeter
+                        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+                        let min = perimeter.Min.V2 * virtualScalar
+                        let size = perimeter.Size.V2 * virtualScalar
+                        let pivot = transform.PerimeterPivot.V2 * virtualScalar
+                        let rotation = -transform.Angles.Z
+                        let color = &particle.Color
+                        let emission = &particle.Emission
+                        let flip = particle.Flip
+                        let insetOpt = &particle.InsetOpt
+                        GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
+                        index <- inc index
+                | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
+            | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render tiles.
     static member renderTiles
