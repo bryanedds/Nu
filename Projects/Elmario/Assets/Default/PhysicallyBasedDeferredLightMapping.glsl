@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -28,13 +28,22 @@ uniform int lightMapsCount;
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec4 frag;
+layout(location = 0) out vec4 frag;
 
 bool inBounds(vec3 point, vec3 min, vec3 size)
 {
     return
         all(greaterThanEqual(point, min)) &&
         all(lessThanEqual(point, min + size));
+}
+
+bool contains(vec3 min1, vec3 size1, vec3 min2, vec3 size2)
+{
+    vec3 max1 = min1 + size1;
+    vec3 max2 = min2 + size2;
+    return
+        all(greaterThanEqual(min1, min2)) &&
+        all(lessThanEqual(max1, max2));
 }
 
 vec2 rayBoxIntersectionRatios(vec3 rayOrigin, vec3 rayDirection, vec3 boxMin, vec3 boxSize)
@@ -101,13 +110,30 @@ void main()
             }
         }
 
-        // compute light map blending ratio
-        float ratio =
-            lm1 != -1 && lm2 != -1 ?
-            computeDepthRatio(lightMapMins[lm1], lightMapSizes[lm1], lightMapMins[lm2], lightMapSizes[lm2], position.xyz, normal) :
-            0.0f;
+        // subsume any contained light map or compute light map blending ratio
+        float ratio = 0.0;
+        if (lm1 != -1 && lm2 != -1)
+        {
+            vec3 min1 = lightMapMins[lm1];
+            vec3 size1 = lightMapSizes[lm1];
+            vec3 min2 = lightMapMins[lm2];
+            vec3 size2 = lightMapSizes[lm2];
+            if (contains(min1, size1, min2, size2))
+            {
+                lm2 = -1;
+            }
+            else if (contains(min2, size2, min1, size1))
+            {
+                lm1 = lm2;
+                lm2 = -1;
+            }
+            else
+            {
+                ratio = computeDepthRatio(min1, size1, min2, size2, position.xyz, normal);
+            }
+        }
 
         // write with indices starting at 0.0 rather than -1.0 so that a black texture can be passed in for no light mapping
-        frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0f);
+        frag = vec4(float(lm1 + 1), float(lm2 + 1), ratio, 0.0);
     }
 }

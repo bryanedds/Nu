@@ -5,8 +5,8 @@
   [Visible True]]
  [[TextDispatcher
    [[Justification [Justified JustifyCenter JustifyMiddle]]
-    [Position [-32 -32 0]]
-    [Size [64 64 0]]
+    [Position [-320 -32 0]]
+    [Size [640 64 0]]
     [Text "After a five day trek into the mountains..."]]
    []]
   [StaticSpriteDispatcher

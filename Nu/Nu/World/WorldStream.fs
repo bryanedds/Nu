@@ -6,11 +6,10 @@ open System
 open System.Diagnostics
 open Prime
 
-/// The Stream comonad.
+/// The Stream construct.
 type [<ReferenceEquality>] Stream<'a> =
     { Subscribe : World -> 'a Address * (World -> World) * World }
 
-// TODO: document track functions.
 [<RequireQualifiedAccess>]
 module Stream =
 
@@ -37,6 +36,8 @@ module Stream =
 
     (* Side-Effecting Combinators *)
 
+    /// Track changes in a stream using a stateful tracker function, transforms the tracked state, and produces a new
+    /// stream with the transformed values.
     let [<DebuggerHidden; DebuggerStepThrough>] trackEffect4
         (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool * World)
         (transformer : 'c -> 'b)
@@ -69,6 +70,7 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
+    /// Tracks changes in a stream using a stateful tracker function and produces a new stream with updated values.
     let [<DebuggerHidden; DebuggerStepThrough>] trackEffect2
         (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool * World)
         (stream : Stream<'a>) :
@@ -99,6 +101,7 @@ module Stream =
             (subscriptionAddress, unsubscribe, world)
         { Subscribe = subscribe }
 
+    /// Tracks changes using a stateful tracker function and creates a stream that optionally processes events based on the state.
     let [<DebuggerHidden; DebuggerStepThrough>] trackEffect
         (tracker : 'b -> World -> 'b * bool * World) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
         let subscribe = fun (world : World) ->
@@ -248,6 +251,8 @@ module Stream =
 
     (* Event-Accessing Combinators *)
 
+    /// Track changes in a stream using a stateful tracker function, transforms the tracked state, and produces a new
+    /// stream with the transformed values.
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent4
         (tracker : 'c -> Event<'a, Simulant> -> World -> 'c * bool)
         (transformer : 'c -> 'b)
@@ -256,12 +261,14 @@ module Stream =
         Stream<'b> =
         trackEffect4 (fun state evt world -> Triple.append world (tracker state evt world)) transformer state stream
 
+    /// Tracks changes in a stream using a stateful tracker function and produces a new stream with updated values.
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent2
         (tracker : 'a -> Event<'a, Simulant> -> World -> 'a * bool)
         (stream : Stream<'a>) :
         Stream<'a> =
         trackEffect2 (fun state evt world -> Triple.append world (tracker state evt world)) stream
 
+    /// Tracks changes using a stateful tracker function and creates a stream that optionally processes events based on the state.
     let [<DebuggerHidden; DebuggerStepThrough>] trackEvent
         (tracker : 'b -> World -> 'b * bool) (state : 'b) (stream : Stream<'a>) : Stream<'a> =
         trackEffect (fun state world -> Triple.append world (tracker state world)) state stream

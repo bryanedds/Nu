@@ -124,29 +124,27 @@ module WorldImGui =
                     Array.add defaultItemValue items
                 else items
             if ImGui.IsItemFocused () then context.FocusProperty ()
-            let items =
-                ImGui.Indent ()
-                let itemOpts =
-                    let mutable i = 0
-                    [|for item in items do
-                        let itemName = itemsName + ".[" + string i + "]"
-                        ImGui.PushID itemName
-                        let itemOpt =
-                            if not (ImGui.SmallButton "x") then
-                                ImGui.SameLine ()
-                                try let (changed', item) = editItem itemName item
-                                    if changed' then changed <- true
-                                    if ImGui.IsItemFocused () then context.FocusProperty ()
-                                    Some item
-                                with _ -> Some item
-                            else changed <- true; None
-                        if ImGui.IsItemFocused () then context.FocusProperty ()
-                        ImGui.PopID ()
-                        i <- inc i
-                        itemOpt|]
-                let items = Array.definitize itemOpts
-                ImGui.Unindent ()
-                items
+            ImGui.Indent ()
+            let itemOpts =
+                let mutable i = 0
+                [|for item in items do
+                    let itemName = itemsName + ".[" + string i + "]"
+                    ImGui.PushID itemName
+                    let itemOpt =
+                        if not (ImGui.SmallButton "x") then
+                            ImGui.SameLine ()
+                            try let (changed', item) = editItem itemName item
+                                if changed' then changed <- true
+                                if ImGui.IsItemFocused () then context.FocusProperty ()
+                                Some item
+                            with _ -> Some item
+                        else changed <- true; None
+                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                    ImGui.PopID ()
+                    i <- inc i
+                    itemOpt|]
+            let items = Array.definitize itemOpts
+            ImGui.Unindent ()
             ImGui.PopID ()
             (changed, items)
 
@@ -159,29 +157,27 @@ module WorldImGui =
                     items @ [defaultItemValue]
                 else items
             if ImGui.IsItemFocused () then context.FocusProperty ()
-            let items =
-                ImGui.Indent ()
-                let itemOpts =
-                    let mutable i = 0
-                    [for item in items do
-                        let itemName = itemsName + ".[" + string i + "]"
-                        ImGui.PushID itemName
-                        let itemOpt =
-                            if not (ImGui.SmallButton "x") then
-                                ImGui.SameLine ()
-                                try let (changed', item) = editItem itemName item
-                                    if changed' then changed <- true
-                                    if ImGui.IsItemFocused () then context.FocusProperty ()
-                                    Some item
-                                with _ -> Some item
-                            else changed <- true; None
-                        if ImGui.IsItemFocused () then context.FocusProperty ()
-                        ImGui.PopID ()
-                        i <- inc i
-                        itemOpt]
-                let items = List.definitize itemOpts
-                ImGui.Unindent ()
-                items
+            ImGui.Indent ()
+            let itemOpts =
+                let mutable i = 0
+                [for item in items do
+                    let itemName = itemsName + ".[" + string i + "]"
+                    ImGui.PushID itemName
+                    let itemOpt =
+                        if not (ImGui.SmallButton "x") then
+                            ImGui.SameLine ()
+                            try let (changed', item) = editItem itemName item
+                                if changed' then changed <- true
+                                if ImGui.IsItemFocused () then context.FocusProperty ()
+                                Some item
+                            with _ -> Some item
+                        else changed <- true; None
+                    if ImGui.IsItemFocused () then context.FocusProperty ()
+                    ImGui.PopID ()
+                    i <- inc i
+                    itemOpt]
+            let items = List.definitize itemOpts
+            ImGui.Unindent ()
             ImGui.PopID ()
             (changed, items)
 

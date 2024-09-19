@@ -4,7 +4,7 @@
 uniform mat4 view;
 uniform mat4 projection;
 
-layout (location = 0) in vec3 position;
+layout(location = 0) in vec3 position;
 
 out vec3 positionOut;
 
@@ -25,7 +25,7 @@ uniform samplerCube cubeMap;
 
 in vec3 positionOut;
 
-layout (location = 0) out vec4 frag;
+layout(location = 0) out vec4 frag;
 
 void main()
 {

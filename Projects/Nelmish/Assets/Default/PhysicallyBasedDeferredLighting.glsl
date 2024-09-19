@@ -1,8 +1,8 @@
 #shader vertex
 #version 410
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
 
 out vec2 texCoordsOut;
 
@@ -18,25 +18,25 @@ void main()
 const float PI = 3.141592654;
 const float REFLECTION_LOD_MAX = 7.0;
 const float ATTENUATION_CONSTANT = 1.0;
-const int LIGHTS_MAX = 64;
+const int LIGHTS_MAX = 32;
 const int SHADOWS_MAX = 16;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
 const vec4 SSVF_DITHERING[4] =
-    vec4[4](
-        vec4(0.0, 0.5, 0.125, 0.625),
-        vec4(0.75, 0.22, 0.875, 0.375),
-        vec4(0.1875, 0.6875, 0.0625, 0.5625),
-        vec4(0.9375, 0.4375, 0.8125, 0.3125));
+vec4[4](
+    vec4(0.0, 0.5, 0.125, 0.625),
+    vec4(0.75, 0.22, 0.875, 0.375),
+    vec4(0.1875, 0.6875, 0.0625, 0.5625),
+    vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float lightCutoffMargin;
-uniform vec3 lightAmbientColor;
-uniform float lightAmbientBrightness;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
+uniform float lightShadowBleedFilter;
+uniform float lightShadowVarianceMin;
 uniform int ssvfEnabled;
 uniform int ssvfSteps;
 uniform float ssvfAsymmetry;
@@ -63,6 +63,7 @@ uniform sampler2D albedoTexture;
 uniform sampler2D materialTexture;
 uniform sampler2D normalPlusTexture;
 uniform sampler2D brdfTexture;
+uniform sampler2D ambientTexture;
 uniform sampler2D irradianceTexture;
 uniform sampler2D environmentFilterTexture;
 uniform sampler2D ssaoTexture;
@@ -83,9 +84,9 @@ uniform mat4 shadowMatrices[SHADOWS_MAX];
 
 in vec2 texCoordsOut;
 
-layout (location = 0) out vec4 color;
-layout (location = 1) out vec4 fogAccum;
-layout (location = 2) out float depth;
+layout(location = 0) out vec4 color;
+layout(location = 1) out vec4 fogAccum;
+layout(location = 2) out float depth;
 
 float linstep(float low, float high, float v)
 {
@@ -147,9 +148,36 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float depthViewToDepthBuffer(float depthView, float nearPlane, float farPlane)
+float depthViewToDepthBuffer(float depthView)
 {
+    // compute near and far planes (these _should_ get baked down to fragment constants)
+    float p2z = projection[2].z;
+    float p2w = projection[2].w;
+    float nearPlane = p2w / (p2z - 1.0);
+    float farPlane = p2w / (p2z + 1.0);
+
+    // compute depth
     return (-depthView - nearPlane) / (farPlane - nearPlane);
+}
+
+float computeShadowScalar(vec4 position, bool lightDirectional, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
+{
+    vec4 positionShadow = shadowMatrix * position;
+    vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
+    if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
+        shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
+    {
+        vec2 shadowTexCoords = shadowTexCoordsProj.xy * 0.5 + 0.5;
+        float shadowZ = !lightDirectional ? shadowTexCoordsProj.z * 0.5 + 0.5 : shadowTexCoordsProj.z;
+        float shadowZExp = exp(-lightShadowExponent * shadowZ);
+        float shadowDepthExp = texture(shadowTexture, shadowTexCoords).y;
+        float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+        shadowScalar = pow(shadowScalar, lightShadowDensity);
+        shadowScalar = lightConeOuter > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
+        return shadowScalar;
+    }
+    return 1.0;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
@@ -330,6 +358,7 @@ void main()
         vec3 normal = texture(normalPlusTexture, texCoordsOut).xyz;
 
         // retrieve data from intermediate buffers
+        vec4 ambientColorAndBrightness = texture(ambientTexture, texCoordsOut);
         vec3 irradiance = texture(irradianceTexture, texCoordsOut).rgb;
         vec3 environmentFilter = texture(environmentFilterTexture, texCoordsOut).rgb;
         float ssao = texture(ssaoTexture, texCoordsOut).r;
@@ -342,13 +371,15 @@ void main()
 
         // compute light accumulation
         vec3 v = normalize(eyeCenter - position.xyz);
+        float nDotV = max(dot(normal, v), 0.0);
         vec3 f0 = mix(vec3(0.04), albedo, metallic); // if dia-electric (plastic) use f0 of 0.04f and if metal, use the albedo color as f0.
         vec3 lightAccum = vec3(0.0);
         for (int i = 0; i < lightsCount; ++i)
         {
             // per-light radiance
+            bool lightDirectional = lightDirectionals[i] == 1;
             vec3 l, h, radiance;
-            if (lightDirectionals[i] == 0)
+            if (!lightDirectional)
             {
                 vec3 d = lightOrigins[i] - position.xyz;
                 l = normalize(d);
@@ -376,33 +407,21 @@ void main()
 
             // shadow scalar
             int shadowIndex = lightShadowIndices[i];
-            float shadowScalar = 1.0;
-            if (shadowIndex >= 0)
-            {
-                vec4 positionShadow = shadowMatrices[shadowIndex] * position;
-                vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
-                vec2 shadowTexCoords = vec2(shadowTexCoordsProj.x, shadowTexCoordsProj.y) * 0.5 + 0.5;
-                if (shadowTexCoordsProj.x >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.x < 1.0 - SHADOW_SEAM_INSET &&
-                    shadowTexCoordsProj.y >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.y < 1.0 - SHADOW_SEAM_INSET &&
-                    shadowTexCoordsProj.z >= -1.0 + SHADOW_SEAM_INSET && shadowTexCoordsProj.z < 1.0 - SHADOW_SEAM_INSET)
-                {
-                    float shadowZ = shadowTexCoordsProj.z;
-                    float shadowZExp = exp(-lightShadowExponent * shadowZ);
-                    float shadowDepthExp = texture(shadowTextures[shadowIndex], shadowTexCoords.xy).g;
-                    shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
-                    shadowScalar = pow(shadowScalar, lightShadowDensity);
-                    shadowScalar = lightConeOuters[i] > SHADOW_FOV_MAX ? fadeShadowScalar(shadowTexCoords, shadowScalar) : shadowScalar;
-                }
-            }
+            float shadowScalar =
+                shadowIndex >= 0 ?
+                computeShadowScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                1.0;
 
             // cook-torrance brdf
+            float hDotV = max(dot(h, v), 0.0);
             float ndf = distributionGGX(normal, h, roughness);
             float g = geometrySchlick(normal, v, l, roughness);
-            vec3 f = fresnelSchlick(max(dot(h, v), 0.0), f0);
+            vec3 f = fresnelSchlick(hDotV, f0);
 
             // compute specularity
             vec3 numerator = ndf * g * f;
-            float denominator = 4.0 * max(dot(normal, v), 0.0) * max(dot(normal, l), 0.0) + 0.0001; // add epsilon to prevent division by zero
+            float nDotL = max(dot(normal, l), 0.0);
+            float denominator = 4.0 * nDotV * nDotL + 0.0001; // add epsilon to prevent division by zero
             vec3 specular = numerator / denominator;
 
             // compute diffusion
@@ -410,33 +429,32 @@ void main()
             vec3 kD = vec3(1.0) - kS;
             kD *= 1.0 - metallic;
 
-            // compute light scalar
-            float nDotL = max(dot(normal, l), 0.0);
-
             // add to outgoing lightAccum
             lightAccum += (kD * albedo / PI + specular) * radiance * nDotL * shadowScalar;
         }
 
-        // compute light ambient terms
-        // NOTE: lightAmbientSpecular gets an additional ao multiply for some specular occlusion.
+        // compute ambient terms
+        // NOTE: ambientSpecular gets an additional ao multiply for some specular occlusion.
         // TODO: use a better means of computing specular occlusion as this one isn't very effective.
-        vec3 lightAmbientDiffuse = lightAmbientColor * lightAmbientBrightness * ambientOcclusion;
-        vec3 lightAmbientSpecular = lightAmbientDiffuse * ambientOcclusion;
+        vec3 ambientColor = ambientColorAndBrightness.rgb;
+        float ambientBrightness = ambientColorAndBrightness.a;
+        vec3 ambientDiffuse = ambientColor * ambientBrightness * ambientOcclusion;
+        vec3 ambientSpecular = ambientDiffuse * ambientOcclusion;
 
         // compute diffuse term
-        vec3 f = fresnelSchlickRoughness(max(dot(normal, v), 0.0), f0, roughness);
+        vec3 f = fresnelSchlickRoughness(nDotV, f0, roughness);
         vec3 kS = f;
         vec3 kD = 1.0 - kS;
         kD *= 1.0 - metallic;
-        vec3 diffuse = kD * irradiance * albedo * lightAmbientDiffuse;
+        vec3 diffuse = kD * irradiance * albedo * ambientDiffuse;
 
         // compute specular term and weight from screen-space
-        vec3 specularScreen = vec3(0.0);
-        float specularScreenWeight = 0.0;
         vec3 forward = vec3(view[0][2], view[1][2], view[2][2]);
         float towardEye = dot(forward, normal);
         float slope = 1.0 - abs(dot(normal, vec3(0.0, 1.0, 0.0)));
         vec4 positionView = view * position;
+        vec3 specularScreen = vec3(0.0);
+        float specularScreenWeight = 0.0;
         if (ssrEnabled == 1 && towardEye <= ssrTowardEyeCutoff && -positionView.z <= ssrDepthCutoff && roughness <= ssrRoughnessCutoff && slope <= ssrSlopeCutoff)
         {
             vec2 texSize = textureSize(positionTexture, 0).xy;
@@ -448,21 +466,14 @@ void main()
         }
 
         // compute specular term
-        vec2 environmentBrdf = texture(brdfTexture, vec2(max(dot(normal, v), 0.0), roughness)).rg;
+        vec2 environmentBrdf = texture(brdfTexture, vec2(nDotV, roughness)).rg;
         vec3 specularEnvironmentSubterm = f * environmentBrdf.x + environmentBrdf.y;
-        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * lightAmbientSpecular;
+        vec3 specularEnvironment = environmentFilter * specularEnvironmentSubterm * ambientSpecular;
         vec3 specular = (1.0 - specularScreenWeight) * specularEnvironment + specularScreenWeight * specularScreen;
 
-        // compute near and far planes (these _should_ get baked down to fragment constants)
-        float p2z = projection[2].z;
-        float p2w = projection[2].w;
-        float nearPlane = p2w / (p2z - 1.0);
-        float farPlane = p2w / (p2z + 1.0);
-
-        // populate lighting values
-        color.xyz = lightAccum + diffuse + emission * albedo + specular;
-        color.w = 1.0; // signify valid fragment
-        fogAccum.xyz = ssvfEnabled == 1 ? computeFogAccumDirectional(position, 0) : vec3(0.0);
-        depth = depthViewToDepthBuffer(positionView.z, nearPlane, farPlane);
+        // write lighting values
+        color = vec4(lightAccum + diffuse + emission * albedo + specular, 1.0);
+        fogAccum = ssvfEnabled == 1 ? vec4(computeFogAccumDirectional(position, 0), 1.0) : vec4(0.0);
+        depth = depthViewToDepthBuffer(positionView.z);
     }
 }

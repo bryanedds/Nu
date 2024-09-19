@@ -34,6 +34,7 @@ type [<SymbolicExpansion>] GaiaState =
       CreationDistance : single
       AlternativeEyeTravelInput : bool
       ReloadPhysicsAssetsWorkaround : bool }
+
     static member make
         dllPath editModeOpt freshlyLoaded imperativeExecution editWhileAdvancing
         desiredEye2dCenter desiredEye3dCenter desiredEye3dRotation masterSoundVolume masterSongVolume
@@ -55,6 +56,7 @@ type [<SymbolicExpansion>] GaiaState =
           CreationDistance = creationDistance
           AlternativeEyeTravelInput = alternativeEyeTravelInput
           ReloadPhysicsAssetsWorkaround = reloadPhysicsAssetsWorkaround }
+
     static member defaultState =
         GaiaState.make
             "" None false false false

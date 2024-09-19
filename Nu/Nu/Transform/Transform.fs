@@ -375,6 +375,7 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Size_ <- perimeter.Size
         transform.Angles_ <- v3Zero
         transform.Elevation_ <- elevation
+        transform.Overflow_ <- 1.0f
         transform.PerimeterCentered <- perimeterCentered
         transform
 
@@ -388,4 +389,5 @@ type [<NoEquality; NoComparison>] Transform =
         transform.Size_ <- size
         transform.Elevation_ <- elevation
         transform.Angles <- angles
+        transform.Overflow_ <- 1.0f
         transform

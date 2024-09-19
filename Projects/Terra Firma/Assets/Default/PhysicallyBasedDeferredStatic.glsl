@@ -24,14 +24,14 @@ const vec2 TEX_COORDS_OFFSET_FILTERS_2[TEX_COORDS_OFFSET_VERTS] =
 uniform mat4 view;
 uniform mat4 projection;
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texCoords;
-layout (location = 2) in vec3 normal;
-layout (location = 3) in mat4 model;
-layout (location = 7) in vec4 texCoordsOffset;
-layout (location = 8) in vec4 albedo;
-layout (location = 9) in vec4 material;
-layout (location = 10) in vec4 heightPlus;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec2 texCoords;
+layout(location = 2) in vec3 normal;
+layout(location = 3) in mat4 model;
+layout(location = 7) in vec4 texCoordsOffset;
+layout(location = 8) in vec4 albedo;
+layout(location = 9) in vec4 material;
+layout(location = 10) in vec4 heightPlus;
 
 out vec4 positionOut;
 out vec2 texCoordsOut;
@@ -75,10 +75,10 @@ flat in vec4 albedoOut;
 flat in vec4 materialOut;
 flat in vec4 heightPlusOut;
 
-layout (location = 0) out vec4 position;
-layout (location = 1) out vec3 albedo;
-layout (location = 2) out vec4 material;
-layout (location = 3) out vec4 normalPlus;
+layout(location = 0) out vec4 position;
+layout(location = 1) out vec3 albedo;
+layout(location = 2) out vec4 material;
+layout(location = 3) out vec4 normalPlus;
 
 void main()
 {

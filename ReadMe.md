@@ -37,14 +37,17 @@ Some Media on the Nu Game Engine
 ![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/0b4778aa-c493-4d9d-9a8a-00e527c831ad)
-Animated 3D model rendering with physically-based, deferred rendering with soft shadows.
-
-![image](https://github.com/user-attachments/assets/b6825003-155b-412f-8b13-12cf990b3506)
-Our new shadowing and volumetric fog systems!
-
 ![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
 Rendering made efficient with instancing-by-default.
+
+![image](https://github.com/user-attachments/assets/58e5fb9b-372a-4674-af4a-0b937268b3b4)
+Photo-realistic yet user-friendly deferred, physically-based rendering.
+
+![image](https://github.com/user-attachments/assets/fbba00a1-02a6-43ce-8a39-688797174009)
+Editing the above photo-realistic scene in real-time.
+
+![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
+Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
 ![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
@@ -59,7 +62,7 @@ Directly editing the entire game state in the new editor.
 Algebraic terrain rendering thanks to contributions from **[@deanjl](https://github.com/deanjl)**.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/1d3ebe11-da94-46ad-bae1-22fc5f7c9b3e)
-Our little 3D dog-fooding demo, TerraFirma.
+Our little 3D dog-fooding demo, Terra Firma.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.

@@ -522,11 +522,12 @@ module Texture =
             while not terminated do
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
                 let desiredFrameTimeMinimumMs = GameTime.DesiredFrameTimeMinimum * 1000.0
+                let frameTimeOutMs = max 4L (int64 (desiredFrameTimeMinimumMs * 0.5))
                 let lazyTextureQueueEnr = lazyTextureQueues.GetEnumerator ()
-                while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueueEnr.MoveNext () do
+                while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueueEnr.MoveNext () do
                     let lazyTextureQueue = lazyTextureQueueEnr.Current.Key
                     let mutable lazyTexture = Unchecked.defaultof<_>
-                    while not terminated && batchTime.ElapsedMilliseconds < int64 (desiredFrameTimeMinimumMs * 0.5) && lazyTextureQueue.TryDequeue &lazyTexture do
+                    while not terminated && batchTime.ElapsedMilliseconds < frameTimeOutMs && lazyTextureQueue.TryDequeue &lazyTexture do
                         lazyTexture.TryServe ()
                 Thread.Sleep (max 1 (int desiredFrameTimeMinimumMs - int batchTime.ElapsedMilliseconds + 1))
 

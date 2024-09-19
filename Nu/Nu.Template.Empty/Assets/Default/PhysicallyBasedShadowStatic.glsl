@@ -4,30 +4,30 @@
 uniform mat4 view;
 uniform mat4 projection;
 
-layout (location = 0) in vec3 position;
-layout (location = 3) in mat4 model;
+layout(location = 0) in vec3 position;
+layout(location = 3) in mat4 model;
 
-out float depthOut;
+out float depthDirectionalOut;
 
 void main()
 {
-    vec4 positionWorld = model * vec4(position, 1.0);
-    gl_Position = projection * view * positionWorld;
-	depthOut = gl_Position.z / gl_Position.w;
+	vec4 positionWorld = model * vec4(position, 1.0);
+	gl_Position = projection * view * positionWorld;
+	depthDirectionalOut = gl_Position.z / gl_Position.w;
 }
 
 #shader fragment
 #version 410
 
+uniform int lightShadowDirectional;
 uniform float lightShadowExponent;
 
-layout (location = 0) out vec2 depths;
+layout(location = 0) out vec2 depths;
 
-in float depthOut;
+in float depthDirectionalOut;
 
 void main()
 {
-	float depthExp = exp(lightShadowExponent * depthOut);
 	depths.x = gl_FragCoord.z;
-	depths.y = depthExp;
+	depths.y = exp(lightShadowExponent * (lightShadowDirectional == 0 ? gl_FragCoord.z : depthDirectionalOut));
 }
