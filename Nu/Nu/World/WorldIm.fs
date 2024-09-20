@@ -12,7 +12,7 @@ module WorldIm =
 
     type World with
 
-        static member imUpdate world =
+        static member internal imUpdate world =
             OMap.fold (fun (world : World) simulant imSimulant ->
                 if not imSimulant.Utilized then
                     let world = World.destroyImmediate simulant world
@@ -26,6 +26,46 @@ module WorldIm =
                         let imSimulants = OMap.add simulant { imSimulant with Utilized = false } world.ImSimulants
                         World.setImSimulants imSimulants world)
                 world world.ImSimulants
+
+        static member imBeginScope (game : Game, world : World, [<ParamArray>] args : DefinitionContent array) =
+            let world = World.setImCurrent game.GameAddress world
+            Array.fold
+                (fun world arg ->
+                    match arg with
+                    | PropertyContent pc -> game.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                    | _ -> world)
+                world args
+
+        static member imBeginScope (screen : Screen, world : World, [<ParamArray>] args : DefinitionContent array) =
+            let world = World.setImCurrent screen.ScreenAddress world
+            Array.fold
+                (fun world arg ->
+                    match arg with
+                    | PropertyContent pc when screen.GetExists world -> screen.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                    | _ -> world)
+                world args
+
+        static member imBeginScope (group : Group, world : World, [<ParamArray>] args : DefinitionContent array) =
+            let world = World.setImCurrent group.GroupAddress world
+            Array.fold
+                (fun world arg ->
+                    match arg with
+                    | PropertyContent pc when group.GetExists world -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                    | _ -> world)
+                world args
+
+        static member imBeginScope (entity : Entity, world : World, [<ParamArray>] args : DefinitionContent array) =
+            let world = World.setImCurrent entity.EntityAddress world
+            Array.fold
+                (fun world arg ->
+                    match arg with
+                    | PropertyContent pc when entity.GetExists world -> entity.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
+                    | _ -> world)
+                world args
+
+        static member imEndScope (world : World) =
+            // be nice if we could assert here that this is paired properly with begin scope
+            World.setImCurrent Address.empty world
 
         static member imBeginGame (world : World, [<ParamArray>] args : DefinitionContent array) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
