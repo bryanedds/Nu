@@ -506,6 +506,36 @@ module Hl =
             // fin
             commandBuffer
         
+        /// Create the renderpass used to clear the screen.
+        static member createScreenClearRenderpass format device =
+            
+            // populate attachment
+            let mutable attachment = VkAttachmentDescription ()
+            attachment.format <- format
+            attachment.samples <- VK_SAMPLE_COUNT_1_BIT
+            attachment.loadOp <- VK_ATTACHMENT_LOAD_OP_CLEAR
+            attachment.storeOp <- VK_ATTACHMENT_STORE_OP_STORE
+            attachment.stencilLoadOp <- VK_ATTACHMENT_LOAD_OP_DONT_CARE
+            attachment.stencilStoreOp <- VK_ATTACHMENT_STORE_OP_DONT_CARE
+            attachment.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+            attachment.finalLayout <- VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+
+            // populate attachment reference
+            let mutable attachmentReference = VkAttachmentReference ()
+            attachmentReference.attachment <- 0u
+            attachmentReference.layout <- VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+
+            // populate subpass
+            let mutable subpass = VkSubpassDescription ()
+            subpass.pipelineBindPoint <- VK_PIPELINE_BIND_POINT_GRAPHICS
+            subpass.inputAttachmentCount <- 0u
+            subpass.colorAttachmentCount <- 1u
+            subpass.pColorAttachments <- asPointer &attachmentReference
+            subpass.preserveAttachmentCount <- 0u
+
+
+            ()
+        
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
             vkDestroyCommandPool (vulkanGlobal.Device, vulkanGlobal.CommandPool, nullPtr)
