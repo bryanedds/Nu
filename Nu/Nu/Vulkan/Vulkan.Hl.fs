@@ -160,7 +160,8 @@ module Hl =
               SwapchainImageViews : VkImageView array
               CommandPool : VkCommandPool
               CommandBuffer : VkCommandBuffer
-              ScreenClearRenderPass : VkRenderPass }
+              ScreenClearRenderPass : VkRenderPass
+              SwapchainFramebuffers : VkFramebuffer array }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -561,8 +562,33 @@ module Hl =
             // fin
             renderPass
         
+        /// Create the swapchain framebuffers.
+        static member createSwapchainFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
+            
+            // framebuffer handle array
+            let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
+
+            // populate create infos
+            for i in [0 .. dec framebuffers.Length] do
+                let mutable imageView = imageViews[i]
+                let mutable createInfo = VkFramebufferCreateInfo ()
+                createInfo.renderPass <- renderPass
+                createInfo.attachmentCount <- 1u
+                createInfo.pAttachments <- asPointer &imageView
+                createInfo.width <- extent.width
+                createInfo.height <- extent.height
+                createInfo.layers <- 1u
+
+                // create framebuffer
+                vkCreateFramebuffer (device, asPointer &createInfo, nullPtr, &framebuffers[i]) |> check
+            
+            // fin
+            framebuffers
+        
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            for i in [0 .. dec vulkanGlobal.SwapchainFramebuffers.Length] do
+                vkDestroyFramebuffer (vulkanGlobal.Device, vulkanGlobal.SwapchainFramebuffers[i], nullPtr)
             vkDestroyRenderPass (vulkanGlobal.Device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
             vkDestroyCommandPool (vulkanGlobal.Device, vulkanGlobal.CommandPool, nullPtr)
             for i in [0 .. dec vulkanGlobal.SwapchainImageViews.Length] do
@@ -613,8 +639,11 @@ module Hl =
                 let commandPool = VulkanGlobal.createCommandPool physicalDeviceData.GraphicsQueueFamily device
                 let commandBuffer = VulkanGlobal.allocateCommandBuffer commandPool device
 
-                // setup screen clear renderpass
+                // create screen clear renderpass
                 let screenClearRenderPass = VulkanGlobal.createScreenClearRenderPass surfaceFormat.format device
+
+                // create swapchain framebuffers
+                let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent screenClearRenderPass swapchainImageViews device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
@@ -625,7 +654,8 @@ module Hl =
                       SwapchainImageViews = swapchainImageViews
                       CommandPool = commandPool
                       CommandBuffer = commandBuffer
-                      ScreenClearRenderPass = screenClearRenderPass }
+                      ScreenClearRenderPass = screenClearRenderPass
+                      SwapchainFramebuffers = swapchainFramebuffers }
 
                 // fin
                 Some vulkanGlobal
