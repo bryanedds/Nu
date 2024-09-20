@@ -159,7 +159,8 @@ module Hl =
               Swapchain : VkSwapchainKHR
               SwapchainImageViews : VkImageView array
               CommandPool : VkCommandPool
-              CommandBuffer : VkCommandBuffer }
+              CommandBuffer : VkCommandBuffer
+              ScreenClearRenderPass : VkRenderPass }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -507,7 +508,10 @@ module Hl =
             commandBuffer
         
         /// Create the renderpass used to clear the screen.
-        static member createScreenClearRenderpass format device =
+        static member createScreenClearRenderPass format device =
+            
+            // renderpass handle
+            let mutable renderPass = Unchecked.defaultof<VkRenderPass>
             
             // populate attachment
             let mutable attachment = VkAttachmentDescription ()
@@ -533,11 +537,33 @@ module Hl =
             subpass.pColorAttachments <- asPointer &attachmentReference
             subpass.preserveAttachmentCount <- 0u
 
+            // populate dependency
+            let mutable dependency = VkSubpassDependency ()
+            dependency.srcSubpass <- VK_SUBPASS_EXTERNAL
+            dependency.dstSubpass <- 0u
+            dependency.srcStageMask <- VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            dependency.dstStageMask <- VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            dependency.srcAccessMask <- VK_ACCESS_NONE
+            dependency.dstAccessMask <- VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
 
-            ()
+            // populate create info
+            let mutable createInfo = VkRenderPassCreateInfo ()
+            createInfo.attachmentCount <- 1u
+            createInfo.pAttachments <- asPointer &attachment
+            createInfo.subpassCount <- 1u
+            createInfo.pSubpasses <- asPointer &subpass
+            createInfo.dependencyCount <- 1u
+            createInfo.pDependencies <- asPointer &dependency
+
+            // create renderpass
+            vkCreateRenderPass (device, asPointer &createInfo, nullPtr, &renderPass) |> check
+
+            // fin
+            renderPass
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
+            vkDestroyRenderPass (vulkanGlobal.Device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
             vkDestroyCommandPool (vulkanGlobal.Device, vulkanGlobal.CommandPool, nullPtr)
             for i in [0 .. dec vulkanGlobal.SwapchainImageViews.Length] do
                 vkDestroyImageView (vulkanGlobal.Device, vulkanGlobal.SwapchainImageViews[i], nullPtr)
@@ -586,6 +612,9 @@ module Hl =
                 // setup command pool and buffer
                 let commandPool = VulkanGlobal.createCommandPool physicalDeviceData.GraphicsQueueFamily device
                 let commandBuffer = VulkanGlobal.allocateCommandBuffer commandPool device
+
+                // setup screen clear renderpass
+                let screenClearRenderPass = VulkanGlobal.createScreenClearRenderPass surfaceFormat.format device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
@@ -595,7 +624,8 @@ module Hl =
                       Swapchain = swapchain
                       SwapchainImageViews = swapchainImageViews
                       CommandPool = commandPool
-                      CommandBuffer = commandBuffer }
+                      CommandBuffer = commandBuffer
+                      ScreenClearRenderPass = screenClearRenderPass }
 
                 // fin
                 Some vulkanGlobal
