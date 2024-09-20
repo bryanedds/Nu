@@ -160,6 +160,9 @@ module Hl =
               SwapchainImageViews : VkImageView array
               CommandPool : VkCommandPool
               CommandBuffer : VkCommandBuffer
+              ImageAvailableSemaphore : VkSemaphore
+              RenderFinishedSemaphore : VkSemaphore
+              InFlightFence : VkFence
               ScreenClearRenderPass : VkRenderPass
               SwapchainFramebuffers : VkFramebuffer array }
 
@@ -507,6 +510,20 @@ module Hl =
 
             // fin
             commandBuffer
+
+        /// Create a semaphore.
+        static member createSemaphore device =
+            let mutable semaphore = Unchecked.defaultof<VkSemaphore>
+            let createInfo = VkSemaphoreCreateInfo ()
+            vkCreateSemaphore (device, &createInfo, nullPtr, &semaphore) |> check
+            semaphore
+        
+        /// Create a fence.
+        static member createFence device =
+            let mutable fence = Unchecked.defaultof<VkFence>
+            let createInfo = VkFenceCreateInfo ()
+            vkCreateFence (device, &createInfo, nullPtr, &fence) |> check
+            fence
         
         /// Create the renderpass used to clear the screen.
         static member createScreenClearRenderPass format device =
@@ -590,6 +607,9 @@ module Hl =
             for i in [0 .. dec vulkanGlobal.SwapchainFramebuffers.Length] do
                 vkDestroyFramebuffer (vulkanGlobal.Device, vulkanGlobal.SwapchainFramebuffers[i], nullPtr)
             vkDestroyRenderPass (vulkanGlobal.Device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
+            vkDestroyFence (vulkanGlobal.Device, vulkanGlobal.InFlightFence, nullPtr)
+            vkDestroySemaphore (vulkanGlobal.Device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
+            vkDestroySemaphore (vulkanGlobal.Device, vulkanGlobal.ImageAvailableSemaphore, nullPtr)
             vkDestroyCommandPool (vulkanGlobal.Device, vulkanGlobal.CommandPool, nullPtr)
             for i in [0 .. dec vulkanGlobal.SwapchainImageViews.Length] do
                 vkDestroyImageView (vulkanGlobal.Device, vulkanGlobal.SwapchainImageViews[i], nullPtr)
@@ -639,6 +659,11 @@ module Hl =
                 let commandPool = VulkanGlobal.createCommandPool physicalDeviceData.GraphicsQueueFamily device
                 let commandBuffer = VulkanGlobal.allocateCommandBuffer commandPool device
 
+                // create sync objects
+                let imageAvailableSemaphore = VulkanGlobal.createSemaphore device
+                let renderFinishedSemaphore = VulkanGlobal.createSemaphore device
+                let inFlightFence = VulkanGlobal.createFence device
+
                 // create screen clear renderpass
                 let screenClearRenderPass = VulkanGlobal.createScreenClearRenderPass surfaceFormat.format device
 
@@ -654,6 +679,9 @@ module Hl =
                       SwapchainImageViews = swapchainImageViews
                       CommandPool = commandPool
                       CommandBuffer = commandBuffer
+                      ImageAvailableSemaphore = imageAvailableSemaphore
+                      RenderFinishedSemaphore = renderFinishedSemaphore
+                      InFlightFence = inFlightFence
                       ScreenClearRenderPass = screenClearRenderPass
                       SwapchainFramebuffers = swapchainFramebuffers }
 
