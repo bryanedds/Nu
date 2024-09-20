@@ -35,13 +35,13 @@ module WorldIm =
                         World.setImSimulants imSimulants world)
                 world world.ImSimulants
 
-        static member scopeGame (game : Game, world : World, [<ParamArray>] args : Game ImProperty array) =
+        static member scopeGame (game : Game) world (args : Game ImProperty seq) =
             let world = World.setImCurrent game.GameAddress world
             Seq.fold
                 (fun world arg -> game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c')
                 world args
 
-        static member scopeScreen (screen : Screen, world : World, [<ParamArray>] args : Screen ImProperty array) =
+        static member scopeScreen (screen : Screen) world (args : Screen ImProperty seq) =
             let world = World.setImCurrent screen.ScreenAddress world
             Seq.fold
                 (fun world arg ->
@@ -50,7 +50,7 @@ module WorldIm =
                     else world)
                 world args
 
-        static member scopeGroup (group : Group, world : World, [<ParamArray>] args : Group ImProperty array) =
+        static member scopeGroup (group : Group) world (args : Group ImProperty seq) =
             let world = World.setImCurrent group.GroupAddress world
             Seq.fold
                 (fun world arg ->
@@ -59,7 +59,7 @@ module WorldIm =
                     else world)
                 world args
 
-        static member scopeEntity (entity : Entity, world : World, [<ParamArray>] args : Entity ImProperty array) =
+        static member scopeEntity (entity : Entity) world (args : Entity ImProperty seq) =
             let world = World.setImCurrent entity.EntityAddress world
             Seq.fold
                 (fun world arg ->
@@ -68,10 +68,10 @@ module WorldIm =
                     else world)
                 world args
 
-        static member scopeWorld (world : World) =
+        static member scopeWorld world =
             World.setImCurrent Address.empty world
 
-        static member beginGame args (world : World) =
+        static member beginGame (args : Game ImProperty seq) (world : World) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
@@ -89,7 +89,7 @@ module WorldIm =
             let world = World.beginGame args world
             World.endGame world
 
-        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select args (world : World) =
+        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select (args : Screen ImProperty seq) (world : World) =
             let screenAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
@@ -128,7 +128,7 @@ module WorldIm =
             let world = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select args world
             World.endScreen world
 
-        static member beginGroup<'d when 'd :> GroupDispatcher> name args (world : World) =
+        static member beginGroup<'d when 'd :> GroupDispatcher> name (args : Group ImProperty seq) (world : World) =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
@@ -293,13 +293,6 @@ module WorldIm =
 
         /// Declare the end of a panel.
         static member endPanel world = World.endEntity world
-
-        /// Declare a panel with the given arguments.
-        static member withPanel<'a> name args world f =
-            let world = World.beginPanel name args world
-            let (a : 'a, world) = f world
-            let world = World.endPanel world
-            (a, world)
 
         /// Declare a panel with the given arguments.
         static member panel name args world = World.entity<PanelDispatcher> name args world
