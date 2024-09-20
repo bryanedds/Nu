@@ -86,8 +86,12 @@ module WorldIm =
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndGame mismatch.")
 
-        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> (transitionScreen, setScreenSlide, screenName, behavior, select, world : World, [<ParamArray>] args : ImProperty array) =
-            let screenAddress = Address.makeFromArray (Array.add screenName world.ImCurrent.Names)
+        static member game (world, [<ParamArray>] args) =
+            let world = World.beginGame (world, args)
+            World.endGame world
+
+        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> (transitionScreen, setScreenSlide, name, behavior, select, world : World, [<ParamArray>] args : ImProperty array) =
+            let screenAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
             let world =
@@ -101,8 +105,8 @@ module WorldIm =
                         let imSimulants = OMap.add (screen :> Simulant) { imScreen with Utilized = true } imSimulants
                         World.setImSimulants imSimulants world
                 | (false, _) ->
-                    let world = World.createScreen<'d> (Some screenName) world |> snd
-                    let imGroup = { Utilized = true; Subs = [||] }
+                    let world = World.createScreen<'d> (Some name) world |> snd
+                    let imGroup = { Utilized = true; Results = [||] }
                     let imSimulants = OMap.add (screen :> Simulant) imGroup imSimulants
                     World.setImSimulants imSimulants world
             let world =
@@ -122,8 +126,12 @@ module WorldIm =
                 World.setImCurrent Game.GameAddress world
             | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
 
-        static member beginGroup<'d when 'd :> GroupDispatcher> (groupName : string, world : World, [<ParamArray>] args : ImProperty array) : World =
-            let groupAddress = Address.makeFromArray (Array.add groupName world.ImCurrent.Names)
+        static member screenInternal<'d when 'd :> ScreenDispatcher> (transitionScreen, setScreenSlide, name, behavior, select, world, [<ParamArray>] args) =
+            let world = World.beginScreenInternal<'d> (transitionScreen, setScreenSlide, name, behavior, select, world, args)
+            World.endScreen world
+
+        static member beginGroup<'d when 'd :> GroupDispatcher> (name : string, world : World, [<ParamArray>] args : ImProperty array) : World =
+            let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
             let world =
@@ -137,8 +145,8 @@ module WorldIm =
                         let imSimulants = OMap.add (group :> Simulant) { imGroup with Utilized = true } imSimulants
                         World.setImSimulants imSimulants world
                 | (false, _) ->
-                    let world = World.createGroup<'d> (Some groupName) group.Screen world |> snd
-                    let imGroup = { Utilized = true; Subs = [||] }
+                    let world = World.createGroup<'d> (Some name) group.Screen world |> snd
+                    let imGroup = { Utilized = true; Results = [||] }
                     let imSimulants = OMap.add (group :> Simulant) imGroup imSimulants
                     World.setImSimulants imSimulants world
             Array.fold
@@ -155,28 +163,32 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
 
-        static member beginEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : ImProperty array) : 'r * World =
-            let entityAddress = Address.makeFromArray (Array.add entityName world.ImCurrent.Names)
+        static member group<'d when 'd :> GroupDispatcher> (name, world, [<ParamArray>] args) =
+            let world = World.beginGroup<'d> (name, world, args)
+            World.endGroup world
+
+        static member beginEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, name : string, world : World, [<ParamArray>] args : ImProperty array) : 'r * World =
+            let entityAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
-            let (subs, world) =
+            let (results, world) =
                 let imSimulants = world.ImSimulants
                 match imSimulants.TryGetValue entity with
                 | (true, imEntity) ->
                     if world.Imperative then
                         imEntity.Utilized <- true
-                        (imEntity.Subs, world)
+                        (imEntity.Results, world)
                     else
                         let imSimulants = OMap.add (entity :> Simulant) { imEntity with Utilized = true } imSimulants
                         let world = World.setImSimulants imSimulants world
-                        (imEntity.Subs, world)
+                        (imEntity.Results, world)
                 | (false, _) ->
                     let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
-                    let (subs, world) = init entity world
-                    let imEntity = { Utilized = true; Subs = subs }
+                    let (results, world) = init entity world
+                    let imEntity = { Utilized = true; Results = results }
                     let imSimulants = OMap.add (entity :> Simulant) imEntity imSimulants
                     let world = World.setImSimulants imSimulants world
-                    (subs, world)
+                    (results, world)
             let world =
                 Array.fold
                     (fun world arg ->
@@ -184,7 +196,10 @@ module WorldIm =
                         then entity.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
                         else world)
                     world args
-            (inspect subs, world)
+            (inspect results, world)
+
+        static member beginEntity<'d when 'd :> EntityDispatcher> (name, world, [<ParamArray>] args) =
+            World.beginEntity<'d, unit> ((fun _ _ -> ([||], world)), (fun _ -> ()), name, world, args) |> snd
 
         static member endEntity (world : World) =
             match world.ImCurrent with
@@ -197,23 +212,88 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
-        static member entity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName, world, [<ParamArray>] args : ImProperty array) =
-            let (result, world) = World.beginEntity<'d, 'r> (init, inspect, entityName, world, args)
+        static member entity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, name, world, [<ParamArray>] args) =
+            let (result, world) = World.beginEntity<'d, 'r> (init, inspect, name, world, args)
             let world = World.endEntity world
             (result, world)
 
-        static member button (buttonName : string, world : World, [<ParamArray>] args : ImProperty array) =
-            World.entity<ButtonDispatcher, _>
+        static member entity<'d when 'd :> EntityDispatcher> (name, world, [<ParamArray>] args) =
+            let world = World.beginEntity<'d> (name, world, args)
+            World.endEntity world
+
+        /// Declare a text entity with the given arguments.
+        static member text (name, world, [<ParamArray>] args) = World.entity<TextDispatcher> (name, world, args)
+
+        /// Declare a label with the given arguments.
+        static member label (name, world, [<ParamArray>] args) = World.entity<LabelDispatcher> (name, world, args)
+
+        /// Declare a button with the given arguments.
+        static member button (name, world, [<ParamArray>] args) =
+            World.entity<ButtonDispatcher, bool>
                 ((fun button world ->
                     let result = ref false
-                    let subKey = Gen.id64
-                    let world = World.subscribePlus subKey (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent Game world |> snd
-                    ([|(subKey, result :> obj)|], world)),
-                 (fun subs ->
-                    let resultRef = snd subs.[0] :?> bool ref
+                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
+                    ([|result :> obj|], world)),
+                 (fun results ->
+                    let resultRef = results.[0] :?> bool ref
                     let result = resultRef.Value
                     resultRef.Value <- false
                     result),
-                 buttonName,
-                 world,
-                 args)
+                 name, world, args)
+
+        /// Declare a toggle button with the given arguments.
+        static member toggleButton (name, world, [<ParamArray>] args) =
+            World.entity<ToggleButtonDispatcher, bool>
+                ((fun button world ->
+                    let result = ref false
+                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
+                    ([|result :> obj|], world)),
+                 (fun results ->
+                    let resultRef = results.[0] :?> bool ref
+                    let result = resultRef.Value
+                    resultRef.Value <- false
+                    result),
+                 name, world, args)
+
+        /// Declare a radio button with the given arguments.
+        static member radioButton (name, world, [<ParamArray>] args) =
+            World.entity<ToggleButtonDispatcher, bool>
+                ((fun button world ->
+                    let result = ref false
+                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
+                    ([|result :> obj|], world)),
+                 (fun results ->
+                    let resultRef = results.[0] :?> bool ref
+                    let result = resultRef.Value
+                    resultRef.Value <- false
+                    result),
+                 name, world, args)
+
+        /// Declare a fill bar with the given arguments.
+        static member fillBar (name, world, [<ParamArray>] args) = World.entity<FillBarDispatcher> (name, world, args)
+
+        /// Declare a feeler with the given arguments.
+        static member feelerButton (name, world, [<ParamArray>] args) =
+            World.entity<FeelerDispatcher, bool>
+                ((fun feeler world ->
+                    let result = ref false
+                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) feeler.TouchEvent feeler world
+                    ([|result :> obj|], world)),
+                 (fun results ->
+                    let resultRef = results.[0] :?> bool ref
+                    let result = resultRef.Value
+                    resultRef.Value <- false
+                    result),
+                 name, world, args)
+
+        /// Declare an fps entity with the given arguments.
+        static member fps (name, world, [<ParamArray>] args) = World.entity<FpsDispatcher> (name, world, args)
+
+        /// Declare the beginning of a panel with the given arguments.
+        static member beginPanel (name, world, [<ParamArray>] args) = World.beginEntity<PanelDispatcher> (name, world, args)
+
+        /// Declare the end of a panel.
+        static member endPanel world = World.endEntity world
+
+        /// Declare a panel with the given arguments.
+        static member panel (name, world, [<ParamArray>] args) = World.entity<PanelDispatcher> (name, world, args)

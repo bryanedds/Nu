@@ -2469,6 +2469,9 @@ module ScreenDispatcherModule =
         static member beginScreen<'d when 'd :> ScreenDispatcher> (screenName, behavior, select, world, [<ParamArray>] args : ImProperty array) =
             World.beginScreenInternal<'d> (World.transitionScreen, World.setScreenSlide, screenName, behavior, select, world, args)
 
+        static member screen<'d when 'd :> ScreenDispatcher> (screenName, behavior, select, world, [<ParamArray>] args : ImProperty array) =
+            World.screenInternal<'d> (World.transitionScreen, World.setScreenSlide, screenName, behavior, select, world, args)
+
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 

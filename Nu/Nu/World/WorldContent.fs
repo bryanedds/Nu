@@ -412,7 +412,7 @@ module Content =
     /// Describe an association of gui entities with the given definitions and content.
     let association entityName definitions content = composite<GuiDispatcher> entityName definitions content
 
-    /// Describe a text with the given definitions.
+    /// Describe a text entity with the given definitions.
     let text entityName definitions = entity<TextDispatcher> entityName definitions
 
     /// Describe a label with the given definitions.
@@ -433,7 +433,7 @@ module Content =
     /// Describe a feeler with the given definitions.
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
-    /// Describe an fps gui with the given definitions.
+    /// Describe an fps entity with the given definitions.
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 
     /// Describe a panel with the given definitions and content.
