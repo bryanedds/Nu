@@ -10,13 +10,13 @@ open Nu
 [<AutoOpen>]
 module WorldIm =
 
-    /// Define an im property definition.
+    /// Define an immediate-mode property definition.
     let
 #if !DEBUG
         inline
 #endif
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ImPropertyName = lens.Name; ImPropertyValue = value }
+        { ImPropertyLens = lens; ImPropertyValue = value }
 
     type World with
 
@@ -38,7 +38,7 @@ module WorldIm =
         static member scope (game : Game, world : World, [<ParamArray>] args : ImProperty array) =
             let world = World.setImCurrent game.GameAddress world
             Array.fold
-                (fun world arg -> game.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c')
+                (fun world arg -> game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c')
                 world args
 
         static member scope (screen : Screen, world : World, [<ParamArray>] args : ImProperty array) =
@@ -46,7 +46,7 @@ module WorldIm =
             Array.fold
                 (fun world arg ->
                     if screen.GetExists world
-                    then screen.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    then screen.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                     else world)
                 world args
 
@@ -55,7 +55,7 @@ module WorldIm =
             Array.fold
                 (fun world arg ->
                     if group.GetExists world
-                    then group.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    then group.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                     else world)
                 world args
 
@@ -64,7 +64,7 @@ module WorldIm =
             Array.fold
                 (fun world arg ->
                     if entity.GetExists world
-                    then entity.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    then entity.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                     else world)
                 world args
 
@@ -77,7 +77,7 @@ module WorldIm =
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
             Array.fold
-                (fun world arg -> game.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c')
+                (fun world arg -> game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c')
                 world args
 
         static member endGame (world : World) =
@@ -113,7 +113,7 @@ module WorldIm =
                 Array.fold
                     (fun world arg ->
                         if screen.GetExists world
-                        then screen.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                        then screen.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                         else world)
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
@@ -152,7 +152,7 @@ module WorldIm =
             Array.fold
                 (fun world arg ->
                     if group.GetExists world
-                    then group.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    then group.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                     else world)
                 world args
 
@@ -194,7 +194,7 @@ module WorldIm =
                 Array.fold
                     (fun world arg ->
                         if entity.GetExists world
-                        then entity.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                        then entity.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                         else world)
                     world args
             (inspect results, world)

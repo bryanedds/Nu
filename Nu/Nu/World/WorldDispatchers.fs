@@ -22,8 +22,10 @@ type GuiDispatcher () =
         [typeof<LayoutFacet>]
 
     static member Properties =
-        [define Entity.Size Constants.Engine.EntityGuiSizeDefault
-         define Entity.Absolute true
+        [define Entity.Absolute true
+         define Entity.Size Constants.Engine.EntityGuiSizeDefault
+         define Entity.Elevation 1.0f
+         define Entity.ElevationLocal 1.0f
          define Entity.Presence Omnipresent
          define Entity.DisabledColor Constants.Gui.DisabledColorDefault]
 

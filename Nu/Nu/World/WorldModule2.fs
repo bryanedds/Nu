@@ -1996,8 +1996,8 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Presence Omnipresent
-             define Entity.Absolute true
+            [define Entity.Absolute true
+             define Entity.Presence Omnipresent
              define Entity.DisabledColor Constants.Gui.DisabledColorDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
