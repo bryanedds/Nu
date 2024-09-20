@@ -1669,6 +1669,7 @@ module WorldModule2 =
 
                                                     // destroy simulants that have been marked for destruction at the end of frame
                                                     world.Timers.DestructionTimer.Restart ()
+                                                    let world = World.imUpdate world
                                                     let world = World.destroySimulants world
                                                     world.Timers.DestructionTimer.Stop ()
                                                     match World.getLiveness world with
@@ -2463,6 +2464,11 @@ module ScreenDispatcherModule =
         abstract UntruncateModel : 'model * 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
+    type World with
+
+        static member beginScreen<'d when 'd :> ScreenDispatcher> (screenName, behavior, select, world, [<ParamArray>] args : ImProperty array) =
+            World.beginScreenInternal<'d> (World.transitionScreen, World.setScreenSlide, screenName, behavior, select, world, args)
+
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
@@ -2638,6 +2644,87 @@ module GameDispatcherModule =
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
+
+    /// The immediate-mode dispatcher for games.
+    and [<AbstractClass>] GameDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit GameDispatcher ()
+
+        new (initial : 'model) =
+            GameDispatcher<'model> (fun _ -> initial)
+
+        /// Get the game's model.
+        member this.GetModel (game : Game) world : 'model =
+            game.GetModelGeneric<'model> world
+
+        /// Set the game's model.
+        member this.SetModel (model : 'model) (game : Game) world =
+            game.SetModelGeneric<'model> model world
+
+        /// The game's model lens.
+        member this.Model (game : Game) =
+            lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
+
+        override this.Register (game, world) =
+            let property = World.getGameModelProperty game world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGameModelGeneric<'model> false model game world |> snd'
+
+        override this.Update (game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (model, world) = this.Run (model, game, world)
+            this.SetModel model game world
+
+        override this.Edit (operation, game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, game, world)
+            this.SetModel model game world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
+            this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, game, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = game.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Game * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the immediate-model programming model.
+        abstract Run : 'model * Game * World -> ('model * World)
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for a game via the ImGui API.
+        abstract Edit : 'model * EditOperation * Game * World -> ('model * World)
+        default this.Edit (model, _, _, world) = (model, world)
 
         /// Truncate the given model.
         abstract TruncateModel : 'model -> 'model

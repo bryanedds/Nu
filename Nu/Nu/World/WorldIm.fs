@@ -10,6 +10,14 @@ open Nu
 [<AutoOpen>]
 module WorldIm =
 
+    /// Define an im property definition.
+    let
+#if !DEBUG
+        inline
+#endif
+        (.=) (lens : Lens<'a, 's>) (value : 'a) =
+        { ImPropertyName = lens.Name; ImPropertyValue = value }
+
     type World with
 
         static member internal imUpdate world =
@@ -27,81 +35,94 @@ module WorldIm =
                         World.setImSimulants imSimulants world)
                 world world.ImSimulants
 
-        static member imBeginScope (game : Game, world : World, [<ParamArray>] args : DefinitionContent array) =
+        static member scope (game : Game, world : World, [<ParamArray>] args : ImProperty array) =
             let world = World.setImCurrent game.GameAddress world
             Array.fold
-                (fun world arg ->
-                    match arg with
-                    | PropertyContent pc -> game.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
+                (fun world arg -> game.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c')
                 world args
 
-        static member imBeginScope (screen : Screen, world : World, [<ParamArray>] args : DefinitionContent array) =
+        static member scope (screen : Screen, world : World, [<ParamArray>] args : ImProperty array) =
             let world = World.setImCurrent screen.ScreenAddress world
             Array.fold
                 (fun world arg ->
-                    match arg with
-                    | PropertyContent pc when screen.GetExists world -> screen.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
+                    if screen.GetExists world
+                    then screen.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    else world)
                 world args
 
-        static member imBeginScope (group : Group, world : World, [<ParamArray>] args : DefinitionContent array) =
+        static member scope (group : Group, world : World, [<ParamArray>] args : ImProperty array) =
             let world = World.setImCurrent group.GroupAddress world
             Array.fold
                 (fun world arg ->
-                    match arg with
-                    | PropertyContent pc when group.GetExists world -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
+                    if group.GetExists world
+                    then group.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    else world)
                 world args
 
-        static member imBeginScope (entity : Entity, world : World, [<ParamArray>] args : DefinitionContent array) =
+        static member scope (entity : Entity, world : World, [<ParamArray>] args : ImProperty array) =
             let world = World.setImCurrent entity.EntityAddress world
             Array.fold
                 (fun world arg ->
-                    match arg with
-                    | PropertyContent pc when entity.GetExists world -> entity.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
+                    if entity.GetExists world
+                    then entity.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    else world)
                 world args
 
-        static member imEndScope (world : World) =
-            // be nice if we could assert here that this is paired properly with begin scope
+        static member unscope (world : World) =
+            // be nice if we could assert here that this is paired properly with scope
             World.setImCurrent Address.empty world
 
-        static member imBeginGame (world : World, [<ParamArray>] args : DefinitionContent array) =
+        static member beginGame (world : World, [<ParamArray>] args : ImProperty array) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
             Array.fold
-                (fun world arg ->
-                    match arg with
-                    | PropertyContent pc -> game.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
+                (fun world arg -> game.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c')
                 world args
 
-        static member imEndGame (world : World) =
+        static member endGame (world : World) =
             match world.ImCurrent with
             | :? (Game Address) ->
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndGame mismatch.")
 
-        static member imBeginScreen (screenName, world : World, [<ParamArray>] args : DefinitionContent array) =
+        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> (transitionScreen, setScreenSlide, screenName, behavior, select, world : World, [<ParamArray>] args : ImProperty array) =
             let screenAddress = Address.makeFromArray (Array.add screenName world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
-            Array.fold
-                (fun world arg ->
-                    match arg with
-                    | PropertyContent pc when screen.GetExists world -> screen.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
-                world args
+            let world =
+                let imSimulants = world.ImSimulants
+                match imSimulants.TryGetValue screen with
+                | (true, imScreen) ->
+                    if world.Imperative then
+                        imScreen.Utilized <- true
+                        world
+                    else
+                        let imSimulants = OMap.add (screen :> Simulant) { imScreen with Utilized = true } imSimulants
+                        World.setImSimulants imSimulants world
+                | (false, _) ->
+                    let world = World.createScreen<'d> (Some screenName) world |> snd
+                    let imGroup = { Utilized = true; Subs = [||] }
+                    let imSimulants = OMap.add (screen :> Simulant) imGroup imSimulants
+                    World.setImSimulants imSimulants world
+            let world =
+                Array.fold
+                    (fun world arg ->
+                        if screen.GetExists world
+                        then screen.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                        else world)
+                    world args
+            let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
+            let world = if screen.GetExists world && select then transitionScreen screen world else world
+            world
 
-        static member imEndScreen (world : World) =
+        static member endScreen (world : World) =
             match world.ImCurrent with
             | :? (Screen Address) ->
                 World.setImCurrent Game.GameAddress world
             | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
 
-        static member imBeginGroup<'d when 'd :> GroupDispatcher> (groupName : string, world : World, [<ParamArray>] args : DefinitionContent array) : World =
+        static member beginGroup<'d when 'd :> GroupDispatcher> (groupName : string, world : World, [<ParamArray>] args : ImProperty array) : World =
             let groupAddress = Address.makeFromArray (Array.add groupName world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
@@ -122,19 +143,19 @@ module WorldIm =
                     World.setImSimulants imSimulants world
             Array.fold
                 (fun world arg ->
-                    match arg with
-                    | PropertyContent pc when group.GetExists world -> group.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                    | _ -> world)
+                    if group.GetExists world
+                    then group.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                    else world)
                 world args
 
-        static member imEndGroup (world : World) =
+        static member endGroup (world : World) =
             match world.ImCurrent with
             | :? (Group Address) as groupAddress ->
                 let currentAddress = Address.take<Group, Screen> 2 groupAddress
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
 
-        static member imBeginEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : DefinitionContent array) : 'r * World =
+        static member beginEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : ImProperty array) : 'r * World =
             let entityAddress = Address.makeFromArray (Array.add entityName world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
@@ -159,13 +180,13 @@ module WorldIm =
             let world =
                 Array.fold
                     (fun world arg ->
-                        match arg with
-                        | PropertyContent pc when entity.GetExists world -> entity.TrySet pc.PropertyLens.Name pc.PropertyValue world |> __c'
-                        | _ -> world)
+                        if entity.GetExists world
+                        then entity.TrySet arg.ImPropertyName arg.ImPropertyValue world |> __c'
+                        else world)
                     world args
             (inspect subs, world)
 
-        static member imEndEntity (world : World) =
+        static member endEntity (world : World) =
             match world.ImCurrent with
             | :? (Entity Address) as entityAddress when entityAddress.Length >= 4 ->
                 let currentNames = Array.take (dec entityAddress.Length) entityAddress.Names
@@ -176,13 +197,13 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
-        static member imEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName, world, [<ParamArray>] args : DefinitionContent array) =
-            let (result, world) = World.imBeginEntity<'d, 'r> (init, inspect, entityName, world, args)
-            let world = World.imEndEntity world
+        static member entity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName, world, [<ParamArray>] args : ImProperty array) =
+            let (result, world) = World.beginEntity<'d, 'r> (init, inspect, entityName, world, args)
+            let world = World.endEntity world
             (result, world)
 
-        static member imButton (buttonName : string, world : World, [<ParamArray>] args : DefinitionContent array) =
-            World.imEntity<ButtonDispatcher, _>
+        static member button (buttonName : string, world : World, [<ParamArray>] args : ImProperty array) =
+            World.entity<ButtonDispatcher, _>
                 ((fun button world ->
                     let result = ref false
                     let subKey = Gen.id64

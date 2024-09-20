@@ -1761,10 +1761,15 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-/// Provides bookkeeping information for immediate-mode simulant API.
+/// Provides bookkeeping information for the immediate-mode simulant API.
 and [<NoEquality; NoComparison>] internal ImSimulant =
     { mutable Utilized : bool
       Subs : (uint64 * obj) array }
+
+/// Describes a property used for the immediate-mode simulant API.
+and [<Struct>] ImProperty =
+    { ImPropertyName : string
+      ImPropertyValue : obj }
 
 /// The world's dispatchers (including facets).
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
