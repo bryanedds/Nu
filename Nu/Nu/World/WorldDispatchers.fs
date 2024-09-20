@@ -171,7 +171,8 @@ type PanelDispatcher () =
         [typeof<BackdroppableFacet>]
 
     static member Properties =
-        [define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
+        [define Entity.Size (v3 Constants.Engine.EntityGuiSizeDefault.X Constants.Engine.EntityGuiSizeDefault.X 0.0f)
+         define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
