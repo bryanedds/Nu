@@ -444,36 +444,20 @@ type TextFacet () =
 
     override this.Render (_, entity, world) =
         let text = entity.GetText world
-        if not (String.IsNullOrWhiteSpace text) then
-            let mutable transform = entity.GetTransform world
-            let perimeter = transform.Perimeter // gui currently ignores rotation and scale
-            let horizon = transform.Horizon
-            let mutable textTransform = Transform.makeDefault ()
-            let margin = (entity.GetTextMargin world).V3
-            let offset = (entity.GetTextOffset world).V3
-            let shift = entity.GetTextShift world
-            textTransform.Position <- perimeter.Center + margin + offset
-            textTransform.Size <- perimeter.Size - margin * 2.0f
-            textTransform.Elevation <- transform.Elevation + shift
-            textTransform.Absolute <- transform.Absolute
-            let font = entity.GetFont world
-            let fontSizing = entity.GetFontSizing world
-            let fontStyling = entity.GetFontStyling world
-            World.enqueueLayeredOperation2d
-                { Elevation = textTransform.Elevation
-                  Horizon = horizon
-                  AssetTag = font
-                  RenderOperation2d =
-                    RenderText
-                        { Transform = textTransform
-                          ClipOpt = ValueSome transform.Bounds2d.Box2
-                          Text = text
-                          Font = font
-                          FontSizing = fontSizing
-                          FontStyling = fontStyling
-                          Color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
-                          Justification = entity.GetJustification world }}
-                world
+        let mutable transform = entity.GetTransform world
+        let absolute = transform.Absolute
+        let perimeter = transform.Perimeter
+        let offset = (entity.GetTextOffset world).V3
+        let elevation = transform.Elevation
+        let shift = entity.GetTextShift world
+        let clipOpt = ValueSome transform.Bounds2d.Box2
+        let justification = entity.GetJustification world
+        let margin = (entity.GetTextMargin world).V3
+        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
+        let font = entity.GetFont world
+        let fontSizing = entity.GetFontSizing world
+        let fontStyling = entity.GetFontStyling world
+        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification margin color font fontSizing fontStyling text world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero

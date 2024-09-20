@@ -58,7 +58,7 @@ module WorldIm =
         static member imEndScreen (world : World) =
             match world.ImCurrent with
             | :? (Screen Address) ->
-                World.setImCurrent Address.empty world
+                World.setImCurrent Game.GameAddress world
             | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
 
         static member imBeginGroup<'d when 'd :> GroupDispatcher> (groupName : string, world : World, [<ParamArray>] args : DefinitionContent array) : World =
@@ -89,8 +89,9 @@ module WorldIm =
 
         static member imEndGroup (world : World) =
             match world.ImCurrent with
-            | :? (Group Address) ->
-                World.setImCurrent Address.empty world
+            | :? (Group Address) as groupAddress ->
+                let currentAddress = Address.take<Group, Screen> 2 groupAddress
+                World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
 
         static member imBeginEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName : string, world : World, [<ParamArray>] args : DefinitionContent array) : 'r * World =
@@ -126,8 +127,13 @@ module WorldIm =
 
         static member imEndEntity (world : World) =
             match world.ImCurrent with
-            | :? (Entity Address) ->
-                World.setImCurrent Address.empty world
+            | :? (Entity Address) as entityAddress when entityAddress.Length >= 4 ->
+                let currentNames = Array.take (dec entityAddress.Length) entityAddress.Names
+                let currentAddress =
+                    if currentNames.Length = 3
+                    then Address.makeFromArray<Group> currentNames :> Address
+                    else Address.makeFromArray<Entity> currentNames
+                World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
         static member imEntity<'d, 'r when 'd :> EntityDispatcher> (init, inspect, entityName, world, [<ParamArray>] args : DefinitionContent array) =

@@ -1761,7 +1761,8 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-and [<NoEquality; NoComparison>] ImSimulant =
+/// Provides bookkeeping information for immediate-mode simulant API.
+and [<NoEquality; NoComparison>] internal ImSimulant =
     { mutable Utilized : bool
       Subs : (uint64 * obj) array }
 
