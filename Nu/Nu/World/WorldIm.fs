@@ -184,6 +184,7 @@ module WorldIm =
                         (imEntity.Results, world)
                 | (false, _) ->
                     let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                    let world = if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                     let (results, world) = init entity world
                     let imEntity = { Utilized = true; Results = results }
                     let imSimulants = OMap.add (entity :> Simulant) imEntity imSimulants
