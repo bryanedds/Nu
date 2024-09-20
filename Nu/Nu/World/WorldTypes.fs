@@ -171,7 +171,7 @@ and ChangeData =
       Previous : obj
       Value : obj }
 
-/// A generalized simulant lens.
+/// A property lens interface.
 and Lens =
     interface
         /// The name of the property accessed by the lens.
@@ -1767,7 +1767,7 @@ and [<NoEquality; NoComparison>] internal ImSimulant =
       Results : obj array }
 
 /// Describes a property used for the immediate-mode simulant API.
-and [<Struct>] ImProperty =
+and [<Struct>] ImProperty<'s when 's :> Simulant> =
     { ImPropertyLens : Lens
       ImPropertyValue : obj }
 
