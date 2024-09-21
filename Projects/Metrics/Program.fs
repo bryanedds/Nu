@@ -115,7 +115,7 @@ type ImGameDispatcher () =
 
     override this.Run (counter, _, world) =
         let world = World.beginGame world []
-        let (_, world) = World.beginScreen "Screen" (Dissolve (Constants.Dissolve.Default, None)) true world []
+        let (_, world) = World.beginScreen "Spleen" (Dissolve (Constants.Dissolve.Default, None)) true world []
         let world = World.beginGroup "Group" world []
         let world = World.beginPanel "Panel" world [Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
         let world = World.doText "Text" world [Entity.Text .= "Counter"]
