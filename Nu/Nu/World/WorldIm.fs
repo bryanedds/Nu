@@ -10,11 +10,11 @@ open Nu
 /// Describes an immediate-mode screen result.
 type ScreenResult =
     | Select
-    | Deselecting
     | IncomingStart
     | IncomingFinish
     | OutgoingStart
     | OutgoingFinish
+    | Deselecting
 
 /// Describes an immediate-mode physics body result.
 type BodyResult =
@@ -262,11 +262,11 @@ module WorldIm =
                     let world = World.createScreen<'d> (Some name) world |> snd
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
                     (true, world)
             let world =
                 Seq.fold
