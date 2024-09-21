@@ -279,7 +279,7 @@ module WorldIm =
                 | (true, imScreen) -> (false, World.utilizeImSimulant screen imScreen world)
                 | (false, _) ->
                     let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
-                    let world = World.createScreen<'d> (Some name) world |> snd
+                    let world = if not (screen.GetExists world) then World.createScreen<'d> (Some name) world |> snd else world // NOTE: special-case when Gaia has already created the screen.
                     let world = World.setScreenProtected true screen world |> snd'
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
@@ -378,16 +378,18 @@ module WorldIm =
         static member scopeWorld world =
             World.setImCurrent Address.empty world
 
-        static member internal imUpdate world =
-            OMap.fold (fun (world : World) simulant imSimulant ->
-                if not imSimulant.Utilized then
-                    let world = World.destroyImmediate simulant world
-                    World.setImSimulants (OMap.remove simulant world.ImSimulants) world
-                else
-                    if world.Imperative then
-                        imSimulant.Utilized <- false
-                        world
+        static member internal imNuiUpdate (world : World) =
+            if world.Advancing then
+                OMap.fold (fun world simulant imSimulant ->
+                    if not imSimulant.Utilized then
+                        let world = World.destroyImmediate simulant world
+                        World.setImSimulants (OMap.remove simulant world.ImSimulants) world
                     else
-                        let world = World.setImSimulants (OMap.add simulant { imSimulant with Utilized = false } world.ImSimulants) world
-                        world)
-                world world.ImSimulants
+                        if world.Imperative then
+                            imSimulant.Utilized <- false
+                            world
+                        else
+                            let world = World.setImSimulants (OMap.add simulant { imSimulant with Utilized = false } world.ImSimulants) world
+                            world)
+                    world world.ImSimulants
+            else world

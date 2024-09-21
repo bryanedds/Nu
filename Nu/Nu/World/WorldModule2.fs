@@ -1669,7 +1669,7 @@ module WorldModule2 =
 
                                                     // destroy simulants that have been marked for destruction at the end of frame
                                                     world.Timers.DestructionTimer.Restart ()
-                                                    let world = World.imUpdate world
+                                                    let world = World.imNuiUpdate world
                                                     let world = World.destroySimulants world
                                                     world.Timers.DestructionTimer.Stop ()
                                                     match World.getLiveness world with
