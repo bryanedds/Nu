@@ -1940,7 +1940,7 @@ module EntityDispatcherModule2 =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The entity's own MMCC definitions.
-        abstract Definitions : 'model * Entity -> DefinitionContent list
+        abstract Definitions : 'model * Entity -> Entity DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
@@ -2250,7 +2250,7 @@ module GroupDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The group's own MMCC definitions.
-        abstract Definitions : 'model * Group -> DefinitionContent list
+        abstract Definitions : 'model * Group -> Group DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
@@ -2433,7 +2433,7 @@ module ScreenDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The screen's own MMCC definitions.
-        abstract Definitions : 'model * Screen -> DefinitionContent list
+        abstract Definitions : 'model * Screen -> Screen DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
@@ -2625,7 +2625,7 @@ module GameDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The game own MMCC definitions.
-        abstract Definitions : 'model * Game -> DefinitionContent list
+        abstract Definitions : 'model * Game -> Game DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.

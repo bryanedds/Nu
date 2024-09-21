@@ -360,7 +360,7 @@ module Content =
         else (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
 
     /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
-    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt definitions entities =
+    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt (definitions : Entity DefinitionContent seq) entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -518,7 +518,7 @@ module Content =
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
-    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt definitions entities =
+    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq)  entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -548,7 +548,7 @@ module Content =
         group4<'groupDispatcher> groupName (Some filePath) definitions entities
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
-    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt definitions groups =
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq)  groups =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -620,7 +620,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (==) (lens : Lens<'a, 's>) (value : 'a) : DefinitionContent =
+        (==) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make true lens value)
 
     /// Define a synchronized property equality.
@@ -628,7 +628,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (:=) (lens : Lens<'a, 's>) (value : 'a) : DefinitionContent =
+        (:=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define an event signal.
@@ -636,7 +636,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=>) (eventAddress : 'a Address) (signal : Signal) : DefinitionContent =
+        (=>) (eventAddress : 'a Address) (signal : Signal) : 's DefinitionContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define an event handler.
@@ -644,5 +644,5 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : DefinitionContent =
+        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : 's DefinitionContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
