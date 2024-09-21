@@ -237,7 +237,7 @@ module WorldImNui =
         static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         ///
-        static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ArgImNui seq) =
+        static member internal beginGroup4<'d when 'd :> GroupDispatcher> name (groupFilePathOpt : string option) (world : World) (args : Group ArgImNui seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContextImNui groupAddress world
             let group = Nu.Group groupAddress
@@ -246,7 +246,10 @@ module WorldImNui =
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui group { Utilized = true; Result = () } world
-                    let world = World.createGroup<'d> (Some name) group.Screen world |> snd
+                    let world =
+                        match groupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
+                        | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
                     let world = World.setGroupProtected true group world |> snd'
                     (true, world)
             Seq.fold
@@ -255,6 +258,14 @@ module WorldImNui =
                     then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                     else world)
                 world args
+
+        ///
+        static member internal beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath world args =
+            World.beginGroup4<'d> name (Some groupFilePath) world args
+
+        ///
+        static member internal beginGroup<'d when 'd :> GroupDispatcher> name world args =
+            World.beginGroup4<'d> name None world args
             
         ///
         static member endGroup (world : World) =
