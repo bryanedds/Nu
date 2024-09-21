@@ -978,9 +978,11 @@ module PhysicallyBased =
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
-                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
-                let instanceDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
+                m4Identity.ToArray (instanceData, 0)
+                let strideSize = instanceData.Length * sizeof<single>
+                let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
                 Gl.EnableVertexAttribArray 3u
@@ -1102,9 +1104,11 @@ module PhysicallyBased =
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
-                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
-                let instanceDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
+                m4Identity.ToArray (instanceData, 0)
+                let strideSize = instanceData.Length * sizeof<single>
+                let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
                 Gl.EnableVertexAttribArray 5u
@@ -1229,9 +1233,11 @@ module PhysicallyBased =
 
                 // create instance buffer
                 let instanceBuffer = Gl.GenBuffer ()
-                let strideSize = Constants.Render.InstanceFieldCount * sizeof<single>
                 Gl.BindBuffer (BufferTarget.ArrayBuffer, instanceBuffer)
-                let instanceDataPtr = GCHandle.Alloc (m4Identity.ToArray (), GCHandleType.Pinned)
+                let instanceData = Array.zeroCreate Constants.Render.InstanceFieldCount
+                m4Identity.ToArray (instanceData, 0)
+                let strideSize = instanceData.Length * sizeof<single>
+                let instanceDataPtr = GCHandle.Alloc (instanceData, GCHandleType.Pinned)
                 try Gl.BufferData (BufferTarget.ArrayBuffer, uint strideSize, instanceDataPtr.AddrOfPinnedObject (), BufferUsage.StreamDraw)
                 finally instanceDataPtr.Free ()
                 Gl.EnableVertexAttribArray 6u
