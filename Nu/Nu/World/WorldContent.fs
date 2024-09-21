@@ -320,7 +320,7 @@ module Content =
                         let world =
                             if not (group.GetExists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
-                                | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                                | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> snd
                                 | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
                             else world
                         let world = World.setGroupProtected true group world |> snd'
