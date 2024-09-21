@@ -160,6 +160,8 @@ module Hl =
               SwapchainImageViews : VkImageView array
               CommandPool : VkCommandPool
               CommandBuffer : VkCommandBuffer
+              GraphicsQueue : VkQueue
+              PresentQueue : VkQueue
               ImageAvailableSemaphore : VkSemaphore
               RenderFinishedSemaphore : VkSemaphore
               InFlightFence : VkFence
@@ -324,20 +326,6 @@ module Hl =
             // fin
             device
 
-        /// Get command queues.
-        static member getQueues (physicalDeviceData : PhysicalDeviceData) device =
-
-            // queue handles
-            let mutable graphicsQueue = Unchecked.defaultof<VkQueue>
-            let mutable presentQueue = Unchecked.defaultof<VkQueue>
-
-            // get queues
-            vkGetDeviceQueue (device, physicalDeviceData.GraphicsQueueFamily, 0u, &graphicsQueue)
-            vkGetDeviceQueue (device, physicalDeviceData.PresentQueueFamily, 0u, &presentQueue)
-
-            // fin
-            (graphicsQueue, presentQueue)
-        
         /// Get surface format.
         static member getSurfaceFormat formats =
             
@@ -511,6 +499,12 @@ module Hl =
             // fin
             commandBuffer
 
+        /// Get command queue.
+        static member getQueue queueFamilyIndex device =
+            let mutable queue = Unchecked.defaultof<VkQueue>
+            vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
+            queue
+        
         /// Create a semaphore.
         static member createSemaphore device =
             let mutable semaphore = Unchecked.defaultof<VkSemaphore>
@@ -643,9 +637,6 @@ module Hl =
                 // load device commands; not vulkan function
                 vkLoadDevice device
 
-                // get queues
-                let (graphicsQueue, presentQueue) = VulkanGlobal.getQueues physicalDeviceData device
-
                 // get surface format and swap extent
                 let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
                 let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
@@ -655,9 +646,11 @@ module Hl =
                 let swapchainImages = VulkanGlobal.getSwapchainImages swapchain device
                 let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
 
-                // setup command pool and buffer
+                // setup command system
                 let commandPool = VulkanGlobal.createCommandPool physicalDeviceData.GraphicsQueueFamily device
                 let commandBuffer = VulkanGlobal.allocateCommandBuffer commandPool device
+                let graphicsQueue = VulkanGlobal.getQueue physicalDeviceData.GraphicsQueueFamily device
+                let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
 
                 // create sync objects
                 let imageAvailableSemaphore = VulkanGlobal.createSemaphore device
@@ -679,6 +672,8 @@ module Hl =
                       SwapchainImageViews = swapchainImageViews
                       CommandPool = commandPool
                       CommandBuffer = commandBuffer
+                      GraphicsQueue = graphicsQueue
+                      PresentQueue = presentQueue
                       ImageAvailableSemaphore = imageAvailableSemaphore
                       RenderFinishedSemaphore = renderFinishedSemaphore
                       InFlightFence = inFlightFence
