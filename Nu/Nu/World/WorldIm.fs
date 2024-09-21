@@ -71,7 +71,7 @@ module WorldIm =
         static member scopeWorld world =
             World.setImCurrent Address.empty world
 
-        static member beginGame (args : Game ImProperty seq) (world : World) =
+        static member beginGame (world : World) (args : Game ImProperty seq) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
@@ -85,11 +85,11 @@ module WorldIm =
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndGame mismatch.")
 
-        static member game args world =
-            let world = World.beginGame args world
+        static member doGame world args =
+            let world = World.beginGame world args
             World.endGame world
 
-        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select (args : Screen ImProperty seq) (world : World) =
+        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select (world : World) (args : Screen ImProperty seq) =
             let screenAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
@@ -124,11 +124,11 @@ module WorldIm =
                 World.setImCurrent Game.GameAddress world
             | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
 
-        static member screenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select args world =
-            let world = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select args world
+        static member doScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select world args =
+            let world = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select world args
             World.endScreen world
 
-        static member beginGroup<'d when 'd :> GroupDispatcher> name (args : Group ImProperty seq) (world : World) =
+        static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ImProperty seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
@@ -161,11 +161,11 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
 
-        static member group<'d when 'd :> GroupDispatcher> name args world =
-            let world = World.beginGroup<'d> name args world
+        static member doGroup<'d when 'd :> GroupDispatcher> name world args =
+            let world = World.beginGroup<'d> name world args
             World.endGroup world
 
-        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> init inspect name (args : Entity ImProperty seq) (world : World) : 'r * World =
+        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> init inspect name (world : World) (args : Entity ImProperty seq) : 'r * World =
             let entityAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
@@ -197,8 +197,8 @@ module WorldIm =
                     world args
             (inspect results, world)
 
-        static member beginEntity<'d when 'd :> EntityDispatcher> name args world =
-            World.beginEntityPlus<'d, unit> (fun _ _ -> ([||], world)) (fun _ -> ()) name args world |> snd
+        static member beginEntity<'d when 'd :> EntityDispatcher> name world args =
+            World.beginEntityPlus<'d, unit> (fun _ _ -> ([||], world)) (fun _ -> ()) name world args |> snd
 
         static member endEntity (world : World) =
             match world.ImCurrent with
@@ -211,24 +211,24 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
-        static member entityPlus<'d, 'r when 'd :> EntityDispatcher> init inspect name args world =
-            let (result, world) = World.beginEntityPlus<'d, 'r> init inspect name args world
+        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> init inspect name world args =
+            let (result, world) = World.beginEntityPlus<'d, 'r> init inspect name world args
             let world = World.endEntity world
             (result, world)
 
-        static member entity<'d when 'd :> EntityDispatcher> name args world =
-            let world = World.beginEntity<'d> name args world
+        static member doEntity<'d when 'd :> EntityDispatcher> name world args =
+            let world = World.beginEntity<'d> name world args
             World.endEntity world
 
         /// Declare a text entity with the given arguments.
-        static member text name args world = World.entity<TextDispatcher> name args world
+        static member doText name world args = World.doEntity<TextDispatcher> name world args
 
         /// Declare a label with the given arguments.
-        static member label name args world = World.entity<LabelDispatcher> name args world
+        static member doLabel name world args = World.doEntity<LabelDispatcher> name world args
 
         /// Declare a button with the given arguments.
-        static member button name args world =
-            World.entityPlus<ButtonDispatcher, bool>
+        static member doButton name world args =
+            World.doEntityPlus<ButtonDispatcher, bool>
                 (fun button world ->
                     let result = ref false
                     let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
@@ -238,11 +238,11 @@ module WorldIm =
                     let result = resultRef.Value
                     resultRef.Value <- false
                     result)
-                name args world
+                name world args
 
         /// Declare a toggle button with the given arguments.
-        static member toggleButton name args world =
-            World.entityPlus<ToggleButtonDispatcher, bool>
+        static member doToggleButton name world args =
+            World.doEntityPlus<ToggleButtonDispatcher, bool>
                 (fun button world ->
                     let result = ref false
                     let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
@@ -252,11 +252,11 @@ module WorldIm =
                     let result = resultRef.Value
                     resultRef.Value <- false
                     result)
-                name args world
+                name world args
 
         /// Declare a radio button with the given arguments.
-        static member radioButton name args world =
-            World.entityPlus<ToggleButtonDispatcher, bool>
+        static member doRadioButton name world args =
+            World.doEntityPlus<ToggleButtonDispatcher, bool>
                 (fun button world ->
                     let result = ref false
                     let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
@@ -266,14 +266,14 @@ module WorldIm =
                     let result = resultRef.Value
                     resultRef.Value <- false
                     result)
-                name args world
+                name world args
 
         /// Declare a fill bar with the given arguments.
-        static member fillBar name args world = World.entity<FillBarDispatcher> name args world
+        static member doFillBar name world args = World.doEntity<FillBarDispatcher> name world args
 
         /// Declare a feeler with the given arguments.
-        static member feelerButton name args world =
-            World.entityPlus<FeelerDispatcher, bool>
+        static member doFeelerButton name world args =
+            World.doEntityPlus<FeelerDispatcher, bool>
                 (fun feeler world ->
                     let result = ref false
                     let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) feeler.TouchEvent feeler world
@@ -283,16 +283,16 @@ module WorldIm =
                     let result = resultRef.Value
                     resultRef.Value <- false
                     result)
-                name args world
+                name world args
 
         /// Declare an fps entity with the given arguments.
-        static member fps name args world = World.entity<FpsDispatcher> name args world
+        static member doFps name world args = World.doEntity<FpsDispatcher> name world args
 
         /// Declare the beginning of a panel with the given arguments.
-        static member beginPanel name args world = World.beginEntity<PanelDispatcher> name args world
+        static member beginPanel name world args = World.beginEntity<PanelDispatcher> name world args
 
         /// Declare the end of a panel.
         static member endPanel world = World.endEntity world
 
         /// Declare a panel with the given arguments.
-        static member panel name args world = World.entity<PanelDispatcher> name args world
+        static member doPanel name world args = World.doEntity<PanelDispatcher> name world args

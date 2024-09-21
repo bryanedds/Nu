@@ -2466,11 +2466,11 @@ module ScreenDispatcherModule =
 
     type World with
 
-        static member beginScreen<'d when 'd :> ScreenDispatcher> name behavior select args world =
-            World.beginScreenInternal<'d> World.transitionScreen World.setScreenSlide name behavior select args world
+        static member beginScreen<'d when 'd :> ScreenDispatcher> name behavior select world args =
+            World.beginScreenInternal<'d> World.transitionScreen World.setScreenSlide name behavior select world args
 
-        static member screen<'d when 'd :> ScreenDispatcher> name behavior select args world =
-            World.screenInternal<'d> World.transitionScreen World.setScreenSlide name behavior select args world
+        static member doScreen<'d when 'd :> ScreenDispatcher> name behavior select world args =
+            World.doScreenInternal<'d> World.transitionScreen World.setScreenSlide name behavior select world args
 
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =

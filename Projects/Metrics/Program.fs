@@ -4,7 +4,7 @@ open System.IO
 open System.Numerics
 open Prime
 open Nu
-
+(*
 type MetricsEntityDispatcher () =
     inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, false, false, Assets.Default.StaticModel)
 
@@ -55,23 +55,9 @@ type MyGameDispatcher () =
 
     override this.Update (game, world) =
         let world = base.Update (game, world)
-
-        let world =
-            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-            then World.exit world
-            else world
-
-        let world = World.imBeginGame world
-        let world = World.imBeginScreen ("Screen", world)
-        let world = World.imBeginGroup ("Group", world)
-        let world =
-            match World.imButton ("Button", world, Entity.Text == "Hello, WorldIm!") with
-            | (true, world) -> World.playSound 1.0f Assets.Default.Sound world; world
-            | (false, world) -> world
-        let world = World.imEndGroup world
-        let world = World.imEndScreen world
-        let world = World.imEndGame world
-        world
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world
 #else
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
@@ -120,6 +106,35 @@ type MmccGameDispatcher () =
         then World.exit world
         else world
 #endif
+*)
+type Counter =
+    { Count : int }
+
+type ImGameDispatcher () =
+    inherit GameDispatcher<Counter> ({ Count = 0 })
+
+    override this.Run (counter, _, world) =
+        let world = World.beginGame world []
+        let world = World.beginScreen "Screen" (Dissolve (Constants.Dissolve.Default, None)) true world []
+        let world = World.beginGroup "Group" world []
+        let world = World.beginPanel "Panel" world [Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
+        let world = World.doText "Text" world [Entity.Text .= "Counter"]
+        let (counter, world) =
+            match World.doButton "Button" world [Entity.Text .= string counter.Count] with 
+            | (true, world) -> ({ counter with Count = min 10 (inc counter.Count) }, world)
+            | (false, world) -> (counter, world)
+        let world = World.doFillBar "FillBar" world [Entity.Fill .= single counter.Count / 10.0f]
+        let world = World.endPanel world
+        let world = World.endGroup world
+        let world = World.endScreen world
+        let world = World.endGame world
+        (counter, world)
+
+    override this.Update (game, world) =
+        let world = base.Update (game, world)        
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world
 
 type MetricsPlugin () =
     inherit NuPlugin ()
