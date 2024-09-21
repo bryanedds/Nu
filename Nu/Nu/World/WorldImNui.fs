@@ -398,7 +398,7 @@ module WorldImNui =
         static member scopeWorld world =
             World.setContextImNui Address.empty world
 
-        static member internal updateImNui (world : World) =
+        static member internal collectImNui (world : World) =
             if world.Advancing then
                 OMap.fold (fun world simulant simulantImNui ->
                     if not simulantImNui.Utilized then
