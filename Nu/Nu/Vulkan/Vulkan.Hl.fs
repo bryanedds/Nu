@@ -321,7 +321,7 @@ module Hl =
             createInfo.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
 
             // create device
-            vkCreateDevice (physicalDeviceData.PhysicalDevice, asPointer &createInfo, nullPtr, &device) |> check
+            vkCreateDevice (physicalDeviceData.PhysicalDevice, &createInfo, nullPtr, &device) |> check
 
             // fin
             device
@@ -422,7 +422,7 @@ module Hl =
             createInfo.oldSwapchain <- VkSwapchainKHR.Null
 
             // create swapchain
-            vkCreateSwapchainKHR (device, asPointer &createInfo, nullPtr, &swapchain) |> check
+            vkCreateSwapchainKHR (device, &createInfo, nullPtr, &swapchain) |> check
 
             // fin
             swapchain
@@ -459,7 +459,7 @@ module Hl =
                 createInfo.subresourceRange.layerCount <- 1u
 
                 // create image view
-                vkCreateImageView (device, asPointer &createInfo, nullPtr, &imageViews[i]) |> check
+                vkCreateImageView (device, &createInfo, nullPtr, &imageViews[i]) |> check
 
             // fin
             imageViews
@@ -476,7 +476,7 @@ module Hl =
             createInfo.queueFamilyIndex <- queueFamilyIndex
 
             // create command pool
-            vkCreateCommandPool (device, asPointer &createInfo, nullPtr, &commandPool) |> check
+            vkCreateCommandPool (device, &createInfo, nullPtr, &commandPool) |> check
 
             // fin
             commandPool
@@ -515,7 +515,8 @@ module Hl =
         /// Create a fence.
         static member createFence device =
             let mutable fence = Unchecked.defaultof<VkFence>
-            let createInfo = VkFenceCreateInfo ()
+            let mutable createInfo = VkFenceCreateInfo ()
+            createInfo.flags <- VK_FENCE_CREATE_SIGNALED_BIT
             vkCreateFence (device, &createInfo, nullPtr, &fence) |> check
             fence
         
@@ -568,7 +569,7 @@ module Hl =
             createInfo.pDependencies <- asPointer &dependency
 
             // create renderpass
-            vkCreateRenderPass (device, asPointer &createInfo, nullPtr, &renderPass) |> check
+            vkCreateRenderPass (device, &createInfo, nullPtr, &renderPass) |> check
 
             // fin
             renderPass
@@ -591,10 +592,20 @@ module Hl =
                 createInfo.layers <- 1u
 
                 // create framebuffer
-                vkCreateFramebuffer (device, asPointer &createInfo, nullPtr, &framebuffers[i]) |> check
+                vkCreateFramebuffer (device, &createInfo, nullPtr, &framebuffers[i]) |> check
             
             // fin
             framebuffers
+        
+        /// Begin the frame and clear the screen.
+        static member beginFrame vulkanGlobal =
+            
+            ()
+
+        /// End the frame.
+        static member endFrame vulkanGlobal =
+            
+            ()
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
