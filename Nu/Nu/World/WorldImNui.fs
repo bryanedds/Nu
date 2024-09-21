@@ -237,7 +237,7 @@ module WorldImNui =
         static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         ///
-        static member internal beginGroup4<'d when 'd :> GroupDispatcher> name (groupFilePathOpt : string option) (world : World) (args : Group ArgImNui seq) =
+        static member private beginGroup4<'d when 'd :> GroupDispatcher> name (groupFilePathOpt : string option) (world : World) (args : Group ArgImNui seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContextImNui groupAddress world
             let group = Nu.Group groupAddress
@@ -260,11 +260,11 @@ module WorldImNui =
                 world args
 
         ///
-        static member internal beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath world args =
+        static member beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath world args =
             World.beginGroup4<'d> name (Some groupFilePath) world args
 
         ///
-        static member internal beginGroup<'d when 'd :> GroupDispatcher> name world args =
+        static member beginGroup<'d when 'd :> GroupDispatcher> name world args =
             World.beginGroup4<'d> name None world args
             
         ///
