@@ -110,6 +110,15 @@ module WorldIm =
             let world = World.beginEntity<'d> name world args
             World.endEntity world
 
+        /// Begin the declaration of associated gui entities with the given arguments.
+        static member beginAssociation name world args = World.beginEntity<GuiDispatcher> name world args
+
+        /// End the declaration of associated gui entities.
+        static member endAssociation world = World.endEntity world
+
+        /// Declare an empty association of gui entities with the given arguments.
+        static member doAssociation name world args = World.doEntity<GuiDispatcher> name world args
+
         /// Declare a 2d effect with the given arguments.
         static member doEffect2d name world args = World.doEntity<Effect2dDispatcher> name world args
 
