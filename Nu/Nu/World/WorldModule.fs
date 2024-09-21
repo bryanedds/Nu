@@ -244,10 +244,10 @@ module WorldModule =
 
         static member internal utilizeImSimulant simulant imSimulant (world : World) =
             if world.Imperative then
-                imSimulant.Utilized <- true
+                imSimulant.ImUtilized <- true
                 world
             else
-                let imSimulant = { imSimulant with Utilized = true }
+                let imSimulant = { imSimulant with ImUtilized = true }
                 let imSimulants = OMap.add simulant imSimulant world.ImSimulants
                 World.setImSimulants imSimulants world
 

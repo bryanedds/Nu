@@ -1761,16 +1761,16 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-/// Provides bookkeeping information for the ImNui API.
+/// Provides bookkeeping information with the ImNui API.
 and [<NoEquality; NoComparison>] internal ImSimulant =
-    { mutable Utilized : bool
-      Result : obj }
+    { mutable ImUtilized : bool
+      ImResult : obj }
 
-/// Describes a property argument used for the ImNui API.
-and [<Struct>] ImPropertyArg<'s when 's :> Simulant> =
-    { ImPropertyArgStatic : bool
-      ImPropertyArgLens : Lens
-      ImPropertyArgValue : obj }
+/// Describes an argument used with the ImNui API.
+and [<Struct>] ImArg<'s when 's :> Simulant> =
+    { ImArgStatic : bool
+      ImArgLens : Lens
+      ImArgValue : obj }
 
 /// The world's dispatchers (including facets).
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
