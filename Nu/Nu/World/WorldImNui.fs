@@ -237,7 +237,7 @@ module WorldImNui =
         static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         ///
-        static member private beginGroup4<'d when 'd :> GroupDispatcher> name (groupFilePathOpt : string option) (world : World) (args : Group ArgImNui seq) =
+        static member private beginGroup4<'d when 'd :> GroupDispatcher> name groupFilePathOpt (world : World) (args : Group ArgImNui seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContextImNui groupAddress world
             let group = Nu.Group groupAddress
@@ -280,7 +280,7 @@ module WorldImNui =
             let world = World.beginGroup<'d> name world args
             World.endGroup world
 
-        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select (world : World) (args : Screen ArgImNui seq) =
+        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContextImNui screenAddress world
             let screen = Nu.Screen screenAddress
@@ -290,7 +290,13 @@ module WorldImNui =
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
-                    let world = if not (screen.GetExists world) then World.createScreen<'d> (Some name) world |> snd else world // NOTE: special-case when Gaia has already created the screen.
+                    let world =
+                        if not (screen.GetExists world) then // NOTE: special-case when Gaia has already created the screen.
+                            let world = World.createScreen<'d> (Some name) world |> snd
+                            match groupFilePathOpt with
+                            | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                            | None -> world
+                        else world
                     let world = World.setScreenProtected true screen world |> snd'
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun screenImNui -> { screenImNui with Result = mapper (screenImNui.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
@@ -319,8 +325,8 @@ module WorldImNui =
                 World.setContextImNui Game.GameAddress world
             | _ -> raise (new InvalidOperationException "World.beginScreen mismatch.")
 
-        static member doScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select world args =
-            let (result, world) = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select world args
+        static member internal doScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args =
+            let (result, world) = World.beginScreen8<'d> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args
             let world = World.endScreen world
             (result, world)
 
