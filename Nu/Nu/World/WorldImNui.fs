@@ -247,9 +247,11 @@ module WorldImNui =
                 | (false, _) ->
                     let world = World.addSimulantImNui group { Utilized = true; Result = () } world
                     let world =
-                        match groupFilePathOpt with
-                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                        | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
+                        if not (group.GetExists world && group.Names = [|"Game"; "Screen"; "Group"|]) then // NOTE: special-case when Gaia has already created the group.
+                            match groupFilePathOpt with
+                            | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
+                            | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
+                        else world
                     let world = World.setGroupProtected true group world |> snd'
                     (true, world)
             Seq.fold
@@ -291,13 +293,14 @@ module WorldImNui =
                 | (false, _) ->
                     let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
                     let world =
-                        if not (screen.GetExists world) then // NOTE: special-case when Gaia has already created the screen.
-                            let world = World.createScreen<'d> (Some name) world |> snd
-                            match groupFilePathOpt with
-                            | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                            | None -> world
+                        if not (screen.GetExists world && screen.Names = [|"Game"; "Screen"|]) // NOTE: special-case when Gaia has already created the screen.
+                        then World.createScreen<'d> (Some name) world |> snd
                         else world
                     let world = World.setScreenProtected true screen world |> snd'
+                    let world =
+                        match groupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                        | None -> world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun screenImNui -> { screenImNui with Result = mapper (screenImNui.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
