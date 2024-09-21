@@ -270,9 +270,9 @@ module WorldModule3 =
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension =
-                { ImSimulants = OMap.makeEmpty HashIdentity.Structural config
-                  ImCurrent = Address.empty
-                  ImRecent = Address.empty
+                { SimulantImNuis = OMap.makeEmpty HashIdentity.Structural config
+                  ContextImNui = Address.empty
+                  RecentImNui = Address.empty
                   DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin

@@ -1762,15 +1762,15 @@ and GameDescriptor =
           ScreenDescriptors = [] }
 
 /// Provides bookkeeping information with the ImNui API.
-and [<NoEquality; NoComparison>] internal ImSimulant =
-    { mutable ImUtilized : bool
-      ImResult : obj }
+and [<NoEquality; NoComparison>] internal SimulantImNui =
+    { mutable Utilized : bool
+      Result : obj }
 
 /// Describes an argument used with the ImNui API.
-and [<Struct>] ImArg<'s when 's :> Simulant> =
-    { ImArgStatic : bool
-      ImArgLens : Lens
-      ImArgValue : obj }
+and [<Struct>] ArgImNui<'s when 's :> Simulant> =
+    { ArgStatic : bool
+      ArgLens : Lens
+      ArgValue : obj }
 
 /// The world's dispatchers (including facets).
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
@@ -1792,9 +1792,9 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { mutable ImSimulants : OMap<Simulant, ImSimulant>
-      mutable ImCurrent : Address
-      mutable ImRecent : Address
+    { mutable SimulantImNuis : OMap<Simulant, SimulantImNui>
+      mutable ContextImNui : Address
+      mutable RecentImNui : Address
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
@@ -1889,16 +1889,16 @@ and [<ReferenceEquality>] World =
     member this.Timers =
         AmbientState.getTimers this.AmbientState
 
-    member internal this.ImSimulants =
-        this.WorldExtension.ImSimulants
+    member internal this.SimulantImNuis =
+        this.WorldExtension.SimulantImNuis
 
     /// The current ImNui context.
-    member this.ImCurrent =
-        this.WorldExtension.ImCurrent
+    member this.ContextImNui =
+        this.WorldExtension.ContextImNui
 
     /// The most recent but non-current ImNui context.
-    member this.ImRecent =
-        this.WorldExtension.ImRecent
+    member this.RecentImNui =
+        this.WorldExtension.RecentImNui
 
 #if DEBUG
     member internal this.Choose () =

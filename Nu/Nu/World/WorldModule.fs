@@ -219,53 +219,53 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
-        static member internal getImSimulants (world : World) =
-            world.ImSimulants
+        static member internal getSimulantImNuis (world : World) =
+            world.SimulantImNuis
 
-        static member internal setImSimulants imSimulants (world : World) =
+        static member internal setSimulantImNuis simulantImNuis (world : World) =
             if world.Imperative then
-                world.WorldExtension.ImSimulants <- imSimulants
+                world.WorldExtension.SimulantImNuis <- simulantImNuis
                 world
             else
-                let worldExtension = { world.WorldExtension with ImSimulants = imSimulants }
+                let worldExtension = { world.WorldExtension with SimulantImNuis = simulantImNuis }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal getImSimulant simulant (world : World) =
-            world.ImSimulants.[simulant] |> __c'
+        static member internal getSimulantImNui simulant (world : World) =
+            world.SimulantImNuis.[simulant] |> __c'
 
-        static member internal addImSimulant simulant imSimulant (world : World) =
-            let imSimulants = OMap.add simulant imSimulant world.ImSimulants
-            World.setImSimulants imSimulants world
+        static member internal addSimulantImNui simulant simulantImNui (world : World) =
+            let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
+            World.setSimulantImNuis simulantImNuis world
 
-        static member internal mapImSimulant mapper simulant world =
-            let imSimulant = World.getImSimulant simulant world
-            let imSimulant = mapper imSimulant
-            World.addImSimulant simulant imSimulant world
+        static member internal mapSimulantImNui mapper simulant world =
+            let simulantImNui = World.getSimulantImNui simulant world
+            let simulantImNui = mapper simulantImNui
+            World.addSimulantImNui simulant simulantImNui world
 
-        static member internal utilizeImSimulant simulant imSimulant (world : World) =
+        static member internal utilizeSimulantImNui simulant simulantImNui (world : World) =
             if world.Imperative then
-                imSimulant.ImUtilized <- true
+                simulantImNui.Utilized <- true
                 world
             else
-                let imSimulant = { imSimulant with ImUtilized = true }
-                let imSimulants = OMap.add simulant imSimulant world.ImSimulants
-                World.setImSimulants imSimulants world
+                let simulantImNui = { simulantImNui with Utilized = true }
+                let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
+                World.setSimulantImNuis simulantImNuis world
 
         /// Get the current ImNui context.
-        static member getImCurrent (world : World) =
-            world.ImCurrent
+        static member getContextImNui (world : World) =
+            world.ContextImNui
 
         /// Get the most recent but non-current ImNui context.
-        static member getImRecent (world : World) =
-            world.ImRecent
+        static member getRenderImNui (world : World) =
+            world.RecentImNui
 
-        static member internal setImCurrent context (world : World) =
+        static member internal setContextImNui context (world : World) =
             if world.Imperative then
-                world.WorldExtension.ImRecent <- world.WorldExtension.ImCurrent
-                world.WorldExtension.ImCurrent <- context
+                world.WorldExtension.RecentImNui <- world.WorldExtension.ContextImNui
+                world.WorldExtension.ContextImNui <- context
                 world
             else
-                let worldExtension = { world.WorldExtension with ImRecent = world.WorldExtension.ImCurrent; ImCurrent = context }
+                let worldExtension = { world.WorldExtension with RecentImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
                 World.choose { world with WorldExtension = worldExtension }
 
         /// Switch simulation to use this ambient state.
