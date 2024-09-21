@@ -125,15 +125,13 @@ type ImGameDispatcher () =
             | (false, world) -> (counter, world)
         let world = World.doFillBar "FillBar" world [Entity.Fill .= single counter.Count / 10.0f]
         let world = World.endPanel world
-        let (events, world) = World.doBlock2d "Block2d" world []
+        let (happenings, world) = World.doBox2d "Box2d" world [Entity.Position @= v3 0.0f 192.0f 0.0f]
         let (counter, world) =
-            FQueue.fold (fun (counter, world) event ->
-                match event with
-                | BodyPenetration _ -> ({ counter with Count = 0 }, world)
-                | BodySeparationExplicit _ -> ({ counter with Count = dec counter.Count }, world)
-                | BodySeparationImplicit _ -> (counter, world)
-                | BodyTransform _ -> (counter, world))
-                (counter, world) events
+            FQueue.fold (fun (counter, world) happening ->
+                match happening with
+                | BodyPenetration _ -> ({ counter with Count = dec counter.Count }, world)
+                | _ -> (counter, world))
+                (counter, world) happenings
         let world = World.endGroup world
         let world = World.endScreen world
         let world = World.endGame world

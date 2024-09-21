@@ -1768,7 +1768,8 @@ and [<NoEquality; NoComparison>] internal ImSimulant =
 
 /// Describes a property used for the immediate-mode simulant API.
 and [<Struct>] ImProperty<'s when 's :> Simulant> =
-    { ImPropertyLens : Lens
+    { ImPropertyStatic : bool
+      ImPropertyLens : Lens
       ImPropertyValue : obj }
 
 /// The world's dispatchers (including facets).

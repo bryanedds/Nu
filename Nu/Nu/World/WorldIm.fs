@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 ///
-type ScreenEvent =
+type ScreenHappening =
     | Select
     | Deselecting
     | IncomingStart
@@ -16,8 +16,8 @@ type ScreenEvent =
     | OutgoingStart
     | OutgoingFinish
 
-/// Describes an immediate mode physics body event.
-type BodyEvent =
+/// Describes an immediate-mode physics body event.
+type BodyHappening =
     | BodyPenetration of BodyPenetrationData
     | BodySeparationExplicit of BodySeparationExplicitData
     | BodySeparationImplicit of BodySeparationImplicitData
@@ -32,7 +32,15 @@ module WorldIm =
         inline
 #endif
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ImPropertyLens = lens; ImPropertyValue = value } : 's ImProperty
+        { ImPropertyStatic = false; ImPropertyLens = lens; ImPropertyValue = value } : 's ImProperty
+
+    /// Define an immediate-mode property definition.
+    let
+#if !DEBUG
+        inline
+#endif
+        (@=) (lens : Lens<'a, 's>) (value : 'a) =
+        { ImPropertyStatic = true; ImPropertyLens = lens; ImPropertyValue = value } : 's ImProperty
 
     type World with
 
@@ -92,7 +100,10 @@ module WorldIm =
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
             Seq.fold
-                (fun world arg -> game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c')
+                (fun world arg ->
+                    if not arg.ImPropertyStatic
+                    then game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                    else world)
                 world args
 
         static member endGame (world : World) =
@@ -109,12 +120,12 @@ module WorldIm =
             let screenAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
-            let world =
+            let (initializing, world) =
                 let imSimulants = world.ImSimulants
                 match imSimulants.TryGetValue screen with
-                | (true, imScreen) -> World.utilizeImSimulant screen imScreen world
+                | (true, imScreen) -> (false, World.utilizeImSimulant screen imScreen world)
                 | (false, _) ->
-                    let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenEvent> } world
+                    let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenHappening> } world
                     let world = World.createScreen<'d> (Some name) world |> snd
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
@@ -123,17 +134,17 @@ module WorldIm =
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
-                    world
+                    (true, world)
             let world =
                 Seq.fold
                     (fun world arg ->
-                        if screen.GetExists world
+                        if (initializing || not arg.ImPropertyStatic) && screen.GetExists world
                         then screen.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                         else world)
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
             let world = if screen.GetExists world && select then transitionScreen screen world else world
-            let result = (World.getImSimulant screen world).Result :?> ScreenEvent FQueue
+            let result = (World.getImSimulant screen world).Result :?> ScreenHappening FQueue
             (result, world)
 
         static member endScreen (world : World) =
@@ -151,17 +162,17 @@ module WorldIm =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
-            let world =
+            let (initializing, world) =
                 let imSimulants = world.ImSimulants
                 match imSimulants.TryGetValue group with
-                | (true, imGroup) -> World.utilizeImSimulant group imGroup world
+                | (true, imGroup) -> (false, World.utilizeImSimulant group imGroup world)
                 | (false, _) ->
                     let world = World.addImSimulant group { Utilized = true; Result = () } world
                     let world = World.createGroup<'d> (Some name) group.Screen world |> snd
-                    World.setImSimulants imSimulants world
+                    (true, World.setImSimulants imSimulants world)
             Seq.fold
                 (fun world arg ->
-                    if group.GetExists world
+                    if (initializing || not arg.ImPropertyStatic) && group.GetExists world
                     then group.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                     else world)
                 world args
@@ -177,23 +188,24 @@ module WorldIm =
             let world = World.beginGroup<'d> name world args
             World.endGroup world
 
+        // TODO: optimize this for large-scale use.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ImProperty seq) : 'r * World =
             let entityAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
-            let world =
+            let (initializing, world) =
                 match world.ImSimulants.TryGetValue entity with
-                | (true, imEntity) -> World.utilizeImSimulant entity imEntity world
+                | (true, imEntity) -> (false, World.utilizeImSimulant entity imEntity world)
                 | (false, _) ->
                     let world = World.addImSimulant entity { Utilized = true; Result = zero } world
                     let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                     let world = if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) entity world
-                    init mapResult entity world
+                    (true, init mapResult entity world)
             let world =
                 Seq.fold
                     (fun world arg ->
-                        if entity.GetExists world
+                        if (initializing || not arg.ImPropertyStatic) && entity.GetExists world
                         then entity.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                         else world)
                     world args
@@ -278,9 +290,21 @@ module WorldIm =
             World.doEntityPlus<Block2dDispatcher, _>
                 FQueue.empty
                 (fun mapResult block2d world ->
-                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration evt.Data) world)) block2d.BodyPenetrationEvent block2d world
-                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit evt.Data) world)) block2d.BodySeparationExplicitEvent block2d world
-                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicit evt.Data) world)) block2d.BodySeparationImplicitEvent block2d world
-                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodyTransform evt.Data) world)) block2d.BodyTransformEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) block2d.BodyPenetrationEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit event.Data) world)) block2d.BodySeparationExplicitEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicit event.Data) world)) block2d.BodySeparationImplicitEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransform event.Data) world)) block2d.BodyTransformEvent block2d world
+                    world)
+                name world args
+
+        /// Declare a box2d with the given arguments.
+        static member doBox2d name world args =
+            World.doEntityPlus<Box2dDispatcher, _>
+                FQueue.empty
+                (fun mapResult block2d world ->
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) block2d.BodyPenetrationEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit event.Data) world)) block2d.BodySeparationExplicitEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicit event.Data) world)) block2d.BodySeparationImplicitEvent block2d world
+                    let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransform event.Data) world)) block2d.BodyTransformEvent block2d world
                     world)
                 name world args
