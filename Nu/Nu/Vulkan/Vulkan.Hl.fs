@@ -600,7 +600,23 @@ module Hl =
         /// Begin the frame and clear the screen.
         static member beginFrame vulkanGlobal =
             
-            ()
+            // swapchain image index and other handles
+            let mutable imageIndex = 0u
+            let device = vulkanGlobal.Device
+            let swapchain = vulkanGlobal.Swapchain
+            let imageAvailable = vulkanGlobal.ImageAvailableSemaphore
+            let mutable inFlight = vulkanGlobal.InFlightFence
+
+            // wait for previous cycle to finish
+            vkWaitForFences (device, 1u, asPointer &inFlight, VkBool32.True, UInt64.MaxValue) |> check
+            vkResetFences (device, 1u, asPointer &inFlight) |> check
+
+            // acquire image from swapchain to draw onto
+            vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
+            
+            
+            // fin
+            imageIndex
 
         /// End the frame.
         static member endFrame vulkanGlobal =
@@ -609,19 +625,24 @@ module Hl =
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =
-            for i in [0 .. dec vulkanGlobal.SwapchainFramebuffers.Length] do
-                vkDestroyFramebuffer (vulkanGlobal.Device, vulkanGlobal.SwapchainFramebuffers[i], nullPtr)
-            vkDestroyRenderPass (vulkanGlobal.Device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
-            vkDestroyFence (vulkanGlobal.Device, vulkanGlobal.InFlightFence, nullPtr)
-            vkDestroySemaphore (vulkanGlobal.Device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
-            vkDestroySemaphore (vulkanGlobal.Device, vulkanGlobal.ImageAvailableSemaphore, nullPtr)
-            vkDestroyCommandPool (vulkanGlobal.Device, vulkanGlobal.CommandPool, nullPtr)
-            for i in [0 .. dec vulkanGlobal.SwapchainImageViews.Length] do
-                vkDestroyImageView (vulkanGlobal.Device, vulkanGlobal.SwapchainImageViews[i], nullPtr)
-            vkDestroySwapchainKHR (vulkanGlobal.Device, vulkanGlobal.Swapchain, nullPtr)
-            vkDestroyDevice (vulkanGlobal.Device, nullPtr)
-            vkDestroySurfaceKHR (vulkanGlobal.Instance, vulkanGlobal.Surface, nullPtr)
-            vkDestroyInstance (vulkanGlobal.Instance, nullPtr)
+            
+            // commonly used handles
+            let instance = vulkanGlobal.Instance
+            let device = vulkanGlobal.Device
+            let framebuffers = vulkanGlobal.SwapchainFramebuffers
+            let imageViews = vulkanGlobal.SwapchainImageViews
+            
+            for i in [0 .. dec framebuffers.Length] do vkDestroyFramebuffer (device, framebuffers[i], nullPtr)
+            vkDestroyRenderPass (device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
+            vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
+            vkDestroySemaphore (device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
+            vkDestroySemaphore (device, vulkanGlobal.ImageAvailableSemaphore, nullPtr)
+            vkDestroyCommandPool (device, vulkanGlobal.CommandPool, nullPtr)
+            for i in [0 .. dec imageViews.Length] do vkDestroyImageView (device, imageViews[i], nullPtr)
+            vkDestroySwapchainKHR (device, vulkanGlobal.Swapchain, nullPtr)
+            vkDestroyDevice (device, nullPtr)
+            vkDestroySurfaceKHR (instance, vulkanGlobal.Surface, nullPtr)
+            vkDestroyInstance (instance, nullPtr)
         
         /// Try to make a VulkanGlobal.
         static member tryMake window =
