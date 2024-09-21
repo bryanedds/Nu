@@ -242,14 +242,13 @@ module WorldIm =
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
             let (initializing, world) =
-                let imSimulants = world.ImSimulants
-                match imSimulants.TryGetValue group with
+                match world.ImSimulants.TryGetValue group with
                 | (true, imGroup) -> (false, World.utilizeImSimulant group imGroup world)
                 | (false, _) ->
                     let world = World.addImSimulant group { Utilized = true; Result = () } world
                     let world = World.createGroup<'d> (Some name) group.Screen world |> snd
                     let world = World.setGroupProtected true group world |> snd'
-                    (true, World.setImSimulants imSimulants world)
+                    (true, world)
             Seq.fold
                 (fun world arg ->
                     if (initializing || not arg.ImPropertyStatic) && group.GetExists world
@@ -383,13 +382,12 @@ module WorldIm =
             OMap.fold (fun (world : World) simulant imSimulant ->
                 if not imSimulant.Utilized then
                     let world = World.destroyImmediate simulant world
-                    let imSimulants = OMap.remove simulant world.ImSimulants
-                    World.setImSimulants imSimulants world
+                    World.setImSimulants (OMap.remove simulant world.ImSimulants) world
                 else
                     if world.Imperative then
                         imSimulant.Utilized <- false
                         world
                     else
-                        let imSimulants = OMap.add simulant { imSimulant with Utilized = false } world.ImSimulants
-                        World.setImSimulants imSimulants world)
+                        let world = World.setImSimulants (OMap.add simulant { imSimulant with Utilized = false } world.ImSimulants) world
+                        world)
                 world world.ImSimulants
