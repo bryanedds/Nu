@@ -97,7 +97,7 @@ module WorldIm =
                     then Address.makeFromArray<Group> currentNames :> Address
                     else Address.makeFromArray<Entity> currentNames
                 World.setImCurrent currentAddress world
-            | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
+            | _ -> raise (new InvalidOperationException "World.beginEntity mismatch.")
 
         ///
         static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name world args =
@@ -254,7 +254,7 @@ module WorldIm =
             | :? (Group Address) as groupAddress ->
                 let currentAddress = Address.take<Group, Screen> 2 groupAddress
                 World.setImCurrent currentAddress world
-            | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
+            | _ -> raise (new InvalidOperationException "World.beginGroup mismatch.")
 
         ///
         static member doGroup<'d when 'd :> GroupDispatcher> name world args =
@@ -298,7 +298,7 @@ module WorldIm =
             match world.ImCurrent with
             | :? (Screen Address) ->
                 World.setImCurrent Game.GameAddress world
-            | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
+            | _ -> raise (new InvalidOperationException "World.beginScreen mismatch.")
 
         static member doScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select world args =
             let (result, world) = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select world args
@@ -322,7 +322,7 @@ module WorldIm =
             match world.ImCurrent with
             | :? (Game Address) ->
                 World.setImCurrent Address.empty world
-            | _ -> raise (new InvalidOperationException "ImEndGame mismatch.")
+            | _ -> raise (new InvalidOperationException "World.beginGame mismatch.")
 
         ///
         static member doGame world args =
