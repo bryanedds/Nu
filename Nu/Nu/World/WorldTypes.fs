@@ -754,7 +754,7 @@ and [<ReferenceEquality>] PropertyContent =
           PropertyValue = value }
 
 /// Describes definition content to the MMCC content system.
-and [<ReferenceEquality>] DefinitionContent =
+and [<ReferenceEquality>] DefinitionContent<'s when 's :> Simulant> =
     | PropertyContent of PropertyContent
     | EventSignalContent of obj Address * obj
     | EventHandlerContent of PartialEquatable<obj Address, Event -> obj>
