@@ -7,6 +7,22 @@ open System.Numerics
 open Prime
 open Nu
 
+///
+type ScreenEvent =
+    | Select
+    | Deselecting
+    | IncomingStart
+    | IncomingFinish
+    | OutgoingStart
+    | OutgoingFinish
+
+/// Describes an immediate mode physics body event.
+type BodyEvent =
+    | BodyPenetration of BodyPenetrationData
+    | BodySeparationExplicit of BodySeparationExplicitData
+    | BodySeparationImplicit of BodySeparationImplicitData
+    | BodyTransform of BodyTransformData
+
 [<AutoOpen>]
 module WorldIm =
 
@@ -96,18 +112,18 @@ module WorldIm =
             let world =
                 let imSimulants = world.ImSimulants
                 match imSimulants.TryGetValue screen with
-                | (true, imScreen) ->
-                    if world.Imperative then
-                        imScreen.Utilized <- true
-                        world
-                    else
-                        let imSimulants = OMap.add (screen :> Simulant) { imScreen with Utilized = true } imSimulants
-                        World.setImSimulants imSimulants world
+                | (true, imScreen) -> World.utilizeImSimulant screen imScreen world
                 | (false, _) ->
+                    let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenEvent> } world
                     let world = World.createScreen<'d> (Some name) world |> snd
-                    let imGroup = { Utilized = true; Results = [||] }
-                    let imSimulants = OMap.add (screen :> Simulant) imGroup imSimulants
-                    World.setImSimulants imSimulants world
+                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
+                    world
             let world =
                 Seq.fold
                     (fun world arg ->
@@ -116,7 +132,9 @@ module WorldIm =
                         else world)
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
-            if screen.GetExists world && select then transitionScreen screen world else world
+            let world = if screen.GetExists world && select then transitionScreen screen world else world
+            let result = (World.getImSimulant screen world).Result :?> ScreenEvent FQueue
+            (result, world)
 
         static member endScreen (world : World) =
             match world.ImCurrent with
@@ -125,8 +143,9 @@ module WorldIm =
             | _ -> raise (new InvalidOperationException "ImEndScreen mismatch.")
 
         static member doScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select world args =
-            let world = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select world args
-            World.endScreen world
+            let (result, world) = World.beginScreenInternal<'d> transitionScreen setScreenSlide name behavior select world args
+            let world = World.endScreen world
+            (result, world)
 
         static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ImProperty seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
@@ -135,17 +154,10 @@ module WorldIm =
             let world =
                 let imSimulants = world.ImSimulants
                 match imSimulants.TryGetValue group with
-                | (true, imGroup) ->
-                    if world.Imperative then
-                        imGroup.Utilized <- true
-                        world
-                    else
-                        let imSimulants = OMap.add (group :> Simulant) { imGroup with Utilized = true } imSimulants
-                        World.setImSimulants imSimulants world
+                | (true, imGroup) -> World.utilizeImSimulant group imGroup world
                 | (false, _) ->
+                    let world = World.addImSimulant group { Utilized = true; Result = () } world
                     let world = World.createGroup<'d> (Some name) group.Screen world |> snd
-                    let imGroup = { Utilized = true; Results = [||] }
-                    let imSimulants = OMap.add (group :> Simulant) imGroup imSimulants
                     World.setImSimulants imSimulants world
             Seq.fold
                 (fun world arg ->
@@ -165,29 +177,19 @@ module WorldIm =
             let world = World.beginGroup<'d> name world args
             World.endGroup world
 
-        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> init inspect name (world : World) (args : Entity ImProperty seq) : 'r * World =
+        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ImProperty seq) : 'r * World =
             let entityAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
-            let (results, world) =
-                let imSimulants = world.ImSimulants
-                match imSimulants.TryGetValue entity with
-                | (true, imEntity) ->
-                    if world.Imperative then
-                        imEntity.Utilized <- true
-                        (imEntity.Results, world)
-                    else
-                        let imSimulants = OMap.add (entity :> Simulant) { imEntity with Utilized = true } imSimulants
-                        let world = World.setImSimulants imSimulants world
-                        (imEntity.Results, world)
+            let world =
+                match world.ImSimulants.TryGetValue entity with
+                | (true, imEntity) -> World.utilizeImSimulant entity imEntity world
                 | (false, _) ->
+                    let world = World.addImSimulant entity { Utilized = true; Result = zero } world
                     let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
                     let world = if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
-                    let (results, world) = init entity world
-                    let imEntity = { Utilized = true; Results = results }
-                    let imSimulants = OMap.add (entity :> Simulant) imEntity imSimulants
-                    let world = World.setImSimulants imSimulants world
-                    (results, world)
+                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) entity world
+                    init mapResult entity world
             let world =
                 Seq.fold
                     (fun world arg ->
@@ -195,10 +197,12 @@ module WorldIm =
                         then entity.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
                         else world)
                     world args
-            (inspect results, world)
+            let result = (World.getImSimulant entity world).Result :?> 'r
+            let world = World.mapImSimulant (fun imSimulant -> { imSimulant with Result = zero }) entity world
+            (result, world)
 
         static member beginEntity<'d when 'd :> EntityDispatcher> name world args =
-            World.beginEntityPlus<'d, unit> (fun _ _ -> ([||], world)) (fun _ -> ()) name world args |> snd
+            World.beginEntityPlus<'d, unit> () (fun _ _ world -> world) name world args |> snd
 
         static member endEntity (world : World) =
             match world.ImCurrent with
@@ -211,8 +215,8 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
-        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> init inspect name world args =
-            let (result, world) = World.beginEntityPlus<'d, 'r> init inspect name world args
+        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name world args =
+            let (result, world) = World.beginEntityPlus<'d, 'r> zero init name world args
             let world = World.endEntity world
             (result, world)
 
@@ -229,60 +233,32 @@ module WorldIm =
         /// Declare a button with the given arguments.
         static member doButton name world args =
             World.doEntityPlus<ButtonDispatcher, bool>
-                (fun button world ->
-                    let result = ref false
-                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
-                    ([|result :> obj|], world))
-                (fun results ->
-                    let resultRef = results.[0] :?> bool ref
-                    let result = resultRef.Value
-                    resultRef.Value <- false
-                    result)
+                false
+                (fun mapResult button world -> World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) button.ClickEvent button world)
                 name world args
 
         /// Declare a toggle button with the given arguments.
         static member doToggleButton name world args =
             World.doEntityPlus<ToggleButtonDispatcher, bool>
-                (fun button world ->
-                    let result = ref false
-                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
-                    ([|result :> obj|], world))
-                (fun results ->
-                    let resultRef = results.[0] :?> bool ref
-                    let result = resultRef.Value
-                    resultRef.Value <- false
-                    result)
+                false
+                (fun mapResult toggleButton world -> World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) toggleButton.ClickEvent toggleButton world)
                 name world args
 
         /// Declare a radio button with the given arguments.
         static member doRadioButton name world args =
             World.doEntityPlus<ToggleButtonDispatcher, bool>
-                (fun button world ->
-                    let result = ref false
-                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) button.ClickEvent button world
-                    ([|result :> obj|], world))
-                (fun results ->
-                    let resultRef = results.[0] :?> bool ref
-                    let result = resultRef.Value
-                    resultRef.Value <- false
-                    result)
+                false
+                (fun mapResult radioButton world -> World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) radioButton.ClickEvent radioButton world)
                 name world args
 
         /// Declare a fill bar with the given arguments.
         static member doFillBar name world args = World.doEntity<FillBarDispatcher> name world args
 
         /// Declare a feeler with the given arguments.
-        static member doFeelerButton name world args =
+        static member doFeeler name world args =
             World.doEntityPlus<FeelerDispatcher, bool>
-                (fun feeler world ->
-                    let result = ref false
-                    let world = World.monitor (fun _ world -> result.Value <- true; (Cascade, world)) feeler.TouchEvent feeler world
-                    ([|result :> obj|], world))
-                (fun results ->
-                    let resultRef = results.[0] :?> bool ref
-                    let result = resultRef.Value
-                    resultRef.Value <- false
-                    result)
+                false
+                (fun mapResult feeler world -> World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) feeler.TouchEvent feeler world)
                 name world args
 
         /// Declare an fps entity with the given arguments.
@@ -296,3 +272,15 @@ module WorldIm =
 
         /// Declare a panel with the given arguments.
         static member doPanel name world args = World.doEntity<PanelDispatcher> name world args
+
+        /// Declare a block2d with the given arguments.
+        static member doBlock2d name world args =
+            World.doEntityPlus<Block2dDispatcher, _>
+                FQueue.empty
+                (fun mapResult block2d world ->
+                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration evt.Data) world)) block2d.BodyPenetrationEvent block2d world
+                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit evt.Data) world)) block2d.BodySeparationExplicitEvent block2d world
+                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicit evt.Data) world)) block2d.BodySeparationImplicitEvent block2d world
+                    let world = World.monitor (fun evt world -> (Cascade, mapResult (FQueue.conj $ BodyTransform evt.Data) world)) block2d.BodyTransformEvent block2d world
+                    world)
+                name world args

@@ -115,7 +115,7 @@ type ImGameDispatcher () =
 
     override this.Run (counter, _, world) =
         let world = World.beginGame world []
-        let world = World.beginScreen "Screen" (Dissolve (Constants.Dissolve.Default, None)) true world []
+        let (_, world) = World.beginScreen "Screen" (Dissolve (Constants.Dissolve.Default, None)) true world []
         let world = World.beginGroup "Group" world []
         let world = World.beginPanel "Panel" world [Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
         let world = World.doText "Text" world [Entity.Text .= "Counter"]
@@ -125,6 +125,15 @@ type ImGameDispatcher () =
             | (false, world) -> (counter, world)
         let world = World.doFillBar "FillBar" world [Entity.Fill .= single counter.Count / 10.0f]
         let world = World.endPanel world
+        let (events, world) = World.doBlock2d "Block2d" world []
+        let (counter, world) =
+            FQueue.fold (fun (counter, world) event ->
+                match event with
+                | BodyPenetration _ -> ({ counter with Count = 0 }, world)
+                | BodySeparationExplicit _ -> ({ counter with Count = dec counter.Count }, world)
+                | BodySeparationImplicit _ -> (counter, world)
+                | BodyTransform _ -> (counter, world))
+                (counter, world) events
         let world = World.endGroup world
         let world = World.endScreen world
         let world = World.endGame world

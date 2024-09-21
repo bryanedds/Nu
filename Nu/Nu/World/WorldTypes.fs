@@ -1764,7 +1764,7 @@ and GameDescriptor =
 /// Provides bookkeeping information for the immediate-mode simulant API.
 and [<NoEquality; NoComparison>] internal ImSimulant =
     { mutable Utilized : bool
-      Results : obj array }
+      Result : obj }
 
 /// Describes a property used for the immediate-mode simulant API.
 and [<Struct>] ImProperty<'s when 's :> Simulant> =
