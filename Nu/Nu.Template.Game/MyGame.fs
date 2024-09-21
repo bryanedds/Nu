@@ -45,12 +45,12 @@ type MyGameDispatcher () =
             | Title -> Desire Simulants.Title
             | Credits -> Desire Simulants.Credits
             | Gameplay -> Desire Simulants.Gameplay
-            if myGame = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
-            Simulants.TitleCredits.ClickEvent => ShowCredits
-            Simulants.TitlePlay.ClickEvent => ShowGameplay
-            Simulants.TitleExit.ClickEvent => Exit
-            Simulants.CreditsBack.ClickEvent => ShowTitle
-            Simulants.Gameplay.QuitEvent => ShowTitle]
+         if myGame = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
+         Simulants.TitleCredits.ClickEvent => ShowCredits
+         Simulants.TitlePlay.ClickEvent => ShowGameplay
+         Simulants.TitleExit.ClickEvent => Exit
+         Simulants.CreditsBack.ClickEvent => ShowTitle
+         Simulants.Gameplay.QuitEvent => ShowTitle]
 
     // here we handle the above messages
     override this.Message (_, message, _, _) =
