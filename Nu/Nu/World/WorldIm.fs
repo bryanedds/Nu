@@ -7,8 +7,8 @@ open System.Numerics
 open Prime
 open Nu
 
-///
-type ScreenHappening =
+/// Describes an immediate-mode screen result.
+type ScreenResult =
     | Select
     | Deselecting
     | IncomingStart
@@ -16,8 +16,8 @@ type ScreenHappening =
     | OutgoingStart
     | OutgoingFinish
 
-/// Describes an immediate-mode physics body event.
-type BodyHappening =
+/// Describes an immediate-mode physics body result.
+type BodyResult =
     | BodyPenetration of BodyPenetrationData
     | BodySeparationExplicit of BodySeparationExplicitData
     | BodySeparationImplicit of BodySeparationImplicitData
@@ -44,10 +44,10 @@ module WorldIm =
 
     type World with
 
-        static member initBoolHappening mapResult (button : Entity) world =
+        static member initBoolResult mapResult (button : Entity) world =
             World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) button.ClickEvent button world
 
-        static member initBodyHappening mapResult (entity : Entity) world =
+        static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) entity.BodyPenetrationEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit event.Data) world)) entity.BodySeparationExplicitEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicit event.Data) world)) entity.BodySeparationImplicitEvent entity world
@@ -121,19 +121,19 @@ module WorldIm =
         static member doLabel name world args = World.doEntity<LabelDispatcher> name world args
 
         /// Declare a button with the given arguments.
-        static member doButton name world args = World.doEntityPlus<ButtonDispatcher, _> false World.initBoolHappening name world args
+        static member doButton name world args = World.doEntityPlus<ButtonDispatcher, _> false World.initBoolResult name world args
 
         /// Declare a toggle button with the given arguments.
-        static member doToggleButton name world args = World.doEntityPlus<ToggleButtonDispatcher, _> false World.initBoolHappening name world args
+        static member doToggleButton name world args = World.doEntityPlus<ToggleButtonDispatcher, _> false World.initBoolResult name world args
 
         /// Declare a radio button with the given arguments.
-        static member doRadioButton name world args = World.doEntityPlus<ToggleButtonDispatcher, _> false World.initBoolHappening name world args
+        static member doRadioButton name world args = World.doEntityPlus<ToggleButtonDispatcher, _> false World.initBoolResult name world args
 
         /// Declare a fill bar with the given arguments.
         static member doFillBar name world args = World.doEntity<FillBarDispatcher> name world args
 
         /// Declare a feeler with the given arguments.
-        static member doFeeler name world args = World.doEntityPlus<FeelerDispatcher, _> false World.initBoolHappening name world args
+        static member doFeeler name world args = World.doEntityPlus<FeelerDispatcher, _> false World.initBoolResult name world args
 
         /// Declare an fps entity with the given arguments.
         static member doFps name world args = World.doEntity<FpsDispatcher> name world args
@@ -148,76 +148,76 @@ module WorldIm =
         static member doPanel name world args = World.doEntity<PanelDispatcher> name world args
 
         /// Declare a 2d block with the given arguments.
-        static member doBlock2d name world args = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doBlock2d name world args = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 2d box with the given arguments.
-        static member doBox2d name world args = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doBox2d name world args = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 2d character with the given arguments.
-        static member doCharacter2d name world args = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doCharacter2d name world args = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a tile map with the given arguments.
-        static member doTileMap name world args = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doTileMap name world args = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d light probe with the given arguments.
-        static member doLightProbe3d name world args = World.doEntityPlus<LightProbe3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doLightProbe3d name world args = World.doEntityPlus<LightProbe3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d light with the given arguments.
-        static member doLight3d name world args = World.doEntityPlus<Light3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doLight3d name world args = World.doEntityPlus<Light3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a sky box with the given arguments.
-        static member doSkyBox name world args = World.doEntityPlus<SkyBoxDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doSkyBox name world args = World.doEntityPlus<SkyBoxDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a basic static billboard emitter with the given arguments.
-        static member doBasicStaticBillboardEmitter name world args = World.doEntityPlus<BasicStaticBillboardEmitterDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doBasicStaticBillboardEmitter name world args = World.doEntityPlus<BasicStaticBillboardEmitterDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d effect with the given arguments.
-        static member doEffect3d name world args = World.doEntityPlus<Effect3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doEffect3d name world args = World.doEntityPlus<Effect3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d block with the given arguments.
-        static member doBlock3d name world args = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doBlock3d name world args = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d box with the given arguments.
-        static member doBox3d name world args = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doBox3d name world args = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a static billboard with the given arguments.
-        static member doStaticBillboard name world args = World.doEntityPlus<StaticBillboardDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doStaticBillboard name world args = World.doEntityPlus<StaticBillboardDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a static model with the given arguments.
-        static member doStaticModel name world args = World.doEntityPlus<StaticModelDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doStaticModel name world args = World.doEntityPlus<StaticModelDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a static model surface with the given arguments.
-        static member doStaticModelSurface name world args = World.doEntityPlus<StaticModelSurfaceDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doStaticModelSurface name world args = World.doEntityPlus<StaticModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a rigid model with the given arguments.
-        static member doRigidModel name world args = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doRigidModel name world args = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a rigid model with the given arguments.
-        static member doRigidModelSurface name world args = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doRigidModelSurface name world args = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a animated model with the given arguments.
-        static member doAnimatedModel name world args = World.doEntityPlus<AnimatedModelDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doAnimatedModel name world args = World.doEntityPlus<AnimatedModelDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d character with the given arguments.
-        static member doCharacter3d name world args = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doCharacter3d name world args = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d body joint with the given arguments.
-        static member doBodyJoint3d name world args = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doBodyJoint3d name world args = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a terrain with the given arguments.
-        static member doTerrain name world args = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doTerrain name world args = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d nav config with the given arguments.
-        static member doNav3dConfig name world args = World.doEntityPlus<Nav3dConfigDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doNav3dConfig name world args = World.doEntityPlus<Nav3dConfigDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a 3d light config with the given arguments.
-        static member doLighting3dConfig name world args = World.doEntityPlus<Lighting3dConfigDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doLighting3dConfig name world args = World.doEntityPlus<Lighting3dConfigDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a static model hierarchy with the given arguments.
-        static member doStaticModelHierarchy name world args = World.doEntityPlus<StaticModelHierarchyDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doStaticModelHierarchy name world args = World.doEntityPlus<StaticModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         /// Declare a rigid model hierarchy with the given arguments.
-        static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyHappening name world args
+        static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ImProperty seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
@@ -258,7 +258,7 @@ module WorldIm =
                 match imSimulants.TryGetValue screen with
                 | (true, imScreen) -> (false, World.utilizeImSimulant screen imScreen world)
                 | (false, _) ->
-                    let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenHappening> } world
+                    let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
                     let world = World.createScreen<'d> (Some name) world |> snd
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
@@ -277,7 +277,7 @@ module WorldIm =
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
             let world = if screen.GetExists world && select then transitionScreen screen world else world
-            let result = (World.getImSimulant screen world).Result :?> ScreenHappening FQueue
+            let result = (World.getImSimulant screen world).Result :?> ScreenResult FQueue
             (result, world)
 
         static member endScreen (world : World) =
