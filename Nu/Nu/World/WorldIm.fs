@@ -68,6 +68,7 @@ module WorldIm =
                 | (false, _) ->
                     let world = World.addImSimulant entity { Utilized = true; Result = zero } world
                     let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                    let world = World.setEntityProtected true entity world |> snd'
                     let world = if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) entity world
                     (true, init mapResult entity world)
@@ -238,6 +239,7 @@ module WorldIm =
                 | (false, _) ->
                     let world = World.addImSimulant group { Utilized = true; Result = () } world
                     let world = World.createGroup<'d> (Some name) group.Screen world |> snd
+                    let world = World.setGroupProtected true group world |> snd'
                     (true, World.setImSimulants imSimulants world)
             Seq.fold
                 (fun world arg ->
@@ -270,6 +272,7 @@ module WorldIm =
                 | (false, _) ->
                     let world = World.addImSimulant screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
                     let world = World.createScreen<'d> (Some name) world |> snd
+                    let world = World.setScreenProtected true screen world |> snd'
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapImSimulant (fun imSimulant -> { imSimulant with Result = mapper (imSimulant.Result :?> 'r) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
