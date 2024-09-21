@@ -1387,7 +1387,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     world
                                 else
                                     let (entity, world) =
-                                        if ImGui.IsCtrlDown () then
+                                        if ImGui.IsCtrlDown () && not (entity.GetProtected world) then
                                             let world = snapshot DuplicateEntity world
                                             let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
                                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
@@ -2129,7 +2129,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
-                        if ImGui.IsCtrlDown () then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
+                        if ImGui.IsCtrlDown () && not (entity.GetProtected world) then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
                         elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
                         elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
                         elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
