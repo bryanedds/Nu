@@ -26,7 +26,7 @@ type BodyResult =
 [<AutoOpen>]
 module WorldIm =
 
-    /// Define an immediate-mode property definition.
+    /// Define a dynamic immediate-mode property definition.
     let
 #if !DEBUG
         inline
@@ -34,7 +34,7 @@ module WorldIm =
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
         { ImPropertyStatic = false; ImPropertyLens = lens; ImPropertyValue = value } : 's ImProperty
 
-    /// Define an immediate-mode property definition.
+    /// Define a static immediate-mode property definition.
     let
 #if !DEBUG
         inline
@@ -44,9 +44,11 @@ module WorldIm =
 
     type World with
 
+        ///
         static member initBoolResult mapResult (button : Entity) world =
             World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) button.ClickEvent button world
 
+        ///
         static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) entity.BodyPenetrationEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit event.Data) world)) entity.BodySeparationExplicitEvent entity world
@@ -54,8 +56,9 @@ module WorldIm =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransform event.Data) world)) entity.BodyTransformEvent entity world
             world
 
-        // TODO: optimize this for large-scale use.
+        ///
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ImProperty seq) : 'r * World =
+            // TODO: optimize this for large-scale use.
             let entityAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
             let entity = Nu.Entity entityAddress
@@ -79,9 +82,11 @@ module WorldIm =
             let world = World.mapImSimulant (fun imSimulant -> { imSimulant with Result = zero }) entity world
             (result, world)
 
+        ///
         static member beginEntity<'d when 'd :> EntityDispatcher> name world args =
             World.beginEntityPlus<'d, unit> () (fun _ _ world -> world) name world args |> snd
 
+        ///
         static member endEntity (world : World) =
             match world.ImCurrent with
             | :? (Entity Address) as entityAddress when entityAddress.Length >= 4 ->
@@ -93,11 +98,13 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndEntity mismatch.")
 
+        ///
         static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name world args =
             let (result, world) = World.beginEntityPlus<'d, 'r> zero init name world args
             let world = World.endEntity world
             (result, world)
 
+        ///
         static member doEntity<'d when 'd :> EntityDispatcher> name world args =
             let world = World.beginEntity<'d> name world args
             World.endEntity world
@@ -219,6 +226,7 @@ module WorldIm =
         /// Declare a rigid model hierarchy with the given arguments.
         static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
+        ///
         static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ImProperty seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
@@ -238,6 +246,7 @@ module WorldIm =
                     else world)
                 world args
             
+        ///
         static member endGroup (world : World) =
             match world.ImCurrent with
             | :? (Group Address) as groupAddress ->
@@ -245,6 +254,7 @@ module WorldIm =
                 World.setImCurrent currentAddress world
             | _ -> raise (new InvalidOperationException "ImEndGroup mismatch.")
 
+        ///
         static member doGroup<'d when 'd :> GroupDispatcher> name world args =
             let world = World.beginGroup<'d> name world args
             World.endGroup world
@@ -280,6 +290,7 @@ module WorldIm =
             let result = (World.getImSimulant screen world).Result :?> ScreenResult FQueue
             (result, world)
 
+        ///
         static member endScreen (world : World) =
             match world.ImCurrent with
             | :? (Screen Address) ->
@@ -291,6 +302,7 @@ module WorldIm =
             let world = World.endScreen world
             (result, world)
 
+        ///
         static member beginGame (world : World) (args : Game ImProperty seq) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
             let world = World.setImCurrent gameAddress world
@@ -302,16 +314,19 @@ module WorldIm =
                     else world)
                 world args
 
+        ///
         static member endGame (world : World) =
             match world.ImCurrent with
             | :? (Game Address) ->
                 World.setImCurrent Address.empty world
             | _ -> raise (new InvalidOperationException "ImEndGame mismatch.")
 
+        ///
         static member doGame world args =
             let world = World.beginGame world args
             World.endGame world
 
+        ///
         static member scopeEntity (entity : Entity) world (args : Entity ImProperty seq) =
             let world = World.setImCurrent entity.EntityAddress world
             Seq.fold
@@ -321,6 +336,7 @@ module WorldIm =
                     else world)
                 world args
 
+        ///
         static member scopeGroup (group : Group) world (args : Group ImProperty seq) =
             let world = World.setImCurrent group.GroupAddress world
             Seq.fold
@@ -330,6 +346,7 @@ module WorldIm =
                     else world)
                 world args
 
+        ///
         static member scopeScreen (screen : Screen) world (args : Screen ImProperty seq) =
             let world = World.setImCurrent screen.ScreenAddress world
             Seq.fold
@@ -339,12 +356,14 @@ module WorldIm =
                     else world)
                 world args
 
+        ///
         static member scopeGame (game : Game) world (args : Game ImProperty seq) =
             let world = World.setImCurrent game.GameAddress world
             Seq.fold
                 (fun world arg -> game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c')
                 world args
 
+        ///
         static member scopeWorld world =
             World.setImCurrent Address.empty world
 
