@@ -916,6 +916,9 @@ module WorldModule2 =
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world
 
+        static member private processImNui world =
+            World.imNuiUpdate world
+
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
             let world = List.foldBack (fun simulant world -> World.destroyImmediate simulant world) destructionListRev world
@@ -1669,7 +1672,7 @@ module WorldModule2 =
 
                                                     // destroy simulants that have been marked for destruction at the end of frame
                                                     world.Timers.DestructionTimer.Restart ()
-                                                    let world = World.imNuiUpdate world
+                                                    let world = World.processImNui world
                                                     let world = World.destroySimulants world
                                                     world.Timers.DestructionTimer.Stop ()
                                                     match World.getLiveness world with

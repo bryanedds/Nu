@@ -382,7 +382,7 @@ module WorldIm =
             if world.Advancing then
                 OMap.fold (fun world simulant imSimulant ->
                     if not imSimulant.Utilized then
-                        let world = World.destroyImmediate simulant world
+                        let world = World.destroy simulant world
                         World.setImSimulants (OMap.remove simulant world.ImSimulants) world
                     else
                         if world.Imperative then
