@@ -917,7 +917,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImNui world =
-            World.imNuiUpdate world
+            World.updateImNui world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
@@ -2659,7 +2659,7 @@ module GameDispatcherModule =
         abstract UntruncateModel : 'model * 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
 
-    /// The immediate-mode dispatcher for games.
+    /// The ImNui dispatcher for games.
     and [<AbstractClass>] GameDispatcher<'model> (makeInitial : World -> 'model) =
         inherit GameDispatcher ()
 
@@ -2724,7 +2724,7 @@ module GameDispatcherModule =
         abstract GetFallbackModel : Symbol * Game * World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
-        /// The run handler of the immediate-model programming model.
+        /// The run handler of the ImNuil programming model.
         abstract Run : 'model * Game * World -> ('model * World)
         default this.Run (model, _, world) = (model, world)
 

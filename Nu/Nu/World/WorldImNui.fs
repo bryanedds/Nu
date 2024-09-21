@@ -7,7 +7,7 @@ open System.Numerics
 open Prime
 open Nu
 
-/// Describes an immediate-mode screen result.
+/// Describes an ImNui screen result.
 type ScreenResult =
     | Select
     | IncomingStart
@@ -16,7 +16,7 @@ type ScreenResult =
     | OutgoingFinish
     | Deselecting
 
-/// Describes an immediate-mode physics body result.
+/// Describes an ImNui physics body result.
 type BodyResult =
     | BodyPenetration of BodyPenetrationData
     | BodySeparationExplicit of BodySeparationExplicitData
@@ -26,21 +26,21 @@ type BodyResult =
 [<AutoOpen>]
 module WorldIm =
 
-    /// Define a dynamic immediate-mode property definition.
+    /// Define a dynamic ImNui property definition.
     let
 #if !DEBUG
         inline
 #endif
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ImPropertyStatic = false; ImPropertyLens = lens; ImPropertyValue = value } : 's ImProperty
+        { ImPropertyArgStatic = false; ImPropertyArgLens = lens; ImPropertyArgValue = value } : 's ImPropertyArg
 
-    /// Define a static immediate-mode property definition.
+    /// Define a static ImNui property definition.
     let
 #if !DEBUG
         inline
 #endif
         (@=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ImPropertyStatic = true; ImPropertyLens = lens; ImPropertyValue = value } : 's ImProperty
+        { ImPropertyArgStatic = true; ImPropertyArgLens = lens; ImPropertyArgValue = value } : 's ImPropertyArg
 
     type World with
 
@@ -57,7 +57,7 @@ module WorldIm =
             world
 
         ///
-        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ImProperty seq) : 'r * World =
+        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ImPropertyArg seq) : 'r * World =
             // TODO: optimize this for large-scale use.
             let entityAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent entityAddress world
@@ -75,8 +75,8 @@ module WorldIm =
             let world =
                 Seq.fold
                     (fun world arg ->
-                        if (initializing || not arg.ImPropertyStatic) && entity.GetExists world
-                        then entity.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                        if (initializing || not arg.ImPropertyArgStatic) && entity.GetExists world
+                        then entity.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                         else world)
                     world args
             let result = (World.getImSimulant entity world).Result :?> 'r
@@ -237,7 +237,7 @@ module WorldIm =
         static member doRigidModelHierarchy name world args = World.doEntityPlus<RigidModelHierarchyDispatcher, _> FQueue.empty World.initBodyResult name world args
 
         ///
-        static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ImProperty seq) =
+        static member beginGroup<'d when 'd :> GroupDispatcher> name (world : World) (args : Group ImPropertyArg seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent groupAddress world
             let group = Nu.Group groupAddress
@@ -251,8 +251,8 @@ module WorldIm =
                     (true, world)
             Seq.fold
                 (fun world arg ->
-                    if (initializing || not arg.ImPropertyStatic) && group.GetExists world
-                    then group.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                    if (initializing || not arg.ImPropertyArgStatic) && group.GetExists world
+                    then group.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                     else world)
                 world args
             
@@ -269,7 +269,7 @@ module WorldIm =
             let world = World.beginGroup<'d> name world args
             World.endGroup world
 
-        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select (world : World) (args : Screen ImProperty seq) =
+        static member internal beginScreenInternal<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name behavior select (world : World) (args : Screen ImPropertyArg seq) =
             let screenAddress = Address.makeFromArray (Array.add name world.ImCurrent.Names)
             let world = World.setImCurrent screenAddress world
             let screen = Nu.Screen screenAddress
@@ -292,8 +292,8 @@ module WorldIm =
             let world =
                 Seq.fold
                     (fun world arg ->
-                        if (initializing || not arg.ImPropertyStatic) && screen.GetExists world
-                        then screen.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                        if (initializing || not arg.ImPropertyArgStatic) && screen.GetExists world
+                        then screen.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                         else world)
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
@@ -314,14 +314,14 @@ module WorldIm =
             (result, world)
 
         ///
-        static member beginGame (world : World) (args : Game ImProperty seq) =
+        static member beginGame (world : World) (args : Game ImPropertyArg seq) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ImCurrent.Names)
             let world = World.setImCurrent gameAddress world
             let game = Nu.Game gameAddress
             Seq.fold
                 (fun world arg ->
-                    if not arg.ImPropertyStatic
-                    then game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                    if not arg.ImPropertyArgStatic
+                    then game.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                     else world)
                 world args
 
@@ -338,47 +338,47 @@ module WorldIm =
             World.endGame world
 
         ///
-        static member scopeEntity (entity : Entity) world (args : Entity ImProperty seq) =
+        static member scopeEntity (entity : Entity) world (args : Entity ImPropertyArg seq) =
             let world = World.setImCurrent entity.EntityAddress world
             Seq.fold
                 (fun world arg ->
                     if entity.GetExists world
-                    then entity.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                    then entity.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                     else world)
                 world args
 
         ///
-        static member scopeGroup (group : Group) world (args : Group ImProperty seq) =
+        static member scopeGroup (group : Group) world (args : Group ImPropertyArg seq) =
             let world = World.setImCurrent group.GroupAddress world
             Seq.fold
                 (fun world arg ->
                     if group.GetExists world
-                    then group.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                    then group.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                     else world)
                 world args
 
         ///
-        static member scopeScreen (screen : Screen) world (args : Screen ImProperty seq) =
+        static member scopeScreen (screen : Screen) world (args : Screen ImPropertyArg seq) =
             let world = World.setImCurrent screen.ScreenAddress world
             Seq.fold
                 (fun world arg ->
                     if screen.GetExists world
-                    then screen.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c'
+                    then screen.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c'
                     else world)
                 world args
 
         ///
-        static member scopeGame (game : Game) world (args : Game ImProperty seq) =
+        static member scopeGame (game : Game) world (args : Game ImPropertyArg seq) =
             let world = World.setImCurrent game.GameAddress world
             Seq.fold
-                (fun world arg -> game.TrySetProperty arg.ImPropertyLens.Name { PropertyType = arg.ImPropertyLens.Type; PropertyValue = arg.ImPropertyValue } world |> __c')
+                (fun world arg -> game.TrySetProperty arg.ImPropertyArgLens.Name { PropertyType = arg.ImPropertyArgLens.Type; PropertyValue = arg.ImPropertyArgValue } world |> __c')
                 world args
 
         ///
         static member scopeWorld world =
             World.setImCurrent Address.empty world
 
-        static member internal imNuiUpdate (world : World) =
+        static member internal updateImNui (world : World) =
             if world.Advancing then
                 OMap.fold (fun world simulant imSimulant ->
                     if not imSimulant.Utilized then

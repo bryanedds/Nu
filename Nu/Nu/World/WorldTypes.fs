@@ -1761,16 +1761,16 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-/// Provides bookkeeping information for the immediate-mode simulant API.
+/// Provides bookkeeping information for the ImNui API.
 and [<NoEquality; NoComparison>] internal ImSimulant =
     { mutable Utilized : bool
       Result : obj }
 
-/// Describes a property used for the immediate-mode simulant API.
-and [<Struct>] ImProperty<'s when 's :> Simulant> =
-    { ImPropertyStatic : bool
-      ImPropertyLens : Lens
-      ImPropertyValue : obj }
+/// Describes a property argument used for the ImNui API.
+and [<Struct>] ImPropertyArg<'s when 's :> Simulant> =
+    { ImPropertyArgStatic : bool
+      ImPropertyArgLens : Lens
+      ImPropertyArgValue : obj }
 
 /// The world's dispatchers (including facets).
 /// NOTE: it would be nice to make this structure internal, but doing so would non-trivially increase the number of
@@ -1892,11 +1892,11 @@ and [<ReferenceEquality>] World =
     member internal this.ImSimulants =
         this.WorldExtension.ImSimulants
 
-    /// The current immediate-mode context.
+    /// The current ImNui context.
     member this.ImCurrent =
         this.WorldExtension.ImCurrent
 
-    /// The most recent but non-current immediate-mode context.
+    /// The most recent but non-current ImNui context.
     member this.ImRecent =
         this.WorldExtension.ImRecent
 

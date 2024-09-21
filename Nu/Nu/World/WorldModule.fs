@@ -251,11 +251,11 @@ module WorldModule =
                 let imSimulants = OMap.add simulant imSimulant world.ImSimulants
                 World.setImSimulants imSimulants world
 
-        /// Get the current immediate-mode context.
+        /// Get the current ImNui context.
         static member getImCurrent (world : World) =
             world.ImCurrent
 
-        /// Get the most recent but non-current immediate-mode context.
+        /// Get the most recent but non-current ImNui context.
         static member getImRecent (world : World) =
             world.ImRecent
 
