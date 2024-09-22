@@ -23,7 +23,7 @@ type MyGameDispatcher () =
     inherit GameDispatcher<MyGame> (MyGame.initial)
 
     // here we handle running the game
-    override this.Run (counter, _, world) =
+    override this.Run (myGame, _, world) =
 
         // run game
         let world = World.beginGame world []
@@ -41,11 +41,11 @@ type MyGameDispatcher () =
         let box3d = world.RecentEntity
         let box3dBodyId = box3d.GetBodyId world
         let myGame =
-            FQueue.fold (fun counter result ->
+            FQueue.fold (fun myGame result ->
                 match result with
-                | BodyPenetration _ -> { counter with Count = inc counter.Count }
-                | _ -> counter)
-                counter results
+                | BodyPenetration _ -> { myGame with Count = inc myGame.Count }
+                | _ -> myGame)
+                myGame results
 
         // expose a control panel
         let world = World.beginPanel "Panel" world [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
