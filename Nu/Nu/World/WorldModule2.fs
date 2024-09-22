@@ -731,13 +731,13 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
-                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
                 Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.Bounds element octree
             world
                 
@@ -747,13 +747,13 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
-                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
                 Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                     Octree.removeElement entityState.Presence entityState.Bounds element octree
             world
 
@@ -917,7 +917,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImNui world =
-            World.updateImNui world
+            World.collectImNui world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world

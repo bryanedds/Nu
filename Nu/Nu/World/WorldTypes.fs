@@ -525,7 +525,7 @@ and ScreenDispatcher () =
     default this.TryTruncateModel _ = None
 
     /// Attempt to untruncate a screen model.
-    abstract TryUntruncateModel<'a> : 'a * Screen* World  -> 'a option
+    abstract TryUntruncateModel<'a> : 'a * Screen * World -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for groups.
@@ -577,7 +577,7 @@ and GroupDispatcher () =
     default this.TryTruncateModel _ = None
 
     /// Attempt to untruncate a group model.
-    abstract TryUntruncateModel<'a> : 'a * Group* World  -> 'a option
+    abstract TryUntruncateModel<'a> : 'a * Group * World -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
 
 /// The default dispatcher for entities.
@@ -672,7 +672,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     default this.TryTruncateModel _ = None
 
     /// Attempt to untruncate an entity model.
-    abstract TryUntruncateModel<'a> : 'a * Entity* World  -> 'a option
+    abstract TryUntruncateModel<'a> : 'a * Entity * World -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
 
     /// Whether the dispatcher has a 2-dimensional transform interpretation.
@@ -1166,6 +1166,8 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Light with get () = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized with get () = this.Transform.Optimized
+    member internal this.VisibleSpatial with get () = this.Visible && not this.AlwaysRender
+    member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate && not this.IsImNui
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
