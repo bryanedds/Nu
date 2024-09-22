@@ -1930,7 +1930,7 @@ and [<ReferenceEquality>] World =
     member this.ContextGame =
         if this.WorldExtension.ContextImNui.Names.Length > 0
         then Game.Handle
-        else raise (InvalidOperationException "ImNui context not of type needed to constructed requested handle.")
+        else raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the current ImNui Screen context (throwing upon failure).
     member this.ContextScreen =
@@ -1938,20 +1938,20 @@ and [<ReferenceEquality>] World =
         | :? (Screen Address) as screenAddress -> Screen screenAddress
         | :? (Group Address) as groupAddress -> Screen (Array.take 2 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Screen (Array.take 2 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "ImNui context not of type needed to constructed requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the current ImNui Group context (throwing upon failure).
     member this.ContextGroup =
         match this.WorldExtension.ContextImNui with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Group (Array.take 3 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "ImNui context not of type needed to constructed requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the current ImNui Entity context (throwing upon failure).
     member this.ContextEntity =
         match this.WorldExtension.ContextImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
-        | _ -> raise (InvalidOperationException "ImNui context not of type needed to constructed requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
     /// Get the most recent ImNui context.
     member this.RecentImNui =
@@ -1961,7 +1961,7 @@ and [<ReferenceEquality>] World =
     member this.RecentGame =
         if this.WorldExtension.RecentImNui.Names.Length > 0
         then Game.Handle
-        else raise (InvalidOperationException "Recent ImNui context not of type needed to constructed requested handle.")
+        else raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
 
     /// Get the most recent ImNui Screen context (throwing upon failure).
     member this.RecentScreen =
@@ -1969,20 +1969,20 @@ and [<ReferenceEquality>] World =
         | :? (Screen Address) as screenAddress -> Screen screenAddress
         | :? (Group Address) as groupAddress -> Screen (Array.take 2 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Screen (Array.take 2 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to constructed requested handle.")
+        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
 
     /// Get the most recent ImNui Group context (throwing upon failure).
     member this.RecentGroup =
         match this.WorldExtension.RecentImNui with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Group (Array.take 3 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to constructed requested handle.")
+        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
 
     /// Get the most recent ImNui Entity context (throwing upon failure).
     member this.RecentEntity =
         match this.WorldExtension.RecentImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to constructed requested handle.")
+        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
 
     member internal this.SimulantImNuis =
         this.WorldExtension.SimulantImNuis
