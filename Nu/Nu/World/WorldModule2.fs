@@ -1850,6 +1850,95 @@ module WorldModule2 =
 [<AutoOpen>]
 module EntityDispatcherModule2 =
 
+    /// The ImNui dispatcher for entities.
+    type [<AbstractClass>] EntityDispatcher<'model>
+        (is2d, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, physical, lightProbe, light)
+
+        new (is2d, physical, lightProbe, light, initial : 'model) =
+            EntityDispatcher<'model> (is2d, physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent]
+
+        /// Get the entity's model.
+        member this.GetModel (entity : Entity) world : 'model =
+            entity.GetModelGeneric<'model> world
+
+        /// Set the entity's model.
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            entity.SetModelGeneric<'model> model world
+
+        /// The entity's model lens.
+        member this.Model (entity : Entity) =
+            lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
+
+        override this.Register (entity, world) =
+            let property = World.getEntityModelProperty entity world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setEntityModelGeneric<'model> false model entity world |> snd'
+
+        override this.TryRun (entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (model, world) = this.Run (model, entity, world)
+            this.SetModel model entity world
+
+        override this.Edit (operation, entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, entity, world)
+            this.SetModel model entity world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
+            this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, entity, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = entity.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Entity * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Entity * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for an entity via the ImGui API.
+        abstract Edit : 'model * EditOperation * Entity * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Render the entity using the given model.
+        abstract Render : 'model * RenderPass * Entity * World -> unit
+        default this.Render (_, _, _, _) = ()
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
+
     type World with
 
         static member inline internal signalEntity<'model, 'message, 'command when 'message :> Message and 'command :> Command> (signal : Signal) (entity : Entity) world =
@@ -2000,7 +2089,7 @@ module EntityDispatcherModule2 =
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
-    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+    type [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, physical, lightProbe, light, makeInitial)
 
         new (physical, lightProbe, light, initial : 'model) =
@@ -2010,7 +2099,7 @@ module EntityDispatcherModule2 =
             [define Entity.Size Constants.Engine.Entity2dSizeDefault]
 
     /// A gui entity dispatcher.
-    and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, false, false, false, makeInitial)
 
         new (initial : 'model) =
@@ -2030,7 +2119,7 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     /// A 3d entity dispatcher.
-    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+    type [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, physical, lightProbe, light, makeInitial)
 
         new (physical, lightProbe, light, initial : 'model) =
@@ -2047,100 +2136,11 @@ module EntityDispatcherModule2 =
             else base.RayCast (ray, entity, world)
 
     /// A vui dispatcher (gui in 3d).
-    and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
+    type [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, false, false, false, makeInitial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
-
-    /// The ImNui dispatcher for entities.
-    and [<AbstractClass>] EntityDispatcher<'model>
-        (is2d, physical, lightProbe, light, makeInitial : World -> 'model) =
-        inherit EntityDispatcher (is2d, physical, lightProbe, light)
-
-        new (is2d, physical, lightProbe, light, initial : 'model) =
-            EntityDispatcher<'model> (is2d, physical, lightProbe, light, fun _ -> initial)
-
-        static member Properties =
-            [define Entity.Presence Omnipresent]
-
-        /// Get the entity's model.
-        member this.GetModel (entity : Entity) world : 'model =
-            entity.GetModelGeneric<'model> world
-
-        /// Set the entity's model.
-        member this.SetModel (model : 'model) (entity : Entity) world =
-            entity.SetModelGeneric<'model> model world
-
-        /// The entity's model lens.
-        member this.Model (entity : Entity) =
-            lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
-
-        override this.Register (entity, world) =
-            let property = World.getEntityModelProperty entity world
-            let model =
-                match property.DesignerValue with
-                | _ when property.DesignerType = typeof<unit> -> makeInitial world
-                | :? 'model as model -> model
-                | null -> null :> obj :?> 'model
-                | modelObj ->
-                    try let model = modelObj |> valueToSymbol |> symbolToValue
-                        property.DesignerType <- typeof<'model>
-                        property.DesignerValue <- model
-                        model
-                    with _ ->
-                        Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
-                        makeInitial world
-            World.setEntityModelGeneric<'model> false model entity world |> snd'
-
-        override this.TryRun (entity, world) =
-            let model = entity.GetModelGeneric<'model> world
-            let (model, world) = this.Run (model, entity, world)
-            this.SetModel model entity world
-
-        override this.Edit (operation, entity, world) =
-            let model = entity.GetModelGeneric<'model> world
-            let (model, world) = this.Edit (model, operation, entity, world)
-            this.SetModel model entity world
-
-        override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
-            this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
-
-        override this.TryTruncateModel<'a> (model : 'a) =
-            match model :> obj with
-            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
-            | _ -> None
-
-        override this.TryUntruncateModel<'a> (incoming : 'a, entity, world) =
-            match incoming :> obj with
-            | :? 'model as incoming ->
-                let current = entity.GetModelGeneric<'model> world
-                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
-            | _ -> None
-
-        /// The fallback model value.
-        abstract GetFallbackModel : Symbol * Entity * World -> 'model
-        default this.GetFallbackModel (_, _, world) = makeInitial world
-
-        /// The run handler of the ImNui programming model.
-        abstract Run : 'model * Entity * World -> 'model * World
-        default this.Run (model, _, world) = (model, world)
-
-        /// Implements additional editing behavior for an entity via the ImGui API.
-        abstract Edit : 'model * EditOperation * Entity * World -> 'model * World
-        default this.Edit (model, _, _, world) = (model, world)
-
-        /// Render the entity using the given model.
-        abstract Render : 'model * RenderPass * Entity * World -> unit
-        default this.Render (_, _, _, _) = ()
-
-        /// Truncate the given model.
-        abstract TruncateModel : 'model -> 'model
-        default this.TruncateModel model = model
-
-        /// Untruncate the given model.
-        abstract UntruncateModel : 'model * 'model -> 'model
-        default this.UntruncateModel (_, incoming) = incoming
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
@@ -2255,6 +2255,78 @@ module EntityPropertyDescriptor =
 
 [<AutoOpen>]
 module GroupDispatcherModule =
+
+    /// The ImNui dispatcher for groups.
+    type [<AbstractClass>] GroupDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit GroupDispatcher ()
+
+        new (initial : 'model) =
+            GroupDispatcher<'model> (fun _ -> initial)
+
+        /// Get the group's model.
+        member this.GetModel (group : Group) world : 'model =
+            group.GetModelGeneric<'model> world
+
+        /// Set the group's model.
+        member this.SetModel (model : 'model) (group : Group) world =
+            group.SetModelGeneric<'model> model world
+
+        /// The group's model lens.
+        member this.Model (group : Group) =
+            lens (nameof this.Model) group (this.GetModel group) (flip this.SetModel group)
+
+        override this.Register (group, world) =
+            let property = World.getGroupModelProperty group world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing group model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGroupModelGeneric<'model> false model group world |> snd'
+
+        override this.Edit (operation, group, world) =
+            let model = group.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, group, world)
+            this.SetModel model group world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, group, world) =
+            this.GetFallbackModel (modelSymbol, group, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, group, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = group.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Group * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// Implements additional editing behavior for a group via the ImGui API.
+        abstract Edit : 'model * EditOperation * Group * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
     type World with
 
@@ -2438,6 +2510,78 @@ module GroupPropertyDescriptor =
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
+
+    /// The ImNui dispatcher for screens.
+    type [<AbstractClass>] ScreenDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit ScreenDispatcher ()
+
+        new (initial : 'model) =
+            ScreenDispatcher<'model> (fun _ -> initial)
+
+        /// Get the screen's model.
+        member this.GetModel (screen : Screen) world : 'model =
+            screen.GetModelGeneric<'model> world
+
+        /// Set the screen's model.
+        member this.SetModel (model : 'model) (screen : Screen) world =
+            screen.SetModelGeneric<'model> model world
+
+        /// The screen's model lens.
+        member this.Model (screen : Screen) =
+            lens (nameof this.Model) screen (this.GetModel screen) (flip this.SetModel screen)
+
+        override this.Register (screen, world) =
+            let property = World.getScreenModelProperty screen world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing screen model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setScreenModelGeneric<'model> false model screen world |> snd'
+
+        override this.Edit (operation, screen, world) =
+            let model = screen.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, screen, world)
+            this.SetModel model screen world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, screen, world) =
+            this.GetFallbackModel (modelSymbol, screen, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, screen, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = screen.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Screen * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// Implements additional editing behavior for a screen via the ImGui API.
+        abstract Edit : 'model * EditOperation * Screen * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
     type World with
 
@@ -2636,6 +2780,91 @@ module ScreenPropertyDescriptor =
 [<AutoOpen>]
 module GameDispatcherModule =
 
+    /// The ImNui dispatcher for games.
+    type [<AbstractClass>] GameDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit GameDispatcher ()
+
+        new (initial : 'model) =
+            GameDispatcher<'model> (fun _ -> initial)
+
+        /// Get the game's model.
+        member this.GetModel (game : Game) world : 'model =
+            game.GetModelGeneric<'model> world
+
+        /// Set the game's model.
+        member this.SetModel (model : 'model) (game : Game) world =
+            game.SetModelGeneric<'model> model world
+
+        /// The game's model lens.
+        member this.Model (game : Game) =
+            lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
+
+        override this.Register (game, world) =
+            let property = World.getGameModelProperty game world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGameModelGeneric<'model> false model game world |> snd'
+
+        override this.TryRun (game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (model, world) = this.Run (model, game, world)
+            this.SetModel model game world
+
+        override this.Edit (operation, game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, game, world)
+            this.SetModel model game world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
+            this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, game, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = game.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Game * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Game * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for a game via the ImGui API.
+        abstract Edit : 'model * EditOperation * Game * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Render the game using the given model.
+        abstract Render : 'model * RenderPass * Game * World -> unit
+        default this.Render (_, _, _, _) = ()
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
+
     type World with
 
         static member inline internal signalGame<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (game : Game) world =
@@ -2766,91 +2995,6 @@ module GameDispatcherModule =
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> Signal list * 'model
         default this.Edit (model, _, _, _) = just model
-
-        /// Truncate the given model.
-        abstract TruncateModel : 'model -> 'model
-        default this.TruncateModel model = model
-
-        /// Untruncate the given model.
-        abstract UntruncateModel : 'model * 'model -> 'model
-        default this.UntruncateModel (_, incoming) = incoming
-
-    /// The ImNui dispatcher for games.
-    and [<AbstractClass>] GameDispatcher<'model> (makeInitial : World -> 'model) =
-        inherit GameDispatcher ()
-
-        new (initial : 'model) =
-            GameDispatcher<'model> (fun _ -> initial)
-
-        /// Get the game's model.
-        member this.GetModel (game : Game) world : 'model =
-            game.GetModelGeneric<'model> world
-
-        /// Set the game's model.
-        member this.SetModel (model : 'model) (game : Game) world =
-            game.SetModelGeneric<'model> model world
-
-        /// The game's model lens.
-        member this.Model (game : Game) =
-            lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
-
-        override this.Register (game, world) =
-            let property = World.getGameModelProperty game world
-            let model =
-                match property.DesignerValue with
-                | _ when property.DesignerType = typeof<unit> -> makeInitial world
-                | :? 'model as model -> model
-                | null -> null :> obj :?> 'model
-                | modelObj ->
-                    try let model = modelObj |> valueToSymbol |> symbolToValue
-                        property.DesignerType <- typeof<'model>
-                        property.DesignerValue <- model
-                        model
-                    with _ ->
-                        Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
-                        makeInitial world
-            World.setGameModelGeneric<'model> false model game world |> snd'
-
-        override this.TryRun (game, world) =
-            let model = game.GetModelGeneric<'model> world
-            let (model, world) = this.Run (model, game, world)
-            this.SetModel model game world
-
-        override this.Edit (operation, game, world) =
-            let model = game.GetModelGeneric<'model> world
-            let (model, world) = this.Edit (model, operation, game, world)
-            this.SetModel model game world
-
-        override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
-            this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
-
-        override this.TryTruncateModel<'a> (model : 'a) =
-            match model :> obj with
-            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
-            | _ -> None
-
-        override this.TryUntruncateModel<'a> (incoming : 'a, game, world) =
-            match incoming :> obj with
-            | :? 'model as incoming ->
-                let current = game.GetModelGeneric<'model> world
-                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
-            | _ -> None
-
-        /// The fallback model value.
-        abstract GetFallbackModel : Symbol * Game * World -> 'model
-        default this.GetFallbackModel (_, _, world) = makeInitial world
-
-        /// The run handler of the ImNui programming model.
-        abstract Run : 'model * Game * World -> 'model * World
-        default this.Run (model, _, world) = (model, world)
-
-        /// Implements additional editing behavior for a game via the ImGui API.
-        abstract Edit : 'model * EditOperation * Game * World -> 'model * World
-        default this.Edit (model, _, _, world) = (model, world)
-
-        /// Render the game using the given model.
-        abstract Render : 'model * RenderPass * Game * World -> unit
-        default this.Render (_, _, _, _) = ()
 
         /// Truncate the given model.
         abstract TruncateModel : 'model -> 'model
