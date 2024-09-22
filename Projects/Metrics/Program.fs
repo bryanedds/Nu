@@ -4,7 +4,7 @@ open System.IO
 open System.Numerics
 open Prime
 open Nu
-(*
+
 type MetricsEntityDispatcher () =
     inherit Entity3dDispatcher<StaticModel AssetTag, Message, Command> (false, false, false, Assets.Default.StaticModel)
 
@@ -106,42 +106,6 @@ type MmccGameDispatcher () =
         then World.exit world
         else world
 #endif
-*)
-type Counter =
-    { Count : int }
-
-type ImGameDispatcher () =
-    inherit GameDispatcher<Counter> ({ Count = 0 })
-
-    override this.Run (counter, _, world) =
-        let world = World.beginGame world []
-        let (_, world) = World.beginScreen "Screen" true (Dissolve (Constants.Dissolve.Default, None)) world []
-        let world = World.beginGroup "Group" world []
-        let world = World.beginPanel "Panel" world [Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
-        let world = World.doText "Text" world [Entity.Text .= "Counter"]
-        let (counter, world) =
-            match World.doButton "Button" world [Entity.Text .= string counter.Count] with 
-            | (true, world) -> ({ counter with Count = min 10 (inc counter.Count) }, world)
-            | (false, world) -> (counter, world)
-        let world = World.doFillBar "FillBar" world [Entity.Fill .= single counter.Count / 10.0f]
-        let world = World.endPanel world
-        let (results, world) = World.doBox2d "Box2d" world [Entity.Position @= v3 0.0f 192.0f 0.0f; Entity.Observable @= true]
-        let counter =
-            FQueue.fold (fun counter result ->
-                match result with
-                | BodyPenetration _ -> { counter with Count = dec counter.Count }
-                | _ -> counter)
-                counter results
-        let world = World.endGroup world
-        let world = World.endScreen world
-        let world = World.endGame world
-        (counter, world)
-
-    override this.Update (game, world) =
-        let world = base.Update (game, world)        
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
 
 type MetricsPlugin () =
     inherit NuPlugin ()
