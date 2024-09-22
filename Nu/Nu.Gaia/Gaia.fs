@@ -66,7 +66,7 @@ module Gaia =
     let mutable private OpenProjectImperativeExecution = false
     let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
-    let mutable private NewProjectType = "Empty"
+    let mutable private NewProjectType = "MMCC Empty"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
     let mutable private NewEntityOverlayName = "(Default Overlay)"
@@ -3256,14 +3256,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
-                for projectType in ["Empty"; "Game"] do
+                for projectType in ["MMCC Empty"; "MMCC Game"; "ImNui Empty"; "ImNui Game"] do
                     if ImGui.Selectable projectType then
                         NewProjectType <- projectType
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "Empty" -> "Create an empty game project. This contains the minimum code needed to experiment freely with Nu in a sandbox environment."
-                | "Game" | _ -> "Create a full game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | "MMCC Empty" -> "Create an empty MMCC game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
+                | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | "ImNui Empty" -> "Create an empty ImNui game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
+                | "ImNui Game" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | _ -> failwithumf ()
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
             ImGui.Separator ()
