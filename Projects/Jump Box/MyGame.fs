@@ -27,7 +27,7 @@ type MyGameDispatcher () =
 
         // run game
         let world = World.beginGame world []
-        let (_, world) = World.beginScreen "Screen" true (Dissolve (Constants.Dissolve.Default, None)) world []
+        let (_, world) = World.beginScreen "Screen" true Vanilla world []
         let world = World.beginGroup "Group" world []
 
         // create a sky box
@@ -36,7 +36,7 @@ type MyGameDispatcher () =
         // create a rigid block
         let (_, world) = World.doBlock3d "Block3d" world [Entity.Position .= v3 0.0f -4.0f -12.0f]
 
-        // create a rigid box, store a handle for later use, then handle its body interactions
+        // create a rigid box, store its handle and body id for reference, then handle its body interactions
         let (results, world) = World.doBox3d "Box3d" world [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Observable .= true]
         let box3d = world.RecentEntity
         let box3dBodyId = box3d.GetBodyId world
