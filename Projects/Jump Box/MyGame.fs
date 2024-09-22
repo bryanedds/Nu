@@ -7,8 +7,8 @@ open Nu
 // this is our top-level ImNui model type. It determines what state the game is in. To learn about ImNui in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
 type MyGame =
-    { Count : int }
-    static member initial = { Count = 0 }
+    { Collisions : int }
+    static member initial = { Collisions = 0 }
 
 // this extends the Game API to expose the above ImNui model as a property.
 [<AutoOpen>]
@@ -43,19 +43,19 @@ type MyGameDispatcher () =
         let myGame =
             FQueue.fold (fun myGame result ->
                 match result with
-                | BodyPenetration _ -> { myGame with Count = inc myGame.Count }
+                | BodyPenetration _ -> { myGame with Collisions = inc myGame.Collisions }
                 | _ -> myGame)
                 myGame results
 
         // declare a control panel
         let world = World.beginPanel "Panel" world [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
-        let world = World.doText "Collisions" world [Entity.Text @= "Collisions: " + string myGame.Count]
+        let world = World.doText "Collisions" world [Entity.Text @= "Collisions: " + string myGame.Collisions]
         let world =
             match World.doButton "Jump!" world [Entity.Text .= "Jump!"; Entity.EnabledLocal @= World.getBodyGrounded box3dBodyId world] with
             | (true, world) -> World.applyBodyLinearImpulse (v3Up * 12.0f) None box3dBodyId world
             | (false, world) -> world
-        let world = World.doFillBar "FillBar" world [Entity.Fill @= single myGame.Count / 25.0f]
-        let world = if myGame.Count >= 25 then World.doText "Full!" world [Entity.Text .= "Full!"] else world
+        let world = World.doFillBar "FillBar" world [Entity.Fill @= single myGame.Collisions / 25.0f]
+        let world = if myGame.Collisions >= 25 then World.doText "Full!" world [Entity.Text .= "Full!"] else world
         let world = World.endPanel world
 
         // finish game
