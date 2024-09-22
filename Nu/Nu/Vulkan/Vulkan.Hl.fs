@@ -613,6 +613,9 @@ module Hl =
 
             // acquire image from swapchain to draw onto
             vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
+
+            // reset command buffer
+            vkResetCommandBuffer (vulkanGlobal.CommandBuffer, VkCommandBufferResetFlags.None) |> check
             
             
             // fin
@@ -620,6 +623,26 @@ module Hl =
 
         /// End the frame.
         static member endFrame vulkanGlobal =
+            
+            // handles
+            let mutable commandBuffer = vulkanGlobal.CommandBuffer
+            let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
+            let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
+
+            // populate submit info
+            let mutable flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            let mutable submitInfo = VkSubmitInfo ()
+            submitInfo.waitSemaphoreCount <- 1u
+            submitInfo.pWaitSemaphores <- asPointer &imageAvailable
+            submitInfo.pWaitDstStageMask <- asPointer &flags
+            submitInfo.commandBufferCount <- 1u
+            submitInfo.pCommandBuffers <- asPointer &commandBuffer
+            submitInfo.signalSemaphoreCount <- 1u
+            submitInfo.pSignalSemaphores <- asPointer &renderFinished
+
+            // submit commands
+            vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &submitInfo, vulkanGlobal.InFlightFence) |> check
+            
             
             ()
         
