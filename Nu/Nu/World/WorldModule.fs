@@ -25,8 +25,12 @@ module WorldModuleOperators =
 [<AutoOpen>]
 module WorldModule =
 
+    /// Track if we're in the portion of the frame simulants are being updated.
+    /// TODO: P1: consider making this an AmbientState flag.
+    let mutable internal UpdatingSimulants = false
+
     /// Track if we're in the portion of the frame before tasklet processing has started or after.
-    /// TODO: consider making this an AmbientState flag.
+    /// TODO: P1: consider making this an AmbientState flag.
     let mutable internal TaskletProcessingStarted = false
 
     /// F# reach-around for adding script unsubscriptions to simulants.
@@ -64,14 +68,17 @@ module WorldModule =
     /// F# reach-around for unregistering physics entities of an entire screen.
     let mutable internal unregisterScreenPhysics : Screen -> World -> World =
         Unchecked.defaultof<_>
-        
-    let mutable internal signal : obj -> Simulant -> World -> World =
-        Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal unregister : Simulant -> World -> World =
+        Unchecked.defaultof<_>
+        
+    let mutable internal tryRunEntity : Entity -> World -> World =
+        Unchecked.defaultof<_>
+        
+    let mutable internal signal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal destroyImmediate : Simulant -> World -> World =

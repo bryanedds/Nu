@@ -72,6 +72,7 @@ type Nu () =
             WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
+            WorldModule.tryRunEntity <- fun entity world -> World.tryRunEntity entity world
             WorldModule.signal <- Nu.worldModuleSignal
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world

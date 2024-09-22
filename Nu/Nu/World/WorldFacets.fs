@@ -1782,10 +1782,10 @@ type LayoutFacet () =
                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
         | FlowLeftward ->
-            // TODO: P1: implement.
+            Log.warnOnce "FlowLeftward not yet implemented." // TODO: P1: implement.
             world
         | FlowUpward ->
-            // TODO: P1: implement.
+            Log.warnOnce "FlowUpward not yet implemented." // TODO: P1: implement.
             world
 
     static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =

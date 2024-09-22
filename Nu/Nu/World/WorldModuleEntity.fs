@@ -2278,6 +2278,9 @@ module WorldModuleEntity =
             // update publish update flag
             let world = World.updateEntityPublishUpdateFlag entity world |> snd'
 
+            // attempt to ImNui run entity first time if in the middle of simulant update phase
+            let world = if WorldModule.UpdatingSimulants then WorldModule.tryRunEntity entity world else world
+
             // propagate properties
             let world =
                 if World.getEntityMounted entity world then
@@ -2336,6 +2339,7 @@ module WorldModuleEntity =
                         let destination = destination / child.Name
                         World.renameEntityImmediate child destination world)
                         world children
+                let world = if WorldModule.UpdatingSimulants then WorldModule.tryRunEntity destination world else world
                 let world =
                     Seq.fold (fun world target ->
                         if World.getEntityExists target world
@@ -2525,6 +2529,9 @@ module WorldModuleEntity =
 
             // read the entity's children
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
+
+            // attempt to ImNui run entity first time if in the middle of simulant update phase
+            let world = if WorldModule.UpdatingSimulants then WorldModule.tryRunEntity entity world else world
 
             // insert a propagated descriptor if needed
             let world =

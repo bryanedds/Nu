@@ -1663,7 +1663,9 @@ module WorldModule2 =
 
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
+                                    WorldModule.UpdatingSimulants <- true
                                     let world = World.updateSimulants world
+                                    WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
