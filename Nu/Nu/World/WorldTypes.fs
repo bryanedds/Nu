@@ -1825,9 +1825,9 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { mutable SimulantImNuis : OMap<Simulant, SimulantImNui>
-      mutable ContextImNui : Address
+    { mutable ContextImNui : Address
       mutable RecentImNui : Address
+      mutable SimulantImNuis : OMap<Simulant, SimulantImNui>
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
@@ -1922,16 +1922,16 @@ and [<ReferenceEquality>] World =
     member this.Timers =
         AmbientState.getTimers this.AmbientState
 
-    member internal this.SimulantImNuis =
-        this.WorldExtension.SimulantImNuis
-
-    /// The current ImNui context.
+    /// Get the current ImNui context.
     member this.ContextImNui =
         this.WorldExtension.ContextImNui
 
-    /// The most recent but non-current ImNui context.
+    /// Get the most recent but non-current ImNui context.
     member this.RecentImNui =
         this.WorldExtension.RecentImNui
+
+    member internal this.SimulantImNuis =
+        this.WorldExtension.SimulantImNuis
 
 #if DEBUG
     member internal this.Choose () =

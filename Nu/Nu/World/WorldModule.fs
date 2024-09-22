@@ -226,6 +226,23 @@ module WorldModule =
         static member getGameTime world =
             World.getAmbientStateBy AmbientState.getGameTime world
 
+        /// Get the current ImNui context.
+        static member getContextImNui (world : World) =
+            world.ContextImNui
+
+        /// Get the most recent ImNui context.
+        static member getRecentImNui (world : World) =
+            world.RecentImNui
+
+        static member internal setContextImNui context (world : World) =
+            if world.Imperative then
+                world.WorldExtension.RecentImNui <- world.WorldExtension.ContextImNui
+                world.WorldExtension.ContextImNui <- context
+                world
+            else
+                let worldExtension = { world.WorldExtension with RecentImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
+                World.choose { world with WorldExtension = worldExtension }
+
         static member internal getSimulantImNuis (world : World) =
             world.SimulantImNuis
 
@@ -257,23 +274,6 @@ module WorldModule =
                 let simulantImNui = { simulantImNui with Utilized = true }
                 let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
                 World.setSimulantImNuis simulantImNuis world
-
-        /// Get the current ImNui context.
-        static member getContextImNui (world : World) =
-            world.ContextImNui
-
-        /// Get the most recent but non-current ImNui context.
-        static member getRenderImNui (world : World) =
-            world.RecentImNui
-
-        static member internal setContextImNui context (world : World) =
-            if world.Imperative then
-                world.WorldExtension.RecentImNui <- world.WorldExtension.ContextImNui
-                world.WorldExtension.ContextImNui <- context
-                world
-            else
-                let worldExtension = { world.WorldExtension with RecentImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
-                World.choose { world with WorldExtension = worldExtension }
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =
