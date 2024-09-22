@@ -282,11 +282,15 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
 
-        /// Reload all currently selected physics assets.
-        static member reloadPhysicsAssets world =
+        /// Reregister all currently selected physics.
+        static member reregisterPhysics world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 let world = WorldModule.unregisterScreenPhysics selectedScreen world
                 let world = WorldModule.registerScreenPhysics selectedScreen world
                 world
             | None -> world
+
+        /// Reload all currently selected physics assets.
+        static member reloadPhysicsAssets world =
+            World.reregisterPhysics world
