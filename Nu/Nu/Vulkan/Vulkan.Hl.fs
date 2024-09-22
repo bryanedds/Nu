@@ -166,7 +166,8 @@ module Hl =
               RenderFinishedSemaphore : VkSemaphore
               InFlightFence : VkFence
               ScreenClearRenderPass : VkRenderPass
-              SwapchainFramebuffers : VkFramebuffer array }
+              SwapchainFramebuffers : VkFramebuffer array
+              SwapExtent : VkExtent2D }
 
         /// Create the Vulkan instance.
         static member createInstance window =
@@ -604,6 +605,7 @@ module Hl =
             let mutable imageIndex = 0u
             let device = vulkanGlobal.Device
             let swapchain = vulkanGlobal.Swapchain
+            let commandBuffer = vulkanGlobal.CommandBuffer
             let imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable inFlight = vulkanGlobal.InFlightFence
 
@@ -614,9 +616,27 @@ module Hl =
             // acquire image from swapchain to draw onto
             vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
 
-            // reset command buffer
-            vkResetCommandBuffer (vulkanGlobal.CommandBuffer, VkCommandBufferResetFlags.None) |> check
-            
+            // reset command buffer and begin recording
+            vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
+            let mutable beginInfo = VkCommandBufferBeginInfo ()
+            vkBeginCommandBuffer (commandBuffer, asPointer &beginInfo) |> check
+
+            // set color for screen clear
+            // TODO: change to proper color once the testing utility of white is no longer needed.
+            let mutable clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)
+
+            // populate render pass info
+            let mutable renderPassInfo = VkRenderPassBeginInfo ()
+            renderPassInfo.renderPass <- vulkanGlobal.ScreenClearRenderPass
+            renderPassInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
+            renderPassInfo.renderArea.offset <- VkOffset2D.Zero
+            renderPassInfo.renderArea.extent <- vulkanGlobal.SwapExtent
+            renderPassInfo.clearValueCount <- 1u
+            renderPassInfo.pClearValues <- asPointer &clearColor
+
+            // clear the screen
+            vkCmdBeginRenderPass (commandBuffer, asPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
+            vkCmdEndRenderPass commandBuffer
             
             // fin
             imageIndex
@@ -631,6 +651,9 @@ module Hl =
             let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
 
+            // end command buffer recording
+            vkEndCommandBuffer commandBuffer |> check
+            
             // populate submit info
             let mutable flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
             let mutable submitInfo = VkSubmitInfo ()
@@ -746,7 +769,8 @@ module Hl =
                       RenderFinishedSemaphore = renderFinishedSemaphore
                       InFlightFence = inFlightFence
                       ScreenClearRenderPass = screenClearRenderPass
-                      SwapchainFramebuffers = swapchainFramebuffers }
+                      SwapchainFramebuffers = swapchainFramebuffers
+                      SwapExtent = swapExtent }
 
                 // fin
                 Some vulkanGlobal

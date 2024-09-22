@@ -359,6 +359,10 @@ type RendererThread () =
         // mark as started
         started <- true
 
+        // vulkan swapchain image index
+        // TODO: consider other ways to track this
+        let mutable imageIndex = 0u
+        
         // loop until terminated
         while not terminated do
 
@@ -371,6 +375,13 @@ type RendererThread () =
                 // receie submission
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
+                
+                // begin frame
+                match vulkanGlobalOpt with
+                | Some vulkanGlobal ->
+                    let currentIndex = Vulkan.Hl.VulkanGlobal.beginFrame vulkanGlobal
+                    imageIndex <- currentIndex
+                | None -> ()
                 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
@@ -392,6 +403,11 @@ type RendererThread () =
                 // guard against early termination
                 if not terminated then
 
+                    // end frame
+                    match vulkanGlobalOpt with
+                    | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.endFrame imageIndex vulkanGlobal
+                    | None -> ()
+                    
                     // acknowledge swap request
                     swap <- false
 
