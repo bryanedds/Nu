@@ -67,7 +67,7 @@ module WorldImNui =
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity entityImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui entity { Utilized = true; Result = zero } world
-                    let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                    let world = if not (entity.GetExists world) then World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd else world
                     let world = World.setEntityProtected true entity world |> snd'
                     let world = if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun entityImNui -> { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }) entity world
@@ -246,7 +246,7 @@ module WorldImNui =
                 | (false, _) ->
                     let world = World.addSimulantImNui group { Utilized = true; Result = () } world
                     let world =
-                        if not (group.GetExists world && group.Names = [|"Game"; "Screen"; "Group"|]) then // NOTE: special-case when Gaia has already created the group.
+                        if not (group.GetExists world) then
                             match groupFilePathOpt with
                             | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
                             | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
@@ -292,7 +292,7 @@ module WorldImNui =
                 | (false, _) ->
                     let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
                     let world =
-                        if not (screen.GetExists world && screen.Names = [|"Game"; "Screen"|]) // NOTE: special-case when Gaia has already created the screen.
+                        if not (screen.GetExists world)
                         then World.createScreen<'d> (Some name) world |> snd
                         else world
                     let world = World.setScreenProtected true screen world |> snd'

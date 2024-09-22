@@ -12,18 +12,6 @@ type MyGame =
     | Credits
     | Gameplay
 
-// this is our top-level MMCC message type.
-type MyGameMessage =
-    | ShowTitle
-    | ShowCredits
-    | ShowGameplay
-    interface Message
-
-// this is our top-level MMCC command type. Commands are used instead of messages when the world is to be transformed.
-type MyGameCommand =
-    | Exit
-    interface Command
-
 // this extends the Game API to expose the above MMCC model as a property.
 [<AutoOpen>]
 module MyGameExtensions =
@@ -35,41 +23,53 @@ module MyGameExtensions =
 // this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
 // bind them up with events and properties.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame, MyGameMessage, MyGameCommand> (Splash)
+    inherit GameDispatcher<MyGame> (Splash)
 
-    // here we define the game's properties and event handling
-    override this.Definitions (myGame, _) =
-        [Game.DesiredScreen :=
-            match myGame with
-            | Splash -> Desire Simulants.Splash
-            | Title -> Desire Simulants.Title
-            | Credits -> Desire Simulants.Credits
-            | Gameplay -> Desire Simulants.Gameplay
-         if myGame = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
-         Simulants.TitleCredits.ClickEvent => ShowCredits
-         Simulants.TitlePlay.ClickEvent => ShowGameplay
-         Simulants.TitleExit.ClickEvent => Exit
-         Simulants.CreditsBack.ClickEvent => ShowTitle
-         Simulants.Gameplay.QuitEvent => ShowTitle]
+    override this.Run (myGame, _, world) : MyGame * World =
 
-    // here we handle the above messages
-    override this.Message (_, message, _, _) =
-        match message with
-        | ShowTitle -> just Title
-        | ShowCredits -> just Credits
-        | ShowGameplay -> just Gameplay
+        // declare game
+        let world = World.beginGame world []
 
-    // here we handle the above commands
-    override this.Command (_, command, _, world) =
-        match command with
-        | Exit ->
-            if world.Unaccompanied
-            then just (World.exit world)
-            else just world
+        // declare splash screen
+        let (result, world) = World.doScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) world []
+        let myGame =
+            match result |> Seq.filter (function Deselecting -> true | _ -> false) |> Seq.tryHead with
+            | Some _ -> Title
+            | None -> myGame
 
-    // here we describe the content of the game, including all of its screens.
-    override this.Content (_, _) =
-        [Content.screen Simulants.Splash.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
-         Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] []
-         Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] []
-         Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, None)) [] []]
+        // declare title screen
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" world []
+        let world = World.beginGroup Simulants.TitleGui.Name world []
+        let (myGame, world) =
+            match World.doButton Simulants.TitleCredits.Name world [] with
+            | (true, world) -> (Credits, world)
+            | (false, world) -> (myGame, world)
+        let (myGame, world) =
+            match World.doButton Simulants.TitlePlay.Name world [] with
+            | (true, world) -> (Gameplay, world)
+            | (false, world) -> (myGame, world)
+        let world = World.endGroup world
+        let world = World.endScreen world
+
+        // declare credits screen
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" world []
+        let world = World.beginGroup Simulants.CreditsGui.Name world []
+        let (myGame, world) =
+            match World.doButton Simulants.CreditsBack.Name world [] with
+            | (true, world) -> (Title, world)
+            | (false, world) -> (myGame, world)
+        let world = World.endGroup world
+        let world = World.endScreen world
+
+        // declare gameplay screen
+        let (_, world) = World.doScreen Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+
+        // declaration terminus
+        let world = World.endGame world
+
+        // handle Alt+F4
+        let world =
+            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+            then World.exit world
+            else world
+        (myGame, world)
