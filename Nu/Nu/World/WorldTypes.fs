@@ -1197,7 +1197,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Light with get () = this.Dispatcher.Light || Array.exists (fun (facet : Facet) -> facet.Light) this.Facets
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized with get () = this.Transform.Optimized
-    member internal this.VisibleSpatial with get () = this.Visible && not this.AlwaysRender
+    member internal this.VisibleSpatial with get () = this.Visible || this.AlwaysRender
     member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate
 
     /// Copy an entity state.

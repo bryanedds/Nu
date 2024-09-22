@@ -150,7 +150,7 @@ module WorldGameModule =
 
         static member internal tryRunGame (game : Game) world =
 
-            // attemp to run via dispatcher
+            // attempt to run via dispatcher
             let dispatcher = game.GetDispatcher world
             dispatcher.TryRun (game, world)
 
