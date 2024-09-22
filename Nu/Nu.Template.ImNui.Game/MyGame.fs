@@ -62,7 +62,7 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (_, world) = World.doScreen Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let (_, world) = World.doScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
 
         // declaration terminus
         let world = World.endGame world
