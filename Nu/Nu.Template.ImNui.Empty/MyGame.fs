@@ -49,6 +49,4 @@ type MyGameDispatcher () =
 
         // advance game time
         let myGame = { myGame with MyGameTime = inc myGame.MyGameTime }
-
-        // fin
         (myGame, world)

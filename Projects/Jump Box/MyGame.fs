@@ -30,11 +30,14 @@ type MyGameDispatcher () =
         let (_, world) = World.beginScreen "Screen" true (Dissolve (Constants.Dissolve.Default, None)) world []
         let world = World.beginGroup "Group" world []
 
+        // create a sky box
+        let world = World.doSkyBox "SkyBox" world []
+
         // create a rigid block
-        let (_, world) = World.doBlock2d "Block2d" world [Entity.Position .= v3 128.0f -128.0f 0.0f]
+        let (_, world) = World.doBlock3d "Block3d" world [Entity.Position .= v3 0.0f -4.0f -12.0f]
 
         // create a rigid box, store a handle for later use, then handle its body interactions
-        let (results, world) = World.doBox2d "Box2d" world [Entity.Position .= v3 128.0f 128.0f 0.0f; Entity.Observable .= true]
+        let (results, world) = World.doBox3d "Box3d" world [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Observable .= true]
         let box2d = world.RecentEntity
         let box2dBodyId = box2d.GetBodyId world
         let myGame =
@@ -49,7 +52,7 @@ type MyGameDispatcher () =
         let world = World.doText "Collisions" world [Entity.Text @= "Collisions: " + string myGame.Count]
         let world =
             match World.doButton "Jump!" world [Entity.Text .= "Jump!"; Entity.EnabledLocal @= World.getBodyGrounded box2dBodyId world] with
-            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 200.0f) None box2dBodyId world
+            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 12.0f) None box2dBodyId world
             | (false, world) -> world
         let world = World.doFillBar "FillBar" world [Entity.Fill @= single myGame.Count / 25.0f]
         let world = if myGame.Count >= 25 then World.doText "Full!" world [Entity.Text .= "Full!"] else world
