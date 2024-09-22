@@ -125,7 +125,7 @@ type ImGameDispatcher () =
             | (false, world) -> (counter, world)
         let world = World.doFillBar "FillBar" world [Entity.Fill .= single counter.Count / 10.0f]
         let world = World.endPanel world
-        let (results, world) = World.doBox2d "Box2d" world [Entity.Position @= v3 0.0f 192.0f 0.0f]
+        let (results, world) = World.doBox2d "Box2d" world [Entity.Position @= v3 0.0f 192.0f 0.0f; Entity.Observable @= true]
         let counter =
             FQueue.fold (fun counter result ->
                 match result with
