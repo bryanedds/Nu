@@ -11,7 +11,7 @@ module WorldModuleOperators =
 
     /// Attempt to resolve a relationship from a simulant.
     let tryResolve<'t when 't :> Simulant> (simulant : Simulant) (relation : 't Relation) : 't option =
-        let simulant2 = Relation.resolve<Simulant, 't> simulant.SimulantAddress relation
+        let simulant2 = Relation.resolve<Simulant, 't> (itoa simulant.SimulantAddress) relation
         if simulant2.Names.Length >= 4 && typeof<'t> = typeof<Entity> then Some (Entity (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 3 && typeof<'t> = typeof<Group> then Some (Group (simulant2.Names) :> Simulant :?> 't)
         elif simulant2.Names.Length = 2 && typeof<'t> = typeof<Screen> then Some (Screen (simulant2.Names) :> Simulant :?> 't)
@@ -20,7 +20,7 @@ module WorldModuleOperators =
 
     /// Relate the second simulant to the first.
     let relate<'t when 't :> Simulant> (simulant : Simulant) (simulant2 : 't) : 't Relation =
-        Relation.relate<Simulant, 't> simulant.SimulantAddress (atoa simulant2.SimulantAddress)
+        Relation.relate<Simulant, 't> (itoa simulant.SimulantAddress) (itoa simulant2.SimulantAddress)
 
 [<AutoOpen>]
 module WorldModule =
@@ -682,7 +682,7 @@ module WorldModule =
                 let world = World.unsubscribe monitorId world
                 world
             let callback' = fun _ world -> (Cascade, unsubscribe world)
-            let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> subscriber.SimulantAddress
+            let unregisteringEventAddress = rtoa<unit> [|"Unregistering"; "Event"|] --> itoa subscriber.SimulantAddress
             let world = World.subscribePlus<unit, Simulant> removalId callback' unregisteringEventAddress subscriber world |> snd
             (unsubscribe, world)
 

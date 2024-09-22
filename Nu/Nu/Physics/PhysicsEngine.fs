@@ -185,7 +185,7 @@ type [<CustomEquality; NoComparison>] BodyId =
 
     /// Equate BodyIds.
     static member equals pid pid2 =
-        Address.equals pid.BodySource.SimulantAddress pid2.BodySource.SimulantAddress &&
+        String.equateMany pid.BodySource.SimulantAddress.Names pid2.BodySource.SimulantAddress.Names &&
         pid.BodyIndex = pid2.BodyIndex
 
     interface BodyId IEquatable with

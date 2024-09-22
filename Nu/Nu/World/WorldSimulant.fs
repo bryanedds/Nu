@@ -222,7 +222,7 @@ module WorldSimulantModule =
 
         /// Check that a simulant exists in the world.
         static member getExists (simulant : Simulant) (world : World) =
-            let namesLength = simulant.SimulantAddress |> Address.getNames |> Array.length
+            let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 4 then
                 let entity = simulant :?> Entity
                 notNull (entity.EntityStateOpt :> obj) && not entity.EntityStateOpt.Invalidated ||
@@ -237,7 +237,7 @@ module WorldSimulantModule =
         /// Determine if a simulant is contained by, or is the same as, any currently selected screen.
         /// Game is always considered 'selected' as well.
         static member getSelected (simulant : Simulant) world =
-            match Address.getNames simulant.SimulantAddress with
+            match simulant.Names with
             | [||] -> failwithumf ()
             | [|_|] -> true
             | names ->

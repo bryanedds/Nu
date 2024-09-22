@@ -7,7 +7,7 @@ open System
 /// A participant in the event graph.
 type Simulant =
     interface
-        abstract SimulantAddress : Simulant Address
+        abstract SimulantAddress : Address
         end
 
 [<AutoOpen>]
@@ -17,19 +17,10 @@ module SimulantOperators =
     type Simulant with
 
         /// The names of the simulant.
-        member this.Names = Address.getNames this.SimulantAddress
+        member this.Names = this.SimulantAddress.Names
 
         /// The name of the simulant.
-        member this.Name = Address.getName this.SimulantAddress
-
-        /// Concatenate an address with a simulant's address, taking the type of first address.
-        static member acatf<'a> (address : 'a Address) (simulant : Simulant) =
-            match box simulant with
-            | null -> address // HACK: this case is a hack to be able to insert events into an MMCC event handler
-            | _ -> acatf address simulant.SimulantAddress
-
-        /// Concatenate an address with a simulant's address, taking the type of first address.
-        // Disabled due to extension types not supporting operators: static member (-->) (address, simulant : Simulant) = Simulant.acatf address simulant
+        member this.Name = Array.last this.SimulantAddress.Names
 
 /// A simulant in the event system that is globalized and compatible with generalized events.
 type GlobalSimulantGeneralized =

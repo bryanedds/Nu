@@ -273,8 +273,8 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
             // HACK: this case is a hack to allow Nu to resolve events contextually.
             let hashCode = Constants.Lens.ChangeNameHash ^^^ hash this.Name ^^^ Constants.Lens.EventNameHash
             let changeEventAddress = { Names = names; HashCode = hashCode; Anonymous = true }
-            changeEventAddress 
-        | _ -> rtoa names --> this.This.SimulantAddress
+            changeEventAddress
+        | _ -> rtoa (Array.append names this.This.SimulantAddress.Names)
 
     /// The type of the lensed property.
     member inline this.Type = typeof<'a>
@@ -1325,9 +1325,6 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
     /// A convenience reference to get the universal game handle.
     static let handle = Game (ntoa Constants.Engine.GameName)
 
-    // cache the simulant address to avoid allocation
-    let simulantAddress = atoa<Game, Simulant> gameAddress
-
     /// The address of the game.
     member this.GameAddress = gameAddress
 
@@ -1364,7 +1361,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
         Address.hash this.GameAddress
 
     interface Simulant with
-        member this.SimulantAddress = simulantAddress
+        member this.SimulantAddress = gameAddress
         end
 
     interface Game IComparable with
@@ -1417,9 +1414,6 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
     do if screenAddress.Length <> 2 || screenAddress.Names.[0] <> Constants.Engine.GameName then
         failwith "Screen address must be length of 2 with Game name = 'Game'."
 #endif
-
-    // cache the simulant address to avoid allocation
-    let simulantAddress = atoa<Screen, Simulant> screenAddress
 
     /// Create a group reference from an address string.
     new (screenAddressStr : string) = Screen (stoa screenAddressStr)
@@ -1476,7 +1470,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
             Address.compare this.ScreenAddress that.ScreenAddress
 
     interface Simulant with
-        member this.SimulantAddress = simulantAddress
+        member this.SimulantAddress = screenAddress
         end
 
 /// Converts Group types, interning its strings for look-up speed.
@@ -1518,9 +1512,6 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
     do if groupAddress.Length <> 3 || groupAddress.Names.[0] <> Constants.Engine.GameName then
         failwith "Group address must be length of 3 with Game name = 'Game'."
 #endif
-
-    // cache the simulant address to avoid allocation
-    let simulantAddress = atoa<Group, Simulant> groupAddress
 
     /// Create a group reference from an address string.
     new (groupAddressStr : string) = Group (stoa groupAddressStr)
@@ -1570,7 +1561,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
         Address.hash this.GroupAddress
 
     interface Simulant with
-        member this.SimulantAddress = simulantAddress
+        member this.SimulantAddress = groupAddress
         end
 
     interface Group IComparable with
@@ -1626,9 +1617,6 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
 
     /// The entity's cached state.
     let mutable entityStateOpt = Unchecked.defaultof<EntityState>
-
-    // cache the simulant address to avoid allocation
-    let simulantAddress = atoa<Entity, Simulant> entityAddress
 
     /// Create an entity reference from an address string.
     new (entityAddressStr : string) = Entity (stoa entityAddressStr)
@@ -1697,7 +1685,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
         Address.hash this.EntityAddress
 
     interface Simulant with
-        member this.SimulantAddress = simulantAddress
+        member this.SimulantAddress = entityAddress
         end
 
     interface Entity IComparable with

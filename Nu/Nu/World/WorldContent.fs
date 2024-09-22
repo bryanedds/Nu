@@ -58,12 +58,12 @@ module Content =
                 // subscribe to added events
                 let world =
                     List.foldGeneric (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -108,12 +108,12 @@ module Content =
                 // subscribe to added handlers
                 let world =
                     List.foldGeneric (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
