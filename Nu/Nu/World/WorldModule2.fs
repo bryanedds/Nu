@@ -2032,6 +2032,86 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
+    /// The ImNui dispatcher for entities.
+    and [<AbstractClass>] EntityDispatcher<'model>
+        (is2d, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, physical, lightProbe, light)
+
+        new (is2d, physical, lightProbe, light, initial : 'model) =
+            EntityDispatcher<'model> (is2d, physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent]
+
+        /// Get the entity's model.
+        member this.GetModel (entity : Entity) world : 'model =
+            entity.GetModelGeneric<'model> world
+
+        /// Set the entity's model.
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            entity.SetModelGeneric<'model> model world
+
+        /// The entity's model lens.
+        member this.Model (entity : Entity) =
+            lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
+
+        override this.Register (entity, world) =
+            let property = World.getEntityModelProperty entity world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setEntityModelGeneric<'model> false model entity world |> snd'
+
+        override this.Edit (operation, entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, entity, world)
+            this.SetModel model entity world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
+            this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, entity, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = entity.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Entity * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// Implements additional editing behavior for an entity via the ImGui API.
+        abstract Edit : 'model * EditOperation * Entity * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Render the entity using the given model.
+        abstract Render : 'model * RenderPass * Entity * World -> unit
+        default this.Render (_, _, _, _) = ()
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
+
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
@@ -2701,11 +2781,6 @@ module GameDispatcherModule =
                         makeInitial world
             World.setGameModelGeneric<'model> false model game world |> snd'
 
-        override this.Update (game, world) =
-            let model = game.GetModelGeneric<'model> world
-            let (model, world) = this.Run (model, game, world)
-            this.SetModel model game world
-
         override this.Edit (operation, game, world) =
             let model = game.GetModelGeneric<'model> world
             let (model, world) = this.Edit (model, operation, game, world)
@@ -2737,6 +2812,10 @@ module GameDispatcherModule =
         /// Implements additional editing behavior for a game via the ImGui API.
         abstract Edit : 'model * EditOperation * Game * World -> ('model * World)
         default this.Edit (model, _, _, world) = (model, world)
+
+        /// Render the game using the given model.
+        abstract Render : 'model * RenderPass * Game * World -> unit
+        default this.Render (_, _, _, _) = ()
 
         /// Truncate the given model.
         abstract TruncateModel : 'model -> 'model

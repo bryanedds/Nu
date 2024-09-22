@@ -1167,7 +1167,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Static with get () = this.Transform.Static and set value = this.Transform.Static <- value
     member this.Optimized with get () = this.Transform.Optimized
     member internal this.VisibleSpatial with get () = this.Visible && not this.AlwaysRender
-    member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate && not this.IsImNui
+    member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
