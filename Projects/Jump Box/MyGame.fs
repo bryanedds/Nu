@@ -58,7 +58,7 @@ type MyGameDispatcher () =
         let world = if myGame.Collisions >= 25 then World.doText "Full!" world [Entity.Text .= "Full!"] else world
         let world = World.endPanel world
 
-        // finish game
+        // declaration termini
         let world = World.endGroup world
         let world = World.endScreen world
         let world = World.endGame world
