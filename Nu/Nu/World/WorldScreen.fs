@@ -133,6 +133,12 @@ module WorldScreenModule =
 
     type World with
 
+        static member internal tryRunScreen (screen : Screen) world =
+
+            // attempt to run via dispatcher
+            let dispatcher = World.getScreenDispatcher screen world
+            dispatcher.TryRun (screen, world)
+
         static member internal preUpdateScreen (screen : Screen) world =
 
             // pre-update via dispatcher

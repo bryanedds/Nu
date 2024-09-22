@@ -551,12 +551,14 @@ module WorldEntityModule =
 
     type World with
 
-        static member internal renderEntity renderPass (entity : Entity) world =
+        static member internal tryRunEntity (entity : Entity) world =
             let facets = entity.GetFacets world
-            for facet in facets do
-                facet.Render (renderPass, entity, world)
+            let mutable world = world // OPTIMIZATION: inlining fold for speed.
+            if Array.notEmpty facets then // OPTIMIZATION: eliding iteration setup for speed.
+                for facet in facets do
+                    world <- facet.TryRun (entity, world)
             let dispatcher = entity.GetDispatcher world
-            dispatcher.Render (renderPass, entity, world)
+            dispatcher.TryRun (entity, world)
 
         static member internal updateEntity (entity : Entity) world =
             let facets = entity.GetFacets world
@@ -570,6 +572,13 @@ module WorldEntityModule =
                 let eventTrace = EventTrace.debug "World" "updateEntity" "" EventTrace.empty
                 World.publishPlus () entity.UpdateEvent eventTrace entity false false world
             else world
+
+        static member internal renderEntity renderPass (entity : Entity) world =
+            let facets = entity.GetFacets world
+            for facet in facets do
+                facet.Render (renderPass, entity, world)
+            let dispatcher = entity.GetDispatcher world
+            dispatcher.Render (renderPass, entity, world)
 
         /// Edit an entity with the given operation using the ImGui APIs.
         /// Intended only to be called by editors like Gaia.

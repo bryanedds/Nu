@@ -1281,32 +1281,55 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
+                let world = World.tryRunGame game world
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
                 // update screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen screen world else world) world screenOpt
+                let world =
+                    Option.fold (fun world (screen : Screen) ->
+                        let world = if screen.GetExists world then World.tryRunScreen screen world else world
+                        let world = if advancing && screen.GetExists world then World.updateScreen screen world else world
+                        world)
+                        world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.updateGroup group world else world) world groups
+                let world =
+                    Seq.fold (fun world (group : Group) ->
+                        let world = if group.GetExists world then World.tryRunGroup group world else world
+                        let world = if advancing && group.GetExists world then World.updateGroup group world else world
+                        world)
+                        world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 let world =
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
-                        then World.updateEntity element.Entry world
-                        else world)
+                        let world =
+                            if element.Entry.GetExists world
+                            then World.tryRunEntity element.Entry world
+                            else world
+                        let world =
+                            if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
+                            then World.updateEntity element.Entry world
+                            else world
+                        world)
                         world HashSet3dNormalCached
                 let world =
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
-                        then World.updateEntity element.Entry world
-                        else world)
+                        let world =
+                            if element.Entry.GetExists world
+                            then World.tryRunEntity element.Entry world
+                            else world
+                        let world =
+                            if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
+                            then World.updateEntity element.Entry world
+                            else world
+                        world)
                         world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
@@ -1613,11 +1636,9 @@ module WorldModule2 =
 
                     // update screen transitioning process
                     let world = World.updateScreenTransition world
+                    World.updateScreenRequestedSong world
                     match World.getLiveness world with
                     | Live ->
-
-                        // 
-                        World.updateScreenRequestedSong world
 
                         // process HID inputs
                         world.Timers.InputTimer.Restart ()
@@ -2072,6 +2093,11 @@ module EntityDispatcherModule2 =
                         makeInitial world
             World.setEntityModelGeneric<'model> false model entity world |> snd'
 
+        override this.TryRun (entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (model, world) = this.Run (model, entity, world)
+            this.SetModel model entity world
+
         override this.Edit (operation, entity, world) =
             let model = entity.GetModelGeneric<'model> world
             let (model, world) = this.Edit (model, operation, entity, world)
@@ -2095,6 +2121,10 @@ module EntityDispatcherModule2 =
         /// The fallback model value.
         abstract GetFallbackModel : Symbol * Entity * World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Entity * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
 
         /// Implements additional editing behavior for an entity via the ImGui API.
         abstract Edit : 'model * EditOperation * Entity * World -> 'model * World
@@ -2781,6 +2811,11 @@ module GameDispatcherModule =
                         makeInitial world
             World.setGameModelGeneric<'model> false model game world |> snd'
 
+        override this.TryRun (game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (model, world) = this.Run (model, game, world)
+            this.SetModel model game world
+
         override this.Edit (operation, game, world) =
             let model = game.GetModelGeneric<'model> world
             let (model, world) = this.Edit (model, operation, game, world)
@@ -2805,12 +2840,12 @@ module GameDispatcherModule =
         abstract GetFallbackModel : Symbol * Game * World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
-        /// The run handler of the ImNuil programming model.
-        abstract Run : 'model * Game * World -> ('model * World)
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Game * World -> 'model * World
         default this.Run (model, _, world) = (model, world)
 
         /// Implements additional editing behavior for a game via the ImGui API.
-        abstract Edit : 'model * EditOperation * Game * World -> ('model * World)
+        abstract Edit : 'model * EditOperation * Game * World -> 'model * World
         default this.Edit (model, _, _, world) = (model, world)
 
         /// Render the game using the given model.

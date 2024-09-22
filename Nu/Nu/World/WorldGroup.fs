@@ -99,6 +99,12 @@ module WorldGroupModule =
 
     type World with
 
+        static member internal tryRunGroup (group : Group) world =
+
+            // attempt to run via dispatcher
+            let dispatcher = group.GetDispatcher world
+            dispatcher.TryRun (group, world)
+
         static member internal preUpdateGroup (group : Group) world =
 
             // pre-update via dispatcher
