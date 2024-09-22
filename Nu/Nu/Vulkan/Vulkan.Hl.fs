@@ -622,9 +622,11 @@ module Hl =
             imageIndex
 
         /// End the frame.
-        static member endFrame vulkanGlobal =
+        static member endFrame imageIndex vulkanGlobal =
             
-            // handles
+            // swapchain image index and other handles
+            let mutable imageIndex = imageIndex
+            let mutable swapchain = vulkanGlobal.Swapchain
             let mutable commandBuffer = vulkanGlobal.CommandBuffer
             let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
@@ -642,9 +644,20 @@ module Hl =
 
             // submit commands
             vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &submitInfo, vulkanGlobal.InFlightFence) |> check
-            
-            
-            ()
+
+            // populate present info
+            let mutable presentInfo = VkPresentInfoKHR ()
+            presentInfo.waitSemaphoreCount <- 1u
+            presentInfo.pWaitSemaphores <- asPointer &renderFinished
+            presentInfo.swapchainCount <- 1u
+            presentInfo.pSwapchains <- asPointer &swapchain
+            presentInfo.pImageIndices <- asPointer &imageIndex
+
+            // present image back to swapchain to appear on screen
+            vkQueuePresentKHR (vulkanGlobal.PresentQueue, asPointer &presentInfo) |> check
+        
+        /// Wait for all device operations to complete before cleaning up resources.
+        static member waitIdle vulkanGlobal = vkDeviceWaitIdle vulkanGlobal.Device |> check
         
         /// Destroy Vulkan handles.
         static member cleanup vulkanGlobal =

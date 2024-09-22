@@ -396,7 +396,13 @@ type RendererThread () =
                     swap <- false
 
         // clean up
+        // TODO: consider abstracting VulkanGlobal with a mock version to remove all this ugliness.
+        match vulkanGlobalOpt with
+        | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.waitIdle vulkanGlobal
+        | None -> ()
+        
         renderer2d.CleanUp ()
+        
         match vulkanGlobalOpt with
         | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.cleanup vulkanGlobal
         | None -> ()
