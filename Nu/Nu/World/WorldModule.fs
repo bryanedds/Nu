@@ -230,11 +230,43 @@ module WorldModule =
         static member getContextImNui (world : World) =
             world.ContextImNui
 
+        /// Get the current ImNui context translated to a Game handle (throwing upon failure).
+        static member getContextGame (world : World) =
+            world.ContextGame
+
+        /// Get the current ImNui context translated to a Screen handle (throwing upon failure).
+        static member getContextScreen (world : World) =
+            world.ContextScreen
+
+        /// Get the current ImNui context translated to a Group handle (throwing upon failure).
+        static member getContextGroup (world : World) =
+            world.ContextGroup
+
+        /// Get the current ImNui context translated to a Entity handle (throwing upon failure).
+        static member getContextEntity (world : World) =
+            world.ContextEntity
+
         /// Get the most recent ImNui context.
         static member getRecentImNui (world : World) =
             world.RecentImNui
 
-        static member internal setContextImNui context (world : World) =
+        /// Get the most recent ImNui context translated to a Game handle (throwing upon failure).
+        static member getRecentGame (world : World) =
+            world.RecentGame
+
+        /// Get the most recent ImNui context translated to a Screen handle (throwing upon failure).
+        static member getRecentScreen (world : World) =
+            world.RecentScreen
+
+        /// Get the most recent ImNui context translated to a Group handle (throwing upon failure).
+        static member getRecentGroup (world : World) =
+            world.RecentGroup
+
+        /// Get the most recent ImNui context translated to a Entity handle (throwing upon failure).
+        static member getRecentEntity (world : World) =
+            world.RecentEntity
+
+        static member internal setContext context (world : World) =
             if world.Imperative then
                 world.WorldExtension.RecentImNui <- world.WorldExtension.ContextImNui
                 world.WorldExtension.ContextImNui <- context

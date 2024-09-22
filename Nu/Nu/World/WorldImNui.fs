@@ -60,7 +60,7 @@ module WorldImNui =
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ArgImNui seq) : 'r * World =
             // TODO: optimize this for large-scale use.
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContextImNui entityAddress world
+            let world = World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue entity with
@@ -96,7 +96,7 @@ module WorldImNui =
                     if currentNames.Length = 3
                     then Address.makeFromArray<Group> currentNames :> Address
                     else Address.makeFromArray<Entity> currentNames
-                World.setContextImNui currentAddress world
+                World.setContext currentAddress world
             | _ -> raise (new InvalidOperationException "World.beginEntity mismatch.")
 
         /// ImNui declare an entity with the given arguments.
@@ -238,7 +238,7 @@ module WorldImNui =
 
         static member private beginGroup4<'d when 'd :> GroupDispatcher> name groupFilePathOpt (world : World) (args : Group ArgImNui seq) =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContextImNui groupAddress world
+            let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group with
@@ -273,7 +273,7 @@ module WorldImNui =
             match world.ContextImNui with
             | :? (Group Address) as groupAddress ->
                 let currentAddress = Address.take<Group, Screen> 2 groupAddress
-                World.setContextImNui currentAddress world
+                World.setContext currentAddress world
             | _ -> raise (new InvalidOperationException "World.beginGroup mismatch.")
 
         /// ImNui declare a group with the given arguments.
@@ -283,7 +283,7 @@ module WorldImNui =
 
         static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContextImNui screenAddress world
+            let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
             let (initializing, world) =
                 let simulantImNuis = world.SimulantImNuis
@@ -324,7 +324,7 @@ module WorldImNui =
         static member endScreen (world : World) =
             match world.ContextImNui with
             | :? (Screen Address) ->
-                World.setContextImNui Game.GameAddress world
+                World.setContext Game.GameAddress world
             | _ -> raise (new InvalidOperationException "World.beginScreen mismatch.")
 
         static member internal doScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args =
@@ -335,7 +335,7 @@ module WorldImNui =
         /// Begin the ImNui declaration of a game with the given arguments.
         static member beginGame (world : World) (args : Game ArgImNui seq) =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
-            let world = World.setContextImNui gameAddress world
+            let world = World.setContext gameAddress world
             let game = Nu.Game gameAddress
             Seq.fold
                 (fun world arg ->
@@ -348,7 +348,7 @@ module WorldImNui =
         static member endGame (world : World) =
             match world.ContextImNui with
             | :? (Game Address) ->
-                World.setContextImNui Address.empty world
+                World.setContext Address.empty world
             | _ -> raise (new InvalidOperationException "World.beginGame mismatch.")
 
         /// ImNui declare a group with the given arguments.
@@ -358,7 +358,7 @@ module WorldImNui =
 
         /// Make an entity the current ImNui context.
         static member scopeEntity (entity : Entity) world (args : Entity ArgImNui seq) =
-            let world = World.setContextImNui entity.EntityAddress world
+            let world = World.setContext entity.EntityAddress world
             Seq.fold
                 (fun world arg ->
                     if entity.GetExists world
@@ -368,7 +368,7 @@ module WorldImNui =
 
         /// Make a group the current ImNui context.
         static member scopeGroup (group : Group) world (args : Group ArgImNui seq) =
-            let world = World.setContextImNui group.GroupAddress world
+            let world = World.setContext group.GroupAddress world
             Seq.fold
                 (fun world arg ->
                     if group.GetExists world
@@ -378,7 +378,7 @@ module WorldImNui =
 
         /// Make a screen the current ImNui context.
         static member scopeScreen (screen : Screen) world (args : Screen ArgImNui seq) =
-            let world = World.setContextImNui screen.ScreenAddress world
+            let world = World.setContext screen.ScreenAddress world
             Seq.fold
                 (fun world arg ->
                     if screen.GetExists world
@@ -389,14 +389,14 @@ module WorldImNui =
         /// Make the game the current ImNui context.
         static member scopeGame world (args : Game ArgImNui seq) =
             let game = Game
-            let world = World.setContextImNui game.GameAddress world
+            let world = World.setContext game.GameAddress world
             Seq.fold
                 (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
                 world args
 
         /// Clear the current ImNui context.
         static member scopeWorld world =
-            World.setContextImNui Address.empty world
+            World.setContext Address.empty world
 
         static member internal collectImNui (world : World) =
             if world.Advancing then

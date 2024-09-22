@@ -253,9 +253,9 @@ module WorldSimulantModule =
             then Entity (Address.changeType<obj, Entity> address) :> Simulant
             else
                 match namesLength with
-                | 1 -> Game.Handle :> Simulant
-                | 2 -> Screen (Address.changeType<obj, Screen> address) :> Simulant
-                | 3 -> Group (Address.changeType<obj, Group> address) :> Simulant
+                | 1 -> Game.Handle // OPTIMIZATION: avoid allocation.
+                | 2 -> Screen (Address.changeType<obj, Screen> address)
+                | 3 -> Group (Address.changeType<obj, Group> address)
                 | _ -> failwithumf ()
 
         /// Convert an event address to the concrete simulant that it targets.
