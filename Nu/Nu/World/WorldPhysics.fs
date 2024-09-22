@@ -262,8 +262,8 @@ module WorldPhysics =
             world
 
         /// Send a physics message to apply force to a body with the given physics id.
-        static member applyBodyForce force offset bodyId world =
-            let applyBodyForceMessage = ApplyBodyForceMessage { BodyId = bodyId; Force = force; Offset = offset }
+        static member applyBodyForce force originWorldOpt bodyId world =
+            let applyBodyForceMessage = ApplyBodyForceMessage { BodyId = bodyId; Force = force; OriginWorldOpt = originWorldOpt }
             let world = World.handlePhysicsMessage3d applyBodyForceMessage world
             let world = World.handlePhysicsMessage2d applyBodyForceMessage world
             world

@@ -756,7 +756,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.Objects.TryGetValue applyBodyForceMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
             if not (Single.IsNaN applyBodyForceMessage.Force.X) then
-                body.ApplyForce (applyBodyForceMessage.Force, applyBodyForceMessage.Offset)
+                let offset =
+                    match applyBodyForceMessage.OriginWorldOpt with
+                    | Some originWorld -> body.CenterOfMassPosition - originWorld
+                    | None -> v3Zero
+                body.ApplyForce (applyBodyForceMessage.Force, offset)
                 body.Activate ()
             else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Bullet.")
         | (_, _) -> ()

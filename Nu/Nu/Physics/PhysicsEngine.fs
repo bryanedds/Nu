@@ -653,7 +653,7 @@ type ApplyBodyAngularImpulseMessage =
 type ApplyBodyForceMessage =
     { BodyId : BodyId
       Force : Vector3
-      Offset : Vector3 }
+      OriginWorldOpt : Vector3 option }
 
 /// A message to the physics system to apply torque to a body.
 type ApplyBodyTorqueMessage =

@@ -109,12 +109,12 @@ type PlayerDispatcher () =
                         let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
                         Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
                     | None -> v3 WalkForce FallForce 0.0f
-                let world = World.applyBodyForce force v3Zero bodyId world
+                let world = World.applyBodyForce force None bodyId world
                 just world
             else just world
 
         | Jump ->
-            let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) v3Zero (entity.GetBodyId world) world
+            let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) None (entity.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
             just world
 
@@ -122,7 +122,7 @@ type PlayerDispatcher () =
             let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 0.0f 0.0f) world
             let world = bullet.SetElevation (entity.GetElevation world) world
-            let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) v3Zero (bullet.GetBodyId world) world
+            let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
             just world
 
