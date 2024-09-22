@@ -31,7 +31,7 @@ module WorldImNui =
 #if !DEBUG
         inline
 #endif
-        (.=) (lens : Lens<'a, 's>) (value : 'a) =
+        (@=) (lens : Lens<'a, 's>) (value : 'a) =
         { ArgStatic = false; ArgLens = lens; ArgValue = value } : 's ArgImNui
 
     /// Specifies a static ImNui argument.
@@ -39,7 +39,7 @@ module WorldImNui =
 #if !DEBUG
         inline
 #endif
-        (@=) (lens : Lens<'a, 's>) (value : 'a) =
+        (.=) (lens : Lens<'a, 's>) (value : 'a) =
         { ArgStatic = true; ArgLens = lens; ArgValue = value } : 's ArgImNui
 
     type World with
