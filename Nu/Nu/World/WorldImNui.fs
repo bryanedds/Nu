@@ -300,7 +300,7 @@ module WorldImNui =
                         match groupFilePathOpt with
                         | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                         | None -> world
-                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun screenImNui -> { screenImNui with Result = mapper (screenImNui.Result :?> 'r) }) screen world
+                    let mapResult = fun (mapper : ScreenResult FQueue -> ScreenResult FQueue) world -> World.mapSimulantImNui (fun screenImNui -> { screenImNui with Result = mapper (screenImNui.Result :?> ScreenResult FQueue) }) screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
                     let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
@@ -318,6 +318,7 @@ module WorldImNui =
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
             let world = if screen.GetExists world && select then transitionScreen screen world else world
             let result = (World.getSimulantImNui screen world).Result :?> ScreenResult FQueue
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = FQueue.empty<ScreenResult> }) screen world
             (result, world)
 
         /// End the ImNui declaration of a screen.
