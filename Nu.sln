@@ -8,6 +8,10 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.Game", "Nu\Nu.T
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.Empty", "Nu\Nu.Template.Empty\Nu.Template.Empty.fsproj", "{32E86635-1E7E-4443-8D73-EE12CF23E267}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.Mmcc.Game", "Nu\Nu.Template.Mmcc.Game\Nu.Template.Mmcc.Game.fsproj", "{4DBBAA23-56BA-43CB-AB63-C45D5FC1016F}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Template.Mmcc.Empty", "Nu\Nu.Template.Mmcc.Empty\Nu.Template.Mmcc.Empty.fsproj", "{32E86635-1E7E-4443-8D73-EE12CF23E267}"
+EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Tests", "Nu\Nu.Tests\Nu.Tests.fsproj", "{F396C66A-302B-4DE5-A7B8-9701F377E22D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nu.Math", "Nu\Nu.Math\Nu.Math.csproj", "{F184A111-8C28-40B4-8CDE-7BF2A64B3CA7}"

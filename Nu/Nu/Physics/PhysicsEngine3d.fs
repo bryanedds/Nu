@@ -734,7 +734,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.Objects.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
             if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
-                body.ApplyImpulse (applyBodyLinearImpulseMessage.LinearImpulse, applyBodyLinearImpulseMessage.Offset)
+                let offset =
+                    match applyBodyLinearImpulseMessage.OriginWorldOpt with
+                    | Some originWorld -> body.CenterOfMassPosition - originWorld
+                    | None -> v3Zero
+                body.ApplyImpulse (applyBodyLinearImpulseMessage.LinearImpulse, offset)
                 body.Activate ()
             else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Bullet.")
         | (_, _) -> ()

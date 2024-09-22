@@ -463,9 +463,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (_, body)) ->
             if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
-                body.ApplyLinearImpulse
-                    (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
-                     PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.Offset)
+                match applyBodyLinearImpulseMessage.OriginWorldOpt with
+                | Some originWorld ->
+                    body.ApplyLinearImpulse
+                        (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse,
+                         PhysicsEngine2d.toPhysicsV2 originWorld)
+                | None ->
+                    body.ApplyLinearImpulse
+                        (PhysicsEngine2d.toPhysicsV2 applyBodyLinearImpulseMessage.LinearImpulse)
             else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Aether.")
         | (false, _) -> ()
 

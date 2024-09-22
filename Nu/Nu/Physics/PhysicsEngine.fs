@@ -642,7 +642,7 @@ type SetBodyAngularVelocityMessage =
 type ApplyBodyLinearImpulseMessage =
     { BodyId : BodyId
       LinearImpulse : Vector3
-      Offset : Vector3 }
+      OriginWorldOpt : Vector3 option }
 
 /// A message to the physics system to apply an angular impulse to a body.
 type ApplyBodyAngularImpulseMessage =

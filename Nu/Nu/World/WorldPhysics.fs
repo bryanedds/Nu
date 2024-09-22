@@ -248,8 +248,8 @@ module WorldPhysics =
             world
 
         /// Send a physics message to apply linear impulse to a body with the given physics id.
-        static member applyBodyLinearImpulse linearImpulse offset bodyId world =
-            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; Offset = offset }
+        static member applyBodyLinearImpulse linearImpulse originWorldOpt bodyId world =
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; OriginWorldOpt = originWorldOpt }
             let world = World.handlePhysicsMessage3d applyBodyLinearImpulseMessage world
             let world = World.handlePhysicsMessage2d applyBodyLinearImpulseMessage world
             world
