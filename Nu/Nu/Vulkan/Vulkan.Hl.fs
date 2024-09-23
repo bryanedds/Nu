@@ -642,11 +642,9 @@ module Hl =
             imageIndex
 
         /// End the frame.
-        static member endFrame imageIndex vulkanGlobal =
+        static member endFrame vulkanGlobal =
             
-            // swapchain image index and other handles
-            let mutable imageIndex = imageIndex
-            let mutable swapchain = vulkanGlobal.Swapchain
+            // handles
             let mutable commandBuffer = vulkanGlobal.CommandBuffer
             let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
@@ -668,6 +666,14 @@ module Hl =
             // submit commands
             vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &submitInfo, vulkanGlobal.InFlightFence) |> check
 
+        /// Present the image back to the swapchain to appear on screen.
+        static member present imageIndex vulkanGlobal =
+
+            // swapchain image index and other handles
+            let mutable imageIndex = imageIndex
+            let mutable swapchain = vulkanGlobal.Swapchain
+            let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
+            
             // populate present info
             let mutable presentInfo = VkPresentInfoKHR ()
             presentInfo.waitSemaphoreCount <- 1u
@@ -676,7 +682,7 @@ module Hl =
             presentInfo.pSwapchains <- asPointer &swapchain
             presentInfo.pImageIndices <- asPointer &imageIndex
 
-            // present image back to swapchain to appear on screen
+            // present image
             vkQueuePresentKHR (vulkanGlobal.PresentQueue, asPointer &presentInfo) |> check
         
         /// Wait for all device operations to complete before cleaning up resources.
@@ -710,9 +716,15 @@ module Hl =
             | None -> 0u
 
         /// End frame if VulkanGlobal exists.
-        static member tryEndFrame imageIndex vulkanGlobalOpt =
+        static member tryEndFrame vulkanGlobalOpt =
             match vulkanGlobalOpt with
-            | Some vulkanGlobal -> VulkanGlobal.endFrame imageIndex vulkanGlobal
+            | Some vulkanGlobal -> VulkanGlobal.endFrame vulkanGlobal
+            | None -> ()
+
+        /// Present if VulkanGlobal exists.
+        static member tryPresent imageIndex vulkanGlobalOpt =
+            match vulkanGlobalOpt with
+            | Some vulkanGlobal -> VulkanGlobal.present imageIndex vulkanGlobal
             | None -> ()
 
         /// Wait idle if VulkanGlobal exists.
