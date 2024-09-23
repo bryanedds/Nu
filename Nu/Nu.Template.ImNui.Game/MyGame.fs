@@ -20,8 +20,7 @@ module MyGameExtensions =
         member this.SetMyGame value world = this.SetModelGeneric<MyGame> value world
         member this.MyGame = this.ModelGeneric<MyGame> ()
 
-// this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
-// bind them up with events and properties.
+// this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
     inherit GameDispatcher<MyGame> (Splash)
 
@@ -37,17 +36,17 @@ type MyGameDispatcher () =
 
         // declare title screen
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" world []
-        let world = World.beginGroup Simulants.TitleGui.Name world []
+        let world = World.beginGroup "Gui" world []
         let (myGame, world) =
-            match World.doButton Simulants.TitlePlay.Name world [] with
+            match World.doButton "Play" world [] with
             | (true, world) -> (Gameplay, world)
             | (false, world) -> (myGame, world)
         let (myGame, world) =
-            match World.doButton Simulants.TitleCredits.Name world [] with
+            match World.doButton "Credits" world [] with
             | (true, world) -> (Credits, world)
             | (false, world) -> (myGame, world)
         let world =
-            match World.doButton Simulants.TitleExit.Name world [] with
+            match World.doButton "Exit" world [] with
             | (true, world) -> World.exit world
             | (false, world) -> world
         let world = World.endGroup world
@@ -55,17 +54,25 @@ type MyGameDispatcher () =
 
         // declare credits screen
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" world []
-        let world = World.beginGroup Simulants.CreditsGui.Name world []
+        let world = World.beginGroup "Gui" world []
         let (myGame, world) =
-            match World.doButton Simulants.CreditsBack.Name world [] with
+            match World.doButton "Back" world [] with
             | (true, world) -> (Title, world)
             | (false, world) -> (myGame, world)
         let world = World.endGroup world
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (_, result, world) = World.beginScreenGameplay Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
-        let myGame = match result with StartQuitting -> Title | KeepPlaying -> myGame
+        let (result, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let gameplayScreen = world.ContextScreen
+        let world =
+            if Seq.contains Select result // TODO: P0: change to FStack.contains.
+            then gameplayScreen.SetGameplay { gameplayScreen.GetGameplay world with GameplayState = Playing } world
+            else world
+        let myGame =
+            if gameplayScreen.GetSelected world && (gameplayScreen.GetGameplay world).GameplayState = Quitting
+            then Title
+            else myGame
         let world = World.endScreen world
 
         // handle Alt+F4
