@@ -52,6 +52,19 @@ type MyGameDispatcher () =
         let world = World.endGroup world
         let world = World.endScreen world
 
+        // declare gameplay screen
+        let (result, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let gameplayScreen = world.ContextScreen
+        let world =
+            if FQueue.contains Select result
+            then gameplayScreen.SetGameplay { gameplayScreen.GetGameplay world with GameplayState = Playing } world
+            else world
+        let myGame =
+            if gameplayScreen.GetSelected world && (gameplayScreen.GetGameplay world).GameplayState = Quitting
+            then Title
+            else myGame
+        let world = World.endScreen world
+
         // declare credits screen
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" world []
         let world = World.beginGroup "Gui" world []
@@ -60,19 +73,6 @@ type MyGameDispatcher () =
             | (true, world) -> (Title, world)
             | (false, world) -> (myGame, world)
         let world = World.endGroup world
-        let world = World.endScreen world
-
-        // declare gameplay screen
-        let (result, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
-        let gameplayScreen = world.ContextScreen
-        let world =
-            if Seq.contains Select result // TODO: P0: change to FStack.contains.
-            then gameplayScreen.SetGameplay { gameplayScreen.GetGameplay world with GameplayState = Playing } world
-            else world
-        let myGame =
-            if gameplayScreen.GetSelected world && (gameplayScreen.GetGameplay world).GameplayState = Quitting
-            then Title
-            else myGame
         let world = World.endScreen world
 
         // handle Alt+F4
