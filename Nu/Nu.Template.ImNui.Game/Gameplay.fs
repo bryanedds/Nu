@@ -48,18 +48,18 @@ type GameplayDispatcher () =
         // declare scene group when selected
         let world =
             if screen.GetSelected world then
-                let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" world []
+                let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
                 let world =
-                    World.doStaticModel "StaticModel" world 
+                    World.doStaticModel "StaticModel"
                         [Entity.Position .= v3 0.0f 0.0f -2.0f
-                         Entity.Rotation @= Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
+                         Entity.Rotation @= Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)] world
                 World.endGroup world
             else world
 
         // declare gui group
-        let world = World.beginGroup "Gui" world []
+        let world = World.beginGroup "Gui" [] world
         let (gameplay, world) =
-            match World.doButton "Quit" world [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] with
+            match World.doButton "Quit" [Entity.Text .= "Quit"; Entity.Position .= v3 232.0f -144.0f 0.0f] world with
             | (true, world) -> ({ gameplay with GameplayState = Quitting }, world)
             | (false, world) -> (gameplay, world)
         let world = World.endGroup world

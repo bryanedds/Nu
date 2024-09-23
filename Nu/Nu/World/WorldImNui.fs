@@ -57,7 +57,7 @@ module WorldImNui =
             World.setContext Address.empty world
 
         /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGamePlus<'r> (zero : 'r) init (world : World) (args : Game ArgImNui seq) : 'r * World =
+        static member beginGamePlus<'r> (zero : 'r) init (args : Game ArgImNui seq) (world : World) : 'r * World =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
             let world = World.setContext gameAddress world
             let game = Nu.Game gameAddress
@@ -80,8 +80,8 @@ module WorldImNui =
             (result, world)
 
         /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGame (world : World) (args : Game ArgImNui seq) =
-            World.beginGamePlus<unit> () (fun _ _ world -> world) world args |> snd
+        static member beginGame world args =
+            World.beginGamePlus<unit> () (fun _ _ world -> world) args world |> snd
 
         /// End the ImNui declaration of a group with the given arguments.
         static member endGame (world : World) =
@@ -91,14 +91,14 @@ module WorldImNui =
             | _ -> raise (InvalidOperationException "World.beginGame mismatch.")
 
         /// Make the game the current ImNui context.
-        static member scopeGame world (args : Game ArgImNui seq) =
+        static member scopeGame (args : Game ArgImNui seq) world =
             let game = Game
             let world = World.setContext game.GameAddress world
             Seq.fold
                 (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
                 world args
 
-        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) : ScreenResult FQueue * 'r * World =
+        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImNui seq) (world : World) : ScreenResult FQueue * 'r * World =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
@@ -152,8 +152,8 @@ module WorldImNui =
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen world
             (screenResult, userResult, world)
 
-        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args : ScreenResult FQueue * World =
-            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt world args |> a_c
+        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : ScreenResult FQueue * World =
+            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> a_c
 
         /// End the ImNui declaration of a screen.
         static member endScreen (world : World) =
@@ -163,7 +163,7 @@ module WorldImNui =
             | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
 
         /// Make a screen the current ImNui context.
-        static member scopeScreen (screen : Screen) world (args : Screen ArgImNui seq) =
+        static member scopeScreen (screen : Screen) (args : Screen ArgImNui seq) world =
             let world = World.setContext screen.ScreenAddress world
             Seq.fold
                 (fun world arg ->
@@ -172,7 +172,7 @@ module WorldImNui =
                     else world)
                 world args
 
-        static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (world : World) (args : Group ArgImNui seq) : 'r * World =
+        static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (args : Group ArgImNui seq) (world : World) : 'r * World =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
@@ -202,24 +202,24 @@ module WorldImNui =
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group world
             (result, world)
 
-        static member private beginGroup4<'d> name groupFilePathOpt world args =
-            World.beginGroupPlus6 () (fun _ _ world -> world) name groupFilePathOpt world args |> snd
+        static member private beginGroup4<'d> name groupFilePathOpt args world =
+            World.beginGroupPlus6 () (fun _ _ world -> world) name groupFilePathOpt args world |> snd
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
-        static member beginGroupFromFilePlus<'d, 'r when 'd :> GroupDispatcher> zero init name groupFilePath world args =
-            World.beginGroupPlus6<'d, 'r> zero init name (Some groupFilePath) world args
+        static member beginGroupFromFilePlus<'d, 'r when 'd :> GroupDispatcher> zero init name groupFilePath args world =
+            World.beginGroupPlus6<'d, 'r> zero init name (Some groupFilePath) args world
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
-        static member beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath world args =
-            World.beginGroup4<'d> name (Some groupFilePath) world args
+        static member beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath args world =
+            World.beginGroup4<'d> name (Some groupFilePath) args world
 
         /// Begin the ImNui declaration of a group with the given arguments.
-        static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name world args =
-            World.beginGroupPlus6<'d, 'r> zero init name None world args
+        static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name args world =
+            World.beginGroupPlus6<'d, 'r> zero init name None args world
 
         /// Begin the ImNui declaration of a group with the given arguments.
-        static member beginGroup<'d when 'd :> GroupDispatcher> name world args =
-            World.beginGroup4<'d> name None world args
+        static member beginGroup<'d when 'd :> GroupDispatcher> name args world =
+            World.beginGroup4<'d> name None args world
 
         /// End the ImNui declaration of a group.
         static member endGroup (world : World) =
@@ -230,7 +230,7 @@ module WorldImNui =
             | _ -> raise (InvalidOperationException "World.beginGroup mismatch.")
 
         /// Make a group the current ImNui context.
-        static member scopeGroup (group : Group) world (args : Group ArgImNui seq) =
+        static member scopeGroup (group : Group) (args : Group ArgImNui seq) world =
             let world = World.setContext group.GroupAddress world
             Seq.fold
                 (fun world arg ->
@@ -241,7 +241,7 @@ module WorldImNui =
 
         /// Begin the ImNui declaration of an entity with the given arguments.
         /// TODO: P1: optimize this for large-scale use.
-        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ArgImNui seq) : 'r * World =
+        static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImNui seq) (world : World) : 'r * World =
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
@@ -270,8 +270,8 @@ module WorldImNui =
             (result, world)
 
         /// Begin the ImNui declaration of an entity with the given arguments.
-        static member beginEntity<'d when 'd :> EntityDispatcher> name world args =
-            World.beginEntityPlus<'d, unit> () (fun _ _ world -> world) name world args |> snd
+        static member beginEntity<'d when 'd :> EntityDispatcher> name args world =
+            World.beginEntityPlus<'d, unit> () (fun _ _ world -> world) name args world |> snd
 
         /// End the ImNui declaration of an entity.
         static member endEntity (world : World) =
@@ -286,18 +286,18 @@ module WorldImNui =
             | _ -> raise (InvalidOperationException "World.beginEntity mismatch.")
 
         /// ImNui declare an entity with the given arguments.
-        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name world args =
-            let (result, world) = World.beginEntityPlus<'d, 'r> zero init name world args
+        static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name args world =
+            let (result, world) = World.beginEntityPlus<'d, 'r> zero init name args world
             let world = World.endEntity world
             (result, world)
 
         /// ImNui declare an entity with the given arguments.
-        static member doEntity<'d when 'd :> EntityDispatcher> name world args =
-            let world = World.beginEntity<'d> name world args
+        static member doEntity<'d when 'd :> EntityDispatcher> name args world =
+            let world = World.beginEntity<'d> name args world
             World.endEntity world
 
         /// Make an entity the current ImNui context.
-        static member scopeEntity (entity : Entity) world (args : Entity ArgImNui seq) =
+        static member scopeEntity (entity : Entity) (args : Entity ArgImNui seq) world =
             let world = World.setContext entity.EntityAddress world
             Seq.fold
                 (fun world arg ->
@@ -307,135 +307,135 @@ module WorldImNui =
                 world args
 
         /// Begin the ImNui declaration of associated gui entities with the given arguments.
-        static member beginAssociation name world args = World.beginEntity<GuiDispatcher> name world args
+        static member beginAssociation name args world = World.beginEntity<GuiDispatcher> name args world
 
         /// End the ImNui declaration of associated gui entities.
         static member endAssociation world = World.endEntity world
 
         /// ImNui declare an empty association of gui entities with the given arguments.
-        static member doAssociation name world args = World.doEntity<GuiDispatcher> name world args
+        static member doAssociation name args world = World.doEntity<GuiDispatcher> name args world
 
         /// ImNui declare a 2d effect with the given arguments.
-        static member doEffect2d name world args = World.doEntity<Effect2dDispatcher> name world args
+        static member doEffect2d name args world = World.doEntity<Effect2dDispatcher> name args world
 
         /// ImNui declare a static sprite with the given arguments.
-        static member doStaticSprite name world args = World.doEntity<StaticSpriteDispatcher> name world args
+        static member doStaticSprite name args world = World.doEntity<StaticSpriteDispatcher> name args world
 
         /// ImNui declare an animated sprite with the given arguments.
-        static member doAnimatedSprite name world args = World.doEntity<AnimatedSpriteDispatcher> name world args
+        static member doAnimatedSprite name args world = World.doEntity<AnimatedSpriteDispatcher> name args world
 
         /// ImNui declare a basic static sprite emitter with the given arguments.
-        static member doBasicStaticSpriteEmitter name world args = World.doEntity<BasicStaticSpriteEmitterDispatcher> name world args
+        static member doBasicStaticSpriteEmitter name args world = World.doEntity<BasicStaticSpriteEmitterDispatcher> name args world
 
         /// ImNui declare a text entity with the given arguments.
-        static member doText name world args = World.doEntity<TextDispatcher> name world args
+        static member doText name args world = World.doEntity<TextDispatcher> name args world
 
         /// ImNui declare a label with the given arguments.
-        static member doLabel name world args = World.doEntity<LabelDispatcher> name world args
+        static member doLabel name args world = World.doEntity<LabelDispatcher> name args world
 
         /// ImNui declare a button with the given arguments.
-        static member doButton name world args =
+        static member doButton name args world =
             let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.ClickEvent entity world
-            World.doEntityPlus<ButtonDispatcher, _> false init name world args
+            World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// ImNui declare a toggle button with the given arguments.
-        static member doToggleButton name world args =
+        static member doToggleButton name args world =
             let init mapResult (entity : Entity) world = World.monitor (fun evt world -> (Cascade, mapResult (fun _ -> evt.Data) world)) entity.ToggleEvent entity world
-            World.doEntityPlus<ToggleButtonDispatcher, _> false init name world args
+            World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
 
         /// ImNui declare a radio button with the given arguments.
-        static member doRadioButton name world args =
+        static member doRadioButton name args world =
             let init mapResult (entity : Entity) world = World.monitor (fun evt world -> (Cascade, mapResult (fun _ -> evt.Data) world)) entity.DialEvent entity world
-            World.doEntityPlus<RadioButtonDispatcher, _> false init name world args
+            World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
 
         /// ImNui declare a fill bar with the given arguments.
-        static member doFillBar name world args = World.doEntity<FillBarDispatcher> name world args
+        static member doFillBar name args world = World.doEntity<FillBarDispatcher> name args world
 
         /// ImNui declare a feeler with the given arguments.
-        static member doFeeler name world args =
+        static member doFeeler name args world =
             let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.TouchEvent entity world
-            World.doEntityPlus<ButtonDispatcher, _> false init name world args
+            World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// ImNui declare an fps entity with the given arguments.
-        static member doFps name world args = World.doEntity<FpsDispatcher> name world args
+        static member doFps name args world = World.doEntity<FpsDispatcher> name args world
 
         /// ImNui declare the beginning of a panel with the given arguments.
-        static member beginPanel name world args = World.beginEntity<PanelDispatcher> name world args
+        static member beginPanel name args world = World.beginEntity<PanelDispatcher> name args world
 
         /// ImNui declare the end of a panel.
         static member endPanel world = World.endEntity world
 
         /// ImNui declare a panel with the given arguments.
-        static member doPanel name world args = World.doEntity<PanelDispatcher> name world args
+        static member doPanel name args world = World.doEntity<PanelDispatcher> name args world
 
         /// ImNui declare a 2d block with the given arguments.
-        static member doBlock2d name world args = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doBlock2d name args world = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a 2d box with the given arguments.
-        static member doBox2d name world args = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doBox2d name args world = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a 2d character with the given arguments.
-        static member doCharacter2d name world args = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doCharacter2d name args world = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a tile map with the given arguments.
-        static member doTileMap name world args = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doTileMap name args world = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a 3d light probe with the given arguments.
-        static member doLightProbe3d name world args = World.doEntity<LightProbe3dDispatcher> name world args
+        static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
 
         /// ImNui declare a 3d light with the given arguments.
-        static member doLight3d name world args = World.doEntity<Light3dDispatcher> name world args
+        static member doLight3d name args world = World.doEntity<Light3dDispatcher> name args world
 
         /// ImNui declare a sky box with the given arguments.
-        static member doSkyBox name world args = World.doEntity<SkyBoxDispatcher> name world args
+        static member doSkyBox name args world = World.doEntity<SkyBoxDispatcher> name args world
 
         /// ImNui declare a basic static billboard emitter with the given arguments.
-        static member doBasicStaticBillboardEmitter name world args = World.doEntity<BasicStaticBillboardEmitterDispatcher> name world args
+        static member doBasicStaticBillboardEmitter name args world = World.doEntity<BasicStaticBillboardEmitterDispatcher> name args world
 
         /// ImNui declare a 3d effect with the given arguments.
-        static member doEffect3d name world args = World.doEntity<Effect3dDispatcher> name world args
+        static member doEffect3d name args world = World.doEntity<Effect3dDispatcher> name args world
 
         /// ImNui declare a 3d block with the given arguments.
-        static member doBlock3d name world args = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doBlock3d name args world = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a 3d box with the given arguments.
-        static member doBox3d name world args = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doBox3d name args world = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a static billboard with the given arguments.
-        static member doStaticBillboard name world args = World.doEntity<StaticBillboardDispatcher> name world args
+        static member doStaticBillboard name args world = World.doEntity<StaticBillboardDispatcher> name args world
 
         /// ImNui declare a static model with the given arguments.
-        static member doStaticModel name world args = World.doEntity<StaticModelDispatcher> name world args
+        static member doStaticModel name args world = World.doEntity<StaticModelDispatcher> name args world
 
         /// ImNui declare a static model surface with the given arguments.
-        static member doStaticModelSurface name world args = World.doEntity<StaticModelSurfaceDispatcher> name world args
+        static member doStaticModelSurface name args world = World.doEntity<StaticModelSurfaceDispatcher> name args world
 
         /// ImNui declare a rigid model with the given arguments.
-        static member doRigidModel name world args = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doRigidModel name args world = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a rigid model with the given arguments.
-        static member doRigidModelSurface name world args = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doRigidModelSurface name args world = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a animated model with the given arguments.
-        static member doAnimatedModel name world args = World.doEntity<AnimatedModelDispatcher> name world args
+        static member doAnimatedModel name args world = World.doEntity<AnimatedModelDispatcher> name args world
 
         /// ImNui declare a 3d character with the given arguments.
-        static member doCharacter3d name world args = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doCharacter3d name args world = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a 3d body joint with the given arguments.
-        static member doBodyJoint3d name world args = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doBodyJoint3d name args world = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a terrain with the given arguments.
-        static member doTerrain name world args = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name world args
+        static member doTerrain name args world = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a 3d nav config with the given arguments.
-        static member doNav3dConfig name world args = World.doEntity<Nav3dConfigDispatcher> name world args
+        static member doNav3dConfig name args world = World.doEntity<Nav3dConfigDispatcher> name args world
 
         /// ImNui declare a 3d light config with the given arguments.
-        static member doLighting3dConfig name world args = World.doEntity<Lighting3dConfigDispatcher> name world args
+        static member doLighting3dConfig name args world = World.doEntity<Lighting3dConfigDispatcher> name args world
 
         /// ImNui declare a static model hierarchy with the given arguments.
-        static member doStaticModelHierarchy name world args = World.doEntity<StaticModelHierarchyDispatcher> name world args
+        static member doStaticModelHierarchy name args world = World.doEntity<StaticModelHierarchyDispatcher> name args world
 
         /// ImNui declare a rigid model hierarchy with the given arguments.
-        static member doRigidModelHierarchy name world args = World.doEntity<RigidModelHierarchyDispatcher> name world args
+        static member doRigidModelHierarchy name args world = World.doEntity<RigidModelHierarchyDispatcher> name args world

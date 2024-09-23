@@ -26,17 +26,17 @@ type MyGameDispatcher () =
     override this.Run (myGame, _, world) =
 
         // declare screen
-        let (_, world) = World.beginScreen "Screen" true Vanilla world []
-        let world = World.beginGroup "Group" world []
+        let (_, world) = World.beginScreen "Screen" true Vanilla [] world
+        let world = World.beginGroup "Group" [] world
 
         // declare a sky box
-        let world = World.doSkyBox "SkyBox" world []
+        let world = World.doSkyBox "SkyBox" [] world
 
         // declare a block
-        let (_, world) = World.doBlock3d "Block3d" world [Entity.Position .= v3 0.0f -4.0f -12.0f]
+        let (_, world) = World.doBlock3d "Block3d" [Entity.Position .= v3 0.0f -4.0f -12.0f] world
 
         // declare a box, store its handle and body id for reference, then handle its body interactions
-        let (results, world) = World.doBox3d "Box3d" world [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Observable .= true]
+        let (results, world) = World.doBox3d "Box3d" [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Observable .= true] world
         let box3d = world.RecentEntity
         let box3dBodyId = box3d.GetBodyId world
         let myGame =
@@ -47,14 +47,14 @@ type MyGameDispatcher () =
                 myGame results
 
         // declare a control panel
-        let world = World.beginPanel "Panel" world [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)]
-        let world = World.doText "Collisions" world [Entity.Text @= "Collisions: " + string myGame.Collisions]
+        let world = World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
+        let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string myGame.Collisions] world
         let world =
-            match World.doButton "Jump!" world [Entity.Text .= "Jump!"; Entity.EnabledLocal @= World.getBodyGrounded box3dBodyId world] with
+            match World.doButton "Jump!" [Entity.Text .= "Jump!"; Entity.EnabledLocal @= World.getBodyGrounded box3dBodyId world] world with
             | (true, world) -> World.applyBodyLinearImpulse (v3Up * 12.0f) None box3dBodyId world
             | (false, world) -> world
-        let world = World.doFillBar "FillBar" world [Entity.Fill @= single myGame.Collisions / 25.0f]
-        let world = if myGame.Collisions >= 25 then World.doText "Full!" world [Entity.Text .= "Full!"] else world
+        let world = World.doFillBar "FillBar" [Entity.Fill @= single myGame.Collisions / 25.0f] world
+        let world = if myGame.Collisions >= 25 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
         let world = World.endPanel world
 
         // finish declaring screen

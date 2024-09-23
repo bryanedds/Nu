@@ -1236,7 +1236,7 @@ module WorldModule2 =
             let octree = World.getOctree world
             Octree.sweep octree
 
-        /// ImNui run for a single frame.
+        /// Run ImNui for a single frame.
         /// Needed only as a hack for Gaia and other accompanying context to ensure ImGui simulants are created at a
         /// meaningful time.
         static member runImNui (world : World) =
@@ -1957,7 +1957,7 @@ module EntityDispatcherModule2 =
         override this.TryRun (entity, world) =
             let model = entity.GetModelGeneric<'model> world
             let context = world.ContextImNui
-            let world = World.scopeEntity entity world []
+            let world = World.scopeEntity entity [] world
             let (model, world) = this.Run (model, entity, world)
             let world = World.advanceContext entity.EntityAddress context world
             this.SetModel model entity world
@@ -2269,7 +2269,7 @@ module EntityDispatcherModule2 =
 
         override this.TryRun (entity, world) =
             let context = world.ContextImNui
-            let world = World.scopeEntity entity world []
+            let world = World.scopeEntity entity [] world
             let world = this.Run (entity, world)
             World.advanceContext entity.EntityAddress context world
 
@@ -2430,7 +2430,7 @@ module GroupDispatcherModule =
         override this.TryRun (group, world) =
             let model = group.GetModelGeneric<'model> world
             let context = world.ContextImNui
-            let world = World.scopeGroup group world []
+            let world = World.scopeGroup group [] world
             let (model, world) = this.Run (model, group, world)
             let world = World.advanceContext group.GroupAddress context world
             this.SetModel model group world
@@ -2697,7 +2697,7 @@ module ScreenDispatcherModule =
         override this.TryRun (screen, world) =
             let model = screen.GetModelGeneric<'model> world
             let context = world.ContextImNui
-            let world = World.scopeScreen screen world []
+            let world = World.scopeScreen screen [] world
             let (model, world) = this.Run (model, screen, world)
             let world = World.advanceContext screen.ScreenAddress context world
             this.SetModel model screen world
@@ -2982,7 +2982,7 @@ module GameDispatcherModule =
         override this.TryRun (game, world) =
             let model = game.GetModelGeneric<'model> world
             let context = world.ContextImNui
-            let world = World.scopeGame world []
+            let world = World.scopeGame [] world
             let (model, world) = this.Run (model, game, world)
             let world = World.advanceContext game.GameAddress context world
             this.SetModel model game world
