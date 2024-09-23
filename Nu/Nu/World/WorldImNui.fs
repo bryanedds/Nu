@@ -56,6 +56,157 @@ module WorldImNui =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransform event.Data) world)) entity.BodyTransformEvent entity world
             world
 
+        /// Begin the ImNui declaration of a game with the given arguments.
+        static member beginGamePlus<'r> (zero : 'r) init (world : World) (args : Game ArgImNui seq) : 'r * World =
+            let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
+            let world = World.setContext gameAddress world
+            let game = Nu.Game gameAddress
+            let (initializing, world) =
+                match world.SimulantImNuis.TryGetValue game with
+                | (true, gameImNui) -> (false, World.utilizeSimulantImNui game gameImNui world)
+                | (false, _) ->
+                    let world = World.addSimulantImNui game { Utilized = true; Result = zero } world
+                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun gameImNui -> { gameImNui with Result = mapper (gameImNui.Result :?> 'r) }) game world
+                    (true, init mapResult game world)
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if initializing || not arg.ArgStatic
+                        then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let result = (World.getSimulantImNui game world).Result :?> 'r
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) game world
+            (result, world)
+
+        /// Begin the ImNui declaration of a game with the given arguments.
+        static member beginGame (world : World) (args : Game ArgImNui seq) =
+            World.beginGamePlus<unit> () (fun _ _ world -> world) world args |> snd
+
+        /// End the ImNui declaration of a group with the given arguments.
+        static member endGame (world : World) =
+            match world.ContextImNui with
+            | :? (Game Address) ->
+                World.setContext Address.empty world
+            | _ -> raise (new InvalidOperationException "World.beginGame mismatch.")
+
+        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) : 'r * ScreenResult FQueue * World =
+            let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
+            let world = World.setContext screenAddress world
+            let screen = Nu.Screen screenAddress
+            let (initializing, world) =
+                let simulantImNuis = world.SimulantImNuis
+                match simulantImNuis.TryGetValue screen with
+                | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
+                | (false, _) ->
+                    let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
+                    let world =
+                        if not (screen.GetExists world)
+                        then World.createScreen<'d> (Some name) world |> snd
+                        else world
+                    let world = World.setScreenProtected true screen world |> snd'
+                    let world =
+                        match groupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                        | None -> world
+                    let mapSndResult =
+                        fun (mapper : ScreenResult FQueue -> ScreenResult FQueue) world ->
+                            World.mapSimulantImNui (fun screenImNui ->
+                                let (userResult, screenResult) = screenImNui.Result :?> 'r * ScreenResult FQueue
+                                { screenImNui with Result = (userResult, mapper screenResult) })
+                                screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj Select) world)) screen.SelectEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
+                    let mapFstResult =
+                        fun (mapper : 'r -> 'r) world ->
+                            World.mapSimulantImNui (fun screenImNui ->
+                                let (userResult, screenResult) = screenImNui.Result :?> 'r * ScreenResult FQueue
+                                { screenImNui with Result = (mapper userResult, screenResult) })
+                                screen world
+                    (true, init mapFstResult screen world)
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if (initializing || not arg.ArgStatic) && screen.GetExists world
+                        then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
+            let world = if screen.GetExists world && select then transitionScreen screen world else world
+            let (userResult, screenResult) = (World.getSimulantImNui screen world).Result :?> 'r * ScreenResult FQueue
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (zero, FQueue.empty<ScreenResult>) }) screen world
+            (userResult, screenResult, world)
+
+        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args : ScreenResult FQueue * World =
+            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt world args |> _bc
+
+        /// End the ImNui declaration of a screen.
+        static member endScreen (world : World) =
+            match world.ContextImNui with
+            | :? (Screen Address) ->
+                World.setContext Game.GameAddress world
+            | _ -> raise (new InvalidOperationException "World.beginScreen mismatch.")
+
+        static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (world : World) (args : Group ArgImNui seq) : 'r * World =
+            let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
+            let world = World.setContext groupAddress world
+            let group = Nu.Group groupAddress
+            let (initializing, world) =
+                match world.SimulantImNuis.TryGetValue group with
+                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
+                | (false, _) ->
+                    let world = World.addSimulantImNui group { Utilized = true; Result = () } world
+                    let world =
+                        if not (group.GetExists world) then
+                            match groupFilePathOpt with
+                            | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
+                            | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
+                        else world
+                    let world = World.setGroupProtected true group world |> snd'
+                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun groupImNui -> { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }) group world
+                    (true, init mapResult group world)
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if (initializing || not arg.ArgStatic) && group.GetExists world
+                        then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let result = (World.getSimulantImNui group world).Result :?> 'r
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group world
+            (result, world)
+
+        static member private beginGroup4<'d> name groupFilePathOpt world args =
+            World.beginGroupPlus6 () (fun _ _ world -> world) name groupFilePathOpt world args |> snd
+
+        /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
+        static member beginGroupFromFilePlus<'d, 'r when 'd :> GroupDispatcher> zero init name groupFilePath world args =
+            World.beginGroupPlus6<'d, 'r> zero init name (Some groupFilePath) world args
+
+        /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
+        static member beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath world args =
+            World.beginGroup4<'d> name (Some groupFilePath) world args
+
+        /// Begin the ImNui declaration of a group with the given arguments.
+        static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name world args =
+            World.beginGroupPlus6<'d, 'r> zero init name None world args
+
+        /// Begin the ImNui declaration of a group with the given arguments.
+        static member beginGroup<'d when 'd :> GroupDispatcher> name world args =
+            World.beginGroup4<'d> name None world args
+
+        /// End the ImNui declaration of a group.
+        static member endGroup (world : World) =
+            match world.ContextImNui with
+            | :? (Group Address) as groupAddress ->
+                let currentAddress = Address.take<Group, Screen> 2 groupAddress
+                World.setContext currentAddress world
+            | _ -> raise (new InvalidOperationException "World.beginGroup mismatch.")
+
         /// Begin the ImNui declaration of an entity with the given arguments.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ArgImNui seq) : 'r * World =
             // TODO: optimize this for large-scale use.
@@ -235,142 +386,6 @@ module WorldImNui =
 
         /// ImNui declare a rigid model hierarchy with the given arguments.
         static member doRigidModelHierarchy name world args = World.doEntity<RigidModelHierarchyDispatcher> name world args
-
-        static member private beginGroup4<'d when 'd :> GroupDispatcher> name groupFilePathOpt (world : World) (args : Group ArgImNui seq) =
-            let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContext groupAddress world
-            let group = Nu.Group groupAddress
-            let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue group with
-                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
-                | (false, _) ->
-                    let world = World.addSimulantImNui group { Utilized = true; Result = () } world
-                    let world =
-                        if not (group.GetExists world) then
-                            match groupFilePathOpt with
-                            | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                            | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
-                        else world
-                    let world = World.setGroupProtected true group world |> snd'
-                    (true, world)
-            Seq.fold
-                (fun world arg ->
-                    if (initializing || not arg.ArgStatic) && group.GetExists world
-                    then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
-
-        /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
-        static member beginGroupFromFile<'d when 'd :> GroupDispatcher> name groupFilePath world args =
-            World.beginGroup4<'d> name (Some groupFilePath) world args
-
-        /// Begin the ImNui declaration of a group with the given arguments.
-        static member beginGroup<'d when 'd :> GroupDispatcher> name world args =
-            World.beginGroup4<'d> name None world args
-            
-        /// End the ImNui declaration of a group.
-        static member endGroup (world : World) =
-            match world.ContextImNui with
-            | :? (Group Address) as groupAddress ->
-                let currentAddress = Address.take<Group, Screen> 2 groupAddress
-                World.setContext currentAddress world
-            | _ -> raise (new InvalidOperationException "World.beginGroup mismatch.")
-
-        /// ImNui declare a group with the given arguments.
-        static member doGroup<'d when 'd :> GroupDispatcher> name world args =
-            let world = World.beginGroup<'d> name world args
-            World.endGroup world
-
-        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) =
-            let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContext screenAddress world
-            let screen = Nu.Screen screenAddress
-            let (initializing, world) =
-                let simulantImNuis = world.SimulantImNuis
-                match simulantImNuis.TryGetValue screen with
-                | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
-                | (false, _) ->
-                    let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
-                    let world =
-                        if not (screen.GetExists world)
-                        then World.createScreen<'d> (Some name) world |> snd
-                        else world
-                    let world = World.setScreenProtected true screen world |> snd'
-                    let world =
-                        match groupFilePathOpt with
-                        | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                        | None -> world
-                    let mapResult = fun (mapper : ScreenResult FQueue -> ScreenResult FQueue) world -> World.mapSimulantImNui (fun screenImNui -> { screenImNui with Result = mapper (screenImNui.Result :?> ScreenResult FQueue) }) screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Select) world)) screen.SelectEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
-                    (true, world)
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && screen.GetExists world
-                        then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
-            let world = if screen.GetExists world && select then transitionScreen screen world else world
-            let result = (World.getSimulantImNui screen world).Result :?> ScreenResult FQueue
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = FQueue.empty<ScreenResult> }) screen world
-            (result, world)
-
-        /// End the ImNui declaration of a screen.
-        static member endScreen (world : World) =
-            match world.ContextImNui with
-            | :? (Screen Address) ->
-                World.setContext Game.GameAddress world
-            | _ -> raise (new InvalidOperationException "World.beginScreen mismatch.")
-
-        static member internal doScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args =
-            let (result, world) = World.beginScreen8<'d> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args
-            let world = World.endScreen world
-            (result, world)
-
-        /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGamePlus<'r> (zero : 'r) init (world : World) (args : Game ArgImNui seq) : 'r * World =
-            let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
-            let world = World.setContext gameAddress world
-            let game = Nu.Game gameAddress
-            let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue game with
-                | (true, gameImNui) -> (false, World.utilizeSimulantImNui game gameImNui world)
-                | (false, _) ->
-                    let world = World.addSimulantImNui game { Utilized = true; Result = zero } world
-                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun entityImNui -> { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }) game world
-                    (true, init mapResult game world)
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if initializing || not arg.ArgStatic
-                        then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let result = (World.getSimulantImNui game world).Result :?> 'r
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) game world
-            (result, world)
-
-        /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGame (world : World) (args : Game ArgImNui seq) =
-            World.beginGamePlus<unit> () (fun _ _ world -> world) world args |> snd
-
-        /// End the ImNui declaration of a group with the given arguments.
-        static member endGame (world : World) =
-            match world.ContextImNui with
-            | :? (Game Address) ->
-                World.setContext Address.empty world
-            | _ -> raise (new InvalidOperationException "World.beginGame mismatch.")
-
-        /// ImNui declare a group with the given arguments.
-        static member doGame world args =
-            let world = World.beginGame world args
-            World.endGame world
 
         (*/// Make an entity the current ImNui context.
         static member scopeEntity (entity : Entity) world (args : Entity ArgImNui seq) =
