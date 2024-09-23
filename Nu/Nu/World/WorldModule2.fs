@@ -1894,9 +1894,10 @@ module EntityDispatcherModule2 =
 
         override this.TryRun (entity, world) =
             let model = entity.GetModelGeneric<'model> world
+            let context = world.ContextImNui
             let world = World.scopeEntity entity world []
             let (model, world) = this.Run (model, entity, world)
-            let world = World.scopeWorld world
+            let world = World.advanceContext context entity.EntityAddress world
             this.SetModel model entity world
 
         override this.Edit (operation, entity, world) =
@@ -2205,9 +2206,10 @@ module EntityDispatcherModule2 =
         inherit Facet (physical, lightProbe, light)
 
         override this.TryRun (entity, world) =
+            let context = world.ContextImNui
             let world = World.scopeEntity entity world []
             let world = this.Run (entity, world)
-            World.scopeWorld world
+            World.advanceContext context entity.EntityAddress world
 
         /// The run handler of the ImNui programming model.
         abstract Run : Entity * World -> World
@@ -2363,6 +2365,14 @@ module GroupDispatcherModule =
                         makeInitial world
             World.setGroupModelGeneric<'model> false model group world |> snd'
 
+        override this.TryRun (group, world) =
+            let model = group.GetModelGeneric<'model> world
+            let context = world.ContextImNui
+            let world = World.scopeGroup group world []
+            let (model, world) = this.Run (model, group, world)
+            let world = World.advanceContext context group.GroupAddress world
+            this.SetModel model group world
+
         override this.Edit (operation, group, world) =
             let model = group.GetModelGeneric<'model> world
             let (model, world) = this.Edit (model, operation, group, world)
@@ -2386,6 +2396,10 @@ module GroupDispatcherModule =
         /// The fallback model value.
         abstract GetFallbackModel : Symbol * Group * World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Group * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
 
         /// Implements additional editing behavior for a group via the ImGui API.
         abstract Edit : 'model * EditOperation * Group * World -> 'model * World
@@ -2620,9 +2634,10 @@ module ScreenDispatcherModule =
 
         override this.TryRun (screen, world) =
             let model = screen.GetModelGeneric<'model> world
+            let context = world.ContextImNui
             let world = World.scopeScreen screen world []
             let (model, world) = this.Run (model, screen, world)
-            let world = World.scopeWorld world
+            let world = World.advanceContext context screen.ScreenAddress world
             this.SetModel model screen world
 
         override this.Edit (operation, screen, world) =
@@ -2904,9 +2919,10 @@ module GameDispatcherModule =
 
         override this.TryRun (game, world) =
             let model = game.GetModelGeneric<'model> world
+            let context = world.ContextImNui
             let world = World.scopeGame world []
             let (model, world) = this.Run (model, game, world)
-            let world = World.scopeWorld world
+            let world = World.advanceContext context game.GameAddress world
             this.SetModel model game world
 
         override this.Edit (operation, game, world) =

@@ -275,6 +275,15 @@ module WorldModule =
                 let worldExtension = { world.WorldExtension with RecentImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
                 World.choose { world with WorldExtension = worldExtension }
 
+        static member internal advanceContext recent context (world : World) =
+            if world.Imperative then
+                world.WorldExtension.RecentImNui <- recent
+                world.WorldExtension.ContextImNui <- context
+                world
+            else
+                let worldExtension = { world.WorldExtension with RecentImNui = recent; ContextImNui = context }
+                World.choose { world with WorldExtension = worldExtension }
+
         static member internal getSimulantImNuis (world : World) =
             world.SimulantImNuis
 
