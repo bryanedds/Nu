@@ -917,7 +917,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImNui world =
-            World.collectImNui world
+            World.sweepImNui world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
@@ -1235,6 +1235,52 @@ module WorldModule2 =
         static member sweepOctree world =
             let octree = World.getOctree world
             Octree.sweep octree
+
+        /// ImNui run for a single frame.
+        /// Needed only as a hack for Gaia and other accompanying context to ensure ImGui simulants are created at a
+        /// meaningful time.
+        static member runImNui (world : World) =
+
+            // use a finally block to free cached values
+            try
+
+                // gather simulants
+                world.Timers.UpdateGatherTimer.Restart ()
+                let game = Nu.Game.Handle
+                let screenOpt = World.getSelectedScreenOpt world
+                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
+                World.getElements3dInPlay HashSet3dNormalCached world
+                World.getElements2dInPlay HashSet2dNormalCached world
+                world.Timers.UpdateGatherTimer.Stop ()
+
+                // run game
+                world.Timers.UpdateGameTimer.Restart ()
+                let world = World.tryRunGame game world
+                world.Timers.UpdateGameTimer.Stop ()
+
+                // run screen if any
+                world.Timers.UpdateScreensTimer.Restart ()
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryRunScreen screen world else world) world screenOpt
+                world.Timers.UpdateScreensTimer.Stop ()
+
+                // update groups
+                world.Timers.UpdateGroupsTimer.Restart ()
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryRunGroup group world else world) world groups
+                world.Timers.UpdateGroupsTimer.Stop ()
+
+                // update entities
+                world.Timers.UpdateEntitiesTimer.Restart ()
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryRunEntity element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryRunEntity element.Entry world else world) world HashSet2dNormalCached
+                world.Timers.UpdateEntitiesTimer.Stop ()
+
+                // fin
+                world
+
+            // free cached values
+            finally
+                HashSet3dNormalCached.Clear ()
+                HashSet2dNormalCached.Clear ()
 
         static member private preUpdateSimulants (world : World) =
 

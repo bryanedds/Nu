@@ -440,7 +440,7 @@ module WorldImNui =
         /// ImNui declare a rigid model hierarchy with the given arguments.
         static member doRigidModelHierarchy name world args = World.doEntity<RigidModelHierarchyDispatcher> name world args
 
-        static member internal collectImNui (world : World) =
+        static member internal sweepImNui (world : World) =
             if world.Advancing then
                 OMap.fold (fun world simulant simulantImNui ->
                     if not simulantImNui.Utilized then
