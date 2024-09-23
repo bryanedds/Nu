@@ -60,7 +60,8 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (_, world) = World.beginScreenGameplay<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let (result, _, world) = World.beginScreenGameplay Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let myGame = match result with StartQuitting -> Title | KeepPlaying -> myGame
         let world = World.endScreen world
 
         // handle Alt+F4

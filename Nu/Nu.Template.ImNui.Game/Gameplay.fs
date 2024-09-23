@@ -8,26 +8,18 @@ type GameplayResult =
     | KeepPlaying
     | StartQuitting
 
-// this represents the state of gameplay simulation.
-type GameplayState =
-    | Playing
-    | Quit
-
 // this is our MMCC model type representing gameplay.
 // this model representation uses update time, that is, time based on number of engine updates.
 type Gameplay =
-    { GameplayTime : int64
-      GameplayState : GameplayState }
+    { GameplayTime : int64 }
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
     static member empty =
-        { GameplayTime = 0L
-          GameplayState = Quit }
+        { GameplayTime = 0L }
 
     // this represents the gameplay model in its initial state, such as when gameplay starts.
     static member initial =
-        { Gameplay.empty with
-            GameplayState = Playing }
+        Gameplay.empty
 
 // this extends the Screen API to expose the Gameplay model as well as the Quit event.
 [<AutoOpen>]
@@ -41,12 +33,7 @@ module GameplayExtensions =
 type GameplayDispatcher () =
     inherit ScreenDispatcher<Gameplay> (Gameplay.empty)
 
-    // here we define the screen's fallback model depending on whether screen is selected
-    override this.GetFallbackModel (_, screen, world) =
-        if screen.GetSelected world
-        then Gameplay.initial
-        else Gameplay.empty
-
+    // here we define the behavior of our gameplay
     override this.Run (gameplay, screen, world) =
 
         // scope to screen
@@ -79,6 +66,6 @@ type GameplayDispatcher () =
 [<AutoOpen>]
 module GameplayExtensions2 =
     type World with
-        static member beginScreenGameplay name world args =
+        static member beginScreenGameplay name select behavior world args =
             let init mapResult gameplay world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> StartQuitting) world)) Simulants.GameplayQuit.ClickEvent gameplay world
-            World.beginScreenPlus<GameplayDispatcher, GameplayResult> KeepPlaying init name world args
+            World.beginScreenPlus<GameplayDispatcher, GameplayResult> KeepPlaying init name select behavior world args
