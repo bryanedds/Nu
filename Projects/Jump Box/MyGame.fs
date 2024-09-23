@@ -25,8 +25,7 @@ type MyGameDispatcher () =
     // here we handle running the game
     override this.Run (myGame, _, world) =
 
-        // declare a game, a screen, and a group
-        let world = World.beginGame world []
+        // declare screen
         let (_, world) = World.beginScreen "Screen" true Vanilla world []
         let world = World.beginGroup "Group" world []
 
@@ -61,7 +60,6 @@ type MyGameDispatcher () =
         // declaration termini
         let world = World.endGroup world
         let world = World.endScreen world
-        let world = World.endGame world
 
         // handle Alt+F4
         let world =
