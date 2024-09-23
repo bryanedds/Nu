@@ -49,7 +49,7 @@ type GameplayDispatcher () =
 
         // declare gui group
         let world = World.beginGroup Simulants.GameplayGui.Name world []
-        let (_, world) = World.doButton Simulants.GameplayQuit.Name world [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Text"]
+        let (_, world) = World.doButton Simulants.GameplayQuit.Name world [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"]
         let world = World.endGroup world
 
         // advance gameplay time

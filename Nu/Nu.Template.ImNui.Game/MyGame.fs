@@ -39,13 +39,17 @@ type MyGameDispatcher () =
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" world []
         let world = World.beginGroup Simulants.TitleGui.Name world []
         let (myGame, world) =
-            match World.doButton Simulants.TitleCredits.Name world [] with
-            | (true, world) -> (Credits, world)
-            | (false, world) -> (myGame, world)
-        let (myGame, world) =
             match World.doButton Simulants.TitlePlay.Name world [] with
             | (true, world) -> (Gameplay, world)
             | (false, world) -> (myGame, world)
+        let (myGame, world) =
+            match World.doButton Simulants.TitleCredits.Name world [] with
+            | (true, world) -> (Credits, world)
+            | (false, world) -> (myGame, world)
+        let world =
+            match World.doButton Simulants.TitleExit.Name world [] with
+            | (true, world) -> World.exit world
+            | (false, world) -> world
         let world = World.endGroup world
         let world = World.endScreen world
 
