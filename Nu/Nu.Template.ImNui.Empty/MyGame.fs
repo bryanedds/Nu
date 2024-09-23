@@ -41,7 +41,7 @@ type MyGameDispatcher () =
 
         // handle Alt+F4
         let world =
-            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+            if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
             then World.exit world
             else world
 
