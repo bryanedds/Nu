@@ -52,6 +52,10 @@ module WorldImNui =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransform event.Data) world)) entity.BodyTransformEvent entity world
             world
 
+        /// Clear the current ImNui context.
+        static member scopeWorld world =
+            World.setContext Address.empty world
+
         /// Begin the ImNui declaration of a game with the given arguments.
         static member beginGamePlus<'r> (zero : 'r) init (world : World) (args : Game ArgImNui seq) : 'r * World =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
@@ -84,7 +88,15 @@ module WorldImNui =
             match world.ContextImNui with
             | :? (Game Address) ->
                 World.setContext Address.empty world
-            | _ -> raise (new InvalidOperationException "World.beginGame mismatch.")
+            | _ -> raise (InvalidOperationException "World.beginGame mismatch.")
+
+        /// Make the game the current ImNui context.
+        static member scopeGame world (args : Game ArgImNui seq) =
+            let game = Game
+            let world = World.setContext game.GameAddress world
+            Seq.fold
+                (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
+                world args
 
         static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) : 'r * ScreenResult FQueue * World =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
@@ -143,7 +155,17 @@ module WorldImNui =
             match world.ContextImNui with
             | :? (Screen Address) ->
                 World.setContext Game.GameAddress world
-            | _ -> raise (new InvalidOperationException "World.beginScreen mismatch.")
+            | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
+
+        /// Make a screen the current ImNui context.
+        static member scopeScreen (screen : Screen) world (args : Screen ArgImNui seq) =
+            let world = World.setContext screen.ScreenAddress world
+            Seq.fold
+                (fun world arg ->
+                    if screen.GetExists world
+                    then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                    else world)
+                world args
 
         static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (world : World) (args : Group ArgImNui seq) : 'r * World =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
@@ -200,7 +222,17 @@ module WorldImNui =
             | :? (Group Address) as groupAddress ->
                 let currentAddress = Address.take<Group, Screen> 2 groupAddress
                 World.setContext currentAddress world
-            | _ -> raise (new InvalidOperationException "World.beginGroup mismatch.")
+            | _ -> raise (InvalidOperationException "World.beginGroup mismatch.")
+
+        /// Make a group the current ImNui context.
+        static member scopeGroup (group : Group) world (args : Group ArgImNui seq) =
+            let world = World.setContext group.GroupAddress world
+            Seq.fold
+                (fun world arg ->
+                    if group.GetExists world
+                    then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                    else world)
+                world args
 
         /// Begin the ImNui declaration of an entity with the given arguments.
         /// TODO: P1: optimize this for large-scale use.
@@ -246,7 +278,7 @@ module WorldImNui =
                     then Address.makeFromArray<Group> currentNames :> Address
                     else Address.makeFromArray<Entity> currentNames
                 World.setContext currentAddress world
-            | _ -> raise (new InvalidOperationException "World.beginEntity mismatch.")
+            | _ -> raise (InvalidOperationException "World.beginEntity mismatch.")
 
         /// ImNui declare an entity with the given arguments.
         static member doEntityPlus<'d, 'r when 'd :> EntityDispatcher> zero init name world args =
@@ -258,6 +290,16 @@ module WorldImNui =
         static member doEntity<'d when 'd :> EntityDispatcher> name world args =
             let world = World.beginEntity<'d> name world args
             World.endEntity world
+
+        /// Make an entity the current ImNui context.
+        static member scopeEntity (entity : Entity) world (args : Entity ArgImNui seq) =
+            let world = World.setContext entity.EntityAddress world
+            Seq.fold
+                (fun world arg ->
+                    if entity.GetExists world
+                    then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                    else world)
+                world args
 
         /// Begin the ImNui declaration of associated gui entities with the given arguments.
         static member beginAssociation name world args = World.beginEntity<GuiDispatcher> name world args
@@ -392,48 +434,6 @@ module WorldImNui =
 
         /// ImNui declare a rigid model hierarchy with the given arguments.
         static member doRigidModelHierarchy name world args = World.doEntity<RigidModelHierarchyDispatcher> name world args
-
-        (*/// Make an entity the current ImNui context.
-        static member scopeEntity (entity : Entity) world (args : Entity ArgImNui seq) =
-            let world = World.setContext entity.EntityAddress world
-            Seq.fold
-                (fun world arg ->
-                    if entity.GetExists world
-                    then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
-
-        /// Make a group the current ImNui context.
-        static member scopeGroup (group : Group) world (args : Group ArgImNui seq) =
-            let world = World.setContext group.GroupAddress world
-            Seq.fold
-                (fun world arg ->
-                    if group.GetExists world
-                    then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
-
-        /// Make a screen the current ImNui context.
-        static member scopeScreen (screen : Screen) world (args : Screen ArgImNui seq) =
-            let world = World.setContext screen.ScreenAddress world
-            Seq.fold
-                (fun world arg ->
-                    if screen.GetExists world
-                    then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
-
-        /// Make the game the current ImNui context.
-        static member scopeGame world (args : Game ArgImNui seq) =
-            let game = Game
-            let world = World.setContext game.GameAddress world
-            Seq.fold
-                (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
-                world args
-
-        /// Clear the current ImNui context.
-        static member scopeWorld world =
-            World.setContext Address.empty world*)
 
         static member internal collectImNui (world : World) =
             if world.Advancing then
