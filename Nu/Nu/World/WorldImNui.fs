@@ -58,6 +58,7 @@ module WorldImNui =
 
         /// Begin the ImNui declaration of a game with the given arguments.
         static member beginGamePlus<'r> (zero : 'r) init (args : Game ArgImNui seq) (world : World) : 'r * World =
+            if world.ContextImNui.Names.Length > 0 then raise (InvalidOperationException "ImNui game declared outside of valid ImNui context (must be called in World context).")
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
             let world = World.setContext gameAddress world
             let game = Nu.Game gameAddress
@@ -86,8 +87,7 @@ module WorldImNui =
         /// End the ImNui declaration of a group with the given arguments.
         static member endGame (world : World) =
             match world.ContextImNui with
-            | :? (Game Address) ->
-                World.setContext Address.empty world
+            | :? (Game Address) -> World.setContext Address.empty world
             | _ -> raise (InvalidOperationException "World.beginGame mismatch.")
 
         /// Make the game the current ImNui context.
@@ -99,6 +99,7 @@ module WorldImNui =
                 world args
 
         static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImNui seq) (world : World) : ScreenResult FQueue * 'r * World =
+            if world.ContextImNui.Names.Length < 1 then raise (InvalidOperationException "ImNui screen declared outside of valid ImNui context (must be called in a Game context).")
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
@@ -158,8 +159,7 @@ module WorldImNui =
         /// End the ImNui declaration of a screen.
         static member endScreen (world : World) =
             match world.ContextImNui with
-            | :? (Screen Address) ->
-                World.setContext Game.GameAddress world
+            | :? (Screen Address) -> World.setContext Game.GameAddress world
             | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
 
         /// Make a screen the current ImNui context.
@@ -173,6 +173,7 @@ module WorldImNui =
                 world args
 
         static member private beginGroupPlus6<'d, 'r when 'd :> GroupDispatcher> (zero : 'r) init name groupFilePathOpt (args : Group ArgImNui seq) (world : World) : 'r * World =
+            if world.ContextImNui.Names.Length < 2 then raise (InvalidOperationException "ImNui group declared outside of valid ImNui context (must be called in a Screen context).")
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
@@ -242,6 +243,7 @@ module WorldImNui =
         /// Begin the ImNui declaration of an entity with the given arguments.
         /// TODO: P1: optimize this for large-scale use.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImNui seq) (world : World) : 'r * World =
+            if world.ContextImNui.Names.Length < 3 then raise (InvalidOperationException "ImNui entity declared outside of valid ImNui context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
