@@ -142,7 +142,12 @@ module WorldImNui =
                         else world)
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
-            let world = if screen.GetExists world && select then transitionScreen screen world else world
+            let world =
+                if screen.GetExists world && select then
+                    if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
+                    then World.setSelectedScreen screen world
+                    else transitionScreen screen world
+                else world
             let (screenResult, userResult) = (World.getSimulantImNui screen world).Result :?> ScreenResult FQueue * 'r
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen world
             (screenResult, userResult, world)

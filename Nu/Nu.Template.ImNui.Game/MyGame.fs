@@ -23,8 +23,9 @@ module MyGameExtensions =
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
     inherit GameDispatcher<MyGame> (Splash)
-
-    override this.Run (myGame, _, world) : MyGame * World =
+    
+    // here we handle running the game
+    override this.Run (myGame, _, world) =
 
         // declare splash screen
         let (result, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) world []

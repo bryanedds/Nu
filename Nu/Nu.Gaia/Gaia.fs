@@ -1315,6 +1315,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | (false, _) -> world
                 | None -> world
 
+            // run game once to make sure initial simulants are created
+            let world = (Game.GetDispatcher world).TryRun (Game, world)
+
             // figure out which screen to use
             let (screen, world) =
                 match Game.GetDesiredScreen world with
@@ -2514,6 +2517,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
+                                        let world = (Game.GetDispatcher world).TryRun (Game, world)
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world
