@@ -90,21 +90,19 @@ module WorldImNui =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
+            let world =
+                if not (screen.GetExists world) then
+                    let world = World.createScreen<'d> (Some name) world |> snd
+                    let world = World.setScreenProtected true screen world |> snd'
+                    match groupFilePathOpt with
+                    | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                    | None -> world
+                else world
             let (initializing, world) =
-                let simulantImNuis = world.SimulantImNuis
-                match simulantImNuis.TryGetValue screen with
+                match world.SimulantImNuis.TryGetValue screen with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
-                    let world =
-                        if not (screen.GetExists world)
-                        then World.createScreen<'d> (Some name) world |> snd
-                        else world
-                    let world = World.setScreenProtected true screen world |> snd'
-                    let world =
-                        match groupFilePathOpt with
-                        | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                        | None -> world
                     let mapSndResult =
                         fun (mapper : ScreenResult FQueue -> ScreenResult FQueue) world ->
                             World.mapSimulantImNui (fun screenImNui ->
@@ -151,18 +149,19 @@ module WorldImNui =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
+            let world =
+                if not (group.GetExists world) then
+                    let world =
+                        match groupFilePathOpt with
+                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
+                        | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
+                    World.setGroupProtected true group world |> snd'
+                else world
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui group { Utilized = true; Result = () } world
-                    let world =
-                        if not (group.GetExists world) then
-                            match groupFilePathOpt with
-                            | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                            | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
-                        else world
-                    let world = World.setGroupProtected true group world |> snd'
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun groupImNui -> { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }) group world
                     (true, init mapResult group world)
             let world =
@@ -204,19 +203,22 @@ module WorldImNui =
             | _ -> raise (new InvalidOperationException "World.beginGroup mismatch.")
 
         /// Begin the ImNui declaration of an entity with the given arguments.
+        /// TODO: P1: optimize this for large-scale use.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (world : World) (args : Entity ArgImNui seq) : 'r * World =
-            // TODO: optimize this for large-scale use.
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
+            let world = 
+                if not (entity.GetExists world) then
+                    let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                    let world = World.setEntityProtected true entity world |> snd'
+                    if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
+                else world
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue entity with
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity entityImNui world)
                 | (false, _) ->
                     let world = World.addSimulantImNui entity { Utilized = true; Result = zero } world
-                    let world = if not (entity.GetExists world) then World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd else world
-                    let world = World.setEntityProtected true entity world |> snd'
-                    let world = if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun entityImNui -> { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }) entity world
                     (true, init mapResult entity world)
             let world =
