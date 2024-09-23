@@ -757,6 +757,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private handleNuSelectedScreenOptChange (evt : Event<ChangeData, Game>) world =
         match evt.Data.Value :?> Screen option with
         | Some screen ->
+            let world = (Game.GetDispatcher world).TryRun (Game, world)
             selectScreen true screen
             let world = selectGroupInitial screen world
             selectEntityOpt None world

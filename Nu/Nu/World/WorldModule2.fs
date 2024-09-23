@@ -1897,7 +1897,7 @@ module EntityDispatcherModule2 =
             let context = world.ContextImNui
             let world = World.scopeEntity entity world []
             let (model, world) = this.Run (model, entity, world)
-            let world = World.advanceContext context entity.EntityAddress world
+            let world = World.advanceContext entity.EntityAddress context world
             this.SetModel model entity world
 
         override this.Edit (operation, entity, world) =
@@ -2209,7 +2209,7 @@ module EntityDispatcherModule2 =
             let context = world.ContextImNui
             let world = World.scopeEntity entity world []
             let world = this.Run (entity, world)
-            World.advanceContext context entity.EntityAddress world
+            World.advanceContext entity.EntityAddress context world
 
         /// The run handler of the ImNui programming model.
         abstract Run : Entity * World -> World
@@ -2370,7 +2370,7 @@ module GroupDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeGroup group world []
             let (model, world) = this.Run (model, group, world)
-            let world = World.advanceContext context group.GroupAddress world
+            let world = World.advanceContext group.GroupAddress context world
             this.SetModel model group world
 
         override this.Edit (operation, group, world) =
@@ -2637,7 +2637,7 @@ module ScreenDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeScreen screen world []
             let (model, world) = this.Run (model, screen, world)
-            let world = World.advanceContext context screen.ScreenAddress world
+            let world = World.advanceContext screen.ScreenAddress context world
             this.SetModel model screen world
 
         override this.Edit (operation, screen, world) =
@@ -2922,7 +2922,7 @@ module GameDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeGame world []
             let (model, world) = this.Run (model, game, world)
-            let world = World.advanceContext context game.GameAddress world
+            let world = World.advanceContext game.GameAddress context world
             this.SetModel model game world
 
         override this.Edit (operation, game, world) =
