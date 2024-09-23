@@ -334,16 +334,31 @@ module WorldImNui =
             (result, world)
 
         /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGame (world : World) (args : Game ArgImNui seq) =
+        static member beginGamePlus<'r> (zero : 'r) init (world : World) (args : Game ArgImNui seq) : 'r * World =
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
             let world = World.setContext gameAddress world
             let game = Nu.Game gameAddress
-            Seq.fold
-                (fun world arg ->
-                    if not arg.ArgStatic
-                    then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                    else world)
-                world args
+            let (initializing, world) =
+                match world.SimulantImNuis.TryGetValue game with
+                | (true, gameImNui) -> (false, World.utilizeSimulantImNui game gameImNui world)
+                | (false, _) ->
+                    let world = World.addSimulantImNui game { Utilized = true; Result = zero } world
+                    let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun entityImNui -> { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }) game world
+                    (true, init mapResult game world)
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if initializing || not arg.ArgStatic
+                        then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let result = (World.getSimulantImNui game world).Result :?> 'r
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) game world
+            (result, world)
+
+        /// Begin the ImNui declaration of a game with the given arguments.
+        static member beginGame (world : World) (args : Game ArgImNui seq) =
+            World.beginGamePlus<unit> () (fun _ _ world -> world) world args |> snd
 
         /// End the ImNui declaration of a group with the given arguments.
         static member endGame (world : World) =
@@ -357,7 +372,7 @@ module WorldImNui =
             let world = World.beginGame world args
             World.endGame world
 
-        /// Make an entity the current ImNui context.
+        (*/// Make an entity the current ImNui context.
         static member scopeEntity (entity : Entity) world (args : Entity ArgImNui seq) =
             let world = World.setContext entity.EntityAddress world
             Seq.fold
@@ -397,7 +412,7 @@ module WorldImNui =
 
         /// Clear the current ImNui context.
         static member scopeWorld world =
-            World.setContext Address.empty world
+            World.setContext Address.empty world*)
 
         static member internal collectImNui (world : World) =
             if world.Advancing then
