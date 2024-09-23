@@ -29,10 +29,7 @@ type MyGameDispatcher () =
 
         // declare splash screen
         let (result, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
-        let myGame =
-            match result |> Seq.filter (function Deselecting -> true | _ -> false) |> Seq.tryHead with
-            | Some _ -> Title
-            | None -> myGame
+        let myGame = if FQueue.contains Deselecting result then Title else myGame
         let world = World.endScreen world
 
         // declare title screen
