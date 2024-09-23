@@ -4,6 +4,10 @@ open System.Numerics
 open Prime
 open Nu
 
+type GameplayResult =
+    | KeepPlaying
+    | StartQuitting
+
 // this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
@@ -25,18 +29,6 @@ type Gameplay =
         { Gameplay.empty with
             GameplayState = Playing }
 
-// this is our gameplay MMCC message type.
-type GameplayMessage =
-    | StartPlaying
-    | FinishQuitting
-    | TimeUpdate
-    interface Message
-
-// this is our gameplay MMCC command type.
-type GameplayCommand =
-    | StartQuitting
-    interface Command
-
 // this extends the Screen API to expose the Gameplay model as well as the Quit event.
 [<AutoOpen>]
 module GameplayExtensions =
@@ -44,11 +36,10 @@ module GameplayExtensions =
         member this.GetGameplay world = this.GetModelGeneric<Gameplay> world
         member this.SetGameplay value world = this.SetModelGeneric<Gameplay> value world
         member this.Gameplay = this.ModelGeneric<Gameplay> ()
-        member this.QuitEvent = Events.QuitEvent --> this
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type GameplayDispatcher () =
-    inherit ScreenDispatcher<Gameplay, GameplayMessage, GameplayCommand> (Gameplay.empty)
+    inherit ScreenDispatcher<Gameplay> (Gameplay.empty)
 
     // here we define the screen's fallback model depending on whether screen is selected
     override this.GetFallbackModel (_, screen, world) =
@@ -79,14 +70,6 @@ type GameplayDispatcher () =
             let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
             just gameplay
 
-    // here we handle the above commands
-    override this.Command (_, command, screen, world) =
-
-        match command with
-        | StartQuitting ->
-            let world = World.publish () screen.QuitEvent screen world
-            just world
-
     // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =
 
@@ -110,3 +93,12 @@ type GameplayDispatcher () =
 
          // no scene group otherwise
          | Quit -> ()]
+
+[<AutoOpen>]
+module GameplayExtensions2 =
+
+    type World with
+
+        static member beginScreenGameplay name world args =
+            let init mapResult (gameplay : Screen) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> StartQuitting) world)) Simulants.GameplayQuit.ClickEvent gameplay world
+            World.beginScreenPlus<GameplayDispatcher, GameplayResult> KeepPlaying init name world args

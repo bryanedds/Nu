@@ -45,10 +45,6 @@ module WorldImNui =
     type World with
 
         ///
-        static member initBoolResult mapResult (entity : Entity) world =
-            World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.ClickEvent entity world
-
-        ///
         static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) entity.BodyPenetrationEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit event.Data) world)) entity.BodySeparationExplicitEvent entity world
@@ -289,19 +285,27 @@ module WorldImNui =
         static member doLabel name world args = World.doEntity<LabelDispatcher> name world args
 
         /// ImNui declare a button with the given arguments.
-        static member doButton name world args = World.doEntityPlus<ButtonDispatcher, _> false World.initBoolResult name world args
+        static member doButton name world args =
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.ClickEvent entity world
+            World.doEntityPlus<ButtonDispatcher, _> false init name world args
 
         /// ImNui declare a toggle button with the given arguments.
-        static member doToggleButton name world args = World.doEntityPlus<ToggleButtonDispatcher, _> false World.initBoolResult name world args
+        static member doToggleButton name world args =
+            let init mapResult (entity : Entity) world = World.monitor (fun evt world -> (Cascade, mapResult (fun _ -> evt.Data) world)) entity.ToggleEvent entity world
+            World.doEntityPlus<ToggleButtonDispatcher, _> false init name world args
 
         /// ImNui declare a radio button with the given arguments.
-        static member doRadioButton name world args = World.doEntityPlus<ToggleButtonDispatcher, _> false World.initBoolResult name world args
+        static member doRadioButton name world args =
+            let init mapResult (entity : Entity) world = World.monitor (fun evt world -> (Cascade, mapResult (fun _ -> evt.Data) world)) entity.DialEvent entity world
+            World.doEntityPlus<RadioButtonDispatcher, _> false init name world args
 
         /// ImNui declare a fill bar with the given arguments.
         static member doFillBar name world args = World.doEntity<FillBarDispatcher> name world args
 
         /// ImNui declare a feeler with the given arguments.
-        static member doFeeler name world args = World.doEntityPlus<FeelerDispatcher, _> false World.initBoolResult name world args
+        static member doFeeler name world args =
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.TouchEvent entity world
+            World.doEntityPlus<ButtonDispatcher, _> false init name world args
 
         /// ImNui declare an fps entity with the given arguments.
         static member doFps name world args = World.doEntity<FpsDispatcher> name world args
