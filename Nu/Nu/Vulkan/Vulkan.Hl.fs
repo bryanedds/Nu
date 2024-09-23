@@ -703,6 +703,30 @@ module Hl =
             vkDestroySurfaceKHR (instance, vulkanGlobal.Surface, nullPtr)
             vkDestroyInstance (instance, nullPtr)
         
+        /// Begin frame if VulkanGlobal exists.
+        static member tryBeginFrame vulkanGlobalOpt =
+            match vulkanGlobalOpt with
+            | Some vulkanGlobal -> VulkanGlobal.beginFrame vulkanGlobal
+            | None -> 0u
+
+        /// End frame if VulkanGlobal exists.
+        static member tryEndFrame imageIndex vulkanGlobalOpt =
+            match vulkanGlobalOpt with
+            | Some vulkanGlobal -> VulkanGlobal.endFrame imageIndex vulkanGlobal
+            | None -> ()
+
+        /// Wait idle if VulkanGlobal exists.
+        static member tryWaitIdle vulkanGlobalOpt =
+            match vulkanGlobalOpt with
+            | Some vulkanGlobal -> VulkanGlobal.waitIdle vulkanGlobal
+            | None -> ()
+
+        /// Cleanup if VulkanGlobal exists.
+        static member tryCleanup vulkanGlobalOpt =
+            match vulkanGlobalOpt with
+            | Some vulkanGlobal -> VulkanGlobal.cleanup vulkanGlobal
+            | None -> ()
+        
         /// Try to make a VulkanGlobal.
         static member tryMake window =
 

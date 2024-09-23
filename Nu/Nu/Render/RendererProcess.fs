@@ -377,11 +377,8 @@ type RendererThread () =
                 submissionOpt <- None
                 
                 // begin frame
-                match vulkanGlobalOpt with
-                | Some vulkanGlobal ->
-                    let currentIndex = Vulkan.Hl.VulkanGlobal.beginFrame vulkanGlobal
-                    imageIndex <- currentIndex
-                | None -> ()
+                let currentIndex = Vulkan.Hl.VulkanGlobal.tryBeginFrame vulkanGlobalOpt
+                imageIndex <- currentIndex
                 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
@@ -404,24 +401,15 @@ type RendererThread () =
                 if not terminated then
 
                     // end frame
-                    match vulkanGlobalOpt with
-                    | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.endFrame imageIndex vulkanGlobal
-                    | None -> ()
+                    Vulkan.Hl.VulkanGlobal.tryEndFrame imageIndex vulkanGlobalOpt
                     
                     // acknowledge swap request
                     swap <- false
 
         // clean up
-        // TODO: consider abstracting VulkanGlobal with a mock version to remove all this ugliness.
-        match vulkanGlobalOpt with
-        | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.waitIdle vulkanGlobal
-        | None -> ()
-        
+        Vulkan.Hl.VulkanGlobal.tryWaitIdle vulkanGlobalOpt
         renderer2d.CleanUp ()
-        
-        match vulkanGlobalOpt with
-        | Some vulkanGlobal -> Vulkan.Hl.VulkanGlobal.cleanup vulkanGlobal
-        | None -> ()
+        Vulkan.Hl.VulkanGlobal.tryCleanup vulkanGlobalOpt
 
     interface RendererProcess with
 
