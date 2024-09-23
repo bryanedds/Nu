@@ -49,10 +49,8 @@ type GameplayDispatcher () =
         let world =
             if screen.GetSelected world then
                 let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
-                let world =
-                    World.doStaticModel "StaticModel"
-                        [Entity.Position .= v3 0.0f 0.0f -2.0f
-                         Entity.Rotation @= Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)] world
+                let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)
+                let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
                 World.endGroup world
             else world
 
