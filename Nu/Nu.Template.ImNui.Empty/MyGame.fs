@@ -32,7 +32,7 @@ type MyGameDispatcher () =
         let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
         let world =
             match World.doButton "Exit" [Entity.Text .= "Exit"; Entity.Position .= v3 232.0f -144.0f 0.0f] world with
-            | (true, world) -> World.exit world
+            | (true, world) when world.Unaccompanied -> World.exit world
             | (_, world) -> world
         let world = World.endGroup world
         let world = World.endScreen world

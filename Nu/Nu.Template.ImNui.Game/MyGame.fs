@@ -48,8 +48,8 @@ type MyGameDispatcher () =
             | (false, world) -> (myGame, world)
         let world =
             match World.doButton "Exit" [] world with
-            | (true, world) -> World.exit world
-            | (false, world) -> world
+            | (true, world) when world.Unaccompanied -> World.exit world
+            | (_, world) -> world
         let world = World.endGroup world
         let world = World.endScreen world
 
