@@ -1282,6 +1282,22 @@ module WorldModule2 =
                 HashSet3dNormalCached.Clear ()
                 HashSet2dNormalCached.Clear ()
 
+        static member internal sweepImNui (world : World) =
+            if world.Advancing then
+                OMap.fold (fun world simulant simulantImNui ->
+                    if not simulantImNui.Utilized then
+                        let world = World.destroy simulant world
+                        World.setSimulantImNuis (OMap.remove simulant world.SimulantImNuis) world
+                    else
+                        if world.Imperative then
+                            simulantImNui.Utilized <- false
+                            world
+                        else
+                            let world = World.setSimulantImNuis (OMap.add simulant { simulantImNui with Utilized = false } world.SimulantImNuis) world
+                            world)
+                    world world.SimulantImNuis
+            else world
+
         static member private preUpdateSimulants (world : World) =
 
             // gather simulants
