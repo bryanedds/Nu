@@ -4,15 +4,15 @@ open System.Numerics
 open Prime
 open Nu
 
-// this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
-// https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
+// this is our top-level ImNui model type. It determines what state the game is in. To learn about ImNui in Nu, see -
+// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
 type MyGame =
     | Splash
     | Title
     | Credits
     | Gameplay
 
-// this extends the Game API to expose the above MMCC model as a property.
+// this extends the Game API to expose the above ImNui model as a property.
 [<AutoOpen>]
 module MyGameExtensions =
     type Game with
