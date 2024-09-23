@@ -763,17 +763,6 @@ and Facet (physical, lightProbe, light) =
 
     interface LateBindings
 
-/// Dynamically augments an entity's behavior in a composable way via ImNui.
-and FacetImNui (physical, lightProbe, light) =
-    inherit Facet (physical, lightProbe, light)
-
-    override this.TryRun (entity, world) =
-        this.Run (entity, world)
-
-    /// The run handler of the ImNui programming model.
-    abstract Run : Entity * World -> World
-    default this.Run (_, world) = world
-
 /// Describes property content to the MMCC content system.
 and [<ReferenceEquality>] PropertyContent =
     { PropertyStatic : bool

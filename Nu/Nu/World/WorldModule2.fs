@@ -1894,7 +1894,9 @@ module EntityDispatcherModule2 =
 
         override this.TryRun (entity, world) =
             let model = entity.GetModelGeneric<'model> world
+            let world = World.scopeEntity entity world []
             let (model, world) = this.Run (model, entity, world)
+            let world = World.scopeWorld world
             this.SetModel model entity world
 
         override this.Edit (operation, entity, world) =
@@ -1940,6 +1942,60 @@ module EntityDispatcherModule2 =
         /// Untruncate the given model.
         abstract UntruncateModel : 'model * 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
+
+    /// A 2d entity dispatcher.
+    type [<AbstractClass>] Entity2dDispatcher<'model> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (true, physical, lightProbe, light, makeInitial)
+
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity2dDispatcher<'model> (physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault]
+
+    /// A gui entity dispatcher.
+    type [<AbstractClass>] GuiDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (true, false, false, false, makeInitial)
+
+        new (initial : 'model) =
+            GuiDispatcher<'model> (fun _ -> initial)
+
+        static member Facets =
+            [typeof<LayoutFacet>]
+
+        static member Properties =
+            [define Entity.Absolute true
+             define Entity.Presence Omnipresent
+             define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+             define Entity.Layout Manual
+             define Entity.LayoutMargin v2Zero
+             define Entity.LayoutOrder 0
+             define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero]
+
+    /// A 3d entity dispatcher.
+    type [<AbstractClass>] Entity3dDispatcher<'model> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (false, physical, lightProbe, light, makeInitial)
+
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity3dDispatcher<'model> (physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
+
+        override this.RayCast (ray, entity, world) =
+            if Array.isEmpty (entity.GetFacets world) then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else base.RayCast (ray, entity, world)
+
+    /// A vui dispatcher (gui in 3d).
+    type [<AbstractClass>] VuiDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (false, false, false, false, makeInitial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
     type World with
 
@@ -2143,6 +2199,19 @@ module EntityDispatcherModule2 =
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
+
+    /// Dynamically augments an entity's behavior in a composable way via ImNui.
+    type FacetImNui (physical, lightProbe, light) =
+        inherit Facet (physical, lightProbe, light)
+
+        override this.TryRun (entity, world) =
+            let world = World.scopeEntity entity world []
+            let world = this.Run (entity, world)
+            World.scopeWorld world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : Entity * World -> World
+        default this.Run (_, world) = world
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
@@ -2549,6 +2618,13 @@ module ScreenDispatcherModule =
                         makeInitial world
             World.setScreenModelGeneric<'model> false model screen world |> snd'
 
+        override this.TryRun (screen, world) =
+            let model = screen.GetModelGeneric<'model> world
+            let world = World.scopeScreen screen world []
+            let (model, world) = this.Run (model, screen, world)
+            let world = World.scopeWorld world
+            this.SetModel model screen world
+
         override this.Edit (operation, screen, world) =
             let model = screen.GetModelGeneric<'model> world
             let (model, world) = this.Edit (model, operation, screen, world)
@@ -2572,6 +2648,10 @@ module ScreenDispatcherModule =
         /// The fallback model value.
         abstract GetFallbackModel : Symbol * Screen * World -> 'model
         default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Screen * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
 
         /// Implements additional editing behavior for a screen via the ImGui API.
         abstract Edit : 'model * EditOperation * Screen * World -> 'model * World
@@ -2824,7 +2904,9 @@ module GameDispatcherModule =
 
         override this.TryRun (game, world) =
             let model = game.GetModelGeneric<'model> world
+            let world = World.scopeGame world []
             let (model, world) = this.Run (model, game, world)
+            let world = World.scopeWorld world
             this.SetModel model game world
 
         override this.Edit (operation, game, world) =

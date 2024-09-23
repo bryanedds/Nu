@@ -47,58 +47,38 @@ type GameplayDispatcher () =
         then Gameplay.initial
         else Gameplay.empty
 
-    // here we define the screen's property values and event handling
-    override this.Definitions (_, _) =
-        [Screen.SelectEvent => StartPlaying
-         Screen.DeselectingEvent => FinishQuitting
-         Screen.TimeUpdateEvent => TimeUpdate]
+    override this.Run (gameplay, screen, world) =
 
-    // here we handle the above messages
-    override this.Message (gameplay, message, _, world) =
+        // scope to screen
+        let world = World.scopeScreen screen world []
 
-        match message with
-        | StartPlaying ->
-            let gameplay = Gameplay.initial
-            just gameplay
+        // declare scene group when selected
+        let world =
+            if screen.GetSelected world then
+                let world = World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" world []
+                let world =
+                    World.doStaticModel "StaticModel" world 
+                        [Entity.Position .= v3 0.0f 0.0f -2.0f
+                         Entity.Rotation @= Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
+                World.endGroup world
+            else world
 
-        | FinishQuitting ->
-            let gameplay = Gameplay.empty
-            just gameplay
+        // declare gui group
+        let world = World.beginGroup Simulants.GameplayGui.Name world []
+        let (_, world) = World.doButton Simulants.GameplayQuit.Name world [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Text"]
+        let world = World.endGroup world
 
-        | TimeUpdate ->
-            let gameDelta = world.GameDelta
-            let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
-            just gameplay
+        // terminate scope
+        let world = World.scopeWorld world
 
-    // here we describe the content of the game including the hud, the scene, and the player
-    override this.Content (gameplay, _) =
-
-        [// the gui group
-         Content.group Simulants.GameplayGui.Name []
-
-            [// quit
-             Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]
-
-         // the scene group while playing
-         match gameplay.GameplayState with
-         | Playing ->
-            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-                [Content.staticModel "StaticModel"
-                    [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]]
-
-         // no scene group otherwise
-         | Quit -> ()]
+        // advance gameplay time
+        let gameDelta = world.GameDelta
+        let gameplay = { gameplay with GameplayTime = gameplay.GameplayTime + gameDelta.Updates }
+        (gameplay, world)
 
 [<AutoOpen>]
 module GameplayExtensions2 =
-
     type World with
-
         static member beginScreenGameplay name world args =
-            let init mapResult (gameplay : Screen) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> StartQuitting) world)) Simulants.GameplayQuit.ClickEvent gameplay world
+            let init mapResult gameplay world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> StartQuitting) world)) Simulants.GameplayQuit.ClickEvent gameplay world
             World.beginScreenPlus<GameplayDispatcher, GameplayResult> KeepPlaying init name world args

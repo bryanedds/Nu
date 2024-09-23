@@ -27,15 +27,13 @@ type MyGameDispatcher () =
 
     override this.Run (myGame, _, world) : MyGame * World =
 
-        // declare game
-        let world = World.beginGame world []
-
         // declare splash screen
-        let (result, world) = World.doScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) world []
+        let (result, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) world []
         let myGame =
             match result |> Seq.filter (function Deselecting -> true | _ -> false) |> Seq.tryHead with
             | Some _ -> Title
             | None -> myGame
+        let world = World.endScreen world
 
         // declare title screen
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" world []
@@ -62,10 +60,8 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (_, world) = World.doScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
-
-        // declaration terminus
-        let world = World.endGame world
+        let (_, world) = World.beginScreenGameplay<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let world = World.endScreen world
 
         // handle Alt+F4
         let world =

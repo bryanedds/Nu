@@ -114,7 +114,7 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue screen with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui screen { Utilized = true; Result = FQueue.empty<ScreenResult> } world
+                    let world = World.addSimulantImNui screen { Utilized = true; Result = (zero, FQueue.empty<ScreenResult>) } world
                     let mapSndResult =
                         fun (mapper : ScreenResult FQueue -> ScreenResult FQueue) world ->
                             World.mapSimulantImNui (fun screenImNui ->

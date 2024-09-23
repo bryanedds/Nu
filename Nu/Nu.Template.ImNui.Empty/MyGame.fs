@@ -25,8 +25,7 @@ type MyGameDispatcher () =
     // here we handle running the game
     override this.Run (myGame, _, world) =
 
-        // run game
-        let world = World.beginGame world []
+        // run in game context
         let (_, world) = World.beginScreen "Screen" true Vanilla world []
         let world = World.beginGroup "Group" world []
         let world =
@@ -39,7 +38,6 @@ type MyGameDispatcher () =
             | (_, world) -> world
         let world = World.endGroup world
         let world = World.endScreen world
-        let world = World.endGame world
 
         // handle Alt+F4
         let world =
@@ -48,5 +46,6 @@ type MyGameDispatcher () =
             else world
 
         // advance game time
-        let myGame = { myGame with MyGameTime = inc myGame.MyGameTime }
+        let gameDelta = world.GameDelta
+        let myGame = { myGame with MyGameTime = myGame.MyGameTime + gameDelta.Updates }
         (myGame, world)
