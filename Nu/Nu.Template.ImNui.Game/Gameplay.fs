@@ -36,9 +36,6 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Run (gameplay, screen, world) =
 
-        // scope to screen
-        let world = World.scopeScreen screen world []
-
         // declare scene group when selected
         let world =
             if screen.GetSelected world then
@@ -54,9 +51,6 @@ type GameplayDispatcher () =
         let world = World.beginGroup Simulants.GameplayGui.Name world []
         let (_, world) = World.doButton Simulants.GameplayQuit.Name world [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Text"]
         let world = World.endGroup world
-
-        // terminate scope
-        let world = World.scopeWorld world
 
         // advance gameplay time
         let gameDelta = world.GameDelta
