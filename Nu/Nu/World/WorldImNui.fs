@@ -98,7 +98,7 @@ module WorldImNui =
                 (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
                 world args
 
-        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) : 'r * ScreenResult FQueue * World =
+        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (world : World) (args : Screen ArgImNui seq) : ScreenResult FQueue * 'r * World =
             let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext screenAddress world
             let screen = Nu.Screen screenAddress
@@ -114,26 +114,26 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue screen with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui screen { Utilized = true; Result = (zero, FQueue.empty<ScreenResult>) } world
-                    let mapSndResult =
+                    let world = World.addSimulantImNui screen { Utilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
+                    let mapFstResult =
                         fun (mapper : ScreenResult FQueue -> ScreenResult FQueue) world ->
                             World.mapSimulantImNui (fun screenImNui ->
-                                let (userResult, screenResult) = screenImNui.Result :?> 'r * ScreenResult FQueue
-                                { screenImNui with Result = (userResult, mapper screenResult) })
+                                let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
+                                { screenImNui with Result = (mapper screenResult, userResult) })
                                 screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj Select) world)) screen.SelectEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapSndResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
-                    let mapFstResult =
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Select) world)) screen.SelectEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
+                    let mapSndResult =
                         fun (mapper : 'r -> 'r) world ->
                             World.mapSimulantImNui (fun screenImNui ->
-                                let (userResult, screenResult) = screenImNui.Result :?> 'r * ScreenResult FQueue
-                                { screenImNui with Result = (mapper userResult, screenResult) })
+                                let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
+                                { screenImNui with Result = (screenResult, mapper userResult) })
                                 screen world
-                    (true, init mapFstResult screen world)
+                    (true, init mapSndResult screen world)
             let world =
                 Seq.fold
                     (fun world arg ->
@@ -143,12 +143,12 @@ module WorldImNui =
                     world args
             let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
             let world = if screen.GetExists world && select then transitionScreen screen world else world
-            let (userResult, screenResult) = (World.getSimulantImNui screen world).Result :?> 'r * ScreenResult FQueue
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (zero, FQueue.empty<ScreenResult>) }) screen world
-            (userResult, screenResult, world)
+            let (screenResult, userResult) = (World.getSimulantImNui screen world).Result :?> ScreenResult FQueue * 'r
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen world
+            (screenResult, userResult, world)
 
         static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt world args : ScreenResult FQueue * World =
-            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt world args |> _bc
+            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt world args |> a_c
 
         /// End the ImNui declaration of a screen.
         static member endScreen (world : World) =

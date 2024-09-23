@@ -60,7 +60,7 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (result, _, world) = World.beginScreenGameplay Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
+        let (_, result, world) = World.beginScreenGameplay Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) world []
         let myGame = match result with StartQuitting -> Title | KeepPlaying -> myGame
         let world = World.endScreen world
 
