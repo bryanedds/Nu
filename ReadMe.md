@@ -43,7 +43,7 @@ Rendering made efficient with instancing-by-default.
 ![image](https://github.com/user-attachments/assets/cd46dfae-0731-4991-a235-0e1dc0fb059f)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
-![image](https://github.com/user-attachments/assets/fbba00a1-02a6-43ce-8a39-688797174009)
+![image](https://github.com/user-attachments/assets/5e22ddb9-f10e-49e6-ba7e-e7322b31de7f)
 Editing the above photo-realistic scene in real-time.
 
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
