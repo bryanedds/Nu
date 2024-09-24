@@ -40,7 +40,7 @@ Real-time WYSIWYG editing with hot asset and live code reloading, and the abilit
 ![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
 Rendering made efficient with instancing-by-default.
 
-![image](https://github.com/user-attachments/assets/58e5fb9b-372a-4674-af4a-0b937268b3b4)
+![image](https://github.com/user-attachments/assets/cd46dfae-0731-4991-a235-0e1dc0fb059f)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
 ![image](https://github.com/user-attachments/assets/fbba00a1-02a6-43ce-8a39-688797174009)
