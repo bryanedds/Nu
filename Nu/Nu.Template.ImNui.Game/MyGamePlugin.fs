@@ -19,4 +19,5 @@ type MyGamePlugin () =
 
     // this specifies which packages are automatically loaded at game start-up.
     override this.InitialPackages =
-        [Assets.Gui.PackageName]
+        [Assets.Gui.PackageName
+         Assets.Gameplay.PackageName]
