@@ -2628,7 +2628,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // group selection
             let world =
-                let groups = World.getGroups SelectedScreen world
+                let groups = world |> World.getGroups SelectedScreen |> Seq.sort
                 let mutable selectedGroupName = SelectedGroup.Name
                 ImGui.SetNextItemWidth -1.0f
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName, ImGuiComboFlags.HeightRegular) then
