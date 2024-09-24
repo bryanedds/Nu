@@ -37,14 +37,14 @@ Some Media on the Nu Game Engine
 ![image](https://github.com/bryanedds/Nu/assets/1625560/54785591-6b39-4a27-939d-b2f3b29f9bf1)
 Real-time WYSIWYG editing with hot asset and live code reloading, and the ability to undo and redo gameplay.
 
-![image](https://github.com/bryanedds/Nu/assets/1625560/71fb4581-265f-4530-bc5e-93fc1a37f225)
-Rendering made efficient with instancing-by-default.
-
 ![image](https://github.com/user-attachments/assets/58e5fb9b-372a-4674-af4a-0b937268b3b4)
 Photo-realistic yet user-friendly deferred, physically-based rendering.
 
-![image](https://github.com/user-attachments/assets/fbba00a1-02a6-43ce-8a39-688797174009)
-Editing the above photo-realistic scene in real-time.
+![image](https://github.com/user-attachments/assets/aa8bbaa8-d253-48c2-bac5-17a5cc3e1167)
+Rendering made efficient with instancing-by-default.
+
+![image](https://github.com/user-attachments/assets/6340fe57-1ad0-4204-bc19-9ee5f0f91f99)
+Editing said photo-realistic scene.
 
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.
