@@ -41,24 +41,3 @@ module CoreOperators =
     /// Test for object inequality.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
-
-// TODO: remove this after updating Prime.
-[<AutoOpen>]
-module StringExtensions =
-
-    let private regex = Regex "([A-Z][a-z]+)"
-
-    type String with
-        member this.Spaced =
-            regex.Matches this |>
-            Seq.map cast<Match> |>
-            Seq.map _.Value |>
-            String.join " "
-
-// TODO: remove this after updating Prime.
-[<RequireQualifiedAccess>]
-module FQueue =
-
-    /// Check that an FStack contains the given item.
-    let contains (item : 'a) (queue : 'a FQueue) =
-        Seq.contains item queue
