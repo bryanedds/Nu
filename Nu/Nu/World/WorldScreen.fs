@@ -476,17 +476,19 @@ module WorldScreenModule =
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
-                let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
-                let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
-                match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
-                | null -> None // some sort of argument issue
-                | dtMeshData ->
-                    DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
-                    let dtNavMesh = DtNavMesh ()
-                    if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
-                        let dtQuery = DtNavMeshQuery dtNavMesh
-                        Some (navBuilderResultData, dtNavMesh, dtQuery)
-                    else None
+                if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but I think this is an indication of nav mesh build failure.
+                    let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
+                    let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
+                    match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
+                    | null -> None // some sort of argument issue
+                    | dtMeshData ->
+                        DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
+                        let dtNavMesh = DtNavMesh ()
+                        if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
+                            let dtQuery = DtNavMeshQuery dtNavMesh
+                            Some (navBuilderResultData, dtNavMesh, dtQuery)
+                        else None
+                else None
 
             // geometry not found
             | None -> None
