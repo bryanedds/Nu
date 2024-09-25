@@ -275,8 +275,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | Mass mass -> mass
         let inertia = hull.CalculateLocalInertia mass
         match pointsShape.TransformOpt with
-        | Some transform -> compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (center, transform.Rotation, v3One), hull)
-        | None -> compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
+        | Some transform ->
+            compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (center, transform.Rotation, v3One), hull)
+        | None ->
+            compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
     static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
@@ -333,7 +335,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             (transform.Scale.Transform surface.SurfaceMatrix)
                     | None -> Affine.makeFromMatrix surface.SurfaceMatrix
                 let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
-                PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine)
+                match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
+                | Some staticModel ->
+                    if  staticModelSurfaceShape.SurfaceIndex > -1 &&
+                        staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
+                        let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
+                        let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                        PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
+                    else centerMassInertiaDisposes
+                | None -> centerMassInertiaDisposes)
                 centerMassInertiaDisposes
                 [0 .. dec staticModel.Surfaces.Length]
         | None -> centerMassInertiaDisposes
@@ -344,8 +354,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Some staticModel ->
             if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
-                let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
-                let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
+                let transform =
+                    match staticModelSurfaceShape.TransformOpt with
+                    | Some transform ->
+                        Affine.make
+                            (transform.Translation.Transform surface.SurfaceMatrix)
+                            (transform.Rotation * surface.SurfaceMatrix.Rotation)
+                            (transform.Scale.Transform surface.SurfaceMatrix)
+                    | None -> Affine.makeFromMatrix surface.SurfaceMatrix
+                let geometry = surface.PhysicallyBasedGeometry
+                let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                 PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
             else centerMassInertiaDisposes
         | None -> centerMassInertiaDisposes
