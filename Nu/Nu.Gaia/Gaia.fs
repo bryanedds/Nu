@@ -2264,9 +2264,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     match ManipulationOperation with
                                     | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
                                         let degreesLocal = Math.SnapDegree3d r (entity.GetDegreesLocal world)
-                                        let world = entity.SetDegreesLocal degreesLocal world
-                                        let degrees = Math.SnapDegree3d r (entity.GetDegrees world)
-                                        entity.SetDegrees degrees world
+                                        entity.SetDegreesLocal degreesLocal world
                                     | _ -> world
                                 | None ->
                                     match ManipulationOperation with
