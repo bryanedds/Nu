@@ -166,6 +166,7 @@ module Hl =
               RenderFinishedSemaphore : VkSemaphore
               InFlightFence : VkFence
               ScreenClearRenderPass : VkRenderPass
+              GeneralRenderPass : VkRenderPass
               SwapchainFramebuffers : VkFramebuffer array
               SwapExtent : VkExtent2D }
 
@@ -521,8 +522,8 @@ module Hl =
             vkCreateFence (device, &createInfo, nullPtr, &fence) |> check
             fence
         
-        /// Create the renderpass used to clear the screen.
-        static member createScreenClearRenderPass format device =
+        /// Create a renderpass.
+        static member createRenderPass clearScreen format device =
             
             // renderpass handle
             let mutable renderPass = Unchecked.defaultof<VkRenderPass>
@@ -531,11 +532,11 @@ module Hl =
             let mutable attachment = VkAttachmentDescription ()
             attachment.format <- format
             attachment.samples <- VK_SAMPLE_COUNT_1_BIT
-            attachment.loadOp <- VK_ATTACHMENT_LOAD_OP_CLEAR
+            attachment.loadOp <- if clearScreen then VK_ATTACHMENT_LOAD_OP_CLEAR else VK_ATTACHMENT_LOAD_OP_LOAD
             attachment.storeOp <- VK_ATTACHMENT_STORE_OP_STORE
             attachment.stencilLoadOp <- VK_ATTACHMENT_LOAD_OP_DONT_CARE
             attachment.stencilStoreOp <- VK_ATTACHMENT_STORE_OP_DONT_CARE
-            attachment.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+            attachment.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED // TODO: set correct initial layout for screen clear false.
             attachment.finalLayout <- VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 
             // populate attachment reference
@@ -698,6 +699,7 @@ module Hl =
             let imageViews = vulkanGlobal.SwapchainImageViews
             
             for i in [0 .. dec framebuffers.Length] do vkDestroyFramebuffer (device, framebuffers[i], nullPtr)
+            vkDestroyRenderPass (device, vulkanGlobal.GeneralRenderPass, nullPtr)
             vkDestroyRenderPass (device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
             vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
             vkDestroySemaphore (device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
@@ -784,8 +786,9 @@ module Hl =
                 let renderFinishedSemaphore = VulkanGlobal.createSemaphore device
                 let inFlightFence = VulkanGlobal.createFence device
 
-                // create screen clear renderpass
-                let screenClearRenderPass = VulkanGlobal.createScreenClearRenderPass surfaceFormat.format device
+                // one renderpass to clear the screen, another to render the actual content
+                let screenClearRenderPass = VulkanGlobal.createRenderPass true surfaceFormat.format device
+                let generalRenderPass = VulkanGlobal.createRenderPass false surfaceFormat.format device
 
                 // create swapchain framebuffers
                 let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent screenClearRenderPass swapchainImageViews device
@@ -805,6 +808,7 @@ module Hl =
                       RenderFinishedSemaphore = renderFinishedSemaphore
                       InFlightFence = inFlightFence
                       ScreenClearRenderPass = screenClearRenderPass
+                      GeneralRenderPass = generalRenderPass
                       SwapchainFramebuffers = swapchainFramebuffers
                       SwapExtent = swapExtent }
 
