@@ -274,7 +274,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 volume * density
             | Mass mass -> mass
         let inertia = hull.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
+        match pointsShape.TransformOpt with
+        | Some transform -> compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (center, transform.Rotation, v3One), hull)
+        | None -> compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
     static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
