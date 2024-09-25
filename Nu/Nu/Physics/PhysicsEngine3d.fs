@@ -356,13 +356,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let transform =
+                    // NOTE: in order to merely accomodate the change in coordinate bases such as from 3DS Max FBX
+                    // export, we apply only the rotation transform here. I _think_ if 3DS Max FBX exporter had
+                    // an Apply Transform option like Blender's does, this wouldn't be necessary.
                     match staticModelSurfaceShape.TransformOpt with
                     | Some transform ->
-                        Affine.make
-                            (transform.Translation.Transform surface.SurfaceMatrix)
-                            (transform.Rotation * surface.SurfaceMatrix.Rotation)
-                            (transform.Scale.Transform surface.SurfaceMatrix)
-                    | None -> Affine.makeFromMatrix surface.SurfaceMatrix
+                        let rotation = transform.Rotation * surface.SurfaceMatrix.Rotation
+                        Affine.make transform.Translation rotation transform.Scale
+                    | None -> Affine.makeRotation surface.SurfaceMatrix.Rotation
                 let geometry = surface.PhysicallyBasedGeometry
                 let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                 PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
