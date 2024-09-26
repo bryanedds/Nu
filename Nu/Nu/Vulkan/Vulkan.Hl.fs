@@ -553,23 +553,13 @@ module Hl =
             subpass.pColorAttachments <- asPointer &attachmentReference
             subpass.preserveAttachmentCount <- 0u
 
-            // populate dependency
-            let mutable dependency = VkSubpassDependency ()
-            dependency.srcSubpass <- VK_SUBPASS_EXTERNAL
-            dependency.dstSubpass <- 0u
-            dependency.srcStageMask <- VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-            dependency.dstStageMask <- VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-            dependency.srcAccessMask <- VK_ACCESS_NONE
-            dependency.dstAccessMask <- VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-
             // populate create info
             let mutable createInfo = VkRenderPassCreateInfo ()
             createInfo.attachmentCount <- 1u
             createInfo.pAttachments <- asPointer &attachment
             createInfo.subpassCount <- 1u
             createInfo.pSubpasses <- asPointer &subpass
-            createInfo.dependencyCount <- 1u
-            createInfo.pDependencies <- asPointer &dependency
+            createInfo.dependencyCount <- 0u
 
             // create renderpass
             vkCreateRenderPass (device, &createInfo, nullPtr, &renderPass) |> check
@@ -667,11 +657,11 @@ module Hl =
             vkEndCommandBuffer commandBuffer |> check
             
             // populate submit info
-            let mutable flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+            let mutable waitStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
             let mutable submitInfo = VkSubmitInfo ()
             submitInfo.waitSemaphoreCount <- 1u
             submitInfo.pWaitSemaphores <- asPointer &imageAvailable
-            submitInfo.pWaitDstStageMask <- asPointer &flags
+            submitInfo.pWaitDstStageMask <- asPointer &waitStage
             submitInfo.commandBufferCount <- 1u
             submitInfo.pCommandBuffers <- asPointer &commandBuffer
             submitInfo.signalSemaphoreCount <- 1u
