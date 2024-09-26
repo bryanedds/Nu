@@ -36,7 +36,7 @@ type MyGameDispatcher () =
         let (_, world) = World.doBlock3d "Block3d" [Entity.Position .= v3 0.0f -4.0f -12.0f] world
 
         // declare a box, store its handle and body id for reference, then handle its body interactions
-        let (results, world) = World.doBox3d "Box3d" [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Restitution .= 0.0f; Entity.Observable .= true] world
+        let (results, world) = World.doBox3d "Box3d" [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Observable .= true] world
         let box3d = world.RecentEntity
         let box3dBodyId = box3d.GetBodyId world
         let myGame =
