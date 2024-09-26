@@ -492,7 +492,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force,
                          PhysicsEngine2d.toPhysicsV2 originWorld)
                 | None ->
-                    body.ApplyLinearImpulse
+                    body.ApplyForce
                         (PhysicsEngine2d.toPhysicsV2 applyBodyForceMessage.Force)
             else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Aether.")
         | (false, _) -> ()
