@@ -735,13 +735,13 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
-                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
                 Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                     Octree.addElement entityState.Presence entityState.Bounds element octree
             world
                 
@@ -751,13 +751,13 @@ module WorldModule2 =
             let quadtree = World.getQuadtree world
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
-                let element = Quadelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entity
+                let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
                 Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make (entityState.Visible || entityState.AlwaysRender) (entityState.Static && not entityState.AlwaysUpdate) entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
+                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
                     Octree.removeElement entityState.Presence entityState.Bounds element octree
             world
 
@@ -919,6 +919,10 @@ module WorldModule2 =
                     tasklets
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world
+
+        static member private processImNui world =
+            WorldImNui.Reinitializing <- false
+            World.sweepImNui world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
@@ -1237,6 +1241,68 @@ module WorldModule2 =
             let octree = World.getOctree world
             Octree.sweep octree
 
+        /// Run ImNui for a single frame.
+        /// Needed only as a hack for Gaia and other accompanying context to ensure ImGui simulants are created at a
+        /// meaningful time.
+        static member runImNui (world : World) =
+
+            // use a finally block to free cached values
+            try
+
+                // gather simulants
+                world.Timers.UpdateGatherTimer.Restart ()
+                let game = Nu.Game.Handle
+                let screenOpt = World.getSelectedScreenOpt world
+                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
+                World.getElements3dInPlay HashSet3dNormalCached world
+                World.getElements2dInPlay HashSet2dNormalCached world
+                world.Timers.UpdateGatherTimer.Stop ()
+
+                // run game
+                world.Timers.UpdateGameTimer.Restart ()
+                let world = World.tryRunGame game world
+                world.Timers.UpdateGameTimer.Stop ()
+
+                // run screen if any
+                world.Timers.UpdateScreensTimer.Restart ()
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryRunScreen screen world else world) world screenOpt
+                world.Timers.UpdateScreensTimer.Stop ()
+
+                // update groups
+                world.Timers.UpdateGroupsTimer.Restart ()
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryRunGroup group world else world) world groups
+                world.Timers.UpdateGroupsTimer.Stop ()
+
+                // update entities
+                world.Timers.UpdateEntitiesTimer.Restart ()
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryRunEntity element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryRunEntity element.Entry world else world) world HashSet2dNormalCached
+                world.Timers.UpdateEntitiesTimer.Stop ()
+
+                // fin
+                world
+
+            // free cached values
+            finally
+                HashSet3dNormalCached.Clear ()
+                HashSet2dNormalCached.Clear ()
+
+        static member internal sweepImNui (world : World) =
+            if world.Advancing then
+                OMap.fold (fun world simulant simulantImNui ->
+                    if not simulantImNui.Utilized then
+                        let world = World.destroy simulant world
+                        World.setSimulantImNuis (OMap.remove simulant world.SimulantImNuis) world
+                    else
+                        if world.Imperative then
+                            simulantImNui.Utilized <- false
+                            world
+                        else
+                            let world = World.setSimulantImNuis (OMap.add simulant { simulantImNui with Utilized = false } world.SimulantImNuis) world
+                            world)
+                    world world.SimulantImNuis
+            else world
+
         static member private preUpdateSimulants (world : World) =
 
             // gather simulants
@@ -1282,32 +1348,55 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
+                let world = World.tryRunGame game world
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
                 // update screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if advancing && screen.GetExists world then World.updateScreen screen world else world) world screenOpt
+                let world =
+                    Option.fold (fun world (screen : Screen) ->
+                        let world = if screen.GetExists world then World.tryRunScreen screen world else world
+                        let world = if advancing && screen.GetExists world then World.updateScreen screen world else world
+                        world)
+                        world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if advancing && group.GetExists world then World.updateGroup group world else world) world groups
+                let world =
+                    Seq.fold (fun world (group : Group) ->
+                        let world = if group.GetExists world then World.tryRunGroup group world else world
+                        let world = if advancing && group.GetExists world then World.updateGroup group world else world
+                        world)
+                        world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
                 // update entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
                 let world =
                     Seq.fold (fun world (element : Entity Octelement) ->
-                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
-                        then World.updateEntity element.Entry world
-                        else world)
+                        let world =
+                            if element.Entry.GetExists world
+                            then World.tryRunEntity element.Entry world
+                            else world
+                        let world =
+                            if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
+                            then World.updateEntity element.Entry world
+                            else world
+                        world)
                         world HashSet3dNormalCached
                 let world =
                     Seq.fold (fun world (element : Entity Quadelement) ->
-                        if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
-                        then World.updateEntity element.Entry world
-                        else world)
+                        let world =
+                            if element.Entry.GetExists world
+                            then World.tryRunEntity element.Entry world
+                            else world
+                        let world =
+                            if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
+                            then World.updateEntity element.Entry world
+                            else world
+                        world)
                         world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
@@ -1616,11 +1705,9 @@ module WorldModule2 =
 
                     // update screen transitioning process
                     let world = World.updateScreenTransition world
+                    World.updateScreenRequestedSong world
                     match World.getLiveness world with
                     | Live ->
-
-                        // 
-                        World.updateScreenRequestedSong world
 
                         // process HID inputs
                         world.Timers.InputTimer.Restart ()
@@ -1645,7 +1732,9 @@ module WorldModule2 =
 
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
+                                    WorldModule.UpdatingSimulants <- true
                                     let world = World.updateSimulants world
+                                    WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
                                     match World.getLiveness world with
                                     | Live ->
@@ -1675,6 +1764,7 @@ module WorldModule2 =
 
                                                     // destroy simulants that have been marked for destruction at the end of frame
                                                     world.Timers.DestructionTimer.Restart ()
+                                                    let world = World.processImNui world
                                                     let world = World.destroySimulants world
                                                     world.Timers.DestructionTimer.Stop ()
                                                     match World.getLiveness world with
@@ -1831,6 +1921,152 @@ module WorldModule2 =
 [<AutoOpen>]
 module EntityDispatcherModule2 =
 
+    /// The ImNui dispatcher for entities.
+    type [<AbstractClass>] EntityDispatcher<'model>
+        (is2d, perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light)
+
+        new (is2d, perimeterCentered, physical, lightProbe, light, initial : 'model) =
+            EntityDispatcher<'model> (is2d, perimeterCentered, physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent]
+
+        /// Get the entity's model.
+        member this.GetModel (entity : Entity) world : 'model =
+            entity.GetModelGeneric<'model> world
+
+        /// Set the entity's model.
+        member this.SetModel (model : 'model) (entity : Entity) world =
+            entity.SetModelGeneric<'model> model world
+
+        /// The entity's model lens.
+        member this.Model (entity : Entity) =
+            lens (nameof this.Model) entity (this.GetModel entity) (flip this.SetModel entity)
+
+        override this.Register (entity, world) =
+            let property = World.getEntityModelProperty entity world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing entity model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setEntityModelGeneric<'model> false model entity world |> snd'
+
+        override this.TryRun (entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let context = world.ContextImNui
+            let world = World.scopeEntity entity [] world
+            let (model, world) = this.Run (model, entity, world)
+            let world = World.advanceContext entity.EntityAddress context world
+            this.SetModel model entity world
+
+        override this.Edit (operation, entity, world) =
+            let model = entity.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, entity, world)
+            this.SetModel model entity world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, entity, world) =
+            this.GetFallbackModel (modelSymbol, entity, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, entity, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = entity.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Entity * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Entity * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for an entity via the ImGui API.
+        abstract Edit : 'model * EditOperation * Entity * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Render the entity using the given model.
+        abstract Render : 'model * RenderPass * Entity * World -> unit
+        default this.Render (_, _, _, _) = ()
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
+
+    /// A 2d entity dispatcher.
+    type [<AbstractClass>] Entity2dDispatcher<'model> (physical, perimeterCentered, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (true, physical, perimeterCentered, lightProbe, light, makeInitial)
+
+        new (physical, perimeterCentered, lightProbe, light, initial : 'model) =
+            Entity2dDispatcher<'model> (physical, perimeterCentered, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault]
+
+    /// A gui entity dispatcher.
+    type [<AbstractClass>] GuiDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false, makeInitial)
+
+        new (initial : 'model) =
+            GuiDispatcher<'model> (fun _ -> initial)
+
+        static member Facets =
+            [typeof<LayoutFacet>]
+
+        static member Properties =
+            [define Entity.Absolute true
+             define Entity.Presence Omnipresent
+             define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+             define Entity.Layout Manual
+             define Entity.LayoutMargin v2Zero
+             define Entity.LayoutOrder 0
+             define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero]
+
+    /// A 3d entity dispatcher.
+    type [<AbstractClass>] Entity3dDispatcher<'model> (physical, lightProbe, light, makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (false, true, physical, lightProbe, light, makeInitial)
+
+        new (physical, lightProbe, light, initial : 'model) =
+            Entity3dDispatcher<'model> (physical, lightProbe, light, fun _ -> initial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
+
+        override this.RayCast (ray, entity, world) =
+            if Array.isEmpty (entity.GetFacets world) then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else base.RayCast (ray, entity, world)
+
+    /// A vui dispatcher (gui in 3d).
+    type [<AbstractClass>] VuiDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit EntityDispatcher<'model> (false, true, false, false, false, makeInitial)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
+
     type World with
 
         static member inline internal signalEntity<'model, 'message, 'command when 'message :> Message and 'command :> Command> (signal : Signal) (entity : Entity) world =
@@ -1945,7 +2181,7 @@ module EntityDispatcherModule2 =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The entity's own MMCC definitions.
-        abstract Definitions : 'model * Entity -> DefinitionContent list
+        abstract Definitions : 'model * Entity -> Entity DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
@@ -1981,7 +2217,7 @@ module EntityDispatcherModule2 =
         default this.UntruncateModel (_, incoming) = incoming
 
     /// A 2d entity dispatcher.
-    and [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
+    type [<AbstractClass>] Entity2dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (perimeterCentered, physical, lightProbe, light, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, perimeterCentered, physical, lightProbe, light, makeInitial)
 
         new (centered, physical, lightProbe, light, initial : 'model) =
@@ -1998,7 +2234,7 @@ module EntityDispatcherModule2 =
              define Entity.PerimeterCentered Constants.Engine.Entity2dPerimeterCenteredDefault]
 
     /// A gui entity dispatcher.
-    and [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
+    type [<AbstractClass>] GuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false, makeInitial)
 
         new (initial : 'model) =
@@ -2008,10 +2244,10 @@ module EntityDispatcherModule2 =
             [typeof<LayoutFacet>]
 
         static member Properties =
-            [define Entity.Size Constants.Engine.EntityGuiSizeDefault
+            [define Entity.Absolute true
+             define Entity.Size Constants.Engine.EntityGuiSizeDefault
              define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
              define Entity.Presence Omnipresent
-             define Entity.Absolute true
              define Entity.DisabledColor Constants.Gui.DisabledColorDefault
              define Entity.Layout Manual
              define Entity.LayoutMargin v2Zero
@@ -2020,7 +2256,7 @@ module EntityDispatcherModule2 =
              define Entity.GridPosition v2iZero]
 
     /// A 3d entity dispatcher.
-    and [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
+    type [<AbstractClass>] Entity3dDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (physical, lightProbe, light, makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, physical, lightProbe, light, makeInitial)
 
         new (physical, lightProbe, light, initial : 'model) =
@@ -2037,11 +2273,25 @@ module EntityDispatcherModule2 =
             else base.RayCast (ray, entity, world)
 
     /// A vui dispatcher (gui in 3d).
-    and [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
+    type [<AbstractClass>] VuiDispatcher<'model, 'message, 'command when 'message :> Message and 'command :> Command> (makeInitial : World -> 'model) =
         inherit EntityDispatcher<'model, 'message, 'command> (false, true, false, false, false, makeInitial)
 
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
+
+    /// Dynamically augments an entity's behavior in a composable way via ImNui.
+    type FacetImNui (physical, lightProbe, light) =
+        inherit Facet (physical, lightProbe, light)
+
+        override this.TryRun (entity, world) =
+            let context = world.ContextImNui
+            let world = World.scopeEntity entity [] world
+            let world = this.Run (entity, world)
+            World.advanceContext entity.EntityAddress context world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : Entity * World -> World
+        default this.Run (_, world) = world
 
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
@@ -2157,6 +2407,90 @@ module EntityPropertyDescriptor =
 [<AutoOpen>]
 module GroupDispatcherModule =
 
+    /// The ImNui dispatcher for groups.
+    type [<AbstractClass>] GroupDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit GroupDispatcher ()
+
+        new (initial : 'model) =
+            GroupDispatcher<'model> (fun _ -> initial)
+
+        /// Get the group's model.
+        member this.GetModel (group : Group) world : 'model =
+            group.GetModelGeneric<'model> world
+
+        /// Set the group's model.
+        member this.SetModel (model : 'model) (group : Group) world =
+            group.SetModelGeneric<'model> model world
+
+        /// The group's model lens.
+        member this.Model (group : Group) =
+            lens (nameof this.Model) group (this.GetModel group) (flip this.SetModel group)
+
+        override this.Register (group, world) =
+            let property = World.getGroupModelProperty group world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing group model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGroupModelGeneric<'model> false model group world |> snd'
+
+        override this.TryRun (group, world) =
+            let model = group.GetModelGeneric<'model> world
+            let context = world.ContextImNui
+            let world = World.scopeGroup group [] world
+            let (model, world) = this.Run (model, group, world)
+            let world = World.advanceContext group.GroupAddress context world
+            this.SetModel model group world
+
+        override this.Edit (operation, group, world) =
+            let model = group.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, group, world)
+            this.SetModel model group world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, group, world) =
+            this.GetFallbackModel (modelSymbol, group, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, group, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = group.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Group * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Group * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for a group via the ImGui API.
+        abstract Edit : 'model * EditOperation * Group * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
+
     type World with
 
         static member inline internal signalGroup<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (group : Group) world =
@@ -2264,7 +2598,7 @@ module GroupDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The group's own MMCC definitions.
-        abstract Definitions : 'model * Group -> DefinitionContent list
+        abstract Definitions : 'model * Group -> Group DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
@@ -2339,6 +2673,90 @@ module GroupPropertyDescriptor =
 
 [<AutoOpen>]
 module ScreenDispatcherModule =
+
+    /// The ImNui dispatcher for screens.
+    type [<AbstractClass>] ScreenDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit ScreenDispatcher ()
+
+        new (initial : 'model) =
+            ScreenDispatcher<'model> (fun _ -> initial)
+
+        /// Get the screen's model.
+        member this.GetModel (screen : Screen) world : 'model =
+            screen.GetModelGeneric<'model> world
+
+        /// Set the screen's model.
+        member this.SetModel (model : 'model) (screen : Screen) world =
+            screen.SetModelGeneric<'model> model world
+
+        /// The screen's model lens.
+        member this.Model (screen : Screen) =
+            lens (nameof this.Model) screen (this.GetModel screen) (flip this.SetModel screen)
+
+        override this.Register (screen, world) =
+            let property = World.getScreenModelProperty screen world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing screen model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setScreenModelGeneric<'model> false model screen world |> snd'
+
+        override this.TryRun (screen, world) =
+            let model = screen.GetModelGeneric<'model> world
+            let context = world.ContextImNui
+            let world = World.scopeScreen screen [] world
+            let (model, world) = this.Run (model, screen, world)
+            let world = World.advanceContext screen.ScreenAddress context world
+            this.SetModel model screen world
+
+        override this.Edit (operation, screen, world) =
+            let model = screen.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, screen, world)
+            this.SetModel model screen world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, screen, world) =
+            this.GetFallbackModel (modelSymbol, screen, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, screen, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = screen.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Screen * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Screen * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for a screen via the ImGui API.
+        abstract Edit : 'model * EditOperation * Screen * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
     type World with
 
@@ -2447,7 +2865,7 @@ module ScreenDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The screen's own MMCC definitions.
-        abstract Definitions : 'model * Screen -> DefinitionContent list
+        abstract Definitions : 'model * Screen -> Screen DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.
@@ -2477,6 +2895,24 @@ module ScreenDispatcherModule =
         /// Untruncate the given model.
         abstract UntruncateModel : 'model * 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
+
+    type World with
+
+        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
+        static member beginScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath world args =
+            World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) world args
+
+        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
+        static member beginScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath world args =
+            World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) world args
+
+        /// Begin the ImNui declaration of a screen with the given arguments.
+        static member beginScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior world args =
+            World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None world args
+
+        /// Begin the ImNui declaration of a screen with the given arguments.
+        static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior world args =
+            World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None world args
 
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
@@ -2522,6 +2958,94 @@ module ScreenPropertyDescriptor =
 
 [<AutoOpen>]
 module GameDispatcherModule =
+
+    /// The ImNui dispatcher for games.
+    type [<AbstractClass>] GameDispatcher<'model> (makeInitial : World -> 'model) =
+        inherit GameDispatcher ()
+
+        new (initial : 'model) =
+            GameDispatcher<'model> (fun _ -> initial)
+
+        /// Get the game's model.
+        member this.GetModel (game : Game) world : 'model =
+            game.GetModelGeneric<'model> world
+
+        /// Set the game's model.
+        member this.SetModel (model : 'model) (game : Game) world =
+            game.SetModelGeneric<'model> model world
+
+        /// The game's model lens.
+        member this.Model (game : Game) =
+            lens (nameof this.Model) game (this.GetModel game) (flip this.SetModel game)
+
+        override this.Register (game, world) =
+            let property = World.getGameModelProperty game world
+            let model =
+                match property.DesignerValue with
+                | _ when property.DesignerType = typeof<unit> -> makeInitial world
+                | :? 'model as model -> model
+                | null -> null :> obj :?> 'model
+                | modelObj ->
+                    try let model = modelObj |> valueToSymbol |> symbolToValue
+                        property.DesignerType <- typeof<'model>
+                        property.DesignerValue <- model
+                        model
+                    with _ ->
+                        Log.warnOnce "Could not convert existing game model to new type. Falling back on initial model value."
+                        makeInitial world
+            World.setGameModelGeneric<'model> false model game world |> snd'
+
+        override this.TryRun (game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let context = world.ContextImNui
+            let world = World.scopeGame [] world
+            let (model, world) = this.Run (model, game, world)
+            let world = World.advanceContext game.GameAddress context world
+            this.SetModel model game world
+
+        override this.Edit (operation, game, world) =
+            let model = game.GetModelGeneric<'model> world
+            let (model, world) = this.Edit (model, operation, game, world)
+            this.SetModel model game world
+
+        override this.TryGetFallbackModel<'a> (modelSymbol, game, world) =
+            this.GetFallbackModel (modelSymbol, game, world) :> obj :?> 'a |> Some
+
+        override this.TryTruncateModel<'a> (model : 'a) =
+            match model :> obj with
+            | :? 'model as model -> Some (this.TruncateModel model :> obj :?> 'a)
+            | _ -> None
+
+        override this.TryUntruncateModel<'a> (incoming : 'a, game, world) =
+            match incoming :> obj with
+            | :? 'model as incoming ->
+                let current = game.GetModelGeneric<'model> world
+                Some (this.UntruncateModel (current, incoming) :> obj :?> 'a)
+            | _ -> None
+
+        /// The fallback model value.
+        abstract GetFallbackModel : Symbol * Game * World -> 'model
+        default this.GetFallbackModel (_, _, world) = makeInitial world
+
+        /// The run handler of the ImNui programming model.
+        abstract Run : 'model * Game * World -> 'model * World
+        default this.Run (model, _, world) = (model, world)
+
+        /// Implements additional editing behavior for a game via the ImGui API.
+        abstract Edit : 'model * EditOperation * Game * World -> 'model * World
+        default this.Edit (model, _, _, world) = (model, world)
+
+        /// Render the game using the given model.
+        abstract Render : 'model * RenderPass * Game * World -> unit
+        default this.Render (_, _, _, _) = ()
+
+        /// Truncate the given model.
+        abstract TruncateModel : 'model -> 'model
+        default this.TruncateModel model = model
+
+        /// Untruncate the given model.
+        abstract UntruncateModel : 'model * 'model -> 'model
+        default this.UntruncateModel (_, incoming) = incoming
 
     type World with
 
@@ -2631,7 +3155,7 @@ module GameDispatcherModule =
         default this.GetFallbackModel (_, _, world) = makeInitial world
 
         /// The game own MMCC definitions.
-        abstract Definitions : 'model * Game -> DefinitionContent list
+        abstract Definitions : 'model * Game -> Game DefinitionContent list
         default this.Definitions (_, _) = []
 
         /// The message handler of the MMCC programming model.

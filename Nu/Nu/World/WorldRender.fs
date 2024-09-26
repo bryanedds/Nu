@@ -125,13 +125,13 @@ module WorldRender =
             World.enqueueLayeredOperation2d operation world
 
         /// Render a gui sprite with 9-way slicing.
-        static member renderGuiSpriteSliced absolute perimeter margins spriteImage offset elevation perimeterCentered color world =
-            if margins <> v2Zero then
+        static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation perimeterCentered color world =
+            if margin <> v2Zero then
                 for i in 0 .. dec 9 do
-                    let slice = box3Slice i margins perimeter
+                    let slice = box3Slice i margin perimeter
                     let insetOpt =
                         match Metadata.tryGetTextureSizeF spriteImage with
-                        | Some imageSize -> ValueSome (box2SliceInverted i margins (box2 v2Zero imageSize))
+                        | Some imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
                         | None -> ValueNone
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation perimeterCentered // out-of-box gui ignores rotation
                     let descriptor = { Transform = spriteTransform; InsetOpt = insetOpt; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }

@@ -148,6 +148,12 @@ module WorldGameModule =
             let world = World.publishPlus (UnregisteringData game) (game.LifeCycleEvent (nameof Game)) eventTrace game true false world
             dispatcher.Unregister (game, world)
 
+        static member internal tryRunGame (game : Game) world =
+
+            // attempt to run via dispatcher
+            let dispatcher = game.GetDispatcher world
+            dispatcher.TryRun (game, world)
+
         static member internal preUpdateGame (game : Game) world =
                 
             // pre-update via dispatcher

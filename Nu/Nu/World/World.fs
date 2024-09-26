@@ -72,6 +72,7 @@ type Nu () =
             WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
+            WorldModule.tryRunEntity <- fun entity world -> World.tryRunEntity entity world
             WorldModule.signal <- Nu.worldModuleSignal
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
@@ -203,6 +204,7 @@ module WorldModule3 =
 
         /// Update late bindings internally stored by the engine from types found in the given assemblies.
         static member updateLateBindings (assemblies : Assembly array) world =
+            WorldImNui.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
             World.clearClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
@@ -270,7 +272,10 @@ module WorldModule3 =
             let subsystems = { ImGui = imGui; PhysicsEngine2d = physicsEngine2d; PhysicsEngine3d = physicsEngine3d; RendererProcess = rendererProcess; AudioPlayer = audioPlayer }
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension =
-                { DestructionListRev = []
+                { ContextImNui = Address.empty
+                  RecentImNui = Address.empty
+                  SimulantImNuis = OMap.makeEmpty HashIdentity.Structural config
+                  DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }

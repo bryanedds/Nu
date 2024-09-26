@@ -16,7 +16,7 @@ open Prime
 
 // The inferred attributes of an entity that are used to construct its bounds.
 // HACK: added Unimportant field to allow attributes to be marked as unimportant.
-// TODO: P1: see if we can refactor this type to make its representation and algo less hacky.
+// TODO: see if we can refactor this type to make its representation and algo less hacky.
 type AttributesInferred =
     { Unimportant : bool
       SizeInferred : Vector3

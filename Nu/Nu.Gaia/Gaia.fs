@@ -66,7 +66,7 @@ module Gaia =
     let mutable private OpenProjectImperativeExecution = false
     let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
-    let mutable private NewProjectType = "Empty"
+    let mutable private NewProjectType = "MMCC Empty"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
     let mutable private NewEntityOverlayName = "(Default Overlay)"
@@ -96,7 +96,7 @@ module Gaia =
     let mutable private Snaps3d = Constants.Gaia.Snaps3dDefault
     let mutable private SnapDrag = 0.1f
     let mutable private AlternativeEyeTravelInput = false
-    let mutable private ReloadPhysicsAssetsWorkaround = true
+    let mutable private ReregisterPhysicsWorkaround = true
     let mutable private EntityHierarchySearchStr = ""
     let mutable private EntityHierarchyFilterPropagationSources = false
     let mutable private AssetViewerSearchStr = ""
@@ -446,7 +446,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         GaiaState.make
             projectDllPath editModeOpt freshlyLoaded OpenProjectImperativeExecution EditWhileAdvancing
             DesiredEye2dCenter DesiredEye3dCenter DesiredEye3dRotation (World.getMasterSoundVolume world) (World.getMasterSongVolume world)            
-            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput ReloadPhysicsAssetsWorkaround
+            Snaps2dSelected Snaps2d Snaps3d NewEntityElevation NewEntityDistance AlternativeEyeTravelInput ReregisterPhysicsWorkaround
 
     let private printGaiaState gaiaState =
         PrettyPrinter.prettyPrintSymbol (valueToSymbol gaiaState) PrettyPrinter.defaultPrinter
@@ -1185,7 +1185,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     let mutable fsiDynamicCompiler = FsiSession.GetType().GetField("fsiDynamicCompiler", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
                     fsiDynamicCompiler.GetType().GetField("resolveAssemblyRef", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(fsiDynamicCompiler, null)
                     fsiDynamicCompiler <- null
-                    
+
                     // HACK: same as above, but for another place.
                     let mutable tcConfigB = FsiSession.GetType().GetField("tcConfigB", BindingFlags.NonPublic ||| BindingFlags.Instance).GetValue(FsiSession)
                     tcConfigB.GetType().GetField("tryGetMetadataSnapshot@", BindingFlags.NonPublic ||| BindingFlags.Instance).SetValue(tcConfigB, null)
@@ -1240,7 +1240,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private toggleAdvancing (world : World) =
         let wasAdvancing = world.Advancing
         let world = snapshot (if wasAdvancing then Halt else Advance) world
-        let world = if ReloadPhysicsAssetsWorkaround && not wasAdvancing then World.reloadPhysicsAssets world else world // HACK: reload physics assets as an automatic workaround for #856.
+        let world = if ReregisterPhysicsWorkaround && not wasAdvancing then World.reregisterPhysics world else world // HACK: reregister physics as an automatic workaround for #856.
         let world = World.setAdvancing (not world.Advancing) world
         world
 
@@ -1306,6 +1306,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // initialize event filter as not to flood the log
             let world = World.setEventFilter Constants.Gaia.EventFilter world
 
+            // run ImNui once to make sure initial simulants are created
+            let world = World.runImNui world
+
             // apply any selected mode
             let world =
                 match worldConfig.ModeOpt with
@@ -1314,6 +1317,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | (true, modeFn) -> modeFn world
                     | (false, _) -> world
                 | None -> world
+
+            // run ImNui again to ensure simulants in new mode are created
+            let world = World.runImNui world
 
             // figure out which screen to use
             let (screen, world) =
@@ -1387,7 +1393,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     world
                                 else
                                     let (entity, world) =
-                                        if ImGui.IsCtrlDown () then
+                                        if ImGui.IsCtrlDown () && not (entity.GetProtected world) then
                                             let world = snapshot DuplicateEntity world
                                             let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
                                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
@@ -2129,7 +2135,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else (0.0f, 0.0f, 0.0f)
                     let mutable copying = false
                     if not ManipulationActive then
-                        if ImGui.IsCtrlDown () then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
+                        if ImGui.IsCtrlDown () && not (entity.GetProtected world) then ManipulationOperation <- OPERATION.TRANSLATE; copying <- true
                         elif ImGui.IsShiftDown () then ManipulationOperation <- OPERATION.SCALE
                         elif ImGui.IsAltDown () then ManipulationOperation <- OPERATION.ROTATE
                         elif ImGui.IsKeyDown ImGuiKey.X then ManipulationOperation <- OPERATION.ROTATE_X
@@ -2257,8 +2263,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | Some _ ->
                                     match ManipulationOperation with
                                     | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z when r <> 0.0f ->
-                                        let degrees = Math.SnapDegree3d r (entity.GetDegreesLocal world)
-                                        entity.SetDegreesLocal degrees world
+                                        let degreesLocal = Math.SnapDegree3d r (entity.GetDegreesLocal world)
+                                        entity.SetDegreesLocal degreesLocal world
                                     | _ -> world
                                 | None ->
                                     match ManipulationOperation with
@@ -2514,6 +2520,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
+                                        let world = World.runImNui world
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world
@@ -2621,7 +2628,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
             // group selection
             let world =
-                let groups = World.getGroups SelectedScreen world
+                let groups = world |> World.getGroups SelectedScreen |> Seq.sort
                 let mutable selectedGroupName = SelectedGroup.Name
                 ImGui.SetNextItemWidth -1.0f
                 if ImGui.BeginCombo ("##selectedGroupName", selectedGroupName, ImGuiComboFlags.HeightRegular) then
@@ -3207,7 +3214,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Text "Input"
             ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
             ImGui.Text "Misc"
-            ImGui.Checkbox ("Reload Physics Assets Workaround", &ReloadPhysicsAssetsWorkaround) |> ignore<bool>
+            ImGui.Checkbox ("Reregister Physics Workaround", &ReregisterPhysicsWorkaround) |> ignore<bool>
             ImGui.End ()
 
     let private imGuiAssetViewerWindow () =
@@ -3256,14 +3263,17 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
-                for projectType in ["Empty"; "Game"] do
+                for projectType in ["MMCC Empty"; "MMCC Game"; "ImNui Empty (Experimental)"; "ImNui Game (Experimental)"] do
                     if ImGui.Selectable projectType then
                         NewProjectType <- projectType
                 ImGui.EndCombo ()
             let projectTypeDescription =
                 match NewProjectType with
-                | "Empty" -> "Create an empty game project. This contains the minimum code needed to experiment freely with Nu in a sandbox environment."
-                | "Game" | _ -> "Create a full game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | "MMCC Empty" -> "Create an empty MMCC game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
+                | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | "ImNui Empty (Experimental)" -> "Create an empty ImNui game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
+                | "ImNui Game (Experimental)" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | _ -> failwithumf ()
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
             ImGui.Separator ()
@@ -3284,8 +3294,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let slnDir = PathF.GetFullPath (programDir + "/../../../../..")
                 let (templateFileName, templateDir, editMode) =
                     match NewProjectType with
-                    | "Empty" -> ("Nu.Template.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Empty"), "Initial")
-                    | "Game" | _ -> ("Nu.Template.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Game"), "Title")
+                    | "MMCC Empty" -> ("Nu.Template.Mmcc.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial")
+                    | "MMCC Game" -> ("Nu.Template.Mmcc.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title")
+                    | "ImNui Empty (Experimental)" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial")
+                    | "ImNui Game (Experimental)" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title")
+                    | _ -> failwithumf ()
                 if Directory.Exists templateDir then
 
                     // attempt to create project files

@@ -248,8 +248,8 @@ module WorldPhysics =
             world
 
         /// Send a physics message to apply linear impulse to a body with the given physics id.
-        static member applyBodyLinearImpulse linearImpulse offset bodyId world =
-            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; Offset = offset }
+        static member applyBodyLinearImpulse linearImpulse originWorldOpt bodyId world =
+            let applyBodyLinearImpulseMessage = ApplyBodyLinearImpulseMessage { BodyId = bodyId; LinearImpulse = linearImpulse; OriginWorldOpt = originWorldOpt }
             let world = World.handlePhysicsMessage3d applyBodyLinearImpulseMessage world
             let world = World.handlePhysicsMessage2d applyBodyLinearImpulseMessage world
             world
@@ -262,8 +262,8 @@ module WorldPhysics =
             world
 
         /// Send a physics message to apply force to a body with the given physics id.
-        static member applyBodyForce force offset bodyId world =
-            let applyBodyForceMessage = ApplyBodyForceMessage { BodyId = bodyId; Force = force; Offset = offset }
+        static member applyBodyForce force originWorldOpt bodyId world =
+            let applyBodyForceMessage = ApplyBodyForceMessage { BodyId = bodyId; Force = force; OriginWorldOpt = originWorldOpt }
             let world = World.handlePhysicsMessage3d applyBodyForceMessage world
             let world = World.handlePhysicsMessage2d applyBodyForceMessage world
             world
@@ -282,11 +282,15 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
 
-        /// Reload all currently selected physics assets.
-        static member reloadPhysicsAssets world =
+        /// Reregister all currently selected physics.
+        static member reregisterPhysics world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
                 let world = WorldModule.unregisterScreenPhysics selectedScreen world
                 let world = WorldModule.registerScreenPhysics selectedScreen world
                 world
             | None -> world
+
+        /// Reload all currently selected physics assets.
+        static member reloadPhysicsAssets world =
+            World.reregisterPhysics world

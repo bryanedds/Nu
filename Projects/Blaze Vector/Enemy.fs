@@ -35,6 +35,7 @@ type EnemyDispatcher () =
 
     override this.Definitions (_, _) =
         [Entity.Size == v3 24.0f 48.0f 0.0f
+         Entity.Static == false
          Entity.Friction == 0.0f
          Entity.AngularFactor == v3Zero
          Entity.LinearDamping == 3.0f
@@ -65,7 +66,7 @@ type EnemyDispatcher () =
         | Update ->
             let world =
                 if entity.GetInView2dRelative world
-                then World.applyBodyForce WalkForce v3Zero (entity.GetBodyId world) world
+                then World.applyBodyForce WalkForce None (entity.GetBodyId world) world
                 else world
             let world =
                 if enemy.Health <= 0 then

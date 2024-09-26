@@ -26,9 +26,11 @@ type GuiDispatcher () =
         [typeof<LayoutFacet>]
 
     static member Properties =
-        [define Entity.Size Constants.Engine.EntityGuiSizeDefault
+        [define Entity.Absolute true
+         define Entity.Size Constants.Engine.EntityGuiSizeDefault
          define Entity.PerimeterCentered Constants.Engine.EntityGuiPerimeterCenteredDefault
-         define Entity.Absolute true
+         define Entity.Elevation 1.0f
+         define Entity.ElevationLocal 1.0f
          define Entity.Presence Omnipresent
          define Entity.DisabledColor Constants.Gui.DisabledColorDefault]
 
@@ -174,7 +176,8 @@ type PanelDispatcher () =
         [typeof<BackdroppableFacet>]
 
     static member Properties =
-        [define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
+        [define Entity.Size (v3 Constants.Engine.EntityGuiSizeDefault.X Constants.Engine.EntityGuiSizeDefault.X 0.0f)
+         define Entity.BackdropImageOpt (Some Assets.Default.Panel)]
 
 /// Gives an entity the base behavior of basic static sprite emitter.
 type BasicStaticSpriteEmitterDispatcher () =
@@ -205,9 +208,6 @@ type Block2dDispatcher () =
         [typeof<RigidBodyFacet>
          typeof<StaticSpriteFacet>]
 
-    static member Properties =
-        [define Entity.Static true]
-
 /// Gives an entity the base behavior of a rigid 2d box using dynamic physics.
 type Box2dDispatcher () =
     inherit Entity2dDispatcher (true, false, false)
@@ -217,7 +217,8 @@ type Box2dDispatcher () =
          typeof<StaticSpriteFacet>]
 
     static member Properties =
-        [define Entity.BodyType Dynamic]
+        [define Entity.Static false
+         define Entity.BodyType Dynamic]
 
 [<AutoOpen>]
 module Character2dDispatcherExtensions =
@@ -255,7 +256,8 @@ type Character2dDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.CelSize (v2 28.0f 28.0f)
+        [define Entity.Static false
+         define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.BodyType Dynamic
@@ -505,9 +507,6 @@ type Block3dDispatcher () =
          typeof<StaticModelFacet>
          typeof<NavBodyFacet>]
 
-    static member Properties =
-        [define Entity.Static true]
-
 /// Gives an entity the base behavior of a rigid 3d box using dynamic physics.
 type Box3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
@@ -518,7 +517,8 @@ type Box3dDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyType Dynamic]
+        [define Entity.Static false
+         define Entity.BodyType Dynamic]
 
 [<AutoOpen>]
 module Character3dDispatcherExtensions =
@@ -539,7 +539,8 @@ type Character3dDispatcher () =
          typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.BodyType KinematicCharacter
+        [define Entity.Static false
+         define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
          define Entity.LinearVelocityPrevious v3Zero
          define Entity.AngularVelocityPrevious v3Zero]

@@ -1310,7 +1310,8 @@ type RigidBodyFacet () =
         (Cascade, world)
 
     static member Properties =
-        [define Entity.BodyEnabled true
+        [define Entity.Static true
+         define Entity.BodyEnabled true
          define Entity.BodyType Static
          define Entity.SleepingAllowed true
          define Entity.Friction 0.5f
@@ -1803,10 +1804,10 @@ type LayoutFacet () =
                 flowDownward false topY margin wrapLimit &offsetX &offsetY &maximum child world)
                 world children
         | FlowLeftward ->
-            // TODO: P1: implement.
+            Log.warnOnce "FlowLeftward not yet implemented." // TODO: P1: implement.
             world
         | FlowUpward ->
-            // TODO: P1: implement.
+            Log.warnOnce "FlowUpward not yet implemented." // TODO: P1: implement.
             world
 
     static let dockLayout (perimeter : Box2) margin (margins : Vector4) children world =

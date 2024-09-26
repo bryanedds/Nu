@@ -54,7 +54,7 @@ type MyGameDispatcher () =
         World.selectScreen (IdlingState world.GameTime) screen world
 
     override this.Update (game, world) =
-        let world = base.Update (game, world)        
+        let world = base.Update (game, world)
         if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world

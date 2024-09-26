@@ -274,7 +274,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 volume * density
             | Mass mass -> mass
         let inertia = hull.CalculateLocalInertia mass
-        compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
+        match pointsShape.TransformOpt with
+        | Some transform ->
+            compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (center, transform.Rotation, v3One), hull)
+        | None ->
+            compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
 
     static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (compoundShape : CompoundShape) centerMassInertiaDisposes =
@@ -331,7 +335,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             (transform.Scale.Transform surface.SurfaceMatrix)
                     | None -> Affine.makeFromMatrix surface.SurfaceMatrix
                 let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
-                PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine)
+                match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
+                | Some staticModel ->
+                    if  staticModelSurfaceShape.SurfaceIndex > -1 &&
+                        staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
+                        let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
+                        let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                        PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
+                    else centerMassInertiaDisposes
+                | None -> centerMassInertiaDisposes)
                 centerMassInertiaDisposes
                 [0 .. dec staticModel.Surfaces.Length]
         | None -> centerMassInertiaDisposes
@@ -342,7 +354,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | Some staticModel ->
             if  staticModelSurfaceShape.SurfaceIndex > -1 &&
                 staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
-                let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
+                let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
+                let geometry = surface.PhysicallyBasedGeometry
                 let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
                 PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
             else centerMassInertiaDisposes
@@ -734,7 +747,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.Objects.TryGetValue applyBodyLinearImpulseMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
             if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
-                body.ApplyImpulse (applyBodyLinearImpulseMessage.LinearImpulse, applyBodyLinearImpulseMessage.Offset)
+                let offset =
+                    match applyBodyLinearImpulseMessage.OriginWorldOpt with
+                    | Some originWorld -> body.CenterOfMassPosition - originWorld
+                    | None -> v3Zero
+                body.ApplyImpulse (applyBodyLinearImpulseMessage.LinearImpulse, offset)
                 body.Activate ()
             else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Bullet.")
         | (_, _) -> ()
@@ -752,7 +769,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.Objects.TryGetValue applyBodyForceMessage.BodyId with
         | (true, (:? RigidBody as body)) ->
             if not (Single.IsNaN applyBodyForceMessage.Force.X) then
-                body.ApplyForce (applyBodyForceMessage.Force, applyBodyForceMessage.Offset)
+                let offset =
+                    match applyBodyForceMessage.OriginWorldOpt with
+                    | Some originWorld -> body.CenterOfMassPosition - originWorld
+                    | None -> v3Zero
+                body.ApplyForce (applyBodyForceMessage.Force, offset)
                 body.Activate ()
             else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Bullet.")
         | (_, _) -> ()

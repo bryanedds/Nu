@@ -185,7 +185,7 @@ type [<CustomEquality; NoComparison>] BodyId =
 
     /// Equate BodyIds.
     static member equals pid pid2 =
-        Address.equals pid.BodySource.SimulantAddress pid2.BodySource.SimulantAddress &&
+        String.equateMany pid.BodySource.SimulantAddress.Names pid2.BodySource.SimulantAddress.Names &&
         pid.BodyIndex = pid2.BodyIndex
 
     interface BodyId IEquatable with
@@ -642,7 +642,7 @@ type SetBodyAngularVelocityMessage =
 type ApplyBodyLinearImpulseMessage =
     { BodyId : BodyId
       LinearImpulse : Vector3
-      Offset : Vector3 }
+      OriginWorldOpt : Vector3 option }
 
 /// A message to the physics system to apply an angular impulse to a body.
 type ApplyBodyAngularImpulseMessage =
@@ -653,7 +653,7 @@ type ApplyBodyAngularImpulseMessage =
 type ApplyBodyForceMessage =
     { BodyId : BodyId
       Force : Vector3
-      Offset : Vector3 }
+      OriginWorldOpt : Vector3 option }
 
 /// A message to the physics system to apply torque to a body.
 type ApplyBodyTorqueMessage =

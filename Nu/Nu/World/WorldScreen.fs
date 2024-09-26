@@ -133,6 +133,12 @@ module WorldScreenModule =
 
     type World with
 
+        static member internal tryRunScreen (screen : Screen) world =
+
+            // attempt to run via dispatcher
+            let dispatcher = World.getScreenDispatcher screen world
+            dispatcher.TryRun (screen, world)
+
         static member internal preUpdateScreen (screen : Screen) world =
 
             // pre-update via dispatcher
@@ -234,6 +240,7 @@ module WorldScreenModule =
                     else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
             let world = World.addScreen false screenState screen world
+            let world = if WorldModule.UpdatingSimulants then World.tryRunScreen screen world else world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.
@@ -327,6 +334,9 @@ module WorldScreenModule =
             
             // read the screen's groups
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
+
+            // attempt to ImNui run screen first time if in the middle of simulant update phase
+            let world = if WorldModule.UpdatingSimulants then World.tryRunScreen screen world else world
             (screen, world)
 
         /// Read multiple screens from a game descriptor.
@@ -466,17 +476,19 @@ module WorldScreenModule =
                 let rcBuilderConfig = RcBuilderConfig (rcConfig, geomProvider.GetMeshBoundsMin (), geomProvider.GetMeshBoundsMax ())
                 let rcBuilder = RcBuilder ()
                 let rcBuilderResult = rcBuilder.Build (geomProvider, rcBuilderConfig, false)
-                let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
-                let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
-                match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
-                | null -> None // some sort of argument issue
-                | dtMeshData ->
-                    DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
-                    let dtNavMesh = DtNavMesh ()
-                    if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
-                        let dtQuery = DtNavMeshQuery dtNavMesh
-                        Some (navBuilderResultData, dtNavMesh, dtQuery)
-                    else None
+                if notNull rcBuilderResult.MeshDetail then // NOTE: not sure why, but null here seems to be an indication of nav mesh build failure.
+                    let navBuilderResultData = NavBuilderResultData.make rcBuilderResult
+                    let dtCreateParams = DemoNavMeshBuilder.GetNavMeshCreateParams (geomProvider, config.CellSize, config.CellHeight, config.AgentHeight, config.AgentRadius, config.AgentClimbMax, rcBuilderResult)
+                    match DtNavMeshBuilder.CreateNavMeshData dtCreateParams with
+                    | null -> None // some sort of argument issue
+                    | dtMeshData ->
+                        DemoNavMeshBuilder.UpdateAreaAndFlags dtMeshData |> ignore<DtMeshData> // ignoring flow-syntax
+                        let dtNavMesh = DtNavMesh ()
+                        if dtNavMesh.Init (dtMeshData, 6, 0) = DtStatus.DT_SUCCESS then // TODO: introduce constant?
+                            let dtQuery = DtNavMeshQuery dtNavMesh
+                            Some (navBuilderResultData, dtNavMesh, dtQuery)
+                        else None
+                else None
 
             // geometry not found
             | None -> None
@@ -512,7 +524,7 @@ module WorldScreenModule =
             let rebuild =
                 match (nav3d.Nav3dBodiesOldOpt, nav3d.Nav3dConfigOldOpt) with
                 | (Some bodiesOld, Some configOld) -> nav3d.Nav3dBodies =/= bodiesOld || nav3d.Nav3dConfig =/= configOld
-                | (None, Some _) | (Some _, None) -> Log.infoOnce "Unexpected 3d navigation state; navigation rebuild declined."; false
+                | (None, Some _) | (Some _, None) -> Log.warnOnce "Unexpected 3d navigation state; navigation rebuild declined."; false
                 | (None, None) -> nav3d.Nav3dBodies.Count <> 0
             if rebuild then
                 let bodies = nav3d.Nav3dBodies.Values
@@ -524,7 +536,7 @@ module WorldScreenModule =
                             Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
                             Nav3dMeshOpt = Some navMesh }
                     World.setScreenNav3d nav3d screen world |> snd'
-                | None -> Log.info "Unable to build 3d navigation mesh."; world
+                | None -> Log.error "Unable to build 3d navigation mesh."; world
             else world
 
         /// Query the given screen's 3d navigation information if it exists.

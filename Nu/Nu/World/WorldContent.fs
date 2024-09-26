@@ -58,12 +58,12 @@ module Content =
                 // subscribe to added events
                 let world =
                     List.foldGeneric (fun world ((eventAddress : obj Address, signalObj), subscriptionId) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandler signalObj origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -108,12 +108,12 @@ module Content =
                 // subscribe to added handlers
                 let world =
                     List.foldGeneric (fun world ((_, eventAddress : obj Address), (subscriptionId, handler)) ->
-                        let eventAddress = if eventAddress.Anonymous then eventAddress --> simulant.SimulantAddress else eventAddress
+                        let eventAddress = if eventAddress.Anonymous then eventAddress --> itoa simulant.SimulantAddress else eventAddress
                         let (unsubscribe, world) = World.subscribePlus subscriptionId (signalHandlerHandler handler origin) eventAddress origin world
                         let world =
                             World.monitor
                                 (fun _ world -> (Cascade, unsubscribe world))
-                                (Events.UnregisteringEvent --> simulant.SimulantAddress)
+                                (Events.UnregisteringEvent --> itoa simulant.SimulantAddress)
                                 simulant
                                 world
                         world)
@@ -320,7 +320,7 @@ module Content =
                         let world =
                             if not (group.GetExists world) || group.GetDestroying world then
                                 match groupContent.GroupFilePathOpt with
-                                | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                                | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some group.Name) screen world |> snd
                                 | None -> World.createGroup4 groupContent.GroupDispatcherName (Some group.Name) group.Screen world |> snd
                             else world
                         let world = World.setGroupProtected true group world |> snd'
@@ -360,7 +360,7 @@ module Content =
         else (content.InitialScreenNameOpt |> Option.map (fun name -> Nu.Game.Handle / name), world)
 
     /// Describe an entity with the given dispatcher type and definitions as well as its contained entities.
-    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt definitions entities =
+    let private composite4<'entityDispatcher when 'entityDispatcher :> EntityDispatcher> entityName entityFilePathOpt (definitions : Entity DefinitionContent seq) entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -412,7 +412,7 @@ module Content =
     /// Describe an association of gui entities with the given definitions and content.
     let association entityName definitions content = composite<GuiDispatcher> entityName definitions content
 
-    /// Describe a text with the given definitions.
+    /// Describe a text entity with the given definitions.
     let text entityName definitions = entity<TextDispatcher> entityName definitions
 
     /// Describe a label with the given definitions.
@@ -433,7 +433,7 @@ module Content =
     /// Describe a feeler with the given definitions.
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
-    /// Describe an fps gui with the given definitions.
+    /// Describe an fps entity with the given definitions.
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 
     /// Describe a panel with the given definitions and content.
@@ -518,7 +518,7 @@ module Content =
     let rigidModelHierarchy entityName definitions = entity<RigidModelHierarchyDispatcher> entityName definitions
 
     /// Describe a group with the given dispatcher type and definitions as well as its contained entities.
-    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt definitions entities =
+    let private group4<'groupDispatcher when 'groupDispatcher :> GroupDispatcher> groupName groupFilePathOpt (definitions : Group DefinitionContent seq)  entities =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -548,7 +548,7 @@ module Content =
         group4<'groupDispatcher> groupName (Some filePath) definitions entities
 
     /// Describe a screen with the given dispatcher type and definitions as well as its contained simulants.
-    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt definitions groups =
+    let private screen5<'screenDispatcher when 'screenDispatcher :> ScreenDispatcher> screenName screenBehavior groupFilePathOpt (definitions : Screen DefinitionContent seq)  groups =
         let mutable eventSignalContentsOpt = null
         let mutable eventHandlerContentsOpt = null
         let mutable propertyContentsOpt = null
@@ -620,7 +620,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (==) (lens : Lens<'a, 's>) (value : 'a) : DefinitionContent =
+        (==) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make true lens value)
 
     /// Define a synchronized property equality.
@@ -628,7 +628,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (:=) (lens : Lens<'a, 's>) (value : 'a) : DefinitionContent =
+        (:=) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make false lens value)
 
     /// Define an event signal.
@@ -636,7 +636,7 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=>) (eventAddress : 'a Address) (signal : Signal) : DefinitionContent =
+        (=>) (eventAddress : 'a Address) (signal : Signal) : 's DefinitionContent =
         EventSignalContent (Address.generalize eventAddress, signal)
 
     /// Define an event handler.
@@ -644,5 +644,5 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : DefinitionContent =
+        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : 's DefinitionContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
