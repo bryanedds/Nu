@@ -3188,8 +3188,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let lines = LogStr.Split '\n'
         let warnings = lines |> Seq.filter (fun line -> line.Contains "|Warn|") |> Seq.length
         let errors = lines |> Seq.filter (fun line -> line.Contains "|Error|") |> Seq.length
-        let flag = warnings > 0 || errors > 0
-        let flash = flag && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
+        let issue = warnings > 0 || errors > 0
+        let flash = issue && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
         if flash then
             let flashColor =
                 if errors > 0 then let red = Color.Red in red.Abgr
