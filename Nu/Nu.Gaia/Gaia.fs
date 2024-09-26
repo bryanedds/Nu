@@ -3188,8 +3188,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let lines = LogStr.Split '\n'
         let warnings = lines |> Seq.filter (fun line -> line.Contains "|Warn|") |> Seq.length
         let errors = lines |> Seq.filter (fun line -> line.Contains "|Error|") |> Seq.length
-        let issue = warnings > 0 || errors > 0
-        let flash = issue && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
+        let flag = warnings > 0 || errors > 0
+        let flash = flag && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
         if flash then
             let flashColor =
                 if errors > 0 then let red = Color.Red in red.Abgr
@@ -3202,7 +3202,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.PushStyleColor (ImGuiCol.TabActive, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TabHovered, flashColor)
         if ImGui.Begin ("Log", ImGuiWindowFlags.NoNav) then
-            if flash then for i in 0 .. 6 do ImGui.PopStyleColor ()
             ImGui.Text "Log:"
             ImGui.SameLine ()
             if ImGui.SmallButton "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then LogStr <- ""
@@ -3213,10 +3212,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.TextUnformatted LogStr
             ImGui.EndChild ()
             ImGui.End ()
-            world
-        else
-            if flash then for i in 0 .. 6 do ImGui.PopStyleColor ()
-            world
+        if flash then for i in 0 .. 6 do ImGui.PopStyleColor ()
+        world
 
     let private imGuiEditorConfigWindow () =
         if ImGui.Begin ("Editor", ImGuiWindowFlags.NoNav) then
