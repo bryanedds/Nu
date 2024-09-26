@@ -167,6 +167,7 @@ module Hl =
               InFlightFence : VkFence
               ScreenClearRenderPass : VkRenderPass
               GeneralRenderPass : VkRenderPass
+              PresentLayoutRenderPass : VkRenderPass
               SwapchainFramebuffers : VkFramebuffer array
               SwapExtent : VkExtent2D }
 
@@ -523,7 +524,7 @@ module Hl =
             fence
         
         /// Create a renderpass.
-        static member createRenderPass clearScreen format device =
+        static member createRenderPass clearScreen presentLayout format device =
             
             // renderpass handle
             let mutable renderPass = Unchecked.defaultof<VkRenderPass>
@@ -536,8 +537,8 @@ module Hl =
             attachment.storeOp <- VK_ATTACHMENT_STORE_OP_STORE
             attachment.stencilLoadOp <- VK_ATTACHMENT_LOAD_OP_DONT_CARE
             attachment.stencilStoreOp <- VK_ATTACHMENT_STORE_OP_DONT_CARE
-            attachment.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED // TODO: set correct initial layout for screen clear false.
-            attachment.finalLayout <- VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            attachment.initialLayout <- if clearScreen then VK_IMAGE_LAYOUT_UNDEFINED else VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            attachment.finalLayout <- if presentLayout then VK_IMAGE_LAYOUT_PRESENT_SRC_KHR else VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 
             // populate attachment reference
             let mutable attachmentReference = VkAttachmentReference ()
@@ -643,13 +644,25 @@ module Hl =
             imageIndex
 
         /// End the frame.
-        static member endFrame vulkanGlobal =
+        static member endFrame (imageIndex : uint32) vulkanGlobal =
             
             // handles
             let mutable commandBuffer = vulkanGlobal.CommandBuffer
             let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
 
+            // run an empty renderpass to transition image layout for presentation
+            let mutable renderPassInfo = VkRenderPassBeginInfo ()
+            renderPassInfo.renderPass <- vulkanGlobal.PresentLayoutRenderPass
+            renderPassInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
+            renderPassInfo.renderArea.offset <- VkOffset2D.Zero
+            renderPassInfo.renderArea.extent <- vulkanGlobal.SwapExtent
+            renderPassInfo.clearValueCount <- 0u
+
+            // transition layout
+            vkCmdBeginRenderPass (commandBuffer, asPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
+            vkCmdEndRenderPass commandBuffer
+            
             // end command buffer recording
             vkEndCommandBuffer commandBuffer |> check
             
@@ -699,6 +712,7 @@ module Hl =
             let imageViews = vulkanGlobal.SwapchainImageViews
             
             for i in [0 .. dec framebuffers.Length] do vkDestroyFramebuffer (device, framebuffers[i], nullPtr)
+            vkDestroyRenderPass (device, vulkanGlobal.PresentLayoutRenderPass, nullPtr)
             vkDestroyRenderPass (device, vulkanGlobal.GeneralRenderPass, nullPtr)
             vkDestroyRenderPass (device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
             vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
@@ -718,9 +732,9 @@ module Hl =
             | None -> 0u
 
         /// End frame if VulkanGlobal exists.
-        static member tryEndFrame vulkanGlobalOpt =
+        static member tryEndFrame imageIndex vulkanGlobalOpt =
             match vulkanGlobalOpt with
-            | Some vulkanGlobal -> VulkanGlobal.endFrame vulkanGlobal
+            | Some vulkanGlobal -> VulkanGlobal.endFrame imageIndex vulkanGlobal
             | None -> ()
 
         /// Present if VulkanGlobal exists.
@@ -786,12 +800,13 @@ module Hl =
                 let renderFinishedSemaphore = VulkanGlobal.createSemaphore device
                 let inFlightFence = VulkanGlobal.createFence device
 
-                // one renderpass to clear the screen, another to render the actual content
-                let screenClearRenderPass = VulkanGlobal.createRenderPass true surfaceFormat.format device
-                let generalRenderPass = VulkanGlobal.createRenderPass false surfaceFormat.format device
+                // clear the screen; render actual content; transition layout for presentation
+                let screenClearRenderPass = VulkanGlobal.createRenderPass true false surfaceFormat.format device
+                let generalRenderPass = VulkanGlobal.createRenderPass false false surfaceFormat.format device
+                let presentLayoutRenderPass = VulkanGlobal.createRenderPass false true surfaceFormat.format device
 
                 // create swapchain framebuffers
-                let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent screenClearRenderPass swapchainImageViews device
+                let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent generalRenderPass swapchainImageViews device
                 
                 // make vulkanGlobal
                 let vulkanGlobal =
@@ -809,6 +824,7 @@ module Hl =
                       InFlightFence = inFlightFence
                       ScreenClearRenderPass = screenClearRenderPass
                       GeneralRenderPass = generalRenderPass
+                      PresentLayoutRenderPass = presentLayoutRenderPass
                       SwapchainFramebuffers = swapchainFramebuffers
                       SwapExtent = swapExtent }
 
