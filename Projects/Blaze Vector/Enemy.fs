@@ -35,6 +35,7 @@ type EnemyDispatcher () =
 
     override this.Definitions (_, _) =
         [Entity.Size == v3 24.0f 48.0f 0.0f
+         Entity.Static == false
          Entity.Friction == 0.0f
          Entity.AngularFactor == v3Zero
          Entity.LinearDamping == 3.0f

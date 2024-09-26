@@ -45,6 +45,7 @@ type PlayerDispatcher () =
     override this.Definitions (_, _) =
         [Entity.Size == v3 24.0f 48.0f 0.0f
          Entity.Presence == Omnipresent
+         Entity.Static == false
          Entity.AngularFactor == v3Zero
          Entity.Friction == 0.0f
          Entity.LinearDamping == 3.0f
