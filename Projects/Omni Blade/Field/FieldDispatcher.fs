@@ -769,9 +769,8 @@ type FieldDispatcher () =
 
         | MoveAvatar force ->
             let world =
-                if force <> v3Zero then
-                    // NOTE: we use the world-relative force here in order to preserve engine behavior.
-                    World.applyBodyForce force (Some v3Zero) (Simulants.FieldAvatar.GetBodyId world) world
+                if force <> v3Zero
+                then World.applyBodyForce force None (Simulants.FieldAvatar.GetBodyId world) world
                 else world
             just world
 
