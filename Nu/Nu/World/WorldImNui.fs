@@ -26,6 +26,9 @@ type BodyResult =
 [<AutoOpen>]
 module WorldImNui =
 
+    /// Instructs ImNui static equality (.=) to act as dynamic equality (@=) for a frame.
+    let mutable internal Reinitializing = false
+
     /// Specifies a dynamic ImNui argument.
     let
 #if !DEBUG
@@ -69,6 +72,7 @@ module WorldImNui =
                     let world = World.addSimulantImNui game { Utilized = true; Result = zero } world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun gameImNui -> { gameImNui with Result = mapper (gameImNui.Result :?> 'r) }) game world
                     (true, init mapResult game world)
+            let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
                     (fun world arg ->
@@ -135,6 +139,7 @@ module WorldImNui =
                                 { screenImNui with Result = (screenResult, mapper userResult) })
                                 screen world
                     (true, init mapSndResult screen world)
+            let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
                     (fun world arg ->
@@ -192,6 +197,7 @@ module WorldImNui =
                     let world = World.addSimulantImNui group { Utilized = true; Result = () } world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun groupImNui -> { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }) group world
                     (true, init mapResult group world)
+            let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
                     (fun world arg ->
@@ -260,6 +266,7 @@ module WorldImNui =
                     let world = World.addSimulantImNui entity { Utilized = true; Result = zero } world
                     let mapResult = fun (mapper : 'r -> 'r) world -> World.mapSimulantImNui (fun entityImNui -> { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }) entity world
                     (true, init mapResult entity world)
+            let initializing = initializing || Reinitializing
             let world =
                 Seq.fold
                     (fun world arg ->

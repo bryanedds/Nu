@@ -917,6 +917,7 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImNui world =
+            WorldImNui.Reinitializing <- false
             World.sweepImNui world
 
         static member private destroySimulants world =
