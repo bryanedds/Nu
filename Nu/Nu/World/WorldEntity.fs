@@ -855,6 +855,6 @@ module WorldEntityModule =
                         else world)
                         world
                 let mountOpt = match parent with :? Entity -> Some (Relation.makeParent ()) | _ -> None
-                let world = entity.SetMountOpt mountOpt world
+                let world = entity.SetMountOptWithAdjustment mountOpt world
                 (Some entity, world)
             | None -> (None, world)
