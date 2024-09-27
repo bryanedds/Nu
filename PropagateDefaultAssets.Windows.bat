@@ -18,8 +18,8 @@ copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Tests\Assets\Default /Y
 del "Projects\Blaze Vector\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Blaze Vector\Assets\Default" /Y
 
-del "Projects\Breakout\Assets\Default\*" /Q
-copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout\Assets\Default" /Y
+del "Projects\Breakout Mmcc\Assets\Default\*" /Q
+copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout Mmcc\Assets\Default" /Y
 
 del "Projects\Elmario\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Elmario\Assets\Default" /Y

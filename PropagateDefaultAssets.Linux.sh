@@ -18,8 +18,8 @@ cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Tests/Assets/Default/
 rm -f "Projects/Blaze Vector/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Blaze Vector/Assets/Default/"
 
-rm -f "Projects/Breakout/Assets/Default/*"
-cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Breakout/Assets/Default/"
+rm -f "Projects/Breakout Mmcc/Assets/Default/*"
+cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Breakout Mmcc/Assets/Default/"
 
 rm -f "Projects/Elmario/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Elmario/Assets/Default/"
