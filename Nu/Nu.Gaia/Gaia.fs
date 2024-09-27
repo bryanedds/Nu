@@ -178,7 +178,7 @@ module Gaia =
 
     (* Fsi Session *)
 
-    let FsProjectNoWarn = "--nowarn:FS0009;FS0049;FS1178;FS3391;FS3536;FS3560"
+    let FsProjectNoWarn = "--nowarn:FS0009;FS0052;FS1178;FS3391;FS3536;FS3560"
     let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectNoWarn|] // TODO: see if can we use --warnon as well.
     let FsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private FsiErrorStream = new StringWriter ()
