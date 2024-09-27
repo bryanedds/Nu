@@ -112,6 +112,7 @@ type GameplayDispatcher () =
             World.doBlock2d "Paddle"
                 [Entity.Position .= gameplay.Paddle.Origin
                  Entity.Size .= gameplay.Paddle.Size
+                 Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Paddle] world
         let paddle = world.RecentEntity
         let paddlePosition = paddle.GetPosition world
@@ -131,8 +132,10 @@ type GameplayDispatcher () =
                 [Entity.Position .= gameplay.Ball.Origin
                  Entity.Size .= gameplay.Ball.Size
                  Entity.BodyType .= Dynamic
+                 Entity.BodyShape .= SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
+                 Entity.Restitution .= 1.0f
+                 Entity.AngularFactor .= v3Zero
                  Entity.GravityOverride .= Some v3Zero
-                 Entity.Restitution .= 0.0f // we'll implement our own bounce behavior
                  Entity.Observable .= true
                  Entity.StaticImage .= Assets.Default.Ball] world
         let ball = world.RecentEntity
@@ -182,9 +185,16 @@ type GameplayDispatcher () =
 
                         // wall collision
                         | (false, _) ->
-                            let velocity = ball.GetLinearVelocity world
-                            let bounce = velocity - 2.0f * Vector3.Dot(velocity, data.Normal) * data.Normal
-                            let world = World.setBodyLinearVelocity bounce ballBodyId world
+                            let normal =
+                                match penetrateeName with
+                                | "LeftWall" -> v3Right
+                                | "RightWall" -> v3Left
+                                | "TopWall" -> v3Down
+                                | _ -> failwithumf ()
+                            let world =
+                                let velocity = ball.GetLinearVelocity world
+                                let bounce = velocity - 2.0f * Vector3.Dot(velocity, normal) * normal
+                                World.setBodyLinearVelocity bounce ballBodyId world
                             World.playSound 1.0f Assets.Default.Sound world
                             (gameplay, world)
 
@@ -197,6 +207,7 @@ type GameplayDispatcher () =
                 World.doBlock2d brickName
                     [Entity.Position .= brick.Position
                      Entity.Size .= brick.Size
+                     Entity.Sensor .= true
                      Entity.Color @= brick.Color
                      Entity.StaticImage .= Assets.Default.Brick] world |> snd) world
 
@@ -205,16 +216,22 @@ type GameplayDispatcher () =
             World.doBlock2d "LeftWall"
                 [Entity.Position .= v3 -164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
+                 Entity.Restitution .= 1.0f
+                 Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
         let (_, world) =
             World.doBlock2d "RightWall"
                 [Entity.Position .= v3 164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
+                 Entity.Restitution .= 1.0f
+                 Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
         let (_, world) =
             World.doBlock2d "TopWall"
                 [Entity.Position .= v3 0.0f 176.0f 0.0f
                  Entity.Size .= v3 320.0f 8.0f 0.0f
+                 Entity.Restitution .= 1.0f
+                 Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
 
         // end scene declaration
