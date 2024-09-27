@@ -337,7 +337,7 @@ type RendererThread () =
                     let renderer2d = StubRenderer2d.make () :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make fonts vulkanGlobal :> RendererImGui
 
                     // fin
                     (Some vulkanGlobal, renderer3d, renderer2d, rendererImGui)
@@ -412,6 +412,7 @@ type RendererThread () =
         // clean up
         Vulkan.Hl.VulkanGlobal.tryWaitIdle vulkanGlobalOpt
         renderer2d.CleanUp ()
+        rendererImGui.CleanUp ()
         Vulkan.Hl.VulkanGlobal.tryCleanup vulkanGlobalOpt
 
     interface RendererProcess with

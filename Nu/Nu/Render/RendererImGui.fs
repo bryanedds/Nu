@@ -265,3 +265,25 @@ module GlRendererImGui =
         let rendererImGui = GlRendererImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui
+
+/// Renders an imgui view via Vulkan.
+type VulkanRendererImGui (vulkanGlobal) =
+    interface RendererImGui with
+        member this.Initialize fonts =
+            let mutable pixels = Unchecked.defaultof<nativeint>
+            let mutable fontTextureWidth = 0
+            let mutable fontTextureHeight = 0
+            let mutable bytesPerPixel = Unchecked.defaultof<_>
+            fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
+            fonts.ClearTexData ()
+        member this.Render _ = ()
+        member this.CleanUp () = ()
+
+[<RequireQualifiedAccess>]
+module VulkanRendererImGui =
+
+    /// Make a Vulkan imgui renderer.
+    let make fonts vulkanGlobal =
+        let rendererImGui = VulkanRendererImGui vulkanGlobal
+        (rendererImGui :> RendererImGui).Initialize fonts
+        rendererImGui
