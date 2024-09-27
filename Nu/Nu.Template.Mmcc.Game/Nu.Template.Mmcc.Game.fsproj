@@ -17,7 +17,7 @@
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
-		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<WarningsAsErrors>FS0026;FS0049;FS0052;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
@@ -26,7 +26,7 @@
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<DefineConstants>TRACE</DefineConstants>
-		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<WarningsAsErrors>FS0026;FS0049;FS0052;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
 	</PropertyGroup>
 
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
