@@ -18,6 +18,9 @@ copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Tests\Assets\Default /Y
 del "Projects\Blaze Vector\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Blaze Vector\Assets\Default" /Y
 
+del "Projects\Breakout ImNui\Assets\Default\*" /Q
+copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout ImNui\Assets\Default" /Y
+
 del "Projects\Breakout Mmcc\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout Mmcc\Assets\Default" /Y
 

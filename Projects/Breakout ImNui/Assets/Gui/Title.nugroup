@@ -1,0 +1,27 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Gui]
+  [Persistent True]
+  [Visible True]]
+ [[TextDispatcher
+   [[BackdropImageOpt
+     [Some [Default Label]]]
+    [Justification [Justified JustifyCenter JustifyMiddle]]
+    [Name Title]
+    [Position [0 80 0]]
+    [Size [342 64 0]]
+    [Text MyGame]]
+   []]
+  [ButtonDispatcher
+   [[Name Play] [Text Play]]
+   []]
+  [ButtonDispatcher
+   [[Name Credits]
+    [Position [0 -48 0]]
+    [Text Credits]]
+   []]
+  [ButtonDispatcher
+   [[Name Exit]
+    [Position [0 -96 0]]
+    [Text Exit]]
+   []]]]
