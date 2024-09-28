@@ -133,7 +133,6 @@ type GameplayDispatcher () =
                  Entity.Size .= gameplay.Ball.Size
                  Entity.BodyType .= Dynamic
                  Entity.BodyShape .= SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
-                 Entity.Restitution .= 1.0f
                  Entity.AngularFactor .= v3Zero
                  Entity.GravityOverride .= Some v3Zero
                  Entity.Observable .= true
@@ -216,21 +215,18 @@ type GameplayDispatcher () =
             World.doBlock2d "LeftWall"
                 [Entity.Position .= v3 -164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
-                 Entity.Restitution .= 1.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
         let (_, world) =
             World.doBlock2d "RightWall"
                 [Entity.Position .= v3 164.0f 0.0f 0.0f
                  Entity.Size .= v3 8.0f 360.0f 0.0f
-                 Entity.Restitution .= 1.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
         let (_, world) =
             World.doBlock2d "TopWall"
                 [Entity.Position .= v3 0.0f 176.0f 0.0f
                  Entity.Size .= v3 320.0f 8.0f 0.0f
-                 Entity.Restitution .= 1.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
 
