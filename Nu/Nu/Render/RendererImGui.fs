@@ -274,6 +274,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     
     let device = vulkanGlobal.Device
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
+    let mutable sampler = Unchecked.defaultof<VkSampler>
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -297,13 +298,44 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // fin
         descriptorPool
+
+    /// Create the sampler used to sample the font atlas.
+    static member createSampler device =
+        
+        // handle
+        let mutable sampler = Unchecked.defaultof<VkSampler>
+
+        // populate create info
+        let mutable createInfo = VkSamplerCreateInfo ()
+        createInfo.magFilter <- VK_FILTER_LINEAR
+        createInfo.minFilter <- VK_FILTER_LINEAR
+        createInfo.mipmapMode <- VK_SAMPLER_MIPMAP_MODE_LINEAR
+        createInfo.addressModeU <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        createInfo.addressModeV <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        createInfo.addressModeW <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        createInfo.mipLodBias <- 0.0f
+        createInfo.anisotropyEnable <- false
+        createInfo.maxAnisotropy <- 1.0f
+        createInfo.compareEnable <- false
+        createInfo.compareOp <- VK_COMPARE_OP_ALWAYS
+        createInfo.minLod <- -1000f
+        createInfo.maxLod <- 1000f
+        createInfo.borderColor <- VK_BORDER_COLOR_INT_OPAQUE_BLACK
+        createInfo.unnormalizedCoordinates <- false
+
+        // create sampler
+        vkCreateSampler (device, &createInfo, nullPtr, &sampler) |> check
+
+        // fin
+        sampler
     
     interface RendererImGui with
         
         member this.Initialize fonts =
             
-            // create descriptor pool for font atlas
+            // create font atlas resources
             descriptorPool <- VulkanRendererImGui.createDescriptorPool device
+            sampler <- VulkanRendererImGui.createSampler device
             
             
             let mutable pixels = Unchecked.defaultof<nativeint>
@@ -316,6 +348,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         member this.Render _ = ()
         
         member this.CleanUp () =
+            vkDestroySampler (device, sampler, nullPtr)
             vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
 
 [<RequireQualifiedAccess>]
