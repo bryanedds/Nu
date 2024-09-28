@@ -377,8 +377,7 @@ type RendererThread () =
                 submissionOpt <- None
                 
                 // begin frame
-                let currentIndex = Vulkan.Hl.VulkanGlobal.tryBeginFrame vulkanGlobalOpt
-                imageIndex <- currentIndex
+                imageIndex <- Vulkan.Hl.VulkanGlobal.tryBeginFrame vulkanGlobalOpt
                 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d

@@ -276,7 +276,10 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     
     /// Create the descriptor pool for the font atlas.
-    static member createDescriptorPool =
+    static member createDescriptorPool device =
+        
+        // handle
+        let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
         
         // create pool size
         let mutable poolSize = VkDescriptorPoolSize ()
@@ -290,12 +293,18 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         createInfo.pPoolSizes <- asPointer &poolSize
 
         // create descriptor pool
+        vkCreateDescriptorPool (device, &createInfo, nullPtr, &descriptorPool) |> check
 
-        ()
+        // fin
+        descriptorPool
     
     interface RendererImGui with
         
         member this.Initialize fonts =
+            
+            // create descriptor pool for font atlas
+            descriptorPool <- VulkanRendererImGui.createDescriptorPool device
+            
             
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable fontTextureWidth = 0
@@ -305,7 +314,9 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             fonts.ClearTexData ()
         
         member this.Render _ = ()
-        member this.CleanUp () = ()
+        
+        member this.CleanUp () =
+            vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =
