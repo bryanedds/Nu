@@ -302,6 +302,13 @@ module WorldModule =
             let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
             World.setSimulantImNuis simulantImNuis world
 
+        static member internal tryMapSimulantImNui mapper simulant (world : World) =
+            match world.SimulantImNuis.TryGetValue simulant with
+            | (true, simulantImNui) ->
+                let simulantImNui = mapper simulantImNui
+                World.addSimulantImNui simulant simulantImNui world
+            | (false, _) -> world
+
         static member internal mapSimulantImNui mapper simulant world =
             let simulantImNui = World.getSimulantImNui simulant world
             let simulantImNui = mapper simulantImNui
