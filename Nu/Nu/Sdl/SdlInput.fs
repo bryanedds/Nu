@@ -74,11 +74,6 @@ module internal MouseState =
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
         MouseButtonStateCurrent <- sdlMouseButtonState
 
-    /// Clear the keyboard state from SDL.
-    let internal wipe () =
-        MouseButtonStatePrevious <- 0u
-        MouseButtonStateCurrent <- 0u
-
     /// Get the position of the mouse.
     let internal getPosition () =
         let (_, x, y) = SDL.SDL_GetMouseState ()
@@ -115,11 +110,6 @@ module internal KeyboardState =
         Marshal.Copy(keyboardStatePtr, keyboardState, 0, keysCount)
         KeyboardStatePreviousOpt <- KeyboardStateCurrentOpt
         KeyboardStateCurrentOpt <- Some keyboardState
-
-    /// Update the keyboard state from SDL.
-    let internal wipe () =
-        KeyboardStatePreviousOpt <- None
-        KeyboardStateCurrentOpt <- None
 
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =

@@ -145,6 +145,7 @@ module Gaia =
     let mutable private ShowOpenEntityDialog = false
     let mutable private ShowSaveEntityDialog = false
     let mutable private ShowRenameEntityDialog = false
+    let mutable private ShowDeleteEntityDialog = false
     let mutable private ShowConfirmExitDialog = false
     let mutable private ShowRestartDialog = false
     let mutable private ReloadAssetsRequested = 0
@@ -165,6 +166,7 @@ module Gaia =
         ShowOpenEntityDialog ||
         ShowSaveEntityDialog ||
         ShowRenameEntityDialog ||
+        ShowDeleteEntityDialog ||
         ShowConfirmExitDialog ||
         ShowRestartDialog ||
         ReloadAssetsRequested <> 0 ||
@@ -956,10 +958,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             if not (entity.GetProtected world) then
-                let world = snapshot DeleteEntity world
-                let world = World.destroyEntity entity world
-                SelectedEntityOpt <- None
-                (true, world)
+                if World.hasPropagationTargets entity world then
+                    ShowDeleteEntityDialog <- true
+                    (false, world)
+                else
+                    let world = snapshot DeleteEntity world
+                    let world = World.destroyEntity entity world
+                    SelectedEntityOpt <- None
+                    (true, world)
             else
                 MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
                 (false, world)
@@ -3620,6 +3626,39 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             else world
         | Some _ | None -> ShowRenameEntityDialog <- false; world
 
+    let private imGuiDeleteEntityDialog world =
+        match SelectedEntityOpt with
+        | Some entity when entity.GetExists world ->
+            let title = "Entity deletion confirmation..."
+            let opening = not (ImGui.IsPopupOpen title)
+            if opening then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &ShowDeleteEntityDialog) then
+                ImGui.Text "Selected entity is an entity propagation source."
+                ImGui.Text "Select a deletion option:"
+                let world =
+                    if ImGui.Button "Wipe propagation targets and delete entity (recommended)." || ImGui.IsKeyReleased ImGuiKey.Enter then
+                        let world = snapshot DeleteEntity world
+                        let world = World.clearPropagationTargets entity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowDeleteEntityDialog <- false
+                        world
+                    else world
+                let world =
+                    if ImGui.Button "Ignore propagation targets and delete entity (if you plan on replacing it)." then
+                        let world = snapshot DeleteEntity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowDeleteEntityDialog <- false
+                        world
+                    else world
+                if ImGui.Button "Cancel deletion." || ImGui.IsKeyReleased ImGuiKey.Escape then
+                    ShowDeleteEntityDialog <- false
+                ImGui.EndPopup ()
+                world
+            else world
+        | Some _ | None -> ShowRenameEntityDialog <- false; world
+
     let private imGuiConfirmExitDialog world =
         let title = "Are you okay with exiting Gaia?"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -3913,6 +3952,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world = if ShowOpenEntityDialog then imGuiOpenEntityDialog world else world
                         let world = if ShowSaveEntityDialog then imGuiSaveEntityDialog world else world
                         let world = if ShowRenameEntityDialog then imGuiRenameEntityDialog world else world
+                        let world = if ShowDeleteEntityDialog then imGuiDeleteEntityDialog world else world
                         let world = if ShowConfirmExitDialog then imGuiConfirmExitDialog world else world
                         let world = if ShowRestartDialog then imGuiRestartDialog world else world
                         world
