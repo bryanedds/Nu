@@ -31,7 +31,7 @@ type MyGameDispatcher () =
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> Math.DegreesToRadians)
         let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
         let world =
-            match World.doButton "Exit" [Entity.Text .= "Exit"; Entity.Position .= v3 232.0f -144.0f 0.0f] world with
+            match World.doButton "Exit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Exit"] world with
             | (true, world) when world.Unaccompanied -> World.exit world
             | (_, world) -> world
         let world = World.endGroup world
