@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Runtime.InteropServices
 open SDL2
 open Prime
 
@@ -83,17 +84,37 @@ module internal MouseState =
 [<RequireQualifiedAccess>]
 module internal KeyboardState =
 
+    let mutable private KeyboardStatePreviousOpt = None
+    let mutable private KeyboardStateCurrentOpt = None
+
+    /// Update the current keyboard state from SDL.
+    let internal updateState () =
+        let mutable keysCount = 0
+        let keyboardStatePtr = SDL.SDL_GetKeyboardState &keysCount
+        let keyboardState = Array.zeroCreate<byte> keysCount
+        Marshal.Copy(keyboardStatePtr, keyboardState, 0, keysCount)
+        KeyboardStatePreviousOpt <- KeyboardStateCurrentOpt
+        KeyboardStateCurrentOpt <- Some keyboardState
+
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =
-        let mutable unused = 0
-        let keyboardStatePtr = SDL.SDL_GetKeyboardState &unused
-        let keyboardStatePtr = NativeInterop.NativePtr.ofNativeInt keyboardStatePtr
-        let state = NativeInterop.NativePtr.get<byte> keyboardStatePtr (int key)
-        state = byte 1
+        match KeyboardStateCurrentOpt with
+        | Some keyboardState -> keyboardState.[int key] = byte 1
+        | None -> false
 
     /// Check that the given keyboard key is up.
     let internal isKeyUp (key : KeyboardKey) =
         not (isKeyDown key)
+
+    /// Check that the given keyboard key was just pressed.
+    let internal isKeyPressed key =
+        match KeyboardStateCurrentOpt with
+        | Some keyboardState ->
+            keyboardState.[int key] = byte 0 &&
+            match KeyboardStatePreviousOpt with
+            | Some keyboardState -> keyboardState.[int key] = byte 1
+            | None -> false
+        | None -> false
 
     /// Check that either enter key is down.
     let internal isEnterDown () =
@@ -104,6 +125,11 @@ module internal KeyboardState =
     let internal isEnterUp () =
         isKeyUp KeyboardKey.KpEnter ||
         isKeyUp KeyboardKey.Enter
+
+    /// Check that either enter key was just pressed.
+    let internal isEnterPressed () =
+        isKeyPressed KeyboardKey.KpEnter ||
+        isKeyPressed KeyboardKey.Enter
 
     /// Check that either ctrl key is down.
     let internal isCtrlDown () =
