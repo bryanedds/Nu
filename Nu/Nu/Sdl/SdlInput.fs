@@ -49,17 +49,6 @@ module internal MouseState =
     let mutable MouseButtonStatePrevious = 0u
     let mutable MouseButtonStateCurrent = 0u
 
-    /// Update the current keyboard state from SDL.
-    let internal updateState () =
-        MouseButtonStatePrevious <- MouseButtonStateCurrent
-        let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
-        MouseButtonStateCurrent <- sdlMouseButtonState
-
-    /// Clear the keyboard state from SDL.
-    let internal wipeState () =
-        MouseButtonStatePrevious <- 0u
-        MouseButtonStateCurrent <- 0u
-
     /// Convert a MouseButton to SDL's representation.
     let internal toSdlButton mouseButton =
         match mouseButton with
@@ -78,6 +67,17 @@ module internal MouseState =
         | SDL.SDL_BUTTON_X1 -> MouseX1
         | SDL.SDL_BUTTON_X2 -> MouseX2
         | _ -> failwith "Invalid SDL mouse button."
+
+    /// Update the current keyboard state from SDL.
+    let internal update () =
+        MouseButtonStatePrevious <- MouseButtonStateCurrent
+        let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
+        MouseButtonStateCurrent <- sdlMouseButtonState
+
+    /// Clear the keyboard state from SDL.
+    let internal wipe () =
+        MouseButtonStatePrevious <- 0u
+        MouseButtonStateCurrent <- 0u
 
     /// Get the position of the mouse.
     let internal getPosition () =
@@ -108,7 +108,7 @@ module internal KeyboardState =
     let mutable private KeyboardStateCurrentOpt = None
 
     /// Update the current keyboard state from SDL.
-    let internal updateState () =
+    let internal update () =
         let mutable keysCount = 0
         let keyboardStatePtr = SDL.SDL_GetKeyboardState &keysCount
         let keyboardState = Array.zeroCreate<byte> keysCount
@@ -117,7 +117,7 @@ module internal KeyboardState =
         KeyboardStateCurrentOpt <- Some keyboardState
 
     /// Update the keyboard state from SDL.
-    let internal wipeState () =
+    let internal wipe () =
         KeyboardStatePreviousOpt <- None
         KeyboardStateCurrentOpt <- None
 

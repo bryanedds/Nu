@@ -857,10 +857,10 @@ module WorldModule2 =
             WorldTypes.Chosen <- world
 
             // wipe mouse input
-            MouseState.wipeState ()
+            MouseState.wipe()
 
             // wipe keyboard input
-            KeyboardState.wipeState ()
+            KeyboardState.wipe ()
 
             // wipe memoized named content
             Content.wipe ()
@@ -1646,8 +1646,8 @@ module WorldModule2 =
 
         static member private processInput world =
             if SDL.SDL_WasInit SDL.SDL_INIT_TIMER <> 0u then
-                MouseState.updateState ()
-                KeyboardState.updateState ()
+                MouseState.update ()
+                KeyboardState.update ()
                 let mutable result = (World.getLiveness world, world)
                 let mutable polledEvent = SDL.SDL_Event ()
                 while
