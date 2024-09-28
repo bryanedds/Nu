@@ -104,6 +104,33 @@ type GameplayDispatcher () =
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)
         let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
 
+        // left wall
+        let (_, world) =
+            World.doBlock2d "LeftWall"
+                [Entity.Position .= v3 -164.0f 0.0f 0.0f
+                 Entity.Size .= v3 8.0f 360.0f 0.0f
+                 Entity.Sensor .= true
+                 Entity.StaticImage .= Assets.Default.Black] world
+        let leftWall = world.RecentEntity
+
+        // right wall
+        let (_, world) =
+            World.doBlock2d "RightWall"
+                [Entity.Position .= v3 164.0f 0.0f 0.0f
+                 Entity.Size .= v3 8.0f 360.0f 0.0f
+                 Entity.Sensor .= true
+                 Entity.StaticImage .= Assets.Default.Black] world
+        let rightWall = world.RecentEntity
+
+        // top wall
+        let (_, world) =
+            World.doBlock2d "TopWall"
+                [Entity.Position .= v3 0.0f 176.0f 0.0f
+                 Entity.Size .= v3 320.0f 8.0f 0.0f
+                 Entity.Sensor .= true
+                 Entity.StaticImage .= Assets.Default.Black] world
+        let topWall = world.RecentEntity
+
         // paddle
         let (_, world) =
             World.doBlock2d "Paddle"
@@ -157,8 +184,8 @@ type GameplayDispatcher () =
             FQueue.fold (fun (gameplay, world) result ->
                 match result with
                 | BodyPenetration data ->
-                    let penetrateeName = data.BodyShapePenetratee.BodyId.BodySource.Name
-                    if penetrateeName = "Paddle" then
+                    let penetratee = data.BodyShapePenetratee.BodyId.BodySource
+                    if penetratee = paddle then
 
                         // paddle collision
                         let bounce = (ballPosition - paddlePosition).Normalized * gameplay.Ball.Speed
@@ -169,7 +196,7 @@ type GameplayDispatcher () =
                     else
 
                         // brick collision
-                        match gameplay.Bricks.TryGetValue penetrateeName with
+                        match gameplay.Bricks.TryGetValue penetratee.Name with
                         | (true, brick) ->
 
                             let bounce = (ballPosition - brick.Position).Normalized * gameplay.Ball.Speed
@@ -177,18 +204,17 @@ type GameplayDispatcher () =
                             let gameplay =
                                 { gameplay with
                                     Score = gameplay.Score + 100
-                                    Bricks = Map.remove penetrateeName gameplay.Bricks }
+                                    Bricks = Map.remove penetratee.Name gameplay.Bricks }
                             World.playSound 1.0f Assets.Default.Sound world
                             (gameplay, world)
 
                         // wall collision
                         | (false, _) ->
                             let normal =
-                                match penetrateeName with
-                                | "LeftWall" -> v3Right
-                                | "RightWall" -> v3Left
-                                | "TopWall" -> v3Down
-                                | _ -> failwithumf ()
+                                if penetratee = leftWall then v3Right
+                                elif penetratee = rightWall then v3Left
+                                elif penetratee = topWall then v3Down
+                                else failwithumf ()
                             let world =
                                 let velocity = ball.GetLinearVelocity world
                                 let bounce = velocity - 2.0f * Vector3.Dot(velocity, normal) * normal
@@ -201,33 +227,14 @@ type GameplayDispatcher () =
 
         // bricks
         let world =
-            gameplay.Bricks.Pairs |> Seq.fold (fun world (brickName, brick) ->
+            Seq.fold (fun world (brickName, brick) ->
                 World.doBlock2d brickName
                     [Entity.Position .= brick.Position
                      Entity.Size .= brick.Size
                      Entity.Sensor .= true
                      Entity.Color @= brick.Color
-                     Entity.StaticImage .= Assets.Default.Brick] world |> snd) world
-
-        // walls
-        let (_, world) =
-            World.doBlock2d "LeftWall"
-                [Entity.Position .= v3 -164.0f 0.0f 0.0f
-                 Entity.Size .= v3 8.0f 360.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Black] world
-        let (_, world) =
-            World.doBlock2d "RightWall"
-                [Entity.Position .= v3 164.0f 0.0f 0.0f
-                 Entity.Size .= v3 8.0f 360.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Black] world
-        let (_, world) =
-            World.doBlock2d "TopWall"
-                [Entity.Position .= v3 0.0f 176.0f 0.0f
-                 Entity.Size .= v3 320.0f 8.0f 0.0f
-                 Entity.Sensor .= true
-                 Entity.StaticImage .= Assets.Default.Black] world
+                     Entity.StaticImage .= Assets.Default.Brick] world |> snd)
+                world gameplay.Bricks.Pairs
 
         // end scene declaration
         let world = World.endGroup world
