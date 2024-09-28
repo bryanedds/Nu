@@ -2,13 +2,6 @@
 // Copyright (C) Bryan Edds, 2013-2023.
 
 namespace Nu
-
-// TODO: confirm this module/namespace arrangement is correct.
-
-/// Force qualification of Vulkan namespace in Nu unless opened explicitly.
-[<RequireQualifiedAccess>]
-module Vulkan = let _ = ()
-
 namespace Vulkan
 open System
 open System.Collections.Generic
@@ -18,7 +11,6 @@ open type Vulkan
 open Prime
 open Nu
 
-[<RequireQualifiedAccess>]
 module Hl =
 
     // enable validation layers in debug mode
@@ -152,24 +144,23 @@ module Hl =
     
     /// The Vulkan handles that must be globally accessible within the renderer.
     type [<ReferenceEquality>] VulkanGlobal =
-        private
-            { Instance : VkInstance
-              Surface : VkSurfaceKHR
-              Device : VkDevice
-              Swapchain : VkSwapchainKHR
-              SwapchainImageViews : VkImageView array
-              CommandPool : VkCommandPool
-              CommandBuffer : VkCommandBuffer
-              GraphicsQueue : VkQueue
-              PresentQueue : VkQueue
-              ImageAvailableSemaphore : VkSemaphore
-              RenderFinishedSemaphore : VkSemaphore
-              InFlightFence : VkFence
-              ScreenClearRenderPass : VkRenderPass
-              GeneralRenderPass : VkRenderPass
-              PresentLayoutRenderPass : VkRenderPass
-              SwapchainFramebuffers : VkFramebuffer array
-              SwapExtent : VkExtent2D }
+        { Instance : VkInstance
+          Surface : VkSurfaceKHR
+          Device : VkDevice
+          Swapchain : VkSwapchainKHR
+          SwapchainImageViews : VkImageView array
+          CommandPool : VkCommandPool
+          CommandBuffer : VkCommandBuffer
+          GraphicsQueue : VkQueue
+          PresentQueue : VkQueue
+          ImageAvailableSemaphore : VkSemaphore
+          RenderFinishedSemaphore : VkSemaphore
+          InFlightFence : VkFence
+          ScreenClearRenderPass : VkRenderPass
+          GeneralRenderPass : VkRenderPass
+          PresentLayoutRenderPass : VkRenderPass
+          SwapchainFramebuffers : VkFramebuffer array
+          SwapExtent : VkExtent2D }
 
         /// Create the Vulkan instance.
         static member createInstance window =

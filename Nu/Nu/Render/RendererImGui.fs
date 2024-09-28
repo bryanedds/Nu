@@ -6,6 +6,9 @@ open System
 open System.Numerics
 open System.Runtime.CompilerServices
 open ImGuiNET
+open Vulkan.Hl
+open Vortice.Vulkan
+open type Vulkan
 open Prime
 
 /// Renders an imgui view.
@@ -267,15 +270,40 @@ module GlRendererImGui =
         rendererImGui
 
 /// Renders an imgui view via Vulkan.
-type VulkanRendererImGui (vulkanGlobal) =
+type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
+    
+    let device = vulkanGlobal.Device
+    let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
+    
+    /// Create the descriptor pool for the font atlas.
+    static member createDescriptorPool =
+        
+        // create pool size
+        let mutable poolSize = VkDescriptorPoolSize ()
+        poolSize.``type`` <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        poolSize.descriptorCount <- 1u
+
+        // populate create info
+        let mutable createInfo = VkDescriptorPoolCreateInfo ()
+        createInfo.maxSets <- 1u
+        createInfo.poolSizeCount <- 1u
+        createInfo.pPoolSizes <- asPointer &poolSize
+
+        // create descriptor pool
+
+        ()
+    
     interface RendererImGui with
+        
         member this.Initialize fonts =
+            
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable fontTextureWidth = 0
             let mutable fontTextureHeight = 0
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
+        
         member this.Render _ = ()
         member this.CleanUp () = ()
 
