@@ -104,11 +104,7 @@ module WorldImNui =
                     let world = World.createScreen<'d> (Some name) world |> snd
                     let world = World.setScreenProtected true screen world |> snd'
                     match groupFilePathOpt with
-                    | Some groupFilePath ->
-                        let groupDescriptorStr = File.ReadAllText groupFilePath
-                        let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                        let world = World.beginGroupFromDescriptor None groupDescriptor [] world
-                        World.endGroup world
+                    | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
                     | None -> world
                 else world
             let (initializing, world) =
@@ -219,14 +215,9 @@ module WorldImNui =
             let group = Nu.Group groupAddress
             let world =
                 if not (group.GetExists world) then
-                    let world = World.readGroup { groupDescriptor with EntityDescriptors = [] } None group.Screen world |> snd
+                    let world = World.readGroup groupDescriptor None group.Screen world |> snd
                     World.setGroupProtected true group world |> snd'
                 else world
-            let world =
-                List.fold (fun world entityDescriptor ->
-                    let world = World.beginEntityFromDescriptor entityDescriptor world |> __c
-                    World.endEntity world)
-                    world groupDescriptor.EntityDescriptors
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
@@ -241,7 +232,6 @@ module WorldImNui =
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
         static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
-            if world.ContextImNui.Names.Length < 2 then raise (InvalidOperationException "ImNui group declared outside of valid ImNui context (must be called in a Screen context).")
             let groupDescriptorStr = File.ReadAllText groupFilePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
             World.beginGroupFromDescriptor (Some name) groupDescriptor args world
@@ -318,14 +308,9 @@ module WorldImNui =
             let entity = Nu.Entity entityAddress
             let world =
                 if not (entity.GetExists world) then
-                    let world = World.readEntity { entityDescriptor with EntityDescriptors = [] } None entity.Group world |> snd
+                    let world = World.readEntity entityDescriptor None entity.Group world |> snd
                     World.setEntityProtected true entity world |> snd'
                 else world
-            let world =
-                List.fold (fun world entityDescriptor ->
-                    let world = World.beginEntityFromDescriptor entityDescriptor world |> __c
-                    World.endEntity world)
-                    world entityDescriptor.EntityDescriptors
             match world.SimulantImNuis.TryGetValue entity with
             | (true, entityImNui) -> (false, entity, World.utilizeSimulantImNui entity entityImNui world)
             | (false, _) -> (true, entity, World.addSimulantImNui entity { Utilized = true; Result = () } world)
