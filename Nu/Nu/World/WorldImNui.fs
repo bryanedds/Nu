@@ -61,7 +61,7 @@ module WorldImNui =
             World.setContext Address.empty world
 
         /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGamePlus<'r> (zero : 'r) init (args : Game ArgImNui seq) (world : World) : 'r * World =
+        static member beginGame args (world : World) =
             if world.ContextImNui.Names.Length > 0 then raise (InvalidOperationException "ImNui game declared outside of valid ImNui context (must be called in World context).")
             let gameAddress = Address.makeFromArray (Array.add Constants.Engine.GameName world.ContextImNui.Names)
             let world = World.setContext gameAddress world
@@ -70,26 +70,15 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue game with
                 | (true, gameImNui) -> (false, World.utilizeSimulantImNui game gameImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui game { Utilized = true; Result = zero } world
-                    let mapResult (mapper : 'r -> 'r) world =
-                        let mapGameImNui gameImNui = { gameImNui with Result = mapper (gameImNui.Result :?> 'r) }
-                        World.tryMapSimulantImNui mapGameImNui game world
-                    (true, init mapResult game world)
+                    let world = World.addSimulantImNui game { Utilized = true; Result = () } world
+                    (true, world)
             let initializing = initializing || Reinitializing
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if initializing || not arg.ArgStatic
-                        then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let result = (World.getSimulantImNui game world).Result :?> 'r
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) game world
-            (result, world)
-
-        /// Begin the ImNui declaration of a game with the given arguments.
-        static member beginGame world args =
-            World.beginGamePlus<unit> () (fun _ _ world -> world) args world |> snd
+            Seq.fold
+                (fun world arg ->
+                    if initializing || not arg.ArgStatic
+                    then game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                    else world)
+                world args
 
         /// End the ImNui declaration of a group with the given arguments.
         static member endGame (world : World) =
@@ -212,7 +201,7 @@ module WorldImNui =
                         then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
-            let result = (World.getSimulantImNui group world).Result :?> 'r
+            let result = match (World.getSimulantImNui group world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group world
             (result, world)
 
@@ -313,7 +302,7 @@ module WorldImNui =
                         then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
-            let result = (World.getSimulantImNui entity world).Result :?> 'r
+            let result = match (World.getSimulantImNui entity world).Result with :? 'r as r -> r | _ -> zero
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) entity world
             (result, world)
 
