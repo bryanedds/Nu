@@ -46,6 +46,14 @@ type GamepadButton =
 [<RequireQualifiedAccess>]
 module internal MouseState =
 
+    let mutable MouseButtonStatePrevious = 0u
+    let mutable MouseButtonStateCurrent = 0u
+
+    let internal updateState () =
+        MouseButtonStatePrevious <- MouseButtonStateCurrent
+        let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
+        MouseButtonStateCurrent <- sdlMouseButtonState
+
     /// Convert a MouseButton to SDL's representation.
     let internal toSdlButton mouseButton =
         match mouseButton with
@@ -74,12 +82,18 @@ module internal MouseState =
     let internal isButtonDown mouseButton =
         let sdlMouseButton = toSdlButton mouseButton
         let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
-        let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
-        sdlMouseButtonState &&& sdlMouseButtonMask <> 0u
+        MouseButtonStateCurrent &&& sdlMouseButtonMask <> 0u
 
     /// Check that the given mouse button is up.
     let internal isButtonUp mouseButton =
         not (isButtonDown mouseButton)
+
+    /// Check that the given mouse button was just clicked.
+    let internal isButtonClicked mouseButton =
+        let sdlMouseButton = toSdlButton mouseButton
+        let sdlMouseButtonMask = SDL.SDL_BUTTON sdlMouseButton
+        (MouseButtonStatePrevious &&& sdlMouseButtonMask <> 0u) &&
+        (MouseButtonStateCurrent &&& sdlMouseButtonMask = 0u)
 
 [<RequireQualifiedAccess>]
 module internal KeyboardState =

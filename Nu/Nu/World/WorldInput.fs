@@ -32,6 +32,11 @@ module WorldInputModule =
             ignore (world : World)
             MouseState.isButtonUp mouseButton
 
+        /// Check that the given mouse button was just clicked.
+        static member isMouseButtonClicked mouseButton world =
+            ignore (world : World)
+            MouseState.isButtonClicked mouseButton
+
         /// Get the position of the mouse.
         static member getMousePosition world =
             match World.tryGetWindowSize world with

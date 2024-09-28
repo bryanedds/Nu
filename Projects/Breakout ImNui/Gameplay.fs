@@ -256,11 +256,6 @@ type GameplayDispatcher () =
             match World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world with
             | (true, world) -> ({ gameplay with GameplayState = Quitting }, world)
             | (false, world) -> (gameplay, world)
-
-        let gameplay =
-            if World.isKeyboardKeyPressed KeyboardKey.Q world
-            then { gameplay with GameplayState = Quitting }
-            else gameplay
         
         // end group declaration
         let world = World.endGroup world
