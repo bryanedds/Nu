@@ -18,7 +18,7 @@ type Paddle =
         { Position = v3 0.0f -160.0f 0.0f
           Size = v3 64.0f 16.0f 0.0f }
 
-// the block-breaking ball.
+// the brick-breaking ball.
 type Ball =
     { Position : Vector3
       Size : Vector3
