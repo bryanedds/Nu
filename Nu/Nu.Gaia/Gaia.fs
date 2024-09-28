@@ -1968,9 +1968,34 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.fold (fun world (propertyCategory, propertyDescriptors) ->
                 let world =
                     if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                        let mountActive =
+                            match simulant with
+                            | :? Entity as entity ->
+                                match entity.GetMountOpt world with
+                                | Some mount ->
+                                    let parentAddress = Relation.resolve entity.EntityAddress mount
+                                    let parent = World.derive (atooa parentAddress)
+                                    World.getExists parent world
+                                | None -> false
+                            | _ -> false
                         let propertyDescriptors =
                             propertyDescriptors |>
                             Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
+                            Array.filter (fun pd ->
+                                match pd.PropertyName with
+                                | nameof Entity.Position
+                                | nameof Entity.Degrees
+                                | nameof Entity.Scale
+                                | nameof Entity.Elevation
+                                | nameof Entity.Enabled
+                                | nameof Entity.Visible -> not mountActive
+                                | nameof Entity.PositionLocal
+                                | nameof Entity.DegreesLocal
+                                | nameof Entity.ScaleLocal
+                                | nameof Entity.ElevationLocal
+                                | nameof Entity.VisibleLocal
+                                | nameof Entity.EnabledLocal -> mountActive
+                                | _ -> true) |>
                             Array.sortBy (fun pd ->
                                 match pd.PropertyName with
                                 | Constants.Engine.NamePropertyName -> "!00" // put Name first
