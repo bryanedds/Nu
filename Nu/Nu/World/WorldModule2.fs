@@ -856,6 +856,12 @@ module WorldModule2 =
             // manually choose world to override choose count check
             WorldTypes.Chosen <- world
 
+            // wipe mouse input
+            MouseState.wipeState ()
+
+            // wipe keyboard input
+            KeyboardState.wipeState ()
+
             // wipe memoized named content
             Content.wipe ()
 

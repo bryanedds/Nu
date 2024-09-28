@@ -49,10 +49,16 @@ module internal MouseState =
     let mutable MouseButtonStatePrevious = 0u
     let mutable MouseButtonStateCurrent = 0u
 
+    /// Update the current keyboard state from SDL.
     let internal updateState () =
         MouseButtonStatePrevious <- MouseButtonStateCurrent
         let (sdlMouseButtonState, _, _) = SDL.SDL_GetMouseState ()
         MouseButtonStateCurrent <- sdlMouseButtonState
+
+    /// Clear the keyboard state from SDL.
+    let internal wipeState () =
+        MouseButtonStatePrevious <- 0u
+        MouseButtonStateCurrent <- 0u
 
     /// Convert a MouseButton to SDL's representation.
     let internal toSdlButton mouseButton =
@@ -109,6 +115,11 @@ module internal KeyboardState =
         Marshal.Copy(keyboardStatePtr, keyboardState, 0, keysCount)
         KeyboardStatePreviousOpt <- KeyboardStateCurrentOpt
         KeyboardStateCurrentOpt <- Some keyboardState
+
+    /// Update the keyboard state from SDL.
+    let internal wipeState () =
+        KeyboardStatePreviousOpt <- None
+        KeyboardStateCurrentOpt <- None
 
     /// Check that the given keyboard key is down.
     let internal isKeyDown (key : KeyboardKey) =
