@@ -7,6 +7,7 @@ open Nu
 type GameplayState =
     | Playing
     | Quitting
+    | Quit
 
 // this is our MMCC model type representing gameplay.
 // this model representation uses update time, that is, time based on number of engine updates.
@@ -17,7 +18,7 @@ type Gameplay =
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
     static member empty =
         { GameplayTime = 0L
-          GameplayState = Quitting }
+          GameplayState = Quit }
 
     // this represents the gameplay model in its initial state, such as when gameplay starts.
     static member initial =
@@ -43,16 +44,13 @@ type GameplayDispatcher () =
         else Gameplay.empty
 
     // here we define the behavior of our gameplay
-    override this.Run (gameplay, screen, world) =
+    override this.Run (gameplay, _, world) =
 
         // declare scene group when selected
-        let world =
-            if screen.GetSelected world then
-                let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
-                let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)
-                let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
-                World.endGroup world
-            else world
+        let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)
+        let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
+        let world = World.endGroup world
 
         // declare gui group
         let world = World.beginGroup "Gui" [] world

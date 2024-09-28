@@ -95,13 +95,10 @@ type GameplayDispatcher () =
         else Gameplay.empty
 
     // here we define the behavior of our gameplay
-    override this.Run (gameplay, screen, world) =
+    override this.Run (gameplay, _, world) =
 
         // declare scene group
-        let world =
-            if screen.GetSelected world
-            then World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
-            else World.beginGroup "Scene" [] world
+        let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
         // background model
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)
@@ -117,13 +114,15 @@ type GameplayDispatcher () =
         let paddle = world.RecentEntity
         let paddlePosition = paddle.GetPosition world
 
-        // move paddle
+        // move paddle while game is playing / playable
         let world =
-            let paddlePosition = paddle.GetPosition world
-            if World.isKeyboardKeyDown KeyboardKey.Left world then
-                paddle.SetPosition (paddlePosition.MapX (fun x -> max -128.0f (x - 4.0f))) world
-            elif World.isKeyboardKeyDown KeyboardKey.Right world then
-                paddle.SetPosition (paddlePosition.MapX (fun x -> min 128.0f (x + 4.0f))) world
+            if gameplay.GameplayState = Playing && gameplay.Lives > 0 && gameplay.Bricks.Count > 0 then
+                let paddlePosition = paddle.GetPosition world
+                if World.isKeyboardKeyDown KeyboardKey.Left world then
+                    paddle.SetPosition (paddlePosition.MapX (fun x -> max -128.0f (x - 4.0f))) world
+                elif World.isKeyboardKeyDown KeyboardKey.Right world then
+                    paddle.SetPosition (paddlePosition.MapX (fun x -> min 128.0f (x + 4.0f))) world
+                else world
             else world
 
         // ball
