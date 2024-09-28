@@ -231,6 +231,7 @@ module WorldImNui =
                 world args
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
+        /// Note that changing the file path over time has no effect as only the first moment is used.
         static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
             let groupDescriptorStr = File.ReadAllText groupFilePath
             let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
@@ -316,6 +317,7 @@ module WorldImNui =
             | (false, _) -> (true, entity, World.addSimulantImNui entity { Utilized = true; Result = () } world)
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
+        /// Note that changing the file path over time has no effect as only the first moment is used.
         static member internal beginEntityFromFile entityFilePath args world =
             let entityDescriptorStr = File.ReadAllText entityFilePath
             let entityDescriptor = scvalue<EntityDescriptor> entityDescriptorStr
