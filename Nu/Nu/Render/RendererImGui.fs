@@ -276,6 +276,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
     let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
+    let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -354,6 +355,32 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // fin
         descriptorSetLayout
     
+    /// Create the pipeline layout for the font atlas.
+    static member createPipelineLayout descriptorSetLayout device =
+        
+        // handles
+        let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
+        let mutable descriptorSetLayout = descriptorSetLayout
+
+        // populate push constant range
+        let mutable pushConstantRange = VkPushConstantRange ()
+        pushConstantRange.stageFlags <- VK_SHADER_STAGE_VERTEX_BIT
+        pushConstantRange.offset <- 0u
+        pushConstantRange.size <- uint sizeof<Single>
+
+        // populate create info
+        let mutable createInfo = VkPipelineLayoutCreateInfo ()
+        createInfo.setLayoutCount <- 1u
+        createInfo.pSetLayouts <- asPointer &descriptorSetLayout
+        createInfo.pushConstantRangeCount <- 1u
+        createInfo.pPushConstantRanges <- asPointer &pushConstantRange
+
+        // create pipeline layout
+        vkCreatePipelineLayout (device, &createInfo, nullPtr, &pipelineLayout) |> check
+
+        // fin
+        pipelineLayout
+    
     interface RendererImGui with
         
         member this.Initialize fonts =
@@ -362,6 +389,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             descriptorPool <- VulkanRendererImGui.createDescriptorPool device
             sampler <- VulkanRendererImGui.createSampler device
             descriptorSetLayout <- VulkanRendererImGui.createDescriptorSetLayout device
+            pipelineLayout <- VulkanRendererImGui.createPipelineLayout descriptorSetLayout device
             
             
             let mutable pixels = Unchecked.defaultof<nativeint>
@@ -374,6 +402,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         member this.Render _ = ()
         
         member this.CleanUp () =
+            vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
             vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullPtr)
             vkDestroySampler (device, sampler, nullPtr)
             vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
