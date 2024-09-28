@@ -15,17 +15,11 @@ copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.Game\Assets\Default /Y
 del Nu\Nu.Tests\Assets\Default\* /Q
 copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Tests\Assets\Default /Y
 
-del "Projects\Blaze Vector\Assets\Default\*" /Q
-copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Blaze Vector\Assets\Default" /Y
-
 del "Projects\Breakout ImNui\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout ImNui\Assets\Default" /Y
 
 del "Projects\Breakout Mmcc\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout Mmcc\Assets\Default" /Y
-
-del "Projects\Elmario\Assets\Default\*" /Q
-copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Elmario\Assets\Default" /Y
 
 del "Projects\Metrics\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Metrics\Assets\Default" /Y
