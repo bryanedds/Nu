@@ -275,6 +275,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let device = vulkanGlobal.Device
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
+    let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -329,6 +330,30 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // fin
         sampler
     
+    /// Create the descriptor set layout for the font atlas.
+    static member createDescriptorSetLayout device =
+        
+        // handle
+        let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
+
+        // populate binding
+        let mutable binding = VkDescriptorSetLayoutBinding ()
+        binding.binding <- 0u
+        binding.descriptorType <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        binding.descriptorCount <- 1u
+        binding.stageFlags <- VK_SHADER_STAGE_FRAGMENT_BIT
+
+        // populate create info
+        let mutable createInfo = VkDescriptorSetLayoutCreateInfo ()
+        createInfo.bindingCount <- 1u
+        createInfo.pBindings <- asPointer &binding
+
+        // create descriptor set layout
+        vkCreateDescriptorSetLayout (device, &createInfo, nullPtr, &descriptorSetLayout) |> check
+
+        // fin
+        descriptorSetLayout
+    
     interface RendererImGui with
         
         member this.Initialize fonts =
@@ -336,6 +361,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             // create font atlas resources
             descriptorPool <- VulkanRendererImGui.createDescriptorPool device
             sampler <- VulkanRendererImGui.createSampler device
+            descriptorSetLayout <- VulkanRendererImGui.createDescriptorSetLayout device
             
             
             let mutable pixels = Unchecked.defaultof<nativeint>
@@ -348,6 +374,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         member this.Render _ = ()
         
         member this.CleanUp () =
+            vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullPtr)
             vkDestroySampler (device, sampler, nullPtr)
             vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
 
