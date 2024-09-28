@@ -146,6 +146,7 @@ module Gaia =
     let mutable private ShowSaveEntityDialog = false
     let mutable private ShowRenameEntityDialog = false
     let mutable private ShowDeleteEntityDialog = false
+    let mutable private ShowCutEntityDialog = false
     let mutable private ShowConfirmExitDialog = false
     let mutable private ShowRestartDialog = false
     let mutable private ReloadAssetsRequested = 0
@@ -167,6 +168,7 @@ module Gaia =
         ShowSaveEntityDialog ||
         ShowRenameEntityDialog ||
         ShowDeleteEntityDialog ||
+        ShowCutEntityDialog ||
         ShowConfirmExitDialog ||
         ShowRestartDialog ||
         ReloadAssetsRequested <> 0 ||
@@ -1019,10 +1021,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             if not (entity.GetProtected world) then
-                let world = snapshot CutEntity world
-                selectEntityOpt None world
-                let world = World.cutEntityToClipboard entity world
-                (true, world)
+                if World.hasPropagationTargets entity world then
+                    ShowCutEntityDialog <- true
+                    (false, world)
+                else
+                    let world = snapshot CutEntity world
+                    selectEntityOpt None world
+                    let world = World.cutEntityToClipboard entity world
+                    (true, world)
             else
                 MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the MMCC API)."
                 (false, world)
@@ -3636,7 +3642,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 ImGui.Text "Selected entity is an entity propagation source."
                 ImGui.Text "Select a deletion option:"
                 let world =
-                    if ImGui.Button "Wipe propagation targets and delete entity (recommended)." || ImGui.IsKeyReleased ImGuiKey.Enter then
+                    if ImGui.Button "Wipe propagation targets and delete entity." then
                         let world = snapshot DeleteEntity world
                         let world = World.clearPropagationTargets entity world
                         let world = World.destroyEntity entity world
@@ -3654,6 +3660,39 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     else world
                 if ImGui.Button "Cancel deletion." || ImGui.IsKeyReleased ImGuiKey.Escape then
                     ShowDeleteEntityDialog <- false
+                ImGui.EndPopup ()
+                world
+            else world
+        | Some _ | None -> ShowRenameEntityDialog <- false; world
+
+    let private imGuiCutEntityDialog world =
+        match SelectedEntityOpt with
+        | Some entity when entity.GetExists world ->
+            let title = "Entity cut confirmation..."
+            let opening = not (ImGui.IsPopupOpen title)
+            if opening then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &ShowCutEntityDialog) then
+                ImGui.Text "Selected entity is an entity propagation source."
+                ImGui.Text "Select a cut option:"
+                let world =
+                    if ImGui.Button "Wipe propagation targets and cut entity." || ImGui.IsKeyReleased ImGuiKey.Enter then
+                        let world = snapshot CutEntity world
+                        let world = World.clearPropagationTargets entity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowCutEntityDialog <- false
+                        world
+                    else world
+                let world =
+                    if ImGui.Button "Ignore propagation targets and cut entity (if you plan on pasting or replacing it)." then
+                        let world = snapshot CutEntity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowCutEntityDialog <- false
+                        world
+                    else world
+                if ImGui.Button "Cancel cut operation." || ImGui.IsKeyReleased ImGuiKey.Escape then
+                    ShowCutEntityDialog <- false
                 ImGui.EndPopup ()
                 world
             else world
@@ -3953,6 +3992,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world = if ShowSaveEntityDialog then imGuiSaveEntityDialog world else world
                         let world = if ShowRenameEntityDialog then imGuiRenameEntityDialog world else world
                         let world = if ShowDeleteEntityDialog then imGuiDeleteEntityDialog world else world
+                        let world = if ShowCutEntityDialog then imGuiCutEntityDialog world else world
                         let world = if ShowConfirmExitDialog then imGuiConfirmExitDialog world else world
                         let world = if ShowRestartDialog then imGuiRestartDialog world else world
                         world
