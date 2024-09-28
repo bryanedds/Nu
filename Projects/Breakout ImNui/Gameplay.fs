@@ -29,7 +29,7 @@ type Ball =
     static member initial =
         { Origin = v3 0.0f 48.0f 0.0f
           Size = v3 8.0f 8.0f 0.0f
-          Speed = 128.0f
+          Speed = 150.0f
           Direction = (v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized }
 
 // the bricks to break out of.

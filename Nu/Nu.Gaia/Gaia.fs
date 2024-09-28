@@ -960,7 +960,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             if not (entity.GetProtected world) then
-                if World.hasPropagationTargets entity world then
+                if entity.HasPropagationTargets world then
                     ShowDeleteEntityDialog <- true
                     (false, world)
                 else
@@ -1021,7 +1021,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             if not (entity.GetProtected world) then
-                if World.hasPropagationTargets entity world then
+                if entity.HasPropagationTargets world then
                     ShowCutEntityDialog <- true
                     (false, world)
                 else
@@ -1433,7 +1433,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                 List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                                     if descendantDuplicate.GetExists world then
                                                         let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                        if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                                        if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                                         then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                                         else world
                                                     else world)
@@ -1752,7 +1752,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                         if descendantDuplicate.GetExists world then
                                             let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                            if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                            if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                             then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                             else world
                                         else world)
@@ -1824,7 +1824,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world
             else world
         let world =
-            let hasPropagationTargets = World.hasPropagationTargets entity world
+            let hasPropagationTargets = entity.HasPropagationTargets world
             let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
             if hasPropagationTargets || hasPropagationDescriptorOpt then
                 ImGui.PushID ("##push" + scstringMemo entity)
@@ -1861,7 +1861,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 EntityHierarchyFilterPropagationSources
             let visible =
                 if EntityHierarchyFilterPropagationSources then
-                    if World.hasPropagationTargets entity world
+                    if entity.HasPropagationTargets world
                     then String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
                     else false
                 else String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
@@ -2240,7 +2240,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                             if descendantDuplicate.GetExists world then
                                                 let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                                if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                                 then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                                 else world
                                             else world)
@@ -2709,7 +2709,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                             if descendantDuplicate.GetExists world then
                                                 let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                                if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                                 then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                                 else world
                                             else world)
