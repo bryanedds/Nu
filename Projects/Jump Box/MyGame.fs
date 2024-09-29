@@ -36,8 +36,8 @@ type MyGameDispatcher () =
 
         // declare a box, store its handle and body id for reference, then handle its body interactions
         let (results, world) = World.doBox2d "Box2d" [Entity.Position .= v3 0.0f 64.0f 0.0f; Entity.Observable .= true] world
-        let box3d = world.RecentEntity
-        let box3dBodyId = box3d.GetBodyId world
+        let box = world.RecentEntity
+        let boxBodyId = box.GetBodyId world
         let myGame =
             FQueue.fold (fun myGame result ->
                 match result with
@@ -49,8 +49,8 @@ type MyGameDispatcher () =
         let world = World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
         let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string myGame.Collisions] world
         let world =
-            match World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded box3dBodyId world; Entity.Text .= "Jump!"] world with
-            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 256.0f) None box3dBodyId world
+            match World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world with
+            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 256.0f) None boxBodyId world
             | (false, world) -> world
         let world = World.doFillBar "FillBar" [Entity.Fill @= single myGame.Collisions / 10.0f] world
         let world = if myGame.Collisions >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
