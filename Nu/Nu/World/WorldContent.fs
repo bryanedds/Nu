@@ -656,5 +656,5 @@ module ContentOperators =
 #if !DEBUG
         inline
 #endif
-        (=|>) (eventAddress : 'a Address) (callback : Event<'a, 's> -> Signal) : 's DefinitionContent =
+        (=|>) (eventAddress : 'a Address) (callback : Event<'a, #Simulant> -> Signal) : 's DefinitionContent =
         EventHandlerContent (PartialEquatable.make (Address.generalize eventAddress) (fun (evt : Event) -> callback (Event.specialize evt) :> obj))
