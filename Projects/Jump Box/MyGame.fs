@@ -28,14 +28,11 @@ type MyGameDispatcher () =
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
         let world = World.beginGroup "Group" [] world
 
-        // declare a sky box
-        let world = World.doSkyBox "SkyBox" [] world
-
         // declare a block
-        let (_, world) = World.doBlock2d "Block2d" [Entity.Position .= v3 0.0f -64.0f 0.0f] world
+        let (_, world) = World.doBlock2d "Block2d" [Entity.Position .= v3 128.0f -64.0f 0.0f] world
 
         // declare a box, store its handle and body id for reference, then handle its body interactions
-        let (results, world) = World.doBox2d "Box2d" [Entity.Position .= v3 0.0f 64.0f 0.0f; Entity.Observable .= true] world
+        let (results, world) = World.doBox2d "Box2d" [Entity.Position .= v3 128.0f 64.0f 0.0f; Entity.Observable .= true] world
         let box = world.RecentEntity
         let boxBodyId = box.GetBodyId world
         let myGame =
