@@ -74,7 +74,7 @@ module WorldImNui =
             let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'd FQueue
             (results, world)
 
-        ///
+        /// TODO: document this!
         static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) entity.BodyPenetrationEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationExplicit event.Data) world)) entity.BodySeparationExplicitEvent entity world
