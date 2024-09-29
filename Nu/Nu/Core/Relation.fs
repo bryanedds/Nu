@@ -177,11 +177,15 @@ module Relation =
     [<RequireQualifiedAccess>]
     module Relation =
 
-        /// Make a relation from a list of option names.
+        /// Make a relation from a sequence of links.
+        let makeFromSeq<'a> links : 'a Relation =
+            { Links = links }
+
+        /// Make a relation from an array of links.
         let makeFromArray<'a> links : 'a Relation =
             { Links = links }
 
-        /// Make a relation from a list of option names.
+        /// Make a relation from a list of links.
         let makeFromList<'a> links : 'a Relation =
             { Links = List.toArray links }
 

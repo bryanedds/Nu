@@ -48,13 +48,31 @@ module WorldImNui =
 
     type World with
 
-        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd list * World =
-            let eventAddress =
+        /// ImNui subscribe to the given event address.
+        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue * World =
+            let eventAddress' =
                 if not (Array.contains "Event" eventAddress.Names)
                 then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImNui.Names|])
                 else eventAddress
-            // TODO: P1: implement this rest of this with WorldExtension.SubscriptionImNuis.
-            failwithnie ()
+            let subscriptionKey = (name, eventAddress :> Address, eventAddress' :> Address)
+            let world =
+                match world.SubscriptionImNuis.TryGetValue subscriptionKey with
+                | (true, subscriptionImNui) -> World.utilizeSubscriptionImNui subscriptionKey subscriptionImNui world
+                | (false, _) ->
+                    let subId = Gen.id64
+                    let (_, world) =
+                        World.subscribePlus subId (fun event world ->
+                            let mapSubscriptionImNui subscriptionImNui =
+                                let results = subscriptionImNui.Results :?> 'd FQueue
+                                { subscriptionImNui with Results = FQueue.conj event.Data results }
+                            let world = World.tryMapSubscriptionImNui mapSubscriptionImNui subscriptionKey world
+                            (Cascade, world))
+                            eventAddress'
+                            Game
+                            world
+                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; Results = FQueue.empty; SubscriptionId = subId } world
+            let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'd FQueue
+            (results, world)
 
         ///
         static member initBodyResult mapResult (entity : Entity) world =
@@ -78,7 +96,7 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue game with
                 | (true, gameImNui) -> (false, World.utilizeSimulantImNui game gameImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui game { Utilized = true; Result = () } world
+                    let world = World.addSimulantImNui game { SimulantUtilized = true; Result = () } world
                     (true, world)
             let initializing = initializing || Reinitializing
             Seq.fold
@@ -119,7 +137,7 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue screen with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui screen { Utilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
+                    let world = World.addSimulantImNui screen { SimulantUtilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
                     let mapFstResult (mapper : ScreenResult FQueue -> ScreenResult FQueue) world =
                         let mapScreenImNui screenImNui =
                             let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
@@ -192,7 +210,7 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue group with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui group { Utilized = true; Result = () } world
+                    let world = World.addSimulantImNui group { SimulantUtilized = true; Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapGroupImNui groupImNui = { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }
                         World.tryMapSimulantImNui mapGroupImNui group world
@@ -229,7 +247,7 @@ module WorldImNui =
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
-                | (false, _) -> (true, World.addSimulantImNui group { Utilized = true; Result = () } world)
+                | (false, _) -> (true, World.addSimulantImNui group { SimulantUtilized = true; Result = () } world)
             let initializing = initializing || Reinitializing
             Seq.fold
                 (fun world arg ->
@@ -288,7 +306,7 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue entity with
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity entityImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui entity { Utilized = true; Result = zero } world
+                    let world = World.addSimulantImNui entity { SimulantUtilized = true; Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapEntityImNui entityImNui = { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }
                         World.tryMapSimulantImNui mapEntityImNui entity world
@@ -322,7 +340,7 @@ module WorldImNui =
                 else world
             match world.SimulantImNuis.TryGetValue entity with
             | (true, entityImNui) -> (false, entity, World.utilizeSimulantImNui entity entityImNui world)
-            | (false, _) -> (true, entity, World.addSimulantImNui entity { Utilized = true; Result = () } world)
+            | (false, _) -> (true, entity, World.addSimulantImNui entity { SimulantUtilized = true; Result = () } world)
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.

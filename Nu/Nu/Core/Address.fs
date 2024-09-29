@@ -125,6 +125,11 @@ module Address =
         static member stoa<'a> str =
             Address<'a>.makeFromString<'a> str
 
+        /// Convert a names sequence into an address.
+        static member qtoa<'a> (names : string seq) : 'a Address =
+            let names = Array.ofSeq names
+            { Names = names; HashCode = String.hashMany names; Anonymous = false }
+
         /// Convert a names array into an address.
         static member rtoa<'a> (names : string array) : 'a Address =
             { Names = names; HashCode = String.hashMany names; Anonymous = false }
@@ -226,6 +231,10 @@ module Address =
         /// Test address equality.
         let equals (left : 'a Address) (right : 'a Address) =
             Address<'a>.equals left right
+
+        /// Make an address from a sequence of names.
+        let makeFromSeq<'a> names : 'a Address =
+            Address.qtoa<'a> names
 
         /// Make an address from a list of names.
         let makeFromArray<'a> names : 'a Address =

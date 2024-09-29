@@ -1289,18 +1289,25 @@ module WorldModule2 =
 
         static member internal sweepImNui (world : World) =
             if world.Advancing then
-                OMap.fold (fun world simulant simulantImNui ->
-                    if not simulantImNui.Utilized then
-                        let world = World.destroy simulant world
-                        World.setSimulantImNuis (OMap.remove simulant world.SimulantImNuis) world
-                    else
-                        if world.Imperative then
-                            simulantImNui.Utilized <- false
-                            world
+                let world =
+                    OMap.fold (fun world simulant simulantImNui ->
+                        if not simulantImNui.SimulantUtilized then
+                            let world = World.destroy simulant world
+                            World.setSimulantImNuis (OMap.remove simulant world.SimulantImNuis) world
                         else
-                            let world = World.setSimulantImNuis (OMap.add simulant { simulantImNui with Utilized = false } world.SimulantImNuis) world
-                            world)
-                    world world.SimulantImNuis
+                            if world.Imperative then simulantImNui.SimulantUtilized <- false; world
+                            else World.setSimulantImNuis (OMap.add simulant { simulantImNui with SimulantUtilized = false } world.SimulantImNuis) world)
+                        world world.SimulantImNuis
+                let world =
+                    OMap.fold (fun world subscriptionKey subscriptionImNui ->
+                        if not subscriptionImNui.SubscriptionUtilized then
+                            let world = World.unsubscribe subscriptionImNui.SubscriptionId world
+                            World.setSubscriptionImNuis (OMap.remove subscriptionKey world.SubscriptionImNuis) world
+                        else
+                            if world.Imperative then subscriptionImNui.SubscriptionUtilized <- false; world
+                            else World.setSubscriptionImNuis (OMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis) world)
+                        world world.SubscriptionImNuis
+                world
             else world
 
         static member private preUpdateSimulants (world : World) =

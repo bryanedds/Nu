@@ -1771,10 +1771,16 @@ and GameDescriptor =
           GameProperties = Map.empty
           ScreenDescriptors = [] }
 
-/// Provides bookkeeping information with the ImNui API.
+/// Provides simulant bookkeeping information with the ImNui API.
 and [<NoEquality; NoComparison>] internal SimulantImNui =
-    { mutable Utilized : bool
+    { mutable SimulantUtilized : bool
       Result : obj }
+
+/// Provides subscription bookkeeping information with the ImNui API.
+and [<NoEquality; NoComparison>] internal SubscriptionImNui =
+    { mutable SubscriptionUtilized : bool
+      Results : obj
+      SubscriptionId : uint64 }
 
 /// Describes an argument used with the ImNui API.
 and [<Struct>] ArgImNui<'s when 's :> Simulant> =
@@ -1805,7 +1811,7 @@ and [<ReferenceEquality>] internal WorldExtension =
     { mutable ContextImNui : Address
       mutable RecentImNui : Address
       mutable SimulantImNuis : OMap<Simulant, SimulantImNui>
-      mutable SubscriptionImNuis : OMap<string * Address, obj>
+      mutable SubscriptionImNuis : OMap<string * Address * Address, SubscriptionImNui>
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
@@ -1964,6 +1970,9 @@ and [<ReferenceEquality>] World =
 
     member internal this.SimulantImNuis =
         this.WorldExtension.SimulantImNuis
+
+    member internal this.SubscriptionImNuis =
+        this.WorldExtension.SubscriptionImNuis
 
 #if DEBUG
     member internal this.Choose () =
