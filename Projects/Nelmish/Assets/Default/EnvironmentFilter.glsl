@@ -10,8 +10,8 @@ uniform mat4 projection;
 
 void main()
 {
-    positionOut = position;  
-    gl_Position =  projection * view * vec4(positionOut, 1.0);
+    positionOut = position;
+    gl_Position = projection * view * vec4(positionOut, 1.0);
 }
 
 #shader fragment
@@ -40,43 +40,43 @@ float distributionGGX(vec3 normal, vec3 h, float roughness)
     return nom / (PI * denom * denom);
 }
 
-float radicalInverse(uint bits) 
+float radicalInverse(uint bits)
 {
-     bits = (bits << 16u) | (bits >> 16u);
-     bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
-     bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
-     bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
-     bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-     return float(bits) * 2.3283064365386963e-10;
+    bits = (bits << 16u) | (bits >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+    return float(bits) * 2.3283064365386963e-10;
 }
 
 vec2 hammersley(uint i, uint normal)
 {
-	return vec2(float(i) / float(normal), radicalInverse(i));
+    return vec2(float(i) / float(normal), radicalInverse(i));
 }
 
 vec3 importanceSampleGGX(vec2 xi, vec3 normal, float roughness)
 {
     // compute 
-	float rPow2 = roughness * roughness;
-	float phi = 2.0 * PI * xi.x;
-	float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (rPow2 * rPow2 - 1.0) * xi.y));
-	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-	
-	// convert from spherical coordinates to cartesian coordinates - halfway vector
-	vec3 h;
-	h.x = cos(phi) * sinTheta;
-	h.y = sin(phi) * sinTheta;
-	h.z = cosTheta;
-	
-	// convert from tangent-space h vector to world-space sample vector
-	vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
-	vec3 tangent = normalize(cross(up, normal));
-	vec3 bitangent = cross(normal, tangent);
-	
+    float rPow2 = roughness * roughness;
+    float phi = 2.0 * PI * xi.x;
+    float cosTheta = sqrt((1.0 - xi.y) / (1.0 + (rPow2 * rPow2 - 1.0) * xi.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+    // convert from spherical coordinates to cartesian coordinates - halfway vector
+    vec3 h;
+    h.x = cos(phi) * sinTheta;
+    h.y = sin(phi) * sinTheta;
+    h.z = cosTheta;
+
+    // convert from tangent-space h vector to world-space sample vector
+    vec3 up = abs(normal.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
+    vec3 tangent = normalize(cross(up, normal));
+    vec3 bitangent = cross(normal, tangent);
+
     // compute sample
-	vec3 sample_ = tangent * h.x + bitangent * h.y + normal * h.z;
-	return normalize(sample_);
+    vec3 sample_ = tangent * h.x + bitangent * h.y + normal * h.z;
+    return normalize(sample_);
 }
 
 void main()
@@ -106,15 +106,18 @@ void main()
             float d = distributionGGX(normal, h, roughness);
             float nDotH = max(dot(normal, h), 0.0);
             float hDotV = max(dot(h, v), 0.0);
-            float pdf = d * nDotH / (4.0 * hDotV) + 0.0001;
+            float pdf = d * nDotH / (4.0 * hDotV + 0.0001);
             float saTexel = 4.0 * PI / (6.0 * resolution * resolution);
             float saSample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
             float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * log2(saSample / saTexel);
             vec3 sampleColor = textureLod(cubeMap, l, mipLevel).rgb;
-            vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR;
-            vec3 sampleSquared = sampleScaled * sampleScaled;
-            filterColor += sampleSquared * nDotL;
-            totalWeight += nDotL;
+            if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
+            {
+                vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR;
+                vec3 sampleSquared = sampleScaled * sampleScaled;
+                filterColor += sampleSquared * nDotL;
+                totalWeight += nDotL;
+            }
         }
     }
 

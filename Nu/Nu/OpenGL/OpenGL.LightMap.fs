@@ -101,8 +101,8 @@ module LightMap =
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 
-            //// take a snapshot for testing
-            //Hl.SaveFramebufferRgbaToBitmap rasterViewport.Bounds.Width rasterViewport.Bounds.Height ("Reflection." + string rasterCubeMapId + "." + string i + ".bmp")
+            // take a snapshot for testing
+            //Hl.SaveFramebufferRgbaToBitmap (rasterViewport.Bounds.Width, rasterViewport.Bounds.Height, "Reflection." + string rasterCubeMapId + "." + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
@@ -182,8 +182,8 @@ module LightMap =
             CubeMap.DrawCubeMap (views.[i], projection, cubeMapSurface.CubeMap, cubeMapSurface.CubeMapGeometry, irradianceShader)
             Hl.Assert ()
 
-            //// take a snapshot for testing
-            //Hl.SaveFramebufferRgbaToBitmap resolution resolution ("Irradiance." + string cubeMapId + "." + string i + ".bmp")
+            // take a snapshot for testing
+            //Hl.SaveFramebufferRgbaToBitmap (resolution, resolution, "Irradiance." + string cubeMapId + "." + string i + ".bmp")
             //Hl.Assert ()
 
         // teardown attachments
@@ -339,6 +339,10 @@ module LightMap =
                 Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, cubeMapId, mip)
                 DrawEnvironmentFilter (views.[i], projection, mipRoughness, mipResolution, environmentFilterSurface.CubeMap, environmentFilterSurface.CubeMapGeometry, environmentFilterShader)
                 Hl.Assert ()
+
+                // take a snapshot for testing
+                //Hl.SaveFramebufferRgbaToBitmap (int mipResolution, int mipResolution, "EnvironmentFilter." + string i + "." + string mip + ".bmp")
+                //Hl.Assert ()
 
         // teardown attachments
         for i in 0 .. dec 6 do

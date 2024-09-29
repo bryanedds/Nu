@@ -10,7 +10,7 @@ out vec3 positionOut;
 
 void main()
 {
-    positionOut = position;  
+    positionOut = position;
     gl_Position = projection * view * vec4(positionOut, 1.0);
 }
 
@@ -47,14 +47,17 @@ void main()
             vec3 sampleTangent = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
             vec3 sampleVector = sampleTangent.x * right + sampleTangent.y * up + sampleTangent.z * normal;
             vec3 sampleColor = texture(cubeMap, sampleVector).rgb;
-            vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR; // tone unmap
-            vec3 sampleSquared = sampleScaled * sampleScaled;
-            irradiance += sampleSquared * cos(theta) * sin(theta);
-            ++sampleCount;
+            if (!any(isnan(sampleColor))) // TODO: understand why NaN can come from this sample and try to apply a more appropriate fix.
+            {
+                vec3 sampleScaled = sampleColor * TONE_UNMAP_SCALAR; // NOTE: non-standard, but done for tone unmap as we're currently working without HDR maps
+                vec3 sampleSquared = sampleScaled * sampleScaled; // NOTE: non-standard, but done for taste as we're currently working without HDR maps
+                irradiance += sampleSquared * cos(theta) * sin(theta);
+                ++sampleCount;
+            }
         }
     }
 
     // normalize irradiance
-    irradiance = PI * irradiance * (1.0 / float(sampleCount));
+    irradiance = PI * irradiance * (1.0 / sampleCount);
     frag = vec4(irradiance, 1.0);
 }

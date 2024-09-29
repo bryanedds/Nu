@@ -282,15 +282,16 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
 
-        /// Reregister all currently selected physics.
-        static member reregisterPhysics world =
+        /// Reregister all currently selected 3d physics.
+        /// HACK: parameter for only reregistering 3d physics as required by Bullet physics performance hack.
+        static member reregisterPhysics only3dHack world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                let world = WorldModule.unregisterScreenPhysics selectedScreen world
-                let world = WorldModule.registerScreenPhysics selectedScreen world
+                let world = WorldModule.unregisterScreenPhysics only3dHack selectedScreen world
+                let world = WorldModule.registerScreenPhysics only3dHack selectedScreen world
                 world
             | None -> world
 
         /// Reload all currently selected physics assets.
         static member reloadPhysicsAssets world =
-            World.reregisterPhysics world
+            World.reregisterPhysics false world

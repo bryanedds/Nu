@@ -7,8 +7,8 @@ open Nu
 // this is our top-level ImNui model type. It determines what state the game is in. To learn about ImNui in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
 type MyGame =
-    { MyGameTime : int64 }
-    static member initial = { MyGameTime = 0L }
+    { PLaceholder : unit } // a placeholder field
+    static member initial = { PLaceholder = () }
 
 // this extends the Game API to expose the above ImNui model as a property.
 [<AutoOpen>]
@@ -28,10 +28,10 @@ type MyGameDispatcher () =
         // run in game context
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
         let world = World.beginGroup "Group" [] world
-        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> Math.DegreesToRadians)
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
         let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
         let world =
-            match World.doButton "Exit" [Entity.Text .= "Exit"; Entity.Position .= v3 232.0f -144.0f 0.0f] world with
+            match World.doButton "Exit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Exit"] world with
             | (true, world) when world.Unaccompanied -> World.exit world
             | (_, world) -> world
         let world = World.endGroup world
@@ -43,7 +43,5 @@ type MyGameDispatcher () =
             then World.exit world
             else world
 
-        // advance game time
-        let gameDelta = world.GameDelta
-        let myGame = { myGame with MyGameTime = myGame.MyGameTime + gameDelta.Updates }
+        // return gameplay and world values
         (myGame, world)

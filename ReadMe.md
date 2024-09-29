@@ -12,16 +12,17 @@ UPDATE: **Omni Blade**, the first commercial game built with Nu, is **available 
 
 So... just what is the **Nu Game Engine**?
 
-*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative MVU-based API called MMCC (Model-Message-Command-Content). Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming styles. After 10,000 commits, the implementation has matured enough to prove both the efficacy and viability of functional programming techniques in games in terms of performance, programmability, and reliability. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Bullet 3D Physics."*
+*"The Nu Game Engine is the world's first practical functional 2D and 3D cross-platform game engine. Built in F#, it offers a declarative MVU-based API called MMCC (Model-Message-Command-Content). Additionally, we're now providing an even easier to learn ImGui-inspired API called 'ImNui'! Nu offers a path to a future where game developers are liberated from the snowballing complexity of overly-imperative game programming approaches. Nu's implementation has matured enough to prove both the efficacy and viability of functional and declarative programming in games. Nu currently utilizes SDL2, OpenGL, Aether 2D Physics, and Bullet 3D Physics."*
 
 ***"...everything that I can think of that makes games programming so awful seems to have a solution in your engine!"* - @Sigmoid**
 
 This repository hosts several projects, including -
 
-- the sample 2D demo game ['Breakout'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout).
-- the sample 2D puzzle game ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
-- the sample 2D action game ['Blaze Vector'](https://github.com/bryanedds/Nu/tree/master/Projects/Blaze%20Vector).
-- the sample 3D project ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
+- the 2D arcade game tutorial, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
+- **NEW!** Breakout tutorial using the ImNui API, ['Breakout ImNui'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20ImNui).
+- the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
+- the 2D action game tutorial, ['Blaze Vector'](https://github.com/bryanedds/Nu/tree/master/Projects/Blaze%20Vector).
+- the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
 - the commercial game demo for ['Omni Blade'](https://github.com/bryanedds/Nu/tree/omni-blade/Projects/Omni%20Blade), full game available now here - https://store.steampowered.com/app/3089800/Omni_Blade/
 
 Getting Started with Nu
@@ -42,9 +43,6 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 
 ![image](https://github.com/user-attachments/assets/aa8bbaa8-d253-48c2-bac5-17a5cc3e1167)
 Rendering made efficient with instancing-by-default.
-
-![image](https://github.com/user-attachments/assets/6340fe57-1ad0-4204-bc19-9ee5f0f91f99)
-Editing said photo-realistic scene.
 
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.

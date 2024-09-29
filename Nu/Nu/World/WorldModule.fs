@@ -62,11 +62,11 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
-    let mutable internal registerScreenPhysics : Screen -> World -> World =
+    let mutable internal registerScreenPhysics : bool -> Screen -> World -> World =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unregistering physics entities of an entire screen.
-    let mutable internal unregisterScreenPhysics : Screen -> World -> World =
+    let mutable internal unregisterScreenPhysics : bool -> Screen -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =
@@ -302,6 +302,13 @@ module WorldModule =
             let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
             World.setSimulantImNuis simulantImNuis world
 
+        static member internal tryMapSimulantImNui mapper simulant (world : World) =
+            match world.SimulantImNuis.TryGetValue simulant with
+            | (true, simulantImNui) ->
+                let simulantImNui = mapper simulantImNui
+                World.addSimulantImNui simulant simulantImNui world
+            | (false, _) -> world
+
         static member internal mapSimulantImNui mapper simulant world =
             let simulantImNui = World.getSimulantImNui simulant world
             let simulantImNui = mapper simulantImNui
@@ -309,12 +316,51 @@ module WorldModule =
 
         static member internal utilizeSimulantImNui simulant simulantImNui (world : World) =
             if world.Imperative then
-                simulantImNui.Utilized <- true
+                simulantImNui.SimulantUtilized <- true
                 world
             else
-                let simulantImNui = { simulantImNui with Utilized = true }
+                let simulantImNui = { simulantImNui with SimulantUtilized = true }
                 let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
                 World.setSimulantImNuis simulantImNuis world
+
+        static member internal getSubscriptionImNuis (world : World) =
+            world.SubscriptionImNuis
+
+        static member internal setSubscriptionImNuis subscriptionImNuis (world : World) =
+            if world.Imperative then
+                world.WorldExtension.SubscriptionImNuis <- subscriptionImNuis
+                world
+            else
+                let worldExtension = { world.WorldExtension with SubscriptionImNuis = subscriptionImNuis }
+                World.choose { world with WorldExtension = worldExtension }
+
+        static member internal getSubscriptionImNui subscription (world : World) =
+            world.SubscriptionImNuis.[subscription] |> __c'
+
+        static member internal addSubscriptionImNui subscription subscriptionImNui (world : World) =
+            let subscriptionImNuis = OMap.add subscription subscriptionImNui world.SubscriptionImNuis
+            World.setSubscriptionImNuis subscriptionImNuis world
+
+        static member internal tryMapSubscriptionImNui mapper subscription (world : World) =
+            match world.SubscriptionImNuis.TryGetValue subscription with
+            | (true, subscriptionImNui) ->
+                let subscriptionImNui = mapper subscriptionImNui
+                World.addSubscriptionImNui subscription subscriptionImNui world
+            | (false, _) -> world
+
+        static member internal mapSubscriptionImNui mapper subscription world =
+            let subscriptionImNui = World.getSubscriptionImNui subscription world
+            let subscriptionImNui = mapper subscriptionImNui
+            World.addSubscriptionImNui subscription subscriptionImNui world
+
+        static member internal utilizeSubscriptionImNui subscription subscriptionImNui (world : World) =
+            if world.Imperative then
+                subscriptionImNui.SubscriptionUtilized <- true
+                world
+            else
+                let subscriptionImNui = { subscriptionImNui with SubscriptionUtilized = true }
+                let subscriptionImNuis = OMap.add subscription subscriptionImNui world.SubscriptionImNuis
+                World.setSubscriptionImNuis subscriptionImNuis world
 
         /// Switch simulation to use this ambient state.
         static member internal switchAmbientState world =

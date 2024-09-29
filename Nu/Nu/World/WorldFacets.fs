@@ -623,12 +623,12 @@ module ToggleButtonFacetExtensions =
         member this.GetToggledOffset world : Vector2 = this.Get (nameof this.ToggledOffset) world
         member this.SetToggledOffset (value : Vector2) world = this.Set (nameof this.ToggledOffset) value world
         member this.ToggledOffset = lens (nameof this.ToggledOffset) this this.GetToggledOffset this.SetToggledOffset
-        member this.GetPressed world : bool = this.Get (nameof this.Pressed) world
-        member this.SetPressed (value : bool) world = this.Set (nameof this.Pressed) value world
-        member this.Pressed = lens (nameof this.Pressed) this this.GetPressed this.SetPressed
-        member this.GetPressedOffset world : Vector2 = this.Get (nameof this.PressedOffset) world
-        member this.SetPressedOffset (value : Vector2) world = this.Set (nameof this.PressedOffset) value world
-        member this.PressedOffset = lens (nameof this.PressedOffset) this this.GetPressedOffset this.SetPressedOffset
+        member this.GetPushed world : bool = this.Get (nameof this.Pushed) world
+        member this.SetPushed (value : bool) world = this.Set (nameof this.Pushed) value world
+        member this.Pushed = lens (nameof this.Pushed) this this.GetPushed this.SetPushed
+        member this.GetPushedOffset world : Vector2 = this.Get (nameof this.PushedOffset) world
+        member this.SetPushedOffset (value : Vector2) world = this.Set (nameof this.PushedOffset) value world
+        member this.PushedOffset = lens (nameof this.PushedOffset) this this.GetPushedOffset this.SetPushedOffset
         member this.GetUntoggledImage world : Image AssetTag = this.Get (nameof this.UntoggledImage) world
         member this.SetUntoggledImage (value : Image AssetTag) world = this.Set (nameof this.UntoggledImage) value world
         member this.UntoggledImage = lens (nameof this.UntoggledImage) this this.GetUntoggledImage this.SetUntoggledImage
@@ -657,7 +657,7 @@ type ToggleButtonFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
-                    let world = entity.SetPressed true world
+                    let world = entity.SetPushed true world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -665,14 +665,14 @@ type ToggleButtonFacet () =
 
     static let handleMouseLeftUp evt world =
         let entity = evt.Subscriber : Entity
-        let wasPressed = entity.GetPressed world
-        let world = if wasPressed then entity.SetPressed false world else world
+        let wasPushed = entity.GetPushed world
+        let world = if wasPushed then entity.SetPushed false world else world
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
-                if transform.Enabled && wasPressed then
+                if transform.Enabled && wasPushed then
                     let world = entity.SetToggled (not (entity.GetToggled world)) world
                     let toggled = entity.GetToggled world
                     let eventAddress = if toggled then entity.ToggledEvent else entity.UntoggledEvent
@@ -693,8 +693,8 @@ type ToggleButtonFacet () =
          define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.Toggled false
          define Entity.ToggledOffset v2Zero
-         define Entity.Pressed false
-         define Entity.PressedOffset v2Zero
+         define Entity.Pushed false
+         define Entity.PushedOffset v2Zero
          define Entity.UntoggledImage Assets.Default.ButtonUp
          define Entity.ToggledImage Assets.Default.ButtonDown
          define Entity.ToggleSoundOpt (Some Assets.Default.Sound)
@@ -707,7 +707,7 @@ type ToggleButtonFacet () =
 
     override this.Update (entity, world) =
         let textOffset =
-            if entity.GetPressed world then entity.GetPressedOffset world
+            if entity.GetPushed world then entity.GetPushedOffset world
             elif entity.GetToggled world then entity.GetToggledOffset world
             else v2Zero
         let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
@@ -717,7 +717,7 @@ type ToggleButtonFacet () =
         let mutable transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
-            if entity.GetToggled world || entity.GetPressed world
+            if entity.GetToggled world || entity.GetPushed world
             then entity.GetToggledImage world
             else entity.GetUntoggledImage world
         let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
@@ -765,7 +765,7 @@ type RadioButtonFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled then
-                    let world = entity.SetPressed true world
+                    let world = entity.SetPushed true world
                     (Resolve, world)
                 else (Resolve, world)
             else (Cascade, world)
@@ -773,15 +773,15 @@ type RadioButtonFacet () =
 
     static let handleMouseLeftUp evt world =
         let entity = evt.Subscriber : Entity
-        let wasPressed = entity.GetPressed world
-        let world = if wasPressed then entity.SetPressed false world else world
+        let wasPushed = entity.GetPushed world
+        let world = if wasPushed then entity.SetPushed false world else world
         let wasDialed = entity.GetDialed world
         if entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
-                if transform.Enabled && wasPressed && not wasDialed then
+                if transform.Enabled && wasPushed && not wasDialed then
                     let world = entity.SetDialed true world
                     let dialed = entity.GetDialed world
                     let eventAddress = if dialed then entity.DialedEvent else entity.UndialedEvent
@@ -802,8 +802,8 @@ type RadioButtonFacet () =
          define Entity.DisabledColor Constants.Gui.DisabledColorDefault
          define Entity.Dialed false
          define Entity.DialedOffset v2Zero
-         define Entity.Pressed false
-         define Entity.PressedOffset v2Zero
+         define Entity.Pushed false
+         define Entity.PushedOffset v2Zero
          define Entity.UndialedImage Assets.Default.ButtonUp
          define Entity.DialedImage Assets.Default.ButtonDown
          define Entity.DialSoundOpt (Some Assets.Default.Sound)
@@ -816,7 +816,7 @@ type RadioButtonFacet () =
 
     override this.Update (entity, world) =
         let textOffset =
-            if entity.GetPressed world then entity.GetPressedOffset world
+            if entity.GetPushed world then entity.GetPushedOffset world
             elif entity.GetDialed world then entity.GetDialedOffset world
             else v2Zero
         let struct (_, _, world) = entity.TrySet (nameof Entity.TextOffset) textOffset world
@@ -826,7 +826,7 @@ type RadioButtonFacet () =
         let mutable transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage =
-            if entity.GetDialed world || entity.GetPressed world
+            if entity.GetDialed world || entity.GetPushed world
             then entity.GetDialedImage world
             else entity.GetUndialedImage world
         let color = if transform.Enabled then Color.One else entity.GetDisabledColor world

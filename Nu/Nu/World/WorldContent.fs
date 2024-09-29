@@ -445,6 +445,12 @@ module Content =
     /// Describe a 2d box with the given definitions.
     let box2d entityName definitions = entity<Box2dDispatcher> entityName definitions
 
+    /// Describe a 2d sphere with the given definitions.
+    let sphere2d entityName definitions = entity<Sphere2dDispatcher> entityName definitions
+
+    /// Describe a 2d ball with the given definitions.
+    let ball2d entityName definitions = entity<Ball2dDispatcher> entityName definitions
+
     /// Describe a 2d character with the given definitions.
     let character2d entityName definitions = entity<Character2dDispatcher> entityName definitions
 
@@ -477,6 +483,12 @@ module Content =
 
     /// Describe a 3d box with the given definitions.
     let box3d entityName definitions = entity<Box3dDispatcher> entityName definitions
+
+    /// Describe a 3d sphere with the given definitions.
+    let sphere3d entityName definitions = entity<Sphere3dDispatcher> entityName definitions
+
+    /// Describe a 3d ball with the given definitions.
+    let ball3d entityName definitions = entity<Ball3dDispatcher> entityName definitions
 
     /// Describe a static billboard with the given definitions.
     let staticBillboard entityName definitions = entity<StaticBillboardDispatcher> entityName definitions
@@ -623,7 +635,7 @@ module ContentOperators =
         (==) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make true lens value)
 
-    /// Define a synchronized property equality.
+    /// Define a dynamic property equality.
     let
 #if !DEBUG
         inline

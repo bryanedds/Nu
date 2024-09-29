@@ -63,6 +63,7 @@ module Assets =
         let [<Uniform>] TerrainTint = asset<Image> PackageName Assets.Default.TerrainTintName
         let [<Uniform>] SkyBoxMap = asset<CubeMap> PackageName Assets.Default.SkyBoxMapName
         let [<Uniform>] StaticModel = asset<StaticModel> PackageName Assets.Default.StaticModelName
+        let [<Uniform>] BallModel = asset<StaticModel> PackageName Assets.Default.BallModelName
         let [<Uniform>] HighlightModel = asset<StaticModel> PackageName Assets.Default.HighlightModelName
         let [<Uniform>] LightbulbModel = asset<StaticModel> PackageName Assets.Default.LightbulbModelName
         let [<Uniform>] LightProbeModel = asset<StaticModel> PackageName Assets.Default.LightProbeModelName

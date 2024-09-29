@@ -68,8 +68,8 @@ type Nu () =
             WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj -> World.sortSubscriptionsByElevation subscriptions (worldObj :?> World)
             WorldModule.admitScreenElements <- fun screen world -> World.admitScreenElements screen world
             WorldModule.evictScreenElements <- fun screen world -> World.evictScreenElements screen world
-            WorldModule.registerScreenPhysics <- fun screen world -> World.registerScreenPhysics screen world
-            WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
+            WorldModule.registerScreenPhysics <- fun only3dHack screen world -> World.registerScreenPhysics only3dHack screen world
+            WorldModule.unregisterScreenPhysics <- fun only3dHack screen world -> World.unregisterScreenPhysics only3dHack screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.tryRunEntity <- fun entity world -> World.tryRunEntity entity world
@@ -144,6 +144,8 @@ module WorldModule3 =
                  Effect2dDispatcher ()
                  Block2dDispatcher ()
                  Box2dDispatcher ()
+                 Sphere2dDispatcher ()
+                 Ball2dDispatcher ()
                  Character2dDispatcher ()
                  BodyJoint2dDispatcher ()
                  TileMapDispatcher ()
@@ -162,6 +164,8 @@ module WorldModule3 =
                  Effect3dDispatcher ()
                  Block3dDispatcher ()
                  Box3dDispatcher ()
+                 Sphere3dDispatcher ()
+                 Ball3dDispatcher ()
                  Character3dDispatcher ()
                  BodyJoint3dDispatcher ()
                  TerrainDispatcher ()
@@ -275,6 +279,7 @@ module WorldModule3 =
                 { ContextImNui = Address.empty
                   RecentImNui = Address.empty
                   SimulantImNuis = OMap.makeEmpty HashIdentity.Structural config
+                  SubscriptionImNuis = OMap.makeEmpty HashIdentity.Structural config
                   DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin

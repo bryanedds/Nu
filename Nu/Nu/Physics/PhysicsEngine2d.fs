@@ -64,12 +64,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
               Normal = Vector3 (normal.X, normal.Y, 0.0f) }
         let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         integrationMessages.Add integrationMessage
-        let bodyPenetrationMessage2 =
-            { BodyShapeSource = bodyPenetrationMessage.BodyShapeSource2
-              BodyShapeSource2 = bodyPenetrationMessage.BodyShapeSource
-              Normal = -bodyPenetrationMessage.Normal }
-        let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage2
-        integrationMessages.Add integrationMessage
         true
 
     static member private handleSeparation

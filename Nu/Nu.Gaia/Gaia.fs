@@ -85,6 +85,7 @@ module Gaia =
     let mutable private InteractiveInputFocusRequested = false
     let mutable private InteractiveInputStr = ""
     let mutable private InteractiveOutputStr = ""
+    let mutable private LogStr = ""
 
     (* Configuration States *)
 
@@ -144,6 +145,8 @@ module Gaia =
     let mutable private ShowOpenEntityDialog = false
     let mutable private ShowSaveEntityDialog = false
     let mutable private ShowRenameEntityDialog = false
+    let mutable private ShowDeleteEntityDialog = false
+    let mutable private ShowCutEntityDialog = false
     let mutable private ShowConfirmExitDialog = false
     let mutable private ShowRestartDialog = false
     let mutable private ReloadAssetsRequested = 0
@@ -164,6 +167,8 @@ module Gaia =
         ShowOpenEntityDialog ||
         ShowSaveEntityDialog ||
         ShowRenameEntityDialog ||
+        ShowDeleteEntityDialog ||
+        ShowCutEntityDialog ||
         ShowConfirmExitDialog ||
         ShowRestartDialog ||
         ReloadAssetsRequested <> 0 ||
@@ -177,7 +182,7 @@ module Gaia =
 
     (* Fsi Session *)
 
-    let FsProjectNoWarn = "--nowarn:FS9;FS1178;FS3391;FS3536;FS3560"
+    let FsProjectNoWarn = "--nowarn:FS0009;FS0052;FS1178;FS3391;FS3536;FS3560"
     let FsiArgs = [|"fsi.exe"; "--debug+"; "--debug:full"; "--define:DEBUG"; "--optimize-"; "--tailcalls-"; "--multiemit+"; "--gui-"; "--nologo"; FsProjectNoWarn|] // TODO: see if can we use --warnon as well.
     let FsiConfig = Shell.FsiEvaluationSession.GetDefaultConfiguration ()
     let private FsiErrorStream = new StringWriter ()
@@ -211,6 +216,12 @@ Pos=286,846
 Size=675,234
 Collapsed=0
 DockId=0x00000001,0
+
+[Window][Log]
+Pos=963,846
+Size=650,234
+Collapsed=0
+DockId=0x00000009,7
 
 [Window][Metrics]
 Pos=963,846
@@ -420,7 +431,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
           DockNode    ID=0x00000004 Parent=0x00000005 SizeRef=1678,788 CentralNode=1
           DockNode    ID=0x00000003 Parent=0x00000005 SizeRef=1678,234 Split=X Selected=0xD4E24632
             DockNode  ID=0x00000001 Parent=0x00000003 SizeRef=675,205 Selected=0x9CF3CB04
-            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=650,205 Selected=0xD92922EC
+            DockNode  ID=0x00000009 Parent=0x00000003 SizeRef=650,205 Selected=0x64F50EE5
         DockNode      ID=0x00000006 Parent=0x00000008 SizeRef=346,979 Selected=0x199AB496
     DockNode          ID=0x0000000E Parent=0x0000000F SizeRef=305,1080 Selected=0xD5116FF8
 
@@ -949,10 +960,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             if not (entity.GetProtected world) then
-                let world = snapshot DeleteEntity world
-                let world = World.destroyEntity entity world
-                SelectedEntityOpt <- None
-                (true, world)
+                if entity.HasPropagationTargets world then
+                    ShowDeleteEntityDialog <- true
+                    (false, world)
+                else
+                    let world = snapshot DeleteEntity world
+                    let world = World.destroyEntity entity world
+                    SelectedEntityOpt <- None
+                    (true, world)
             else
                 MessageBoxOpt <- Some "Cannot destroy a protected simulant (such as an entity created by the MMCC API)."
                 (false, world)
@@ -1006,10 +1021,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             if not (entity.GetProtected world) then
-                let world = snapshot CutEntity world
-                selectEntityOpt None world
-                let world = World.cutEntityToClipboard entity world
-                (true, world)
+                if entity.HasPropagationTargets world then
+                    ShowCutEntityDialog <- true
+                    (false, world)
+                else
+                    let world = snapshot CutEntity world
+                    selectEntityOpt None world
+                    let world = World.cutEntityToClipboard entity world
+                    (true, world)
             else
                 MessageBoxOpt <- Some "Cannot cut a protected simulant (such as an entity created by the MMCC API)."
                 (false, world)
@@ -1240,7 +1259,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private toggleAdvancing (world : World) =
         let wasAdvancing = world.Advancing
         let world = snapshot (if wasAdvancing then Halt else Advance) world
-        let world = if ReregisterPhysicsWorkaround && not wasAdvancing then World.reregisterPhysics world else world // HACK: reregister physics as an automatic workaround for #856.
+        let world = if ReregisterPhysicsWorkaround && not wasAdvancing then World.reregisterPhysics true world else world // HACK: reregister physics as an automatic workaround for #856.
         let world = World.setAdvancing (not world.Advancing) world
         world
 
@@ -1414,7 +1433,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                                 List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                                     if descendantDuplicate.GetExists world then
                                                         let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                        if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                                        if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                                         then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                                         else world
                                                     else world)
@@ -1733,7 +1752,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                     List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                         if descendantDuplicate.GetExists world then
                                             let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                            if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                            if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                             then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                             else world
                                         else world)
@@ -1805,7 +1824,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 world
             else world
         let world =
-            let hasPropagationTargets = World.hasPropagationTargets entity world
+            let hasPropagationTargets = entity.HasPropagationTargets world
             let hasPropagationDescriptorOpt = Option.isSome (entity.GetPropagatedDescriptorOpt world)
             if hasPropagationTargets || hasPropagationDescriptorOpt then
                 ImGui.PushID ("##push" + scstringMemo entity)
@@ -1842,7 +1861,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 EntityHierarchyFilterPropagationSources
             let visible =
                 if EntityHierarchyFilterPropagationSources then
-                    if World.hasPropagationTargets entity world
+                    if entity.HasPropagationTargets world
                     then String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
                     else false
                 else String.IsNullOrWhiteSpace EntityHierarchySearchStr || entity.Name.ToLowerInvariant().Contains (EntityHierarchySearchStr.ToLowerInvariant ())
@@ -1949,9 +1968,34 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             Seq.fold (fun world (propertyCategory, propertyDescriptors) ->
                 let world =
                     if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                        let mountActive =
+                            match simulant with
+                            | :? Entity as entity ->
+                                match entity.GetMountOpt world with
+                                | Some mount ->
+                                    let parentAddress = Relation.resolve entity.EntityAddress mount
+                                    let parent = World.derive (atooa parentAddress)
+                                    World.getExists parent world
+                                | None -> false
+                            | _ -> false
                         let propertyDescriptors =
                             propertyDescriptors |>
                             Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
+                            Array.filter (fun pd ->
+                                match pd.PropertyName with
+                                | nameof Entity.Position
+                                | nameof Entity.Degrees
+                                | nameof Entity.Scale
+                                | nameof Entity.Elevation
+                                | nameof Entity.Enabled
+                                | nameof Entity.Visible -> not mountActive
+                                | nameof Entity.PositionLocal
+                                | nameof Entity.DegreesLocal
+                                | nameof Entity.ScaleLocal
+                                | nameof Entity.ElevationLocal
+                                | nameof Entity.VisibleLocal
+                                | nameof Entity.EnabledLocal -> mountActive
+                                | _ -> true) |>
                             Array.sortBy (fun pd ->
                                 match pd.PropertyName with
                                 | Constants.Engine.NamePropertyName -> "!00" // put Name first
@@ -2196,7 +2240,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                             if descendantDuplicate.GetExists world then
                                                 let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                                if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                                 then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                                 else world
                                             else world)
@@ -2665,7 +2709,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
                                             if descendantDuplicate.GetExists world then
                                                 let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                if descendantSource.GetExists world && World.hasPropagationTargets descendantSource world
+                                                if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
                                                 then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
                                                 else world
                                             else world)
@@ -3173,8 +3217,40 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                       SsvfEnabled = ssvfEnabled
                       SsrEnabled = ssrEnabled }
                 World.enqueueRenderMessage3d (ConfigureRenderer3d renderer3dConfig) world
+            ImGui.End ()
             world
         else world
+
+    let private imGuiLogWindow world =
+        let lines = LogStr.Split '\n'
+        let warnings = lines |> Seq.filter (fun line -> line.Contains "|Warn|") |> Seq.length
+        let errors = lines |> Seq.filter (fun line -> line.Contains "|Error|") |> Seq.length
+        let flag = warnings > 0 || errors > 0
+        let flash = flag && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
+        if flash then
+            let flashColor =
+                if errors > 0 then let red = Color.Red in red.Abgr
+                elif warnings > 0 then let yellow = Color.Yellow in yellow.Abgr
+                else failwithumf ()
+            ImGui.PushStyleColor (ImGuiCol.TitleBg, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TitleBgActive, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TitleBgCollapsed, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.Tab, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TabActive, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TabHovered, flashColor)
+        if ImGui.Begin ("Log", ImGuiWindowFlags.NoNav) then
+            ImGui.Text "Log:"
+            ImGui.SameLine ()
+            if ImGui.SmallButton "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then LogStr <- ""
+            if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                ImGui.Text "Clear evaluation output (Alt+C)"
+                ImGui.EndTooltip ()
+            ImGui.BeginChild ("##outputBufferStr", v2Zero, false, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+            ImGui.TextUnformatted LogStr
+            ImGui.EndChild ()
+            ImGui.End ()
+        if flash then for i in 0 .. 6 do ImGui.PopStyleColor ()
+        world
 
     let private imGuiEditorConfigWindow () =
         if ImGui.Begin ("Editor", ImGuiWindowFlags.NoNav) then
@@ -3263,7 +3339,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Text "Project Type"
             ImGui.SameLine ()
             if ImGui.BeginCombo ("##newProjectType", NewProjectType) then
-                for projectType in ["MMCC Empty"; "MMCC Game"; "ImNui Empty (Experimental)"; "ImNui Game (Experimental)"] do
+                for projectType in ["MMCC Empty"; "MMCC Game"; "ImNui Empty"; "ImNui Game"] do
                     if ImGui.Selectable projectType then
                         NewProjectType <- projectType
                 ImGui.EndCombo ()
@@ -3271,8 +3347,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 match NewProjectType with
                 | "MMCC Empty" -> "Create an empty MMCC game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
                 | "MMCC Game" -> "Create a full MMCC game project. This contains the structures and pieces that embody the best practices of Nu usage."
-                | "ImNui Empty (Experimental)" -> "Create an empty ImNui game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
-                | "ImNui Game (Experimental)" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of Nu usage."
+                | "ImNui Empty" -> "Create an empty ImNui game project. This contains the minimum code needed to experiment with Nu in a sandbox environment."
+                | "ImNui Game" -> "Create a full ImNui game project. This contains the structures and pieces that embody the best practices of Nu usage."
                 | _ -> failwithumf ()
             ImGui.Separator ()
             ImGui.TextWrapped ("Description: " + projectTypeDescription)
@@ -3296,8 +3372,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     match NewProjectType with
                     | "MMCC Empty" -> ("Nu.Template.Mmcc.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Empty"), "Initial")
                     | "MMCC Game" -> ("Nu.Template.Mmcc.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.Mmcc.Game"), "Title")
-                    | "ImNui Empty (Experimental)" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial")
-                    | "ImNui Game (Experimental)" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title")
+                    | "ImNui Empty" -> ("Nu.Template.ImNui.Empty.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Empty"), "Initial")
+                    | "ImNui Game" -> ("Nu.Template.ImNui.Game.fsproj", PathF.GetFullPath (programDir + "/../../../../Nu.Template.ImNui.Game"), "Title")
                     | _ -> failwithumf ()
                 if Directory.Exists templateDir then
 
@@ -3581,6 +3657,72 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             else world
         | Some _ | None -> ShowRenameEntityDialog <- false; world
 
+    let private imGuiDeleteEntityDialog world =
+        match SelectedEntityOpt with
+        | Some entity when entity.GetExists world ->
+            let title = "Entity deletion confirmation..."
+            let opening = not (ImGui.IsPopupOpen title)
+            if opening then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &ShowDeleteEntityDialog) then
+                ImGui.Text "Selected entity is an entity propagation source."
+                ImGui.Text "Select a deletion option:"
+                let world =
+                    if ImGui.Button "Wipe propagation targets and delete entity." then
+                        let world = snapshot DeleteEntity world
+                        let world = World.clearPropagationTargets entity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowDeleteEntityDialog <- false
+                        world
+                    else world
+                let world =
+                    if ImGui.Button "Ignore propagation targets and delete entity (if you plan on replacing it)." then
+                        let world = snapshot DeleteEntity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowDeleteEntityDialog <- false
+                        world
+                    else world
+                if ImGui.Button "Cancel deletion." || ImGui.IsKeyReleased ImGuiKey.Escape then
+                    ShowDeleteEntityDialog <- false
+                ImGui.EndPopup ()
+                world
+            else world
+        | Some _ | None -> ShowRenameEntityDialog <- false; world
+
+    let private imGuiCutEntityDialog world =
+        match SelectedEntityOpt with
+        | Some entity when entity.GetExists world ->
+            let title = "Entity cut confirmation..."
+            let opening = not (ImGui.IsPopupOpen title)
+            if opening then ImGui.OpenPopup title
+            if ImGui.BeginPopupModal (title, &ShowCutEntityDialog) then
+                ImGui.Text "Selected entity is an entity propagation source."
+                ImGui.Text "Select a cut option:"
+                let world =
+                    if ImGui.Button "Wipe propagation targets and cut entity." || ImGui.IsKeyReleased ImGuiKey.Enter then
+                        let world = snapshot CutEntity world
+                        let world = World.clearPropagationTargets entity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowCutEntityDialog <- false
+                        world
+                    else world
+                let world =
+                    if ImGui.Button "Ignore propagation targets and cut entity (if you plan on pasting or replacing it)." then
+                        let world = snapshot CutEntity world
+                        let world = World.destroyEntity entity world
+                        SelectedEntityOpt <- None
+                        ShowCutEntityDialog <- false
+                        world
+                    else world
+                if ImGui.Button "Cancel cut operation." || ImGui.IsKeyReleased ImGuiKey.Escape then
+                    ShowCutEntityDialog <- false
+                ImGui.EndPopup ()
+                world
+            else world
+        | Some _ | None -> ShowRenameEntityDialog <- false; world
+
     let private imGuiConfirmExitDialog world =
         let title = "Are you okay with exiting Gaia?"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -3849,6 +3991,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world = imGuiOverlayerWindow world
                         let world = imGuiAssetGraphWindow world
                         let world = imGuiEditPropertyWindow world
+                        let world = imGuiLogWindow world
                         let world = imGuiMetricsWindow world
                         let world = imGuiInteractiveWindow world
                         let world = imGuiEventTracingWindow world
@@ -3873,6 +4016,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world = if ShowOpenEntityDialog then imGuiOpenEntityDialog world else world
                         let world = if ShowSaveEntityDialog then imGuiSaveEntityDialog world else world
                         let world = if ShowRenameEntityDialog then imGuiRenameEntityDialog world else world
+                        let world = if ShowDeleteEntityDialog then imGuiDeleteEntityDialog world else world
+                        let world = if ShowCutEntityDialog then imGuiCutEntityDialog world else world
                         let world = if ShowConfirmExitDialog then imGuiConfirmExitDialog world else world
                         let world = if ShowRestartDialog then imGuiRestartDialog world else world
                         world
@@ -4029,8 +4174,14 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         Snaps2dSelected <- gaiaState.Snaps2dSelected
         Snaps2d <- gaiaState.Snaps2d
         Snaps3d <- gaiaState.Snaps3d
+        NewEntityDispatcherName <- World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         NewEntityElevation <- gaiaState.CreationElevation
         NewEntityDistance <- gaiaState.CreationDistance
+        Trace.Listeners.Add $
+            { new TraceListener () with
+                override this.Write (message : string) = LogStr <- LogStr + message
+                override this.WriteLine (message : string) = LogStr <- LogStr + message + "\n" } |>
+            ignore<int>
         AlternativeEyeTravelInput <- gaiaState.AlternativeEyeTravelInput
         let world =
             if not gaiaState.ProjectFreshlyLoaded then
@@ -4054,7 +4205,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         EntityFileDialogState <- ImGuiFileDialogState (TargetDir + "/../../..")
         selectScreen false screen
         let world = selectGroupInitial screen world
-        NewEntityDispatcherName <- World.getEntityDispatchers world |> Seq.head |> fun kvp -> kvp.Key
         AssetGraphStr <-
             match AssetGraph.tryMakeFromFile (TargetDir + "/" + Assets.Global.AssetGraphFilePath) with
             | Right assetGraph ->
