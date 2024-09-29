@@ -44,9 +44,6 @@ Photo-realistic yet user-friendly deferred, physically-based rendering.
 ![image](https://github.com/user-attachments/assets/aa8bbaa8-d253-48c2-bac5-17a5cc3e1167)
 Rendering made efficient with instancing-by-default.
 
-![image](https://github.com/user-attachments/assets/6340fe57-1ad0-4204-bc19-9ee5f0f91f99)
-Editing said photo-realistic scene.
-
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
