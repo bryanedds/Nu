@@ -8,7 +8,6 @@ open Nu
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
 type MyGame =
     { Collisions : int }
-    static member initial = { Collisions = 0 }
 
 // this extends the Game API to expose the above ImNui model as a property.
 [<AutoOpen>]
@@ -20,7 +19,7 @@ module MyGameExtensions =
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame> (MyGame.initial)
+    inherit GameDispatcher<MyGame> ({ Collisions = 0 })
 
     // here we handle running the game
     override this.Run (myGame, _, world) =
@@ -33,10 +32,10 @@ type MyGameDispatcher () =
         let world = World.doSkyBox "SkyBox" [] world
 
         // declare a block
-        let (_, world) = World.doBlock3d "Block3d" [Entity.Position .= v3 0.0f -4.0f -12.0f] world
+        let (_, world) = World.doBlock2d "Block2d" [Entity.Position .= v3 0.0f -64.0f 0.0f] world
 
         // declare a box, store its handle and body id for reference, then handle its body interactions
-        let (results, world) = World.doBox3d "Box3d" [Entity.Position .= v3 0.0f 4.0f -12.0f; Entity.Observable .= true] world
+        let (results, world) = World.doBox2d "Box2d" [Entity.Position .= v3 0.0f 64.0f 0.0f; Entity.Observable .= true] world
         let box3d = world.RecentEntity
         let box3dBodyId = box3d.GetBodyId world
         let myGame =
@@ -51,7 +50,7 @@ type MyGameDispatcher () =
         let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string myGame.Collisions] world
         let world =
             match World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded box3dBodyId world; Entity.Text .= "Jump!"] world with
-            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 12.0f) None box3dBodyId world
+            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 256.0f) None box3dBodyId world
             | (false, world) -> world
         let world = World.doFillBar "FillBar" [Entity.Fill @= single myGame.Collisions / 10.0f] world
         let world = if myGame.Collisions >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
@@ -61,9 +60,9 @@ type MyGameDispatcher () =
         let world = World.endGroup world
         let world = World.endScreen world
 
-        // handle Alt+F4
+        // handle Alt+F4 while unaccompanied
         let world =
-            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world && world.Unaccompanied
             then World.exit world
             else world
 
