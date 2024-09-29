@@ -1,0 +1,19 @@
+# 3ds Max Wavefront OBJ Exporter v0.99 - (c)2007 guruware
+# File Created: 29.09.2024 03:43:08
+
+newmtl Material
+	Kd 0.5500 0.5500 0.5500
+	Ks 0.9000 0.9000 0.9000
+	Tr 0.0000
+	d 1.0000
+	Tf 0.0000 0.0000 0.0000
+	Pr 0.0000
+	Pm 0.0000
+	Pc 0.0000
+	Pcr 0.0000
+	Ni 1.5000
+	Ke 0.0000 0.0000 0.0000
+	illum 2
+	map_Kd C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\StaticModelAlbedo.tiff
+	map_Pr C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\StaticModelRoughness.tiff
+	map_Pm C:\Development\Nu\Nu\Nu.Gaia\Assets\Default\StaticModelMetallic.tiff

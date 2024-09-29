@@ -154,11 +154,10 @@ type GameplayDispatcher () =
 
         // ball
         let (results, world) =
-            World.doBox2d "Ball"
+            World.doBall2d "Ball"
                 [Entity.Position .= gameplay.Ball.Origin
                  Entity.Size .= gameplay.Ball.Size
                  Entity.BodyType .= Dynamic
-                 Entity.BodyShape .= SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
                  Entity.AngularFactor .= v3Zero
                  Entity.GravityOverride .= Some v3Zero
                  Entity.Observable .= true

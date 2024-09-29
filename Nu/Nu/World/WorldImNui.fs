@@ -431,6 +431,12 @@ module WorldImNui =
         /// ImNui declare a 2d box with the given arguments.
         static member doBox2d name args world = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
+        /// ImNui declare a 2d sphere with the given arguments.
+        static member doSphere2d name args world = World.doEntityPlus<Sphere2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+
+        /// ImNui declare a 2d ball with the given arguments.
+        static member doBall2d name args world = World.doEntityPlus<Ball2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+
         /// ImNui declare a 2d character with the given arguments.
         static member doCharacter2d name args world = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
@@ -457,6 +463,12 @@ module WorldImNui =
 
         /// ImNui declare a 3d box with the given arguments.
         static member doBox3d name args world = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+
+        /// ImNui declare a 3d sphere with the given arguments.
+        static member doSphere3d name args world = World.doEntityPlus<Sphere3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+
+        /// ImNui declare a 3d ball with the given arguments.
+        static member doBall3d name args world = World.doEntityPlus<Ball3dDispatcher, _> FQueue.empty World.initBodyResult name args world
 
         /// ImNui declare a static billboard with the given arguments.
         static member doStaticBillboard name args world = World.doEntity<StaticBillboardDispatcher> name args world

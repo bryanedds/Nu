@@ -209,7 +209,34 @@ type Box2dDispatcher () =
 
     static member Properties =
         [define Entity.Static false
-         define Entity.BodyType Dynamic]
+         define Entity.BodyType Dynamic
+         define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })]
+
+/// Gives an entity the base behavior of a rigid 2d sphere using static physics.
+type Sphere2dDispatcher () =
+    inherit Entity2dDispatcher (true, false, false)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticSpriteFacet>]
+
+    static member Properties =
+        [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.StaticImage Assets.Default.Ball]
+
+/// Gives an entity the base behavior of a rigid 2d ball using dynamic physics.
+type Ball2dDispatcher () =
+    inherit Entity2dDispatcher (true, false, false)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticSpriteFacet>]
+
+    static member Properties =
+        [define Entity.Static false
+         define Entity.BodyType Dynamic
+         define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.StaticImage Assets.Default.Ball]
 
 [<AutoOpen>]
 module Character2dDispatcherExtensions =
@@ -510,6 +537,34 @@ type Box3dDispatcher () =
     static member Properties =
         [define Entity.Static false
          define Entity.BodyType Dynamic]
+
+/// Gives an entity the base behavior of a rigid 3d sphere using static physics.
+type Sphere3dDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticModelFacet>
+         typeof<NavBodyFacet>]
+
+    static member Properties =
+        [define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.StaticModel Assets.Default.BallModel]
+
+/// Gives an entity the base behavior of a rigid 3d ball using dynamic physics.
+type Ball3dDispatcher () =
+    inherit Entity3dDispatcher (true, false, false)
+
+    static member Facets =
+        [typeof<RigidBodyFacet>
+         typeof<StaticModelFacet>
+         typeof<NavBodyFacet>]
+
+    static member Properties =
+        [define Entity.Static false
+         define Entity.BodyType Dynamic
+         define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
+         define Entity.StaticModel Assets.Default.BallModel]
 
 [<AutoOpen>]
 module Character3dDispatcherExtensions =
