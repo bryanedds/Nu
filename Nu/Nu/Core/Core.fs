@@ -4,7 +4,6 @@
 namespace Nu
 open System
 open System.Diagnostics
-open System.Text.RegularExpressions
 open Prime
 
 [<RequireQualifiedAccess>]
