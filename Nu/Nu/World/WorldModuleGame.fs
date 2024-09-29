@@ -122,7 +122,7 @@ module WorldModuleGame =
                 let world =
                     match (World.getGameState game world).SelectedScreenOpt with
                     | Some screen ->
-                        let world = WorldModule.unregisterScreenPhysics screen world
+                        let world = WorldModule.unregisterScreenPhysics false screen world
                         let world = WorldModule.evictScreenElements screen world
                         world
                     | None -> world
@@ -138,7 +138,7 @@ module WorldModuleGame =
 
                     // populate singleton states
                     let world = WorldModule.admitScreenElements screen world
-                    let world = WorldModule.registerScreenPhysics screen world
+                    let world = WorldModule.registerScreenPhysics false screen world
 
                     // raise change event for some selection
                     let world = World.publishGameChange (nameof gameState.SelectedScreenOpt) previous value game world

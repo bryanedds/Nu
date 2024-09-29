@@ -1259,7 +1259,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private toggleAdvancing (world : World) =
         let wasAdvancing = world.Advancing
         let world = snapshot (if wasAdvancing then Halt else Advance) world
-        let world = if ReregisterPhysicsWorkaround && not wasAdvancing then World.reregisterPhysics world else world // HACK: reregister physics as an automatic workaround for #856.
+        let world = if ReregisterPhysicsWorkaround && not wasAdvancing then World.reregisterPhysics true world else world // HACK: reregister physics as an automatic workaround for #856.
         let world = World.setAdvancing (not world.Advancing) world
         world
 

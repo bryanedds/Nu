@@ -757,24 +757,28 @@ module WorldModule2 =
                     Octree.removeElement entityState.Presence entityState.Bounds element octree
             world
 
-        static member internal registerScreenPhysics screen world =
+        static member internal registerScreenPhysics only3dHack screen world =
             let entities =
                 World.getGroups screen world |>
                 Seq.map (flip World.getEntities world) |>
                 Seq.concat |>
                 SList.ofSeq
             SList.fold (fun world (entity : Entity) ->
-                World.registerEntityPhysics entity world)
+                if not only3dHack || entity.GetIs3d world
+                then World.registerEntityPhysics entity world
+                else world)
                 world entities
 
-        static member internal unregisterScreenPhysics screen world =
+        static member internal unregisterScreenPhysics only3dHack screen world =
             let entities =
                 World.getGroups screen world |>
                 Seq.map (flip World.getEntities world) |>
                 Seq.concat |>
                 SList.ofSeq
             SList.fold (fun world (entity : Entity) ->
-                World.unregisterEntityPhysics entity world)
+                if not only3dHack || entity.GetIs3d world
+                then World.unregisterEntityPhysics entity world
+                else world)
                 world entities
 
         /// Try to reload the overlayer currently in use by the world.
