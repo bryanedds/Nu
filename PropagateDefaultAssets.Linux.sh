@@ -3,9 +3,6 @@ echo "Propagating default assets..."
 rm -f Nu/Nu.Pipe/Assets/Default/*
 cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Pipe/Assets/Default/
 
-rm -f Nu/Nu.Pipe/Assets/Default/*
-cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Pipe/Assets/Default/
-
 rm -f Nu/Nu.Template.ImNui.Empty/Assets/Default/*
 cp -f Nu/Nu.Gaia/Assets/Default/* Nu/Nu.Template.ImNui.Empty/Assets/Default/
 
@@ -29,6 +26,9 @@ cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Breakout Mmcc/Assets/Default/"
 
 rm -f "Projects/Metrics/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Metrics/Assets/Default/"
+
+rm -f "Projects/Jump Box/Assets/Default/*"
+cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Jump Box/Assets/Default/"
 
 rm -f "Projects/Nelmish/Assets/Default/*"
 cp -f Nu/Nu.Gaia/Assets/Default/* "Projects/Nelmish/Assets/Default/"

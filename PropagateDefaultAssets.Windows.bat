@@ -3,9 +3,6 @@
 del Nu\Nu.Pipe\Assets\Default\* /Q
 copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Pipe\Assets\Default /Y
 
-del Nu\Nu.Pipe\Assets\Default\* /Q
-copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Pipe\Assets\Default /Y
-
 del Nu\Nu.Template.ImNui.Empty\Assets\Default\* /Q
 copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.ImNui.Empty\Assets\Default /Y
 
@@ -26,6 +23,9 @@ copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout ImNui\Assets\Default" /Y
 
 del "Projects\Breakout Mmcc\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Breakout Mmcc\Assets\Default" /Y
+
+del "Projects\Jump Box\Assets\Default\*" /Q
+copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Jump Box\Assets\Default" /Y
 
 del "Projects\Metrics\Assets\Default\*" /Q
 copy Nu\Nu.Gaia\Assets\Default\*, "Projects\Metrics\Assets\Default" /Y
