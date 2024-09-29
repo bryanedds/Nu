@@ -279,6 +279,7 @@ module WorldModule3 =
                 { ContextImNui = Address.empty
                   RecentImNui = Address.empty
                   SimulantImNuis = OMap.makeEmpty HashIdentity.Structural config
+                  SubscriptionImNuis = OMap.makeEmpty HashIdentity.Structural config
                   DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin

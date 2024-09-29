@@ -48,6 +48,14 @@ module WorldImNui =
 
     type World with
 
+        static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd list * World =
+            let eventAddress =
+                if not (Array.contains "Event" eventAddress.Names)
+                then Address.makeFromArray<'d> (Array.concat [|eventAddress.Names; [|"Event"|]; world.ContextImNui.Names|])
+                else eventAddress
+            // TODO: P1: implement this rest of this with WorldExtension.SubscriptionImNuis.
+            failwithnie ()
+
         ///
         static member initBodyResult mapResult (entity : Entity) world =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyPenetration event.Data) world)) entity.BodyPenetrationEvent entity world
