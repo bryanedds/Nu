@@ -19,7 +19,7 @@ So... just what is the **Nu Game Engine**?
 This repository hosts several projects, including -
 
 - the 2D arcade game tutorial, ['Breakout MMCC'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20Mmcc).
-- **NEW!** and with the new ImNui API, ['Breakout ImNui'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20ImNui).
+- the same but with the **NEW!** ImNui API, ['Breakout ImNui'](https://github.com/bryanedds/Nu/tree/master/Projects/Breakout%20ImNui).
 - the 2D puzzle game tutorial, ['Twenty 48'](https://github.com/bryanedds/Nu/tree/master/Projects/Twenty%2048).
 - the 2D action game tutorial, ['Blaze Vector'](https://github.com/bryanedds/Nu/tree/master/Projects/Blaze%20Vector).
 - the 3D third-person game sample, ['Terra Firma'](https://github.com/bryanedds/Nu/tree/master/Projects/Terra%20Firma).
