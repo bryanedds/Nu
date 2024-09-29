@@ -6,11 +6,17 @@ copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Pipe\Assets\Default /Y
 del Nu\Nu.Pipe\Assets\Default\* /Q
 copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Pipe\Assets\Default /Y
 
-del Nu\Nu.Template.Empty\Assets\Default\* /Q
-copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.Empty\Assets\Default /Y
+del Nu\Nu.Template.ImNui.Empty\Assets\Default\* /Q
+copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.ImNui.Empty\Assets\Default /Y
 
-del Nu\Nu.Template.Game\Assets\Default\* /Q
-copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.Game\Assets\Default /Y
+del Nu\Nu.Template.ImNui.Game\Assets\Default\* /Q
+copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.ImNui.Game\Assets\Default /Y
+
+del Nu\Nu.Template.Mmcc.Empty\Assets\Default\* /Q
+copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.Mmcc.Empty\Assets\Default /Y
+
+del Nu\Nu.Template.Mmcc.Game\Assets\Default\* /Q
+copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Template.Mmcc.Game\Assets\Default /Y
 
 del Nu\Nu.Tests\Assets\Default\* /Q
 copy Nu\Nu.Gaia\Assets\Default\*, Nu\Nu.Tests\Assets\Default /Y
