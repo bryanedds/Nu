@@ -230,17 +230,17 @@ module WorldImNui =
         static member private beginGroup4<'d> name groupFilePathOpt args world =
             World.beginGroupPlus6 () (fun _ _ world -> world) name groupFilePathOpt args world |> snd
 
-        static member internal beginGroupFromDescriptor nameOpt groupDescriptor args (world : World) =
+        /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
+        /// Note that changing the file path over time has no effect as only the first moment is used.
+        static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
             if world.ContextImNui.Names.Length < 2 then raise (InvalidOperationException "ImNui group declared outside of valid ImNui context (must be called in a Screen context).")
-            let groupName =
-                match nameOpt with
-                | Some name -> name
-                | None -> match GroupDescriptor.getNameOpt groupDescriptor with Some name -> name | None -> "Group"
-            let groupAddress = Address.makeFromArray (Array.add groupName world.ContextImNui.Names)
+            let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
             let world =
                 if not (group.GetExists world) then
+                    let groupDescriptorStr = File.ReadAllText groupFilePath
+                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
                     let world = World.readGroup groupDescriptor None group.Screen world |> snd
                     World.setGroupProtected true group world |> snd'
                 else world
@@ -255,13 +255,6 @@ module WorldImNui =
                     then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                     else world)
                 world args
-
-        /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
-        /// Note that changing the file path over time has no effect as only the first moment is used.
-        static member beginGroupFromFile (name : string) (groupFilePath : string) args (world : World) =
-            let groupDescriptorStr = File.ReadAllText groupFilePath
-            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-            World.beginGroupFromDescriptor (Some name) groupDescriptor args world
 
         /// Begin the ImNui declaration of a group with the given arguments.
         static member beginGroupPlus<'d, 'r when 'd :> GroupDispatcher> zero init name args world =
