@@ -30,14 +30,6 @@ module WorldImNui =
     /// Instructs ImNui static equality (.=) to act as dynamic equality (@=) for a frame.
     let mutable internal Reinitializing = false
 
-    /// Specifies a dynamic ImNui argument.
-    let
-#if !DEBUG
-        inline
-#endif
-        (@=) (lens : Lens<'a, 's>) (value : 'a) =
-        { ArgStatic = false; ArgLens = lens; ArgValue = value } : 's ArgImNui
-
     /// Specifies a static ImNui argument.
     let
 #if !DEBUG
@@ -45,6 +37,14 @@ module WorldImNui =
 #endif
         (.=) (lens : Lens<'a, 's>) (value : 'a) =
         { ArgStatic = true; ArgLens = lens; ArgValue = value } : 's ArgImNui
+
+    /// Specifies a dynamic ImNui argument.
+    let
+#if !DEBUG
+        inline
+#endif
+        (@=) (lens : Lens<'a, 's>) (value : 'a) =
+        { ArgStatic = false; ArgLens = lens; ArgValue = value } : 's ArgImNui
 
     type World with
 

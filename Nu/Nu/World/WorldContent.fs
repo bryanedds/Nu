@@ -623,7 +623,7 @@ module ContentOperators =
         (==) (lens : Lens<'a, 's>) (value : 'a) : 's DefinitionContent =
         PropertyContent (PropertyContent.make true lens value)
 
-    /// Define a synchronized property equality.
+    /// Define a dynamic property equality.
     let
 #if !DEBUG
         inline
