@@ -32,6 +32,13 @@ module Native =
         let voidPtr = NativePtr.toVoidPtr ptr
         NativeMemory.Free voidPtr
     
+    // TODO: confirm these unmanaged versions are correct for our use case (e.g. ImDrawVert).
+    /// Get the unmanaged byte size of a class.
+    let sizeOf<'a> () = Marshal.SizeOf<'a> () |> uint
+    
+    /// Get the byte offset of a field within the unmanaged form of a managed class.
+    let offsetOf<'a> fieldName = Marshal.OffsetOf (typeof<'a>, fieldName) |> uint
+    
     /// Converts the type of a managed pointer from 'a to 'b.
     /// Because of automatic dereferencing, the result must be *re*referenced after calling.
     let asRefType<'a, 'b> (source : byref<'a>) : byref<'b> = &(Unsafe.As<'a, 'b> &source)

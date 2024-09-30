@@ -5,6 +5,7 @@ namespace Nu
 open System
 open System.Numerics
 open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open ImGuiNET
 open Vulkan.Hl
 open Vortice.Vulkan
@@ -423,7 +424,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // populate vertex input binding description
         let mutable bindingDescription = VkVertexInputBindingDescription ()
         bindingDescription.binding <- 0u
-        bindingDescription.stride <- Unsafe.SizeOf<ImDrawVert> () |> uint
+        bindingDescription.stride <- sizeOf<ImDrawVert> ()
         bindingDescription.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
 
         // populate vertex input attribute descriptions
@@ -432,7 +433,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         attributeDescriptions[0].location <- 0u
         attributeDescriptions[0].binding <- 0u
         attributeDescriptions[0].format <- VK_FORMAT_R32G32_SFLOAT
-        attributeDescriptions[0].offset // TODO: find out how to get this
+        attributeDescriptions[0].offset <- offsetOf<ImDrawVert> "pos"
 
 
         // destroy shader modules
