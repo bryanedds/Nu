@@ -56,10 +56,10 @@ type MyGameDispatcher () =
     override this.Content (myGame, _) =
         [Content.screen "Screen" Vanilla []
             [Content.group "Group" []
-                [Content.button "Exit"
+                [Content.staticModel "StaticModel"
+                    [Entity.Position == v3 0.0f 0.0f -2.0f
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> Math.DegreesToRadians)]
+                 Content.button "Exit"
                     [Entity.Position == v3 232.0f -144.0f 0.0f
                      Entity.Text == "Exit"
-                     Entity.ClickEvent => Exit]
-                 Content.staticModel "StaticModel"
-                    [Entity.Position == v3 0.0f 0.0f -2.0f
-                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, myGame.MyGameTime % 360L |> single |> Math.DegreesToRadians)]]]]
+                     Entity.ClickEvent => Exit]]]]

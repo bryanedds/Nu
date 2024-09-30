@@ -234,38 +234,8 @@ type GameplayDispatcher () =
     // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =
 
-        [// the gui group
-         Content.group Simulants.GameplayGui.Name []
-
-            [// score
-             Content.text "Score"
-                [Entity.Position == v3 248.0f 136.0f 0.0f
-                 Entity.Text := "Score: " + string gameplay.Score]
-
-             // lives
-             Content.text "Lives"
-                [Entity.Position == v3 -240.0f 0.0f 0.0f
-                 Entity.Text == "Lives"]
-             for i in 0 .. dec gameplay.Lives do
-                Content.staticSprite ("Life+" + string i)
-                    [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
-                     Entity.Size == v3 32.0f 8.0f 0.0f
-                     Entity.StaticImage == Assets.Default.Paddle]
-
-             // message
-             Content.text "Message"
-                [Entity.Text := if gameplay.Lives <= 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
-             
-             // quit
-             Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]
-
-         // the scene group while playing
-         match gameplay.GameplayState with
-         | Playing ->
+        [// the scene group while playing
+         if gameplay.GameplayState = Playing then
             Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
                 [Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
@@ -297,5 +267,31 @@ type GameplayDispatcher () =
                          Entity.Color := brick.Color
                          Entity.StaticImage == Assets.Default.Brick]]
 
-         // no scene group otherwise
-         | Quit -> ()]
+         // the gui group
+         Content.group Simulants.GameplayGui.Name []
+
+            [// score
+             Content.text "Score"
+                [Entity.Position == v3 248.0f 136.0f 0.0f
+                 Entity.Text := "Score: " + string gameplay.Score]
+
+             // lives
+             Content.text "Lives"
+                [Entity.Position == v3 -240.0f 0.0f 0.0f
+                 Entity.Text == "Lives"]
+             for i in 0 .. dec gameplay.Lives do
+                Content.staticSprite ("Life+" + string i)
+                    [Entity.Position == v3 -240.0f (single (inc i) * -16.0f) 0.0f
+                     Entity.Size == v3 32.0f 8.0f 0.0f
+                     Entity.StaticImage == Assets.Default.Paddle]
+
+             // message
+             Content.text "Message"
+                [Entity.Text := if gameplay.Lives <= 0 then "Game over!" elif gameplay.Bricks.Count = 0 then "You win!" else ""]
+             
+             // quit
+             Content.button Simulants.GameplayQuit.Name
+                [Entity.Position == v3 232.0f -144.0f 0.0f
+                 Entity.Elevation == 10.0f
+                 Entity.Text == "Quit"
+                 Entity.ClickEvent => StartQuitting]]]
