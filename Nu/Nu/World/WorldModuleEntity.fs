@@ -1069,7 +1069,7 @@ module WorldModuleEntity =
                                     entityState.AnglesLocal <- anglesLocal
                                     struct (entityState, world)
                                 else
-                                    let entityState = { entityState with RotationLocal = value }
+                                    let entityState = { entityState with RotationLocal = value; AnglesLocal = anglesLocal }
                                     struct (entityState, World.setEntityState entityState entity world)
                             let publishChangeEvents = entityState.PublishChangeEvents
                             let world = World.publishEntityChange (nameof entityState.RotationLocal) previous value publishChangeEvents entity world
