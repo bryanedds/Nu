@@ -70,8 +70,9 @@ module WorldImNui =
                             eventAddress'
                             Game
                             world
-                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; Results = FQueue.empty; SubscriptionId = subId } world
+                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; Results = FQueue.empty<'d>; SubscriptionId = subId } world
             let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'd FQueue
+            let world = World.mapSubscriptionImNui (fun subscriptionImNui -> { subscriptionImNui with Results = FQueue.empty<'d> }) subscriptionKey world
             (results, world)
 
         /// TODO: document this!

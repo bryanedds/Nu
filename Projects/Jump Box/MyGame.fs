@@ -45,10 +45,10 @@ type MyGameDispatcher () =
         // declare a control panel
         let world = World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
         let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string myGame.Collisions] world
-        let (_, world) = World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world
-        let button = world.RecentEntity
-        let (results, world) = World.doSubscription "Jump!" button.ClickEvent world
-        let world = if FQueue.notEmpty results then World.applyBodyLinearImpulse (v3Up * 256.0f) None boxBodyId world else world
+        let world =
+            match World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world with
+            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 256.0f) None boxBodyId world
+            | (false, world) -> world
         let world = World.doFillBar "FillBar" [Entity.Fill @= single myGame.Collisions / 10.0f] world
         let world = if myGame.Collisions >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
         let world = World.endPanel world
