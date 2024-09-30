@@ -407,6 +407,19 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let vertModule = VulkanRendererImGui.createShaderModuleFromGLSL "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
         let fragModule = VulkanRendererImGui.createShaderModuleFromGLSL "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
 
+        // create shader stage infos
+        use entryPoint = StringWrap "main"
+        let mutable vertShaderStageInfo = VkPipelineShaderStageCreateInfo ()
+        vertShaderStageInfo.stage <- VK_SHADER_STAGE_VERTEX_BIT
+        vertShaderStageInfo.``module`` <- vertModule
+        vertShaderStageInfo.pName <- entryPoint.Pointer
+        let mutable fragShaderStageInfo = VkPipelineShaderStageCreateInfo ()
+        fragShaderStageInfo.stage <- VK_SHADER_STAGE_FRAGMENT_BIT
+        fragShaderStageInfo.``module`` <- fragModule
+        fragShaderStageInfo.pName <- entryPoint.Pointer
+        let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
+        use stagesArrayPin = ArrayPin stagesArray
+
 
         // destroy shader modules
         vkDestroyShaderModule (device, vertModule, nullPtr)

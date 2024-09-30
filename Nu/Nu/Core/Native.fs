@@ -83,6 +83,25 @@ module Native =
             member this.Dispose () =
                 this.Dispose ()
 
+    /// A container for a single unmanaged string.
+    type StringWrap private (stringPtr : nativeptr<byte>) =
+        
+        let stringPtr = stringPtr
+
+        new (str : string) =
+            let ptr = convertToUnmanaged str
+            new StringWrap (ptr)
+
+        // TODO: see if implicit conversion can be used to remove the need to call this member directly.
+        member this.Pointer = stringPtr
+
+        // make disposal publicly available without casting
+        member this.Dispose () = freeUnmanaged stringPtr
+    
+        interface IDisposable with
+            member this.Dispose () =
+                this.Dispose ()
+    
     /// A container for a pinned array of unmanaged strings.
     type StringArrayWrap private (array : nativeptr<byte> array) =
     
@@ -105,5 +124,4 @@ module Native =
         interface IDisposable with
             member this.Dispose () =
                 this.Dispose ()
-    
     
