@@ -2257,6 +2257,9 @@ module WorldModuleEntity =
                     else entityState
                 | None -> entityState
 
+            // populate local angles value from local rotation
+            entityState.AnglesLocal <- entityState.RotationLocal.RollPitchYaw
+
             // make entity address
             let entityAddress = group.GroupAddress <-- rtoa<Entity> entityState.Surnames
 
@@ -2489,7 +2492,7 @@ module WorldModuleEntity =
             // read the entity state's values
             let entityState = Reflection.readPropertiesToTarget id entityDescriptor.EntityProperties entityState
 
-            // populate local angles value from local rotation (since these cannot be serialized without causing precision issues due to Transform.set_Angles being called)
+            // populate local angles value from local rotation
             entityState.AnglesLocal <- entityState.RotationLocal.RollPitchYaw
 
             // configure the name and surnames
