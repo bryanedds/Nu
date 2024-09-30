@@ -615,16 +615,13 @@ module WorldModuleEntity =
             if  not mounterState.Physical || // OPTIMIZATION: skip call to getEntityAllowedToMount when non-physical.
                 World.getEntityAllowedToMount mounter world then
                 let affineMatrixWorld = World.getEntityAffineMatrix mount world
-                let affineMatrixLocal = World.getEntityAffineMatrixLocal mounter world
-                let affineMatrix = affineMatrixLocal * affineMatrixWorld
-                let mutable (scale, rotation, position) = (v3One, quatIdentity, v3Zero)
-                if Matrix4x4.Decompose (affineMatrix, &scale, &rotation, &position) then
-                    let mutable transform = mounterState.Transform
-                    transform.Position <- position
-                    transform.Rotation <- rotation
-                    transform.Scale <- scale
-                    World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
-                else world
+                let rotationWorld = World.getEntityRotation mount world
+                let scaleWorld = World.getEntityScale mount world
+                let mutable transform = mounterState.Transform
+                transform.Position <- Vector3.Transform (World.getEntityPositionLocal mounter world, affineMatrixWorld)
+                transform.Rotation <- rotationWorld * World.getEntityRotationLocal mounter world
+                transform.Scale <- World.getEntityScaleLocal mounter world * scaleWorld
+                World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
             else world
 
         static member internal propagateEntityProperties3 mountOpt entity world =
