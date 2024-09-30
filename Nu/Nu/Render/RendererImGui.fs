@@ -420,6 +420,20 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
         use stagesArrayPin = ArrayPin stagesArray
 
+        // populate vertex input binding description
+        let mutable bindingDescription = VkVertexInputBindingDescription ()
+        bindingDescription.binding <- 0u
+        bindingDescription.stride <- Unsafe.SizeOf<ImDrawVert> () |> uint
+        bindingDescription.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
+
+        // populate vertex input attribute descriptions
+        let attributeDescriptions = Array.zeroCreate<VkVertexInputAttributeDescription> 3
+        attributeDescriptions[0] <- VkVertexInputAttributeDescription ()
+        attributeDescriptions[0].location <- 0u
+        attributeDescriptions[0].binding <- 0u
+        attributeDescriptions[0].format <- VK_FORMAT_R32G32_SFLOAT
+        attributeDescriptions[0].offset // TODO: find out how to get this
+
 
         // destroy shader modules
         vkDestroyShaderModule (device, vertModule, nullPtr)
