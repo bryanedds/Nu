@@ -5,9 +5,11 @@ namespace Nu
 namespace Vulkan
 open System
 open System.Collections.Generic
+open System.IO
 open SDL2
 open Vortice.Vulkan
 open type Vulkan
+open Vortice.ShaderCompiler
 open Prime
 open Nu
 
@@ -24,6 +26,16 @@ module Hl =
     let check (result : VkResult) =
         if int result > 0 then Log.info ("Vulkan info: " + string result)
         elif int result < 0 then Log.error ("Vulkan error: " + string result)
+    
+    /// Compile GLSL file to SPIR-V.
+    let compileShader shaderPath shaderKind =
+        use shaderStream = new StreamReader (File.OpenRead shaderPath)
+        let shaderStr = shaderStream.ReadToEnd ()
+        use compiler = new Compiler ()
+        use result = compiler.Compile (shaderStr, shaderPath, shaderKind)
+        if result.Status <> CompilationStatus.Success then Log.error ("Vulkan compiler error: " + result.ErrorMessage)
+        let shaderCode = result.GetBytecode().ToArray()
+        shaderCode
     
     /// Convert VkExtensionProperties.extensionName to a string.
     let getExtensionName (extensionProps : VkExtensionProperties) =

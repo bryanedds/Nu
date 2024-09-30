@@ -9,6 +9,7 @@ open ImGuiNET
 open Vulkan.Hl
 open Vortice.Vulkan
 open type Vulkan
+open Vortice.ShaderCompiler
 open Prime
 
 /// Renders an imgui view.
@@ -277,6 +278,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let mutable sampler = Unchecked.defaultof<VkSampler>
     let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
     let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
+    let mutable pipeline = Unchecked.defaultof<VkPipeline>
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -380,6 +382,38 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // fin
         pipelineLayout
+
+    /// Create a shader module from a GLSL file.
+    static member createShaderModuleFromGLSL shaderPath shaderKind device =
+        
+        // handle and shader
+        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
+        let shader = compileShader shaderPath shaderKind
+
+        // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
+        // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
+        vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
+
+        // fin
+        shaderModule
+
+    /// Create the pipeline.
+    static member createPipeline device =
+        
+        // handle
+        let mutable pipeline = Unchecked.defaultof<VkPipeline>
+
+        // create shader modules
+        let vertModule = VulkanRendererImGui.createShaderModuleFromGLSL "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
+        let fragModule = VulkanRendererImGui.createShaderModuleFromGLSL "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
+
+
+        // destroy shader modules
+        vkDestroyShaderModule (device, vertModule, nullPtr)
+        vkDestroyShaderModule (device, fragModule, nullPtr)
+
+        // fin
+        pipeline
     
     interface RendererImGui with
         
@@ -390,6 +424,9 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             sampler <- VulkanRendererImGui.createSampler device
             descriptorSetLayout <- VulkanRendererImGui.createDescriptorSetLayout device
             pipelineLayout <- VulkanRendererImGui.createPipelineLayout descriptorSetLayout device
+            
+            // create pipeline
+            pipeline <- VulkanRendererImGui.createPipeline device
             
             
             let mutable pixels = Unchecked.defaultof<nativeint>
