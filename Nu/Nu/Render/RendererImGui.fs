@@ -431,6 +431,33 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         attributeDescriptions[2].offset <- offsetOf<ImDrawVert> "col"
         use attributeDescriptionsPin = ArrayPin attributeDescriptions
 
+        // populate vertex input info
+        let mutable vertexInfo = VkPipelineVertexInputStateCreateInfo ()
+        vertexInfo.vertexBindingDescriptionCount <- 1u
+        vertexInfo.pVertexBindingDescriptions <- asPointer &bindingDescription
+        vertexInfo.vertexAttributeDescriptionCount <- 3u
+        vertexInfo.pVertexAttributeDescriptions <- attributeDescriptionsPin.Pointer
+
+        // populate input assembly info
+        let mutable inputAssemblyInfo = VkPipelineInputAssemblyStateCreateInfo ()
+        inputAssemblyInfo.topology <- VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        inputAssemblyInfo.primitiveRestartEnable <- false
+
+        // populate viewport info
+        let mutable viewportInfo = VkPipelineViewportStateCreateInfo ()
+        viewportInfo.viewportCount <- 1u
+        viewportInfo.scissorCount <- 1u
+
+        // populate rasterization info
+        let mutable rasterInfo = VkPipelineRasterizationStateCreateInfo ()
+        rasterInfo.depthClampEnable <- false
+        rasterInfo.rasterizerDiscardEnable <- false
+        rasterInfo.polygonMode <- VK_POLYGON_MODE_FILL
+        rasterInfo.cullMode <- VK_CULL_MODE_NONE
+        rasterInfo.frontFace <- VK_FRONT_FACE_COUNTER_CLOCKWISE
+        rasterInfo.depthBiasEnable <- false
+        rasterInfo.lineWidth <- 1.0f
+
 
         // destroy shader modules
         vkDestroyShaderModule (device, vertModule, nullPtr)
