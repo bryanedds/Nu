@@ -5,7 +5,6 @@ namespace Nu
 open System
 open System.Numerics
 open System.Runtime.CompilerServices
-open System.Runtime.InteropServices
 open ImGuiNET
 open Vulkan.Hl
 open Vortice.Vulkan
@@ -384,20 +383,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // fin
         pipelineLayout
 
-    /// Create a shader module from a GLSL file.
-    static member createShaderModuleFromGLSL shaderPath shaderKind device =
-        
-        // handle and shader
-        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
-        let shader = compileShader shaderPath shaderKind
-
-        // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
-        // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
-        vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
-
-        // fin
-        shaderModule
-
     /// Create the pipeline.
     static member createPipeline device =
         
@@ -405,21 +390,21 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable pipeline = Unchecked.defaultof<VkPipeline>
 
         // create shader modules
-        let vertModule = VulkanRendererImGui.createShaderModuleFromGLSL "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
-        let fragModule = VulkanRendererImGui.createShaderModuleFromGLSL "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
+        let vertModule = createShaderModuleFromGLSL "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
+        let fragModule = createShaderModuleFromGLSL "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
 
-        // create shader stage infos
+        // populate shader stage infos
         use entryPoint = StringWrap "main"
-        let mutable vertShaderStageInfo = VkPipelineShaderStageCreateInfo ()
-        vertShaderStageInfo.stage <- VK_SHADER_STAGE_VERTEX_BIT
-        vertShaderStageInfo.``module`` <- vertModule
-        vertShaderStageInfo.pName <- entryPoint.Pointer
-        let mutable fragShaderStageInfo = VkPipelineShaderStageCreateInfo ()
-        fragShaderStageInfo.stage <- VK_SHADER_STAGE_FRAGMENT_BIT
-        fragShaderStageInfo.``module`` <- fragModule
-        fragShaderStageInfo.pName <- entryPoint.Pointer
-        let stagesArray = [|vertShaderStageInfo; fragShaderStageInfo|]
-        use stagesArrayPin = ArrayPin stagesArray
+        let shaderStageInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
+        shaderStageInfos[0] <- VkPipelineShaderStageCreateInfo ()
+        shaderStageInfos[0].stage <- VK_SHADER_STAGE_VERTEX_BIT
+        shaderStageInfos[0].``module`` <- vertModule
+        shaderStageInfos[0].pName <- entryPoint.Pointer
+        shaderStageInfos[1] <- VkPipelineShaderStageCreateInfo ()
+        shaderStageInfos[1].stage <- VK_SHADER_STAGE_FRAGMENT_BIT
+        shaderStageInfos[1].``module`` <- fragModule
+        shaderStageInfos[1].pName <- entryPoint.Pointer
+        use shaderStageInfosPin = ArrayPin shaderStageInfos
 
         // populate vertex input binding description
         let mutable bindingDescription = VkVertexInputBindingDescription ()
@@ -434,6 +419,17 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         attributeDescriptions[0].binding <- 0u
         attributeDescriptions[0].format <- VK_FORMAT_R32G32_SFLOAT
         attributeDescriptions[0].offset <- offsetOf<ImDrawVert> "pos"
+        attributeDescriptions[1] <- VkVertexInputAttributeDescription ()
+        attributeDescriptions[1].location <- 1u
+        attributeDescriptions[1].binding <- 0u
+        attributeDescriptions[1].format <- VK_FORMAT_R32G32_SFLOAT
+        attributeDescriptions[1].offset <- offsetOf<ImDrawVert> "uv"
+        attributeDescriptions[2] <- VkVertexInputAttributeDescription ()
+        attributeDescriptions[2].location <- 2u
+        attributeDescriptions[2].binding <- 0u
+        attributeDescriptions[2].format <- VK_FORMAT_R8G8B8A8_UNORM
+        attributeDescriptions[2].offset <- offsetOf<ImDrawVert> "col"
+        use attributeDescriptionsPin = ArrayPin attributeDescriptions
 
 
         // destroy shader modules

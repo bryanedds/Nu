@@ -37,6 +37,20 @@ module Hl =
         let shaderCode = result.GetBytecode().ToArray()
         shaderCode
     
+    /// Create a shader module from a GLSL file.
+    let createShaderModuleFromGLSL shaderPath shaderKind device =
+        
+        // handle and shader
+        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
+        let shader = compileShader shaderPath shaderKind
+
+        // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
+        // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
+        vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
+
+        // fin
+        shaderModule
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     let getExtensionName (extensionProps : VkExtensionProperties) =
         getBufferString extensionProps.extensionName
