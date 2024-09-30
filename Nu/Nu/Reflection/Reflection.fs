@@ -64,6 +64,8 @@ module Reflection =
              ("PerimeterMinLocal", true)
              ("PerimeterMaxLocal", true)
              ("RotationMatrix", true)
+             ("Angles", true)
+             ("AnglesLocal", true)
              ("Degrees", true)
              ("DegreesLocal", true)
              ("AffineMatrix", true)
