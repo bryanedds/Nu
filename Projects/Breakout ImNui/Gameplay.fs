@@ -160,6 +160,7 @@ type GameplayDispatcher () =
                  Entity.BodyType .= Dynamic
                  Entity.AngularFactor .= v3Zero
                  Entity.GravityOverride .= Some v3Zero
+                 Entity.CollisionDetection .= Continuous (1.0f, 1.0f)
                  Entity.Observable .= true
                  Entity.StaticImage .= Assets.Default.Ball] world
         let ball = world.RecentEntity
@@ -174,8 +175,10 @@ type GameplayDispatcher () =
                 (gameplay, world)
             else (gameplay, world)
         let world =
-            if ball.GetLinearVelocity world = v3Zero
-            then World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * gameplay.Ball.Speed) ballBodyId world
+            if gameplay.Bricks.Count = 0 then
+                World.setBodyLinearVelocity v3Zero ballBodyId world
+            elif ball.GetLinearVelocity world = v3Zero then
+                World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * gameplay.Ball.Speed) ballBodyId world
             else world
 
         // ball collision
