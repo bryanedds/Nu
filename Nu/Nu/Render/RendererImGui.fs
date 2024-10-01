@@ -450,13 +450,32 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // populate rasterization info
         let mutable rasterInfo = VkPipelineRasterizationStateCreateInfo ()
-        rasterInfo.depthClampEnable <- false
-        rasterInfo.rasterizerDiscardEnable <- false
         rasterInfo.polygonMode <- VK_POLYGON_MODE_FILL
         rasterInfo.cullMode <- VK_CULL_MODE_NONE
         rasterInfo.frontFace <- VK_FRONT_FACE_COUNTER_CLOCKWISE
-        rasterInfo.depthBiasEnable <- false
         rasterInfo.lineWidth <- 1.0f
+
+        // populate multisample info
+        let mutable multisampleInfo = VkPipelineMultisampleStateCreateInfo ()
+        multisampleInfo.rasterizationSamples <- VK_SAMPLE_COUNT_1_BIT
+
+        // populate color attachment
+        let mutable colorAttachment = VkPipelineColorBlendAttachmentState ()
+        colorAttachment.blendEnable <- true
+        colorAttachment.srcColorBlendFactor <- VK_BLEND_FACTOR_SRC_ALPHA
+        colorAttachment.dstColorBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        colorAttachment.colorBlendOp <- VK_BLEND_OP_ADD
+        colorAttachment.srcAlphaBlendFactor <- VK_BLEND_FACTOR_ONE
+        colorAttachment.dstAlphaBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        colorAttachment.alphaBlendOp <- VK_BLEND_OP_ADD
+        colorAttachment.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
+
+        // populate depth and blend info
+        let depthInfo = VkPipelineDepthStencilStateCreateInfo ()
+        let mutable blendInfo = VkPipelineColorBlendStateCreateInfo ()
+        blendInfo.attachmentCount <- 1u
+        blendInfo.pAttachments <- asPointer &colorAttachment
+        // TODO: see if Vortice.Vulkan offers a workaround for supplying blendConstants.
 
 
         // destroy shader modules
