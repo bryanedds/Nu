@@ -614,13 +614,11 @@ module WorldModuleEntity =
             let mounterState = World.getEntityState mounter world
             if  not mounterState.Physical || // OPTIMIZATION: skip call to getEntityAllowedToMount when non-physical.
                 World.getEntityAllowedToMount mounter world then
-                let affineMatrixWorld = World.getEntityAffineMatrix mount world
-                let rotationWorld = World.getEntityRotation mount world
-                let scaleWorld = World.getEntityScale mount world
+                let mountState = World.getEntityState mount world
                 let mutable transform = mounterState.Transform
-                transform.Position <- Vector3.Transform (World.getEntityPositionLocal mounter world, affineMatrixWorld)
-                transform.Rotation <- rotationWorld * World.getEntityRotationLocal mounter world
-                transform.Scale <- World.getEntityScaleLocal mounter world * scaleWorld
+                transform.Position <- Vector3.Transform (mounterState.PositionLocal, mountState.AffineMatrix)
+                transform.Rotation <- mountState.Rotation * mounterState.RotationLocal
+                transform.Scale <- mounterState.ScaleLocal * mountState.Scale
                 World.setEntityTransformByRef (&transform, mounterState, mounter, world) |> snd'
             else world
 
