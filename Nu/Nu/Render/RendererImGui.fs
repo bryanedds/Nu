@@ -274,6 +274,7 @@ module GlRendererImGui =
 type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     
     let device = vulkanGlobal.Device
+    let renderPass = vulkanGlobal.GeneralRenderPass
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
     let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
@@ -384,7 +385,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         pipelineLayout
 
     /// Create the pipeline.
-    static member createPipeline device =
+    static member createPipeline pipelineLayout renderPass device =
         
         // handle
         let mutable pipeline = Unchecked.defaultof<VkPipeline>
@@ -471,11 +472,33 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         colorAttachment.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
 
         // populate depth and blend info
-        let depthInfo = VkPipelineDepthStencilStateCreateInfo ()
+        let mutable depthInfo = VkPipelineDepthStencilStateCreateInfo ()
         let mutable blendInfo = VkPipelineColorBlendStateCreateInfo ()
         blendInfo.attachmentCount <- 1u
         blendInfo.pAttachments <- asPointer &colorAttachment
-        // TODO: see if Vortice.Vulkan offers a workaround for supplying blendConstants.
+        // TODO: use blendConstants (0.0f, 0.0f, 0.0f, 0.0f) to test fixed buffer writing solution.
+
+        // populate dynamic state info
+        let dynamicStates = [|VK_DYNAMIC_STATE_VIEWPORT; VK_DYNAMIC_STATE_SCISSOR|]
+        let dynamicStatesPin = ArrayPin dynamicStates
+        let mutable dynamicState = VkPipelineDynamicStateCreateInfo ()
+        dynamicState.dynamicStateCount <- 2u
+        dynamicState.pDynamicStates <- dynamicStatesPin.Pointer
+
+        // populate pipeline create info
+        let mutable createInfo = VkGraphicsPipelineCreateInfo ()
+        createInfo.stageCount <- 2u
+        createInfo.pStages <- shaderStageInfosPin.Pointer
+        createInfo.pVertexInputState <- asPointer &vertexInfo
+        createInfo.pInputAssemblyState <- asPointer &inputAssemblyInfo
+        createInfo.pViewportState <- asPointer &viewportInfo
+        createInfo.pRasterizationState <- asPointer &rasterInfo
+        createInfo.pMultisampleState <- asPointer &multisampleInfo
+        createInfo.pDepthStencilState <- asPointer &depthInfo
+        createInfo.pColorBlendState <- asPointer &blendInfo
+        createInfo.pDynamicState <- asPointer &dynamicState
+        createInfo.layout <- pipelineLayout
+        createInfo.renderPass <- renderPass
 
 
         // destroy shader modules
@@ -496,7 +519,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             pipelineLayout <- VulkanRendererImGui.createPipelineLayout descriptorSetLayout device
             
             // create pipeline
-            pipeline <- VulkanRendererImGui.createPipeline device
+            pipeline <- VulkanRendererImGui.createPipeline pipelineLayout renderPass device
             
             
             let mutable pixels = Unchecked.defaultof<nativeint>
