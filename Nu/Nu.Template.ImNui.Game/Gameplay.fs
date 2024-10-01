@@ -63,3 +63,7 @@ type GameplayDispatcher () =
 
         // return gameplay and world values
         (gameplay, world)
+
+    // this is a semantic fix-up that allows the editor to avoid creating an unused group. This is specific to the
+    // ImNui API that is needed to patch a little semantic hole inherent in the immediate-mode programming idiom.
+    override this.CreateDefaultGroup (screen, world) = World.createGroup (Some "Gui") screen world

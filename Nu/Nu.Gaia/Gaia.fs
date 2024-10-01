@@ -511,7 +511,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let (group, world) =
             match Seq.tryHead groups with
             | Some group -> (group, world)
-            | None -> World.createGroup (Some "Group") screen world
+            | None -> (SelectedScreen.GetDispatcher world).CreateDefaultGroup (SelectedScreen, world)
         selectGroup false group
         world
 
@@ -752,7 +752,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 if SelectedGroup :> Simulant = simulant then
                     let groups = World.getGroups SelectedScreen world
                     if Seq.isEmpty groups then
-                        let (group, world) = World.createGroup (Some "Group") SelectedScreen world // create default group if no group remains
+                        let (group, world) = (SelectedScreen.GetDispatcher world).CreateDefaultGroup (SelectedScreen, world) // create default group if no group remains
                         SelectedGroup <- group
                         world
                     else
