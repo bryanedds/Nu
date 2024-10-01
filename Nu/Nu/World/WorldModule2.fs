@@ -598,6 +598,13 @@ module WorldModule2 =
 
             // propagate entity
             let targets = entity.GetPropagationTargets world
+            let targetsValid =
+                Seq.filter (fun (target : Entity) ->
+                    let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
+                    let valid = Array.notExists (function Parent -> true | _ -> false) targetToEntity.Links
+                    if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
+                    valid)
+                    targets
             let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
@@ -612,13 +619,21 @@ module WorldModule2 =
                         let world = target.SetOrder order world
                         world
                     else world)
-                    world targets
+                    world targetsValid
             let currentDescriptor = { currentDescriptor with EntityProperties = Map.remove (nameof Entity.PropagatedDescriptorOpt) currentDescriptor.EntityProperties }
             let world = entity.SetPropagatedDescriptorOpt (Some currentDescriptor) world
 
             // propagate sourced ancestor entities
             seq {
-                for target in entity.GetPropagationTargets world do
+                let targets = entity.GetPropagationTargets world
+                let targetsValid =
+                    Seq.filter (fun (target : Entity) ->
+                        let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
+                        let valid = Array.notExists (function Parent -> true | _ -> false) targetToEntity.Links
+                        if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
+                        valid)
+                        targets
+                for target in targetsValid do
                     if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
                             if ancestor.GetExists world && ancestor.HasPropagationTargets world then

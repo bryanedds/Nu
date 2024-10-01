@@ -689,6 +689,15 @@ module WorldModuleEntity =
             let previous = entityState.MountOpt
             if value <> previous then
 
+                // validate mount value
+                match value with
+                | Some mount ->
+                    let mountAddress = Relation.resolve entity.EntityAddress mount
+                    let mountToEntity = Relation.relate entity.EntityAddress mountAddress
+                    if Array.notExists (function Parent -> true | _ -> false) mountToEntity.Links then
+                        failwith "Cannot mount an entity circularly."
+                | None -> ()
+
                 // update property
                 let struct (entityState, world) =
                     if entityState.Imperative then
