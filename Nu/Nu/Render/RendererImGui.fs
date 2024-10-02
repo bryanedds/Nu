@@ -369,7 +369,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable pushConstantRange = VkPushConstantRange ()
         pushConstantRange.stageFlags <- VK_SHADER_STAGE_VERTEX_BIT
         pushConstantRange.offset <- 0u
-        pushConstantRange.size <- uint sizeof<Single>
+        pushConstantRange.size <- uint sizeof<Single> * 4u
 
         // populate create info
         let mutable createInfo = VkPipelineLayoutCreateInfo ()
@@ -499,7 +499,10 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         createInfo.pDynamicState <- asPointer &dynamicState
         createInfo.layout <- pipelineLayout
         createInfo.renderPass <- renderPass
+        createInfo.subpass <- 0u
 
+        // create pipeline
+        vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &createInfo, nullPtr, asPointer &pipeline) |> check
 
         // destroy shader modules
         vkDestroyShaderModule (device, vertModule, nullPtr)
@@ -532,6 +535,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         member this.Render _ = ()
         
         member this.CleanUp () =
+            vkDestroyPipeline (device, pipeline, nullPtr)
             vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
             vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullPtr)
             vkDestroySampler (device, sampler, nullPtr)
