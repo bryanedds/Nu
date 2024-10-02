@@ -694,7 +694,7 @@ module WorldModuleEntity =
                 | Some mount ->
                     let mountAddress = Relation.resolve entity.EntityAddress mount
                     let mountToEntity = Relation.relate entity.EntityAddress mountAddress
-                    if Array.notExists (function Parent -> true | _ -> false) mountToEntity.Links then
+                    if Array.notExists (function Parent | Name "???" | Name "??" | Name "?" -> true | _ -> false) mountToEntity.Links then
                         failwith "Cannot mount an entity circularly."
                 | None -> ()
 
