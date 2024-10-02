@@ -3698,7 +3698,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     if ImGui.Button "Wipe propagation targets and cut entity." || ImGui.IsKeyReleased ImGuiKey.Enter then
                         let world = snapshot CutEntity world
                         let world = World.clearPropagationTargets entity world
-                        let world = World.destroyEntity entity world
+                        let world = World.cutEntityToClipboard entity world
                         SelectedEntityOpt <- None
                         ShowCutEntityDialog <- false
                         world
@@ -3706,7 +3706,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let world =
                     if ImGui.Button "Ignore propagation targets and cut entity (if you plan on pasting or replacing it)." then
                         let world = snapshot CutEntity world
-                        let world = World.destroyEntity entity world
+                        let world = World.cutEntityToClipboard entity world
                         SelectedEntityOpt <- None
                         ShowCutEntityDialog <- false
                         world
