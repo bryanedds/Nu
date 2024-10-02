@@ -75,17 +75,32 @@ module WorldModule2 =
             let world =
                 match World.getSelectedScreenOpt world with
                 | Some selectedScreen ->
-                    let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
-                    World.publishPlus () selectedScreen.DeselectingEvent eventTrace selectedScreen false false world
+                    let deselecting =
+                        match transitionStateAndScreenOpt with
+                        | Some (_, screen) when selectedScreen = screen -> false
+                        | Some _ | None -> true
+                    if deselecting then
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "Deselecting" EventTrace.empty
+                        World.publishPlus () selectedScreen.DeselectingEvent eventTrace selectedScreen false false world
+                    else world
                 | None -> world
             match transitionStateAndScreenOpt with
             | Some (transitionState, screen) ->
-                let world = World.setScreenTransitionStatePlus transitionState screen world
-                let world = World.setSelectedScreen screen world
-                let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
-                World.publishPlus () screen.SelectEvent eventTrace screen false false world
-            | None ->
-                World.setSelectedScreenOpt None world
+                let world =
+                    match World.getSelectedScreenOpt world with
+                    | Some selectedScreen ->
+                        let select =
+                            match transitionStateAndScreenOpt with
+                            | Some (_, screen) when selectedScreen = screen -> false
+                            | Some _ | None -> true
+                        if select then
+                            let world = World.setSelectedScreen screen world
+                            let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                            World.publishPlus () screen.SelectEvent eventTrace screen false false world
+                        else world
+                    | None -> world
+                World.setScreenTransitionStatePlus transitionState screen world
+            | None -> World.setSelectedScreenOpt None world
 
         /// Select the given screen without transitioning, even if another transition is taking place.
         static member selectScreen transitionState screen world =
