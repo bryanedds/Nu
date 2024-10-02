@@ -28,8 +28,8 @@ type MyGameDispatcher () =
     override this.Run (myGame, _, world) =
 
         // declare splash screen
-        let (result, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
-        let myGame = if FQueue.contains Deselecting result then Title else myGame
+        let (results, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
+        let myGame = if FQueue.contains Deselecting results then Title else myGame
         let world = World.endScreen world
 
         // declare title screen
