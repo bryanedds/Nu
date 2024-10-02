@@ -729,7 +729,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
           FocusProperty = match focusPropertyOpt with Some focus -> focus | None -> fun () -> ()
           UnfocusProperty = match unfocusPropertyOpt with Some unfocus -> unfocus | None -> fun () -> ()
           SearchAssetViewer = fun () -> searchAssetViewer ()
-          PropertyValueStrPreviousRef = ref PropertyValueStrPrevious
           DragDropPayloadOpt = DragDropPayloadOpt
           SnapDrag = SnapDrag
           SelectedScreen = SelectedScreen
@@ -1895,7 +1894,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyValue = getProperty propertyDescriptor simulant world
         let context = makeContext (Some focusProperty) None
         let (changed, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
-        PropertyValueStrPrevious <- context.PropertyValueStrPreviousRef.Value
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditProperty
@@ -1908,7 +1906,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyValue = getProperty propertyDescriptor simulant world
         let context = makeContext (Some focusProperty) None
         let (changed, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
-        PropertyValueStrPrevious <- context.PropertyValueStrPreviousRef.Value
         if changed then setProperty propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =

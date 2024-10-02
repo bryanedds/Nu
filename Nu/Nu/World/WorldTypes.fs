@@ -122,7 +122,6 @@ and EditContext =
       FocusProperty : unit -> unit
       UnfocusProperty : unit -> unit
       SearchAssetViewer : unit -> unit
-      PropertyValueStrPreviousRef : string ref
       DragDropPayloadOpt : string option
       SnapDrag : single
       SelectedScreen : Screen

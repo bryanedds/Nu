@@ -870,14 +870,9 @@ module WorldImGui =
                     else
                         let mutable valueStr = converter.ConvertToString value
                         let (changed, value) =
-                            if ImGui.InputText (name, &valueStr, 131072u) && valueStr <> context.PropertyValueStrPreviousRef.Value then
-                                let (changed, value) =
-                                    try let value = converter.ConvertFromString valueStr
-                                        (true, value)
-                                    with _ ->
-                                        (false, value)
-                                context.PropertyValueStrPreviousRef.Value <- valueStr
-                                (changed, value)
+                            if ImGui.InputText (name, &valueStr, 131072u) then
+                                try (true, converter.ConvertFromString valueStr)
+                                with _ -> (false, value)
                             else (false, value)
                         if ImGui.IsItemFocused () then context.FocusProperty ()
                         (changed, value)
