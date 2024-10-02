@@ -630,7 +630,8 @@ module WorldModule2 =
                 let targetsValid =
                     Seq.filter (fun (target : Entity) ->
                         let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                        let valid = Array.notExists (function Parent -> true | _ -> false) targetToEntity.Links
+                        let linkLast = Array.tryLast targetToEntity.Links
+                        let valid = linkLast <> Some Parent && linkLast <> Some Current
                         if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
                         targets
