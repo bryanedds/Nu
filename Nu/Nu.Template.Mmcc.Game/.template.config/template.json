@@ -2,9 +2,9 @@
   "$schema": "http://json.schemastore.org/template",
   "author": "Bryan Edds",
   "classifications": [ "Nu", "Game" ],
-  "identity": "Nu Game",
-  "name": "Nu Game",
-  "shortName": "nu-game",
+  "identity": "Nu Game - MMCC Game",
+  "name": "Nu Game - MMCC Game",
+  "shortName": "nu-game-mmcc-game",
   "tags": {
     "language": "F#",
     "type": "project"
