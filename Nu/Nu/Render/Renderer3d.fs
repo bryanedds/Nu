@@ -892,8 +892,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)>
           ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single) List
-          RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           RenderPackages : Packages<RenderAsset, AssetClient>
+          RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
@@ -970,6 +970,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         v2 (a / single samples) (b / single samples)
 
     static member private invalidateCaches renderer =
+        renderer.RenderTasksDictionary.Clear ()
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
@@ -3612,8 +3613,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               ForwardSurfacesComparer = forwardSurfacesComparer
               ForwardSurfacesSortBuffer = List ()
-              RenderTasksDictionary = renderTasksDictionary
               RenderPackages = dictPlus StringComparer.Ordinal []
+              RenderTasksDictionary = renderTasksDictionary
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
