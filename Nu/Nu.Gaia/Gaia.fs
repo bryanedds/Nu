@@ -1970,7 +1970,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | Some mount ->
                                     let parentAddress = Relation.resolve entity.EntityAddress mount
                                     let parent = World.derive (atooa parentAddress)
-                                    World.getExists parent world
+                                    parent.Names.Length >= 4 && World.getExists parent world
                                 | None -> false
                             | _ -> false
                         let propertyDescriptors =
