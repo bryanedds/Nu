@@ -240,14 +240,6 @@ type GameplayDispatcher () =
                 [Content.staticModel "StaticModel"
                     [Entity.Position == v3 0.0f 0.0f -2.0f
                      Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
-                 Content.staticSprite "Paddle"
-                    [Entity.Position := gameplay.Paddle.Position
-                     Entity.Size == gameplay.Paddle.Size
-                     Entity.StaticImage == Assets.Default.Paddle]
-                 Content.staticSprite "Ball"
-                    [Entity.Position := gameplay.Ball.Position
-                     Entity.Size == gameplay.Ball.Size
-                     Entity.StaticImage == Assets.Default.Ball]
                  Content.staticSprite "LeftWall"
                     [Entity.Position == v3 -164.0f 0.0f 0.0f
                      Entity.Size == v3 8.0f 360.0f 0.0f
@@ -260,6 +252,14 @@ type GameplayDispatcher () =
                     [Entity.Position == v3 0.0f 176.0f 0.0f
                      Entity.Size == v3 320.0f 8.0f 0.0f
                      Entity.StaticImage == Assets.Default.Black]
+                 Content.staticSprite "Paddle"
+                    [Entity.Position := gameplay.Paddle.Position
+                     Entity.Size == gameplay.Paddle.Size
+                     Entity.StaticImage == Assets.Default.Paddle]
+                 Content.staticSprite "Ball"
+                    [Entity.Position := gameplay.Ball.Position
+                     Entity.Size == gameplay.Ball.Size
+                     Entity.StaticImage == Assets.Default.Ball]
                  for (brickName, brick) in gameplay.Bricks.Pairs do
                     Content.staticSprite brickName
                         [Entity.Position == brick.Position
