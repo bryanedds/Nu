@@ -495,10 +495,15 @@ module WorldModule2 =
                                             | None -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
                                         with _ -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
                                     | (false, _) -> Overlay.dispatcherNameToOverlayName currentDescriptor.EntityDispatcherName
-                                let facetNames =
+                                let facetNamesIntrinsic =
+                                    let entityDispatchers = World.getEntityDispatchers world
+                                    let currentDispatcher = entityDispatchers.[currentDescriptor.EntityDispatcherName]
+                                    currentDispatcher |> getType |> Reflection.getIntrinsicFacetNames
+                                let facetNamesExtrinsic =
                                     match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
                                     | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
                                     | (false, _) -> Set.empty
+                                let facetNames = Set.addMany facetNamesIntrinsic facetNamesExtrinsic
                                 let overlayer = World.getOverlayer world
                                 let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
                                 match overlaySymbols.TryGetValue propertyName with
@@ -526,10 +531,15 @@ module WorldModule2 =
                                                 | None -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
                                             with _ -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
                                         | (false, _) -> Overlay.dispatcherNameToOverlayName targetDescriptor.EntityDispatcherName
-                                    let facetNames =
+                                    let facetNamesIntrinsic =
+                                        let entityDispatchers = World.getEntityDispatchers world
+                                        let targetDispatcher = entityDispatchers.[targetDescriptor.EntityDispatcherName]
+                                        targetDispatcher |> getType |> Reflection.getIntrinsicFacetNames
+                                    let facetNamesExtrinsic =
                                         match targetDescriptor.EntityProperties.TryGetValue Constants.Engine.FacetNamesPropertyName with
                                         | (true, facetNamesSymbol) -> symbolToValue<string Set> facetNamesSymbol
                                         | (false, _) -> Set.empty
+                                    let facetNames = Set.addMany facetNamesIntrinsic facetNamesExtrinsic
                                     let overlayer = World.getOverlayer world
                                     let overlaySymbols = Overlayer.getOverlaySymbols overlayName facetNames overlayer
                                     match overlaySymbols.TryGetValue propertyName with
