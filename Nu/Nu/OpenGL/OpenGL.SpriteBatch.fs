@@ -98,13 +98,14 @@ module SpriteBatch =
             Gl.Enable EnableCap.CullFace
             match env.State.ClipOpt with
             | ValueSome clip ->
-                let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
-                let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
-                let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
-                let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
-                let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
-                Gl.Enable EnableCap.ScissorTest
-                Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
+                // HACK: disabling sprite clipping on Omni Blade since it seemingly triggers a bug in Proton.
+                //let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
+                //let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
+                //let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
+                //let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
+                //let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
+                //Gl.Enable EnableCap.ScissorTest
+                //Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
             | ValueNone -> ()
             Hl.Assert ()
 
