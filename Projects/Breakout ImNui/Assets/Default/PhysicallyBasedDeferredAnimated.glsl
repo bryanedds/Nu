@@ -123,8 +123,9 @@ void main()
     vec2 parallax = toEyeTangent.xy * height;
     vec2 texCoords = texCoordsOut - parallax;
 
-    // compute albedo
+    // compute albedo, discarding fragment if even partly transparent
     vec4 albedoSample = texture(albedoTexture, texCoords);
+    if (albedoSample.w < 0.5) discard;
     albedo = pow(albedoSample.rgb, vec3(GAMMA)) * albedoOut.rgb;
 
     // compute material properties

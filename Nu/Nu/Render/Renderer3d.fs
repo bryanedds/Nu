@@ -507,20 +507,14 @@ type [<SymbolicExpansion>] Lighting3dConfig =
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
-    { StaticSurfaceOcclusionPrePassEnabled : bool
-      AnimatedSurfaceOcclusionPrePassEnabled : bool
-      TerrainOcclusionPrePassEnabled : bool
-      LightMappingEnabled : bool
+    { LightMappingEnabled : bool
       SsaoEnabled : bool
       SsaoSampleCount : int
       SsvfEnabled : bool
       SsrEnabled : bool }
 
     static member defaultConfig =
-        { StaticSurfaceOcclusionPrePassEnabled = Constants.Render.StaticSurfaceOcclusionPrePassEnabledDefault
-          AnimatedSurfaceOcclusionPrePassEnabled = Constants.Render.AnimatedSurfaceOcclusionPrePassEnabledDefault
-          TerrainOcclusionPrePassEnabled = Constants.Render.TerrainOcclusionPrePassEnabledDefault
-          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+        { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
@@ -841,9 +835,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedShadowStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
-          PhysicallyBasedOcclusionStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedOcclusionAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedOcclusionTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           PhysicallyBasedDeferredStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
@@ -2531,80 +2522,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
 
-        // render static surface occlusions if needed
-        if renderer.RendererConfig.StaticSurfaceOcclusionPrePassEnabled then
-        
-            // render static surface occlusions w/ absolute transforms if in top level render
-            if topLevelRender then
-                let mutable enr = renderTasks.DeferredStaticAbsolute.GetEnumerator ()
-                let mutable i = 0
-                while enr.MoveNext () do
-                    let entry = enr.Current
-                    let batchPhase =
-                        match renderTasks.DeferredStaticAbsolute.Count with
-                        | 1 -> SingletonPhase
-                        | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-                    GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                        batchPhase viewAbsoluteArray geometryProjectionArray [||] entry.Value
-                        false entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
-                    OpenGL.Hl.Assert ()
-                    i <- inc i
-        
-            // render static surface occlusions w/ relative transforms
-            let mutable enr = renderTasks.DeferredStaticRelative.GetEnumerator ()
-            let mutable i = 0
-            while enr.MoveNext () do
-                let entry = enr.Current
-                let batchPhase =
-                    match renderTasks.DeferredStaticRelative.Count with
-                    | 1 -> SingletonPhase
-                    | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    batchPhase viewRelativeArray geometryProjectionArray [||] entry.Value
-                    false entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
-                OpenGL.Hl.Assert ()
-                i <- inc i
-
-        // render animated surface occlusions if needed
-        if renderer.RendererConfig.AnimatedSurfaceOcclusionPrePassEnabled then
-
-            // render animated surface occlusions w/ absolute transforms if in top level render
-            if topLevelRender then
-                for entry in renderTasks.DeferredAnimatedAbsolute do
-                    let surfaceKey = entry.Key
-                    let parameters = entry.Value
-                    let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-                    GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                        SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray parameters
-                        false surfaceKey.AnimatedSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
-                    OpenGL.Hl.Assert ()
-
-            // render animated surface occlusions w/ relative transforms
-            for entry in renderTasks.DeferredAnimatedRelative do
-                let surfaceKey = entry.Key
-                let parameters = entry.Value
-                let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    SingletonPhase viewRelativeArray geometryProjectionArray bonesArray parameters
-                    false surfaceKey.AnimatedSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
-                OpenGL.Hl.Assert ()
-
-        // render terrain occlusions if needed
-        if renderer.RendererConfig.TerrainOcclusionPrePassEnabled then
-
-            // attempt to render terrain occlusions w/ absolute transforms if in top level render
-            if topLevelRender then
-                for (descriptor, geometry) in renderTasks.DeferredTerrainsAbsolute do
-                    GlRenderer3d.renderPhysicallyBasedTerrain
-                        viewAbsoluteArray geometryProjectionArray eyeCenter false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                        descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
-        
-            // attempt to render terrain occlusions w/ relative transforms
-            for (descriptor, geometry) in renderTasks.DeferredTerrainsRelative do
-                GlRenderer3d.renderPhysicallyBasedTerrain
-                    viewRelativeArray geometryProjectionArray eyeCenter false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
-
         // render static surfaces deferred w/ absolute transforms if in top level render
         if topLevelRender then
             let mutable enr = renderTasks.DeferredStaticAbsolute.GetEnumerator ()
@@ -3266,14 +3183,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                  Constants.Paths.PhysicallyBasedShadowTerrainShaderFilePath)
         OpenGL.Hl.Assert ()
 
-        // create occlusion shaders
-        let (occlusionStaticShader, occlusionAnimatedShader, occlusionTerrainShader) =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedDepthShaders
-                (Constants.Paths.PhysicallyBasedOcclusionStaticShaderFilePath,
-                 Constants.Paths.PhysicallyBasedOcclusionAnimatedShaderFilePath,
-                 Constants.Paths.PhysicallyBasedOcclusionTerrainShaderFilePath)
-        OpenGL.Hl.Assert ()
-
         // create deferred shaders
         let (deferredStaticShader, deferredAnimatedShader, deferredTerrainShader, deferredLightMappingShader,
              deferredAmbientShader, deferredIrradianceShader, deferredEnvironmentFilterShader, deferredSsaoShader,
@@ -3562,9 +3471,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedShadowStaticShader = shadowStaticShader
               PhysicallyBasedShadowAnimatedShader = shadowAnimatedShader
               PhysicallyBasedShadowTerrainShader = shadowTerrainShader
-              PhysicallyBasedOcclusionStaticShader = occlusionStaticShader
-              PhysicallyBasedOcclusionAnimatedShader = occlusionAnimatedShader
-              PhysicallyBasedOcclusionTerrainShader = occlusionTerrainShader
               PhysicallyBasedDeferredStaticShader = deferredStaticShader
               PhysicallyBasedDeferredAnimatedShader = deferredAnimatedShader
               PhysicallyBasedDeferredTerrainShader = deferredTerrainShader
