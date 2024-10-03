@@ -91,6 +91,7 @@ module Sprite =
          textureWidth,
          textureHeight,
          texture : Texture.Texture,
+         windowSize,
          modelViewProjectionUniform,
          texCoords4Uniform,
          colorUniform,
@@ -142,12 +143,17 @@ module Sprite =
         Gl.Enable EnableCap.CullFace
         match clipOpt with
         | ValueSome clip ->
+            let offsetViewport = Constants.Render.OffsetViewport windowSize
             let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
             let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
             let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
             Gl.Enable EnableCap.ScissorTest
-            Gl.Scissor (minScissor.X |> round |> int, minScissor.Y |> round |> int, int sizeScissor.X, int sizeScissor.Y)
+            Gl.Scissor
+                ((minScissor.X |> round |> int) + offsetViewport.Bounds.Min.X,
+                 (minScissor.Y |> round |> int) + offsetViewport.Bounds.Min.Y,
+                 int sizeScissor.X,
+                 int sizeScissor.Y)
         | ValueNone -> ()
         Hl.Assert ()
 
