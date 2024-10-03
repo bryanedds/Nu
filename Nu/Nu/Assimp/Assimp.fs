@@ -386,6 +386,21 @@ module AssimpExtensions =
                 mesh.Faces.Clear ()
                 mesh.Faces.Capacity <- 0
 
+        member this.TryFindNode (meshIndex, node : Assimp.Node) =
+            let nodes =
+                [for i in 0 .. dec node.MeshCount do
+                    if node.MeshIndices.[i] = meshIndex then
+                        node]
+            match nodes with
+            | node :: _ -> Some node
+            | _ ->
+                let nodes =
+                    [for child in node.Children do
+                        match this.TryFindNode (meshIndex, child) with
+                        | Some node -> node
+                        | None -> ()]
+                List.tryHead nodes
+
         static member private UpdateBoneTransforms
             (time : single,
              boneIds : Dictionary<string, int>,
