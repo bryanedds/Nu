@@ -632,7 +632,7 @@ module WorldModule2 =
                     valid)
                     targets
             let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
-            let previousDescriptor = Option.defaultValue currentDescriptor (entity.GetPropagatedDescriptorOpt world)
+            let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
                 Seq.fold (fun world target ->
                     if World.getEntityExists target world then
