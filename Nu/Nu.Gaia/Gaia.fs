@@ -1761,7 +1761,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 let next = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                                 let previousOpt = World.tryGetPreviousEntity next world
                                 let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                                if not ((scstringMemo parentOpt).Contains (scstringMemo sourceEntity)) then
+                                let canMove =
+                                    match parentOpt with
+                                    | Some parent ->
+                                        let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
+                                        Array.contains Parent parentToSource.Links
+                                    | None -> true
+                                if canMove then
                                     let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
                                     let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> SelectedGroup / sourceEntity.Name
                                     if sourceEntity'.GetExists world then
@@ -1781,12 +1787,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                         world
-                                else world
+                                else Log.warn "Cannot mount an entity circularly."; world
                             else
                                 let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
                                 let sourceEntity' = parent / sourceEntity.Name
-                                if not ((scstringMemo parent).Contains (scstringMemo sourceEntity)) then
-                                    if not (sourceEntity'.GetExists world) then
+                                let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
+                                if Array.contains Parent parentToSource.Links then
+                                    if sourceEntity'.GetExists world
+                                    then MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."; world
+                                    else
                                         let world = snapshot RenameEntity world
                                         let world = World.renameEntityImmediate sourceEntity sourceEntity' world
                                         let world =
@@ -1797,8 +1806,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         selectEntityOpt (Some sourceEntity') world
                                         ShowSelectedEntity <- true
                                         world
-                                    else MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."; world
-                                else world
+                                else Log.warn "Cannot mount an entity circularly."; world
                         else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the MMCC API)."; world
                     | None -> world
                 else world
@@ -3209,7 +3217,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private imGuiLogWindow world =
         let lines = LogStr.Split '\n'
-        let warnings = lines |> Seq.filter (fun line -> line.Contains "|Warn|") |> Seq.length
+        let warnings = lines |> Seq.filter (fun line -> line.Contains "|Warning|") |> Seq.length
         let errors = lines |> Seq.filter (fun line -> line.Contains "|Error|") |> Seq.length
         let flag = warnings > 0 || errors > 0
         let flash = flag && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
@@ -3224,6 +3232,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.PushStyleColor (ImGuiCol.Tab, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TabActive, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TabHovered, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TabUnfocused, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TabUnfocusedActive, flashColor)
         if ImGui.Begin ("Log", ImGuiWindowFlags.NoNav) then
             ImGui.Text "Log:"
             ImGui.SameLine ()
@@ -3235,7 +3245,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.TextUnformatted LogStr
             ImGui.EndChild ()
             ImGui.End ()
-        if flash then for i in 0 .. 6 do ImGui.PopStyleColor ()
+        if flash then for i in 0 .. dec 8 do ImGui.PopStyleColor ()
         world
 
     let private imGuiEditorConfigWindow () =
