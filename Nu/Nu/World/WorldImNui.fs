@@ -164,7 +164,10 @@ module WorldImNui =
                         then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
-            let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
+            let world =
+                if initializing && screen.GetExists world
+                then World.applyScreenBehavior setScreenSlide behavior screen world
+                else world
             let world =
                 if screen.GetExists world && select then
                     if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
