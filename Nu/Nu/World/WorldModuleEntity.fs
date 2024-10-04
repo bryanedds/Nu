@@ -654,6 +654,14 @@ module WorldModuleEntity =
                 let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add source targets world.WorldExtension.PropagationTargets }
                 World.choose { world with WorldExtension = worldExtension }
             | (false, _) ->
+                let world =
+                    if World.getEntityExists source world then
+                        match World.getEntityPropagatedDescriptorOpt source world with
+                        | None ->
+                            let propagatedDescriptor = World.writeEntity false EntityDescriptor.empty source world
+                            World.setEntityPropagatedDescriptorOpt (Some propagatedDescriptor) source world |> snd'
+                        | Some _ -> world
+                    else world
                 let config = World.getCollectionConfig world
                 let targets = USet.singleton HashIdentity.Structural config entity
                 let worldExtension = { world.WorldExtension with PropagationTargets = UMap.add source targets world.WorldExtension.PropagationTargets }
