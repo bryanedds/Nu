@@ -568,7 +568,7 @@ type private SortableLightMap =
 
     /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightMapsIntoArrays lightMapsMax position boundsOpt lightMaps =
+    static member sortLightMapsIntoFloatArrays lightMapsMax position boundsOpt lightMaps =
         let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
@@ -623,9 +623,12 @@ type private SortableLight =
       SortableLightDesireShadows : int
       mutable SortableLightDistanceSquared : single }
 
+    static member private project light =
+        struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared)
+
     /// Sort lights for ordering shadow operations.
     /// TODO: consider getting rid of allocation here.
-    static member sortLights lightsMax position lights =
+    static member sortLightsIntoArrays lightsMax position lights =
         let lightIds = Array.zeroCreate<uint64> lightsMax
         let lightOrigins = Array.zeroCreate<Vector3> lightsMax
         let lightRotations = Array.zeroCreate<Quaternion> lightsMax
@@ -634,12 +637,8 @@ type private SortableLight =
         let lightConeInners = Array.zeroCreate<single> lightsMax
         let lightConeOuters = Array.zeroCreate<single> lightsMax
         let lightDesireShadows = Array.zeroCreate<int> lightsMax
-        for light in lights do
-            light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
-        let lightsSorted =
-            lights |>
-            Seq.toArray |>
-            Array.sortBy (fun light -> struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared))
+        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
@@ -653,9 +652,9 @@ type private SortableLight =
                 lightDesireShadows.[i] <- light.SortableLightDesireShadows
         (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightIds.Length)
 
-    /// Sort lights into array for uploading to OpenGL.
+    /// Sort lights into float array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightsIntoArrays lightsMax position lights =
+    static member sortLightsIntoFloatArrays lightsMax position lights =
         let lightIds = Array.zeroCreate<uint64> lightsMax
         let lightOrigins = Array.zeroCreate<single> (lightsMax * 3)
         let lightDirections = Array.zeroCreate<single> (lightsMax * 3)
@@ -668,12 +667,8 @@ type private SortableLight =
         let lightConeInners = Array.zeroCreate<single> lightsMax
         let lightConeOuters = Array.zeroCreate<single> lightsMax
         let lightDesireShadows = Array.zeroCreate<int> lightsMax
-        for light in lights do
-            light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
-        let lightsSorted =
-            lights |>
-            Seq.toArray |>
-            Array.sortBy (fun light -> struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared))
+        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let i3 = i * 3
@@ -2505,7 +2500,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort light maps for deferred rendering relative to eye center
         let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
             if topLevelRender then
-                SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
+                SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
             else
                 (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
                  Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
@@ -2518,7 +2513,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort lights for deferred rendering relative to eye center
         let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
-            SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
+            SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
 
         // compute light shadow indices according to sorted lights
         let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
@@ -2834,9 +2829,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.LightingConfig.SsvfSteps * 2; // HACK: need an increase in forward-rendered steps since they don't get blurred.
                 let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                     let surfaceBounds = surface.SurfaceBounds.Transform model
-                    SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
+                    SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
                 let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
-                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
+                    SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
                 let lightShadowIndices =
                     SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
@@ -2854,9 +2849,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.LightingConfig.SsvfSteps * 2; // HACK: need an increase in forward-rendered steps since they don't get blurred.
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
-                SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
+                SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
             let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
-                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
+                SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
@@ -3082,7 +3077,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // shadow pre-passes (sorting lights to properly prioritize shadow rendering)
         let normalPass = NormalPass
         let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
-        let (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, _, lightConeOuters, lightDesireShadows, lightSortedsCount) = SortableLight.sortLights Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
+        let (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, _, lightConeOuters, lightDesireShadows, lightSortedsCount) = SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
         let mutable shadowBufferIndex = 0
         for i in 0 .. dec lightSortedsCount do
             if lightDesireShadows.[i] = 1 then
