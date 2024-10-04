@@ -634,7 +634,6 @@ type private SortableLight =
         let lightRotations = Array.zeroCreate<Quaternion> lightsMax
         let lightCutoffs = Array.zeroCreate<single> lightsMax
         let lightDirectionals = Array.zeroCreate<int> lightsMax
-        let lightConeInners = Array.zeroCreate<single> lightsMax
         let lightConeOuters = Array.zeroCreate<single> lightsMax
         let lightDesireShadows = Array.zeroCreate<int> lightsMax
         for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
@@ -647,10 +646,9 @@ type private SortableLight =
                 lightRotations.[i] <- light.SortableLightRotation
                 lightCutoffs.[i] <- light.SortableLightCutoff
                 lightDirectionals.[i] <- light.SortableLightDirectional
-                lightConeInners.[i] <- light.SortableLightConeInner
                 lightConeOuters.[i] <- light.SortableLightConeOuter
                 lightDesireShadows.[i] <- light.SortableLightDesireShadows
-        (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightIds.Length)
+        (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, lightConeOuters, lightDesireShadows, lightIds.Length)
 
     /// Sort lights into float array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
@@ -666,7 +664,6 @@ type private SortableLight =
         let lightDirectionals = Array.zeroCreate<int> lightsMax
         let lightConeInners = Array.zeroCreate<single> lightsMax
         let lightConeOuters = Array.zeroCreate<single> lightsMax
-        let lightDesireShadows = Array.zeroCreate<int> lightsMax
         for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
         let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
@@ -690,20 +687,17 @@ type private SortableLight =
                 lightDirectionals.[i] <- light.SortableLightDirectional
                 lightConeInners.[i] <- light.SortableLightConeInner
                 lightConeOuters.[i] <- light.SortableLightConeOuter
-                lightDesireShadows.[i] <- light.SortableLightDesireShadows
-        (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightIds.Length)
+        (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightIds.Length)
 
     /// Sort light shadow indices.
-    static member sortLightShadowIndices (lightShadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) (lightDesireShadows : int array) lightsCount =
-        let mutable found = 0
-        [|for i in 0 .. dec lightsCount do
-            if found < Constants.Render.ShadowsMax && lightDesireShadows.[i] <> 0 then
-                match lightShadowIndices.TryGetValue lightIds.[i] with
-                | (true, index) ->
-                    found <- inc found
-                    index
-                | (false, _) -> -1 // TODO: log here?
-            else -1|]
+    static member sortLightShadowIndices (lightShadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) lightsCount =
+        let indices =
+            [|for lightId in lightIds do
+                match lightShadowIndices.TryGetValue lightId with
+                | (true, index) -> index
+                | (false, _) -> -1|]
+        let indicesPadded = Array.append indices (Array.create lightsCount -1)
+        Array.take lightsCount indicesPadded
 
 /// Enables efficient comparison of animated model surfaces.
 type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
@@ -2512,11 +2506,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                  0)
 
         // sort lights for deferred rendering relative to eye center
-        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
+        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightSortedsCount) =
             SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
+        let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
 
         // grab shadow textures
         let shadowTextures = Array.map a__ renderer.ShadowBuffersArray
@@ -2830,10 +2824,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                     let surfaceBounds = surface.SurfaceBounds.Transform model
                     SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
-                let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
+                let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightSortedsCount) =
                     SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
                 let lightShadowIndices =
-                    SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
+                    SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                     true viewAbsoluteArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
                     eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
@@ -2850,10 +2844,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
                 SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
-            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
+            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightSortedsCount) =
                 SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
-                SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
+                SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 true viewRelativeArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
                 eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
@@ -3077,7 +3071,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // shadow pre-passes (sorting lights to properly prioritize shadow rendering)
         let normalPass = NormalPass
         let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
-        let (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, _, lightConeOuters, lightDesireShadows, lightSortedsCount) = SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
+        let (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, lightConeOuters, lightDesireShadows, lightSortedsCount) = SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
         let mutable shadowBufferIndex = 0
         for i in 0 .. dec lightSortedsCount do
             if lightDesireShadows.[i] = 1 then
