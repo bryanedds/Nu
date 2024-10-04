@@ -623,6 +623,36 @@ type private SortableLight =
       SortableLightDesireShadows : int
       mutable SortableLightDistanceSquared : single }
 
+    /// Sort lights for ordering shadow operations.
+    /// TODO: consider getting rid of allocation here.
+    static member sortLights lightsMax position lights =
+        let lightIds = Array.zeroCreate<uint64> lightsMax
+        let lightOrigins = Array.zeroCreate<Vector3> lightsMax
+        let lightRotations = Array.zeroCreate<Quaternion> lightsMax
+        let lightCutoffs = Array.zeroCreate<single> lightsMax
+        let lightDirectionals = Array.zeroCreate<int> lightsMax
+        let lightConeInners = Array.zeroCreate<single> lightsMax
+        let lightConeOuters = Array.zeroCreate<single> lightsMax
+        let lightDesireShadows = Array.zeroCreate<int> lightsMax
+        for light in lights do
+            light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        let lightsSorted =
+            lights |>
+            Seq.toArray |>
+            Array.sortBy (fun light -> struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared))
+        for i in 0 .. dec lightsMax do
+            if i < lightsSorted.Length then
+                let light = lightsSorted.[i]
+                lightIds.[i] <- light.SortableLightId
+                lightOrigins.[i] <- light.SortableLightOrigin
+                lightRotations.[i] <- light.SortableLightRotation
+                lightCutoffs.[i] <- light.SortableLightCutoff
+                lightDirectionals.[i] <- light.SortableLightDirectional
+                lightConeInners.[i] <- light.SortableLightConeInner
+                lightConeOuters.[i] <- light.SortableLightConeOuter
+                lightDesireShadows.[i] <- light.SortableLightDesireShadows
+        (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightIds.Length)
+
     /// Sort lights into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
     static member sortLightsIntoArrays lightsMax position lights =
@@ -2961,8 +2991,8 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
 
-        // light map and shadow pre-passes
-        let mutable shadowBufferIndex = 0
+        // light map pre-passes and shadow pass accumulation
+        let shadowPasses = List ()
         for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
 
             // fallback light map pre-pass
@@ -3043,54 +3073,62 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     | (false, _) -> ()
 
-            | ShadowPass (lightId, _, _, _) ->
-                match renderer.LightsDesiringShadows.TryGetValue lightId with
-                | (true, light) ->
-                    if shadowBufferIndex < Constants.Render.ShadowsMax then
+            | ShadowPass (lightId, shadowDirectional, shadowRotation, shadowFrustum) ->
+                if renderPass = NormalPass then
+                    shadowPasses.Add (lightId, shadowDirectional, shadowRotation, shadowFrustum)
 
-                        // draw shadows
-                        let shadowDirectional = light.SortableLightDirectional = 1
-                        let (shadowOrigin, shadowView, shadowProjection) =
-                            if not shadowDirectional then
-                                let shadowOrigin = light.SortableLightOrigin
-                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
-                                shadowView.Translation <- light.SortableLightOrigin
-                                shadowView <- shadowView.Inverted
-                                let shadowFov = max (min light.SortableLightConeOuter Constants.Render.ShadowFovMax) 0.01f
-                                let shadowCutoff = max light.SortableLightCutoff 0.1f
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
-                                (shadowOrigin, shadowView, shadowProjection)
-                            else
-                                let shadowOrigin = light.SortableLightOrigin
-                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
-                                shadowView.Translation <- light.SortableLightOrigin
-                                shadowView <- shadowView.Inverted
-                                let shadowCutoff = light.SortableLightCutoff
-                                let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
-                                (shadowOrigin, shadowView, shadowProjection)
-                        let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
-                        let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffersArray.[shadowBufferIndex]
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowDirectional shadowResolution shadowRenderbuffer shadowFramebuffer
-                        renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
-                        renderer.LightShadowIndices.[light.SortableLightId] <- shadowBufferIndex
-
-                        // filter shadows on the x (presuming that viewport already configured correctly)
-                        let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowBuffers2Array.[shadowBufferIndex]
-                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
-                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
-                        OpenGL.Hl.Assert ()
-                        
-                        // filter shadows on the y (presuming that viewport already configured correctly)
-                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
-                        OpenGL.Hl.Assert ()
-
-                        // next shadow
-                        shadowBufferIndex <- inc shadowBufferIndex
-                    | (false, _) -> ()
             | _ -> ()
+
+        // shadow pre-passes (sorting lights to properly prioritize shadow rendering)
+        let normalPass = NormalPass
+        let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
+        let (lightIds, lightOrigins, lightRotations, lightCutoffs, lightDirectionals, _, lightConeOuters, lightDesireShadows, lightSortedsCount) = SortableLight.sortLights Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
+        let mutable shadowBufferIndex = 0
+        for i in 0 .. dec lightSortedsCount do
+            if lightDesireShadows.[i] = 1 then
+                if shadowBufferIndex < Constants.Render.ShadowsMax then
+
+                    // draw shadows
+                    let shadowDirectional = lightDirectionals.[i] = 1
+                    let (shadowOrigin, shadowView, shadowProjection) =
+                        if not shadowDirectional then
+                            let shadowOrigin = lightOrigins.[i]
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotations.[i]
+                            shadowView.Translation <- shadowOrigin
+                            shadowView <- shadowView.Inverted
+                            let shadowFov = max (min lightConeOuters.[i] Constants.Render.ShadowFovMax) 0.01f
+                            let shadowCutoff = max lightCutoffs.[i] 0.1f
+                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                            (shadowOrigin, shadowView, shadowProjection)
+                        else
+                            let shadowOrigin = lightOrigins.[i]
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotations.[i]
+                            shadowView.Translation <- shadowOrigin
+                            shadowView <- shadowView.Inverted
+                            let shadowCutoff = lightCutoffs.[i]
+                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                            (shadowOrigin, shadowView, shadowProjection)
+                    let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
+                    let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffersArray.[shadowBufferIndex]
+                    GlRenderer3d.renderShadowTexture normalTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowDirectional shadowResolution shadowRenderbuffer shadowFramebuffer
+                    renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
+                    renderer.LightShadowIndices.[lightIds.[i]] <- shadowBufferIndex
+
+                    // filter shadows on the x (presuming that viewport already configured correctly)
+                    let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowBuffers2Array.[shadowBufferIndex]
+                    OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
+                    OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
+                    OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                    OpenGL.Hl.Assert ()
+                        
+                    // filter shadows on the y (presuming that viewport already configured correctly)
+                    OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+                    OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
+                    OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                    OpenGL.Hl.Assert ()
+
+                    // next shadow
+                    shadowBufferIndex <- inc shadowBufferIndex
 
         // compute the viewports for the given window size
         let viewport = Constants.Render.Viewport
@@ -3104,9 +3142,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let projection = viewport.Projection3d
 
         // top-level geometry pass
-        let renderPass = NormalPass
-        let normalTasks = GlRenderer3d.getRenderTasks renderPass renderer
-        GlRenderer3d.renderGeometry renderPass normalTasks renderer true None eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
+        GlRenderer3d.renderGeometry normalPass normalTasks renderer true None eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
