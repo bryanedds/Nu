@@ -635,7 +635,7 @@ type private SortableLight =
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
-                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightRotation, light.SortableLightCutoff, light.SortableLightConeOuter)
+                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter)
         lightsArray
 
     /// Sort lights into float array for uploading to OpenGL.
@@ -1586,7 +1586,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> box2 v2Zero v2One // shouldn't we still be using borders?
         let lookRotation =
             match renderPass with
-            | ShadowPass (_, _, shadowRotation, _) -> shadowRotation
+            | ShadowPass (_, _, shadowRotation, _) -> shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
             | _ -> eyeRotation
         let billboardRotation =
             match renderPass with
@@ -3056,15 +3056,15 @@ type [<ReferenceEquality>] GlRenderer3d =
         let normalPass = NormalPass
         let normalTasks = renderer.RenderTasksDictionary.[normalPass]
         let lightsArray = SortableLight.sortLightsIntoArray Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
-        for struct (lightId, lightOrigin, lightRotation, lightCutoff, lightConeOuter) in lightsArray do
+        for struct (lightId, lightOrigin, lightCutoff, lightConeOuter) in lightsArray do
             for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
                 match renderPass with
-                | ShadowPass (shadowLightId, shadowDirectional, _, _) when lightId = shadowLightId && shadowBufferIndex < Constants.Render.ShadowsMax ->
+                | ShadowPass (shadowLightId, shadowDirectional, shadowRotation, _) when lightId = shadowLightId && shadowBufferIndex < Constants.Render.ShadowsMax ->
 
                     // draw shadows
                     let (shadowOrigin, shadowView, shadowProjection) =
                         if not shadowDirectional then
-                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                             shadowView.Translation <- lightOrigin
                             shadowView <- shadowView.Inverted
                             let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
@@ -3072,7 +3072,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                             (lightOrigin, shadowView, shadowProjection)
                         else
-                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion lightRotation
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                             shadowView.Translation <- lightOrigin
                             shadowView <- shadowView.Inverted
                             let shadowCutoff = lightCutoff

@@ -1680,8 +1680,7 @@ module WorldModule2 =
                     Array.sortBy fst' |>
                     Array.tryTake Constants.Render.ShadowsMax |>
                     Array.fold (fun world struct (struct (directionalSort, _), struct (shadowFrustum, light)) ->
-                        let shadowRotation = light.GetRotation world * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
-                        World.renderSimulantsInternal (ShadowPass (light.GetId world, isZero directionalSort, shadowRotation, shadowFrustum)) world)
+                        World.renderSimulantsInternal (ShadowPass (light.GetId world, isZero directionalSort, light.GetRotation world, shadowFrustum)) world)
                         world
 
                 // render simulants normally, remember to clear 3d shadow cache
