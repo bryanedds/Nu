@@ -9,6 +9,7 @@ open System.IO
 open SDL2
 open Vortice.Vulkan
 open type Vulkan
+open type Vortice.Vulkan.Vma
 open Vortice.ShaderCompiler
 open Prime
 open Nu
@@ -173,6 +174,7 @@ module Hl =
         { Instance : VkInstance
           Surface : VkSurfaceKHR
           Device : VkDevice
+          VmaAllocator : VmaAllocator
           Swapchain : VkSwapchainKHR
           SwapchainImageViews : VkImageView array
           CommandPool : VkCommandPool
@@ -346,6 +348,24 @@ module Hl =
             // fin
             device
 
+        /// Create the VMA allocator.
+        static member createVmaAllocator physicalDeviceData device instance =
+            
+            // handle
+            let mutable vmaAllocator = Unchecked.defaultof<VmaAllocator>
+
+            // populate create info
+            let mutable createInfo = VmaAllocatorCreateInfo ()
+            createInfo.physicalDevice <- physicalDeviceData.PhysicalDevice
+            createInfo.device <- device
+            createInfo.instance <- instance
+
+            // create vma allocator
+            vmaCreateAllocator (&createInfo, &vmaAllocator) |> check
+
+            // fin
+            vmaAllocator
+        
         /// Get surface format.
         static member getSurfaceFormat formats =
             
@@ -728,6 +748,7 @@ module Hl =
             vkDestroyCommandPool (device, vulkanGlobal.CommandPool, nullPtr)
             for i in [0 .. dec imageViews.Length] do vkDestroyImageView (device, imageViews[i], nullPtr)
             vkDestroySwapchainKHR (device, vulkanGlobal.Swapchain, nullPtr)
+            vmaDestroyAllocator vulkanGlobal.VmaAllocator
             vkDestroyDevice (device, nullPtr)
             vkDestroySurfaceKHR (instance, vulkanGlobal.Surface, nullPtr)
             vkDestroyInstance (instance, nullPtr)
@@ -787,6 +808,9 @@ module Hl =
                 // load device commands; not vulkan function
                 vkLoadDevice device
 
+                // create vma allocator
+                let vmaAllocator = VulkanGlobal.createVmaAllocator physicalDeviceData device instance
+
                 // get surface format and swap extent
                 let surfaceFormat = VulkanGlobal.getSurfaceFormat physicalDeviceData.Formats
                 let swapExtent = VulkanGlobal.getSwapExtent physicalDeviceData.SurfaceCapabilities window
@@ -820,6 +844,7 @@ module Hl =
                     { Instance = instance
                       Surface = surface
                       Device = device
+                      VmaAllocator = vmaAllocator
                       Swapchain = swapchain
                       SwapchainImageViews = swapchainImageViews
                       CommandPool = commandPool
