@@ -9,6 +9,7 @@ open ImGuiNET
 open Vulkan.Hl
 open Vortice.Vulkan
 open type Vulkan
+open type Vortice.Vulkan.Vma
 open Vortice.ShaderCompiler
 open Prime
 
@@ -274,12 +275,14 @@ module GlRendererImGui =
 type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     
     let device = vulkanGlobal.Device
+    let vmaAllocator = vulkanGlobal.VmaAllocator
     let renderPass = vulkanGlobal.GeneralRenderPass
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
     let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
     let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
     let mutable pipeline = Unchecked.defaultof<VkPipeline>
+    let mutable vmaImage = (Unchecked.defaultof<VkImage>, Unchecked.defaultof<VmaAllocation>)
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -510,6 +513,38 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // fin
         pipeline
+
+    /// Create the image for the font atlas.
+    static member createImage width height vmaAllocator =
+        
+        // handles
+        let mutable image = Unchecked.defaultof<VkImage>
+        let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
+        
+        // populate create info
+        let mutable createInfo = VkImageCreateInfo ()
+        createInfo.imageType <- VK_IMAGE_TYPE_2D
+        createInfo.format <- VK_FORMAT_R8G8B8A8_UNORM
+        createInfo.extent.width <- uint width
+        createInfo.extent.height <- uint height
+        createInfo.extent.depth <- 1u
+        createInfo.mipLevels <- 1u
+        createInfo.arrayLayers <- 1u
+        createInfo.samples <- VK_SAMPLE_COUNT_1_BIT
+        createInfo.tiling <- VK_IMAGE_TILING_OPTIMAL
+        createInfo.usage <- VK_IMAGE_USAGE_SAMPLED_BIT ||| VK_IMAGE_USAGE_TRANSFER_DST_BIT
+        createInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        createInfo.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+
+        // populate allocation info
+        let mutable allocInfo = VmaAllocationCreateInfo ()
+        allocInfo.usage <- VmaMemoryUsage.Auto
+
+        // create vma image
+        vmaCreateImage (vmaAllocator, &createInfo, &allocInfo, &image, &vmaAllocation, nullPtr) |> check
+
+        // fin
+        (image, vmaAllocation)
     
     interface RendererImGui with
         
@@ -524,17 +559,23 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             // create pipeline
             pipeline <- VulkanRendererImGui.createPipeline pipelineLayout renderPass device
             
-            
+            // get font atlas data
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable fontTextureWidth = 0
             let mutable fontTextureHeight = 0
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
+
+            // create image for font atlas
+            vmaImage <- VulkanRendererImGui.createImage fontTextureWidth fontTextureHeight vmaAllocator
+            
+            
             fonts.ClearTexData ()
         
         member this.Render _ = ()
         
         member this.CleanUp () =
+            vmaDestroyImage (vmaAllocator, fst vmaImage, snd vmaImage)
             vkDestroyPipeline (device, pipeline, nullPtr)
             vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
             vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullPtr)
