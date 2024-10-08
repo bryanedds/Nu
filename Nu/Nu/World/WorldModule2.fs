@@ -1975,8 +1975,8 @@ module EntityDispatcherModule2 =
         inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
 #if DEBUG
-        static let modelHasReferenceType =
-            not typeof<'model>.IsValueType
+        static let modelHasValueType =
+            typeof<'model>.IsValueType
 #endif
 
         new (is2d, physical, lightProbe, light, initial : 'model) =
@@ -2021,7 +2021,8 @@ module EntityDispatcherModule2 =
             let (model', world) = this.Run (model, entity, world)
             let world = World.advanceContext entity.EntityAddress context world
 #if DEBUG
-            if modelHasReferenceType && refNeq model (this.GetModel entity world) then
+            let model = this.GetModel entity world
+            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' entity world
@@ -2462,8 +2463,8 @@ module GroupDispatcherModule =
         inherit GroupDispatcher ()
 
 #if DEBUG
-        static let modelHasReferenceType =
-            not typeof<'model>.IsValueType
+        static let modelHasValueType =
+            typeof<'model>.IsValueType
 #endif
 
         new (initial : 'model) =
@@ -2505,7 +2506,8 @@ module GroupDispatcherModule =
             let (model', world) = this.Run (model, group, world)
             let world = World.advanceContext group.GroupAddress context world
 #if DEBUG
-            if modelHasReferenceType && refNeq model (this.GetModel group world) then
+            let model = this.GetModel group world
+            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' group world
@@ -2738,8 +2740,8 @@ module ScreenDispatcherModule =
         inherit ScreenDispatcher ()
 
 #if DEBUG
-        static let modelHasReferenceType =
-            not typeof<'model>.IsValueType
+        static let modelHasValueType =
+            typeof<'model>.IsValueType
 #endif
 
         new (initial : 'model) =
@@ -2781,7 +2783,8 @@ module ScreenDispatcherModule =
             let (model', world) = this.Run (model, screen, world)
             let world = World.advanceContext screen.ScreenAddress context world
 #if DEBUG
-            if modelHasReferenceType && refNeq model (this.GetModel screen world) then
+            let model = this.GetModel screen world
+            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' screen world
@@ -3036,8 +3039,8 @@ module GameDispatcherModule =
         inherit GameDispatcher ()
 
 #if DEBUG
-        static let modelHasReferenceType =
-            not typeof<'model>.IsValueType
+        static let modelHasValueType =
+            typeof<'model>.IsValueType
 #endif
 
         new (initial : 'model) =
@@ -3079,7 +3082,8 @@ module GameDispatcherModule =
             let (model', world) = this.Run (model, game, world)
             let world = World.advanceContext game.GameAddress context world
 #if DEBUG
-            if modelHasReferenceType && refNeq model (this.GetModel game world) then
+            let model = this.GetModel game world
+            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' game world
