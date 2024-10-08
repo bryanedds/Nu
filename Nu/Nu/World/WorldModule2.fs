@@ -2013,9 +2013,10 @@ module EntityDispatcherModule2 =
             let model = entity.GetModelGeneric<'model> world
             let context = world.ContextImNui
             let world = World.scopeEntity entity [] world
-            let (model, world) = this.Run (model, entity, world)
+            let (model', world) = this.Run (model, entity, world)
             let world = World.advanceContext entity.EntityAddress context world
-            this.SetModel model entity world
+            if model =/= this.GetModel entity world then Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
+            this.SetModel model' entity world
 
         override this.Edit (operation, entity, world) =
             let model = entity.GetModelGeneric<'model> world
@@ -2488,9 +2489,10 @@ module GroupDispatcherModule =
             let model = group.GetModelGeneric<'model> world
             let context = world.ContextImNui
             let world = World.scopeGroup group [] world
-            let (model, world) = this.Run (model, group, world)
+            let (model', world) = this.Run (model, group, world)
             let world = World.advanceContext group.GroupAddress context world
-            this.SetModel model group world
+            if model =/= this.GetModel group world then Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
+            this.SetModel model' group world
 
         override this.Edit (operation, group, world) =
             let model = group.GetModelGeneric<'model> world
@@ -2755,9 +2757,10 @@ module ScreenDispatcherModule =
             let model = screen.GetModelGeneric<'model> world
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
-            let (model, world) = this.Run (model, screen, world)
+            let (model', world) = this.Run (model, screen, world)
             let world = World.advanceContext screen.ScreenAddress context world
-            this.SetModel model screen world
+            if model =/= this.GetModel screen world then Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
+            this.SetModel model' screen world
 
         override this.Edit (operation, screen, world) =
             let model = screen.GetModelGeneric<'model> world
@@ -3044,9 +3047,10 @@ module GameDispatcherModule =
             let model = game.GetModelGeneric<'model> world
             let context = world.ContextImNui
             let world = World.scopeGame [] world
-            let (model, world) = this.Run (model, game, world)
+            let (model', world) = this.Run (model, game, world)
             let world = World.advanceContext game.GameAddress context world
-            this.SetModel model game world
+            if model =/= this.GetModel game world then Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
+            this.SetModel model' game world
 
         override this.Edit (operation, game, world) =
             let model = game.GetModelGeneric<'model> world
