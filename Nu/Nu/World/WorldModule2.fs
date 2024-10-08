@@ -2021,8 +2021,8 @@ module EntityDispatcherModule2 =
             let (model', world) = this.Run (model, entity, world)
             let world = World.advanceContext entity.EntityAddress context world
 #if DEBUG
-            let model = this.GetModel entity world
-            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
+            let model'' = this.GetModel entity world
+            if modelHasValueType && objNeq model model'' || not modelHasValueType && refNeq model model'' then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' entity world
@@ -2506,8 +2506,8 @@ module GroupDispatcherModule =
             let (model', world) = this.Run (model, group, world)
             let world = World.advanceContext group.GroupAddress context world
 #if DEBUG
-            let model = this.GetModel group world
-            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
+            let model'' = this.GetModel group world
+            if modelHasValueType && objNeq model model'' || not modelHasValueType && refNeq model model'' then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' group world
@@ -2783,8 +2783,8 @@ module ScreenDispatcherModule =
             let (model', world) = this.Run (model, screen, world)
             let world = World.advanceContext screen.ScreenAddress context world
 #if DEBUG
-            let model = this.GetModel screen world
-            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
+            let model'' = this.GetModel screen world
+            if modelHasValueType && objNeq model model'' || not modelHasValueType && refNeq model model'' then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' screen world
@@ -3082,8 +3082,8 @@ module GameDispatcherModule =
             let (model', world) = this.Run (model, game, world)
             let world = World.advanceContext game.GameAddress context world
 #if DEBUG
-            let model = this.GetModel game world
-            if modelHasValueType && objNeq model model || not modelHasValueType && refNeq model model then
+            let model'' = this.GetModel game world
+            if modelHasValueType && objNeq model model'' || not modelHasValueType && refNeq model model'' then
                 Log.warnOnce "Model has been changed by another operation during the Run method. Any changes to the model outside of Run will be lost."
 #endif
             this.SetModel model' game world
