@@ -3054,7 +3054,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // shadow pre-passes (sorting lights to properly prioritize shadow rendering)
         let mutable shadowBufferIndex = 0
         let normalPass = NormalPass
-        let normalTasks = renderer.RenderTasksDictionary.[normalPass]
+        let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
         let lightsArray = SortableLight.sortLightsIntoArray Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
         for struct (lightId, lightOrigin, lightCutoff, lightConeOuter) in lightsArray do
             for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
