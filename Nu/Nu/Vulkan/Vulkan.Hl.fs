@@ -551,8 +551,7 @@ module Hl =
         /// Create a fence.
         static member createFence device =
             let mutable fence = Unchecked.defaultof<VkFence>
-            let mutable createInfo = VkFenceCreateInfo ()
-            createInfo.flags <- VK_FENCE_CREATE_SIGNALED_BIT
+            let createInfo = VkFenceCreateInfo (flags = VK_FENCE_CREATE_SIGNALED_BIT)
             vkCreateFence (device, &createInfo, nullPtr, &fence) |> check
             fence
         

@@ -435,8 +435,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vertexInfo.pVertexAttributeDescriptions <- attributeDescriptionsPin.Pointer
 
         // populate input assembly info
-        let mutable inputAssemblyInfo = VkPipelineInputAssemblyStateCreateInfo ()
-        inputAssemblyInfo.topology <- VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        let mutable inputAssemblyInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 
         // populate viewport info
         let mutable viewportInfo = VkPipelineViewportStateCreateInfo ()
@@ -451,8 +450,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         rasterInfo.lineWidth <- 1.0f
 
         // populate multisample info
-        let mutable multisampleInfo = VkPipelineMultisampleStateCreateInfo ()
-        multisampleInfo.rasterizationSamples <- VK_SAMPLE_COUNT_1_BIT
+        let mutable multisampleInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VK_SAMPLE_COUNT_1_BIT)
 
         // populate color attachment
         let mutable colorAttachment = VkPipelineColorBlendAttachmentState ()
@@ -527,8 +525,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         createInfo.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
 
         // populate allocation info
-        let mutable allocInfo = VmaAllocationCreateInfo ()
-        allocInfo.usage <- VmaMemoryUsage.Auto
+        let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
 
         // create vma image
         vmaCreateImage (vmaAllocator, &createInfo, &allocInfo, &image, &vmaAllocation, nullPtr) |> check
