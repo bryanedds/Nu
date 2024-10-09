@@ -229,17 +229,17 @@ module Hl =
             use layerWrap = StringArrayWrap [|validationLayer|]
             
             // populate createinstance info
-            let mutable createInfo = VkInstanceCreateInfo ()
-            createInfo.enabledExtensionCount <- sdlExtensionCount
-            createInfo.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
+            let mutable info = VkInstanceCreateInfo ()
+            info.enabledExtensionCount <- sdlExtensionCount
+            info.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
             
             // load validation layer if enabled and available
             if validationLayersEnabled && validationLayerExists then
-                createInfo.enabledLayerCount <- 1u
-                createInfo.ppEnabledLayerNames <- layerWrap.Pointer
+                info.enabledLayerCount <- 1u
+                info.ppEnabledLayerNames <- layerWrap.Pointer
 
             // create instance
-            vkCreateInstance (&createInfo, nullPtr, &instance) |> check
+            vkCreateInstance (&info, nullPtr, &instance) |> check
 
             // fin
             instance
@@ -320,11 +320,11 @@ module Hl =
             let queueCreateInfos = Array.zeroCreate<VkDeviceQueueCreateInfo> uniqueQueueFamilies.Length
             use queueCreateInfosPin = ArrayPin queueCreateInfos
             for i in [0 .. dec (uniqueQueueFamilies.Length)] do
-                let mutable createInfo = VkDeviceQueueCreateInfo ()
-                createInfo.queueFamilyIndex <- uniqueQueueFamilies[i]
-                createInfo.queueCount <- 1u
-                createInfo.pQueuePriorities <- asPointer &queuePriority
-                queueCreateInfos[i] <- createInfo
+                let mutable info = VkDeviceQueueCreateInfo ()
+                info.queueFamilyIndex <- uniqueQueueFamilies[i]
+                info.queueCount <- 1u
+                info.pQueuePriorities <- asPointer &queuePriority
+                queueCreateInfos[i] <- info
 
             // get swapchain extension
             let swapchainExtensionName = spanToString VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -334,14 +334,14 @@ module Hl =
             // deprecated. These must be enabled if validation support for said implementations is desired.
             
             // populate createdevice info
-            let mutable createInfo = VkDeviceCreateInfo ()
-            createInfo.queueCreateInfoCount <- uint queueCreateInfos.Length
-            createInfo.pQueueCreateInfos <- queueCreateInfosPin.Pointer
-            createInfo.enabledExtensionCount <- 1u
-            createInfo.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
+            let mutable info = VkDeviceCreateInfo ()
+            info.queueCreateInfoCount <- uint queueCreateInfos.Length
+            info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
+            info.enabledExtensionCount <- 1u
+            info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
 
             // create device
-            vkCreateDevice (physicalDeviceData.PhysicalDevice, &createInfo, nullPtr, &device) |> check
+            vkCreateDevice (physicalDeviceData.PhysicalDevice, &info, nullPtr, &device) |> check
 
             // fin
             device
@@ -353,13 +353,13 @@ module Hl =
             let mutable vmaAllocator = Unchecked.defaultof<VmaAllocator>
 
             // populate create info
-            let mutable createInfo = VmaAllocatorCreateInfo ()
-            createInfo.physicalDevice <- physicalDeviceData.PhysicalDevice
-            createInfo.device <- device
-            createInfo.instance <- instance
+            let mutable info = VmaAllocatorCreateInfo ()
+            info.physicalDevice <- physicalDeviceData.PhysicalDevice
+            info.device <- device
+            info.instance <- instance
 
             // create vma allocator
-            vmaCreateAllocator (&createInfo, &vmaAllocator) |> check
+            vmaCreateAllocator (&info, &vmaAllocator) |> check
 
             // fin
             vmaAllocator
@@ -435,30 +435,30 @@ module Hl =
             use indicesArrayPin = ArrayPin indicesArray
 
             // populate create swapchain info
-            let mutable createInfo = VkSwapchainCreateInfoKHR ()
-            createInfo.surface <- surface
-            createInfo.minImageCount <- minImageCount
-            createInfo.imageFormat <- surfaceFormat.format
-            createInfo.imageColorSpace <- surfaceFormat.colorSpace
-            createInfo.imageExtent <- swapExtent
-            createInfo.imageArrayLayers <- 1u
-            createInfo.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+            let mutable info = VkSwapchainCreateInfoKHR ()
+            info.surface <- surface
+            info.minImageCount <- minImageCount
+            info.imageFormat <- surfaceFormat.format
+            info.imageColorSpace <- surfaceFormat.colorSpace
+            info.imageExtent <- swapExtent
+            info.imageArrayLayers <- 1u
+            info.imageUsage <- VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
             
             if (physicalDeviceData.GraphicsQueueFamily = physicalDeviceData.PresentQueueFamily) then
-                createInfo.imageSharingMode <- VK_SHARING_MODE_EXCLUSIVE
+                info.imageSharingMode <- VK_SHARING_MODE_EXCLUSIVE
             else
-                createInfo.imageSharingMode <- VK_SHARING_MODE_CONCURRENT
-                createInfo.queueFamilyIndexCount <- 2u
-                createInfo.pQueueFamilyIndices <- indicesArrayPin.Pointer
+                info.imageSharingMode <- VK_SHARING_MODE_CONCURRENT
+                info.queueFamilyIndexCount <- 2u
+                info.pQueueFamilyIndices <- indicesArrayPin.Pointer
 
-            createInfo.preTransform <- capabilities.currentTransform
-            createInfo.compositeAlpha <- VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
-            createInfo.presentMode <- presentMode
-            createInfo.clipped <- true
-            createInfo.oldSwapchain <- VkSwapchainKHR.Null
+            info.preTransform <- capabilities.currentTransform
+            info.compositeAlpha <- VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
+            info.presentMode <- presentMode
+            info.clipped <- true
+            info.oldSwapchain <- VkSwapchainKHR.Null
 
             // create swapchain
-            vkCreateSwapchainKHR (device, &createInfo, nullPtr, &swapchain) |> check
+            vkCreateSwapchainKHR (device, &info, nullPtr, &swapchain) |> check
 
             // fin
             swapchain
@@ -480,22 +480,22 @@ module Hl =
 
             // populate create infos
             for i in [0 .. dec imageViews.Length] do
-                let mutable createInfo = VkImageViewCreateInfo ()
-                createInfo.image <- images[i]
-                createInfo.viewType <- VK_IMAGE_VIEW_TYPE_2D
-                createInfo.format <- format
-                createInfo.components.r <- VK_COMPONENT_SWIZZLE_IDENTITY
-                createInfo.components.g <- VK_COMPONENT_SWIZZLE_IDENTITY
-                createInfo.components.b <- VK_COMPONENT_SWIZZLE_IDENTITY
-                createInfo.components.a <- VK_COMPONENT_SWIZZLE_IDENTITY
-                createInfo.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-                createInfo.subresourceRange.baseMipLevel <- 0u
-                createInfo.subresourceRange.levelCount <- 1u
-                createInfo.subresourceRange.baseArrayLayer <- 0u
-                createInfo.subresourceRange.layerCount <- 1u
+                let mutable info = VkImageViewCreateInfo ()
+                info.image <- images[i]
+                info.viewType <- VK_IMAGE_VIEW_TYPE_2D
+                info.format <- format
+                info.components.r <- VK_COMPONENT_SWIZZLE_IDENTITY
+                info.components.g <- VK_COMPONENT_SWIZZLE_IDENTITY
+                info.components.b <- VK_COMPONENT_SWIZZLE_IDENTITY
+                info.components.a <- VK_COMPONENT_SWIZZLE_IDENTITY
+                info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+                info.subresourceRange.baseMipLevel <- 0u
+                info.subresourceRange.levelCount <- 1u
+                info.subresourceRange.baseArrayLayer <- 0u
+                info.subresourceRange.layerCount <- 1u
 
                 // create image view
-                vkCreateImageView (device, &createInfo, nullPtr, &imageViews[i]) |> check
+                vkCreateImageView (device, &info, nullPtr, &imageViews[i]) |> check
 
             // fin
             imageViews
@@ -507,12 +507,12 @@ module Hl =
             let mutable commandPool = Unchecked.defaultof<VkCommandPool>
 
             // populate create info
-            let mutable createInfo = VkCommandPoolCreateInfo ()
-            createInfo.flags <- VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-            createInfo.queueFamilyIndex <- queueFamilyIndex
+            let mutable info = VkCommandPoolCreateInfo ()
+            info.flags <- VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+            info.queueFamilyIndex <- queueFamilyIndex
 
             // create command pool
-            vkCreateCommandPool (device, &createInfo, nullPtr, &commandPool) |> check
+            vkCreateCommandPool (device, &info, nullPtr, &commandPool) |> check
 
             // fin
             commandPool
@@ -524,13 +524,13 @@ module Hl =
             let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
 
             // populate allocate info
-            let mutable allocateInfo = VkCommandBufferAllocateInfo ()
-            allocateInfo.commandPool <- commandPool
-            allocateInfo.level <- VK_COMMAND_BUFFER_LEVEL_PRIMARY
-            allocateInfo.commandBufferCount <- 1u
+            let mutable info = VkCommandBufferAllocateInfo ()
+            info.commandPool <- commandPool
+            info.level <- VK_COMMAND_BUFFER_LEVEL_PRIMARY
+            info.commandBufferCount <- 1u
 
             // allocate command buffer
-            vkAllocateCommandBuffers (device, asPointer &allocateInfo, asPointer &commandBuffer) |> check
+            vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
 
             // fin
             commandBuffer
@@ -544,15 +544,15 @@ module Hl =
         /// Create a semaphore.
         static member createSemaphore device =
             let mutable semaphore = Unchecked.defaultof<VkSemaphore>
-            let createInfo = VkSemaphoreCreateInfo ()
-            vkCreateSemaphore (device, &createInfo, nullPtr, &semaphore) |> check
+            let info = VkSemaphoreCreateInfo ()
+            vkCreateSemaphore (device, &info, nullPtr, &semaphore) |> check
             semaphore
         
         /// Create a fence.
         static member createFence device =
             let mutable fence = Unchecked.defaultof<VkFence>
-            let createInfo = VkFenceCreateInfo (flags = VK_FENCE_CREATE_SIGNALED_BIT)
-            vkCreateFence (device, &createInfo, nullPtr, &fence) |> check
+            let info = VkFenceCreateInfo (flags = VK_FENCE_CREATE_SIGNALED_BIT)
+            vkCreateFence (device, &info, nullPtr, &fence) |> check
             fence
         
         /// Create a renderpass.
@@ -584,14 +584,14 @@ module Hl =
             subpass.pColorAttachments <- asPointer &attachmentReference
 
             // populate create info
-            let mutable createInfo = VkRenderPassCreateInfo ()
-            createInfo.attachmentCount <- 1u
-            createInfo.pAttachments <- asPointer &attachment
-            createInfo.subpassCount <- 1u
-            createInfo.pSubpasses <- asPointer &subpass
+            let mutable info = VkRenderPassCreateInfo ()
+            info.attachmentCount <- 1u
+            info.pAttachments <- asPointer &attachment
+            info.subpassCount <- 1u
+            info.pSubpasses <- asPointer &subpass
 
             // create renderpass
-            vkCreateRenderPass (device, &createInfo, nullPtr, &renderPass) |> check
+            vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
 
             // fin
             renderPass
@@ -605,16 +605,16 @@ module Hl =
             // populate create infos
             for i in [0 .. dec framebuffers.Length] do
                 let mutable imageView = imageViews[i]
-                let mutable createInfo = VkFramebufferCreateInfo ()
-                createInfo.renderPass <- renderPass
-                createInfo.attachmentCount <- 1u
-                createInfo.pAttachments <- asPointer &imageView
-                createInfo.width <- extent.width
-                createInfo.height <- extent.height
-                createInfo.layers <- 1u
+                let mutable info = VkFramebufferCreateInfo ()
+                info.renderPass <- renderPass
+                info.attachmentCount <- 1u
+                info.pAttachments <- asPointer &imageView
+                info.width <- extent.width
+                info.height <- extent.height
+                info.layers <- 1u
 
                 // create framebuffer
-                vkCreateFramebuffer (device, &createInfo, nullPtr, &framebuffers[i]) |> check
+                vkCreateFramebuffer (device, &info, nullPtr, &framebuffers[i]) |> check
             
             // fin
             framebuffers
@@ -639,24 +639,24 @@ module Hl =
 
             // reset command buffer and begin recording
             vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
-            let mutable beginInfo = VkCommandBufferBeginInfo ()
-            vkBeginCommandBuffer (commandBuffer, asPointer &beginInfo) |> check
+            let mutable cbInfo = VkCommandBufferBeginInfo ()
+            vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
 
             // set color for screen clear
             // TODO: change to proper color once the testing utility of white is no longer needed.
             let mutable clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)
 
             // populate render pass info
-            let mutable renderPassInfo = VkRenderPassBeginInfo ()
-            renderPassInfo.renderPass <- vulkanGlobal.ScreenClearRenderPass
-            renderPassInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
-            renderPassInfo.renderArea.offset <- VkOffset2D.Zero
-            renderPassInfo.renderArea.extent <- vulkanGlobal.SwapExtent
-            renderPassInfo.clearValueCount <- 1u
-            renderPassInfo.pClearValues <- asPointer &clearColor
+            let mutable rpInfo = VkRenderPassBeginInfo ()
+            rpInfo.renderPass <- vulkanGlobal.ScreenClearRenderPass
+            rpInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
+            rpInfo.renderArea.offset <- VkOffset2D.Zero
+            rpInfo.renderArea.extent <- vulkanGlobal.SwapExtent
+            rpInfo.clearValueCount <- 1u
+            rpInfo.pClearValues <- asPointer &clearColor
 
             // clear the screen
-            vkCmdBeginRenderPass (commandBuffer, asPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
+            vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, VK_SUBPASS_CONTENTS_INLINE)
             vkCmdEndRenderPass commandBuffer
             
             // fin
@@ -671,14 +671,14 @@ module Hl =
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
 
             // run an empty renderpass to transition image layout for presentation
-            let mutable renderPassInfo = VkRenderPassBeginInfo ()
-            renderPassInfo.renderPass <- vulkanGlobal.PresentLayoutRenderPass
-            renderPassInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
-            renderPassInfo.renderArea.offset <- VkOffset2D.Zero
-            renderPassInfo.renderArea.extent <- vulkanGlobal.SwapExtent
+            let mutable rpInfo = VkRenderPassBeginInfo ()
+            rpInfo.renderPass <- vulkanGlobal.PresentLayoutRenderPass
+            rpInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
+            rpInfo.renderArea.offset <- VkOffset2D.Zero
+            rpInfo.renderArea.extent <- vulkanGlobal.SwapExtent
 
             // transition layout
-            vkCmdBeginRenderPass (commandBuffer, asPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)
+            vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, VK_SUBPASS_CONTENTS_INLINE)
             vkCmdEndRenderPass commandBuffer
             
             // end command buffer recording
@@ -686,17 +686,17 @@ module Hl =
             
             // populate submit info
             let mutable waitStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
-            let mutable submitInfo = VkSubmitInfo ()
-            submitInfo.waitSemaphoreCount <- 1u
-            submitInfo.pWaitSemaphores <- asPointer &imageAvailable
-            submitInfo.pWaitDstStageMask <- asPointer &waitStage
-            submitInfo.commandBufferCount <- 1u
-            submitInfo.pCommandBuffers <- asPointer &commandBuffer
-            submitInfo.signalSemaphoreCount <- 1u
-            submitInfo.pSignalSemaphores <- asPointer &renderFinished
+            let mutable sInfo = VkSubmitInfo ()
+            sInfo.waitSemaphoreCount <- 1u
+            sInfo.pWaitSemaphores <- asPointer &imageAvailable
+            sInfo.pWaitDstStageMask <- asPointer &waitStage
+            sInfo.commandBufferCount <- 1u
+            sInfo.pCommandBuffers <- asPointer &commandBuffer
+            sInfo.signalSemaphoreCount <- 1u
+            sInfo.pSignalSemaphores <- asPointer &renderFinished
 
             // submit commands
-            vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &submitInfo, vulkanGlobal.InFlightFence) |> check
+            vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, vulkanGlobal.InFlightFence) |> check
 
         /// Present the image back to the swapchain to appear on screen.
         static member present imageIndex vulkanGlobal =
@@ -707,15 +707,15 @@ module Hl =
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
             
             // populate present info
-            let mutable presentInfo = VkPresentInfoKHR ()
-            presentInfo.waitSemaphoreCount <- 1u
-            presentInfo.pWaitSemaphores <- asPointer &renderFinished
-            presentInfo.swapchainCount <- 1u
-            presentInfo.pSwapchains <- asPointer &swapchain
-            presentInfo.pImageIndices <- asPointer &imageIndex
+            let mutable info = VkPresentInfoKHR ()
+            info.waitSemaphoreCount <- 1u
+            info.pWaitSemaphores <- asPointer &renderFinished
+            info.swapchainCount <- 1u
+            info.pSwapchains <- asPointer &swapchain
+            info.pImageIndices <- asPointer &imageIndex
 
             // present image
-            vkQueuePresentKHR (vulkanGlobal.PresentQueue, asPointer &presentInfo) |> check
+            vkQueuePresentKHR (vulkanGlobal.PresentQueue, asPointer &info) |> check
         
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle vulkanGlobal = vkDeviceWaitIdle vulkanGlobal.Device |> check

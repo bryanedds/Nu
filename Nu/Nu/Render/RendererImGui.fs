@@ -296,13 +296,13 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         poolSize.descriptorCount <- 1u
 
         // populate create info
-        let mutable createInfo = VkDescriptorPoolCreateInfo ()
-        createInfo.maxSets <- 1u
-        createInfo.poolSizeCount <- 1u
-        createInfo.pPoolSizes <- asPointer &poolSize
+        let mutable info = VkDescriptorPoolCreateInfo ()
+        info.maxSets <- 1u
+        info.poolSizeCount <- 1u
+        info.pPoolSizes <- asPointer &poolSize
 
         // create descriptor pool
-        vkCreateDescriptorPool (device, &createInfo, nullPtr, &descriptorPool) |> check
+        vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> check
 
         // fin
         descriptorPool
@@ -314,19 +314,19 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable sampler = Unchecked.defaultof<VkSampler>
 
         // populate create info
-        let mutable createInfo = VkSamplerCreateInfo ()
-        createInfo.magFilter <- VK_FILTER_LINEAR
-        createInfo.minFilter <- VK_FILTER_LINEAR
-        createInfo.mipmapMode <- VK_SAMPLER_MIPMAP_MODE_LINEAR
-        createInfo.addressModeU <- VK_SAMPLER_ADDRESS_MODE_REPEAT
-        createInfo.addressModeV <- VK_SAMPLER_ADDRESS_MODE_REPEAT
-        createInfo.addressModeW <- VK_SAMPLER_ADDRESS_MODE_REPEAT
-        createInfo.maxAnisotropy <- 1.0f
-        createInfo.minLod <- -1000f
-        createInfo.maxLod <- 1000f
+        let mutable info = VkSamplerCreateInfo ()
+        info.magFilter <- VK_FILTER_LINEAR
+        info.minFilter <- VK_FILTER_LINEAR
+        info.mipmapMode <- VK_SAMPLER_MIPMAP_MODE_LINEAR
+        info.addressModeU <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        info.addressModeV <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        info.addressModeW <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        info.maxAnisotropy <- 1.0f
+        info.minLod <- -1000f
+        info.maxLod <- 1000f
 
         // create sampler
-        vkCreateSampler (device, &createInfo, nullPtr, &sampler) |> check
+        vkCreateSampler (device, &info, nullPtr, &sampler) |> check
 
         // fin
         sampler
@@ -344,12 +344,12 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         binding.stageFlags <- VK_SHADER_STAGE_FRAGMENT_BIT
 
         // populate create info
-        let mutable createInfo = VkDescriptorSetLayoutCreateInfo ()
-        createInfo.bindingCount <- 1u
-        createInfo.pBindings <- asPointer &binding
+        let mutable info = VkDescriptorSetLayoutCreateInfo ()
+        info.bindingCount <- 1u
+        info.pBindings <- asPointer &binding
 
         // create descriptor set layout
-        vkCreateDescriptorSetLayout (device, &createInfo, nullPtr, &descriptorSetLayout) |> check
+        vkCreateDescriptorSetLayout (device, &info, nullPtr, &descriptorSetLayout) |> check
 
         // fin
         descriptorSetLayout
@@ -368,14 +368,14 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         pushConstantRange.size <- uint sizeof<Single> * 4u
 
         // populate create info
-        let mutable createInfo = VkPipelineLayoutCreateInfo ()
-        createInfo.setLayoutCount <- 1u
-        createInfo.pSetLayouts <- asPointer &descriptorSetLayout
-        createInfo.pushConstantRangeCount <- 1u
-        createInfo.pPushConstantRanges <- asPointer &pushConstantRange
+        let mutable info = VkPipelineLayoutCreateInfo ()
+        info.setLayoutCount <- 1u
+        info.pSetLayouts <- asPointer &descriptorSetLayout
+        info.pushConstantRangeCount <- 1u
+        info.pPushConstantRanges <- asPointer &pushConstantRange
 
         // create pipeline layout
-        vkCreatePipelineLayout (device, &createInfo, nullPtr, &pipelineLayout) |> check
+        vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> check
 
         // fin
         pipelineLayout
@@ -392,108 +392,108 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // populate shader stage infos
         use entryPoint = StringWrap "main"
-        let shaderStageInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
-        shaderStageInfos[0] <- VkPipelineShaderStageCreateInfo ()
-        shaderStageInfos[0].stage <- VK_SHADER_STAGE_VERTEX_BIT
-        shaderStageInfos[0].``module`` <- vertModule
-        shaderStageInfos[0].pName <- entryPoint.Pointer
-        shaderStageInfos[1] <- VkPipelineShaderStageCreateInfo ()
-        shaderStageInfos[1].stage <- VK_SHADER_STAGE_FRAGMENT_BIT
-        shaderStageInfos[1].``module`` <- fragModule
-        shaderStageInfos[1].pName <- entryPoint.Pointer
-        use shaderStageInfosPin = ArrayPin shaderStageInfos
+        let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
+        ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
+        ssInfos[0].stage <- VK_SHADER_STAGE_VERTEX_BIT
+        ssInfos[0].``module`` <- vertModule
+        ssInfos[0].pName <- entryPoint.Pointer
+        ssInfos[1] <- VkPipelineShaderStageCreateInfo ()
+        ssInfos[1].stage <- VK_SHADER_STAGE_FRAGMENT_BIT
+        ssInfos[1].``module`` <- fragModule
+        ssInfos[1].pName <- entryPoint.Pointer
+        use ssInfosPin = ArrayPin ssInfos
 
         // populate vertex input binding description
-        let mutable bindingDescription = VkVertexInputBindingDescription ()
-        bindingDescription.stride <- sizeOf<ImDrawVert> ()
-        bindingDescription.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
+        let mutable binding = VkVertexInputBindingDescription ()
+        binding.stride <- sizeOf<ImDrawVert> ()
+        binding.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
 
         // populate vertex input attribute descriptions
-        let attributeDescriptions = Array.zeroCreate<VkVertexInputAttributeDescription> 3
-        attributeDescriptions[0] <- VkVertexInputAttributeDescription ()
-        attributeDescriptions[0].location <- 0u
-        attributeDescriptions[0].binding <- 0u
-        attributeDescriptions[0].format <- VK_FORMAT_R32G32_SFLOAT
-        attributeDescriptions[0].offset <- offsetOf<ImDrawVert> "pos"
-        attributeDescriptions[1] <- VkVertexInputAttributeDescription ()
-        attributeDescriptions[1].location <- 1u
-        attributeDescriptions[1].binding <- 0u
-        attributeDescriptions[1].format <- VK_FORMAT_R32G32_SFLOAT
-        attributeDescriptions[1].offset <- offsetOf<ImDrawVert> "uv"
-        attributeDescriptions[2] <- VkVertexInputAttributeDescription ()
-        attributeDescriptions[2].location <- 2u
-        attributeDescriptions[2].binding <- 0u
-        attributeDescriptions[2].format <- VK_FORMAT_R8G8B8A8_UNORM
-        attributeDescriptions[2].offset <- offsetOf<ImDrawVert> "col"
-        use attributeDescriptionsPin = ArrayPin attributeDescriptions
+        let attributes = Array.zeroCreate<VkVertexInputAttributeDescription> 3
+        attributes[0] <- VkVertexInputAttributeDescription ()
+        attributes[0].location <- 0u
+        attributes[0].binding <- 0u
+        attributes[0].format <- VK_FORMAT_R32G32_SFLOAT
+        attributes[0].offset <- offsetOf<ImDrawVert> "pos"
+        attributes[1] <- VkVertexInputAttributeDescription ()
+        attributes[1].location <- 1u
+        attributes[1].binding <- 0u
+        attributes[1].format <- VK_FORMAT_R32G32_SFLOAT
+        attributes[1].offset <- offsetOf<ImDrawVert> "uv"
+        attributes[2] <- VkVertexInputAttributeDescription ()
+        attributes[2].location <- 2u
+        attributes[2].binding <- 0u
+        attributes[2].format <- VK_FORMAT_R8G8B8A8_UNORM
+        attributes[2].offset <- offsetOf<ImDrawVert> "col"
+        use attributesPin = ArrayPin attributes
 
         // populate vertex input info
-        let mutable vertexInfo = VkPipelineVertexInputStateCreateInfo ()
-        vertexInfo.vertexBindingDescriptionCount <- 1u
-        vertexInfo.pVertexBindingDescriptions <- asPointer &bindingDescription
-        vertexInfo.vertexAttributeDescriptionCount <- 3u
-        vertexInfo.pVertexAttributeDescriptions <- attributeDescriptionsPin.Pointer
+        let mutable viInfo = VkPipelineVertexInputStateCreateInfo ()
+        viInfo.vertexBindingDescriptionCount <- 1u
+        viInfo.pVertexBindingDescriptions <- asPointer &binding
+        viInfo.vertexAttributeDescriptionCount <- 3u
+        viInfo.pVertexAttributeDescriptions <- attributesPin.Pointer
 
         // populate input assembly info
-        let mutable inputAssemblyInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 
         // populate viewport info
-        let mutable viewportInfo = VkPipelineViewportStateCreateInfo ()
-        viewportInfo.viewportCount <- 1u
-        viewportInfo.scissorCount <- 1u
+        let mutable vInfo = VkPipelineViewportStateCreateInfo ()
+        vInfo.viewportCount <- 1u
+        vInfo.scissorCount <- 1u
 
         // populate rasterization info
-        let mutable rasterInfo = VkPipelineRasterizationStateCreateInfo ()
-        rasterInfo.polygonMode <- VK_POLYGON_MODE_FILL
-        rasterInfo.cullMode <- VK_CULL_MODE_NONE
-        rasterInfo.frontFace <- VK_FRONT_FACE_COUNTER_CLOCKWISE
-        rasterInfo.lineWidth <- 1.0f
+        let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
+        rInfo.polygonMode <- VK_POLYGON_MODE_FILL
+        rInfo.cullMode <- VK_CULL_MODE_NONE
+        rInfo.frontFace <- VK_FRONT_FACE_COUNTER_CLOCKWISE
+        rInfo.lineWidth <- 1.0f
 
         // populate multisample info
-        let mutable multisampleInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VK_SAMPLE_COUNT_1_BIT)
+        let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VK_SAMPLE_COUNT_1_BIT)
 
         // populate color attachment
-        let mutable colorAttachment = VkPipelineColorBlendAttachmentState ()
-        colorAttachment.blendEnable <- true
-        colorAttachment.srcColorBlendFactor <- VK_BLEND_FACTOR_SRC_ALPHA
-        colorAttachment.dstColorBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-        colorAttachment.colorBlendOp <- VK_BLEND_OP_ADD
-        colorAttachment.srcAlphaBlendFactor <- VK_BLEND_FACTOR_ONE
-        colorAttachment.dstAlphaBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-        colorAttachment.alphaBlendOp <- VK_BLEND_OP_ADD
-        colorAttachment.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
+        let mutable color = VkPipelineColorBlendAttachmentState ()
+        color.blendEnable <- true
+        color.srcColorBlendFactor <- VK_BLEND_FACTOR_SRC_ALPHA
+        color.dstColorBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        color.colorBlendOp <- VK_BLEND_OP_ADD
+        color.srcAlphaBlendFactor <- VK_BLEND_FACTOR_ONE
+        color.dstAlphaBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        color.alphaBlendOp <- VK_BLEND_OP_ADD
+        color.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
 
         // populate depth and blend info
-        let mutable depthInfo = VkPipelineDepthStencilStateCreateInfo ()
-        let mutable blendInfo = VkPipelineColorBlendStateCreateInfo ()
-        blendInfo.attachmentCount <- 1u
-        blendInfo.pAttachments <- asPointer &colorAttachment
+        let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
+        let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
+        bInfo.attachmentCount <- 1u
+        bInfo.pAttachments <- asPointer &color
 
         // populate dynamic state info
         let dynamicStates = [|VK_DYNAMIC_STATE_VIEWPORT; VK_DYNAMIC_STATE_SCISSOR|]
         let dynamicStatesPin = ArrayPin dynamicStates
-        let mutable dynamicState = VkPipelineDynamicStateCreateInfo ()
-        dynamicState.dynamicStateCount <- 2u
-        dynamicState.pDynamicStates <- dynamicStatesPin.Pointer
+        let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
+        dsInfo.dynamicStateCount <- 2u
+        dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
         // populate pipeline create info
-        let mutable createInfo = VkGraphicsPipelineCreateInfo ()
-        createInfo.stageCount <- 2u
-        createInfo.pStages <- shaderStageInfosPin.Pointer
-        createInfo.pVertexInputState <- asPointer &vertexInfo
-        createInfo.pInputAssemblyState <- asPointer &inputAssemblyInfo
-        createInfo.pViewportState <- asPointer &viewportInfo
-        createInfo.pRasterizationState <- asPointer &rasterInfo
-        createInfo.pMultisampleState <- asPointer &multisampleInfo
-        createInfo.pDepthStencilState <- asPointer &depthInfo
-        createInfo.pColorBlendState <- asPointer &blendInfo
-        createInfo.pDynamicState <- asPointer &dynamicState
-        createInfo.layout <- pipelineLayout
-        createInfo.renderPass <- renderPass
-        createInfo.subpass <- 0u
+        let mutable info = VkGraphicsPipelineCreateInfo ()
+        info.stageCount <- 2u
+        info.pStages <- ssInfosPin.Pointer
+        info.pVertexInputState <- asPointer &viInfo
+        info.pInputAssemblyState <- asPointer &iaInfo
+        info.pViewportState <- asPointer &vInfo
+        info.pRasterizationState <- asPointer &rInfo
+        info.pMultisampleState <- asPointer &mInfo
+        info.pDepthStencilState <- asPointer &dInfo
+        info.pColorBlendState <- asPointer &bInfo
+        info.pDynamicState <- asPointer &dsInfo
+        info.layout <- pipelineLayout
+        info.renderPass <- renderPass
+        info.subpass <- 0u
 
         // create pipeline
-        vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &createInfo, nullPtr, asPointer &pipeline) |> check
+        vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &pipeline) |> check
 
         // destroy shader modules
         vkDestroyShaderModule (device, vertModule, nullPtr)
@@ -510,25 +510,25 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
         
         // populate create info
-        let mutable createInfo = VkImageCreateInfo ()
-        createInfo.imageType <- VK_IMAGE_TYPE_2D
-        createInfo.format <- VK_FORMAT_R8G8B8A8_UNORM
-        createInfo.extent.width <- uint width
-        createInfo.extent.height <- uint height
-        createInfo.extent.depth <- 1u
-        createInfo.mipLevels <- 1u
-        createInfo.arrayLayers <- 1u
-        createInfo.samples <- VK_SAMPLE_COUNT_1_BIT
-        createInfo.tiling <- VK_IMAGE_TILING_OPTIMAL
-        createInfo.usage <- VK_IMAGE_USAGE_SAMPLED_BIT ||| VK_IMAGE_USAGE_TRANSFER_DST_BIT
-        createInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        createInfo.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+        let mutable iInfo = VkImageCreateInfo ()
+        iInfo.imageType <- VK_IMAGE_TYPE_2D
+        iInfo.format <- VK_FORMAT_R8G8B8A8_UNORM
+        iInfo.extent.width <- uint width
+        iInfo.extent.height <- uint height
+        iInfo.extent.depth <- 1u
+        iInfo.mipLevels <- 1u
+        iInfo.arrayLayers <- 1u
+        iInfo.samples <- VK_SAMPLE_COUNT_1_BIT
+        iInfo.tiling <- VK_IMAGE_TILING_OPTIMAL
+        iInfo.usage <- VK_IMAGE_USAGE_SAMPLED_BIT ||| VK_IMAGE_USAGE_TRANSFER_DST_BIT
+        iInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        iInfo.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
 
         // populate allocation info
-        let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+        let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
 
         // create vma image
-        vmaCreateImage (vmaAllocator, &createInfo, &allocInfo, &image, &vmaAllocation, nullPtr) |> check
+        vmaCreateImage (vmaAllocator, &iInfo, &aInfo, &image, &vmaAllocation, nullPtr) |> check
 
         // fin
         (image, vmaAllocation)
