@@ -290,30 +290,22 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // handle
         let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
         
-        // create pool size
+        // pool size
         let mutable poolSize = VkDescriptorPoolSize ()
         poolSize.``type`` <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         poolSize.descriptorCount <- 1u
 
-        // populate create info
+        // create descriptor pool
         let mutable info = VkDescriptorPoolCreateInfo ()
         info.maxSets <- 1u
         info.poolSizeCount <- 1u
         info.pPoolSizes <- asPointer &poolSize
-
-        // create descriptor pool
         vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> check
-
-        // fin
         descriptorPool
 
     /// Create the sampler used to sample the font atlas.
     static member createSampler device =
-        
-        // handle
         let mutable sampler = Unchecked.defaultof<VkSampler>
-
-        // populate create info
         let mutable info = VkSamplerCreateInfo ()
         info.magFilter <- VK_FILTER_LINEAR
         info.minFilter <- VK_FILTER_LINEAR
@@ -324,11 +316,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.maxAnisotropy <- 1.0f
         info.minLod <- -1000f
         info.maxLod <- 1000f
-
-        // create sampler
         vkCreateSampler (device, &info, nullPtr, &sampler) |> check
-
-        // fin
         sampler
     
     /// Create the descriptor set layout for the font atlas.
@@ -337,21 +325,17 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // handle
         let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
 
-        // populate binding
+        // binding
         let mutable binding = VkDescriptorSetLayoutBinding ()
         binding.descriptorType <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         binding.descriptorCount <- 1u
         binding.stageFlags <- VK_SHADER_STAGE_FRAGMENT_BIT
 
-        // populate create info
+        // create descriptor set layout
         let mutable info = VkDescriptorSetLayoutCreateInfo ()
         info.bindingCount <- 1u
         info.pBindings <- asPointer &binding
-
-        // create descriptor set layout
         vkCreateDescriptorSetLayout (device, &info, nullPtr, &descriptorSetLayout) |> check
-
-        // fin
         descriptorSetLayout
     
     /// Create the pipeline layout for the font atlas.
@@ -361,23 +345,19 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
         let mutable descriptorSetLayout = descriptorSetLayout
 
-        // populate push constant range
+        // push constant range
         let mutable pushConstantRange = VkPushConstantRange ()
         pushConstantRange.stageFlags <- VK_SHADER_STAGE_VERTEX_BIT
         pushConstantRange.offset <- 0u
         pushConstantRange.size <- uint sizeof<Single> * 4u
 
-        // populate create info
+        // create pipeline layout
         let mutable info = VkPipelineLayoutCreateInfo ()
         info.setLayoutCount <- 1u
         info.pSetLayouts <- asPointer &descriptorSetLayout
         info.pushConstantRangeCount <- 1u
         info.pPushConstantRanges <- asPointer &pushConstantRange
-
-        // create pipeline layout
         vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> check
-
-        // fin
         pipelineLayout
 
     /// Create the pipeline.
@@ -390,7 +370,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let vertModule = createShaderModuleFromGLSL "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
         let fragModule = createShaderModuleFromGLSL "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
 
-        // populate shader stage infos
+        // shader stage infos
         use entryPoint = StringWrap "main"
         let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
         ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
@@ -403,12 +383,12 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         ssInfos[1].pName <- entryPoint.Pointer
         use ssInfosPin = ArrayPin ssInfos
 
-        // populate vertex input binding description
+        // vertex input binding description
         let mutable binding = VkVertexInputBindingDescription ()
         binding.stride <- sizeOf<ImDrawVert> ()
         binding.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
 
-        // populate vertex input attribute descriptions
+        // vertex input attribute descriptions
         let attributes = Array.zeroCreate<VkVertexInputAttributeDescription> 3
         attributes[0] <- VkVertexInputAttributeDescription ()
         attributes[0].location <- 0u
@@ -427,32 +407,32 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         attributes[2].offset <- offsetOf<ImDrawVert> "col"
         use attributesPin = ArrayPin attributes
 
-        // populate vertex input info
+        // vertex input info
         let mutable viInfo = VkPipelineVertexInputStateCreateInfo ()
         viInfo.vertexBindingDescriptionCount <- 1u
         viInfo.pVertexBindingDescriptions <- asPointer &binding
         viInfo.vertexAttributeDescriptionCount <- 3u
         viInfo.pVertexAttributeDescriptions <- attributesPin.Pointer
 
-        // populate input assembly info
+        // input assembly info
         let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 
-        // populate viewport info
+        // viewport info
         let mutable vInfo = VkPipelineViewportStateCreateInfo ()
         vInfo.viewportCount <- 1u
         vInfo.scissorCount <- 1u
 
-        // populate rasterization info
+        // rasterization info
         let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
         rInfo.polygonMode <- VK_POLYGON_MODE_FILL
         rInfo.cullMode <- VK_CULL_MODE_NONE
         rInfo.frontFace <- VK_FRONT_FACE_COUNTER_CLOCKWISE
         rInfo.lineWidth <- 1.0f
 
-        // populate multisample info
+        // multisample info
         let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VK_SAMPLE_COUNT_1_BIT)
 
-        // populate color attachment
+        // color attachment
         let mutable color = VkPipelineColorBlendAttachmentState ()
         color.blendEnable <- true
         color.srcColorBlendFactor <- VK_BLEND_FACTOR_SRC_ALPHA
@@ -463,20 +443,20 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         color.alphaBlendOp <- VK_BLEND_OP_ADD
         color.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
 
-        // populate depth and blend info
+        // depth and blend info
         let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
         let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
         bInfo.attachmentCount <- 1u
         bInfo.pAttachments <- asPointer &color
 
-        // populate dynamic state info
+        // dynamic state info
         let dynamicStates = [|VK_DYNAMIC_STATE_VIEWPORT; VK_DYNAMIC_STATE_SCISSOR|]
         let dynamicStatesPin = ArrayPin dynamicStates
         let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
         dsInfo.dynamicStateCount <- 2u
         dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
-        // populate pipeline create info
+        // create pipeline
         let mutable info = VkGraphicsPipelineCreateInfo ()
         info.stageCount <- 2u
         info.pStages <- ssInfosPin.Pointer
@@ -491,8 +471,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.layout <- pipelineLayout
         info.renderPass <- renderPass
         info.subpass <- 0u
-
-        // create pipeline
         vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &pipeline) |> check
 
         // destroy shader modules
@@ -509,7 +487,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable image = Unchecked.defaultof<VkImage>
         let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
         
-        // populate create info
+        // image create info
         let mutable iInfo = VkImageCreateInfo ()
         iInfo.imageType <- VK_IMAGE_TYPE_2D
         iInfo.format <- VK_FORMAT_R8G8B8A8_UNORM
@@ -524,13 +502,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         iInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
         iInfo.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
 
-        // populate allocation info
+        // allocation create info
         let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
 
         // create vma image
         vmaCreateImage (vmaAllocator, &iInfo, &aInfo, &image, &vmaAllocation, nullPtr) |> check
-
-        // fin
         (image, vmaAllocation)
     
     interface RendererImGui with
