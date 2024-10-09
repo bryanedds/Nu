@@ -225,20 +225,18 @@ module Hl =
             // and check for available vulkan version as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
 
+            // must be assigned outside conditional to remain in scope until vkCreateInstance
+            use layerWrap = StringArrayWrap [|validationLayer|]
+            
             // populate createinstance info
             let mutable createInfo = VkInstanceCreateInfo ()
             createInfo.enabledExtensionCount <- sdlExtensionCount
             createInfo.ppEnabledExtensionNames <- sdlExtensionsPin.Pointer
-
-            // must be assigned outside conditional to remain in scope until vkCreateInstance
-            use layerWrap = StringArrayWrap [|validationLayer|]
             
             // load validation layer if enabled and available
             if validationLayersEnabled && validationLayerExists then
                 createInfo.enabledLayerCount <- 1u
                 createInfo.ppEnabledLayerNames <- layerWrap.Pointer
-            else
-                createInfo.enabledLayerCount <- 0u
 
             // create instance
             vkCreateInstance (&createInfo, nullPtr, &instance) |> check
@@ -448,8 +446,6 @@ module Hl =
             
             if (physicalDeviceData.GraphicsQueueFamily = physicalDeviceData.PresentQueueFamily) then
                 createInfo.imageSharingMode <- VK_SHARING_MODE_EXCLUSIVE
-                createInfo.queueFamilyIndexCount <- 0u
-                createInfo.pQueueFamilyIndices <- nullPtr
             else
                 createInfo.imageSharingMode <- VK_SHARING_MODE_CONCURRENT
                 createInfo.queueFamilyIndexCount <- 2u
@@ -585,10 +581,8 @@ module Hl =
             // populate subpass
             let mutable subpass = VkSubpassDescription ()
             subpass.pipelineBindPoint <- VK_PIPELINE_BIND_POINT_GRAPHICS
-            subpass.inputAttachmentCount <- 0u
             subpass.colorAttachmentCount <- 1u
             subpass.pColorAttachments <- asPointer &attachmentReference
-            subpass.preserveAttachmentCount <- 0u
 
             // populate create info
             let mutable createInfo = VkRenderPassCreateInfo ()
@@ -596,7 +590,6 @@ module Hl =
             createInfo.pAttachments <- asPointer &attachment
             createInfo.subpassCount <- 1u
             createInfo.pSubpasses <- asPointer &subpass
-            createInfo.dependencyCount <- 0u
 
             // create renderpass
             vkCreateRenderPass (device, &createInfo, nullPtr, &renderPass) |> check
@@ -684,7 +677,6 @@ module Hl =
             renderPassInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
             renderPassInfo.renderArea.offset <- VkOffset2D.Zero
             renderPassInfo.renderArea.extent <- vulkanGlobal.SwapExtent
-            renderPassInfo.clearValueCount <- 0u
 
             // transition layout
             vkCmdBeginRenderPass (commandBuffer, asPointer &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE)

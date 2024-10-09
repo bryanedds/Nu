@@ -321,15 +321,9 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         createInfo.addressModeU <- VK_SAMPLER_ADDRESS_MODE_REPEAT
         createInfo.addressModeV <- VK_SAMPLER_ADDRESS_MODE_REPEAT
         createInfo.addressModeW <- VK_SAMPLER_ADDRESS_MODE_REPEAT
-        createInfo.mipLodBias <- 0.0f
-        createInfo.anisotropyEnable <- false
         createInfo.maxAnisotropy <- 1.0f
-        createInfo.compareEnable <- false
-        createInfo.compareOp <- VK_COMPARE_OP_ALWAYS
         createInfo.minLod <- -1000f
         createInfo.maxLod <- 1000f
-        createInfo.borderColor <- VK_BORDER_COLOR_INT_OPAQUE_BLACK
-        createInfo.unnormalizedCoordinates <- false
 
         // create sampler
         vkCreateSampler (device, &createInfo, nullPtr, &sampler) |> check
@@ -345,7 +339,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // populate binding
         let mutable binding = VkDescriptorSetLayoutBinding ()
-        binding.binding <- 0u
         binding.descriptorType <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         binding.descriptorCount <- 1u
         binding.stageFlags <- VK_SHADER_STAGE_FRAGMENT_BIT
@@ -412,7 +405,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // populate vertex input binding description
         let mutable bindingDescription = VkVertexInputBindingDescription ()
-        bindingDescription.binding <- 0u
         bindingDescription.stride <- sizeOf<ImDrawVert> ()
         bindingDescription.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
 
@@ -445,7 +437,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // populate input assembly info
         let mutable inputAssemblyInfo = VkPipelineInputAssemblyStateCreateInfo ()
         inputAssemblyInfo.topology <- VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-        inputAssemblyInfo.primitiveRestartEnable <- false
 
         // populate viewport info
         let mutable viewportInfo = VkPipelineViewportStateCreateInfo ()
@@ -479,7 +470,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable blendInfo = VkPipelineColorBlendStateCreateInfo ()
         blendInfo.attachmentCount <- 1u
         blendInfo.pAttachments <- asPointer &colorAttachment
-        // TODO: use blendConstants (0.0f, 0.0f, 0.0f, 0.0f) to test fixed buffer writing solution.
 
         // populate dynamic state info
         let dynamicStates = [|VK_DYNAMIC_STATE_VIEWPORT; VK_DYNAMIC_STATE_SCISSOR|]
