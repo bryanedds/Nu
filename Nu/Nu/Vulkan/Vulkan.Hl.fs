@@ -444,20 +444,14 @@ module Hl =
             // handle array
             let imageViews = Array.zeroCreate<VkImageView> images.Length
 
-            // create infos
+            // create image views
             for i in [0 .. dec imageViews.Length] do
                 let mutable info = VkImageViewCreateInfo ()
                 info.image <- images[i]
                 info.viewType <- VK_IMAGE_VIEW_TYPE_2D
                 info.format <- format
-                info.components.r <- VK_COMPONENT_SWIZZLE_IDENTITY
-                info.components.g <- VK_COMPONENT_SWIZZLE_IDENTITY
-                info.components.b <- VK_COMPONENT_SWIZZLE_IDENTITY
-                info.components.a <- VK_COMPONENT_SWIZZLE_IDENTITY
                 info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-                info.subresourceRange.baseMipLevel <- 0u
                 info.subresourceRange.levelCount <- 1u
-                info.subresourceRange.baseArrayLayer <- 0u
                 info.subresourceRange.layerCount <- 1u
                 vkCreateImageView (device, &info, nullPtr, &imageViews[i]) |> check
 
@@ -546,7 +540,7 @@ module Hl =
             // handle array
             let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
 
-            // create infos
+            // create framebuffers
             for i in [0 .. dec framebuffers.Length] do
                 let mutable imageView = imageViews[i]
                 let mutable info = VkFramebufferCreateInfo ()

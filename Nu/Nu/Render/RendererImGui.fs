@@ -283,6 +283,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
     let mutable pipeline = Unchecked.defaultof<VkPipeline>
     let mutable vmaImage = (Unchecked.defaultof<VkImage>, Unchecked.defaultof<VmaAllocation>)
+    let mutable imageView = Unchecked.defaultof<VkImageView>
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -508,6 +509,19 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         // create vma image
         vmaCreateImage (vmaAllocator, &iInfo, &aInfo, &image, &vmaAllocation, nullPtr) |> check
         (image, vmaAllocation)
+
+    /// Create the image view for the font atlas.
+    static member createImageView image device =
+        let mutable imageView = Unchecked.defaultof<VkImageView>
+        let mutable info = VkImageViewCreateInfo ()
+        info.image <- image
+        info.viewType <- VK_IMAGE_VIEW_TYPE_2D
+        info.format <- VK_FORMAT_R8G8B8A8_UNORM
+        info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        info.subresourceRange.levelCount <- 1u
+        info.subresourceRange.layerCount <- 1u
+        vkCreateImageView (device, &info, nullPtr, &imageView) |> check
+        imageView
     
     interface RendererImGui with
         
@@ -529,8 +543,9 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
 
-            // create image for font atlas
+            // create image and image view for font atlas
             vmaImage <- VulkanRendererImGui.createImage fontTextureWidth fontTextureHeight vmaAllocator
+            imageView <- VulkanRendererImGui.createImageView (fst vmaImage) device
             
             
             fonts.ClearTexData ()
@@ -538,6 +553,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         member this.Render _ = ()
         
         member this.CleanUp () =
+            vkDestroyImageView (device, imageView, nullPtr)
             vmaDestroyImage (vmaAllocator, fst vmaImage, snd vmaImage)
             vkDestroyPipeline (device, pipeline, nullPtr)
             vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
