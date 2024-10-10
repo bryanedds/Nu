@@ -80,7 +80,64 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."] // NOTE: for all we know, maybe only Intel requires glFinish...
+    /// The vendor names for which we have not yet experienced a need to call glFinish before swapping.
+    ///
+    /// be me -
+    /// Certain drivers seem to require glFinish before swap. Any documented insight into this?
+    ///
+    /// be chat-gpt -
+    /// The requirement for calling `glFinish()` before swapping buffers on certain drivers is an issue related to how
+    /// different GPUs and drivers handle the rendering pipeline and buffer swapping. While it's not explicitly
+    /// mandated in the OpenGL specification, some drivers have behavior that benefits from calling `glFinish()` to
+    /// ensure proper synchronization between the GPU and the display system. Here's why this might happen:
+    ///
+    /// ### 1. **Driver-Specific Behavior**
+    /// Some OpenGL drivers (particularly on older or less optimized systems) may not fully synchronize the pipeline
+    /// without a manual intervention like `glFinish()`. This can lead to incomplete frames being swapped to the
+    /// display, or the pipeline being flushed too late. By calling `glFinish()`, you force the GPU to complete all
+    /// previously issued commands before swapping buffers, which can help ensure that the rendered frame is complete.
+    ///
+    /// - **NVIDIA**: On some NVIDIA drivers, using `glFinish()` may help with synchronization issues where the GPU hasn’t completed rendering when the swap occurs.
+    /// - **Intel**: Integrated GPUs (like Intel's) sometimes have issues where they are slower to synchronize between CPU and GPU without `glFinish()`.
+    /// - **AMD**: Older AMD drivers also occasionally show issues that require `glFinish()` before `glSwapBuffers()` to ensure proper display.
+    ///
+    /// ### 2. **VSync and Buffer Management**
+    /// When VSync is enabled, buffer swaps should ideally occur at the vertical blanking interval (VBI) to avoid
+    /// tearing. However, some drivers may not respect VSync properly unless you ensure that all GPU commands are
+    /// completed before the swap. `glFinish()` forces the driver to ensure that the frame is fully rendered and ready
+    /// to be presented to the screen.
+    ///
+    /// ### 3. **Double and Triple Buffering**
+    /// If you're using **double buffering**, OpenGL typically uses an implicit synchronization between rendering and
+    /// swapping buffers. However, with **triple buffering**, there can be more frames in flight, and `glFinish()`
+    /// might be needed to avoid over-rendering frames ahead of the display refresh. This is because triple buffering
+    /// allows the GPU to continue rendering frames even if a buffer is waiting to be swapped, which can sometimes
+    /// cause tearing or incomplete frames being displayed unless forced to finish rendering.
+    ///
+    /// ### 4. **Swap Interval and Timing Issues**
+    /// In cases where **swap interval** is set (e.g., for VSync), some drivers may have timing issues, especially when
+    /// the system is under heavy load. If `glSwapBuffers()` is called while the GPU is still processing previous
+    /// frames, artifacts or incomplete frames might appear. Calling `glFinish()` forces a flush of the GPU pipeline,
+    /// ensuring that all previous commands are complete before the swap.
+    ///
+    /// ### Documented Insights:
+    /// While the OpenGL specification does not explicitly require `glFinish()` before `glSwapBuffers()`, several sources and community forums discuss situations where it's needed:
+    /// - **OpenGL Wiki - Synchronization**: The OpenGL Wiki highlights that implicit synchronization generally happens with buffer swaps but doesn’t rule out cases where explicit flushing (`glFinish()` or `glFlush()`) might be needed due to driver issues. [OpenGL Wiki - Synchronization](https://www.khronos.org/opengl/wiki/Synchronization#glFinish_and_glFlush)
+    /// - **NVIDIA Developer Documentation**: NVIDIA provides guidance on best practices, sometimes recommending `glFinish()` in specific performance-related debugging cases, particularly when dealing with multi-threading or complex GPU pipelines.
+    /// - **Community Observations (Stack Overflow, Forums)**: Various community discussions across platforms like Stack Overflow and Khronos forums have observed the need for `glFinish()` before `glSwapBuffers()` on specific hardware configurations, often to resolve visual artifacts or performance issues.
+    ///
+    /// ### Performance Impact:
+    /// Using `glFinish()` forces a full synchronization between CPU and GPU, which can reduce performance, as it
+    /// introduces a stall while waiting for the GPU to finish all operations. Therefore, it should be used only if
+    /// necessary (e.g., debugging or when a driver shows specific problems).
+    ///
+    /// ### Conclusion:
+    /// The need for `glFinish()` before `glSwapBuffers()` is typically driver-specific and arises due to differences
+    /// in how synchronization between the rendering pipeline and the display system is handled. While it's not part of
+    /// the OpenGL specification, calling `glFinish()` can help ensure proper synchronization, especially on
+    /// problematic drivers or when using VSync. If your application runs without visual issues or performance
+    /// degradation without `glFinish()`, it's usually best to avoid it for the sake of performance.
+    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."]
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] TwoSidedName = "TwoSided"
