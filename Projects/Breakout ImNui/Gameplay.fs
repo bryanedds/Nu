@@ -221,7 +221,7 @@ type GameplayDispatcher () =
                                         else failwithumf ()
                                     let world =
                                         let velocity = ball.GetLinearVelocity world
-                                        let bounce = velocity - 2.0f * Vector3.Dot(velocity, normal) * normal
+                                        let bounce = velocity - 2.0f * Vector3.Dot (velocity, normal) * normal
                                         World.setBodyLinearVelocity bounce ballBodyId world
                                     World.playSound 1.0f Assets.Default.Sound world
                                     (gameplay, world)

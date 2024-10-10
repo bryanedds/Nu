@@ -93,7 +93,7 @@ module Hl =
             Log.fail "Failed to create OpenGL version 4.1 or higher. Install your system's latest graphics drivers and try again."
         let vendorName = Gl.GetString StringName.Vendor
         let glFinishRequired =
-            Constants.Render.VendorNamesExceptedFromGlFinishSwapRequirement |>
+            Constants.Render.VendorNamesExceptedFromSwapGlFinishRequirement |>
             List.notExists (fun vendorName2 -> String.Equals (vendorName, vendorName2, StringComparison.InvariantCultureIgnoreCase))
         if glFinishRequired then Log.warn "Requirement to call 'glFinish' before swapping is detected on current hardware. This will likely reduce rendering performance."
         (glFinishRequired, glContext)
