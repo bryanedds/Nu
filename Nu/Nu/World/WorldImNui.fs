@@ -70,8 +70,9 @@ module WorldImNui =
                             eventAddress'
                             Game
                             world
-                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; Results = FQueue.empty; SubscriptionId = subId } world
+                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; Results = FQueue.empty<'d>; SubscriptionId = subId } world
             let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'd FQueue
+            let world = World.mapSubscriptionImNui (fun subscriptionImNui -> { subscriptionImNui with Results = FQueue.empty<'d> }) subscriptionKey world
             (results, world)
 
         /// TODO: document this!
@@ -163,7 +164,10 @@ module WorldImNui =
                         then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
-            let world = if screen.GetExists world then World.applyScreenBehavior setScreenSlide behavior screen world else world
+            let world =
+                if initializing && screen.GetExists world
+                then World.applyScreenBehavior setScreenSlide behavior screen world
+                else world
             let world =
                 if screen.GetExists world && select then
                     if world.Accompanied && world.Halted // special case to quick cut when halted in the editor

@@ -23,13 +23,13 @@ module MyGameExtensions =
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
     inherit GameDispatcher<MyGame> (Splash)
-    
+
     // here we handle running the game
     override this.Run (myGame, _, world) =
 
         // declare splash screen
-        let (result, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
-        let myGame = if FQueue.contains Deselecting result then Title else myGame
+        let (results, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
+        let myGame = if FQueue.contains Deselecting results then Title else myGame
         let world = World.endScreen world
 
         // declare title screen
@@ -51,13 +51,13 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (result, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) [] world
+        let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) [] world
         let world =
-            if FQueue.contains Select result
+            if FQueue.contains Select results
             then Simulants.Gameplay.SetGameplay Gameplay.initial world
             else world
         let world =
-            if FQueue.contains Deselecting result
+            if FQueue.contains Deselecting results
             then Simulants.Gameplay.SetGameplay Gameplay.empty world
             else world
         let myGame =

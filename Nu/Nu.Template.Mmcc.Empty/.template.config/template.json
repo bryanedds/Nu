@@ -1,12 +1,12 @@
 {
-  "$schema": "http://json.schemastore.org/template",
-  "author": "Bryan Edds",
-  "classifications": [ "Nu", "Game" ],
-  "identity": "Nu Game",
-  "name": "Nu Game",
-  "shortName": "nu-game",
-  "tags": {
-    "language": "F#",
-    "type": "project"
-  }
+    "$schema": "http://json.schemastore.org/template",
+    "author": "Bryan Edds",
+    "classifications": [ "Nu", "Template" ],
+    "identity": "Nu Template MMCC Empty",
+    "name": "Nu Template MMCC Empty",
+    "shortName": "nu-template-mmcc-empty",
+    "tags": {
+        "language": "F#",
+        "type": "project"
+    }
 }

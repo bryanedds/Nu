@@ -160,7 +160,18 @@ type GameplayDispatcher () =
     // here we describe the content of the game including the hud group and the scene group
     override this.Content (gameplay, _) =
 
-        [// the gui group
+        [// the scene group while playing
+         if gameplay.GameplayState = Playing then
+            
+            // loads scene from file edited in Gaia
+            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
+
+                [// the player that's always present in the scene
+                 Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
+                    [Entity.Persistent == false
+                     Entity.DieEvent => Die Simulants.GameplayPlayer]]
+         
+         // the gui group
          Content.group Simulants.GameplayGui.Name []
 
             [// score
@@ -174,19 +185,4 @@ type GameplayDispatcher () =
                 [Entity.Position == v3 232.0f -144.0f 0.0f
                  Entity.Elevation == 10.0f
                  Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]
-
-         // the scene group while playing
-         match gameplay.GameplayState with
-         | Playing ->
-            
-            // loads scene from file edited in Gaia
-            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-
-                [// the player that's always present in the scene
-                 Content.entity<PlayerDispatcher> Simulants.GameplayPlayer.Name
-                    [Entity.Persistent == false
-                     Entity.DieEvent => Die Simulants.GameplayPlayer]]
-
-         // no scene group otherwise
-         | Quit -> ()]
+                 Entity.ClickEvent => StartQuitting]]]

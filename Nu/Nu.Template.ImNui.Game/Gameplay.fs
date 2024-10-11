@@ -41,13 +41,17 @@ type GameplayDispatcher () =
         else Gameplay.empty
 
     // here we define the behavior of our gameplay
-    override this.Run (gameplay, _, world) =
+    override this.Run (gameplay, screen, world) =
 
-        // declare scene group when selected
-        let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
-        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
-        let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
-        let world = World.endGroup world
+        // declare scene group while screen is selected
+        let (gameplay, world) =
+            if screen.GetSelected world then
+                let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+                let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
+                let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
+                let world = World.endGroup world
+                (gameplay, world)
+            else (gameplay, world)
 
         // declare gui group
         let world = World.beginGroup "Gui" [] world
@@ -59,3 +63,7 @@ type GameplayDispatcher () =
 
         // return gameplay and world values
         (gameplay, world)
+
+    // this is a semantic fix-up that allows the editor to avoid creating an unused group. This is specific to the
+    // ImNui API that is needed to patch a little semantic hole inherent in the immediate-mode programming idiom.
+    override this.CreateDefaultGroup (screen, world) = World.createGroup (Some "Gui") screen world

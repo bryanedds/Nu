@@ -137,6 +137,9 @@ void main()
         normalBlend += (texture(normalTextures[i], texCoords).xyz * 2.0 - 1.0) * blend;
     }
 
+    // discard fragment if even partly transparent
+    if (albedoBlend.w < 0.5) discard;
+
     // populate albedo, material, and normalPlus
     albedo = pow(albedoBlend.rgb, vec3(GAMMA)) * tintOut * albedoOut.rgb;
     material = vec4(roughnessBlend * materialOut.g, 0.0, ambientOcclusionBlend * materialOut.b, 0.0);

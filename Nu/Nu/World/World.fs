@@ -61,6 +61,7 @@ type Nu () =
             WorldTypes.getSelectedScreenIdling <- fun worldObj -> World.getSelectedScreenIdling (worldObj :?> World)
             WorldTypes.getSelectedScreenTransitioning <- fun worldObj -> World.getSelectedScreenTransitioning (worldObj :?> World)
             WorldTypes.handleSubscribeAndUnsubscribeEvent <- fun subscribing eventAddress subscriber worldObj -> World.handleSubscribeAndUnsubscribeEvent subscribing eventAddress subscriber (worldObj :?> World)
+            WorldTypes.createDefaultGroup <- fun screenObj worldObj -> let (screen, world) = World.createGroup (Some "Group") (screenObj :?> Screen) (worldObj :?> World) in (screen, world)
             WorldTypes.getEntityIs2d <- fun entityObj worldObj -> World.getEntityIs2d (entityObj :?> Entity) (worldObj :?> World)
 
             // init WorldModule F# reach-arounds

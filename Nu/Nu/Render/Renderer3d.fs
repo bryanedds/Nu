@@ -507,20 +507,14 @@ type [<SymbolicExpansion>] Lighting3dConfig =
 
 /// Configures 3d renderer.
 type [<SymbolicExpansion>] Renderer3dConfig =
-    { StaticSurfaceOcclusionPrePassEnabled : bool
-      AnimatedSurfaceOcclusionPrePassEnabled : bool
-      TerrainOcclusionPrePassEnabled : bool
-      LightMappingEnabled : bool
+    { LightMappingEnabled : bool
       SsaoEnabled : bool
       SsaoSampleCount : int
       SsvfEnabled : bool
       SsrEnabled : bool }
 
     static member defaultConfig =
-        { StaticSurfaceOcclusionPrePassEnabled = Constants.Render.StaticSurfaceOcclusionPrePassEnabledDefault
-          AnimatedSurfaceOcclusionPrePassEnabled = Constants.Render.AnimatedSurfaceOcclusionPrePassEnabledDefault
-          TerrainOcclusionPrePassEnabled = Constants.Render.TerrainOcclusionPrePassEnabledDefault
-          LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
+        { LightMappingEnabled = Constants.Render.LightMappingEnabledDefault
           SsaoEnabled = Constants.Render.SsaoEnabledDefault
           SsaoSampleCount = Constants.Render.SsaoSampleCountDefault
           SsvfEnabled = Constants.Render.SsvfEnabledGlobalDefault
@@ -574,7 +568,7 @@ type private SortableLightMap =
 
     /// Sort light maps into array for uploading to OpenGL.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightMapsIntoArrays lightMapsMax position boundsOpt lightMaps =
+    static member sortLightMapsIntoFloatArrays lightMapsMax position boundsOpt lightMaps =
         let lightMapOrigins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapMins = Array.zeroCreate<single> (lightMapsMax * 3)
         let lightMapSizes = Array.zeroCreate<single> (lightMapsMax * 3)
@@ -629,9 +623,24 @@ type private SortableLight =
       SortableLightDesireShadows : int
       mutable SortableLightDistanceSquared : single }
 
-    /// Sort lights into array for uploading to OpenGL.
+    static member private project light =
+        struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared)
+
+    /// Sort lights for ordering shadow operations.
     /// TODO: consider getting rid of allocation here.
-    static member sortLightsIntoArrays lightsMax position lights =
+    static member sortLightsIntoArray lightsMax position lights =
+        let lightsArray = Array.zeroCreate<_> lightsMax
+        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
+        for i in 0 .. dec lightsMax do
+            if i < lightsSorted.Length then
+                let light = lightsSorted.[i]
+                lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter)
+        lightsArray
+
+    /// Sort lights into float array for uploading to OpenGL.
+    /// TODO: consider getting rid of allocation here.
+    static member sortLightsIntoFloatArrays lightsMax position lights =
         let lightIds = Array.zeroCreate<uint64> lightsMax
         let lightOrigins = Array.zeroCreate<single> (lightsMax * 3)
         let lightDirections = Array.zeroCreate<single> (lightsMax * 3)
@@ -643,13 +652,8 @@ type private SortableLight =
         let lightDirectionals = Array.zeroCreate<int> lightsMax
         let lightConeInners = Array.zeroCreate<single> lightsMax
         let lightConeOuters = Array.zeroCreate<single> lightsMax
-        let lightDesireShadows = Array.zeroCreate<int> lightsMax
-        for light in lights do
-            light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
-        let lightsSorted =
-            lights |>
-            Seq.toArray |>
-            Array.sortBy (fun light -> struct (-light.SortableLightDirectional, light.SortableLightDistanceSquared))
+        for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
+        let lightsSorted = lights |> Seq.toArray |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let i3 = i * 3
@@ -671,20 +675,17 @@ type private SortableLight =
                 lightDirectionals.[i] <- light.SortableLightDirectional
                 lightConeInners.[i] <- light.SortableLightConeInner
                 lightConeOuters.[i] <- light.SortableLightConeOuter
-                lightDesireShadows.[i] <- light.SortableLightDesireShadows
-        (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightIds.Length)
+        (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightIds.Length)
 
     /// Sort light shadow indices.
-    static member sortLightShadowIndices (lightShadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) (lightDesireShadows : int array) lightsCount =
-        let mutable found = 0
-        [|for i in 0 .. dec lightsCount do
-            if found < Constants.Render.ShadowsMax && lightDesireShadows.[i] <> 0 then
-                match lightShadowIndices.TryGetValue lightIds.[i] with
-                | (true, index) ->
-                    found <- inc found
-                    index
-                | (false, _) -> -1 // TODO: log here?
-            else -1|]
+    static member sortLightShadowIndices (lightShadowIndices : Dictionary<uint64, int>) (lightIds : uint64 array) lightsCount =
+        let indices =
+            [|for lightId in lightIds do
+                match lightShadowIndices.TryGetValue lightId with
+                | (true, index) -> index
+                | (false, _) -> -1|]
+        let indicesPadded = Array.append indices (Array.create lightsCount -1)
+        Array.take lightsCount indicesPadded
 
 /// Enables efficient comparison of animated model surfaces.
 type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
@@ -841,9 +842,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           PhysicallyBasedShadowStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedShadowTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
-          PhysicallyBasedOcclusionStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedOcclusionAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
-          PhysicallyBasedOcclusionTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
           PhysicallyBasedDeferredStaticShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredAnimatedShader : OpenGL.PhysicallyBased.PhysicallyBasedShader
           PhysicallyBasedDeferredTerrainShader : OpenGL.PhysicallyBased.PhysicallyBasedDeferredTerrainShader
@@ -892,8 +890,8 @@ type [<ReferenceEquality>] GlRenderer3d =
           LightsDesiringShadows : Dictionary<uint64, SortableLight>
           ForwardSurfacesComparer : IComparer<struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single)>
           ForwardSurfacesSortBuffer : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface * single) List
-          RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           RenderPackages : Packages<RenderAsset, AssetClient>
+          RenderTasksDictionary : Dictionary<RenderPass, RenderTasks>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
@@ -970,6 +968,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         v2 (a / single samples) (b / single samples)
 
     static member private invalidateCaches renderer =
+        renderer.RenderTasksDictionary.Clear ()
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedAssetTagOpt <- Unchecked.defaultof<_>
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
@@ -1587,7 +1586,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | None -> box2 v2Zero v2One // shouldn't we still be using borders?
         let lookRotation =
             match renderPass with
-            | ShadowPass (_, _, shadowRotation, _) -> shadowRotation
+            | ShadowPass (_, _, shadowRotation, _) -> shadowRotation * Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
             | _ -> eyeRotation
         let billboardRotation =
             match renderPass with
@@ -2483,7 +2482,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort light maps for deferred rendering relative to eye center
         let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
             if topLevelRender then
-                SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
+                SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxDeferred eyeCenter None lightMaps
             else
                 (Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
                  Array.zeroCreate (Constants.Render.LightMapsMaxDeferred * 3),
@@ -2495,11 +2494,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                  0)
 
         // sort lights for deferred rendering relative to eye center
-        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
-            SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
+        let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightSortedsCount) =
+            SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxDeferred eyeCenter renderTasks.Lights
 
         // compute light shadow indices according to sorted lights
-        let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
+        let lightShadowIndices = SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
 
         // grab shadow textures
         let shadowTextures = Array.map a__ renderer.ShadowBuffersArray
@@ -2529,80 +2528,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
         OpenGL.Gl.Viewport (geometryViewport.Bounds.Min.X, geometryViewport.Bounds.Min.Y, geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y)
         OpenGL.Hl.Assert ()
-
-        // render static surface occlusions if needed
-        if renderer.RendererConfig.StaticSurfaceOcclusionPrePassEnabled then
-        
-            // render static surface occlusions w/ absolute transforms if in top level render
-            if topLevelRender then
-                let mutable enr = renderTasks.DeferredStaticAbsolute.GetEnumerator ()
-                let mutable i = 0
-                while enr.MoveNext () do
-                    let entry = enr.Current
-                    let batchPhase =
-                        match renderTasks.DeferredStaticAbsolute.Count with
-                        | 1 -> SingletonPhase
-                        | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-                    GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                        batchPhase viewAbsoluteArray geometryProjectionArray [||] entry.Value
-                        false entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
-                    OpenGL.Hl.Assert ()
-                    i <- inc i
-        
-            // render static surface occlusions w/ relative transforms
-            let mutable enr = renderTasks.DeferredStaticRelative.GetEnumerator ()
-            let mutable i = 0
-            while enr.MoveNext () do
-                let entry = enr.Current
-                let batchPhase =
-                    match renderTasks.DeferredStaticRelative.Count with
-                    | 1 -> SingletonPhase
-                    | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
-                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    batchPhase viewRelativeArray geometryProjectionArray [||] entry.Value
-                    false entry.Key renderer.PhysicallyBasedOcclusionStaticShader renderer
-                OpenGL.Hl.Assert ()
-                i <- inc i
-
-        // render animated surface occlusions if needed
-        if renderer.RendererConfig.AnimatedSurfaceOcclusionPrePassEnabled then
-
-            // render animated surface occlusions w/ absolute transforms if in top level render
-            if topLevelRender then
-                for entry in renderTasks.DeferredAnimatedAbsolute do
-                    let surfaceKey = entry.Key
-                    let parameters = entry.Value
-                    let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-                    GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                        SingletonPhase viewAbsoluteArray geometryProjectionArray bonesArray parameters
-                        false surfaceKey.AnimatedSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
-                    OpenGL.Hl.Assert ()
-
-            // render animated surface occlusions w/ relative transforms
-            for entry in renderTasks.DeferredAnimatedRelative do
-                let surfaceKey = entry.Key
-                let parameters = entry.Value
-                let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
-                GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                    SingletonPhase viewRelativeArray geometryProjectionArray bonesArray parameters
-                    false surfaceKey.AnimatedSurface renderer.PhysicallyBasedOcclusionAnimatedShader renderer
-                OpenGL.Hl.Assert ()
-
-        // render terrain occlusions if needed
-        if renderer.RendererConfig.TerrainOcclusionPrePassEnabled then
-
-            // attempt to render terrain occlusions w/ absolute transforms if in top level render
-            if topLevelRender then
-                for (descriptor, geometry) in renderTasks.DeferredTerrainsAbsolute do
-                    GlRenderer3d.renderPhysicallyBasedTerrain
-                        viewAbsoluteArray geometryProjectionArray eyeCenter false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                        descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
-        
-            // attempt to render terrain occlusions w/ relative transforms
-            for (descriptor, geometry) in renderTasks.DeferredTerrainsRelative do
-                GlRenderer3d.renderPhysicallyBasedTerrain
-                    viewRelativeArray geometryProjectionArray eyeCenter false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
-                    descriptor geometry renderer.PhysicallyBasedOcclusionTerrainShader renderer
 
         // render static surfaces deferred w/ absolute transforms if in top level render
         if topLevelRender then
@@ -2886,11 +2811,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.LightingConfig.SsvfSteps * 2; // HACK: need an increase in forward-rendered steps since they don't get blurred.
                 let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                     let surfaceBounds = surface.SurfaceBounds.Transform model
-                    SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
-                let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
-                    SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
+                    SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
+                let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightSortedsCount) =
+                    SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
                 let lightShadowIndices =
-                    SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
+                    SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
                 GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                     true viewAbsoluteArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
                     eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
@@ -2906,11 +2831,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                 renderer.LightingConfig.SsvfSteps * 2; // HACK: need an increase in forward-rendered steps since they don't get blurred.
             let (lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapIrradianceMaps, lightMapEnvironmentFilterMaps, lightMapsCount) =
                 let surfaceBounds = surface.SurfaceBounds.Transform model
-                SortableLightMap.sortLightMapsIntoArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
-            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightDesireShadows, lightSortedsCount) =
-                SortableLight.sortLightsIntoArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
+                SortableLightMap.sortLightMapsIntoFloatArrays Constants.Render.LightMapsMaxForward model.Translation (Some surfaceBounds) lightMaps
+            let (lightIds, lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightDirectionals, lightConeInners, lightConeOuters, lightSortedsCount) =
+                SortableLight.sortLightsIntoFloatArrays Constants.Render.LightsMaxForward model.Translation renderTasks.Lights
             let lightShadowIndices =
-                SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightDesireShadows lightSortedsCount
+                SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 true viewRelativeArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
                 eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness false renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
@@ -3043,8 +2968,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             | ReloadRenderAssets3d ->
                 renderer.ReloadAssetsRequested <- true
 
-        // light map and shadow pre-passes
-        let mutable shadowBufferIndex = 0
+        // light map pre-passes and shadow pass accumulation
         for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
 
             // fallback light map pre-pass
@@ -3125,54 +3049,58 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                     | (false, _) -> ()
 
-            | ShadowPass (lightId, _, _, _) ->
-                match renderer.LightsDesiringShadows.TryGetValue lightId with
-                | (true, light) ->
-                    if shadowBufferIndex < Constants.Render.ShadowsMax then
-
-                        // draw shadows
-                        let shadowDirectional = light.SortableLightDirectional = 1
-                        let (shadowOrigin, shadowView, shadowProjection) =
-                            if not shadowDirectional then
-                                let shadowOrigin = light.SortableLightOrigin
-                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
-                                shadowView.Translation <- light.SortableLightOrigin
-                                shadowView <- shadowView.Inverted
-                                let shadowFov = max (min light.SortableLightConeOuter Constants.Render.ShadowFovMax) 0.01f
-                                let shadowCutoff = max light.SortableLightCutoff 0.1f
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
-                                (shadowOrigin, shadowView, shadowProjection)
-                            else
-                                let shadowOrigin = light.SortableLightOrigin
-                                let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion light.SortableLightRotation
-                                shadowView.Translation <- light.SortableLightOrigin
-                                shadowView <- shadowView.Inverted
-                                let shadowCutoff = light.SortableLightCutoff
-                                let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
-                                (shadowOrigin, shadowView, shadowProjection)
-                        let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
-                        let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffersArray.[shadowBufferIndex]
-                        GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowDirectional shadowResolution shadowRenderbuffer shadowFramebuffer
-                        renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
-                        renderer.LightShadowIndices.[light.SortableLightId] <- shadowBufferIndex
-
-                        // filter shadows on the x (presuming that viewport already configured correctly)
-                        let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowBuffers2Array.[shadowBufferIndex]
-                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
-                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
-                        OpenGL.Hl.Assert ()
-                        
-                        // filter shadows on the y (presuming that viewport already configured correctly)
-                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
-                        OpenGL.Hl.Assert ()
-
-                        // next shadow
-                        shadowBufferIndex <- inc shadowBufferIndex
-                    | (false, _) -> ()
             | _ -> ()
+
+        // shadow pre-passes (sorting lights to properly prioritize shadow rendering)
+        let mutable shadowBufferIndex = 0
+        let normalPass = NormalPass
+        let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
+        let lightsArray = SortableLight.sortLightsIntoArray Constants.Render.LightsMaxDeferred eyeCenter normalTasks.Lights
+        for struct (lightId, lightOrigin, lightCutoff, lightConeOuter) in lightsArray do
+            for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
+                match renderPass with
+                | ShadowPass (shadowLightId, shadowDirectional, shadowRotation, _) when lightId = shadowLightId && shadowBufferIndex < Constants.Render.ShadowsMax ->
+
+                    // draw shadows
+                    let (shadowOrigin, shadowView, shadowProjection) =
+                        if not shadowDirectional then
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                            shadowView.Translation <- lightOrigin
+                            shadowView <- shadowView.Inverted
+                            let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
+                            let shadowCutoff = max lightCutoff 0.1f
+                            let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                            (lightOrigin, shadowView, shadowProjection)
+                        else
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                            shadowView.Translation <- lightOrigin
+                            shadowView <- shadowView.Inverted
+                            let shadowCutoff = lightCutoff
+                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                            (lightOrigin, shadowView, shadowProjection)
+                    let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
+                    let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffersArray.[shadowBufferIndex]
+                    GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowDirectional shadowResolution shadowRenderbuffer shadowFramebuffer
+                    renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
+                    renderer.LightShadowIndices.[lightId] <- shadowBufferIndex
+
+                    // filter shadows on the x (presuming that viewport already configured correctly)
+                    let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowBuffers2Array.[shadowBufferIndex]
+                    OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
+                    OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
+                    OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                    OpenGL.Hl.Assert ()
+                        
+                    // filter shadows on the y (presuming that viewport already configured correctly)
+                    OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+                    OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
+                    OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                    OpenGL.Hl.Assert ()
+
+                    // next shadow
+                    shadowBufferIndex <- inc shadowBufferIndex
+
+                | _ -> ()
 
         // compute the viewports for the given window size
         let viewport = Constants.Render.Viewport
@@ -3186,9 +3114,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let projection = viewport.Projection3d
 
         // top-level geometry pass
-        let renderPass = NormalPass
-        let normalTasks = GlRenderer3d.getRenderTasks renderPass renderer
-        GlRenderer3d.renderGeometry renderPass normalTasks renderer true None eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
+        GlRenderer3d.renderGeometry normalPass normalTasks renderer true None eyeCenter eyeRotation viewAbsolute viewRelative viewSkyBox viewport projection ssaoViewport offsetViewport projection renderbuffer framebuffer
 
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
@@ -3263,14 +3189,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 (Constants.Paths.PhysicallyBasedShadowStaticShaderFilePath,
                  Constants.Paths.PhysicallyBasedShadowAnimatedShaderFilePath,
                  Constants.Paths.PhysicallyBasedShadowTerrainShaderFilePath)
-        OpenGL.Hl.Assert ()
-
-        // create occlusion shaders
-        let (occlusionStaticShader, occlusionAnimatedShader, occlusionTerrainShader) =
-            OpenGL.PhysicallyBased.CreatePhysicallyBasedDepthShaders
-                (Constants.Paths.PhysicallyBasedOcclusionStaticShaderFilePath,
-                 Constants.Paths.PhysicallyBasedOcclusionAnimatedShaderFilePath,
-                 Constants.Paths.PhysicallyBasedOcclusionTerrainShaderFilePath)
         OpenGL.Hl.Assert ()
 
         // create deferred shaders
@@ -3561,9 +3479,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               PhysicallyBasedShadowStaticShader = shadowStaticShader
               PhysicallyBasedShadowAnimatedShader = shadowAnimatedShader
               PhysicallyBasedShadowTerrainShader = shadowTerrainShader
-              PhysicallyBasedOcclusionStaticShader = occlusionStaticShader
-              PhysicallyBasedOcclusionAnimatedShader = occlusionAnimatedShader
-              PhysicallyBasedOcclusionTerrainShader = occlusionTerrainShader
               PhysicallyBasedDeferredStaticShader = deferredStaticShader
               PhysicallyBasedDeferredAnimatedShader = deferredAnimatedShader
               PhysicallyBasedDeferredTerrainShader = deferredTerrainShader
@@ -3612,8 +3527,8 @@ type [<ReferenceEquality>] GlRenderer3d =
               LightsDesiringShadows = dictPlus HashIdentity.Structural []
               ForwardSurfacesComparer = forwardSurfacesComparer
               ForwardSurfacesSortBuffer = List ()
-              RenderTasksDictionary = renderTasksDictionary
               RenderPackages = dictPlus StringComparer.Ordinal []
+              RenderTasksDictionary = renderTasksDictionary
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false

@@ -2126,33 +2126,32 @@ type Light3dFacet () =
          define Entity.DesireShadows false]
 
     override this.Render (renderPass, entity, world) =
-        if entity.GetEnabled world then
-            let lightId = entity.GetId world
-            let position = entity.GetPosition world
-            let rotation = entity.GetRotation world
-            let direction = rotation.Down
-            let color = entity.GetColor world
-            let brightness = entity.GetBrightness world
-            let attenuationLinear = entity.GetAttenuationLinear world
-            let attenuationQuadratic = entity.GetAttenuationQuadratic world
-            let lightCutoff = entity.GetLightCutoff world
-            let lightType = entity.GetLightType world
-            let desireShadows = entity.GetDesireShadows world
-            World.enqueueRenderMessage3d
-                (RenderLight3d
-                    { LightId = lightId
-                      Origin = position
-                      Rotation = rotation
-                      Direction = direction
-                      Color = color
-                      Brightness = brightness
-                      AttenuationLinear = attenuationLinear
-                      AttenuationQuadratic = attenuationQuadratic
-                      LightCutoff = lightCutoff
-                      LightType = lightType
-                      DesireShadows = desireShadows
-                      RenderPass = renderPass })
-                world
+        let lightId = entity.GetId world
+        let position = entity.GetPosition world
+        let rotation = entity.GetRotation world
+        let direction = rotation.Down
+        let color = entity.GetColor world
+        let brightness = entity.GetBrightness world
+        let attenuationLinear = entity.GetAttenuationLinear world
+        let attenuationQuadratic = entity.GetAttenuationQuadratic world
+        let lightCutoff = entity.GetLightCutoff world
+        let lightType = entity.GetLightType world
+        let desireShadows = entity.GetDesireShadows world
+        World.enqueueRenderMessage3d
+            (RenderLight3d
+                { LightId = lightId
+                  Origin = position
+                  Rotation = rotation
+                  Direction = direction
+                  Color = color
+                  Brightness = brightness
+                  AttenuationLinear = attenuationLinear
+                  AttenuationQuadratic = attenuationQuadratic
+                  LightCutoff = lightCutoff
+                  LightType = lightType
+                  DesireShadows = desireShadows
+                  RenderPass = renderPass })
+            world
 
     override this.RayCast (ray, entity, world) =
         let intersectionOpt = ray.Intersects (entity.GetBounds world)
@@ -2411,7 +2410,7 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.BasicParticleSeed { Life = Particles.Life.make GameTime.zero (GameTime.ofSeconds 1.0f); Body = Particles.Body.defaultBody; Size = v3Dup 0.25f; Offset = v3Zero; Inset = box2Zero; Color = Color.One; Emission = Color.Zero; Flip = FlipNone }
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
-         define Entity.EmitterRenderStyle (Forward (0.0f, 0.0f))
+         define Entity.EmitterRenderStyle Deferred
          define Entity.EmitterShadowEnabled true
          define Entity.EmitterShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]

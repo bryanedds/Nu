@@ -281,7 +281,7 @@ module ImGui =
                 fileNameBuffer <- fileNameStr.Substring(0, fileNameSize)
 
                 ImGui.PushItemWidth contentRegionWidth
-                if ImGui.InputText ("File Name", &fileNameBuffer, uint fileNameBufferSize) then
+                if ImGui.InputText ("File Name", &fileNameBuffer, uint fileNameBufferSize, ImGuiInputTextFlags.AutoSelectAll) then
                     dialogState.FileName <- fileNameBuffer
                     dialogState.CurrentIndex <- 0UL
 
