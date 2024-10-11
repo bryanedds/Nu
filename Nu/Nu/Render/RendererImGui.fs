@@ -546,10 +546,13 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         
         // create upload buffer
         let mutable info = VkBufferCreateInfo ()
-        info.size <- uint64 uploadSize
+        info.size <- uploadSize
         info.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
         info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        let uploadBuffer = AllocatedBuffer.make info vmaAllocator
+        let uploadBuffer = AllocatedBuffer.make true info vmaAllocator
+
+        // upload font atlas
+        uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
 
 
         // destroy upload buffer
@@ -584,7 +587,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             VulkanRendererImGui.writeDescriptorSet sampler imageView descriptorSet device
 
             // upload font atlas
-            let uploadSize = fontTextureWidth * fontTextureHeight * bytesPerPixel
+            let uploadSize = uint64 (fontTextureWidth * fontTextureHeight * bytesPerPixel)
             VulkanRendererImGui.uploadFont uploadSize pixels commandBuffer vmaAllocator
             
             

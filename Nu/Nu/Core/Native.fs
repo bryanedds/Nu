@@ -57,6 +57,11 @@ module Native =
         let voidPtr = Unsafe.AsPointer &managedPtr
         NativePtr.ofVoidPtr<byte> voidPtr
 
+    /// Convert nativeint to void pointer.
+    let nintToVoidPointer nint =
+        let ptr = NativePtr.ofNativeInt<byte> nint
+        NativePtr.toVoidPtr ptr
+    
     /// Convert nativeint to byte pointer.
     let nintToBytePointer nint = NativePtr.ofNativeInt<byte> nint
 

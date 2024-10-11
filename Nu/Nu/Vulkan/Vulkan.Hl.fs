@@ -62,20 +62,28 @@ module Hl =
     type AllocatedBuffer =
         { Buffer : VkBuffer
           VmaAllocation : VmaAllocation
-          VmaAllocator : VmaAllocator }
+          VmaAllocator : VmaAllocator
+          UploadEnabled : bool }
 
+        /// Upload data to buffer if upload is enabled.
+        member this.TryUpload size ptr =
+            if this.UploadEnabled then vmaCopyMemoryToAllocation (this.VmaAllocator, ptr, this.VmaAllocation, 0UL, size) |> check
+            else Log.info "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+        
         /// Destroy buffer and allocation.
         member this.Destroy () = vmaDestroyBuffer (this.VmaAllocator, this.Buffer, this.VmaAllocation)
 
         /// Make an AllocatedBuffer.
-        static member make bufferInfo vmaAllocator =
+        static member make uploadEnabled bufferInfo vmaAllocator =
             
             // handles
             let mutable buffer = Unchecked.defaultof<VkBuffer>
             let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
 
             // allocation create info
-            let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+            let mutable allocInfo = VmaAllocationCreateInfo ()
+            allocInfo.usage <- VmaMemoryUsage.Auto
+            if uploadEnabled then allocInfo.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite
 
             // create vma buffer
             vmaCreateBuffer (vmaAllocator, &bufferInfo, &allocInfo, &buffer, &vmaAllocation, nullPtr) |> check
@@ -84,7 +92,8 @@ module Hl =
             let allocatedBuffer =
                 { Buffer = buffer
                   VmaAllocation = vmaAllocation
-                  VmaAllocator = vmaAllocator }
+                  VmaAllocator = vmaAllocator
+                  UploadEnabled = uploadEnabled }
 
             // fin
             allocatedBuffer
