@@ -9,7 +9,6 @@ open ImGuiNET
 open Vulkan.Hl
 open Vortice.Vulkan
 open type Vulkan
-open type Vortice.Vulkan.Vma
 open Vortice.ShaderCompiler
 open Prime
 
@@ -276,13 +275,14 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     
     let device = vulkanGlobal.Device
     let vmaAllocator = vulkanGlobal.VmaAllocator
+    let commandBuffer = vulkanGlobal.CommandBuffer
     let renderPass = vulkanGlobal.GeneralRenderPass
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
     let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
     let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
     let mutable pipeline = Unchecked.defaultof<VkPipeline>
-    let mutable vmaImage = (Unchecked.defaultof<VkImage>, Unchecked.defaultof<VmaAllocation>)
+    let mutable vmaImage = Unchecked.defaultof<AllocatedImage>
     let mutable imageView = Unchecked.defaultof<VkImageView>
     let mutable descriptorSet = Unchecked.defaultof<VkDescriptorSet>
     
@@ -484,32 +484,21 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
     /// Create the image for the font atlas.
     static member createImage width height vmaAllocator =
-        
-        // handles
-        let mutable image = Unchecked.defaultof<VkImage>
-        let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
-        
-        // image create info
-        let mutable iInfo = VkImageCreateInfo ()
-        iInfo.imageType <- VK_IMAGE_TYPE_2D
-        iInfo.format <- VK_FORMAT_R8G8B8A8_UNORM
-        iInfo.extent.width <- uint width
-        iInfo.extent.height <- uint height
-        iInfo.extent.depth <- 1u
-        iInfo.mipLevels <- 1u
-        iInfo.arrayLayers <- 1u
-        iInfo.samples <- VK_SAMPLE_COUNT_1_BIT
-        iInfo.tiling <- VK_IMAGE_TILING_OPTIMAL
-        iInfo.usage <- VK_IMAGE_USAGE_SAMPLED_BIT ||| VK_IMAGE_USAGE_TRANSFER_DST_BIT
-        iInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        iInfo.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
-
-        // allocation create info
-        let aInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
-
-        // create vma image
-        vmaCreateImage (vmaAllocator, &iInfo, &aInfo, &image, &vmaAllocation, nullPtr) |> check
-        (image, vmaAllocation)
+        let mutable info = VkImageCreateInfo ()
+        info.imageType <- VK_IMAGE_TYPE_2D
+        info.format <- VK_FORMAT_R8G8B8A8_UNORM
+        info.extent.width <- uint width
+        info.extent.height <- uint height
+        info.extent.depth <- 1u
+        info.mipLevels <- 1u
+        info.arrayLayers <- 1u
+        info.samples <- VK_SAMPLE_COUNT_1_BIT
+        info.tiling <- VK_IMAGE_TILING_OPTIMAL
+        info.usage <- VK_IMAGE_USAGE_SAMPLED_BIT ||| VK_IMAGE_USAGE_TRANSFER_DST_BIT
+        info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        info.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+        let allocatedImage = AllocatedImage.make info vmaAllocator
+        allocatedImage
 
     /// Create the image view for the font atlas.
     static member createImageView image device =
@@ -552,6 +541,20 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         write.pImageInfo <- asPointer &info
         vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
+    /// Upload the font atlas to the image.
+    static member uploadFont uploadSize pixels commandBuffer vmaAllocator =
+        
+        // create upload buffer
+        let mutable info = VkBufferCreateInfo ()
+        info.size <- uint64 uploadSize
+        info.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+        info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        let uploadBuffer = AllocatedBuffer.make info vmaAllocator
+
+
+        // destroy upload buffer
+        uploadBuffer.Destroy ()
+    
     interface RendererImGui with
         
         member this.Initialize fonts =
@@ -574,11 +577,15 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
             // create image and image view for font atlas
             vmaImage <- VulkanRendererImGui.createImage fontTextureWidth fontTextureHeight vmaAllocator
-            imageView <- VulkanRendererImGui.createImageView (fst vmaImage) device
+            imageView <- VulkanRendererImGui.createImageView vmaImage.Image device
 
             // create and write descriptor set for font atlas
             descriptorSet <- VulkanRendererImGui.createDescriptorSet descriptorSetLayout descriptorPool device
             VulkanRendererImGui.writeDescriptorSet sampler imageView descriptorSet device
+
+            // upload font atlas
+            let uploadSize = fontTextureWidth * fontTextureHeight * bytesPerPixel
+            VulkanRendererImGui.uploadFont uploadSize pixels commandBuffer vmaAllocator
             
             
             fonts.ClearTexData ()
@@ -587,7 +594,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         
         member this.CleanUp () =
             vkDestroyImageView (device, imageView, nullPtr)
-            vmaDestroyImage (vmaAllocator, fst vmaImage, snd vmaImage)
+            vmaImage.Destroy ()
             vkDestroyPipeline (device, pipeline, nullPtr)
             vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
             vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullPtr)

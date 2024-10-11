@@ -58,6 +58,68 @@ module Hl =
     let getLayerName (layerProps : VkLayerProperties) =
         getBufferString layerProps.layerName
     
+    /// Abstraction for vma allocated buffer.
+    type AllocatedBuffer =
+        { Buffer : VkBuffer
+          VmaAllocation : VmaAllocation
+          VmaAllocator : VmaAllocator }
+
+        /// Destroy buffer and allocation.
+        member this.Destroy () = vmaDestroyBuffer (this.VmaAllocator, this.Buffer, this.VmaAllocation)
+
+        /// Make an AllocatedBuffer.
+        static member make bufferInfo vmaAllocator =
+            
+            // handles
+            let mutable buffer = Unchecked.defaultof<VkBuffer>
+            let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
+
+            // allocation create info
+            let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+
+            // create vma buffer
+            vmaCreateBuffer (vmaAllocator, &bufferInfo, &allocInfo, &buffer, &vmaAllocation, nullPtr) |> check
+
+            // make allocatedBuffer
+            let allocatedBuffer =
+                { Buffer = buffer
+                  VmaAllocation = vmaAllocation
+                  VmaAllocator = vmaAllocator }
+
+            // fin
+            allocatedBuffer
+    
+    /// Abstraction for vma allocated image.
+    type AllocatedImage =
+        { Image : VkImage
+          VmaAllocation : VmaAllocation
+          VmaAllocator : VmaAllocator }
+
+        /// Destroy image and allocation.
+        member this.Destroy () = vmaDestroyImage (this.VmaAllocator, this.Image, this.VmaAllocation)
+
+        /// Make an AllocatedImage.
+        static member make imageInfo vmaAllocator =
+            
+            // handles
+            let mutable image = Unchecked.defaultof<VkImage>
+            let mutable vmaAllocation = Unchecked.defaultof<VmaAllocation>
+
+            // allocation create info
+            let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+
+            // create vma image
+            vmaCreateImage (vmaAllocator, &imageInfo, &allocInfo, &image, &vmaAllocation, nullPtr) |> check
+
+            // make allocatedImage
+            let allocatedImage =
+                { Image = image
+                  VmaAllocation = vmaAllocation
+                  VmaAllocator = vmaAllocator }
+
+            // fin
+            allocatedImage
+    
     /// A physical device and associated data.
     type PhysicalDeviceData =
         { PhysicalDevice : VkPhysicalDevice

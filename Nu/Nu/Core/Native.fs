@@ -90,7 +90,7 @@ module Native =
             member this.Dispose () =
                 this.Dispose ()
 
-    /// A container for a single unmanaged string.
+    /// Container for a single unmanaged string.
     type StringWrap private (stringPtr : nativeptr<byte>) =
         
         let stringPtr = stringPtr
@@ -109,7 +109,7 @@ module Native =
             member this.Dispose () =
                 this.Dispose ()
     
-    /// A container for a pinned array of unmanaged strings.
+    /// Container for a pinned array of unmanaged strings.
     type StringArrayWrap private (array : nativeptr<byte> array) =
     
         let array = array
