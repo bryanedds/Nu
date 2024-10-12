@@ -628,7 +628,10 @@ module WorldModule2 =
                     let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
                     let linkHeadOpt = Array.tryHead targetToEntity.Links
                     let linkLastOpt = Array.tryLast targetToEntity.Links
-                    let valid = not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && linkLastOpt <> Some Parent && linkLastOpt <> Some Current
+                    let valid =
+                        not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
+                        Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
+                        linkLastOpt <> Some Current // propagation target is not self
                     if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
                     targets
@@ -658,7 +661,10 @@ module WorldModule2 =
                         let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
                         let linkHeadOpt = Array.tryHead targetToEntity.Links
                         let linkLastOpt = Array.tryLast targetToEntity.Links
-                        let valid = not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && linkLastOpt <> Some Parent && linkLastOpt <> Some Current
+                        let valid =
+                            not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && // propagation target is not descendent
+                            Array.contains Parent targetToEntity.Links && // propagation target is not ancestor
+                            linkLastOpt <> Some Current // propagation target is not self
                         if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
                         targets
