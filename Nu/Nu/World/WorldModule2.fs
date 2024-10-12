@@ -626,8 +626,9 @@ module WorldModule2 =
             let targetsValid =
                 Seq.filter (fun (target : Entity) ->
                     let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                    let linkLast = Array.tryLast targetToEntity.Links
-                    let valid = linkLast <> Some Parent && linkLast <> Some Current
+                    let linkHeadOpt = Array.tryHead targetToEntity.Links
+                    let linkLastOpt = Array.tryLast targetToEntity.Links
+                    let valid = not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && linkLastOpt <> Some Parent && linkLastOpt <> Some Current
                     if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
                     targets
@@ -655,8 +656,9 @@ module WorldModule2 =
                 let targetsValid =
                     Seq.filter (fun (target : Entity) ->
                         let targetToEntity = Relation.relate target.EntityAddress entity.EntityAddress
-                        let linkLast = Array.tryLast targetToEntity.Links
-                        let valid = linkLast <> Some Parent && linkLast <> Some Current
+                        let linkHeadOpt = Array.tryHead targetToEntity.Links
+                        let linkLastOpt = Array.tryLast targetToEntity.Links
+                        let valid = not (linkHeadOpt = Some Parent && linkLastOpt = Some (Name target.Name)) && linkLastOpt <> Some Parent && linkLastOpt <> Some Current
                         if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
                         targets
