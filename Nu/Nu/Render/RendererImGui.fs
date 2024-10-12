@@ -275,7 +275,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     
     let device = vulkanGlobal.Device
     let vmaAllocator = vulkanGlobal.VmaAllocator
-    let commandBuffer = vulkanGlobal.CommandBuffer
+    let transferCommandPool = vulkanGlobal.TransferCommandPool
+    let renderCommandBuffer = vulkanGlobal.RenderCommandBuffer
     let renderPass = vulkanGlobal.GeneralRenderPass
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
@@ -542,7 +543,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
     /// Upload the font atlas to the image.
-    static member uploadFont uploadSize pixels commandBuffer vmaAllocator =
+    static member uploadFont uploadSize pixels transferCommandPool vmaAllocator =
         
         // create upload buffer
         let mutable info = VkBufferCreateInfo ()
@@ -588,7 +589,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
             // upload font atlas
             let uploadSize = uint64 (fontTextureWidth * fontTextureHeight * bytesPerPixel)
-            VulkanRendererImGui.uploadFont uploadSize pixels commandBuffer vmaAllocator
+            VulkanRendererImGui.uploadFont uploadSize pixels transferCommandPool vmaAllocator
             
             
             fonts.ClearTexData ()

@@ -246,8 +246,9 @@ module Hl =
           VmaAllocator : VmaAllocator
           Swapchain : VkSwapchainKHR
           SwapchainImageViews : VkImageView array
-          CommandPool : VkCommandPool
-          CommandBuffer : VkCommandBuffer
+          TransferCommandPool : VkCommandPool
+          RenderCommandPool : VkCommandPool
+          RenderCommandBuffer : VkCommandBuffer
           GraphicsQueue : VkQueue
           PresentQueue : VkQueue
           ImageAvailableSemaphore : VkSemaphore
@@ -529,11 +530,20 @@ module Hl =
             // fin
             imageViews
 
-        /// Create the command pool.
-        static member createCommandPool queueFamilyIndex device =
+        /// Create a command pool.
+        static member createCommandPool transient queueFamilyIndex device =
+            
+            // handle
             let mutable commandPool = Unchecked.defaultof<VkCommandPool>
+            
+            // apply transient flag if desired
+            let flags =
+                if transient then VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT ||| VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
+                else VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+            
+            // create command pool
             let mutable info = VkCommandPoolCreateInfo ()
-            info.flags <- VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+            info.flags <- flags
             info.queueFamilyIndex <- queueFamilyIndex
             vkCreateCommandPool (device, &info, nullPtr, &commandPool) |> check
             commandPool
@@ -633,7 +643,7 @@ module Hl =
             let mutable imageIndex = 0u
             let device = vulkanGlobal.Device
             let swapchain = vulkanGlobal.Swapchain
-            let commandBuffer = vulkanGlobal.CommandBuffer
+            let commandBuffer = vulkanGlobal.RenderCommandBuffer
             let imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable inFlight = vulkanGlobal.InFlightFence
 
@@ -671,7 +681,7 @@ module Hl =
         static member endFrame (imageIndex : uint32) vulkanGlobal =
             
             // handles
-            let mutable commandBuffer = vulkanGlobal.CommandBuffer
+            let mutable commandBuffer = vulkanGlobal.RenderCommandBuffer
             let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
 
@@ -735,7 +745,8 @@ module Hl =
             vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
             vkDestroySemaphore (device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
             vkDestroySemaphore (device, vulkanGlobal.ImageAvailableSemaphore, nullPtr)
-            vkDestroyCommandPool (device, vulkanGlobal.CommandPool, nullPtr)
+            vkDestroyCommandPool (device, vulkanGlobal.RenderCommandPool, nullPtr)
+            vkDestroyCommandPool (device, vulkanGlobal.TransferCommandPool, nullPtr)
             for i in [0 .. dec imageViews.Length] do vkDestroyImageView (device, imageViews[i], nullPtr)
             vkDestroySwapchainKHR (device, vulkanGlobal.Swapchain, nullPtr)
             vmaDestroyAllocator vulkanGlobal.VmaAllocator
@@ -811,8 +822,9 @@ module Hl =
                 let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
 
                 // setup command system
-                let commandPool = VulkanGlobal.createCommandPool physicalDeviceData.GraphicsQueueFamily device
-                let commandBuffer = VulkanGlobal.allocateCommandBuffer commandPool device
+                let transferCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
+                let renderCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
+                let renderCommandBuffer = VulkanGlobal.allocateCommandBuffer renderCommandPool device
                 let graphicsQueue = VulkanGlobal.getQueue physicalDeviceData.GraphicsQueueFamily device
                 let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
 
@@ -837,8 +849,9 @@ module Hl =
                       VmaAllocator = vmaAllocator
                       Swapchain = swapchain
                       SwapchainImageViews = swapchainImageViews
-                      CommandPool = commandPool
-                      CommandBuffer = commandBuffer
+                      TransferCommandPool = transferCommandPool
+                      RenderCommandPool = renderCommandPool
+                      RenderCommandBuffer = renderCommandBuffer
                       GraphicsQueue = graphicsQueue
                       PresentQueue = presentQueue
                       ImageAvailableSemaphore = imageAvailableSemaphore
