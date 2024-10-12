@@ -277,6 +277,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let vmaAllocator = vulkanGlobal.VmaAllocator
     let transferCommandPool = vulkanGlobal.TransferCommandPool
     let renderCommandBuffer = vulkanGlobal.RenderCommandBuffer
+    let graphicsQueue = vulkanGlobal.GraphicsQueue
     let renderPass = vulkanGlobal.GeneralRenderPass
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
     let mutable sampler = Unchecked.defaultof<VkSampler>
@@ -543,18 +544,34 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
     /// Upload the font atlas to the image.
-    static member uploadFont uploadSize pixels transferCommandPool vmaAllocator =
+    static member uploadFont uploadSize pixels graphicsQueue transferCommandPool vmaAllocator device =
         
         // create upload buffer
-        let mutable info = VkBufferCreateInfo ()
-        info.size <- uploadSize
-        info.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-        info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        let uploadBuffer = AllocatedBuffer.make true info vmaAllocator
+        let mutable bInfo = VkBufferCreateInfo ()
+        bInfo.size <- uploadSize
+        bInfo.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+        bInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        let uploadBuffer = AllocatedBuffer.make true bInfo vmaAllocator
 
         // upload font atlas
         uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
 
+        // create command buffer for transfer
+        let mutable commandBuffer = allocateCommandBuffer transferCommandPool device
+
+        // reset command buffer and begin recording
+        vkResetCommandPool (device, transferCommandPool, VkCommandPoolResetFlags.None) |> check
+        let mutable cbInfo = VkCommandBufferBeginInfo (flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+        vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+
+
+        // execute commands
+        vkEndCommandBuffer commandBuffer |> check
+        let mutable sInfo = VkSubmitInfo ()
+        sInfo.commandBufferCount <- 1u
+        sInfo.pCommandBuffers <- asPointer &commandBuffer
+        vkQueueSubmit (graphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> check
+        vkQueueWaitIdle graphicsQueue |> check
 
         // destroy upload buffer
         uploadBuffer.Destroy ()
@@ -589,7 +606,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
             // upload font atlas
             let uploadSize = uint64 (fontTextureWidth * fontTextureHeight * bytesPerPixel)
-            VulkanRendererImGui.uploadFont uploadSize pixels transferCommandPool vmaAllocator
+            VulkanRendererImGui.uploadFont uploadSize pixels graphicsQueue transferCommandPool vmaAllocator device
             
             
             fonts.ClearTexData ()

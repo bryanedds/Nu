@@ -58,6 +58,16 @@ module Hl =
     let getLayerName (layerProps : VkLayerProperties) =
         getBufferString layerProps.layerName
     
+    /// Allocate a command buffer.
+    let allocateCommandBuffer commandPool device =
+        let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
+        let mutable info = VkCommandBufferAllocateInfo ()
+        info.commandPool <- commandPool
+        info.level <- VK_COMMAND_BUFFER_LEVEL_PRIMARY
+        info.commandBufferCount <- 1u
+        vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
+        commandBuffer
+    
     /// Abstraction for vma allocated buffer.
     type AllocatedBuffer =
         { Buffer : VkBuffer
@@ -548,16 +558,6 @@ module Hl =
             vkCreateCommandPool (device, &info, nullPtr, &commandPool) |> check
             commandPool
 
-        /// Allocate the command buffer.
-        static member allocateCommandBuffer commandPool device =
-            let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
-            let mutable info = VkCommandBufferAllocateInfo ()
-            info.commandPool <- commandPool
-            info.level <- VK_COMMAND_BUFFER_LEVEL_PRIMARY
-            info.commandBufferCount <- 1u
-            vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
-            commandBuffer
-
         /// Get command queue.
         static member getQueue queueFamilyIndex device =
             let mutable queue = Unchecked.defaultof<VkQueue>
@@ -824,7 +824,7 @@ module Hl =
                 // setup command system
                 let transferCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
                 let renderCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
-                let renderCommandBuffer = VulkanGlobal.allocateCommandBuffer renderCommandPool device
+                let renderCommandBuffer = allocateCommandBuffer renderCommandPool device
                 let graphicsQueue = VulkanGlobal.getQueue physicalDeviceData.GraphicsQueueFamily device
                 let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
 
