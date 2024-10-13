@@ -616,7 +616,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
              0u, nullPtr, 0u, nullPtr,
              1u, asPointer &useBarrier)
 
-
         // execute commands
         vkEndCommandBuffer commandBuffer |> check
         let mutable sInfo = VkSubmitInfo ()
@@ -660,7 +659,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             let uploadSize = uint64 (fontTextureWidth * fontTextureHeight * bytesPerPixel)
             VulkanRendererImGui.uploadFont fontTextureWidth fontTextureHeight uploadSize pixels vmaImage.Image graphicsQueue transferCommandPool vmaAllocator device
             
+            // store identifier
+            // TODO: confirm this works!
+            fonts.SetTexID (nativeint descriptorSet.Handle)
             
+            // NOTE: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
         
         member this.Render _ = ()
