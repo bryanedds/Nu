@@ -544,7 +544,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
     /// Upload the font atlas to the image.
-    static member uploadFont uploadSize pixels graphicsQueue transferCommandPool vmaAllocator device =
+    static member uploadFont width height uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
         
         // create upload buffer
         let mutable bInfo = VkBufferCreateInfo ()
@@ -563,6 +563,58 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vkResetCommandPool (device, transferCommandPool, VkCommandPoolResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo (flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
         vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+
+        // transition image layout for data transfer
+        let mutable copyBarrier = VkImageMemoryBarrier ()
+        copyBarrier.dstAccessMask <- VK_ACCESS_TRANSFER_WRITE_BIT
+        copyBarrier.oldLayout <- VK_IMAGE_LAYOUT_UNDEFINED
+        copyBarrier.newLayout <- VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        copyBarrier.srcQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
+        copyBarrier.dstQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
+        copyBarrier.image <- image
+        copyBarrier.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        copyBarrier.subresourceRange.levelCount <- 1u
+        copyBarrier.subresourceRange.layerCount <- 1u
+        vkCmdPipelineBarrier
+            (commandBuffer,
+             VK_PIPELINE_STAGE_HOST_BIT,
+             VK_PIPELINE_STAGE_TRANSFER_BIT,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, asPointer &copyBarrier)
+
+        // copy data from upload buffer to image
+        let mutable region = VkBufferImageCopy ()
+        region.imageSubresource.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        region.imageSubresource.layerCount <- 1u
+        region.imageExtent.width <- uint width
+        region.imageExtent.height <- uint height
+        region.imageExtent.depth <- 1u
+        vkCmdCopyBufferToImage
+            (commandBuffer,
+             uploadBuffer.Buffer, image,
+             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+             1u, asPointer &region)
+
+        // transition image layout for usage
+        let mutable useBarrier = VkImageMemoryBarrier ()
+        useBarrier.srcAccessMask <- VK_ACCESS_TRANSFER_WRITE_BIT
+        useBarrier.dstAccessMask <- VK_ACCESS_SHADER_READ_BIT
+        useBarrier.oldLayout <- VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        useBarrier.newLayout <- VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        useBarrier.srcQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
+        useBarrier.dstQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
+        useBarrier.image <- image
+        useBarrier.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        useBarrier.subresourceRange.levelCount <- 1u
+        useBarrier.subresourceRange.layerCount <- 1u
+        vkCmdPipelineBarrier
+            (commandBuffer,
+             VK_PIPELINE_STAGE_TRANSFER_BIT,
+             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+             VkDependencyFlags.None,
+             0u, nullPtr, 0u, nullPtr,
+             1u, asPointer &useBarrier)
 
 
         // execute commands
@@ -606,7 +658,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
             // upload font atlas
             let uploadSize = uint64 (fontTextureWidth * fontTextureHeight * bytesPerPixel)
-            VulkanRendererImGui.uploadFont uploadSize pixels graphicsQueue transferCommandPool vmaAllocator device
+            VulkanRendererImGui.uploadFont fontTextureWidth fontTextureHeight uploadSize pixels vmaImage.Image graphicsQueue transferCommandPool vmaAllocator device
             
             
             fonts.ClearTexData ()
