@@ -614,11 +614,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
         
         // create upload buffer
-        let mutable bInfo = VkBufferCreateInfo ()
-        bInfo.size <- uploadSize
-        bInfo.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-        bInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        let uploadBuffer = AllocatedBuffer.make true bInfo vmaAllocator
+        let mutable info = VkBufferCreateInfo ()
+        info.size <- uploadSize
+        info.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+        info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        let uploadBuffer = AllocatedBuffer.make true info vmaAllocator
 
         // upload font atlas
         uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
