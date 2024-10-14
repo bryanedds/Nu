@@ -541,19 +541,9 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         write.pImageInfo <- asPointer &info
         vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
-    /// Upload the font atlas to the image.
-    static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
+    /// Copy font atlas from the upload buffer to the image.
+    static member copyFont extent uploadBuffer image graphicsQueue transferCommandPool device =
         
-        // create upload buffer
-        let mutable bInfo = VkBufferCreateInfo ()
-        bInfo.size <- uploadSize
-        bInfo.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-        bInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        let uploadBuffer = AllocatedBuffer.make true bInfo vmaAllocator
-
-        // upload font atlas
-        uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
-
         // create command buffer for transfer
         let mutable commandBuffer = allocateCommandBuffer transferCommandPool device
 
@@ -588,7 +578,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         region.imageExtent <- extent
         vkCmdCopyBufferToImage
             (commandBuffer,
-             uploadBuffer.Buffer, image,
+             uploadBuffer, image,
              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
              1u, asPointer &region)
 
@@ -619,6 +609,22 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         sInfo.pCommandBuffers <- asPointer &commandBuffer
         vkQueueSubmit (graphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> check
         vkQueueWaitIdle graphicsQueue |> check
+    
+    /// Upload the font atlas to the image.
+    static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
+        
+        // create upload buffer
+        let mutable bInfo = VkBufferCreateInfo ()
+        bInfo.size <- uploadSize
+        bInfo.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+        bInfo.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+        let uploadBuffer = AllocatedBuffer.make true bInfo vmaAllocator
+
+        // upload font atlas
+        uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
+
+        // copy font atlas to image
+        VulkanRendererImGui.copyFont extent uploadBuffer.Buffer image graphicsQueue transferCommandPool device
 
         // destroy upload buffer
         uploadBuffer.Destroy ()
