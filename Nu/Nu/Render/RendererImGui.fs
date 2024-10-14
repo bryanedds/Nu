@@ -485,13 +485,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         pipeline
 
     /// Create the image for the font atlas.
-    static member createImage width height vmaAllocator =
+    static member createImage extent vmaAllocator =
         let mutable info = VkImageCreateInfo ()
         info.imageType <- VK_IMAGE_TYPE_2D
         info.format <- VK_FORMAT_R8G8B8A8_UNORM
-        info.extent.width <- uint width
-        info.extent.height <- uint height
-        info.extent.depth <- 1u
+        info.extent <- extent
         info.mipLevels <- 1u
         info.arrayLayers <- 1u
         info.samples <- VK_SAMPLE_COUNT_1_BIT
@@ -544,7 +542,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
     /// Upload the font atlas to the image.
-    static member uploadFont width height uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
+    static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
         
         // create upload buffer
         let mutable bInfo = VkBufferCreateInfo ()
@@ -587,9 +585,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable region = VkBufferImageCopy ()
         region.imageSubresource.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
         region.imageSubresource.layerCount <- 1u
-        region.imageExtent.width <- uint width
-        region.imageExtent.height <- uint height
-        region.imageExtent.depth <- 1u
+        region.imageExtent <- extent
         vkCmdCopyBufferToImage
             (commandBuffer,
              uploadBuffer.Buffer, image,
@@ -642,13 +638,15 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             
             // get font atlas data
             let mutable pixels = Unchecked.defaultof<nativeint>
-            let mutable fontTextureWidth = 0
-            let mutable fontTextureHeight = 0
+            let mutable fontWidth = 0
+            let mutable fontHeight = 0
             let mutable bytesPerPixel = Unchecked.defaultof<_>
-            fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
+            fonts.GetTexDataAsRGBA32 (&pixels, &fontWidth, &fontHeight, &bytesPerPixel)
+            let uploadSize = uint64 (fontWidth * fontHeight * bytesPerPixel)
+            let fontExtent = VkExtent3D (fontWidth, fontHeight, 1)
 
             // create image and image view for font atlas
-            vmaImage <- VulkanRendererImGui.createImage fontTextureWidth fontTextureHeight vmaAllocator
+            vmaImage <- VulkanRendererImGui.createImage fontExtent vmaAllocator
             imageView <- VulkanRendererImGui.createImageView vmaImage.Image device
 
             // create and write descriptor set for font atlas
@@ -656,8 +654,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             VulkanRendererImGui.writeDescriptorSet sampler imageView descriptorSet device
 
             // upload font atlas
-            let uploadSize = uint64 (fontTextureWidth * fontTextureHeight * bytesPerPixel)
-            VulkanRendererImGui.uploadFont fontTextureWidth fontTextureHeight uploadSize pixels vmaImage.Image graphicsQueue transferCommandPool vmaAllocator device
+            VulkanRendererImGui.uploadFont fontExtent uploadSize pixels vmaImage.Image graphicsQueue transferCommandPool vmaAllocator device
             
             // store identifier
             // TODO: confirm this works!
