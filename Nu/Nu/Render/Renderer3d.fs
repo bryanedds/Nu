@@ -3061,6 +3061,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match renderPass with
                 | ShadowPass (shadowLightId, shadowDirectional, shadowRotation, _) when lightId = shadowLightId && shadowBufferIndex < Constants.Render.ShadowsMax ->
 
+                    // skip index 0 when no lights are directional and there are at least two shadows allowed
+                    if shadowBufferIndex = 0 && shadowBufferIndex < dec Constants.Render.ShadowsMax && not shadowDirectional then
+                        shadowBufferIndex <- 1
+
                     // draw shadows
                     let (shadowOrigin, shadowView, shadowProjection) =
                         if not shadowDirectional then
