@@ -54,11 +54,11 @@ module Override =
                 | nameof Render.FarPlaneDistanceImposter -> Render.FarPlaneDistanceImposter <- scvalue value
                 | nameof Render.VirtualResolution -> Render.VirtualResolution <- scvalue value
                 | nameof Render.VirtualScalar -> Render.VirtualScalar <- scvalue value
+                | nameof Render.ShadowVirtualResolution -> Render.ShadowVirtualResolution <- scvalue value
                 | nameof Render.SsaoResolutionDivisor -> Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Render.FieldOfView -> Render.FieldOfView <- scvalue value
                 | nameof Render.TextureAnisotropyMax -> Render.TextureAnisotropyMax <- scvalue value
                 | nameof Render.TextureMinimalMipmapIndex -> Render.TextureMinimalMipmapIndex <- scvalue value
-                | nameof Render.ShadowDetailedCount -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
                 | nameof Gui.SliceMarginDefault -> Gui.SliceMarginDefault <- scvalue value
@@ -67,7 +67,7 @@ module Override =
             Constants.Render.FarPlaneDistanceOmnipresent <- Constants.Render.FarPlaneDistanceImposter
             Constants.Render.Resolution <- Constants.Render.VirtualResolution * Constants.Render.VirtualScalar
             Constants.Render.Viewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
-            Constants.Render.ShadowResolution <- Vector2i (512 * Constants.Render.VirtualScalar)
+            Constants.Render.ShadowResolution <- Vector2i (Constants.Render.ShadowVirtualResolution * Constants.Render.VirtualScalar)
             Constants.Render.SsaoResolution <- Constants.Render.Resolution / Constants.Render.SsaoResolutionDivisor
             Constants.Render.SsaoViewport <- Nu.Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, Box2i (v2iZero, Constants.Render.SsaoResolution))
         with

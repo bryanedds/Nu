@@ -1544,10 +1544,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.tryLoadRenderPackage packageName renderer
 
     static member private getShadowBufferResolution shadowBufferIndex =
-        let scalar =
-            if shadowBufferIndex < Constants.Render.ShadowDetailedCount
-            then Constants.Render.ShadowDetailedResolutionScalar
-            else 1
+        let scalar = if shadowBufferIndex = 0 then Constants.Render.ShadowDetailedResolutionScalar else 1
         Constants.Render.ShadowResolution * scalar
 
     static member private getRenderTasks renderPass renderer =
