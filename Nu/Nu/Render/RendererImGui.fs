@@ -289,6 +289,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let mutable fontDescriptorSet = Unchecked.defaultof<VkDescriptorSet>
     let mutable vertexBuffer = Unchecked.defaultof<AllocatedBuffer>
     let mutable indexBuffer = Unchecked.defaultof<AllocatedBuffer>
+    let mutable vertexBufferSize = 8192
+    let mutable indexBufferSize = 1024
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -668,8 +670,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- AllocatedBuffer.createVertex true 8192 vmaAllocator
-            indexBuffer <- AllocatedBuffer.createIndex true 1024 vmaAllocator
+            vertexBuffer <- AllocatedBuffer.createVertex true vertexBufferSize vmaAllocator
+            indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
         
         member this.Render (drawData : ImDrawDataPtr) =
             
@@ -679,6 +681,22 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             let framebufferHeight = int (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)
 
             if drawData.TotalVtxCount > 0 then
+                
+                // get data size for vertices and indices
+                let vertexSize = drawData.TotalVtxCount * int (sizeOf<ImDrawVert> ())
+                let indexSize = drawData.TotalVtxCount * sizeof<uint16>
+
+                // enlargen vertex buffer if needed
+                if vertexSize > vertexBufferSize then
+                    while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
+                    vertexBuffer.Destroy ()
+                    vertexBuffer <- AllocatedBuffer.createVertex true vertexBufferSize vmaAllocator
+
+                // enlargen index buffer if needed
+                if indexSize > indexBufferSize then
+                    while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
+                    indexBuffer.Destroy ()
+                    indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
                 
 
                 ()
