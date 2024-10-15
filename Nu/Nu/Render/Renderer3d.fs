@@ -1952,7 +1952,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // blit parameters to instance fields
         for i in 0 .. dec parameters.Count do
-            let struct (model, _, texCoordsOffset, properties) = parameters.[i]
+            let struct (model, presence, texCoordsOffset, properties) = parameters.[i]
             model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
@@ -1975,7 +1975,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- 0.0f // unused
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- surface.SurfaceMaterialProperties.OpaqueDistance
 
         // draw deferred surfaces
@@ -1998,7 +1998,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // blit parameters to instance fields
         for i in 0 .. dec parameters.Length do
-            let struct (model, _, texCoordsOffset, properties) = parameters.[i]
+            let struct (model, presence, texCoordsOffset, properties) = parameters.[i]
             model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
@@ -2021,7 +2021,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 24 + 3] <- emission
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 28] <- surface.SurfaceMaterial.AlbedoTexture.TextureMetadata.TextureTexelHeight * height
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 29] <- if ignoreLightMaps then 1.0f else 0.0f
-            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- 0.0f // unused
+            renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 30] <- presence.DepthCutoff
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 31] <- surface.SurfaceMaterialProperties.OpaqueDistance
 
         // draw forward surfaces
