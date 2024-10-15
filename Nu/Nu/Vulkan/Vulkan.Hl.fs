@@ -77,7 +77,7 @@ module Hl =
 
         /// Upload data to buffer if upload is enabled.
         member this.TryUpload size ptr =
-            if this.UploadEnabled then vmaCopyMemoryToAllocation (this.VmaAllocator, ptr, this.VmaAllocation, 0UL, size) |> check
+            if this.UploadEnabled then vmaCopyMemoryToAllocation (this.VmaAllocator, ptr, this.VmaAllocation, 0UL, uint64 size) |> check
             else Log.info "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
         
         /// Destroy buffer and allocation.
@@ -106,6 +106,33 @@ module Hl =
                   UploadEnabled = uploadEnabled }
 
             // fin
+            allocatedBuffer
+
+        /// Create an allocated staging buffer.
+        static member createStaging size vmaAllocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+            info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.make true info vmaAllocator
+            allocatedBuffer
+
+        /// Create an allocated vertex buffer.
+        static member createVertex uploadEnabled size vmaAllocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+            info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.make uploadEnabled info vmaAllocator
+            allocatedBuffer
+
+        /// Create an allocated index buffer.
+        static member createIndex uploadEnabled size vmaAllocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+            info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.make uploadEnabled info vmaAllocator
             allocatedBuffer
     
     /// Abstraction for vma allocated image.

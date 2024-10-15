@@ -280,13 +280,15 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let graphicsQueue = vulkanGlobal.GraphicsQueue
     let renderPass = vulkanGlobal.GeneralRenderPass
     let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-    let mutable sampler = Unchecked.defaultof<VkSampler>
-    let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
+    let mutable fontSampler = Unchecked.defaultof<VkSampler>
+    let mutable fontDescriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
     let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
     let mutable pipeline = Unchecked.defaultof<VkPipeline>
-    let mutable vmaImage = Unchecked.defaultof<AllocatedImage>
-    let mutable imageView = Unchecked.defaultof<VkImageView>
-    let mutable descriptorSet = Unchecked.defaultof<VkDescriptorSet>
+    let mutable fontImage = Unchecked.defaultof<AllocatedImage>
+    let mutable fontImageView = Unchecked.defaultof<VkImageView>
+    let mutable fontDescriptorSet = Unchecked.defaultof<VkDescriptorSet>
+    let mutable vertexBuffer = Unchecked.defaultof<AllocatedBuffer>
+    let mutable indexBuffer = Unchecked.defaultof<AllocatedBuffer>
     
     /// Create the descriptor pool for the font atlas.
     static member createDescriptorPool device =
@@ -614,11 +616,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
         
         // create upload buffer
-        let mutable info = VkBufferCreateInfo ()
-        info.size <- uploadSize
-        info.usage <- VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-        info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        let uploadBuffer = AllocatedBuffer.make true info vmaAllocator
+        let uploadBuffer = AllocatedBuffer.createStaging uploadSize vmaAllocator
 
         // upload font atlas
         uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
@@ -635,9 +633,9 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             
             // create font atlas resources
             descriptorPool <- VulkanRendererImGui.createDescriptorPool device
-            sampler <- VulkanRendererImGui.createSampler device
-            descriptorSetLayout <- VulkanRendererImGui.createDescriptorSetLayout device
-            pipelineLayout <- VulkanRendererImGui.createPipelineLayout descriptorSetLayout device
+            fontSampler <- VulkanRendererImGui.createSampler device
+            fontDescriptorSetLayout <- VulkanRendererImGui.createDescriptorSetLayout device
+            pipelineLayout <- VulkanRendererImGui.createPipelineLayout fontDescriptorSetLayout device
             
             // create pipeline
             pipeline <- VulkanRendererImGui.createPipeline pipelineLayout renderPass device
@@ -648,36 +646,42 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             let mutable fontHeight = 0
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontWidth, &fontHeight, &bytesPerPixel)
-            let uploadSize = uint64 (fontWidth * fontHeight * bytesPerPixel)
+            let uploadSize = fontWidth * fontHeight * bytesPerPixel
             let fontExtent = VkExtent3D (fontWidth, fontHeight, 1)
 
             // create image and image view for font atlas
-            vmaImage <- VulkanRendererImGui.createImage fontExtent vmaAllocator
-            imageView <- VulkanRendererImGui.createImageView vmaImage.Image device
+            fontImage <- VulkanRendererImGui.createImage fontExtent vmaAllocator
+            fontImageView <- VulkanRendererImGui.createImageView fontImage.Image device
 
             // create and write descriptor set for font atlas
-            descriptorSet <- VulkanRendererImGui.createDescriptorSet descriptorSetLayout descriptorPool device
-            VulkanRendererImGui.writeDescriptorSet sampler imageView descriptorSet device
+            fontDescriptorSet <- VulkanRendererImGui.createDescriptorSet fontDescriptorSetLayout descriptorPool device
+            VulkanRendererImGui.writeDescriptorSet fontSampler fontImageView fontDescriptorSet device
 
             // upload font atlas
-            VulkanRendererImGui.uploadFont fontExtent uploadSize pixels vmaImage.Image graphicsQueue transferCommandPool vmaAllocator device
+            VulkanRendererImGui.uploadFont fontExtent uploadSize pixels fontImage.Image graphicsQueue transferCommandPool vmaAllocator device
             
             // store identifier
             // TODO: confirm this works!
-            fonts.SetTexID (nativeint descriptorSet.Handle)
+            fonts.SetTexID (nativeint fontDescriptorSet.Handle)
             
             // NOTE: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
+
+            // create vertex and index buffers
+            vertexBuffer <- AllocatedBuffer.createVertex true 8192 vmaAllocator
+            indexBuffer <- AllocatedBuffer.createIndex true 1024 vmaAllocator
         
         member this.Render _ = ()
         
         member this.CleanUp () =
-            vkDestroyImageView (device, imageView, nullPtr)
-            vmaImage.Destroy ()
+            indexBuffer.Destroy ()
+            vertexBuffer.Destroy ()
+            vkDestroyImageView (device, fontImageView, nullPtr)
+            fontImage.Destroy ()
             vkDestroyPipeline (device, pipeline, nullPtr)
             vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
-            vkDestroyDescriptorSetLayout (device, descriptorSetLayout, nullPtr)
-            vkDestroySampler (device, sampler, nullPtr)
+            vkDestroyDescriptorSetLayout (device, fontDescriptorSetLayout, nullPtr)
+            vkDestroySampler (device, fontSampler, nullPtr)
             vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
 
 [<RequireQualifiedAccess>]
