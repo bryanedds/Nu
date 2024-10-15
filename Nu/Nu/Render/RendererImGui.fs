@@ -629,7 +629,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     
     interface RendererImGui with
         
-        member this.Initialize fonts =
+        member this.Initialize (fonts : ImFontAtlasPtr) =
             
             // create font atlas resources
             descriptorPool <- VulkanRendererImGui.createDescriptorPool device
@@ -671,7 +671,20 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             vertexBuffer <- AllocatedBuffer.createVertex true 8192 vmaAllocator
             indexBuffer <- AllocatedBuffer.createIndex true 1024 vmaAllocator
         
-        member this.Render _ = ()
+        member this.Render (drawData : ImDrawDataPtr) =
+            
+            // get total resolution from imgui
+            // NOTE: if this ever differs from the swapchain then something is wrong.
+            let framebufferWidth = int (drawData.DisplaySize.X * drawData.FramebufferScale.X)
+            let framebufferHeight = int (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)
+
+            if drawData.TotalVtxCount > 0 then
+                
+
+                ()
+
+            
+            ()
         
         member this.CleanUp () =
             indexBuffer.Destroy ()
