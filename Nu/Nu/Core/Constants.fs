@@ -294,7 +294,7 @@ module Associations =
 module Gui =
 
     let [<Uniform>] mutable SliceMarginDefault = match ConfigurationManager.AppSettings.["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | marginDefault -> scvalue marginDefault
-    let [<Uniform>] DisabledColorDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
+    let [<Uniform>] ColorDisabledDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
 
 [<RequireQualifiedAccess>]
 module TileMap =

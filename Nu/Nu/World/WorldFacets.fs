@@ -416,9 +416,9 @@ module TextFacetExtensions =
         member this.GetTextColor world : Color = this.Get (nameof this.TextColor) world
         member this.SetTextColor (value : Color) world = this.Set (nameof this.TextColor) value world
         member this.TextColor = lens (nameof this.TextColor) this this.GetTextColor this.SetTextColor
-        member this.GetTextDisabledColor world : Color = this.Get (nameof this.TextDisabledColor) world
-        member this.SetTextDisabledColor (value : Color) world = this.Set (nameof this.TextDisabledColor) value world
-        member this.TextDisabledColor = lens (nameof this.TextDisabledColor) this this.GetTextDisabledColor this.SetTextDisabledColor
+        member this.GetTextColorDisabled world : Color = this.Get (nameof this.TextColorDisabled) world
+        member this.SetTextColorDisabled (value : Color) world = this.Set (nameof this.TextColorDisabled) value world
+        member this.TextColorDisabled = lens (nameof this.TextColorDisabled) this this.GetTextColorDisabled this.SetTextColorDisabled
         member this.GetTextOffset world : Vector2 = this.Get (nameof this.TextOffset) world
         member this.SetTextOffset (value : Vector2) world = this.Set (nameof this.TextOffset) value world
         member this.TextOffset = lens (nameof this.TextOffset) this this.GetTextOffset this.SetTextOffset
@@ -438,7 +438,7 @@ type TextFacet () =
          define Entity.Justification (Justified (JustifyCenter, JustifyMiddle))
          define Entity.TextMargin v2Zero
          define Entity.TextColor Color.White
-         define Entity.TextDisabledColor Constants.Gui.DisabledColorDefault
+         define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
          define Entity.TextShift 0.5f]
 
@@ -453,7 +453,7 @@ type TextFacet () =
         let clipOpt = ValueSome transform.Bounds2d.Box2
         let justification = entity.GetJustification world
         let margin = (entity.GetTextMargin world).V3
-        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextDisabledColor world
+        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
         let font = entity.GetFont world
         let fontSizing = entity.GetFontSizing world
         let fontStyling = entity.GetFontStyling world
@@ -465,9 +465,9 @@ type TextFacet () =
 [<AutoOpen>]
 module BackdroppableFacetExtensions =
     type Entity with
-        member this.GetDisabledColor world : Color = this.Get (nameof this.DisabledColor) world
-        member this.SetDisabledColor (value : Color) world = this.Set (nameof this.DisabledColor) value world
-        member this.DisabledColor = lens (nameof this.DisabledColor) this this.GetDisabledColor this.SetDisabledColor
+        member this.GetColorDisabled world : Color = this.Get (nameof this.ColorDisabled) world
+        member this.SetColorDisabled (value : Color) world = this.Set (nameof this.ColorDisabled) value world
+        member this.ColorDisabled = lens (nameof this.ColorDisabled) this this.GetColorDisabled this.SetColorDisabled
         member this.GetSliceMargin world : Vector2 = this.Get (nameof this.SliceMargin) world
         member this.SetSliceMargin (value : Vector2) world = this.Set (nameof this.SliceMargin) value world
         member this.SliceMargin = lens (nameof this.SliceMargin) this this.GetSliceMargin this.SetSliceMargin
@@ -482,7 +482,7 @@ type BackdroppableFacet () =
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
          define Entity.Color Color.One
-         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.BackdropImageOpt None]
 
     override this.Render (_, entity, world) =
@@ -490,7 +490,7 @@ type BackdroppableFacet () =
         | Some spriteImage ->
             let mutable transform = entity.GetTransform world
             let sliceMargin = entity.GetSliceMargin world
-            let color = if transform.Enabled then entity.GetColor world else entity.GetDisabledColor world
+            let color = if transform.Enabled then entity.GetColor world else entity.GetColorDisabled world
             World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
         | None -> ()
 
@@ -573,7 +573,7 @@ type ButtonFacet () =
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
-         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Down false
          define Entity.DownOffset v2Zero
          define Entity.UpImage Assets.Default.ButtonUp
@@ -590,7 +590,7 @@ type ButtonFacet () =
         let mutable transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let spriteImage = if entity.GetDown world then entity.GetDownImage world else entity.GetUpImage world
-        let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+        let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
         World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
 
     override this.GetAttributesInferred (entity, world) =
@@ -674,7 +674,7 @@ type ToggleButtonFacet () =
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
-         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Toggled false
          define Entity.ToggledOffset v2Zero
          define Entity.Pushed false
@@ -704,7 +704,7 @@ type ToggleButtonFacet () =
             if entity.GetToggled world || entity.GetPushed world
             then entity.GetToggledImage world
             else entity.GetUntoggledImage world
-        let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+        let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
         World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
 
     override this.GetAttributesInferred (entity, world) =
@@ -783,7 +783,7 @@ type RadioButtonFacet () =
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
-         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Dialed false
          define Entity.DialedOffset v2Zero
          define Entity.Pushed false
@@ -813,7 +813,7 @@ type RadioButtonFacet () =
             if entity.GetDialed world || entity.GetPushed world
             then entity.GetDialedImage world
             else entity.GetUndialedImage world
-        let color = if transform.Enabled then Color.One else entity.GetDisabledColor world
+        let color = if transform.Enabled then Color.One else entity.GetColorDisabled world
         World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin spriteImage transform.Offset transform.Elevation color world
 
     override this.GetAttributesInferred (entity, world) =
@@ -849,7 +849,7 @@ type FillBarFacet () =
 
     static member Properties =
         [define Entity.SliceMargin Constants.Gui.SliceMarginDefault
-         define Entity.DisabledColor Constants.Gui.DisabledColorDefault
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.Fill 0.0f
          define Entity.FillInset 0.0f
          define Entity.FillColor (Color (1.0f, 0.0f, 0.0f, 1.0f))
@@ -863,7 +863,7 @@ type FillBarFacet () =
         let mutable transform = entity.GetTransform world
         let sliceMargin = entity.GetSliceMargin world
         let elevation = transform.Elevation + 0.5f
-        let color = if transform.Enabled then Color.White else entity.GetDisabledColor world
+        let color = if transform.Enabled then Color.White else entity.GetColorDisabled world
         let borderImageColor = entity.GetBorderColor world * color
         let borderImage = entity.GetBorderImage world
         World.renderGuiSpriteSliced transform.Absolute transform.Perimeter sliceMargin borderImage transform.Offset elevation borderImageColor world

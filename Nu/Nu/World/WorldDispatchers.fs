@@ -27,7 +27,7 @@ type GuiDispatcher () =
          define Entity.Elevation 1.0f
          define Entity.ElevationLocal 1.0f
          define Entity.Presence Omnipresent
-         define Entity.DisabledColor Constants.Gui.DisabledColorDefault]
+         define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault]
 
 /// A 3d entity dispatcher.
 type Entity3dDispatcher (physical, lightProbe, light) =
