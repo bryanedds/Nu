@@ -39,18 +39,13 @@ type Asset =
     abstract Refinements : Refinement list
     abstract Associations : string Set
 
-/// Describes a strongly-typed game asset, such as a texture, sound, or model in detail.
+/// Describes a strongly-typed game asset, such as an image, sound, or model, in detail.
 ///
 /// All assets must belong to an asset Package, which is a unit of asset loading.
 ///
 /// In order for the renderer to render a single texture, that texture, along with all the other
 /// assets in the corresponding package, must be loaded. Also, the only way to unload any of those
-/// assets is to send an AssetPackageUnload message to the relevent subsystem, which unloads them all.
-/// There is an AssetPackageLoad message to load a package when convenient.
-///
-/// The use of a message system for the subsystem should enable streamed loading, optionally with
-/// smooth fading-in of late-loaded assets (IE - render assets that are already in the view frustum
-/// but are still being loaded).
+/// assets is to send a package unload message to the relevent subsystem.
 type [<ReferenceEquality>] 'a Asset =
     { AssetTag : 'a AssetTag
       FilePath : string
@@ -82,8 +77,8 @@ type Packages<'a, 's> = Dictionary<string, Package<'a, 's>>
 
 /// Describes assets and how to process and use them.
 type AssetDescriptor =
-    | Asset of AssetName : string * FilePath : string * Associations : string Set * Refinements : Refinement list
-    | Assets of Directory : string * Extensions : string Set * Associations : string Set * Refinements : Refinement list
+    | Asset of AssetName : string * FilePath : string * Refinements : Refinement list * Associations : string Set
+    | Assets of Directory : string * Extensions : string Set * Refinements : Refinement list * Associations : string Set
 
 /// Describes asset packages.
 type PackageDescriptor = AssetDescriptor list
@@ -214,11 +209,11 @@ module AssetGraph =
     let private collectAssetsFromPackageDescriptor packageName packageDescriptor : Asset list =
         [for assetDescriptor in packageDescriptor do
             match assetDescriptor with
-            | Asset (assetName, filePath, associations, refinements) ->
+            | Asset (assetName, filePath, refinements, associations) ->
                 let tag = AssetTag.make<obj> packageName assetName
                 yield Asset.make tag filePath refinements associations
             | Assets (directory, extensions, associations, refinements) ->
-                yield! collectAssetsFromPackageDescriptorAssets packageName directory extensions associations refinements]
+                yield! collectAssetsFromPackageDescriptorAssets packageName directory extensions refinements associations]
 
     /// Attempt to collect all the available assets from a package.
     let tryCollectAssetsFromPackage associationOpt packageName assetGraph =
