@@ -98,8 +98,8 @@ module Hl =
         *)
         
         /// Upload data to buffer if upload is enabled.
-        member this.TryUpload size ptr =
-            if this.UploadEnabled then vmaCopyMemoryToAllocation (this.VmaAllocator, ptr, this.VmaAllocation, 0UL, uint64 size) |> check
+        member this.TryUpload offset size ptr =
+            if this.UploadEnabled then vmaCopyMemoryToAllocation (this.VmaAllocator, ptr, this.VmaAllocation, uint64 offset, uint64 size) |> check
             else Log.info "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
         
         /// Destroy buffer and allocation.

@@ -621,7 +621,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let uploadBuffer = AllocatedBuffer.createStaging uploadSize vmaAllocator
 
         // upload font atlas
-        uploadBuffer.TryUpload uploadSize (nintToVoidPointer pixels)
+        uploadBuffer.TryUpload 0 uploadSize (nintToVoidPointer pixels)
 
         // copy font atlas to image
         VulkanRendererImGui.copyFont extent uploadBuffer.Buffer image graphicsQueue transferCommandPool device
@@ -697,6 +697,20 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                     while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
                     indexBuffer.Destroy ()
                     indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
+
+                // upload vertices and indices
+                let mutable vertexOffset = 0
+                let mutable indexOffset = 0
+                for i in 0 .. dec drawData.CmdListsCount do
+                    let cmds = drawData.CmdListsRange.[i]
+                    let vertexSize = cmds.VtxBuffer.Size * int (sizeOf<ImDrawVert> ())
+                    let indexSize = cmds.IdxBuffer.Size * sizeof<uint16>
+                    
+                    // TODO: try a persistently mapped buffer and compare performance
+                    vertexBuffer.TryUpload vertexOffset vertexSize (nintToVoidPointer cmds.VtxBuffer.Data)
+                    indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer cmds.IdxBuffer.Data)
+                    vertexOffset <- vertexOffset + vertexSize
+                    indexOffset <- indexOffset + indexSize
                 
 
                 ()
