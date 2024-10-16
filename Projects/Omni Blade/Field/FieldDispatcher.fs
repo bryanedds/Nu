@@ -1061,7 +1061,7 @@ type FieldDispatcher () =
                         Entity.UpImage == Assets.Field.ButtonAutoMapUpImage
                         Entity.DownImage == Assets.Field.ButtonAutoMapDownImage
                         Entity.TextColor == Color 0x93544CFFu
-                        Entity.TextDisabledColor == Color 0x93544CC0u
+                        Entity.TextColorDisabled == Color 0x93544CC0u
                         Entity.Text == "Map"
                         Entity.ClickSoundOpt == Some Assets.Field.AutoMapSound
                         Entity.ClickEvent => MenuAutoMapOpen]

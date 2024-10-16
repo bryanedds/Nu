@@ -275,42 +275,42 @@ void computeSsr(vec4 position, vec3 albedo, float roughness, float metallic, vec
     float currentDepthView = 0.0;
     for (int i = 0; i < stepCount && currentTexCoords.x >= 0.0 && currentTexCoords.x < 1.0 && currentTexCoords.y >= 0.0 && currentTexCoords.y < 1.0; ++i)
     {
-        // advance frag values, immediately continuing marching when traversing sky / empty space
+        // advance frag values
         currentFrag += stepAmount;
         currentTexCoords = currentFrag / texSize;
         currentPosition = texture(positionTexture, currentTexCoords);
         currentPositionView = view * currentPosition;
         currentProgressB = length(currentFrag - startFrag) / lengthFrag;
         currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
-        if (currentPosition.w != 1.0) continue;
 
-        // compute depth delta and thickness
+        // compute depth delta and thickness based on view state
         float depthDelta = currentDepthView - -currentPositionView.z;
         float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
-        if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0) thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
+        if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0)
+            thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
 
         // determine whether we hit geometry within acceptable thickness
-        if (depthDelta <= thickness && depthDelta >= 0.0)
+        if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
         {
             // perform refinements within walk
             currentProgressB = currentProgressA + (currentProgressB - currentProgressA) * 0.5;
             for (int j = 0; j < ssrRefinementsMax; ++j)
             {
-                // advance frag values, immediately continuing refining when traversing sky / empty space
+                // advance frag values
                 currentFrag = mix(startFrag, stopFrag, currentProgressB);
                 currentTexCoords = currentFrag / texSize;
                 currentPosition = texture(positionTexture, currentTexCoords);
                 currentPositionView = view * currentPosition;
                 currentDepthView = -startView.z * -stopView.z / max(0.00001, mix(-stopView.z, -startView.z, currentProgressB)); // NOTE: uses perspective correct interpolation for depth, but causes precision issues as ssrDistanceCutoff increases.
-                if (currentPosition.w != 1.0) continue;
 
-                // compute depth delta and thickness
+                // compute depth delta and thickness based on view state
                 float depthDelta = currentDepthView - -currentPositionView.z;
                 float thickness = max(-currentPositionView.z * ssrRayThickness, ssrRayThickness);
-                if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0) thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
+                if (-currentPositionView.z > 3.0 && eyeDistanceFromPlane < 1.0)
+                    thickness = max(1.0 - eyeDistanceFromPlane + ssrRayThickness, thickness);
 
                 // determine whether we hit geometry within acceptable thickness
-                if (depthDelta <= thickness && depthDelta >= 0.0)
+                if (currentPosition.w == 1.0 && depthDelta >= 0.0 && depthDelta <= thickness)
                 {
                     // compute screen-space specular color and weight
                     vec3 f0 = mix(vec3(0.04), albedo, metallic);

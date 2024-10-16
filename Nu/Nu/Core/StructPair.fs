@@ -3,7 +3,7 @@
 
 namespace Nu
 
-/// An struct-based representation of a pair.
+/// A struct-based representation of a pair.
 /// This type would seem redundant with struct (,) and KeyValuePair, but it's not. This type is unique in that allows
 /// you to take a reference to its Fst and Snd fields. Unfortunately, there seems to be no way to do that with
 /// struct (,) or KeyValuePair.

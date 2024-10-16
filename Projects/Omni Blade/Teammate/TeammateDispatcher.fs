@@ -79,7 +79,7 @@ type TeammateDispatcher () =
     override this.Definitions (teammate : Teammate, _) =
         [Entity.Text := teammate.Name
          Entity.TextColor == Color.White
-         Entity.TextDisabledColor == color8Dup (byte 192) // TODO: make constant?
+         Entity.TextColorDisabled == color8Dup (byte 192) // TODO: make constant?
          Entity.Font == Assets.Gui.Font
          Entity.FontSizing == Some 24
          Entity.DownOffset == v2 0.0f -3.0f

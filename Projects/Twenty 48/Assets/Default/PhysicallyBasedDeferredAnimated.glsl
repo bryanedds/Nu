@@ -100,6 +100,12 @@ layout(location = 3) out vec4 normalPlus;
 
 void main()
 {
+    // discard when depth out of range
+    float depthCutoff = heightPlusOut.z;
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
+    else if (depth <= -depthCutoff) discard;
+
     // forward position, marking w for writter
     position.xyz = positionOut.xyz;
     position.w = 1.0;
