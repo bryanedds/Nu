@@ -75,6 +75,28 @@ module Hl =
           VmaAllocator : VmaAllocator
           UploadEnabled : bool }
 
+        (*
+        
+        TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
+        
+        /// Map pointer to buffer if upload is enabled.
+        member this.TryMap () =
+            let mutable memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
+            if this.UploadEnabled then
+                vmaMapMemory (this.VmaAllocator, this.VmaAllocation, memoryPtrPtr) |> check
+                vmaInvalidateAllocation (this.VmaAllocator, this.VmaAllocation, 0UL, VK_WHOLE_SIZE) |> check
+            else Log.info "Mapping to Vulkan buffer failed because upload was not enabled for that buffer."
+            memoryPtrPtr
+
+        /// Unmap buffer.
+        member this.Unmap () =
+
+            // no point checking UploadEnabled because success or failure simply depends on calling context
+            vmaFlushAllocation (this.VmaAllocator, this.VmaAllocation, 0UL, VK_WHOLE_SIZE) |> check
+            vmaUnmapMemory (this.VmaAllocator, this.VmaAllocation)
+
+        *)
+        
         /// Upload data to buffer if upload is enabled.
         member this.TryUpload size ptr =
             if this.UploadEnabled then vmaCopyMemoryToAllocation (this.VmaAllocator, ptr, this.VmaAllocation, 0UL, uint64 size) |> check
