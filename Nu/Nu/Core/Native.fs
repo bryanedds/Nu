@@ -88,6 +88,8 @@ module Native =
         // TODO: see if implicit conversion can be used to remove the need to call this member directly.
         member this.Pointer = pointer
 
+        member this.VoidPtr = NativePtr.toVoidPtr pointer
+
         // make disposal publicly available without casting
         member this.Dispose () = handle.Dispose ()
     

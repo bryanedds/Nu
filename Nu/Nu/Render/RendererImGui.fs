@@ -459,7 +459,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // dynamic state info
         let dynamicStates = [|VK_DYNAMIC_STATE_VIEWPORT; VK_DYNAMIC_STATE_SCISSOR|]
-        let dynamicStatesPin = ArrayPin dynamicStates
+        use dynamicStatesPin = ArrayPin dynamicStates
         let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
         dsInfo.dynamicStateCount <- 2u
         dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
@@ -711,9 +711,39 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                     indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer cmds.IdxBuffer.Data)
                     vertexOffset <- vertexOffset + vertexSize
                     indexOffset <- indexOffset + indexSize
-                
 
-                ()
+            // bind pipeline
+            vkCmdBindPipeline (renderCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline)
+
+            if drawData.TotalVtxCount > 0 then
+
+                // bind vertex and index buffer
+                let mutable vertexBuffer = vertexBuffer.Buffer
+                let mutable vertexOffset = 0UL
+                vkCmdBindVertexBuffers (renderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                vkCmdBindIndexBuffer (renderCommandBuffer, indexBuffer.Buffer, 0UL, VK_INDEX_TYPE_UINT16)
+
+            // set up viewport
+            let mutable viewport = VkViewport ()
+            viewport.x <- 0.0f
+            viewport.y <- 0.0f
+            viewport.width <- single framebufferWidth
+            viewport.height <- single framebufferHeight
+            viewport.minDepth <- 0.0f
+            viewport.maxDepth <- 1.0f
+            vkCmdSetViewport (renderCommandBuffer, 0u, 1u, asPointer &viewport)
+
+            // set up scale and translation
+            let scale = Array.zeroCreate<single> 2
+            scale[0] <- 2.0f / drawData.DisplaySize.X
+            scale[1] <- 2.0f / drawData.DisplaySize.Y
+            use scalePin = ArrayPin scale
+            let translate = Array.zeroCreate<single> 2
+            translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
+            translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
+            use translatePin = ArrayPin translate
+            vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
+            vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
             
             ()
