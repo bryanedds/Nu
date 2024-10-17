@@ -107,39 +107,39 @@ type GameplayDispatcher () =
                 let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
 
                 // left wall
-                let (_, world) =
+                let world =
                     World.doBlock2d "LeftWall"
                         [Entity.Position .= v3 -164.0f 0.0f 0.0f
                          Entity.Size .= v3 8.0f 360.0f 0.0f
                          Entity.Sensor .= true
-                         Entity.StaticImage .= Assets.Default.Black] world
+                         Entity.StaticImage .= Assets.Default.Black] world |> snd
                 let leftWall = world.RecentEntity
 
                 // right wall
-                let (_, world) =
+                let world =
                     World.doBlock2d "RightWall"
                         [Entity.Position .= v3 164.0f 0.0f 0.0f
                          Entity.Size .= v3 8.0f 360.0f 0.0f
                          Entity.Sensor .= true
-                         Entity.StaticImage .= Assets.Default.Black] world
+                         Entity.StaticImage .= Assets.Default.Black] world |> snd
                 let rightWall = world.RecentEntity
 
                 // top wall
-                let (_, world) =
+                let world =
                     World.doBlock2d "TopWall"
                         [Entity.Position .= v3 0.0f 176.0f 0.0f
                          Entity.Size .= v3 320.0f 8.0f 0.0f
                          Entity.Sensor .= true
-                         Entity.StaticImage .= Assets.Default.Black] world
+                         Entity.StaticImage .= Assets.Default.Black] world |> snd
                 let topWall = world.RecentEntity
 
                 // paddle
-                let (_, world) =
+                let world =
                     World.doBlock2d "Paddle"
                         [Entity.Position .= gameplay.Paddle.Origin
                          Entity.Size .= gameplay.Paddle.Size
                          Entity.Sensor .= true
-                         Entity.StaticImage .= Assets.Default.Paddle] world
+                         Entity.StaticImage .= Assets.Default.Paddle] world |> snd
                 let paddle = world.RecentEntity
                 let paddlePosition = paddle.GetPosition world
 
@@ -267,10 +267,8 @@ type GameplayDispatcher () =
         let world = World.doText "Message" [Entity.Text @= messageText] world
 
         // declare quit button
-        let (gameplay, world) =
-            match World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world with
-            | (true, world) -> ({ gameplay with GameplayState = Quitting }, world)
-            | (false, world) -> (gameplay, world)
+        let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world
+        let gameplay = if clicked then { gameplay with GameplayState = Quitting } else gameplay
 
         // end group declaration
         let world = World.endGroup world

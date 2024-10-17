@@ -35,18 +35,12 @@ type MyGameDispatcher () =
         // declare title screen
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] world
         let world = World.beginGroup "Gui" [] world
-        let (myGame, world) =
-            match World.doButton "Play" [] world with
-            | (true, world) -> (Gameplay, world)
-            | (false, world) -> (myGame, world)
-        let (myGame, world) =
-            match World.doButton "Credits" [] world with
-            | (true, world) -> (Credits, world)
-            | (false, world) -> (myGame, world)
-        let world =
-            match World.doButton "Exit" [] world with
-            | (true, world) when world.Unaccompanied -> World.exit world
-            | (_, world) -> world
+        let (clicked, world) = World.doButton "Play" [] world
+        let myGame = if clicked then Gameplay else myGame
+        let (clicked, world) = World.doButton "Credits" [] world
+        let myGame = if clicked then Credits else myGame
+        let (clicked, world) = World.doButton "Exit" [] world
+        let world = if clicked && world.Unaccompanied then World.exit world else world
         let world = World.endGroup world
         let world = World.endScreen world
 
@@ -69,10 +63,8 @@ type MyGameDispatcher () =
         // declare credits screen
         let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] world
         let world = World.beginGroup "Gui" [] world
-        let (myGame, world) =
-            match World.doButton "Back" [] world with
-            | (true, world) -> (Title, world)
-            | (false, world) -> (myGame, world)
+        let (clicked, world) = World.doButton "Back" [] world
+        let myGame = if clicked then Title else myGame
         let world = World.endGroup world
         let world = World.endScreen world
 
