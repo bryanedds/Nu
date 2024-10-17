@@ -1779,14 +1779,15 @@ and GameDescriptor =
 
 /// Provides simulant bookkeeping information with the ImNui API.
 and [<NoEquality; NoComparison>] internal SimulantImNui =
-    { mutable SimulantUtilized : bool
+    { mutable SimulantInitializing : bool
+      mutable SimulantUtilized : bool
       Result : obj }
 
 /// Provides subscription bookkeeping information with the ImNui API.
 and [<NoEquality; NoComparison>] internal SubscriptionImNui =
     { mutable SubscriptionUtilized : bool
-      Results : obj
-      SubscriptionId : uint64 }
+      SubscriptionId : uint64
+      Results : obj }
 
 /// Describes an argument used with the ImNui API.
 and [<Struct>] ArgImNui<'s when 's :> Simulant> =
@@ -1816,7 +1817,7 @@ and [<ReferenceEquality>] internal Subsystems =
 and [<ReferenceEquality>] internal WorldExtension =
     { mutable ContextImNui : Address
       mutable RecentImNui : Address
-      mutable SimulantImNuis : OMap<Simulant, SimulantImNui>
+      mutable SimulantImNuis : OMap<Address, SimulantImNui>
       mutable SubscriptionImNuis : OMap<string * Address * Address, SubscriptionImNui>
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
@@ -1943,6 +1944,12 @@ and [<ReferenceEquality>] World =
         | :? (Entity Address) as entityAddress -> Entity entityAddress
         | _ -> raise (InvalidOperationException "ImNui context not of type needed to construct requested handle.")
 
+    /// Check that the current ImNui context is initializing this frame.
+    member this.ContextInitializing =
+        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.ContextImNui with
+        | (true, simulantImNui) -> simulantImNui.SimulantInitializing
+        | (false, _) -> false
+
     /// Get the most recent ImNui context.
     member this.RecentImNui =
         this.WorldExtension.RecentImNui
@@ -1973,6 +1980,12 @@ and [<ReferenceEquality>] World =
         match this.WorldExtension.RecentImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
         | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+
+    /// Check that the recent ImNui context is initializing this frame.
+    member this.RecentInitializing =
+        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.RecentImNui with
+        | (true, simulantImNui) -> simulantImNui.SimulantInitializing
+        | (false, _) -> false
 
     member internal this.SimulantImNuis =
         this.WorldExtension.SimulantImNuis

@@ -246,6 +246,10 @@ module WorldModule =
         static member getContextEntity (world : World) =
             world.ContextEntity
 
+        /// Check that the current ImNui context is initializing this frame.
+        static member getContextInitializing (world : World) =
+            world.ContextInitializing
+
         /// Get the most recent ImNui context.
         static member getRecentImNui (world : World) =
             world.RecentImNui
@@ -265,6 +269,10 @@ module WorldModule =
         /// Get the most recent ImNui context translated to a Entity handle (throwing upon failure).
         static member getRecentEntity (world : World) =
             world.RecentEntity
+
+        /// Check that the recent ImNui context is initializing this frame.
+        static member getRecentInitializing (world : World) =
+            world.RecentInitializing
 
         static member internal setContext context (world : World) =
             if world.Imperative then
