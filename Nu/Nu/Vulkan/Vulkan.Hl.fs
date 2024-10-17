@@ -51,12 +51,20 @@ module Hl =
         shaderModule
     
     /// Convert VkExtensionProperties.extensionName to a string.
-    let getExtensionName (extensionProps : VkExtensionProperties) =
-        getBufferString extensionProps.extensionName
+    let getExtensionName (extensionProps : VkExtensionProperties) = getBufferString extensionProps.extensionName
     
     /// Convert VkLayerProperties.layerName to a string.
-    let getLayerName (layerProps : VkLayerProperties) =
-        getBufferString layerProps.layerName
+    let getLayerName (layerProps : VkLayerProperties) = getBufferString layerProps.layerName
+    
+    /// Make a VkImageMemoryBarrier with typical values set.
+    let imageBarrierTypical () =
+        let mutable barrier = VkImageMemoryBarrier ()
+        barrier.srcQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
+        barrier.dstQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
+        barrier.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        barrier.subresourceRange.levelCount <- 1u
+        barrier.subresourceRange.layerCount <- 1u
+        barrier
     
     /// Allocate a command buffer.
     let allocateCommandBuffer commandPool device =

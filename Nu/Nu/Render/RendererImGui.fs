@@ -557,16 +557,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
 
         // transition image layout for data transfer
-        let mutable copyBarrier = VkImageMemoryBarrier ()
+        let mutable copyBarrier = imageBarrierTypical ()
         copyBarrier.dstAccessMask <- VK_ACCESS_TRANSFER_WRITE_BIT
         copyBarrier.oldLayout <- VK_IMAGE_LAYOUT_UNDEFINED
         copyBarrier.newLayout <- VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        copyBarrier.srcQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
-        copyBarrier.dstQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
         copyBarrier.image <- image
-        copyBarrier.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-        copyBarrier.subresourceRange.levelCount <- 1u
-        copyBarrier.subresourceRange.layerCount <- 1u
         vkCmdPipelineBarrier
             (commandBuffer,
              VK_PIPELINE_STAGE_HOST_BIT,
@@ -587,17 +582,12 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
              1u, asPointer &region)
 
         // transition image layout for usage
-        let mutable useBarrier = VkImageMemoryBarrier ()
+        let mutable useBarrier = imageBarrierTypical ()
         useBarrier.srcAccessMask <- VK_ACCESS_TRANSFER_WRITE_BIT
         useBarrier.dstAccessMask <- VK_ACCESS_SHADER_READ_BIT
         useBarrier.oldLayout <- VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
         useBarrier.newLayout <- VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        useBarrier.srcQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
-        useBarrier.dstQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
         useBarrier.image <- image
-        useBarrier.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-        useBarrier.subresourceRange.levelCount <- 1u
-        useBarrier.subresourceRange.layerCount <- 1u
         vkCmdPipelineBarrier
             (commandBuffer,
              VK_PIPELINE_STAGE_TRANSFER_BIT,
