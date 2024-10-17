@@ -394,7 +394,7 @@ type RendererThread () =
                 rendererImGui.Render drawData
 
                 // end frame
-                Vulkan.Hl.VulkanGlobal.tryEndFrame imageIndex vulkanGlobalOpt
+                Vulkan.Hl.VulkanGlobal.tryEndFrame vulkanGlobalOpt
 
                 // loop until swap is requested
                 while not terminated && not swap do Thread.Sleep 1
