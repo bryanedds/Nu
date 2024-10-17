@@ -619,17 +619,14 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             let mutable closestOpt = None
             let callback =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
-                    match fixture.Body.Tag with
-                    | :? BodyId as bodyId ->
-                        match fixture.Tag with
-                        | :? BodyShapeIndex as bodyShapeIndex ->
-                            if (int fixture.CollidesWith &&& collisionCategories) <> 0 then
-                                let report = (v3 point.X point.Y 0.0f, v3 normal.X normal.Y 0.0f, fraction, bodyShapeIndex, bodyId)
-                                if fraction < fractionMin then
-                                    fractionMin <- fraction
-                                    closestOpt <- Some report
-                                results.Add report
-                        | _ -> ()
+                    match fixture.Tag with
+                    | :? BodyShapeIndex as bodyShapeIndex ->
+                        if (int fixture.CollidesWith &&& collisionCategories) <> 0 then
+                            let report = BodyIntersection.make bodyShapeIndex fraction (v3 point.X point.Y 0.0f) (v3 normal.X normal.Y 0.0f)
+                            if fraction < fractionMin then
+                                fractionMin <- fraction
+                                closestOpt <- Some report
+                            results.Add report
                     | _ -> ()
                     if closestOnly then fraction else 1.0f)
             physicsEngine.PhysicsContext.RayCast

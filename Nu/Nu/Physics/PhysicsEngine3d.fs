@@ -1105,23 +1105,19 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             if rrc.HasHit then
                 match rrc with
                 | :? ClosestRayResultCallback as crrc ->
-                    [|match crrc.CollisionObject.UserObject with
-                      | :? BodyUserObject as bodyUserObject ->
-                        match crrc.CollisionObject.CollisionShape.UserObject with
-                        | :? BodyShapeIndex as shapeIndex -> (crrc.HitPointWorld, crrc.HitNormalWorld, crrc.ClosestHitFraction, shapeIndex, bodyUserObject.BodyId)
-                        | _ -> failwithumf ()
-                      | _ -> failwithumf ()|]
+                    [|  match crrc.CollisionObject.CollisionShape.UserObject with
+                        | :? BodyShapeIndex as shapeIndex ->
+                            BodyIntersection.make shapeIndex crrc.ClosestHitFraction crrc.HitPointWorld crrc.HitNormalWorld
+                        | _ -> failwithumf ()|]
                 | :? AllHitsRayResultCallback as ahrrc ->
                     [|for i in 0 .. dec ahrrc.CollisionObjects.Count do
                         let collisionObject = ahrrc.CollisionObjects.[i]
                         let hitPointWorld = ahrrc.HitPointWorld.[i]
                         let hitNormalWorld = ahrrc.HitNormalWorld.[i]
                         let hitFraction = ahrrc.HitFractions.[i]
-                        match collisionObject.UserObject with
-                        | :? BodyUserObject as bodyUserObject ->
-                            match collisionObject.CollisionShape.UserObject with
-                            | :? BodyShapeIndex as shapeIndex -> (hitPointWorld, hitNormalWorld, hitFraction, shapeIndex, bodyUserObject.BodyId)
-                            | _ -> failwithumf ()
+                        match collisionObject.CollisionShape.UserObject with
+                        | :? BodyShapeIndex as shapeIndex ->
+                            BodyIntersection.make shapeIndex hitFraction hitPointWorld hitNormalWorld
                         | _ -> failwithumf ()|]
                 | _ -> failwithumf ()
             else [||]
