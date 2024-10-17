@@ -373,6 +373,20 @@ type BodyShape =
             | _ -> false
         else true
 
+/// Describes a physics body intersection, such as found from a ray cast.
+type [<Struct>] BodyIntersection =
+    { BodyShapeIntersected : BodyShapeIndex
+      Progress : single
+      Position : Vector3
+      Normal : Vector3 }
+
+    /// Make a ray intersesction value.
+    static member make bodyShapeIntersected progress position normal =
+        { BodyShapeIntersected = bodyShapeIntersected
+          Progress = progress
+          Position = position
+          Normal = normal }
+
 /// The type of a physics body.
 [<Syntax
     ("", "", "", "", "",
@@ -733,7 +747,7 @@ type PhysicsEngine =
     /// Check that the body with the given physics id is on the ground.
     abstract GetBodyGrounded : BodyId -> bool
     /// Cast a ray into the physics bodies.
-    abstract RayCast : Vector3 * Vector3 * int * int * bool -> (Vector3 * Vector3 * single * BodyShapeIndex * BodyId) array
+    abstract RayCast : Vector3 * Vector3 * int * int * bool -> BodyIntersection array
     /// Handle a physics message from an external source.
     abstract HandleMessage : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
