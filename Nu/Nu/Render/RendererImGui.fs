@@ -312,7 +312,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         descriptorPool
 
     /// Create the sampler used to sample the font atlas.
-    static member createSampler device =
+    static member createFontSampler device =
         let mutable sampler = Unchecked.defaultof<VkSampler>
         let mutable info = VkSamplerCreateInfo ()
         info.magFilter <- VK_FILTER_LINEAR
@@ -328,7 +328,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         sampler
     
     /// Create the descriptor set layout for the font atlas.
-    static member createDescriptorSetLayout device =
+    static member createFontDescriptorSetLayout device =
         
         // handle
         let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
@@ -505,7 +505,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         allocatedImage
 
     /// Create the descriptor set for the font atlas.
-    static member createDescriptorSet descriptorSetLayout descriptorPool device =
+    static member createFontDescriptorSet descriptorSetLayout descriptorPool device =
         let mutable descriptorSet = Unchecked.defaultof<VkDescriptorSet>
         let mutable descriptorSetLayout = descriptorSetLayout
         let mutable info = VkDescriptorSetAllocateInfo ()
@@ -516,7 +516,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         descriptorSet
 
     /// Write the data to the descriptor set.
-    static member writeDescriptorSet sampler imageView descriptorSet device =
+    static member writeFontDescriptorSet sampler imageView descriptorSet device =
         
         // image info
         let mutable info = VkDescriptorImageInfo ()
@@ -612,8 +612,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             
             // create font atlas resources
             descriptorPool <- VulkanRendererImGui.createDescriptorPool device
-            fontSampler <- VulkanRendererImGui.createSampler device
-            fontDescriptorSetLayout <- VulkanRendererImGui.createDescriptorSetLayout device
+            fontSampler <- VulkanRendererImGui.createFontSampler device
+            fontDescriptorSetLayout <- VulkanRendererImGui.createFontDescriptorSetLayout device
             pipelineLayout <- VulkanRendererImGui.createPipelineLayout fontDescriptorSetLayout device
             
             // create pipeline
@@ -634,8 +634,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             fontImageView <- createImageView fontImageFormat fontImage.Image device
 
             // create and write descriptor set for font atlas
-            fontDescriptorSet <- VulkanRendererImGui.createDescriptorSet fontDescriptorSetLayout descriptorPool device
-            VulkanRendererImGui.writeDescriptorSet fontSampler fontImageView fontDescriptorSet device
+            fontDescriptorSet <- VulkanRendererImGui.createFontDescriptorSet fontDescriptorSetLayout descriptorPool device
+            VulkanRendererImGui.writeFontDescriptorSet fontSampler fontImageView fontDescriptorSet device
 
             // upload font atlas
             VulkanRendererImGui.uploadFont fontExtent uploadSize pixels fontImage.Image graphicsQueue transferCommandPool vmaAllocator device
