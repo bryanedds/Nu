@@ -43,7 +43,7 @@ type Brick =
           Size = v3 64.0f 16.0f 0.0f
           Color = color (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) (Gen.randomf1 0.5f + 0.5f) 1.0f }
 
-// this is our MMCC model type representing gameplay.
+// this is our ImNui model type representing gameplay.
 // this model representation uses update time, that is, time based on number of engine updates.
 type [<SymbolicExpansion>] Gameplay =
     { GameplayTime : int64
