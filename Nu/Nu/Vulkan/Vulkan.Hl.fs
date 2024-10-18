@@ -244,13 +244,13 @@ module Hl =
         member this.PresentQueueFamily = Option.get this.PresentQueueFamilyOpt
         
         /// Get properties.
-        static member getProperties physicalDevice =
+        static member private getProperties physicalDevice =
             let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
             vkGetPhysicalDeviceProperties (physicalDevice, &properties)
             properties
         
         /// Get available extensions.
-        static member getExtensions physicalDevice =
+        static member private getExtensions physicalDevice =
             let mutable extensionCount = 0u
             vkEnumerateDeviceExtensionProperties (physicalDevice, nullPtr, asPointer &extensionCount, nullPtr) |> check
             let extensions = Array.zeroCreate<VkExtensionProperties> (int extensionCount)
@@ -259,13 +259,13 @@ module Hl =
             extensions
 
         /// Get surface capabilities.
-        static member getSurfaceCapabilities physicalDevice surface =
+        static member private getSurfaceCapabilities physicalDevice surface =
             let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
             vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &capabilities) |> check
             capabilities
         
         /// Get available surface formats.
-        static member getFormats physicalDevice surface =
+        static member private getFormats physicalDevice surface =
             let mutable formatCount = 0u
             vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, asPointer &formatCount, nullPtr) |> check
             let formats = Array.zeroCreate<VkSurfaceFormatKHR> (int formatCount)
@@ -274,7 +274,7 @@ module Hl =
             formats
         
         /// Get queue family opts.
-        static member getQueueFamilyOpts physicalDevice surface =
+        static member private getQueueFamilyOpts physicalDevice surface =
             
             // get queue families' properties
             let mutable queueFamilyCount = 0u
@@ -357,7 +357,7 @@ module Hl =
           SwapExtent : VkExtent2D }
 
         /// Create the Vulkan instance.
-        static member createInstance window =
+        static member private createInstance window =
 
             // handle
             let mutable instance = Unchecked.defaultof<VkInstance>
@@ -405,14 +405,14 @@ module Hl =
             instance
         
         /// Create surface.
-        static member createSurface window instance =
+        static member private createSurface window instance =
             let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
             let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(asRefType<VkSurfaceKHR, uint64> &surface))
             if int result = 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
             surface
         
         /// Select compatible physical device if available.
-        static member trySelectPhysicalDevice surface instance =
+        static member private trySelectPhysicalDevice surface instance =
             
             // get available physical devices
             let mutable deviceCount = 0u
@@ -457,7 +457,7 @@ module Hl =
             physicalDeviceOpt
         
         /// Create the logical device.
-        static member createDevice (physicalDeviceData : PhysicalDeviceData) =
+        static member private createDevice (physicalDeviceData : PhysicalDeviceData) =
 
             // handle
             let mutable device = Unchecked.defaultof<VkDevice>
@@ -497,7 +497,7 @@ module Hl =
             device
 
         /// Create the VMA allocator.
-        static member createVmaAllocator physicalDeviceData device instance =
+        static member private createVmaAllocator physicalDeviceData device instance =
             let mutable vmaAllocator = Unchecked.defaultof<VmaAllocator>
             let mutable info = VmaAllocatorCreateInfo ()
             info.physicalDevice <- physicalDeviceData.PhysicalDevice
@@ -507,7 +507,7 @@ module Hl =
             vmaAllocator
         
         /// Get surface format.
-        static member getSurfaceFormat formats =
+        static member private getSurfaceFormat formats =
             
             // specify preferred format and color space
             let isPreferred (format : VkSurfaceFormatKHR) =
@@ -527,7 +527,7 @@ module Hl =
             format
 
         /// Get swap extent.
-        static member getSwapExtent (surfaceCapabilities : VkSurfaceCapabilitiesKHR) window =
+        static member private getSwapExtent (surfaceCapabilities : VkSurfaceCapabilitiesKHR) window =
             
             // swap extent
             let extent =
@@ -552,7 +552,7 @@ module Hl =
             extent
         
         /// Create the swapchain.
-        static member createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
+        static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
             
             // handles
             let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
@@ -598,7 +598,7 @@ module Hl =
             swapchain
 
         /// Get swapchain images.
-        static member getSwapchainImages swapchain device =
+        static member private getSwapchainImages swapchain device =
             let mutable imageCount = 0u
             vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, nullPtr) |> check
             let images = Array.zeroCreate<VkImage> (int imageCount)
@@ -607,13 +607,13 @@ module Hl =
             images
         
         /// Create swapchain image views.
-        static member createSwapchainImageViews format (images : VkImage array) device =
+        static member private createSwapchainImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
             for i in [0 .. dec imageViews.Length] do imageViews[i] <- createImageView format images[i] device
             imageViews
 
         /// Create a command pool.
-        static member createCommandPool transient queueFamilyIndex device =
+        static member private createCommandPool transient queueFamilyIndex device =
             
             // handle
             let mutable commandPool = Unchecked.defaultof<VkCommandPool>
@@ -631,27 +631,27 @@ module Hl =
             commandPool
 
         /// Get command queue.
-        static member getQueue queueFamilyIndex device =
+        static member private getQueue queueFamilyIndex device =
             let mutable queue = Unchecked.defaultof<VkQueue>
             vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
             queue
         
         /// Create a semaphore.
-        static member createSemaphore device =
+        static member private createSemaphore device =
             let mutable semaphore = Unchecked.defaultof<VkSemaphore>
             let info = VkSemaphoreCreateInfo ()
             vkCreateSemaphore (device, &info, nullPtr, &semaphore) |> check
             semaphore
         
         /// Create a fence.
-        static member createFence device =
+        static member private createFence device =
             let mutable fence = Unchecked.defaultof<VkFence>
             let info = VkFenceCreateInfo (flags = VK_FENCE_CREATE_SIGNALED_BIT)
             vkCreateFence (device, &info, nullPtr, &fence) |> check
             fence
         
         /// Create a renderpass.
-        static member createRenderPass clearScreen presentLayout format device =
+        static member private createRenderPass clearScreen presentLayout format device =
             
             // handle
             let mutable renderPass = Unchecked.defaultof<VkRenderPass>
@@ -688,7 +688,7 @@ module Hl =
             renderPass
         
         /// Create the swapchain framebuffers.
-        static member createSwapchainFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
+        static member private createSwapchainFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
             
             // handle array
             let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
