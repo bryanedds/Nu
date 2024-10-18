@@ -489,10 +489,10 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         pipeline
 
     /// Create the image for the font atlas.
-    static member createImage extent vmaAllocator =
+    static member createFontImage format extent vmaAllocator =
         let mutable info = VkImageCreateInfo ()
         info.imageType <- VK_IMAGE_TYPE_2D
-        info.format <- VK_FORMAT_R8G8B8A8_UNORM
+        info.format <- format
         info.extent <- extent
         info.mipLevels <- 1u
         info.arrayLayers <- 1u
@@ -503,19 +503,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
         let allocatedImage = AllocatedImage.make info vmaAllocator
         allocatedImage
-
-    /// Create the image view for the font atlas.
-    static member createImageView image device =
-        let mutable imageView = Unchecked.defaultof<VkImageView>
-        let mutable info = VkImageViewCreateInfo ()
-        info.image <- image
-        info.viewType <- VK_IMAGE_VIEW_TYPE_2D
-        info.format <- VK_FORMAT_R8G8B8A8_UNORM
-        info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-        info.subresourceRange.levelCount <- 1u
-        info.subresourceRange.layerCount <- 1u
-        vkCreateImageView (device, &info, nullPtr, &imageView) |> check
-        imageView
 
     /// Create the descriptor set for the font atlas.
     static member createDescriptorSet descriptorSetLayout descriptorPool device =
@@ -640,10 +627,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             fonts.GetTexDataAsRGBA32 (&pixels, &fontWidth, &fontHeight, &bytesPerPixel)
             let uploadSize = fontWidth * fontHeight * bytesPerPixel
             let fontExtent = VkExtent3D (fontWidth, fontHeight, 1)
+            let fontImageFormat = VK_FORMAT_R8G8B8A8_UNORM
 
             // create image and image view for font atlas
-            fontImage <- VulkanRendererImGui.createImage fontExtent vmaAllocator
-            fontImageView <- VulkanRendererImGui.createImageView fontImage.Image device
+            fontImage <- VulkanRendererImGui.createFontImage fontImageFormat fontExtent vmaAllocator
+            fontImageView <- createImageView fontImageFormat fontImage.Image device
 
             // create and write descriptor set for font atlas
             fontDescriptorSet <- VulkanRendererImGui.createDescriptorSet fontDescriptorSetLayout descriptorPool device

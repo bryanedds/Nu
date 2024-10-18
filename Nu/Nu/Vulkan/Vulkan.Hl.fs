@@ -66,6 +66,19 @@ module Hl =
         barrier.subresourceRange.layerCount <- 1u
         barrier
     
+    /// Create an image view.
+    let createImageView format image device =
+        let mutable imageView = Unchecked.defaultof<VkImageView>
+        let mutable info = VkImageViewCreateInfo ()
+        info.image <- image
+        info.viewType <- VK_IMAGE_VIEW_TYPE_2D
+        info.format <- format
+        info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        info.subresourceRange.levelCount <- 1u
+        info.subresourceRange.layerCount <- 1u
+        vkCreateImageView (device, &info, nullPtr, &imageView) |> check
+        imageView
+    
     /// Allocate a command buffer.
     let allocateCommandBuffer commandPool device =
         let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
@@ -577,22 +590,8 @@ module Hl =
         
         /// Create swapchain image views.
         static member createSwapchainImageViews format (images : VkImage array) device =
-            
-            // handle array
             let imageViews = Array.zeroCreate<VkImageView> images.Length
-
-            // create image views
-            for i in [0 .. dec imageViews.Length] do
-                let mutable info = VkImageViewCreateInfo ()
-                info.image <- images[i]
-                info.viewType <- VK_IMAGE_VIEW_TYPE_2D
-                info.format <- format
-                info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-                info.subresourceRange.levelCount <- 1u
-                info.subresourceRange.layerCount <- 1u
-                vkCreateImageView (device, &info, nullPtr, &imageViews[i]) |> check
-
-            // fin
+            for i in [0 .. dec imageViews.Length] do imageViews[i] <- createImageView format images[i] device
             imageViews
 
         /// Create a command pool.
