@@ -56,14 +56,34 @@ module Hl =
     /// Convert VkLayerProperties.layerName to a string.
     let getLayerName (layerProps : VkLayerProperties) = getBufferString layerProps.layerName
     
+    /// Make a VkImageSubresourceRange representing a normal color image.
+    let subresourceRangeColor () =
+        let mutable subresourceRange = VkImageSubresourceRange ()
+        subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        subresourceRange.levelCount <- 1u
+        subresourceRange.layerCount <- 1u
+        subresourceRange
+    
+    /// Make a VkImageSubresourceLayers representing a normal color image.
+    let subresourceLayersColor () =
+        let mutable subresourceLayers = VkImageSubresourceLayers ()
+        subresourceLayers.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
+        subresourceLayers.layerCount <- 1u
+        subresourceLayers
+    
+    /// Make a VkRect2D with no offset and the given extent.
+    let extentToRect extent =
+        let mutable rect = VkRect2D ()
+        rect.offset <- VkOffset2D.Zero
+        rect.extent <- extent
+        rect
+    
     /// Make a VkImageMemoryBarrier with typical values set.
     let imageBarrierTypical () =
         let mutable barrier = VkImageMemoryBarrier ()
         barrier.srcQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
         barrier.dstQueueFamilyIndex <- VK_QUEUE_FAMILY_IGNORED
-        barrier.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-        barrier.subresourceRange.levelCount <- 1u
-        barrier.subresourceRange.layerCount <- 1u
+        barrier.subresourceRange <- subresourceRangeColor ()
         barrier
     
     /// Create an image view.
@@ -73,9 +93,7 @@ module Hl =
         info.image <- image
         info.viewType <- VK_IMAGE_VIEW_TYPE_2D
         info.format <- format
-        info.subresourceRange.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-        info.subresourceRange.levelCount <- 1u
-        info.subresourceRange.layerCount <- 1u
+        info.subresourceRange <- subresourceRangeColor ()
         vkCreateImageView (device, &info, nullPtr, &imageView) |> check
         imageView
     
@@ -721,8 +739,7 @@ module Hl =
             let mutable rpInfo = VkRenderPassBeginInfo ()
             rpInfo.renderPass <- vulkanGlobal.RenderPass
             rpInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
-            rpInfo.renderArea.offset <- VkOffset2D.Zero
-            rpInfo.renderArea.extent <- vulkanGlobal.SwapExtent
+            rpInfo.renderArea <- extentToRect vulkanGlobal.SwapExtent
             rpInfo.clearValueCount <- 1u
             rpInfo.pClearValues <- asPointer &clearColor
             vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, VK_SUBPASS_CONTENTS_INLINE)

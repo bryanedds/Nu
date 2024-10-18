@@ -559,8 +559,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // copy data from upload buffer to image
         let mutable region = VkBufferImageCopy ()
-        region.imageSubresource.aspectMask <- VK_IMAGE_ASPECT_COLOR_BIT
-        region.imageSubresource.layerCount <- 1u
+        region.imageSubresource <- subresourceLayersColor ()
         region.imageExtent <- extent
         vkCmdCopyBufferToImage
             (commandBuffer,
