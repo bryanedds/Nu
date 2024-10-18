@@ -9,8 +9,7 @@ type GameplayState =
     | Quitting
     | Quit
 
-// this is our MMCC model type representing gameplay.
-// this model representation uses update time, that is, time based on number of engine updates.
+// this is our ImNui model type representing gameplay.
 type Gameplay =
     { GameplayState : GameplayState }
 
