@@ -162,71 +162,7 @@ module WorldImNui =
                 (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
                 world args
 
-        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImNui seq) (world : World) : ScreenResult FQueue * 'r * World =
-            if world.ContextImNui.Names.Length < 1 then raise (InvalidOperationException "ImNui screen declared outside of valid ImNui context (must be called in a Game context).")
-            let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContext screenAddress world
-            let screen = Nu.Screen screenAddress
-            let world =
-                if not (screen.GetExists world) then
-                    let world = World.createScreen<'d> (Some name) world |> snd
-                    let world = World.setScreenProtected true screen world |> snd'
-                    match groupFilePathOpt with
-                    | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                    | None -> world
-                else world
-            let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue screen.ScreenAddress with
-                | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen.ScreenAddress screenImNui world)
-                | (false, _) ->
-                    let world = World.addSimulantImNui screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
-                    let mapFstResult (mapper : ScreenResult FQueue -> ScreenResult FQueue) world =
-                        let mapScreenImNui screenImNui =
-                            let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
-                            { screenImNui with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Select) world)) screen.SelectEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
-                    let mapSndResult (mapper : 'r -> 'r) world =
-                        let mapScreenImNui screenImNui =
-                            let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
-                            { screenImNui with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
-                    (true, init mapSndResult screen world)
-            let initializing = initializing || Reinitializing
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && screen.GetExists world
-                        then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world =
-                if initializing && screen.GetExists world
-                then World.applyScreenBehavior setScreenSlide behavior screen world
-                else world
-            let world =
-                if screen.GetExists world && select then
-                    if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
-                    then World.setSelectedScreen screen world
-                    else transitionScreen screen world
-                else world
-            let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> ScreenResult FQueue * 'r
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen.ScreenAddress world
-            (screenResult, userResult, world)
-
-        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : ScreenResult FQueue * World =
-            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> a_c
-
-        /// End the ImNui declaration of a screen.
-        static member endScreen (world : World) =
-            match world.ContextImNui with
-            | :? (Screen Address) -> World.setContext Game.GameAddress world
-            | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
+        (* NOTE: most of ImNui's screen functions are defined in WorldModule2.fs so they can access the internal screen transition APIs. *)
 
         /// Make a screen the current ImNui context.
         static member scopeScreen (screen : Screen) (args : Screen ArgImNui seq) world =

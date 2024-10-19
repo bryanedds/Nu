@@ -383,6 +383,94 @@ module WorldModule2 =
         static member transitionScreen destination world =
             World.tryTransitionScreen destination world |> snd
 
+        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImNui seq) (world : World) : ScreenResult FQueue * 'r * World =
+            if world.ContextImNui.Names.Length < 1 then raise (InvalidOperationException "ImNui screen declared outside of valid ImNui context (must be called in a Game context).")
+            let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
+            let world = World.setContext screenAddress world
+            let screen = Nu.Screen screenAddress
+            let world =
+                if not (screen.GetExists world) then
+                    let world = World.createScreen<'d> (Some name) world |> snd
+                    let world = World.setScreenProtected true screen world |> snd'
+                    match groupFilePathOpt with
+                    | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
+                    | None -> world
+                else world
+            let (initializing, world) =
+                match world.SimulantImNuis.TryGetValue screen.ScreenAddress with
+                | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen.ScreenAddress screenImNui world)
+                | (false, _) ->
+                    let world = World.addSimulantImNui screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
+                    let mapFstResult (mapper : ScreenResult FQueue -> ScreenResult FQueue) world =
+                        let mapScreenImNui screenImNui =
+                            let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
+                            { screenImNui with Result = (mapper screenResult, userResult) }
+                        World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Select) world)) screen.SelectEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
+                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
+                    let mapSndResult (mapper : 'r -> 'r) world =
+                        let mapScreenImNui screenImNui =
+                            let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
+                            { screenImNui with Result = (screenResult, mapper userResult) }
+                        World.tryMapSimulantImNui mapScreenImNui screen.ScreenAddress world
+                    (true, init mapSndResult screen world)
+            let initializing = initializing || Reinitializing
+            let world =
+                Seq.fold
+                    (fun world arg ->
+                        if (initializing || not arg.ArgStatic) && screen.GetExists world
+                        then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        else world)
+                    world args
+            let world =
+                if initializing && screen.GetExists world
+                then World.applyScreenBehavior setScreenSlide behavior screen world
+                else world
+            let world =
+                if screen.GetExists world && select then
+                    if world.Accompanied && world.Halted then // special case to quick cut when halted in the editor
+                        let transitionTime = world.GameTime
+                        let world = World.selectScreen (IdlingState transitionTime) screen world
+                        World.updateScreenIdling transitionTime screen world
+                    else transitionScreen screen world
+                else world
+            let (screenResult, userResult) = (World.getSimulantImNui screen.ScreenAddress world).Result :?> ScreenResult FQueue * 'r
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen.ScreenAddress world
+            (screenResult, userResult, world)
+
+        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : ScreenResult FQueue * World =
+            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> a_c
+
+        /// End the ImNui declaration of a screen.
+        static member endScreen (world : World) =
+            match world.ContextImNui with
+            | :? (Screen Address) -> World.setContext Game.GameAddress world
+            | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
+
+        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member beginScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath world args =
+            World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) world args
+
+        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
+        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
+        static member beginScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath world args =
+            World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) world args
+
+        /// Begin the ImNui declaration of a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member beginScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior world args =
+            World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None world args
+
+        /// Begin the ImNui declaration of a screen with the given arguments.
+        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
+        static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior world args =
+            World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None world args
+
         /// Set the slide aspects of a screen.
         static member setScreenSlide (slideDescriptor : SlideDescriptor) destination (screen : Screen) world =
 
@@ -2638,28 +2726,6 @@ module ScreenDispatcherModule =
         /// Untruncate the given model.
         abstract UntruncateModel : 'model * 'model -> 'model
         default this.UntruncateModel (_, incoming) = incoming
-
-    type World with
-
-        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
-        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
-        static member beginScreenWithGroupFromFilePlus<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init name select behavior groupFilePath world args =
-            World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) world args
-
-        /// Begin the ImNui declaration of a screen with the given arguments using a child group read from the given file path.
-        /// Note that changing the screen behavior and file path over time has no effect as only the first moment is used.
-        static member beginScreenWithGroupFromFile<'d when 'd :> ScreenDispatcher> name select behavior groupFilePath world args =
-            World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior (Some groupFilePath) world args
-
-        /// Begin the ImNui declaration of a screen with the given arguments.
-        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
-        static member beginScreenPlus<'d, 'r when 'd :> ScreenDispatcher> zero init name select behavior world args =
-            World.beginScreenPlus10<'d, 'r> zero init World.transitionScreen World.setScreenSlide name select behavior None world args
-
-        /// Begin the ImNui declaration of a screen with the given arguments.
-        /// Note that changing the screen behavior over time has no effect as only the first moment is used.
-        static member beginScreen<'d when 'd :> ScreenDispatcher> name select behavior world args =
-            World.beginScreen8<'d> World.transitionScreen World.setScreenSlide name select behavior None world args
 
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
