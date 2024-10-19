@@ -1331,7 +1331,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
 
     /// Get the latest value of a game's properties.
     [<DebuggerBrowsable (DebuggerBrowsableState.RootHidden)>]
-    member private this.View = WorldTypes.viewGame WorldTypes.Chosen
+    member private this.View = WorldTypes.viewGame handle WorldTypes.Chosen
 
     /// A convenience accessor to get the universal game handle.
     static member Handle = handle
