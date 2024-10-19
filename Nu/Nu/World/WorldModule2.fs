@@ -2233,6 +2233,8 @@ module EntityPropertyDescriptor =
              propertyName = "Scale" || propertyName = "ScaleLocal" ||
              propertyName = "Size" then
              "Basic Transform Properties"
+        elif propertyName = "Incoming" || propertyName = "Outgoing" then
+             "Transition Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) baseProperties then "Configuration Properties"
         elif propertyName = "MaterialProperties" then "Material Properties"
         elif propertyName = "Material" then "Material Properties 2"
