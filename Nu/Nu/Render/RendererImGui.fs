@@ -679,13 +679,13 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                 let mutable vertexOffset = 0
                 let mutable indexOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let cmds = drawData.CmdListsRange.[i]
-                    let vertexSize = cmds.VtxBuffer.Size * int (sizeOf<ImDrawVert> ())
-                    let indexSize = cmds.IdxBuffer.Size * sizeof<uint16>
+                    let drawList = drawData.CmdListsRange.[i]
+                    let vertexSize = drawList.VtxBuffer.Size * int (sizeOf<ImDrawVert> ())
+                    let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
                     
                     // TODO: try a persistently mapped buffer and compare performance
-                    vertexBuffer.TryUpload vertexOffset vertexSize (nintToVoidPointer cmds.VtxBuffer.Data)
-                    indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer cmds.IdxBuffer.Data)
+                    vertexBuffer.TryUpload vertexOffset vertexSize (nintToVoidPointer drawList.VtxBuffer.Data)
+                    indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer drawList.IdxBuffer.Data)
                     vertexOffset <- vertexOffset + vertexSize
                     indexOffset <- indexOffset + indexSize
 
@@ -721,6 +721,18 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             use translatePin = ArrayPin translate
             vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
             vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
+
+
+            for i in 0 .. dec drawData.CmdListsCount do
+                let drawList = drawData.CmdListsRange.[i]
+                for j in 0 .. dec drawList.CmdBuffer.Size do
+                    let pcmd = drawList.CmdBuffer[j]
+                    if pcmd.UserCallback = nativeint 0 then
+                        
+
+                        ()
+
+                    else raise (NotImplementedException ())
 
             
             ()
