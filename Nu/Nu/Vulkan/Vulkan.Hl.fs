@@ -72,11 +72,7 @@ module Hl =
         subresourceLayers
     
     /// Make a VkRect2D with no offset and the given extent.
-    let extentToRect extent =
-        let mutable rect = VkRect2D ()
-        rect.offset <- VkOffset2D.Zero
-        rect.extent <- extent
-        rect
+    let extentToRect extent = VkRect2D (VkOffset2D.Zero, extent)
     
     /// Make a VkImageMemoryBarrier with typical values set.
     let imageBarrierTypical () =

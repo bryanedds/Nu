@@ -654,8 +654,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             
             // get total resolution from imgui
             // NOTE: if this ever differs from the swapchain then something is wrong.
-            let framebufferWidth = int (drawData.DisplaySize.X * drawData.FramebufferScale.X)
-            let framebufferHeight = int (drawData.DisplaySize.Y * drawData.FramebufferScale.Y)
+            let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
+            let framebufferHeight = drawData.DisplaySize.Y * drawData.FramebufferScale.Y
 
             if drawData.TotalVtxCount > 0 then
                 
@@ -704,8 +704,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             let mutable viewport = VkViewport ()
             viewport.x <- 0.0f
             viewport.y <- 0.0f
-            viewport.width <- single framebufferWidth
-            viewport.height <- single framebufferHeight
+            viewport.width <- framebufferWidth
+            viewport.height <- framebufferHeight
             viewport.minDepth <- 0.0f
             viewport.maxDepth <- 1.0f
             vkCmdSetViewport (renderCommandBuffer, 0u, 1u, asPointer &viewport)
@@ -722,20 +722,48 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
             vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
-
+            // draw command lists
             for i in 0 .. dec drawData.CmdListsCount do
                 let drawList = drawData.CmdListsRange.[i]
                 for j in 0 .. dec drawList.CmdBuffer.Size do
                     let pcmd = drawList.CmdBuffer[j]
                     if pcmd.UserCallback = nativeint 0 then
                         
+                        // project scissor/clipping rectangles into framebuffer space
+                        let mutable clipMin =
+                            v2
+                                ((pcmd.ClipRect.X - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
+                                ((pcmd.ClipRect.Y - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
+                        
+                        let mutable clipMax =
+                            v2
+                                ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
+                                ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
 
-                        ()
+                        // clamp to viewport as vkCmdSetScissor won't accept values that are off bounds
+                        if clipMin.X < 0.0f then clipMin.X <- 0.0f
+                        if clipMin.Y < 0.0f then clipMin.Y <- 0.0f
+                        if clipMax.X > framebufferWidth then clipMax.X <- framebufferWidth
+                        if clipMax.Y > framebufferHeight then clipMax.Y <- framebufferHeight
+
+                        // check rectangle is valid
+                        if clipMax.X > clipMin.X && clipMax.Y > clipMin.Y then
+                            
+                            // apply scissor/clipping rectangle
+                            let width = uint (clipMax.X - clipMin.X)
+                            let height = uint (clipMax.Y - clipMin.Y)
+                            let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
+                            vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
+
+
+                            ()
 
                     else raise (NotImplementedException ())
 
-            
-            ()
+
+            // reset scissor
+            let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
+            vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
         
         member this.CleanUp () =
             indexBuffer.Destroy ()
