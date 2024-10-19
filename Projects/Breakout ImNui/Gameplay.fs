@@ -73,7 +73,6 @@ type GameplayDispatcher () =
                          Entity.Size .= v3 8.0f 360.0f 0.0f
                          Entity.Sensor .= true
                          Entity.StaticImage .= Assets.Default.Black] world
-                let leftWall = world.RecentEntity
 
                 // right wall
                 let (_, world) =
@@ -82,7 +81,6 @@ type GameplayDispatcher () =
                          Entity.Size .= v3 8.0f 360.0f 0.0f
                          Entity.Sensor .= true
                          Entity.StaticImage .= Assets.Default.Black] world
-                let rightWall = world.RecentEntity
 
                 // top wall
                 let (_, world) =
@@ -91,7 +89,6 @@ type GameplayDispatcher () =
                          Entity.Size .= v3 320.0f 8.0f 0.0f
                          Entity.Sensor .= true
                          Entity.StaticImage .= Assets.Default.Black] world
-                let topWall = world.RecentEntity
 
                 // paddle
                 let (_, world) =
@@ -173,9 +170,9 @@ type GameplayDispatcher () =
                                 // wall collision
                                 | (false, _) ->
                                     let normal =
-                                        if penetratee = leftWall then v3Right
-                                        elif penetratee = rightWall then v3Left
-                                        elif penetratee = topWall then v3Down
+                                        if penetratee.Name = "LeftWall" then v3Right
+                                        elif penetratee.Name = "RightWall" then v3Left
+                                        elif penetratee.Name = "TopWall" then v3Down
                                         else failwithumf ()
                                     let world =
                                         let velocity = ball.GetLinearVelocity world
