@@ -9,4 +9,4 @@ type MyGamePlugin () =
     // this exposes different editing modes in the editor
     override this.EditModes =
         Map.ofList
-            [("Initial", fun world -> Game.SetMyGame { Collisions = 0 } world)]
+            [("Initial", fun world -> Game.SetCollisions 0 world)]

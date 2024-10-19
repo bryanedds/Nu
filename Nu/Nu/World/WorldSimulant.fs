@@ -34,6 +34,14 @@ module WorldSimulantModule =
             | :? Game as game -> World.getGameState game world :> SimulantState
             | _ -> failwithumf ()
 
+        static member internal getXtensionProperties (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.getEntityXtensionProperties entity world
+            | :? Group as group -> World.getGroupXtensionProperties group world
+            | :? Screen as screen -> World.getScreenXtensionProperties screen world
+            | :? Game as game -> World.getGameXtensionProperties game world
+            | _ -> failwithumf ()
+
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
             let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 4
@@ -342,22 +350,19 @@ module PropertyDescriptor =
                     propertyDescriptor)
                     properties
             let propertyDescriptors =
-                match simulant :> obj with
-                | :? Entity as entity ->
-                    let properties' = World.getEntityXtensionProperties entity world
-                    let propertyDescriptors' =
-                        Seq.fold
-                            (fun propertyDescriptors' (propertyName, property : Property) ->
-                                if property.PropertyType = typeof<ComputedProperty> then
-                                    propertyDescriptors'
-                                elif not (Reflection.isPropertyNonPersistentByName propertyName) then
-                                    let propertyType = property.PropertyType
-                                    let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
-                                    propertyDescriptor :: propertyDescriptors'
-                                else propertyDescriptors')
-                            []
-                            properties'
-                    Seq.append propertyDescriptors' propertyDescriptors
-                | _ -> propertyDescriptors
+                let properties' = World.getXtensionProperties simulant world
+                let propertyDescriptors' =
+                    Seq.fold
+                        (fun propertyDescriptors' (propertyName, property : Property) ->
+                            if property.PropertyType = typeof<ComputedProperty> then
+                                propertyDescriptors'
+                            elif not (Reflection.isPropertyNonPersistentByName propertyName) then
+                                let propertyType = property.PropertyType
+                                let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
+                                propertyDescriptor :: propertyDescriptors'
+                            else propertyDescriptors')
+                        []
+                        properties'
+                Seq.append propertyDescriptors' propertyDescriptors
             List.ofSeq propertyDescriptors
         | None -> []

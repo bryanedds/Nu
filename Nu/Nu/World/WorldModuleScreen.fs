@@ -84,6 +84,10 @@ module WorldModuleScreen =
         static member internal setScreenState screenState screen world =
             World.screenStateSetter screenState screen world
 
+        static member internal getScreenXtensionProperties screen world =
+            let screenState = World.getScreenState screen world
+            screenState.Xtension |> Xtension.toSeq |> Seq.toList
+
         /// Check that a screen exists in the world.
         static member internal getScreenExists screen world =
             Option.isSome (World.getScreenStateOpt screen world)

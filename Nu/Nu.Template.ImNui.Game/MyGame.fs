@@ -4,9 +4,9 @@ open System.Numerics
 open Prime
 open Nu
 
-// this is our top-level ImNui model type. It determines what state the game is in. To learn about ImNui in Nu, see -
+// this determines what state the game is in. To learn about ImNui in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
-type MyGame =
+type GameState =
     | Splash
     | Title
     | Credits
@@ -16,55 +16,59 @@ type MyGame =
 [<AutoOpen>]
 module MyGameExtensions =
     type Game with
-        member this.GetMyGame world = this.GetModelGeneric<MyGame> world
-        member this.SetMyGame value world = this.SetModelGeneric<MyGame> value world
-        member this.MyGame = this.ModelGeneric<MyGame> ()
+        member this.GetGameState world : GameState = this.Get (nameof Game.GameState) world
+        member this.SetGameState (value : GameState) world = this.Set (nameof Game.GameState) value world
+        member this.GameState = lens (nameof Game.GameState) this this.GetGameState this.SetGameState
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame> (Splash)
+    inherit GameDispatcher ()
+
+    // here we define default property values
+    static member Properties =
+        [define Game.GameState Splash]
 
     // here we handle running the game
-    override this.Run (myGame, _, world) =
+    override this.Run (myGame, world) =
 
         // declare splash screen
-        let (results, world) = World.beginScreen Simulants.Splash.Name (myGame = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
-        let myGame = if FQueue.contains Deselecting results then Title else myGame
+        let (results, world) = World.beginScreen Simulants.Splash.Name (myGame.GetGameState world = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
+        let world = if FQueue.contains Deselecting results then myGame.SetGameState Title world else world
         let world = World.endScreen world
 
         // declare title screen
-        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] world
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame.GetGameState world = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] world
         let world = World.beginGroup "Gui" [] world
         let (clicked, world) = World.doButton "Play" [] world
-        let myGame = if clicked then Gameplay else myGame
+        let world = if clicked then myGame.SetGameState Gameplay world else world
         let (clicked, world) = World.doButton "Credits" [] world
-        let myGame = if clicked then Credits else myGame
+        let world = if clicked then myGame.SetGameState Credits world else world
         let (clicked, world) = World.doButton "Exit" [] world
         let world = if clicked && world.Unaccompanied then World.exit world else world
         let world = World.endGroup world
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) [] world
+        let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame.GetGameState world = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) [] world
         let world =
             if FQueue.contains Select results
-            then Simulants.Gameplay.SetGameplay Gameplay.initial world
+            then Simulants.Gameplay.SetGameplayState Playing world
             else world
         let world =
             if FQueue.contains Deselecting results
-            then Simulants.Gameplay.SetGameplay Gameplay.empty world
+            then Simulants.Gameplay.SetGameplayState Quit world
             else world
-        let myGame =
-            if Simulants.Gameplay.GetSelected world && (Simulants.Gameplay.GetGameplay world).GameplayState = Quitting
-            then Title
-            else myGame
+        let world =
+            if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quitting
+            then myGame.SetGameState Title world
+            else world
         let world = World.endScreen world
 
         // declare credits screen
-        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] world
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame.GetGameState world = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] world
         let world = World.beginGroup "Gui" [] world
         let (clicked, world) = World.doButton "Back" [] world
-        let myGame = if clicked then Title else myGame
+        let world = if clicked then myGame.SetGameState Title world else world
         let world = World.endGroup world
         let world = World.endScreen world
 
@@ -73,4 +77,6 @@ type MyGameDispatcher () =
             if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
             then World.exit world
             else world
-        (myGame, world)
+
+        // fin
+        world

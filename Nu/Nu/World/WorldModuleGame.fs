@@ -30,6 +30,10 @@ module WorldModuleGame =
             ignore<Game> game
             World.choose { world with GameState = gameState }
 
+        static member internal getGameXtensionProperties game world =
+            let gameState = World.getGameState game world
+            gameState.Xtension |> Xtension.toSeq |> Seq.toList
+
         static member internal getGameId game world = (World.getGameState game world).Id
         static member internal getGameOrder game world = (World.getGameState game world).Order
         static member internal getGameDispatcher game world = (World.getGameState game world).Dispatcher

@@ -436,9 +436,9 @@ and GameDispatcher () =
     abstract Unregister : Game * World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui run a game.
-    abstract TryRun : Game * World -> World
-    default this.TryRun (_, world) = world
+    /// ImNui run a game.
+    abstract Run : Game * World -> World
+    default this.Run (_, world) = world
 
     /// Pre-update a game.
     abstract PreUpdate : Game * World -> World
@@ -492,9 +492,9 @@ and ScreenDispatcher () =
     abstract Unregister : Screen * World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui run a screen.
-    abstract TryRun : Screen * World -> World
-    default this.TryRun (_, world) = world
+    /// ImNui run a screen.
+    abstract Run : Screen * World -> World
+    default this.Run (_, world) = world
 
     /// Pre-update a screen.
     abstract PreUpdate : Screen * World -> World
@@ -552,11 +552,11 @@ and GroupDispatcher () =
 
     /// Unregister a group when removing it from a screen.
     abstract Unregister : Group * World -> World
-
-    /// Attempt to ImNui run a group.
-    abstract TryRun : Group * World -> World
-    default this.TryRun (_, world) = world
     default this.Unregister (_, world) = world
+
+    /// ImNui run a group.
+    abstract Run : Group * World -> World
+    default this.Run (_, world) = world
 
     /// Pre-update a group.
     abstract PreUpdate : Group * World -> World
@@ -646,9 +646,9 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     abstract Unregister : Entity * World -> World
     default this.Unregister (_, world) = world
 
-    /// Attempt to ImNui run an entity.
-    abstract TryRun : Entity * World -> World
-    default this.TryRun (_, world) = world
+    /// ImNui run an entity.
+    abstract Run : Entity * World -> World
+    default this.Run (_, world) = world
 
     /// Update an entity.
     abstract Update : Entity * World -> World
@@ -731,9 +731,9 @@ and Facet (physical, lightProbe, light) =
     abstract UnregisterPhysics : Entity * World -> World
     default this.UnregisterPhysics (_, world) = world
 
-    /// Attempt to ImNui run a facet.
-    abstract TryRun : Entity * World -> World
-    default this.TryRun (_, world) = world
+    /// ImNui run a facet.
+    abstract Run : Entity * World -> World
+    default this.Run (_, world) = world
 
     /// Update a facet.
     abstract Update : Entity * World -> World

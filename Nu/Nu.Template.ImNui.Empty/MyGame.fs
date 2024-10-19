@@ -4,26 +4,12 @@ open System.Numerics
 open Prime
 open Nu
 
-// this is our top-level ImNui model type. It determines what state the game is in. To learn about ImNui in Nu, see -
-// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
-type MyGame =
-    { PLaceholder : unit } // a placeholder field
-    static member initial = { PLaceholder = () }
-
-// this extends the Game API to expose the above ImNui model as a property.
-[<AutoOpen>]
-module MyGameExtensions =
-    type Game with
-        member this.GetMyGame world = this.GetModelGeneric<MyGame> world
-        member this.SetMyGame value world = this.SetModelGeneric<MyGame> value world
-        member this.MyGame = this.ModelGeneric<MyGame> ()
-
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame> (MyGame.initial)
+    inherit GameDispatcher ()
 
     // here we handle running the game
-    override this.Run (myGame, _, world) =
+    override this.Run (_, world) =
 
         // run in game context
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
@@ -42,4 +28,4 @@ type MyGameDispatcher () =
             else world
 
         // return gameplay and world values
-        (myGame, world)
+        world

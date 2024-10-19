@@ -551,15 +551,6 @@ module WorldEntityModule =
 
     type World with
 
-        static member internal tryRunEntity (entity : Entity) world =
-            let facets = entity.GetFacets world
-            let mutable world = world // OPTIMIZATION: inlining fold for speed.
-            if Array.notEmpty facets then // OPTIMIZATION: eliding iteration setup for speed.
-                for facet in facets do
-                    world <- facet.TryRun (entity, world)
-            let dispatcher = entity.GetDispatcher world
-            dispatcher.TryRun (entity, world)
-
         static member internal updateEntity (entity : Entity) world =
             let facets = entity.GetFacets world
             let mutable world = world // OPTIMIZATION: inlining fold for speed.

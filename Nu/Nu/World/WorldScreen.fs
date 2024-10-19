@@ -101,7 +101,7 @@ module WorldScreenModule =
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setScreenXtensionProperty propertyName property this world
+            World.setScreenXtensionProperty propertyName property this world |> snd'
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.GetIdling world =
@@ -132,12 +132,6 @@ module WorldScreenModule =
         member this.NotifyModelChange world = World.notifyScreenModelChange this world
 
     type World with
-
-        static member internal tryRunScreen (screen : Screen) world =
-
-            // attempt to run via dispatcher
-            let dispatcher = World.getScreenDispatcher screen world
-            dispatcher.TryRun (screen, world)
 
         static member internal preUpdateScreen (screen : Screen) world =
 
@@ -240,7 +234,7 @@ module WorldScreenModule =
                     else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
             let world = World.addScreen false screenState screen world
-            let world = if WorldModule.UpdatingSimulants then World.tryRunScreen screen world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.runScreen screen world else world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.
@@ -336,7 +330,7 @@ module WorldScreenModule =
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
 
             // attempt to ImNui run screen first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then World.tryRunScreen screen world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.runScreen screen world else world
             (screen, world)
 
         /// Read multiple screens from a game descriptor.
