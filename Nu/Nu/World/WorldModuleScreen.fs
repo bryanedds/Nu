@@ -217,19 +217,6 @@ module WorldModuleScreen =
             then ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property)
             else false
 
-        static member internal tryGetScreenXtensionValue<'a> propertyName screen world =
-            let screenStateOpt = World.getScreenStateOpt screen world
-            match screenStateOpt :> obj with
-            | null -> failwithf "Could not find screen '%s'." (scstring screen)
-            | _ ->
-                let mutable property = Unchecked.defaultof<Property>
-                if World.tryGetScreenProperty (propertyName, screen, world, &property) then
-                    match property.PropertyValue with
-                    | :? 'a as value -> value
-                    | null -> null :> obj :?> 'a
-                    | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-                else Unchecked.defaultof<'a>
-
         static member internal getScreenXtensionProperty propertyName screen world =
             let mutable property = Unchecked.defaultof<_>
             match ScreenState.tryGetProperty (propertyName, World.getScreenState screen world, &property) with
@@ -251,8 +238,8 @@ module WorldModuleScreen =
                     | Some definition ->
                         match definition.PropertyExpr with
                         | DefineExpr value -> value :?> 'a
-                        | VariableExpr eval -> eval world :?> 'a
-                        | ComputedExpr cp -> cp.ComputedGet screen world :?> 'a
+                        | VariableExpr _ -> failwith "ScreenDispatchers do not support variable properties."
+                        | ComputedExpr _ -> failwith "ScreenDispatchers do not support computed properties."
                     | None -> failwithumf ()
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
                 screenState.Xtension <- Xtension.attachProperty propertyName property screenState.Xtension

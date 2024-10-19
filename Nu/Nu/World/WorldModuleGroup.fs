@@ -180,19 +180,6 @@ module WorldModuleGroup =
             then GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property)
             else false
 
-        static member internal tryGetGroupXtensionValue<'a> propertyName group world =
-            let groupStateOpt = World.getGroupStateOpt group world
-            match groupStateOpt :> obj with
-            | null -> failwithf "Could not find group '%s'." (scstring group)
-            | _ ->
-                let mutable property = Unchecked.defaultof<Property>
-                if World.tryGetGroupProperty (propertyName, group, world, &property) then
-                    match property.PropertyValue with
-                    | :? 'a as value -> value
-                    | null -> null :> obj :?> 'a
-                    | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-                else Unchecked.defaultof<'a>
-
         static member internal getGroupXtensionProperty propertyName group world =
             let mutable property = Unchecked.defaultof<_>
             match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
@@ -214,8 +201,8 @@ module WorldModuleGroup =
                     | Some definition ->
                         match definition.PropertyExpr with
                         | DefineExpr value -> value :?> 'a
-                        | VariableExpr eval -> eval world :?> 'a
-                        | ComputedExpr cp -> cp.ComputedGet group world :?> 'a
+                        | VariableExpr _ -> failwith "GroupDispatchers do not support variable properties."
+                        | ComputedExpr _ -> failwith "GroupDispatchers do not support computed properties."
                     | None -> failwithumf ()
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
                 groupState.Xtension <- Xtension.attachProperty propertyName property groupState.Xtension

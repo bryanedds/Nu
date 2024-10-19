@@ -50,10 +50,6 @@ module WorldGroupModule =
             World.getGroupProperty propertyName this world
 
         /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
-            World.tryGetGroupXtensionValue<'a> propertyName this world
-
-        /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getGroupXtensionValue<'a> propertyName this world
 

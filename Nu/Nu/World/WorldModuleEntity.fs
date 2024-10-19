@@ -1748,24 +1748,6 @@ module WorldModuleEntity =
             | null -> false
             | _ -> EntityState.tryGetProperty (propertyName, entityStateOpt, &property)
 
-        static member internal tryGetEntityXtensionValue<'a> propertyName entity world =
-            let entityStateOpt = World.getEntityStateOpt entity world
-            match entityStateOpt :> obj with
-            | null -> failwithf "Could not find entity '%s'." (scstring entity)
-            | _ ->
-                let mutable property = Unchecked.defaultof<Property>
-                if World.tryGetEntityProperty (propertyName, entity, world, &property) then
-                    let valueObj =
-                        match property.PropertyValue with
-                        | :? DesignerProperty as dp -> dp.DesignerValue
-                        | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj)
-                        | _ -> property.PropertyValue
-                    match valueObj with
-                    | :? 'a as value -> value
-                    | null -> null :> obj :?> 'a
-                    | value -> value |> valueToSymbol |> symbolToValue
-                else Unchecked.defaultof<'a>
-
         static member internal tryGetEntityProperty (propertyName, entity, world, property : _ outref) =
             let entityStateOpt = World.getEntityStateOpt entity world
             match entityStateOpt :> obj with

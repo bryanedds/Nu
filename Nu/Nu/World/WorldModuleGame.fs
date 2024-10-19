@@ -442,16 +442,6 @@ module WorldModuleGame =
         static member internal tryGetGameXtensionProperty (propertyName, game, world, property : _ outref) =
             GameState.tryGetProperty (propertyName, World.getGameState game world, &property)
 
-        static member internal tryGetGameXtensionValue<'a> propertyName game world =
-            let gameState = World.getGameState game world
-            let mutable property = Unchecked.defaultof<Property>
-            if GameState.tryGetProperty (propertyName, gameState, &property) then
-                match property.PropertyValue with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-            else Unchecked.defaultof<'a>
-
         static member internal getGameXtensionProperty propertyName game world =
             let mutable property = Unchecked.defaultof<_>
             match GameState.tryGetProperty (propertyName, World.getGameState game world, &property) with
@@ -473,8 +463,8 @@ module WorldModuleGame =
                     | Some definition ->
                         match definition.PropertyExpr with
                         | DefineExpr value -> value :?> 'a
-                        | VariableExpr eval -> eval world :?> 'a
-                        | ComputedExpr cp -> cp.ComputedGet game world :?> 'a
+                        | VariableExpr _ -> failwith "GameDispatchers do not support variable properties."
+                        | ComputedExpr _ -> failwith "GameDispatchers do not support computed properties."
                     | None -> failwithumf ()
                 let property = { PropertyType = typeof<'a>; PropertyValue = value }
                 gameState.Xtension <- Xtension.attachProperty propertyName property gameState.Xtension

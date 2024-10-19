@@ -93,10 +93,6 @@ module WorldGameModule =
             World.getGameProperty propertyName this world
 
         /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
-            World.tryGetGameXtensionValue<'a> propertyName this world
-
-        /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getGameXtensionValue<'a> propertyName this world
 

@@ -341,10 +341,6 @@ module WorldEntityModule =
             World.getEntityProperty propertyName this world
 
         /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
-            World.tryGetEntityXtensionValue<'a> propertyName this world
-
-        /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getEntityXtensionValue<'a> propertyName this world
 
