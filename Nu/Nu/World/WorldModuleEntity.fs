@@ -283,9 +283,9 @@ module WorldModuleEntity =
                     entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.errorOnce "Could not convert existing entity model value to new type; using fallback model value instead."
+                    Log.errorOnce "Could not convert existing entity model value to new type; attempting to use fallback model value instead."
                     match entityState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, entity, world) with
-                    | None -> failwithnie ()
+                    | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
                         entityState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
@@ -1788,16 +1788,44 @@ module WorldModuleEntity =
             match entityStateOpt :> obj with
             | null -> failwithf "Could not find entity '%s'." (scstring entity)
             | _ ->
-                let property = EntityState.getProperty propertyName entityStateOpt
-                let valueObj =
-                    match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerValue
-                    | :? ComputedProperty as cp -> cp.ComputedGet (entity :> obj) (world :> obj)
-                    | _ -> property.PropertyValue
-                match valueObj with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | value -> value |> valueToSymbol |> symbolToValue
+                let mutable property = Unchecked.defaultof<_>
+                if EntityState.tryGetProperty (propertyName, entityStateOpt, &property) then
+                    let valueObj =
+                        match property.PropertyValue with
+                        | :? DesignerProperty as dp -> dp.DesignerValue
+                        | :? ComputedProperty as cp -> cp.ComputedGet entity world
+                        | _ -> property.PropertyValue
+                    match valueObj with
+                    | :? 'a as value -> value
+                    | null -> null :> obj :?> 'a
+                    | value -> value |> valueToSymbol |> symbolToValue
+                else
+                    let value =
+                        match entityStateOpt.OverlayNameOpt with
+                        | Some overlayName ->
+                            match World.tryGetOverlayerPropertyValue propertyName typeof<'a> overlayName entityStateOpt.FacetNames world with
+                            | Some value -> value :?> 'a
+                            | None ->
+                                let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
+                                match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                                | Some definition ->
+                                    match definition.PropertyExpr with
+                                    | DefineExpr value -> value :?> 'a
+                                    | VariableExpr eval -> eval world :?> 'a
+                                    | ComputedExpr property -> property.ComputedGet entity world :?> 'a
+                                | None -> failwithumf ()
+                        | None ->
+                            let definitions = Reflection.getPropertyDefinitions (getType entityStateOpt.Dispatcher)
+                            match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                            | Some definition ->
+                                match definition.PropertyExpr with
+                                | DefineExpr value -> value :?> 'a
+                                | VariableExpr eval -> eval world :?> 'a
+                                | ComputedExpr property -> property.ComputedGet entity world :?> 'a
+                            | None -> failwithumf ()
+                    let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                    entityStateOpt.Xtension <- Xtension.attachProperty propertyName property entityStateOpt.Xtension
+                    value
 
         static member internal getEntityProperty propertyName entity world =
             let mutable property = Unchecked.defaultof<_>

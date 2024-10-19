@@ -131,9 +131,9 @@ module WorldModuleScreen =
                     screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.warn "Could not convert existing screen model value to new type; using fallback model value instead."
+                    Log.warn "Could not convert existing screen model value to new type; attempting to use fallback model value instead."
                     match screenState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, screen, world) with
-                    | None -> failwithnie ()
+                    | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
                         screenState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
@@ -238,11 +238,25 @@ module WorldModuleScreen =
 
         static member internal getScreenXtensionValue<'a> propertyName screen world =
             let screenState = World.getScreenState screen world
-            let property = ScreenState.getProperty propertyName screenState
-            match property.PropertyValue with
-            | :? 'a as value -> value
-            | null -> null :> obj :?> 'a
-            | valueObj -> valueObj |> valueToSymbol |> symbolToValue
+            let mutable property = Unchecked.defaultof<_>
+            if ScreenState.tryGetProperty (propertyName, screenState, &property) then
+                match property.PropertyValue with
+                | :? 'a as value -> value
+                | null -> null :> obj :?> 'a
+                | valueObj -> valueObj |> valueToSymbol |> symbolToValue
+            else
+                let definitions = Reflection.getPropertyDefinitions (getType screenState.Dispatcher)
+                let value =
+                    match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                    | Some definition ->
+                        match definition.PropertyExpr with
+                        | DefineExpr value -> value :?> 'a
+                        | VariableExpr eval -> eval world :?> 'a
+                        | ComputedExpr cp -> cp.ComputedGet screen world :?> 'a
+                    | None -> failwithumf ()
+                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                screenState.Xtension <- Xtension.attachProperty propertyName property screenState.Xtension
+                value
 
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             match ScreenGetters.TryGetValue propertyName with

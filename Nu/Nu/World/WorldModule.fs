@@ -502,6 +502,9 @@ module WorldModule =
         static member internal setOverlayer overlayer world =
             World.mapAmbientState (AmbientState.setOverlayer overlayer) world
 
+        static member internal tryGetOverlayerPropertyValue propertyName propertyType overlayName facetNames world =
+            World.getOverlayerBy (Overlayer.tryGetPropertyValue propertyName propertyType overlayName facetNames) world
+
         /// Get overlay names.
         static member getOverlayNames world =
             (World.getOverlayerBy Overlayer.getOverlays world).Keys

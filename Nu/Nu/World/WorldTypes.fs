@@ -914,7 +914,7 @@ and SimulantState =
 /// Hosts the ongoing state of a game.
 and [<ReferenceEquality; CLIMutable>] GameState =
     { Dispatcher : GameDispatcher
-      Xtension : Xtension
+      mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GameContent
       SelectedScreenOpt : Screen option
@@ -991,7 +991,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
 /// Hosts the ongoing state of a screen.
 and [<ReferenceEquality; CLIMutable>] ScreenState =
     { Dispatcher : ScreenDispatcher
-      Xtension : Xtension
+      mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : ScreenContent
       TransitionState : TransitionState
@@ -1062,7 +1062,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
 /// Hosts the ongoing state of a group.
 and [<ReferenceEquality; CLIMutable>] GroupState =
     { Dispatcher : GroupDispatcher
-      Xtension : Xtension
+      mutable Xtension : Xtension // mutable to allow inserting new properties on code reload
       mutable Model : DesignerProperty // mutable to allow inserting fallback model on code reload
       Content : GroupContent
       Visible : bool

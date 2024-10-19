@@ -160,6 +160,15 @@ module Overlayer =
             | Altered | NonPersistent -> false
         else false
 
+    let internal tryGetPropertyValue propertyName (propertyType : Type) overlayName facetNames overlayer =
+        let overlaySymbols = getOverlaySymbols overlayName facetNames overlayer
+        match Map.tryFind propertyName overlaySymbols with
+        | Some propertySymbol ->
+            let converter = Reflection.makeSymbolicConverterMemo false None propertyType
+            let value = converter.ConvertFrom propertySymbol
+            Some value
+        | None -> None
+
     let internal tryApplyOverlayToRecordProperty property (propertySymbol : Symbol) target overlaySymbolsOld =
         if shouldApplyOverlay property target overlaySymbolsOld then
             let converter = Reflection.makeSymbolicConverterMemo false None property.PropertyType
