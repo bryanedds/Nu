@@ -159,7 +159,6 @@ type GameplayDispatcher () =
                                 // brick collision
                                 match (gameplay.GetBricks world).TryGetValue penetratee.Name with
                                 | (true, brick) ->
-
                                     let bounce = (ballPosition - brick.Position).Normalized * BallSpeed
                                     let world = World.setBodyLinearVelocity bounce ballBodyId world
                                     let world = gameplay.Score.Map ((+) 100) world
