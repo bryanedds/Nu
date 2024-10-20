@@ -91,7 +91,6 @@ type CharacterDispatcher (character : Character) =
                 let characterPenetratee = penetratee.GetCharacter world
                 match (character.CharacterType, characterPenetratee.CharacterType) with
                 | (Enemy, Enemy) ->
-                    if penetratee.Name = "Player" then Log.error "WTF"
                     let character = { character with CharacterCollisions = Set.add penetratee character.CharacterCollisions }
                     just character
                 | (_, _) -> just character
