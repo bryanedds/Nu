@@ -657,113 +657,115 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
             let framebufferHeight = drawData.DisplaySize.Y * drawData.FramebufferScale.Y
 
-            if drawData.TotalVtxCount > 0 then
-                
-                // get data size for vertices and indices
-                let vertexSize = drawData.TotalVtxCount * int (sizeOf<ImDrawVert> ())
-                let indexSize = drawData.TotalVtxCount * sizeof<uint16>
+            // only proceed if window is not minimized
+            if int framebufferWidth > 0 && int framebufferHeight > 0 then
 
-                // enlargen vertex buffer if needed
-                if vertexSize > vertexBufferSize then
-                    while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                    vertexBuffer.Destroy ()
-                    vertexBuffer <- AllocatedBuffer.createVertex true vertexBufferSize vmaAllocator
-
-                // enlargen index buffer if needed
-                if indexSize > indexBufferSize then
-                    while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                    indexBuffer.Destroy ()
-                    indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
-
-                // upload vertices and indices
-                let mutable vertexOffset = 0
-                let mutable indexOffset = 0
-                for i in 0 .. dec drawData.CmdListsCount do
-                    let drawList = drawData.CmdListsRange.[i]
-                    let vertexSize = drawList.VtxBuffer.Size * int (sizeOf<ImDrawVert> ())
-                    let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
+                if drawData.TotalVtxCount > 0 then
                     
-                    // TODO: try a persistently mapped buffer and compare performance
-                    vertexBuffer.TryUpload vertexOffset vertexSize (nintToVoidPointer drawList.VtxBuffer.Data)
-                    indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer drawList.IdxBuffer.Data)
-                    vertexOffset <- vertexOffset + vertexSize
-                    indexOffset <- indexOffset + indexSize
+                    // get data size for vertices and indices
+                    let vertexSize = drawData.TotalVtxCount * int (sizeOf<ImDrawVert> ())
+                    let indexSize = drawData.TotalVtxCount * sizeof<uint16>
 
-            // bind pipeline
-            vkCmdBindPipeline (renderCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline)
+                    // enlargen vertex buffer if needed
+                    if vertexSize > vertexBufferSize then
+                        while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
+                        vertexBuffer.Destroy ()
+                        vertexBuffer <- AllocatedBuffer.createVertex true vertexBufferSize vmaAllocator
 
-            if drawData.TotalVtxCount > 0 then
+                    // enlargen index buffer if needed
+                    if indexSize > indexBufferSize then
+                        while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
+                        indexBuffer.Destroy ()
+                        indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
+
+                    // upload vertices and indices
+                    let mutable vertexOffset = 0
+                    let mutable indexOffset = 0
+                    for i in 0 .. dec drawData.CmdListsCount do
+                        let drawList = drawData.CmdListsRange.[i]
+                        let vertexSize = drawList.VtxBuffer.Size * int (sizeOf<ImDrawVert> ())
+                        let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
+                        
+                        // TODO: try a persistently mapped buffer and compare performance
+                        vertexBuffer.TryUpload vertexOffset vertexSize (nintToVoidPointer drawList.VtxBuffer.Data)
+                        indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer drawList.IdxBuffer.Data)
+                        vertexOffset <- vertexOffset + vertexSize
+                        indexOffset <- indexOffset + indexSize
+
+                // bind pipeline
+                vkCmdBindPipeline (renderCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline)
 
                 // bind vertex and index buffer
-                let mutable vertexBuffer = vertexBuffer.Buffer
-                let mutable vertexOffset = 0UL
-                vkCmdBindVertexBuffers (renderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                vkCmdBindIndexBuffer (renderCommandBuffer, indexBuffer.Buffer, 0UL, VK_INDEX_TYPE_UINT16)
+                if drawData.TotalVtxCount > 0 then
+                    let mutable vertexBuffer = vertexBuffer.Buffer
+                    let mutable vertexOffset = 0UL
+                    vkCmdBindVertexBuffers (renderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                    vkCmdBindIndexBuffer (renderCommandBuffer, indexBuffer.Buffer, 0UL, VK_INDEX_TYPE_UINT16)
 
-            // set up viewport
-            let mutable viewport = VkViewport ()
-            viewport.x <- 0.0f
-            viewport.y <- 0.0f
-            viewport.width <- framebufferWidth
-            viewport.height <- framebufferHeight
-            viewport.minDepth <- 0.0f
-            viewport.maxDepth <- 1.0f
-            vkCmdSetViewport (renderCommandBuffer, 0u, 1u, asPointer &viewport)
+                // set up viewport
+                let mutable viewport = VkViewport ()
+                viewport.x <- 0.0f
+                viewport.y <- 0.0f
+                viewport.width <- framebufferWidth
+                viewport.height <- framebufferHeight
+                viewport.minDepth <- 0.0f
+                viewport.maxDepth <- 1.0f
+                vkCmdSetViewport (renderCommandBuffer, 0u, 1u, asPointer &viewport)
 
-            // set up scale and translation
-            let scale = Array.zeroCreate<single> 2
-            scale[0] <- 2.0f / drawData.DisplaySize.X
-            scale[1] <- 2.0f / drawData.DisplaySize.Y
-            use scalePin = ArrayPin scale
-            let translate = Array.zeroCreate<single> 2
-            translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
-            translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
-            use translatePin = ArrayPin translate
-            vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
-            vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
+                // set up scale and translation
+                let scale = Array.zeroCreate<single> 2
+                scale[0] <- 2.0f / drawData.DisplaySize.X
+                scale[1] <- 2.0f / drawData.DisplaySize.Y
+                use scalePin = ArrayPin scale
+                let translate = Array.zeroCreate<single> 2
+                translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
+                translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
+                use translatePin = ArrayPin translate
+                vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
+                vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
-            // draw command lists
-            for i in 0 .. dec drawData.CmdListsCount do
-                let drawList = drawData.CmdListsRange.[i]
-                for j in 0 .. dec drawList.CmdBuffer.Size do
-                    let pcmd = drawList.CmdBuffer[j]
-                    if pcmd.UserCallback = nativeint 0 then
-                        
-                        // project scissor/clipping rectangles into framebuffer space
-                        let mutable clipMin =
-                            v2
-                                ((pcmd.ClipRect.X - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
-                                ((pcmd.ClipRect.Y - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
-                        
-                        let mutable clipMax =
-                            v2
-                                ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
-                                ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
-
-                        // clamp to viewport as vkCmdSetScissor won't accept values that are off bounds
-                        if clipMin.X < 0.0f then clipMin.X <- 0.0f
-                        if clipMin.Y < 0.0f then clipMin.Y <- 0.0f
-                        if clipMax.X > framebufferWidth then clipMax.X <- framebufferWidth
-                        if clipMax.Y > framebufferHeight then clipMax.Y <- framebufferHeight
-
-                        // check rectangle is valid
-                        if clipMax.X > clipMin.X && clipMax.Y > clipMin.Y then
+                // draw command lists
+                for i in 0 .. dec drawData.CmdListsCount do
+                    let drawList = drawData.CmdListsRange.[i]
+                    for j in 0 .. dec drawList.CmdBuffer.Size do
+                        let pcmd = drawList.CmdBuffer[j]
+                        if pcmd.UserCallback = nativeint 0 then
                             
-                            // apply scissor/clipping rectangle
-                            let width = uint (clipMax.X - clipMin.X)
-                            let height = uint (clipMax.Y - clipMin.Y)
-                            let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                            vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
+                            // project scissor/clipping rectangles into framebuffer space
+                            let mutable clipMin =
+                                v2
+                                    ((pcmd.ClipRect.X - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
+                                    ((pcmd.ClipRect.Y - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
+                            
+                            let mutable clipMax =
+                                v2
+                                    ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
+                                    ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
+
+                            // clamp to viewport as vkCmdSetScissor won't accept values that are off bounds
+                            if clipMin.X < 0.0f then clipMin.X <- 0.0f
+                            if clipMin.Y < 0.0f then clipMin.Y <- 0.0f
+                            if clipMax.X > framebufferWidth then clipMax.X <- framebufferWidth
+                            if clipMax.Y > framebufferHeight then clipMax.Y <- framebufferHeight
+
+                            // check rectangle is valid
+                            if clipMax.X > clipMin.X && clipMax.Y > clipMin.Y then
+                                
+                                // apply scissor/clipping rectangle
+                                let width = uint (clipMax.X - clipMin.X)
+                                let height = uint (clipMax.Y - clipMin.Y)
+                                let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
+                                vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
 
 
-                            ()
+                                ()
 
-                    else raise (NotImplementedException ())
+                        else raise (NotImplementedException ())
 
 
-            // reset scissor
-            let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-            vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
+                // reset scissor
+                let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
+                vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
         
         member this.CleanUp () =
             indexBuffer.Destroy ()
