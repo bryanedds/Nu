@@ -34,6 +34,14 @@ module WorldSimulantModule =
             | :? Game as game -> World.getGameState game world :> SimulantState
             | _ -> failwithumf ()
 
+        static member internal getXtensionProperties (simulant : Simulant) world =
+            match simulant with
+            | :? Entity as entity -> World.getEntityXtensionProperties entity world
+            | :? Group as group -> World.getGroupXtensionProperties group world
+            | :? Screen as screen -> World.getScreenXtensionProperties screen world
+            | :? Game as game -> World.getGameXtensionProperties game world
+            | _ -> failwithumf ()
+
         static member internal tryGetProperty (name, simulant : Simulant, world, property : Property outref) =
             let namesLength = simulant.SimulantAddress.Names.Length
             if namesLength >= 4
@@ -247,24 +255,40 @@ module WorldSimulantModule =
                 | _ -> false
 
         /// Convert an address to a concrete simulant reference.
-        static member derive address =
-            let namesLength = address |> Address.getNames |> Array.length
+        static member deriveFromNames (names : string seq) =
+            let names = Seq.toArray names // NOTE: this should be fast for arrays because there's an explicit array test in Seq.toArray.
+            let namesLength = names.Length
             if namesLength >= 4
-            then Entity (Address.changeType<obj, Entity> address) :> Simulant
+            then Entity (rtoa names) :> Simulant
             else
                 match namesLength with
                 | 1 -> Game.Handle // OPTIMIZATION: avoid allocation.
-                | 2 -> Screen (Address.changeType<obj, Screen> address)
-                | 3 -> Group (Address.changeType<obj, Group> address)
+                | 2 -> Screen (rtoa names)
+                | 3 -> Group (rtoa names)
+                | _ -> failwithumf ()
+
+        /// Convert an address to a concrete simulant reference.
+        static member deriveFromAddress (address : Address) =
+            let names = address.Names // OPTIMIZATION: unroll fields to locals to avoid redundant fetches.
+            let hashCode = address.HashCode
+            let anonymous = address.Anonymous
+            let namesLength = names.Length
+            if namesLength >= 4
+            then Entity { Names = names; HashCode = hashCode; Anonymous = anonymous } :> Simulant
+            else
+                match namesLength with
+                | 1 -> Game.Handle // OPTIMIZATION: avoid allocation.
+                | 2 -> Screen { Names = names; HashCode = hashCode; Anonymous = anonymous }
+                | 3 -> Group { Names = names; HashCode = hashCode; Anonymous = anonymous }
                 | _ -> failwithumf ()
 
         /// Convert an event address to the concrete simulant that it targets.
-        static member deriveFromEvent event =
-            let eventAddressNames = Address.getNames event
+        static member deriveFromEventAddress (event : Address) =
+            let eventAddressNames = event.Names
             let eventTargetIndex = Array.findIndex (fun name -> name = "Event") eventAddressNames + 1
             if eventTargetIndex < Array.length eventAddressNames then
-                let eventTarget = eventAddressNames |> Array.skip eventTargetIndex |> rtoa
-                World.derive eventTarget
+                let eventTargetNames = eventAddressNames |> Array.skip eventTargetIndex
+                World.deriveFromNames eventTargetNames
             else failwithumf ()
 
 [<RequireQualifiedAccess>]
@@ -326,22 +350,19 @@ module PropertyDescriptor =
                     propertyDescriptor)
                     properties
             let propertyDescriptors =
-                match simulant :> obj with
-                | :? Entity as entity ->
-                    let properties' = World.getEntityXtensionProperties entity world
-                    let propertyDescriptors' =
-                        Seq.fold
-                            (fun propertyDescriptors' (propertyName, property : Property) ->
-                                if property.PropertyType = typeof<ComputedProperty> then
-                                    propertyDescriptors'
-                                elif not (Reflection.isPropertyNonPersistentByName propertyName) then
-                                    let propertyType = property.PropertyType
-                                    let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
-                                    propertyDescriptor :: propertyDescriptors'
-                                else propertyDescriptors')
-                            []
-                            properties'
-                    Seq.append propertyDescriptors' propertyDescriptors
-                | _ -> propertyDescriptors
+                let properties' = World.getXtensionProperties simulant world
+                let propertyDescriptors' =
+                    Seq.fold
+                        (fun propertyDescriptors' (propertyName, property : Property) ->
+                            if property.PropertyType = typeof<ComputedProperty> then
+                                propertyDescriptors'
+                            elif not (Reflection.isPropertyNonPersistentByName propertyName) then
+                                let propertyType = property.PropertyType
+                                let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
+                                propertyDescriptor :: propertyDescriptors'
+                            else propertyDescriptors')
+                        []
+                        properties'
+                Seq.append propertyDescriptors' propertyDescriptors
             List.ofSeq propertyDescriptors
         | None -> []

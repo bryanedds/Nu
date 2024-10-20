@@ -129,9 +129,9 @@ module WorldModuleGroup =
                     groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                     model
                 with _ ->
-                    Log.warn "Could not convert existing group model value to new type; using fallback model value instead."
+                    Log.warn "Could not convert existing group model value to new type; attempting to use fallback model value instead."
                     match groupState.Dispatcher.TryGetFallbackModel<'a> (modelSymbol, group, world) with
-                    | None -> failwithnie ()
+                    | None -> typeof<'a>.GetDefaultValue () :?> 'a
                     | Some model ->
                         groupState.Model <- { DesignerType = typeof<'a>; DesignerValue = model }
                         model
@@ -180,19 +180,6 @@ module WorldModuleGroup =
             then GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property)
             else false
 
-        static member internal tryGetGroupXtensionValue<'a> propertyName group world =
-            let groupStateOpt = World.getGroupStateOpt group world
-            match groupStateOpt :> obj with
-            | null -> failwithf "Could not find group '%s'." (scstring group)
-            | _ ->
-                let mutable property = Unchecked.defaultof<Property>
-                if World.tryGetGroupProperty (propertyName, group, world, &property) then
-                    match property.PropertyValue with
-                    | :? 'a as value -> value
-                    | null -> null :> obj :?> 'a
-                    | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-                else Unchecked.defaultof<'a>
-
         static member internal getGroupXtensionProperty propertyName group world =
             let mutable property = Unchecked.defaultof<_>
             match GroupState.tryGetProperty (propertyName, World.getGroupState group world, &property) with
@@ -201,12 +188,25 @@ module WorldModuleGroup =
 
         static member internal getGroupXtensionValue<'a> propertyName group world =
             let groupState = World.getGroupState group world
-            let property = GroupState.getProperty propertyName groupState
-            match property.PropertyValue with
-            | :? 'a as value -> value
-            | null -> null :> obj :?> 'a
-            | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-
+            let mutable property = Unchecked.defaultof<_>
+            if GroupState.tryGetProperty (propertyName, groupState, &property) then
+                match property.PropertyValue with
+                | :? 'a as value -> value
+                | null -> null :> obj :?> 'a
+                | valueObj -> valueObj |> valueToSymbol |> symbolToValue
+            else
+                let definitions = Reflection.getPropertyDefinitions (getType groupState.Dispatcher)
+                let value =
+                    match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                    | Some definition ->
+                        match definition.PropertyExpr with
+                        | DefineExpr value -> value :?> 'a
+                        | VariableExpr _ -> failwith "GroupDispatchers do not support variable properties."
+                        | ComputedExpr _ -> failwith "GroupDispatchers do not support computed properties."
+                    | None -> failwithumf ()
+                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                groupState.Xtension <- Xtension.attachProperty propertyName property groupState.Xtension
+                value
         static member internal tryGetGroupProperty (propertyName, group, world, property : _ outref) =
             match GroupGetters.TryGetValue propertyName with
             | (true, getter) ->

@@ -4,53 +4,50 @@ open System.Numerics
 open Prime
 open Nu
 
-// this is our top-level ImNui model type. It determines what state the game is in. To learn about ImNui in Nu, see -
-// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
-type MyGame =
-    { Collisions : int }
-
-// this extends the Game API to expose the above ImNui model as a property.
+// this extends the Game API to expose user-defined properties.
 [<AutoOpen>]
 module MyGameExtensions =
     type Game with
-        member this.GetMyGame world = this.GetModelGeneric<MyGame> world
-        member this.SetMyGame value world = this.SetModelGeneric<MyGame> value world
-        member this.MyGame = this.ModelGeneric<MyGame> ()
+        member this.GetCollisions world : int = this.Get (nameof Game.Collisions) world
+        member this.SetCollisions (value : int) world = this.Set (nameof Game.Collisions) value world
+        member this.Collisions = lens (nameof Game.Collisions) this this.GetCollisions this.SetCollisions
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
-    inherit GameDispatcher<MyGame> ({ Collisions = 0 })
+    inherit GameDispatcher ()
+
+    // here we define default property values
+    static member Properties =
+        [define Game.Collisions 0]
 
     // here we handle running the game
-    override this.Run (myGame, _, world) =
+    override this.Run (myGame, world) =
 
         // declare screen and group
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
         let world = World.beginGroup "Group" [] world
 
         // declare a block
-        let (_, world) = World.doBlock2d "Block2d" [Entity.Position .= v3 128.0f -64.0f 0.0f] world
+        let (_, world) = World.doBlock2d "Block" [Entity.Position .= v3 128.0f -64.0f 0.0f] world
 
         // declare a box, store its handle and body id for reference, then handle its body interactions
-        let (results, world) = World.doBox2d "Box2d" [Entity.Position .= v3 128.0f 64.0f 0.0f; Entity.Observable .= true] world
+        let (results, world) = World.doBox2d "Box" [Entity.Position .= v3 128.0f 64.0f 0.0f; Entity.Observable .= true] world
         let box = world.RecentEntity
         let boxBodyId = box.GetBodyId world
-        let myGame =
-            FQueue.fold (fun myGame result ->
+        let world =
+            FQueue.fold (fun world result ->
                 match result with
-                | BodyPenetration _ -> { myGame with Collisions = inc myGame.Collisions }
-                | _ -> myGame)
-                myGame results
+                | BodyPenetration _ -> myGame.Collisions.Map inc world
+                | _ -> world)
+                world results
 
         // declare a control panel
         let world = World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
-        let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string myGame.Collisions] world
-        let world =
-            match World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world with
-            | (true, world) -> World.applyBodyLinearImpulse (v3Up * 256.0f) None boxBodyId world
-            | (false, world) -> world
-        let world = World.doFillBar "FillBar" [Entity.Fill @= single myGame.Collisions / 10.0f] world
-        let world = if myGame.Collisions >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
+        let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string (myGame.GetCollisions world)] world
+        let (clicked, world) = World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world
+        let world = if clicked then World.applyBodyLinearImpulse (v3Up * 256.0f) None boxBodyId world else world
+        let world = World.doFillBar "FillBar" [Entity.Fill @= single (myGame.GetCollisions world) / 10.0f] world
+        let world = if myGame.GetCollisions world >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
         let world = World.endPanel world
 
         // finish declaring group and screen
@@ -64,4 +61,4 @@ type MyGameDispatcher () =
             else world
 
         // fin
-        (myGame, world)
+        world

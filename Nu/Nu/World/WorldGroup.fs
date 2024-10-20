@@ -50,10 +50,6 @@ module WorldGroupModule =
             World.getGroupProperty propertyName this world
 
         /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
-            World.tryGetGroupXtensionValue<'a> propertyName this world
-
-        /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getGroupXtensionValue<'a> propertyName this world
 
@@ -73,7 +69,7 @@ module WorldGroupModule =
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setGroupXtensionProperty propertyName property this world
+            World.setGroupXtensionProperty propertyName property this world |> snd'
 
         /// Check that a group is selected.
         member this.GetSelected world =
@@ -98,12 +94,6 @@ module WorldGroupModule =
         member this.NotifyModelChange world = World.notifyGroupModelChange this world
 
     type World with
-
-        static member internal tryRunGroup (group : Group) world =
-
-            // attempt to run via dispatcher
-            let dispatcher = group.GetDispatcher world
-            dispatcher.TryRun (group, world)
 
         static member internal preUpdateGroup (group : Group) world =
 
@@ -182,7 +172,7 @@ module WorldGroupModule =
                     else failwith ("Group '" + scstring group + "' already exists and cannot be created."); world
                 else world
             let world = World.addGroup false groupState group world
-            let world = if WorldModule.UpdatingSimulants then World.tryRunGroup group world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.runGroup group world else world
             (group, world)
 
         /// Create a group from a simulant descriptor.
@@ -256,7 +246,7 @@ module WorldGroupModule =
                         World.renameEntityImmediate child destination world)
                         world children
                 let world = World.destroyGroupImmediate source world
-                let world = if WorldModule.UpdatingSimulants then World.tryRunGroup destination world else world
+                let world = if WorldModule.UpdatingSimulants then WorldModule.runGroup destination world else world
                 world
             | None -> world
 
@@ -324,7 +314,7 @@ module WorldGroupModule =
             let world = World.readEntities groupDescriptor.EntityDescriptors group world |> snd
 
             // try to ImNui run group first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then World.tryRunGroup group world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.runGroup group world else world
             (group, world)
 
         /// Read multiple groups from a screen descriptor.

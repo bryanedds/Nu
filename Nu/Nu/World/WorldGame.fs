@@ -93,10 +93,6 @@ module WorldGameModule =
             World.getGameProperty propertyName this world
 
         /// Get an xtension property value.
-        member this.TryGet<'a> propertyName world : 'a =
-            World.tryGetGameXtensionValue<'a> propertyName this world
-
-        /// Get an xtension property value.
         member this.Get<'a> propertyName world : 'a =
             World.getGameXtensionValue<'a> propertyName this world
 
@@ -116,7 +112,7 @@ module WorldGameModule =
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
             let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setGameXtensionProperty propertyName property this world
+            World.setGameXtensionProperty propertyName property this world |> snd'
 
         /// Check that a game dispatches in the same manner as the dispatcher with the given type.
         member this.Is (dispatcherType, world) = Reflection.dispatchesAs dispatcherType (this.GetDispatcher world)
@@ -147,12 +143,6 @@ module WorldGameModule =
             let eventTrace = EventTrace.debug "World" "unregisteringGame" "" EventTrace.empty
             let world = World.publishPlus (UnregisteringData game) (game.LifeCycleEvent (nameof Game)) eventTrace game true false world
             dispatcher.Unregister (game, world)
-
-        static member internal tryRunGame (game : Game) world =
-
-            // attempt to run via dispatcher
-            let dispatcher = game.GetDispatcher world
-            dispatcher.TryRun (game, world)
 
         static member internal preUpdateGame (game : Game) world =
                 

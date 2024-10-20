@@ -186,7 +186,7 @@ module Content =
                     | (true, childContentOld) when optEq childEntry.Value.DispatcherNameOpt childContentOld.DispatcherNameOpt ->
                         let childSimulant = // OPTIMIZATION: attempt to get child simulant from old content rather than deriving it, and store it for future use.
                             if isNull (childContentOld.SimulantCachedOpt :> obj) then
-                                let derived = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                                let derived = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
                                 childEntry.Value.SimulantCachedOpt <- derived
                                 derived
                             else
@@ -195,7 +195,7 @@ module Content =
                                 found
                         childrenPotentiallyAltered.Add (childSimulant, childEntry.Value)
                     | (_, _) ->
-                        let childSimulant = World.derive (rtoa (Array.add childEntry.Key simulant.SimulantAddress.Names)) :?> 'child
+                        let childSimulant = World.deriveFromNames (Array.add childEntry.Key simulant.SimulantAddress.Names) :?> 'child
                         childEntry.Value.SimulantCachedOpt <- childSimulant
                         childrenAdded.Add (childSimulant, childEntry.Value)
                 let childrenRemoved = List<'child> ()

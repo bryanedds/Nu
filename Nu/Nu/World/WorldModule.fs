@@ -75,9 +75,18 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal tryRunEntity : Entity -> World -> World =
+    let mutable internal runGame : Game -> World -> World =
         Unchecked.defaultof<_>
         
+    let mutable internal runScreen : Screen -> World -> World =
+        Unchecked.defaultof<_>
+        
+    let mutable internal runGroup : Group -> World -> World =
+        Unchecked.defaultof<_>
+        
+    let mutable internal runEntity : Entity -> World -> World =
+        Unchecked.defaultof<_>
+
     let mutable internal signal : obj -> Simulant -> World -> World =
         Unchecked.defaultof<_>
 
@@ -246,6 +255,10 @@ module WorldModule =
         static member getContextEntity (world : World) =
             world.ContextEntity
 
+        /// Check that the current ImNui context is initializing this frame.
+        static member getContextInitializing (world : World) =
+            world.ContextInitializing
+
         /// Get the most recent ImNui context.
         static member getRecentImNui (world : World) =
             world.RecentImNui
@@ -265,6 +278,10 @@ module WorldModule =
         /// Get the most recent ImNui context translated to a Entity handle (throwing upon failure).
         static member getRecentEntity (world : World) =
             world.RecentEntity
+
+        /// Check that the recent ImNui context is initializing this frame.
+        static member getRecentInitializing (world : World) =
+            world.RecentInitializing
 
         static member internal setContext context (world : World) =
             if world.Imperative then
@@ -484,6 +501,9 @@ module WorldModule =
 
         static member internal setOverlayer overlayer world =
             World.mapAmbientState (AmbientState.setOverlayer overlayer) world
+
+        static member internal tryGetOverlayerPropertyValue propertyName propertyType overlayName facetNames world =
+            World.getOverlayerBy (Overlayer.tryGetPropertyValue propertyName propertyType overlayName facetNames) world
 
         /// Get overlay names.
         static member getOverlayNames world =

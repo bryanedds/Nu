@@ -48,6 +48,47 @@ module WorldImNui =
 
     type World with
 
+        static member internal runGame (game : Game) (world : World) =
+            let context = world.ContextImNui
+            let world = World.scopeGame [] world
+            let dispatcher = game.GetDispatcher world
+            let world = dispatcher.Run (game, world)
+            World.advanceContext game.GameAddress context world
+
+        static member internal runScreen (screen : Screen) (world : World) =
+            let context = world.ContextImNui
+            let world = World.scopeScreen screen [] world
+            let dispatcher = World.getScreenDispatcher screen world
+            let world = dispatcher.Run (screen, world)
+            World.advanceContext screen.ScreenAddress context world
+
+        static member internal runGroup (group : Group) (world : World) =
+            let context = world.ContextImNui
+            let world = World.scopeGroup group [] world
+            let dispatcher = group.GetDispatcher world
+            let world = dispatcher.Run (group, world)
+            World.advanceContext group.GroupAddress context world
+
+        static member internal runEntity (entity : Entity) (world : World) =
+            let context = world.ContextImNui
+            let world = World.scopeEntity entity [] world
+            let facets = entity.GetFacets world
+            let mutable world = world // OPTIMIZATION: inlining fold for speed.
+            if Array.notEmpty facets then // OPTIMIZATION: eliding iteration setup for speed.
+                for facet in facets do
+                    world <- facet.Run (entity, world)
+            let dispatcher = entity.GetDispatcher world
+            let world = dispatcher.Run (entity, world)
+            World.advanceContext entity.EntityAddress context world
+
+        /// Whether ImNui is reinitializing this frame (such as on a code reload).
+        member this.ReinitializingImNui =
+            Reinitializing
+
+        /// Whether ImNui is reinitializing this frame (such as on a code reload).
+        static member getReinitializingImNui (world : World) =
+            world.ReinitializingImNui
+
         /// ImNui subscribe to the given event address.
         static member doSubscription<'d> name (eventAddress : 'd Address) (world : World) : 'd FQueue * World =
             let eventAddress' =
@@ -70,7 +111,7 @@ module WorldImNui =
                             eventAddress'
                             Game
                             world
-                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; Results = FQueue.empty<'d>; SubscriptionId = subId } world
+                    World.addSubscriptionImNui subscriptionKey { SubscriptionUtilized = true; SubscriptionId = subId; Results = FQueue.empty<'d> } world
             let results = (World.getSubscriptionImNui subscriptionKey world).Results :?> 'd FQueue
             let world = World.mapSubscriptionImNui (fun subscriptionImNui -> { subscriptionImNui with Results = FQueue.empty<'d> }) subscriptionKey world
             (results, world)
@@ -94,10 +135,10 @@ module WorldImNui =
             let world = World.setContext gameAddress world
             let game = Nu.Game gameAddress
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue game with
-                | (true, gameImNui) -> (false, World.utilizeSimulantImNui game gameImNui world)
+                match world.SimulantImNuis.TryGetValue game.GameAddress with
+                | (true, gameImNui) -> (false, World.utilizeSimulantImNui game.GameAddress gameImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui game { SimulantUtilized = true; Result = () } world
+                    let world = World.addSimulantImNui game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
                     (true, world)
             let initializing = initializing || Reinitializing
             Seq.fold
@@ -121,71 +162,7 @@ module WorldImNui =
                 (fun world arg -> game.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c')
                 world args
 
-        static member internal beginScreenPlus10<'d, 'r when 'd :> ScreenDispatcher> (zero : 'r) init transitionScreen setScreenSlide name select behavior groupFilePathOpt (args : Screen ArgImNui seq) (world : World) : ScreenResult FQueue * 'r * World =
-            if world.ContextImNui.Names.Length < 1 then raise (InvalidOperationException "ImNui screen declared outside of valid ImNui context (must be called in a Game context).")
-            let screenAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
-            let world = World.setContext screenAddress world
-            let screen = Nu.Screen screenAddress
-            let world =
-                if not (screen.GetExists world) then
-                    let world = World.createScreen<'d> (Some name) world |> snd
-                    let world = World.setScreenProtected true screen world |> snd'
-                    match groupFilePathOpt with
-                    | Some groupFilePath -> World.readGroupFromFile groupFilePath None screen world |> snd
-                    | None -> world
-                else world
-            let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue screen with
-                | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen screenImNui world)
-                | (false, _) ->
-                    let world = World.addSimulantImNui screen { SimulantUtilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
-                    let mapFstResult (mapper : ScreenResult FQueue -> ScreenResult FQueue) world =
-                        let mapScreenImNui screenImNui =
-                            let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
-                            { screenImNui with Result = (mapper screenResult, userResult) }
-                        World.tryMapSimulantImNui mapScreenImNui screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Select) world)) screen.SelectEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingStart) world)) screen.IncomingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj IncomingFinish) world)) screen.IncomingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingStart) world)) screen.OutgoingStartEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj OutgoingFinish) world)) screen.OutgoingFinishEvent screen world
-                    let world = World.monitor (fun _ world -> (Cascade, mapFstResult (FQueue.conj Deselecting) world)) screen.DeselectingEvent screen world
-                    let mapSndResult (mapper : 'r -> 'r) world =
-                        let mapScreenImNui screenImNui =
-                            let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
-                            { screenImNui with Result = (screenResult, mapper userResult) }
-                        World.tryMapSimulantImNui mapScreenImNui screen world
-                    (true, init mapSndResult screen world)
-            let initializing = initializing || Reinitializing
-            let world =
-                Seq.fold
-                    (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && screen.GetExists world
-                        then screen.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
-                        else world)
-                    world args
-            let world =
-                if initializing && screen.GetExists world
-                then World.applyScreenBehavior setScreenSlide behavior screen world
-                else world
-            let world =
-                if screen.GetExists world && select then
-                    if world.Accompanied && world.Halted // special case to quick cut when halted in the editor
-                    then World.setSelectedScreen screen world
-                    else transitionScreen screen world
-                else world
-            let (screenResult, userResult) = (World.getSimulantImNui screen world).Result :?> ScreenResult FQueue * 'r
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = (FQueue.empty<ScreenResult>, zero) }) screen world
-            (screenResult, userResult, world)
-
-        static member internal beginScreen8<'d when 'd :> ScreenDispatcher> transitionScreen setScreenSlide name select behavior groupFilePathOpt args world : ScreenResult FQueue * World =
-            World.beginScreenPlus10<'d, unit> () (fun _ _ world -> world) transitionScreen setScreenSlide name select behavior groupFilePathOpt args world |> a_c
-
-        /// End the ImNui declaration of a screen.
-        static member endScreen (world : World) =
-            match world.ContextImNui with
-            | :? (Screen Address) -> World.setContext Game.GameAddress world
-            | _ -> raise (InvalidOperationException "World.beginScreen mismatch.")
+        (* NOTE: most of ImNui's screen functions are defined in WorldModule2.fs so they can access the internal screen transition APIs. *)
 
         /// Make a screen the current ImNui context.
         static member scopeScreen (screen : Screen) (args : Screen ArgImNui seq) world =
@@ -211,13 +188,13 @@ module WorldImNui =
                     World.setGroupProtected true group world |> snd'
                 else world
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue group with
-                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
+                match world.SimulantImNuis.TryGetValue group.GroupAddress with
+                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui group { SimulantUtilized = true; Result = () } world
+                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapGroupImNui groupImNui = { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }
-                        World.tryMapSimulantImNui mapGroupImNui group world
+                        World.tryMapSimulantImNui mapGroupImNui group.GroupAddress world
                     (true, init mapResult group world)
             let initializing = initializing || Reinitializing
             let world =
@@ -227,8 +204,8 @@ module WorldImNui =
                         then group.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
-            let result = match (World.getSimulantImNui group world).Result with :? 'r as r -> r | _ -> zero
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group world
+            let result = match (World.getSimulantImNui group.GroupAddress world).Result with :? 'r as r -> r | _ -> zero
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group.GroupAddress world
             (result, world)
 
         static member private beginGroup4<'d> name groupFilePathOpt args world =
@@ -249,9 +226,9 @@ module WorldImNui =
                     World.setGroupProtected true group world |> snd'
                 else world
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue group with
-                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group groupImNui world)
-                | (false, _) -> (true, World.addSimulantImNui group { SimulantUtilized = true; Result = () } world)
+                match world.SimulantImNuis.TryGetValue group.GroupAddress with
+                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
+                | (false, _) -> (true, World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world)
             let initializing = initializing || Reinitializing
             Seq.fold
                 (fun world arg ->
@@ -300,13 +277,13 @@ module WorldImNui =
                     if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                 else world
             let (initializing, world) =
-                match world.SimulantImNuis.TryGetValue entity with
-                | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity entityImNui world)
+                match world.SimulantImNuis.TryGetValue entity.EntityAddress with
+                | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui entity { SimulantUtilized = true; Result = zero } world
+                    let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapEntityImNui entityImNui = { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }
-                        World.tryMapSimulantImNui mapEntityImNui entity world
+                        World.tryMapSimulantImNui mapEntityImNui entity.EntityAddress world
                     (true, init mapResult entity world)
             let initializing = initializing || Reinitializing
             let world =
@@ -316,8 +293,8 @@ module WorldImNui =
                         then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
-            let result = match (World.getSimulantImNui entity world).Result with :? 'r as r -> r | _ -> zero
-            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) entity world
+            let result = match (World.getSimulantImNui entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
+            let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) entity.EntityAddress world
             (result, world)
 
         /// Begin the ImNui declaration of an entity with the given arguments.
@@ -335,9 +312,9 @@ module WorldImNui =
                     let world = World.readEntity entityDescriptor None entity.Group world |> snd
                     World.setEntityProtected true entity world |> snd'
                 else world
-            match world.SimulantImNuis.TryGetValue entity with
-            | (true, entityImNui) -> (false, entity, World.utilizeSimulantImNui entity entityImNui world)
-            | (false, _) -> (true, entity, World.addSimulantImNui entity { SimulantUtilized = true; Result = () } world)
+            match world.SimulantImNuis.TryGetValue entity.EntityAddress with
+            | (true, entityImNui) -> (false, entity, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
+            | (false, _) -> (true, entity, World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world)
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
