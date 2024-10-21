@@ -640,7 +640,6 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             VulkanRendererImGui.uploadFont fontExtent uploadSize pixels fontImage.Image graphicsQueue transferCommandPool vmaAllocator device
             
             // store identifier
-            // TODO: confirm this works!
             fonts.SetTexID (nativeint fontDescriptorSet.Handle)
             
             // NOTE: this is not used in the dear imgui vulkan backend.
@@ -664,7 +663,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                     
                     // get data size for vertices and indices
                     let vertexSize = drawData.TotalVtxCount * int (sizeOf<ImDrawVert> ())
-                    let indexSize = drawData.TotalVtxCount * sizeof<uint16>
+                    let indexSize = drawData.TotalIdxCount * sizeof<uint16>
 
                     // enlargen vertex buffer if needed
                     if vertexSize > vertexBufferSize then
@@ -725,6 +724,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                 vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists
+                let mutable globalVtxOffset = 0
+                let mutable globalIdxOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
                     let drawList = drawData.CmdListsRange.[i]
                     for j in 0 .. dec drawList.CmdBuffer.Size do
@@ -757,11 +758,26 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                                 let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
                                 vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
 
+                                // bind font descriptor set
+                                let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
+                                vkCmdBindDescriptorSets
+                                    (renderCommandBuffer,
+                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     pipelineLayout, 0u,
+                                     1u, asPointer &descriptorSet,
+                                     0u, nullPtr)
 
-                                ()
+                                // draw
+                                vkCmdDrawIndexed
+                                    (renderCommandBuffer,
+                                     pcmd.ElemCount, 1u,
+                                     pcmd.IdxOffset + uint globalIdxOffset,
+                                     int pcmd.VtxOffset + globalVtxOffset, 0u)
 
                         else raise (NotImplementedException ())
 
+                    globalIdxOffset <- globalIdxOffset + drawList.IdxBuffer.Size
+                    globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
                 // reset scissor
                 let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
