@@ -54,7 +54,7 @@ type [<Struct>] RenderType =
 type [<CustomEquality; NoComparison>] RenderPass =
     | NormalPass
     | LightMapPass of LightProbeId : uint64 * LightMapBounds : Box3
-    | ShadowPass of LightId : uint64 * ShadowDirectional : bool * ShadowRotation : Quaternion * ShadowFrustum : Frustum
+    | ShadowPass of LightId : uint64 * LightType : LightType * ShadowRotation : Quaternion * ShadowFrustum : Frustum
     | ReflectionPass of ReflectorId : int64 * ShadowFrustum : Frustum
 
     static member hash renderPass =

@@ -1658,7 +1658,7 @@ module WorldModule2 =
                     for element in hashSet do
                         if element.Static then
                             HashSet3dNormalCached.Add element |> ignore<bool>
-                | ShadowPass (_, shadowDirectional, _, shadowFrustum) -> World.getElements3dInViewFrustum (not shadowDirectional) true shadowFrustum HashSet3dNormalCached world
+                | ShadowPass (_, shadowLightType, _, shadowFrustum) -> World.getElements3dInViewFrustum (shadowLightType <> DirectionalLight) true shadowFrustum HashSet3dNormalCached world
                 | ReflectionPass (_, _) -> ()
                 match renderPass with
                 | NormalPass -> World.getElements2dInView HashSet2dNormalCached world
@@ -1741,13 +1741,15 @@ module WorldModule2 =
                 let sortableShadowPassDescriptors =
                     [|for light in lights do
                         if light.GetDesireShadows world then
-                            let (directional, coneOuter) =
-                                match light.GetLightType world with
-                                | PointLight -> (false, MathF.TWO_PI)
-                                | SpotLight (_, coneOuter)-> (false, coneOuter)
-                                | DirectionalLight -> (true, 0.0f)
+                            let lightType = light.GetLightType world
                             let (shadowView, shadowProjection) =
-                                if not directional then
+                                match lightType with
+                                | PointLight ->
+                                    let shadowView = Matrix4x4.CreateTranslation (light.GetPosition world)
+                                    let shadowCutoff = max (light.GetLightCutoff world) 0.1f
+                                    let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                                    (shadowView, shadowProjection)
+                                | SpotLight (_, coneOuter)->
                                     let shadowRotation = light.GetRotation world
                                     let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                     shadowView.Translation <- light.GetPosition world
@@ -1756,7 +1758,7 @@ module WorldModule2 =
                                     let shadowCutoff = max (light.GetLightCutoff world) 0.1f
                                     let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                     (shadowView, shadowProjection)
-                                else
+                                | DirectionalLight ->
                                     let shadowRotation = light.GetRotation world
                                     let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                     shadowView.Translation <- light.GetPosition world
@@ -1776,7 +1778,7 @@ module WorldModule2 =
                                 | Imposter -> frustumImposter.Intersects shadowFrustum
                                 | Omnipresent -> true
                             if shadowInView then
-                                let directionalSort = if not directional then 1 else 0
+                                let directionalSort = if lightType = DirectionalLight then 1 else 0 // directional lights come first to attempt to grab the detailed shadow texture
                                 let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
                                 struct (struct (directionalSort, distanceSquared), struct (shadowFrustum, light))|]
 
@@ -1785,8 +1787,8 @@ module WorldModule2 =
                     sortableShadowPassDescriptors |>
                     Array.sortBy fst' |>
                     Array.tryTake Constants.Render.ShadowsMax |>
-                    Array.fold (fun world struct (struct (directionalSort, _), struct (shadowFrustum, light)) ->
-                        World.renderSimulantsInternal (ShadowPass (light.GetId world, isZero directionalSort, light.GetRotation world, shadowFrustum)) world)
+                    Array.fold (fun world struct (_, struct (shadowFrustum, light)) ->
+                        World.renderSimulantsInternal (ShadowPass (light.GetId world, light.GetLightType world, light.GetRotation world, shadowFrustum)) world)
                         world
 
                 // render simulants normally, remember to clear 3d shadow cache

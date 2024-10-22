@@ -1750,7 +1750,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         match renderPass with
                         | NormalPass -> Presence.intersects3d (Some frustumInterior) frustumExterior frustumImposter (Some lightBox) false false presence surfaceBounds
                         | LightMapPass (_, _) -> true // TODO: see if we have enough context to cull here.
-                        | ShadowPass (_, shadowDirectional, _, shadowFrustum) -> Presence.intersects3d (if shadowDirectional then None else Some shadowFrustum) shadowFrustum shadowFrustum None false false presence surfaceBounds
+                        | ShadowPass (_, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then Some shadowFrustum else None) shadowFrustum shadowFrustum None false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d None reflFrustum reflFrustum None false false presence surfaceBounds
                     if unculled then
                         GlRenderer3d.categorizeStaticModelSurface (absolute, &surfaceMatrix, presence, &insetOpt, &properties, surface, renderType, renderPass, Some renderTasks, renderer)
@@ -2260,7 +2260,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         (lightViewAbsolute : Matrix4x4)
         (lightViewRelative : Matrix4x4)
         (lightProjection : Matrix4x4)
-        (lightDirectional : bool)
+        (lightType : LightType)
         (shadowResolution : Vector2i)
         (renderbuffer : uint)
         (framebuffer : uint) =
@@ -3056,15 +3056,28 @@ type [<ReferenceEquality>] GlRenderer3d =
         for struct (lightId, lightOrigin, lightCutoff, lightConeOuter) in lightsArray do
             for (renderPass, renderTasks) in renderer.RenderTasksDictionary.Pairs do
                 match renderPass with
-                | ShadowPass (shadowLightId, shadowDirectional, shadowRotation, _) when lightId = shadowLightId && shadowBufferIndex < Constants.Render.ShadowsMax ->
+                | ShadowPass (shadowLightId, shadowLightType, shadowRotation, _) when lightId = shadowLightId && shadowBufferIndex < Constants.Render.ShadowsMax ->
 
                     // skip index 0 when no lights are directional and there are at least two shadows allowed
-                    if shadowBufferIndex = 0 && shadowBufferIndex < dec Constants.Render.ShadowsMax && not shadowDirectional then
+                    if shadowBufferIndex = 0 && shadowBufferIndex < dec Constants.Render.ShadowsMax && shadowLightType <> DirectionalLight then
                         shadowBufferIndex <- 1
 
                     // draw shadows
                     let (shadowOrigin, shadowView, shadowProjection) =
-                        if not shadowDirectional then
+                        match lightType with
+                        | PointLight ->
+                            let shadowView = Matrix4x4.CreateTranslation (light.GetPosition world)
+                            let shadowCutoff = max (light.GetLightCutoff world) 0.1f
+                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                            (lightOrigin, shadowView, shadowProjection)
+                        | SpotLight (_, coneOuter) ->
+                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                            shadowView.Translation <- lightOrigin
+                            shadowView <- shadowView.Inverted
+                            let shadowCutoff = lightCutoff
+                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                            (lightOrigin, shadowView, shadowProjection)
+                        | DirectionalLight ->
                             let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                             shadowView.Translation <- lightOrigin
                             shadowView <- shadowView.Inverted
@@ -3072,16 +3085,9 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let shadowCutoff = max lightCutoff 0.1f
                             let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                             (lightOrigin, shadowView, shadowProjection)
-                        else
-                            let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                            shadowView.Translation <- lightOrigin
-                            shadowView <- shadowView.Inverted
-                            let shadowCutoff = lightCutoff
-                            let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
-                            (lightOrigin, shadowView, shadowProjection)
                     let shadowResolution = GlRenderer3d.getShadowBufferResolution shadowBufferIndex
                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowBuffersArray.[shadowBufferIndex]
-                    GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowDirectional shadowResolution shadowRenderbuffer shadowFramebuffer
+                    GlRenderer3d.renderShadowTexture renderTasks renderer false shadowOrigin m4Identity shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
                     renderer.ShadowMatrices.[shadowBufferIndex] <- shadowView * shadowProjection
                     renderer.LightShadowIndices.[lightId] <- shadowBufferIndex
 
