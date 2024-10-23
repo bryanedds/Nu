@@ -60,7 +60,8 @@ module Override =
                 | nameof Render.TextureAnisotropyMax -> Render.TextureAnisotropyMax <- scvalue value
                 | nameof Render.TextureMinimalMipmapIndex -> Render.TextureMinimalMipmapIndex <- scvalue value
                 | nameof Render.ShadowDetailedResolutionScalar -> Render.ShadowDetailedResolutionScalar <- scvalue value
-                | nameof Render.ShadowsMax -> Render.ShadowsMax <- min (scvalue value) Constants.Render.ShadowsMaxShader
+                | nameof Render.ShadowTexturesMax -> Render.ShadowTexturesMax <- min (scvalue value) Constants.Render.ShadowTexturesMaxShader
+                | nameof Render.ShadowMapsMax -> Render.ShadowMapsMax <- min (scvalue value) Constants.Render.ShadowMapsMaxShader
                 | nameof Gui.SliceMarginDefault -> Gui.SliceMarginDefault <- scvalue value
                 | _ -> ()
             Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior

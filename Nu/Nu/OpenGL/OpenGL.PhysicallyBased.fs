@@ -261,6 +261,7 @@ module PhysicallyBased =
           IrradianceMapsUniforms : int array
           EnvironmentFilterMapsUniforms : int array
           ShadowTexturesUniforms : int array
+          ShadowMapsUniforms : int array
           LightMapOriginsUniform : int
           LightMapMinsUniform : int
           LightMapSizesUniform : int
@@ -397,6 +398,7 @@ module PhysicallyBased =
           EnvironmentFilterTextureUniform : int
           SsaoTextureUniform : int
           ShadowTexturesUniforms : int array
+          ShadowMapsUniforms : int array
           LightOriginsUniform : int
           LightDirectionsUniform : int
           LightColorsUniform : int
@@ -1440,8 +1442,11 @@ module PhysicallyBased =
             Array.init Constants.Render.LightMapsMaxForward $ fun i ->
                 Gl.GetUniformLocation (shader, "environmentFilterMaps[" + string i + "]")
         let shadowTexturesUniforms =
-            Array.init Constants.Render.ShadowsMax $ fun i ->
+            Array.init Constants.Render.ShadowTexturesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "shadowTextures[" + string i + "]")
+        let shadowMapsUniforms =
+            Array.init Constants.Render.ShadowMapsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowMaps[" + string i + "]")
         let lightMapOriginsUniform = Gl.GetUniformLocation (shader, "lightMapOrigins")
         let lightMapMinsUniform = Gl.GetUniformLocation (shader, "lightMapMins")
         let lightMapSizesUniform = Gl.GetUniformLocation (shader, "lightMapSizes")
@@ -1461,7 +1466,7 @@ module PhysicallyBased =
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
         let shadowMatricesUniforms =
-            Array.init Constants.Render.ShadowsMax $ fun i ->
+            Array.init Constants.Render.ShadowTexturesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
 
         // make shader record
@@ -1492,6 +1497,7 @@ module PhysicallyBased =
           IrradianceMapsUniforms = irradianceMapsUniforms
           EnvironmentFilterMapsUniforms = environmentFilterMapsUniforms
           ShadowTexturesUniforms = shadowTexturesUniforms
+          ShadowMapsUniforms = shadowMapsUniforms
           LightMapOriginsUniform = lightMapOriginsUniform
           LightMapMinsUniform = lightMapMinsUniform
           LightMapSizesUniform = lightMapSizesUniform
@@ -1745,8 +1751,11 @@ module PhysicallyBased =
         let environmentFilterTextureUniform = Gl.GetUniformLocation (shader, "environmentFilterTexture")
         let ssaoTextureUniform = Gl.GetUniformLocation (shader, "ssaoTexture")
         let shadowTexturesUniforms =
-            Array.init Constants.Render.ShadowsMax $ fun i ->
+            Array.init Constants.Render.ShadowTexturesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "shadowTextures[" + string i + "]")
+        let shadowMapsUniforms =
+            Array.init Constants.Render.ShadowMapsMax $ fun i ->
+                Gl.GetUniformLocation (shader, "shadowMaps[" + string i + "]")
         let lightOriginsUniform = Gl.GetUniformLocation (shader, "lightOrigins")
         let lightDirectionsUniform = Gl.GetUniformLocation (shader, "lightDirections")
         let lightColorsUniform = Gl.GetUniformLocation (shader, "lightColors")
@@ -1760,7 +1769,7 @@ module PhysicallyBased =
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
         let lightsCountUniform = Gl.GetUniformLocation (shader, "lightsCount")
         let shadowMatricesUniforms =
-            Array.init Constants.Render.ShadowsMax $ fun i ->
+            Array.init Constants.Render.ShadowTexturesMax $ fun i ->
                 Gl.GetUniformLocation (shader, "shadowMatrices[" + string i + "]")
 
         // make shader record
@@ -1804,6 +1813,7 @@ module PhysicallyBased =
           EnvironmentFilterTextureUniform = environmentFilterTextureUniform
           SsaoTextureUniform = ssaoTextureUniform
           ShadowTexturesUniforms = shadowTexturesUniforms
+          ShadowMapsUniforms = shadowMapsUniforms
           LightOriginsUniform = lightOriginsUniform
           LightDirectionsUniform = lightDirectionsUniform
           LightColorsUniform = lightColorsUniform
@@ -2294,6 +2304,7 @@ module PhysicallyBased =
          irradianceMaps : Texture.Texture array,
          environmentFilterMaps : Texture.Texture array,
          shadowTextures : Texture.Texture array,
+         shadowMaps : Texture.Texture array,
          lightMapOrigins : single array,
          lightMapMins : single array,
          lightMapSizes : single array,
@@ -2362,8 +2373,10 @@ module PhysicallyBased =
                 Gl.Uniform1 (shader.IrradianceMapsUniforms.[i], i + 10)
             for i in 0 .. dec Constants.Render.LightMapsMaxForward do
                 Gl.Uniform1 (shader.EnvironmentFilterMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward)
-            for i in 0 .. dec Constants.Render.ShadowsMax do
+            for i in 0 .. dec Constants.Render.ShadowTexturesMax do
                 Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward)
+            for i in 0 .. dec Constants.Render.ShadowMapsMax do
+                Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 10 + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax)
             Gl.Uniform3 (shader.LightMapOriginsUniform, lightMapOrigins)
             Gl.Uniform3 (shader.LightMapMinsUniform, lightMapMins)
             Gl.Uniform3 (shader.LightMapSizesUniform, lightMapSizes)
@@ -2382,7 +2395,7 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
             Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
             Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
-            for i in 0 .. dec (min Constants.Render.ShadowsMax shadowMatrices.Length) do
+            for i in 0 .. dec (min Constants.Render.ShadowTexturesMax shadowMatrices.Length) do
                 Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
             Hl.Assert ()
 
@@ -2413,9 +2426,12 @@ module PhysicallyBased =
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.TextureCubeMap, environmentFilterMaps.[i].TextureId)
-            for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
+            for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i].TextureId)
+            for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
             Hl.Assert ()
 
             // update instance buffer
@@ -2468,9 +2484,12 @@ module PhysicallyBased =
             for i in 0 .. dec (min environmentFilterMaps.Length Constants.Render.LightMapsMaxForward) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
-            for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
+            for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
                 Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward |> Branchless.reinterpret)
                 Gl.BindTexture (TextureTarget.Texture2d, 0u)
+            for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+                Gl.ActiveTexture (int TextureUnit.Texture0 + 10 + i + Constants.Render.LightMapsMaxForward + Constants.Render.LightMapsMaxForward + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+                Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
             Hl.Assert ()
 
             // teardown shader
@@ -2938,6 +2957,7 @@ module PhysicallyBased =
          environmentFilterTexture : Texture.Texture,
          ssaoTexture : Texture.Texture,
          shadowTextures : Texture.Texture array,
+         shadowMaps : Texture.Texture array,
          lightOrigins : single array,
          lightDirections : single array,
          lightColors : single array,
@@ -2992,8 +3012,10 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.IrradianceTextureUniform, 6)
         Gl.Uniform1 (shader.EnvironmentFilterTextureUniform, 7)
         Gl.Uniform1 (shader.SsaoTextureUniform, 8)
-        for i in 0 .. dec Constants.Render.ShadowsMax do
+        for i in 0 .. dec Constants.Render.ShadowTexturesMax do
             Gl.Uniform1 (shader.ShadowTexturesUniforms.[i], i + 9)
+        for i in 0 .. dec Constants.Render.ShadowMapsMax do
+            Gl.Uniform1 (shader.ShadowMapsUniforms.[i], i + 9 + Constants.Render.ShadowTexturesMax)
         Gl.Uniform3 (shader.LightOriginsUniform, lightOrigins)
         Gl.Uniform3 (shader.LightDirectionsUniform, lightDirections)
         Gl.Uniform3 (shader.LightColorsUniform, lightColors)
@@ -3006,7 +3028,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
         Gl.Uniform1 (shader.LightsCountUniform, lightsCount)
-        for i in 0 .. dec (min Constants.Render.ShadowsMax shadowMatrices.Length) do
+        for i in 0 .. dec (min Constants.Render.ShadowTexturesMax shadowMatrices.Length) do
             Gl.UniformMatrix4 (shader.ShadowMatricesUniforms.[i], false, shadowMatrices.[i])
         Hl.Assert ()
 
@@ -3029,9 +3051,12 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, environmentFilterTexture.TextureId)
         Gl.ActiveTexture TextureUnit.Texture8
         Gl.BindTexture (TextureTarget.Texture2d, ssaoTexture.TextureId)
-        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
+        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, shadowTextures.[i].TextureId)
+        for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMaps.[i].TextureId)
         Hl.Assert ()
 
         // setup geometry
@@ -3068,9 +3093,12 @@ module PhysicallyBased =
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
         Gl.ActiveTexture TextureUnit.Texture8
         Gl.BindTexture (TextureTarget.Texture2d, 0u)
-        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowsMax) do
+        for i in 0 .. dec (min shadowTextures.Length Constants.Render.ShadowTexturesMax) do
             Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i |> Branchless.reinterpret)
             Gl.BindTexture (TextureTarget.Texture2d, 0u)
+        for i in 0 .. dec (min shadowMaps.Length Constants.Render.ShadowMapsMax) do
+            Gl.ActiveTexture (int TextureUnit.Texture0 + 9 + i + Constants.Render.ShadowTexturesMax |> Branchless.reinterpret)
+            Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
         // teardown shader
