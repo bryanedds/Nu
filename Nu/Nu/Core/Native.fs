@@ -32,11 +32,11 @@ module Native =
         let voidPtr = NativePtr.toVoidPtr ptr
         NativeMemory.Free voidPtr
     
-    // TODO: confirm these versions are correct for our use case (e.g. ImDrawVert).
     /// Get the byte size of a class.
     let sizeOf<'a> () = Unsafe.SizeOf<'a> () |> uint
     
     /// Get the byte offset of a field within the unmanaged form of a managed class.
+    /// This is valid for any struct that does not contain non-blittable types like bool.
     let offsetOf<'a> fieldName = Marshal.OffsetOf (typeof<'a>, fieldName) |> uint
     
     /// Converts the type of a managed pointer from 'a to 'b.
