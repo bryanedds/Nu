@@ -431,8 +431,7 @@ module Hl =
                 swapchainSupported &&
                 physicalDeviceData.Formats.Length > 0 &&
                 Option.isSome physicalDeviceData.GraphicsQueueFamilyOpt &&
-                Option.isSome physicalDeviceData.PresentQueueFamilyOpt &&
-                physicalDeviceData.Properties.apiVersion.Minor >= 3u
+                Option.isSome physicalDeviceData.PresentQueueFamilyOpt
 
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDeviceData = physicalDeviceData.Properties.deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
