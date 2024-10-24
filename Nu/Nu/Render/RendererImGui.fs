@@ -393,7 +393,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // vertex input binding description
         let mutable binding = VkVertexInputBindingDescription ()
-        binding.stride <- sizeOf<ImDrawVert> ()
+        binding.stride <- uint sizeof<ImDrawVert>
         binding.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
 
         // vertex input attribute descriptions
@@ -662,7 +662,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                 if drawData.TotalVtxCount > 0 then
                     
                     // get data size for vertices and indices
-                    let vertexSize = drawData.TotalVtxCount * int (sizeOf<ImDrawVert> ())
+                    let vertexSize = drawData.TotalVtxCount * sizeof<ImDrawVert>
                     let indexSize = drawData.TotalIdxCount * sizeof<uint16>
 
                     // enlargen vertex buffer if needed
@@ -682,7 +682,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                     let mutable indexOffset = 0
                     for i in 0 .. dec drawData.CmdListsCount do
                         let drawList = drawData.CmdListsRange.[i]
-                        let vertexSize = drawList.VtxBuffer.Size * int (sizeOf<ImDrawVert> ())
+                        let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
                         
                         // TODO: try a persistently mapped buffer and compare performance
