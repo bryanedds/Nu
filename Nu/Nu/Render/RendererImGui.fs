@@ -155,7 +155,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             if drawData.CmdListsCount <> 0 then
 
                 // resize vertex buffer if necessary
-                let vertexBufferSizeNeeded = uint (drawData.TotalVtxCount * Unsafe.SizeOf<ImDrawVert>())
+                let vertexBufferSizeNeeded = uint (drawData.TotalVtxCount * sizeof<ImDrawVert>)
                 if vertexBufferSizeNeeded > vertexBufferSize then
                     vertexBufferSize <- max (vertexBufferSize * 2u) vertexBufferSizeNeeded
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
@@ -177,7 +177,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 for i in 0 .. dec drawData.CmdListsCount do
                     let cmds = cmdsRange.[i]
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * Unsafe.SizeOf<ImDrawVert> ()), uint (cmds.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmds.VtxBuffer.Data)
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * sizeof<ImDrawVert>), uint (cmds.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmds.VtxBuffer.Data)
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
                     OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ElementArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmds.IdxBuffer.Size * sizeof<uint16>), cmds.IdxBuffer.Data)
                     vertexOffsetInVertices <- vertexOffsetInVertices + cmds.VtxBuffer.Size
