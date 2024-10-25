@@ -42,7 +42,7 @@ type [<ReferenceEquality>] SdlConfig =
           ViewH = Constants.Render.Resolution.Y
           AudioChunkSize = Constants.Audio.BufferSizeDefault }
 
-[<AutoOpen>]
+[<RequireQualifiedAccess>]
 module SdlDeps =
 
     /// The dependencies needed to initialize SDL.
