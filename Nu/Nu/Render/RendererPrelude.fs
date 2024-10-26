@@ -58,12 +58,14 @@ type RenderPass =
 
     /// Check that a render pass should displace another.
     static member displaces renderPass renderPass2 =
-        match (renderPass, renderPass2) with
-        | (NormalPass, NormalPass) -> true
-        | (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
-        | (ShadowPass (lightId, _, _, _), ShadowPass (lightId2, _, _, _)) -> lightId = lightId2
-        | (ReflectionPass (reflectorId, _), ReflectionPass (reflectorId2, _)) -> reflectorId = reflectorId2
-        | (_, _) -> false
+        if renderPass <> renderPass2 then
+            match (renderPass, renderPass2) with
+            | (NormalPass, NormalPass) -> failwithumf ()
+            | (LightMapPass (lightProbeId, _), LightMapPass (lightProbeId2, _)) -> lightProbeId = lightProbeId2
+            | (ShadowPass (lightId, _, _, _), ShadowPass (lightId2, _, _, _)) -> lightId = lightId2
+            | (ReflectionPass (reflectorId, _), ReflectionPass (reflectorId2, _)) -> reflectorId = reflectorId2
+            | (_, _) -> false
+        else false
 
 /// An asset that is used for rendering.
 type RenderAsset =
