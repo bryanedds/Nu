@@ -1553,6 +1553,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         then renderTasks
         else
             let renderTasks = RenderTasks.make ()
+            let displacedPasses =
+                [for kvp in renderer.RenderTasksDictionary do
+                    if RenderPass.displaces renderPass kvp.Key then
+                        kvp.Key]
+            for displacedPass in displacedPasses do
+                renderer.RenderTasksDictionary.Remove displacedPass |> ignore<bool>
             renderer.RenderTasksDictionary.Add (renderPass, renderTasks)
             renderTasks
 
@@ -3462,7 +3468,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // create render tasks
         let renderTasksDictionary =
-            dictPlus RenderPass.comparer [(NormalPass, RenderTasks.make ())]
+            dictPlus HashIdentity.Structural [(NormalPass, RenderTasks.make ())]
 
         // make renderer
         let renderer =
