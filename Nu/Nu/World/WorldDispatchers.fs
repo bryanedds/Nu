@@ -72,18 +72,6 @@ type TextDispatcher () =
         [typeof<BackdroppableFacet>
          typeof<TextFacet>]
 
-/// Gives an entity the base behavior of a gui text box control.
-type TextBoxDispatcher () =
-    inherit GuiDispatcher ()
-
-    static member Facets =
-        [typeof<BackdroppableFacet>
-         typeof<TextBoxFacet>]
-
-    static member Properties =
-        [define Entity.BackdropImageOpt (Some Assets.Default.Label)
-         define Entity.TextMargin (v2 2.0f 0.0f)]
-
 /// Gives an entity the base behavior of a gui label.
 type LabelDispatcher () =
     inherit GuiDispatcher ()
@@ -133,6 +121,17 @@ type FeelerDispatcher () =
     static member Facets =
         [typeof<BackdroppableFacet>
          typeof<FeelerFacet>]
+
+/// Gives an entity the base behavior of a gui text box control.
+type TextBoxDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Facets =
+        [typeof<BackdroppableFacet>
+         typeof<TextBoxFacet>]
+
+    static member Properties =
+        [define Entity.BackdropImageOpt (Some Assets.Default.Label)]
 
 [<AutoOpen>]
 module FpsDispatcherExtensions =
