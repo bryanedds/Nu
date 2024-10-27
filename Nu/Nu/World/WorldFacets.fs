@@ -994,14 +994,11 @@ type TextBoxFacet () =
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
             if perimeter.Intersects mousePositionWorld then
                 if transform.Enabled && not (entity.GetFocused world) then
-                    let world = entity.SetFocused true world
                     let eventTrace = EventTrace.debug "TextBoxFacet" "handleMouseLeftDown" "" EventTrace.empty
                     let world = World.publishPlus () entity.FocusEvent eventTrace entity true false world
-                    (Cascade, world)
-                else (Cascade, world)
-            else
-                let world = entity.SetFocused false world
-                (Cascade, world)
+                    (Resolve, world)
+                else (Resolve, world)
+            else (Cascade, world)
         else (Cascade, world)
 
     static let handleKeyboardKeyChange evt (world : World) =
@@ -1069,7 +1066,7 @@ type TextBoxFacet () =
          define Entity.TextOffset v2Zero
          define Entity.TextShift 0.5f
          define Entity.TextCapacity 14
-         nonPersistent Entity.Focused false
+         define Entity.Focused false
          nonPersistent Entity.Cursor 0]
 
     override this.Register (entity, world) =
