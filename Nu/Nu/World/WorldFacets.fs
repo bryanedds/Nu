@@ -986,9 +986,9 @@ module TextBoxFacetExtensions =
 type TextBoxFacet () =
     inherit Facet (false, false, false)
 
-    static let handleMouseLeftDown evt world =
+    static let handleMouseLeftDown evt (world : World) =
         let entity = evt.Subscriber : Entity
-        if entity.GetVisible world then
+        if world.Advancing && entity.GetVisible world then
             let mutable transform = entity.GetTransform world
             let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
             let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
@@ -1037,7 +1037,7 @@ type TextBoxFacet () =
                         else world
                     else world
                 else world
-            (Cascade, world)
+            (Resolve, world)
         else (Cascade, world)
 
     static let handleTextInput evt (world : World) =
@@ -1055,7 +1055,7 @@ type TextBoxFacet () =
                 else String.take cursor text + string evt.Data.TextInput + String.skip cursor text
             let world = entity.SetText text world
             let world = if cursor >= 0 then entity.SetCursor (inc cursor) world else world
-            (Cascade, world)
+            (Resolve, world)
         else (Cascade, world)
 
     static member Properties =
@@ -1082,6 +1082,7 @@ type TextBoxFacet () =
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
         let absolute = transform.Absolute
+        let enabled = transform.Enabled
         let perimeter = transform.Perimeter
         let offset = (entity.GetTextOffset world).V3
         let elevation = transform.Elevation
@@ -1089,9 +1090,9 @@ type TextBoxFacet () =
         let clipOpt = ValueSome transform.Bounds2d.Box2
         let justification = Justified (JustifyLeft, JustifyMiddle)
         let focused = entity.GetFocused world
-        let cursorOpt = if focused then Some (entity.GetCursor world) else None
+        let cursorOpt = if enabled && focused then Some (entity.GetCursor world) else None
         let margin = (entity.GetTextMargin world).V3
-        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
+        let color = if enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
         let font = entity.GetFont world
         let fontSizing = entity.GetFontSizing world
         let fontStyling = entity.GetFontStyling world
