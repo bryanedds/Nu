@@ -291,7 +291,7 @@ type BasicStaticSpriteEmitterFacet () =
         (Cascade, world)
 
     static let handleEmitterStyleChange evt world =
-        let entity = evt.Subscriber
+        let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
         let world = mapEmitter (constant emitter) entity world
         (Cascade, world)
@@ -1004,6 +1004,42 @@ type TextBoxFacet () =
                 (Cascade, world)
         else (Cascade, world)
 
+    static let handleKeyboardKeyChange evt (world : World) =
+        let entity = evt.Subscriber : Entity
+        let data = evt.Data : KeyboardKeyData
+        let cursor = entity.GetCursor world
+        let text = entity.GetText world
+        if  world.Advancing &&
+            entity.GetVisible world &&
+            entity.GetEnabled world &&
+            entity.GetFocused world &&
+            text.Length < entity.GetTextCapacity world then
+            let world =
+                if data.Down then
+                    if data.KeyboardKey = KeyboardKey.Left then 
+                        if cursor > 0 then entity.SetCursor (dec cursor) world else world
+                    elif data.KeyboardKey = KeyboardKey.Right then
+                        if cursor < text.Length then entity.SetCursor (inc cursor) world else world
+                    elif data.KeyboardKey = KeyboardKey.Home || data.KeyboardKey = KeyboardKey.Up then
+                        entity.SetCursor 0 world
+                    elif data.KeyboardKey = KeyboardKey.End || data.KeyboardKey = KeyboardKey.Down then
+                        entity.SetCursor text.Length world
+                    elif data.KeyboardKey = KeyboardKey.Backspace then
+                        if cursor > 0 && text.Length > 0 then
+                            let world = entity.SetText (String.take (dec cursor) text + String.skip cursor text) world
+                            let world = entity.SetCursor (dec cursor) world
+                            world
+                        else world
+                    elif data.KeyboardKey = KeyboardKey.Delete then
+                        let text = entity.GetText world
+                        if cursor >= 0 && cursor < text.Length
+                        then entity.SetText (String.take cursor text + String.skip (inc cursor) text) world
+                        else world
+                    else world
+                else world
+            (Cascade, world)
+        else (Cascade, world)
+
     static let handleTextInput evt (world : World) =
         let entity = evt.Subscriber : Entity
         let cursor = entity.GetCursor world
@@ -1037,36 +1073,11 @@ type TextBoxFacet () =
          nonPersistent Entity.Cursor 0]
 
     override this.Register (entity, world) =
-        let world = World.sense handleMouseLeftDown Nu.Game.Handle.MouseLeftDownEvent entity (nameof TextBoxFacet) world
+        let world = World.sense handleMouseLeftDown Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
+        let world = World.sense handleKeyboardKeyChange Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
         let world = World.sense handleTextInput Game.TextInputEvent entity (nameof TextBoxFacet) world
         let world = entity.SetCursor (entity.GetText world).Length world
         world
-
-    override this.Update (entity, world) =
-        if entity.GetVisible world && entity.GetFocused world then
-            let cursor = entity.GetCursor world
-            let text = entity.GetText world
-            if World.isKeyboardKeyPressed KeyboardKey.Left world then 
-                if cursor > 0 then entity.SetCursor (dec cursor) world else world
-            elif World.isKeyboardKeyPressed KeyboardKey.Right world then
-                if cursor < text.Length then entity.SetCursor (inc cursor) world else world
-            elif World.isKeyboardKeyPressed KeyboardKey.Home world then
-                entity.SetCursor 0 world
-            elif World.isKeyboardKeyPressed KeyboardKey.End world then 
-                entity.SetCursor text.Length world
-            elif World.isKeyboardKeyPressed KeyboardKey.Backspace world then
-                if cursor > 0 && text.Length > 0 then
-                    let world = entity.SetText (String.take (dec cursor) text + String.skip cursor text) world
-                    let world = entity.SetCursor (dec cursor) world
-                    world
-                else world
-            elif World.isKeyboardKeyPressed KeyboardKey.Delete world then
-                let text = entity.GetText world
-                if cursor >= 0 && cursor < text.Length
-                then entity.SetText (String.take cursor text + String.skip (inc cursor) text) world
-                else world
-            else world
-        else world
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -2458,7 +2469,7 @@ type BasicStaticBillboardEmitterFacet () =
         (Cascade, world)
 
     static let handleEmitterStyleChange evt world =
-        let entity = evt.Subscriber
+        let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
         let world = mapEmitter (constant emitter) entity world
         (Cascade, world)
