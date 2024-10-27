@@ -465,12 +465,12 @@ type TextFacet () =
 [<AutoOpen>]
 module TextBoxFacetExtensions =
     type Entity with
+        member this.GetTextCapacity world : int = this.Get (nameof this.TextCapacity) world
+        member this.SetTextCapacity (value : int) world = this.Set (nameof this.TextCapacity) value world
+        member this.TextCapacity = lens (nameof this.TextCapacity) this this.GetTextCapacity this.SetTextCapacity
         member this.GetFocused world : bool = this.Get (nameof this.Focused) world
         member this.SetFocused (value : bool) world = this.Set (nameof this.Focused) value world
         member this.Focused = lens (nameof this.Focused) this this.GetFocused this.SetFocused
-        member this.GetCharacterLimit world : int = this.Get (nameof this.CharacterLimit) world
-        member this.SetCharacterLimit (value : int) world = this.Set (nameof this.CharacterLimit) value world
-        member this.CharacterLimit = lens (nameof this.CharacterLimit) this this.GetCharacterLimit this.SetCharacterLimit
         member this.GetCursor world : int = this.Get (nameof this.Cursor) world
         member this.SetCursor (value : int) world = this.Set (nameof this.Cursor) value world
         member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
@@ -489,15 +489,15 @@ type TextBoxFacet () =
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
          define Entity.TextShift 0.5f
+         define Entity.TextCapacity 14
          define Entity.Focused false
-         define Entity.CharacterLimit 12
          define Entity.Cursor 0]
 
     override this.Register (entity, world) =
         let input evt (world : World) =
             let cursor = entity.GetCursor world
             let text = entity.GetText world
-            if world.Advancing && entity.GetFocused world && text.Length < entity.GetCharacterLimit world then
+            if world.Advancing && entity.GetFocused world && text.Length < entity.GetTextCapacity world then
                 let text =
                     if cursor < 0 || cursor >= text.Length
                     then text + string evt.Data.TextInput
