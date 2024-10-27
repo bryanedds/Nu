@@ -125,9 +125,9 @@ module internal KeyboardState =
     let internal isKeyPressed key =
         match KeyboardStateCurrentOpt with
         | Some keyboardState ->
-            keyboardState.[int key] = byte 0 &&
+            keyboardState.[int key] = byte 1 &&
             match KeyboardStatePreviousOpt with
-            | Some keyboardState -> keyboardState.[int key] = byte 1
+            | Some keyboardState -> keyboardState.[int key] = byte 0
             | None -> false
         | None -> false
 

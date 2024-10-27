@@ -27,7 +27,8 @@ module WorldDataToken =
                       FontSizing = text.FontSizing
                       FontStyling = text.FontStyling
                       Color = text.Color
-                      Justification = text.Justification }
+                      Justification = text.Justification
+                      CursorOpt = None }
                 World.enqueueLayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderText renderText } world
 
             // render 3d light

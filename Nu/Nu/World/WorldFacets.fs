@@ -443,7 +443,6 @@ type TextFacet () =
          define Entity.TextShift 0.5f]
 
     override this.Render (_, entity, world) =
-        let text = entity.GetText world
         let mutable transform = entity.GetTransform world
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
@@ -457,7 +456,102 @@ type TextFacet () =
         let font = entity.GetFont world
         let fontSizing = entity.GetFontSizing world
         let fontStyling = entity.GetFontStyling world
-        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification margin color font fontSizing fontStyling text world
+        let text = entity.GetText world
+        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification None margin color font fontSizing fontStyling text world
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+
+[<AutoOpen>]
+module TextBoxFacetExtensions =
+    type Entity with
+        member this.GetFocused world : bool = this.Get (nameof this.Focused) world
+        member this.SetFocused (value : bool) world = this.Set (nameof this.Focused) value world
+        member this.Focused = lens (nameof this.Focused) this this.GetFocused this.SetFocused
+        member this.GetCharacterLimit world : int = this.Get (nameof this.CharacterLimit) world
+        member this.SetCharacterLimit (value : int) world = this.Set (nameof this.CharacterLimit) value world
+        member this.CharacterLimit = lens (nameof this.CharacterLimit) this this.GetCharacterLimit this.SetCharacterLimit
+        member this.GetCursor world : int = this.Get (nameof this.Cursor) world
+        member this.SetCursor (value : int) world = this.Set (nameof this.Cursor) value world
+        member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
+
+/// Augments an entity with text box behavior.
+type TextBoxFacet () =
+    inherit Facet (false, false, false)
+
+    static member Properties =
+        [define Entity.Text ""
+         define Entity.Font Assets.Default.Font
+         define Entity.FontSizing None
+         define Entity.FontStyling Set.empty
+         define Entity.TextMargin (v2 2.0f 0.0f)
+         define Entity.TextColor Color.White
+         define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
+         define Entity.TextOffset v2Zero
+         define Entity.TextShift 0.5f
+         define Entity.Focused false
+         define Entity.CharacterLimit 12
+         define Entity.Cursor 0]
+
+    override this.Register (entity, world) =
+        let input evt (world : World) =
+            let cursor = entity.GetCursor world
+            let text = entity.GetText world
+            if world.Advancing && entity.GetFocused world && text.Length < entity.GetCharacterLimit world then
+                let text =
+                    if cursor < 0 || cursor >= text.Length
+                    then text + string evt.Data.TextInput
+                    else String.take cursor text + string evt.Data.TextInput + String.skip cursor text
+                let world = entity.SetText text world
+                let world = if cursor >= 0 then entity.SetCursor (inc cursor) world else world
+                (Cascade, world)
+            else (Cascade, world)
+        World.monitor input Game.TextInputEvent entity world
+
+    override this.Update (entity, world) =
+        if entity.GetFocused world then
+            let cursor = entity.GetCursor world
+            let text = entity.GetText world
+            if World.isKeyboardKeyPressed KeyboardKey.Left world then 
+                if cursor > 0 then entity.SetCursor (dec cursor) world else world
+            elif World.isKeyboardKeyPressed KeyboardKey.Right world then
+                if cursor < text.Length then entity.SetCursor (inc cursor) world else world
+            elif World.isKeyboardKeyPressed KeyboardKey.Home world then
+                entity.SetCursor 0 world
+            elif World.isKeyboardKeyPressed KeyboardKey.End world then 
+                entity.SetCursor text.Length world
+            elif World.isKeyboardKeyPressed KeyboardKey.Backspace world then
+                if cursor > 0 && text.Length > 0 then
+                    let world = entity.SetText (String.take (dec cursor) text + String.skip cursor text) world
+                    let world = entity.SetCursor (dec cursor) world
+                    world
+                else world
+            elif World.isKeyboardKeyPressed KeyboardKey.Delete world then
+                let text = entity.GetText world
+                if cursor >= 0 && cursor < text.Length
+                then entity.SetText (String.take cursor text + String.skip (inc cursor) text) world
+                else world
+            else world
+        else world
+
+    override this.Render (_, entity, world) =
+        let mutable transform = entity.GetTransform world
+        let absolute = transform.Absolute
+        let perimeter = transform.Perimeter
+        let offset = (entity.GetTextOffset world).V3
+        let elevation = transform.Elevation
+        let shift = entity.GetTextShift world
+        let clipOpt = ValueSome transform.Bounds2d.Box2
+        let justification = Justified (JustifyLeft, JustifyMiddle)
+        let focused = entity.GetFocused world
+        let cursorOpt = if focused then Some (entity.GetCursor world) else None
+        let margin = (entity.GetTextMargin world).V3
+        let color = if transform.Enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
+        let font = entity.GetFont world
+        let fontSizing = entity.GetFontSizing world
+        let fontStyling = entity.GetFontStyling world
+        let text = entity.GetText world
+        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification cursorOpt margin color font fontSizing fontStyling text world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
