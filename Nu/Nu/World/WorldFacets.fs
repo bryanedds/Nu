@@ -1279,8 +1279,7 @@ type EffectFacet () =
                 | BillboardParticlesDescriptor descriptor ->
                     let message =
                         RenderBillboardParticles
-                            { Absolute = descriptor.Absolute
-                              Presence = presence
+                            { Presence = presence
                               MaterialProperties = descriptor.MaterialProperties
                               Material = descriptor.Material
                               ShadowOffset = descriptor.ShadowOffset
@@ -2311,7 +2310,6 @@ type StaticBillboardFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = entity.GetInsetOpt world
@@ -2324,7 +2322,7 @@ type StaticBillboardFacet () =
             | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
         World.enqueueRenderMessage3d
             (RenderBillboard
-                { Absolute = absolute; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
+                { Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
                   MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
             world
 
@@ -2592,8 +2590,7 @@ type BasicStaticBillboardEmitterFacet () =
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with Some twoSided -> Some twoSided | None -> descriptor.Material.TwoSidedOpt }
                         Some
                             (RenderBillboardParticles
-                                { Absolute = descriptor.Absolute
-                                  Presence = presence
+                                { Presence = presence
                                   MaterialProperties = properties
                                   Material = material
                                   ShadowOffset = descriptor.ShadowOffset
@@ -2628,7 +2625,6 @@ type StaticModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
@@ -2638,7 +2634,7 @@ type StaticModelFacet () =
             match entity.GetRenderStyle world with
             | Deferred -> DeferredRenderType
             | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.renderStaticModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
+        World.renderStaticModelFast (&affineMatrix, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -2693,7 +2689,6 @@ type StaticModelSurfaceFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
@@ -2705,7 +2700,7 @@ type StaticModelSurfaceFacet () =
             match entity.GetRenderStyle world with
             | Deferred -> DeferredRenderType
             | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.renderStaticModelSurfaceFast (absolute, &affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
+        World.renderStaticModelSurfaceFast (&affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -2850,14 +2845,13 @@ type AnimatedModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
         let properties = entity.GetMaterialProperties world
         let animatedModel = entity.GetAnimatedModel world
         match entity.GetBoneTransformsOpt world with
-        | Some boneTransforms -> World.renderAnimatedModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
+        | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
         | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -3057,8 +3051,7 @@ type TerrainFacet () =
               Segments = entity.GetSegments world }
         World.enqueueRenderMessage3d
             (RenderTerrain
-                { Absolute = transform.Absolute
-                  Visible = transform.Visible
+                { Visible = transform.Visible
                   TerrainDescriptor = terrainDescriptor
                   RenderPass = renderPass })
             world

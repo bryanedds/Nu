@@ -776,8 +776,7 @@ module EffectSystem =
                       TwoSidedOpt = Some twoSided }
                 let billboardToken =
                     BillboardToken
-                        { Absolute = effectSystem.EffectAbsolute
-                          ModelMatrix = affineMatrix
+                        { ModelMatrix = affineMatrix
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
@@ -815,8 +814,7 @@ module EffectSystem =
                       OpaqueDistanceOpt = None }
                 let staticModelToken =
                     StaticModelToken
-                        { Absolute = effectSystem.EffectAbsolute
-                          ModelMatrix = affineMatrix
+                        { ModelMatrix = affineMatrix
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
