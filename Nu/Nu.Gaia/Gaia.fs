@@ -4062,8 +4062,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if SList.notEmpty lightProbeModels then
             World.enqueueRenderMessage3d
                 (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightProbeModels
+                    { StaticModels = lightProbeModels
                       StaticModel = Assets.Default.LightProbeModel
                       RenderType = DeferredRenderType
                       RenderPass = NormalPass })
@@ -4079,8 +4078,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if SList.notEmpty lightModels then
             World.enqueueRenderMessage3d
                 (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightModels
+                    { StaticModels = lightModels
                       StaticModel = Assets.Default.LightbulbModel
                       RenderType = DeferredRenderType
                       RenderPass = NormalPass })
@@ -4118,8 +4116,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 boundsMatrix.Translation <- bounds.Center
                 World.enqueueRenderMessage3d
                     (RenderStaticModel
-                        { Absolute = absolute
-                          ModelMatrix = boundsMatrix
+                        { ModelMatrix = boundsMatrix
                           Presence = Omnipresent
                           InsetOpt = None
                           MaterialProperties = MaterialProperties.defaultProperties
