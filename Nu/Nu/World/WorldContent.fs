@@ -433,6 +433,9 @@ module Content =
     /// Describe a feeler with the given definitions.
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
+    /// Describe a text box entity with the given definitions.
+    let textBox entityName definitions = entity<TextBoxDispatcher> entityName definitions
+
     /// Describe an fps entity with the given definitions.
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 

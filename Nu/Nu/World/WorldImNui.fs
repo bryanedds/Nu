@@ -413,6 +413,9 @@ module WorldImNui =
             let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.TouchEvent entity world
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
+        /// ImNui declare a text box entity with the given arguments.
+        static member doTextBox name args world = World.doEntity<TextBoxDispatcher> name args world
+
         /// ImNui declare an fps entity with the given arguments.
         static member doFps name args world = World.doEntity<FpsDispatcher> name args world
 

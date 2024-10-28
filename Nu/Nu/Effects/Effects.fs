@@ -698,7 +698,8 @@ module EffectSystem =
                       FontSizing = fontSizing
                       FontStyling = fontStyling
                       Color = slice.Color
-                      Justification = Justified (JustifyCenter, JustifyMiddle) }
+                      Justification = Justified (JustifyCenter, JustifyMiddle)
+                      CursorOpt = None }
                 let textToken = TextToken (transform.Elevation, transform.Horizon, font, text)
                 addDataToken textToken effectSystem
             else effectSystem
@@ -775,8 +776,7 @@ module EffectSystem =
                       TwoSidedOpt = Some twoSided }
                 let billboardToken =
                     BillboardToken
-                        { Absolute = effectSystem.EffectAbsolute
-                          ModelMatrix = affineMatrix
+                        { ModelMatrix = affineMatrix
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
@@ -814,8 +814,7 @@ module EffectSystem =
                       OpaqueDistanceOpt = None }
                 let staticModelToken =
                     StaticModelToken
-                        { Absolute = effectSystem.EffectAbsolute
-                          ModelMatrix = affineMatrix
+                        { ModelMatrix = affineMatrix
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties

@@ -31,7 +31,8 @@ type [<Struct>] TextValue =
       mutable FontSizing : int option
       mutable FontStyling : FontStyle Set
       mutable Color : Color
-      mutable Justification : Justification }
+      mutable Justification : Justification
+      mutable CursorOpt : int option }
 
 /// Describes how to render a sprite to a rendering subsystem.
 type SpriteDescriptor =
@@ -87,7 +88,8 @@ type TextDescriptor =
       FontSizing : int option
       FontStyling : FontStyle Set
       Color : Color
-      Justification : Justification }
+      Justification : Justification
+      CursorOpt : int option }
 
 /// Describes a 2d rendering operation.
 type RenderOperation2d =
@@ -616,14 +618,25 @@ type [<ReferenceEquality>] GlRenderer2d =
          fontStyling : FontStyle Set,
          color : Color inref,
          justification : Justification,
+         cursorOpt : int option,
          eyeCenter : Vector2,
          eyeSize : Vector2,
          windowSize,
          renderer : GlRenderer2d) =
 
-        // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
+        // modify text to utilize cursor
+        let text =
+            match cursorOpt with
+            | Some cursor when DateTimeOffset.UtcNow.Millisecond / 250 % 2 = 0 ->
+                if cursor < 0 || cursor >= text.Length then text + "_"
+                elif cursor < text.Length then String.take cursor text + "_" + String.skip (inc cursor) text
+                else text
+            | Some _ | None -> text
+
+        // attempt to render text
         let color = color // copy to local for proprety access
-        if color.A8 <> 0uy then
+        if  not (String.IsNullOrWhiteSpace text) && // render only when non-whitespace
+            color.A8 <> 0uy then // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
             let transform = transform // copy to local to make visible from lambda
             let clipOpt = clipOpt // same
             flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame windowSize renderer.SpriteBatchEnv $ fun () ->
@@ -776,7 +789,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, windowSize, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, windowSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CursorOpt, eyeCenter, eyeSize, windowSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, windowSize, renderer)

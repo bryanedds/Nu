@@ -291,7 +291,7 @@ type BasicStaticSpriteEmitterFacet () =
         (Cascade, world)
 
     static let handleEmitterStyleChange evt world =
-        let entity = evt.Subscriber
+        let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
         let world = mapEmitter (constant emitter) entity world
         (Cascade, world)
@@ -443,7 +443,6 @@ type TextFacet () =
          define Entity.TextShift 0.5f]
 
     override this.Render (_, entity, world) =
-        let text = entity.GetText world
         let mutable transform = entity.GetTransform world
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
@@ -457,7 +456,8 @@ type TextFacet () =
         let font = entity.GetFont world
         let fontSizing = entity.GetFontSizing world
         let fontStyling = entity.GetFontStyling world
-        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification margin color font fontSizing fontStyling text world
+        let text = entity.GetText world
+        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification None margin color font fontSizing fontStyling text world
 
     override this.GetAttributesInferred (_, _) =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
@@ -969,6 +969,137 @@ type FeelerFacet () =
         AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
+module TextBoxFacetExtensions =
+    type Entity with
+        member this.GetTextCapacity world : int = this.Get (nameof this.TextCapacity) world
+        member this.SetTextCapacity (value : int) world = this.Set (nameof this.TextCapacity) value world
+        member this.TextCapacity = lens (nameof this.TextCapacity) this this.GetTextCapacity this.SetTextCapacity
+        member this.GetFocused world : bool = this.Get (nameof this.Focused) world
+        member this.SetFocused (value : bool) world = this.Set (nameof this.Focused) value world
+        member this.Focused = lens (nameof this.Focused) this this.GetFocused this.SetFocused
+        member this.GetCursor world : int = this.Get (nameof this.Cursor) world
+        member this.SetCursor (value : int) world = this.Set (nameof this.Cursor) value world
+        member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
+        member this.FocusEvent = Events.FocusEvent --> this
+
+/// Augments an entity with text box behavior.
+type TextBoxFacet () =
+    inherit Facet (false, false, false)
+
+    static let handleMouseLeftDown evt (world : World) =
+        let entity = evt.Subscriber : Entity
+        if world.Advancing && entity.GetVisible world then
+            let mutable transform = entity.GetTransform world
+            let perimeter = transform.Perimeter.Box2 // gui currently ignores rotation
+            let mousePositionWorld = World.getMousePostion2dWorld transform.Absolute world
+            if perimeter.Intersects mousePositionWorld then
+                if transform.Enabled && not (entity.GetFocused world) then
+                    let eventTrace = EventTrace.debug "TextBoxFacet" "handleMouseLeftDown" "" EventTrace.empty
+                    let world = World.publishPlus () entity.FocusEvent eventTrace entity true false world
+                    (Resolve, world)
+                else (Resolve, world)
+            else (Cascade, world)
+        else (Cascade, world)
+
+    static let handleKeyboardKeyChange evt (world : World) =
+        let entity = evt.Subscriber : Entity
+        let data = evt.Data : KeyboardKeyData
+        let cursor = entity.GetCursor world
+        let text = entity.GetText world
+        if  world.Advancing &&
+            entity.GetVisible world &&
+            entity.GetEnabled world &&
+            entity.GetFocused world &&
+            text.Length < entity.GetTextCapacity world then
+            let world =
+                if data.Down then
+                    if data.KeyboardKey = KeyboardKey.Left then 
+                        if cursor > 0 then entity.SetCursor (dec cursor) world else world
+                    elif data.KeyboardKey = KeyboardKey.Right then
+                        if cursor < text.Length then entity.SetCursor (inc cursor) world else world
+                    elif data.KeyboardKey = KeyboardKey.Home || data.KeyboardKey = KeyboardKey.Up then
+                        entity.SetCursor 0 world
+                    elif data.KeyboardKey = KeyboardKey.End || data.KeyboardKey = KeyboardKey.Down then
+                        entity.SetCursor text.Length world
+                    elif data.KeyboardKey = KeyboardKey.Backspace then
+                        if cursor > 0 && text.Length > 0 then
+                            let world = entity.SetText (String.take (dec cursor) text + String.skip cursor text) world
+                            let world = entity.SetCursor (dec cursor) world
+                            world
+                        else world
+                    elif data.KeyboardKey = KeyboardKey.Delete then
+                        let text = entity.GetText world
+                        if cursor >= 0 && cursor < text.Length
+                        then entity.SetText (String.take cursor text + String.skip (inc cursor) text) world
+                        else world
+                    else world
+                else world
+            (Resolve, world)
+        else (Cascade, world)
+
+    static let handleTextInput evt (world : World) =
+        let entity = evt.Subscriber : Entity
+        let cursor = entity.GetCursor world
+        let text = entity.GetText world
+        if  world.Advancing &&
+            entity.GetVisible world &&
+            entity.GetEnabled world &&
+            entity.GetFocused world &&
+            text.Length < entity.GetTextCapacity world then
+            let text =
+                if cursor < 0 || cursor >= text.Length
+                then text + string evt.Data.TextInput
+                else String.take cursor text + string evt.Data.TextInput + String.skip cursor text
+            let world = entity.SetText text world
+            let world = if cursor >= 0 then entity.SetCursor (inc cursor) world else world
+            (Resolve, world)
+        else (Cascade, world)
+
+    static member Properties =
+        [define Entity.Text ""
+         define Entity.Font Assets.Default.Font
+         define Entity.FontSizing None
+         define Entity.FontStyling Set.empty
+         define Entity.TextMargin (v2 2.0f 0.0f)
+         define Entity.TextColor Color.White
+         define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
+         define Entity.TextOffset v2Zero
+         define Entity.TextShift 0.5f
+         define Entity.TextCapacity 14
+         define Entity.Focused false
+         nonPersistent Entity.Cursor 0]
+
+    override this.Register (entity, world) =
+        let world = World.sense handleMouseLeftDown Game.MouseLeftDownEvent entity (nameof TextBoxFacet) world
+        let world = World.sense handleKeyboardKeyChange Game.KeyboardKeyChangeEvent entity (nameof TextBoxFacet) world
+        let world = World.sense handleTextInput Game.TextInputEvent entity (nameof TextBoxFacet) world
+        let world = entity.SetCursor (entity.GetText world).Length world
+        world
+
+    override this.Render (_, entity, world) =
+        let mutable transform = entity.GetTransform world
+        let absolute = transform.Absolute
+        let enabled = transform.Enabled
+        let perimeter = transform.Perimeter
+        let offset = (entity.GetTextOffset world).V3
+        let elevation = transform.Elevation
+        let shift = entity.GetTextShift world
+        let clipOpt = ValueSome transform.Bounds2d.Box2
+        let justification = Justified (JustifyLeft, JustifyMiddle)
+        let focused = entity.GetFocused world
+        let cursorOpt = if enabled && focused then Some (entity.GetCursor world) else None
+        let margin = (entity.GetTextMargin world).V3
+        let color = if enabled then entity.GetTextColor world else entity.GetTextColorDisabled world
+        let font = entity.GetFont world
+        let fontSizing = entity.GetFontSizing world
+        let fontStyling = entity.GetFontStyling world
+        let text = entity.GetText world
+        World.renderGuiText absolute perimeter offset elevation shift clipOpt justification cursorOpt margin color font fontSizing fontStyling text world
+
+    override this.GetAttributesInferred (_, _) =
+        AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+
+[<AutoOpen>]
 module EffectFacetExtensions =
     type Entity with
         member this.GetRunMode world : RunMode = this.Get (nameof this.RunMode) world
@@ -1148,8 +1279,7 @@ type EffectFacet () =
                 | BillboardParticlesDescriptor descriptor ->
                     let message =
                         RenderBillboardParticles
-                            { Absolute = descriptor.Absolute
-                              Presence = presence
+                            { Presence = presence
                               MaterialProperties = descriptor.MaterialProperties
                               Material = descriptor.Material
                               ShadowOffset = descriptor.ShadowOffset
@@ -2180,7 +2310,6 @@ type StaticBillboardFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = entity.GetInsetOpt world
@@ -2193,7 +2322,7 @@ type StaticBillboardFacet () =
             | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
         World.enqueueRenderMessage3d
             (RenderBillboard
-                { Absolute = absolute; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
+                { Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
                   MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
             world
 
@@ -2336,7 +2465,7 @@ type BasicStaticBillboardEmitterFacet () =
         (Cascade, world)
 
     static let handleEmitterStyleChange evt world =
-        let entity = evt.Subscriber
+        let entity = evt.Subscriber : Entity
         let emitter = makeEmitter entity world
         let world = mapEmitter (constant emitter) entity world
         (Cascade, world)
@@ -2461,8 +2590,7 @@ type BasicStaticBillboardEmitterFacet () =
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with Some twoSided -> Some twoSided | None -> descriptor.Material.TwoSidedOpt }
                         Some
                             (RenderBillboardParticles
-                                { Absolute = descriptor.Absolute
-                                  Presence = presence
+                                { Presence = presence
                                   MaterialProperties = properties
                                   Material = material
                                   ShadowOffset = descriptor.ShadowOffset
@@ -2497,7 +2625,6 @@ type StaticModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
@@ -2507,7 +2634,7 @@ type StaticModelFacet () =
             match entity.GetRenderStyle world with
             | Deferred -> DeferredRenderType
             | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.renderStaticModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
+        World.renderStaticModelFast (&affineMatrix, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -2562,7 +2689,6 @@ type StaticModelSurfaceFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
@@ -2574,7 +2700,7 @@ type StaticModelSurfaceFacet () =
             match entity.GetRenderStyle world with
             | Deferred -> DeferredRenderType
             | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.renderStaticModelSurfaceFast (absolute, &affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
+        World.renderStaticModelSurfaceFast (&affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -2719,14 +2845,13 @@ type AnimatedModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let absolute = transform.Absolute
         let affineMatrix = transform.AffineMatrix
         let presence = transform.Presence
         let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
         let properties = entity.GetMaterialProperties world
         let animatedModel = entity.GetAnimatedModel world
         match entity.GetBoneTransformsOpt world with
-        | Some boneTransforms -> World.renderAnimatedModelFast (absolute, &affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
+        | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
         | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
@@ -2770,7 +2895,7 @@ type AnimatedModelFacet () =
                 for i in 0 .. dec offsets.Length do
                     let offset = offsets.[i]
                     let transform = transforms.[i]
-                    World.imGuiCircle3d false (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
+                    World.imGuiCircle3d (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
                 world
             | (_, _) -> world
         | _ -> world
@@ -2926,8 +3051,7 @@ type TerrainFacet () =
               Segments = entity.GetSegments world }
         World.enqueueRenderMessage3d
             (RenderTerrain
-                { Absolute = transform.Absolute
-                  Visible = transform.Visible
+                { Visible = transform.Visible
                   TerrainDescriptor = terrainDescriptor
                   RenderPass = renderPass })
             world

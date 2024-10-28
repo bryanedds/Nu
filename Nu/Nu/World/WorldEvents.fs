@@ -133,6 +133,7 @@ module Events =
     let TouchEvent = stoa<Vector2> "Touch/Event"
     let TouchingEvent = stoa<Vector2> "Touching/Event"
     let UntouchEvent = stoa<Vector2> "Untouch/Event"
+    let FocusEvent = stoa<unit> "Focus/Event"
     let MouseMoveEvent = stoa<MouseMoveData> "Mouse/Move/Event"
     let MouseDragEvent = stoa<MouseMoveData> "Mouse/Drag/Event"
     let MouseWheelEvent = stoa<MouseWheelData> "Mouse/Wheel/Event"

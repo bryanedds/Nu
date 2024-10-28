@@ -122,6 +122,17 @@ type FeelerDispatcher () =
         [typeof<BackdroppableFacet>
          typeof<FeelerFacet>]
 
+/// Gives an entity the base behavior of a gui text box control.
+type TextBoxDispatcher () =
+    inherit GuiDispatcher ()
+
+    static member Facets =
+        [typeof<BackdroppableFacet>
+         typeof<TextBoxFacet>]
+
+    static member Properties =
+        [define Entity.BackdropImageOpt (Some Assets.Default.Label)]
+
 [<AutoOpen>]
 module FpsDispatcherExtensions =
     type Entity with
@@ -603,8 +614,8 @@ type Character3dDispatcher () =
         let backness = (linearVelocityAvg * 32.0f).Dot -rotation.Forward
         let rightness = (linearVelocityAvg * 32.0f).Dot rotation.Right
         let leftness = (linearVelocityAvg * 32.0f).Dot -rotation.Right
-        let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 48.0f else 0.0f
-        let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 48.0f else 0.0f
+        let turnRightness = if angularVelocityAvg.Y < 0.0f then -angularVelocityAvg.Y * 48.0f else 0.0f
+        let turnLeftness = if angularVelocityAvg.Y > 0.0f then angularVelocityAvg.Y * 48.0f else 0.0f
         let animations =
             [Animation.make GameTime.zero None "Armature|Idle" Loop 1.0f 0.5f None]
         let animations =
@@ -686,9 +697,9 @@ type Nav3dConfigDispatcher () =
                     Color (1.0f, 1.0f - height, height, 1.0f)
 
                 // draw edges and points
-                World.imGuiSegments3dPlus false nbrData.NavInteriorEdges 1.0f computeEdgeColor world
-                World.imGuiSegments3dPlus false nbrData.NavExteriorEdges 1.0f computeEdgeColor world
-                World.imGuiCircles3dPlus false nbrData.NavPoints 2.5f true computePointColor world
+                World.imGuiSegments3dPlus nbrData.NavInteriorEdges 1.0f computeEdgeColor world
+                World.imGuiSegments3dPlus nbrData.NavExteriorEdges 1.0f computeEdgeColor world
+                World.imGuiCircles3dPlus nbrData.NavPoints 2.5f true computePointColor world
                 world
 
             | None -> world
