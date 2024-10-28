@@ -2916,7 +2916,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let offsetViewport = Constants.Render.OffsetViewport windowSize
 
         // compute view and projection
-        let view = viewport.View3d (false, eyeCenter, eyeRotation)
+        let view = viewport.View3d (eyeCenter, eyeRotation)
         let viewSkyBox = Matrix4x4.CreateFromQuaternion eyeRotation.Inverted
         let projection = viewport.Projection3d
 

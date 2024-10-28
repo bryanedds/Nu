@@ -66,11 +66,11 @@ module WorldInputModule =
             viewport.MouseToScreen3d (World.getMousePosition world)
 
         /// Get the 3d world ray of the mouse.
-        static member getMouseRay3dWorld absolute world =
+        static member getMouseRay3dWorld world =
             let viewport = World.getViewport world
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
-            viewport.MouseToWorld3d (absolute, World.getMousePosition world, eyeCenter, eyeRotation)
+            viewport.MouseToWorld3d (World.getMousePosition world, eyeCenter, eyeRotation)
 
         /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown key world =

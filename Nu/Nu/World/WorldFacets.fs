@@ -2895,7 +2895,7 @@ type AnimatedModelFacet () =
                 for i in 0 .. dec offsets.Length do
                     let offset = offsets.[i]
                     let transform = transforms.[i]
-                    World.imGuiCircle3d false (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
+                    World.imGuiCircle3d (offset.Inverted * transform * affineMatrix).Translation 2.0f false Color.Yellow world
                 world
             | (_, _) -> world
         | _ -> world

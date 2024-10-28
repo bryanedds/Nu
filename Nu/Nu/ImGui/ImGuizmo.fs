@@ -13,7 +13,7 @@ module ImGuizmo =
     let mutable private BoxCenterSelectedOpt = Option<int>.None
 
     /// Manipulate a Box3 value via ImGuizmo.
-    let ManipulateBox3 (eyeCenter, eyeRotation, eyeFrustum, absolute, snap, box : Box3 byref) =
+    let ManipulateBox3 (eyeCenter, eyeRotation, eyeFrustum, snap, box : Box3 byref) =
 
         // render segments
         let mutable result = ImGuiEditInactive
@@ -22,7 +22,7 @@ module ImGuizmo =
         let windowPosition = ImGui.GetWindowPos ()
         let windowSize = ImGui.GetWindowSize ()
         let viewport = Constants.Render.Viewport
-        let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
+        let view = viewport.View3d (eyeCenter, eyeRotation)
         let projection = viewport.Projection3d
         let viewProjection = view * projection
         let corners = box.Corners
@@ -73,7 +73,7 @@ module ImGuizmo =
             if dragging then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                 let direction = (center - box.Center).Absolute.Normalized
-                let ray = viewport.MouseToWorld3d (absolute, mouseWindow, eyeCenter, eyeRotation)
+                let ray = viewport.MouseToWorld3d (mouseWindow, eyeCenter, eyeRotation)
                 let forward = eyeRotation.Forward
                 let plane = plane3 center -forward
                 let mouse = (ray.Intersection plane).Value

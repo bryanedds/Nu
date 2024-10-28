@@ -812,7 +812,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let eyeRotation = World.getEye3dRotation world
                 let entityPosition =
                     if atMouse then
-                        let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, RightClickPosition, eyeCenter, eyeRotation)
+                        let ray = viewport.MouseToWorld3d (RightClickPosition, eyeCenter, eyeRotation)
                         let forward = eyeRotation.Forward
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
@@ -2133,7 +2133,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let projection = projectionMatrix.ToArray ()
             let operation =
                 ViewportOverlay
-                    { ViewportView = viewport.View3d (false, World.getEye3dCenter world, World.getEye3dRotation world)
+                    { ViewportView = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                       ViewportProjection = projectionMatrix
                       ViewportBounds = box2 v2Zero io.DisplaySize
                       EditContext = makeContext None None }
@@ -2145,7 +2145,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | Some entity when entity.GetExists world && entity.GetIs3d world ->
                     let operation =
                         ViewportOverlay
-                            { ViewportView = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
+                            { ViewportView = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                               ViewportProjection = projectionMatrix
                               ViewportBounds = box2 v2Zero io.DisplaySize
                               EditContext = makeContext None None }
@@ -2162,7 +2162,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             (World.getEye3dCenter world,
                              World.getEye3dRotation world,
                              World.getEye3dFrustumView world,
-                             entity.GetAbsolute world,
                              (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
                              &lightProbeBounds)
                     match manipulationResult with
@@ -2179,7 +2178,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let world =
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal ->
-                    let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
+                    let viewMatrix = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                     let view = viewMatrix.ToArray ()
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
@@ -4110,7 +4109,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                   Flip = FlipNone }})
                     world
             else
-                let absolute = entity.GetAbsolute world
                 let bounds = entity.GetBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center

@@ -90,20 +90,10 @@ module Viewport =
             let mouseWorld = this.MouseToWorld2d (absolute, mousePosition, entityPosition, entitySize)
             entityPosition - mouseWorld
 
-        /// Compute the 3d absolute view matrix.
-        member this.ViewAbsolute3d (_ : Vector3, _ : Quaternion) =
-            m4Identity
-
-        /// Compute the 3d relative view matrix.
-        member this.ViewRelative3d (eyeCenter : Vector3, eyeRotation : Quaternion) =
+        /// Compute the 3d view matrix.
+        member this.View3d (eyeCenter : Vector3, eyeRotation : Quaternion) =
             let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
             Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
-
-        /// Compute a 3d view matrix.
-        member this.View3d (absolute, eyeCenter, eyeRotation) =
-            if absolute
-            then this.ViewAbsolute3d (eyeCenter, eyeRotation)
-            else this.ViewRelative3d (eyeCenter, eyeRotation)
 
         /// Compute the 3d projection matrix.
         member this.Projection3d : Matrix4x4 =
@@ -114,8 +104,8 @@ module Viewport =
                  this.FarDistance)
 
         /// Compute a 3d view projection matrix.
-        member this.ViewProjection3d (absolute, eyeCenter, eyeRotation) =
-            let view = this.View3d (absolute, eyeCenter, eyeRotation)
+        member this.ViewProjection3d (eyeCenter, eyeRotation) =
+            let view = this.View3d (eyeCenter, eyeRotation)
             let projection = this.Projection3d
             view * projection
 
@@ -134,8 +124,8 @@ module Viewport =
                 (1.0f - (mousePosition.Y / single Constants.Render.Resolution.Y)) // inversion for right-handedness
 
         /// Transform the given mouse position to 3d world space.
-        member this.MouseToWorld3d (absolute, mousePosition : Vector2, eyeCenter, eyeRotation) =
-            let viewProjection = this.ViewProjection3d (absolute, v3Zero, eyeRotation)
+        member this.MouseToWorld3d (mousePosition : Vector2, eyeCenter, eyeRotation) =
+            let viewProjection = this.ViewProjection3d (v3Zero, eyeRotation)
             let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
             let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
             ray3 (near + eyeCenter) (far - near).Normalized

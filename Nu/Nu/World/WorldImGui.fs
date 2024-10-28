@@ -59,7 +59,7 @@ module WorldImGui =
             World.imGuiSegments2d absolute (SArray.singleton segment) thickness color world
 
         /// Render circles via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiCircles3dPlus absolute (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) world =
+        static member imGuiCircles3dPlus (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
@@ -67,7 +67,7 @@ module WorldImGui =
             let eyeRotation = World.getEye3dRotation world
             let eyeFrustum = World.getEye3dFrustumView world
             let viewport = Constants.Render.Viewport
-            let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
+            let view = viewport.View3d (eyeCenter, eyeRotation)
             let projection = viewport.Projection3d
             let viewProjection = view * projection
             for position in positions do
@@ -79,15 +79,15 @@ module WorldImGui =
                     else drawList.AddCircle (positionWindow, radius, color.Abgr)
 
         /// Render circles via ImGui in the current eye 3d space.
-        static member imGuiCircles3d absolute position radius filled color world =
-            World.imGuiCircles3dPlus absolute position radius filled (constant color) world
+        static member imGuiCircles3d position radius filled color world =
+            World.imGuiCircles3dPlus position radius filled (constant color) world
 
         /// Render a circle via ImGui in the current eye 3d space.
-        static member imGuiCircle3d absolute position radius filled color world =
-            World.imGuiCircles3d absolute (SArray.singleton position) radius filled color world
+        static member imGuiCircle3d position radius filled color world =
+            World.imGuiCircles3d (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiSegments3dPlus absolute (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) world =
+        static member imGuiSegments3dPlus (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
@@ -95,7 +95,7 @@ module WorldImGui =
             let eyeRotation = World.getEye3dRotation world
             let eyeFrustum = World.getEye3dFrustumView world
             let viewport = Constants.Render.Viewport
-            let view = viewport.View3d (absolute, eyeCenter, eyeRotation)
+            let view = viewport.View3d (eyeCenter, eyeRotation)
             let projection = viewport.Projection3d
             let viewProjection = view * projection
             for segment in segments do
@@ -108,12 +108,12 @@ module WorldImGui =
                 | None -> ()
 
         /// Render segments via ImGui in the current eye 3d space.
-        static member imGuiSegments3d absolute segments thickness color world =
-            World.imGuiSegments3dPlus absolute segments thickness (constant color) world
+        static member imGuiSegments3d segments thickness color world =
+            World.imGuiSegments3dPlus segments thickness (constant color) world
 
         /// Render a segment via ImGui in the current eye 3d space.
-        static member imGuiSegment3d absolute segment thickness color world =
-            World.imGuiSegments3d absolute (SArray.singleton segment) thickness color world
+        static member imGuiSegment3d segment thickness color world =
+            World.imGuiSegments3d (SArray.singleton segment) thickness color world
 
         /// Edit an array value via ImGui.
         static member imGuiEditPropertyArray<'a> (editItem : string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) context =

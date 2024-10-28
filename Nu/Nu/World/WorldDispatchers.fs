@@ -697,9 +697,9 @@ type Nav3dConfigDispatcher () =
                     Color (1.0f, 1.0f - height, height, 1.0f)
 
                 // draw edges and points
-                World.imGuiSegments3dPlus false nbrData.NavInteriorEdges 1.0f computeEdgeColor world
-                World.imGuiSegments3dPlus false nbrData.NavExteriorEdges 1.0f computeEdgeColor world
-                World.imGuiCircles3dPlus false nbrData.NavPoints 2.5f true computePointColor world
+                World.imGuiSegments3dPlus nbrData.NavInteriorEdges 1.0f computeEdgeColor world
+                World.imGuiSegments3dPlus nbrData.NavExteriorEdges 1.0f computeEdgeColor world
+                World.imGuiCircles3dPlus nbrData.NavPoints 2.5f true computePointColor world
                 world
 
             | None -> world
