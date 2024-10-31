@@ -2,7 +2,6 @@
 open System
 open System.IO
 open Nu
-open Breakout
 module Program =
 
     // this the entry point for your Nu application
@@ -24,4 +23,4 @@ module Program =
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // run the engine with the given config and plugin
-        World.run worldConfig (MyGamePlugin ())
+        World.run worldConfig (BreakoutPlugin ())

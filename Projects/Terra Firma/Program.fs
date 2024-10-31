@@ -2,7 +2,6 @@
 open System
 open System.IO
 open Nu
-open TerraFirma
 module Program =
 
     // this the entry point for your Nu application
