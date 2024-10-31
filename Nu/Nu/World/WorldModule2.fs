@@ -2328,7 +2328,7 @@ module EntityPropertyDescriptor =
         elif propertyName = "Material" then "Material Properties 2"
         elif propertyName = "NavShape" || propertyName = "Nav3dConfig" then "Navigation Properties"
         elif List.exists (fun (property : PropertyDefinition) -> propertyName = property.PropertyName) rigidBodyProperties then "Physics Properties"
-        else "~More Properties~"
+        else "~ More Properties"
 
     let getEditable propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
