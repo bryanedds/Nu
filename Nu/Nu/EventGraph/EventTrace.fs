@@ -25,9 +25,5 @@ module EventTrace =
         eventTrace
 #endif
 
-    /// Record event only in all modes.
-    let trace moduleName functionName moreInfo eventTrace =
-        record moduleName functionName moreInfo eventTrace
-
     /// The empty event trace.
     let empty : EventTrace = []
