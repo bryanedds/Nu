@@ -608,7 +608,7 @@ module Content =
             screenContents.Add (screen.ScreenName, screen)
 #if DEBUG
         if screenContents.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
-            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screen (> 2048) in a single game may thrash the LOH."
+            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screens (> 2048) in a single game may thrash the LOH."
 #endif
         { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt
