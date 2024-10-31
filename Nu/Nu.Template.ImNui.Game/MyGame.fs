@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open MyGame
 
 // this determines what state the game is in. To learn about ImNui in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui

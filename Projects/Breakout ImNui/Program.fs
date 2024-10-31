@@ -1,7 +1,8 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open System.IO
 open Nu
+open Breakout
 module Program =
 
     // this the entry point for your Nu application

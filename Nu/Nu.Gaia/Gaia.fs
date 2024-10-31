@@ -18,6 +18,7 @@ open ImGuizmoNET
 open ImPlotNET
 open Prime
 open Nu
+open Nu.Gaia
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //

@@ -1,6 +1,7 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open Nu
+open Breakout
 
 // this module provides global handles to the game's key simulants.
 // having a Simulants module for your game is optional, but can be nice to avoid duplicating string literals across

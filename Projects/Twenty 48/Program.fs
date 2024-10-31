@@ -2,6 +2,7 @@
 open System
 open System.IO
 open Nu
+open Twenty48
 module Program =
 
     // this the entry point for your Nu application

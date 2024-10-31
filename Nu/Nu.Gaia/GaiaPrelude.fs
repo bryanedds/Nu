@@ -6,6 +6,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Nu.Gaia
 
 type DragEntityState =
     | DragEntityPosition2d of Time : DateTimeOffset * MousePositionWorldOrig : Vector2 * EntityDragOffset : Vector2 * Entity : Entity

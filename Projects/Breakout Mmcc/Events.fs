@@ -1,6 +1,7 @@
 ﻿namespace Breakout
 open System
 open Nu
+open Breakout
 
 // this module specifies user-defined event types for Breakout.
 [<RequireQualifiedAccess>]

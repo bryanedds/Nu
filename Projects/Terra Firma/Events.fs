@@ -1,6 +1,7 @@
 ﻿namespace TerraFirma
 open System
 open Nu
+open TerraFirma
 
 [<RequireQualifiedAccess>]
 module Events =

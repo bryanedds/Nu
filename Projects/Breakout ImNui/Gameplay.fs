@@ -1,8 +1,9 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open System.Numerics
 open Prime
 open Nu
+open Breakout
 
 // this represents the state of gameplay simulation.
 type GameplayState =

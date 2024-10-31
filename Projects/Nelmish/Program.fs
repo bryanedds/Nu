@@ -2,6 +2,7 @@
 open System
 open System.IO
 open Nu
+open Nelmish
 module Program =
 
     // this the entry point for your Nu application

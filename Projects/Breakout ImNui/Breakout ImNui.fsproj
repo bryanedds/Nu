@@ -38,8 +38,8 @@
 		<Compile Include="Assets.fs" />
 		<Compile Include="Simulants.fs" />
 		<Compile Include="Gameplay.fs" />
-		<Compile Include="MyGame.fs" />
-		<Compile Include="MyGamePlugin.fs" />
+		<Compile Include="Breakout.fs" />
+		<Compile Include="BreakoutPlugin.fs" />
 		<Compile Include="Program.fs" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>

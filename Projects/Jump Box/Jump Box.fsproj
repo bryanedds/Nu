@@ -35,8 +35,8 @@
 	</Target>
 
 	<ItemGroup>
-		<Compile Include="MyGame.fs" />
-		<Compile Include="MyGamePlugin.fs" />
+		<Compile Include="JumpBox.fs" />
+		<Compile Include="JumpBoxPlugin.fs" />
 		<Compile Include="Program.fs" />
 		<Content Include="AssetGraph.nuag">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -1,6 +1,7 @@
 ﻿namespace MyGame
 open System
 open Nu
+open MyGame
 
 // this module contains our user-defined events.
 [<RequireQualifiedAccess>]

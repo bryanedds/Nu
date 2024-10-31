@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Twenty48
 
 // this is our MMCC model type representing gameplay.
 type GameplayMessage =

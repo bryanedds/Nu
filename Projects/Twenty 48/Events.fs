@@ -1,6 +1,7 @@
 ﻿namespace Twenty48
 open System
 open Nu
+open Twenty48
 
 // this module specifies user-defined event types for Breakout.
 [<RequireQualifiedAccess>]
