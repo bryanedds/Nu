@@ -870,13 +870,13 @@ module WorldModule2 =
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
                 let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
-                Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                Quadtree.addElement entityState.PresenceSpatial entityState.Bounds.Box2 element quadtree
             if SList.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                    Octree.addElement entityState.Presence entityState.Bounds element octree
+                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.PresenceSpatial entityState.Bounds entity
+                    Octree.addElement entityState.PresenceSpatial entityState.Bounds element octree
             world
                 
         static member internal evictScreenElements screen world =
@@ -886,13 +886,13 @@ module WorldModule2 =
             for entity in entities2d do
                 let entityState = World.getEntityState entity world
                 let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
-                Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                Quadtree.removeElement entityState.PresenceSpatial entityState.Bounds.Box2 element quadtree
             if SArray.notEmpty entities3d then
                 let octree = World.getOctree world
                 for entity in entities3d do
                     let entityState = World.getEntityState entity world
-                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                    Octree.removeElement entityState.Presence entityState.Bounds element octree
+                    let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.PresenceSpatial entityState.Bounds entity
+                    Octree.removeElement entityState.PresenceSpatial entityState.Bounds element octree
             world
 
         static member internal registerScreenPhysics only3dHack screen world =

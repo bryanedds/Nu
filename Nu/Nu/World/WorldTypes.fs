@@ -1200,6 +1200,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.Optimized with get () = this.Transform.Optimized
     member internal this.VisibleSpatial with get () = this.Visible || this.AlwaysRender
     member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate
+    member internal this.PresenceSpatial with get () = if this.Absolute then Omnipresent else this.Presence
 
     /// Copy an entity state.
     /// This is used when we want to retain an old version of an entity state in face of mutation.
