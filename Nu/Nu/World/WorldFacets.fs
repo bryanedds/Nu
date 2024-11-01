@@ -2681,7 +2681,7 @@ type StaticModelSurfaceFacet () =
 
     static member Properties =
         [define Entity.InsetOpt None
-         define Entity.MaterialProperties MaterialProperties.empty
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.empty
          define Entity.RenderStyle Deferred
          define Entity.StaticModel Assets.Default.StaticModel
