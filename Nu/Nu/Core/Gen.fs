@@ -151,24 +151,7 @@ module Gen =
         static member id =
             Guid.NewGuid ()
 
-        /// Generate an id from a couple of ints.
-        /// It is the user's responsibility to ensure uniqueness when using the resulting ids.
-        /// Thread-safe.
-        static member idFromInts m n =
-            let bytes = Array.create<byte> 8 (byte 0)
-            Guid (m, int16 (n >>> 16), int16 n, bytes)
-
-        /// Generate an id deterministically.
-        /// HACK: this is an ugly hack to create a deterministic sequance of guids.
-        /// Limited to creating 65,536 guids.
-        /// Thread-safe.
-        static member idDeterministic offset (guid : Guid) =
-            let arr = guid.ToByteArray ()
-            if arr.[15] + byte offset < arr.[15] then arr.[14] <- arr.[14] + byte 1
-            arr.[15] <- arr.[15] + byte offset                    
-            Guid arr
-
-        /// Generate a unique non-zero 64-bit id.
+        /// Generate a unique non-zero 32-bit id.
         /// Thread-safe.
         static member id32 =
             lock Lock (fun () ->
