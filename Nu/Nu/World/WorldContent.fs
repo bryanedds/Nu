@@ -142,7 +142,7 @@ module Content =
                     let lens = propertyContent.PropertyLens
                     match lens.This :> obj with
                     | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
-                    | _ -> lens.TrySet propertyContent.PropertyValue world
+                    | _ -> lens.TrySet propertyContent.PropertyValue world |> snd'
                 else world)
                 world content.PropertyContentsOpt
         else world
@@ -164,7 +164,7 @@ module Content =
                     if strEq lens.Name "MountOpt" then mountOptFound <- true
                     match lens.This :> obj with
                     | null -> world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world
+                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world |> snd'
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
             world
         else world
