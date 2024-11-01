@@ -208,7 +208,7 @@ module WorldImNui =
             let world = World.mapSimulantImNui (fun simulantImNui -> { simulantImNui with Result = zero }) group.GroupAddress world
             (result, world)
 
-        static member private beginGroup4<'d> name groupFilePathOpt args world =
+        static member inline private beginGroup4<'d> name groupFilePathOpt args world =
             World.beginGroupPlus6 () (fun _ _ world -> world) name groupFilePathOpt args world |> snd
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
