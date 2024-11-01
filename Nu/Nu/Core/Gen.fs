@@ -151,6 +151,13 @@ module Gen =
         static member id =
             Guid.NewGuid ()
 
+        /// Generate an id from a couple of ints.
+        /// It is the user's responsibility to ensure uniqueness when using the resulting ids.
+        /// Thread-safe.
+        static member idFromInts m n =
+            let bytes = Array.create<byte> 8 (byte 0)
+            Guid (m, int16 (n >>> 16), int16 n, bytes)
+
         /// Generate a unique non-zero 32-bit id.
         /// Thread-safe.
         static member id32 =
