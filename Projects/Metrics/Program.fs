@@ -27,7 +27,54 @@ type MetricsEntityDispatcher () =
         let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
         AttributesInferred.important bounds.Size bounds.Center
 
-#if !MMCC
+#if MMCC
+type [<ReferenceEquality>] Ints =
+    { Ints : Map<int, int> }
+    static member init n =
+        { Ints = Seq.init n (fun a -> (a, a)) |> Map.ofSeq }
+    static member inc ints =
+        { Ints = ints.Ints |> Map.map (fun _ v -> inc v) }
+
+type [<ReferenceEquality>] Intss =
+    { Intss : Map<int, Ints> }
+    static member init n =
+        { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
+    static member inc intss =
+        { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
+
+type MmccGameMessage =
+    | Inc
+    interface Message
+
+type MmccGameDispatcher () =
+    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 60FPS)
+
+    override this.Definitions (_, _) =
+        [Game.UpdateEvent => Inc]
+
+    override this.Message (intss, message, _, _) =
+        match message with
+        | Inc -> just (Intss.inc intss)
+
+    override this.Content (intss, _) =
+        [Content.screen "Screen" Vanilla []
+            [for (i, ints) in intss.Intss.Pairs' do
+                Content.group (string i) []
+                    [for (j, int) in ints.Ints.Pairs' do
+                        Content.entity<MetricsEntityDispatcher> (string j)
+                            [Entity.Presence == Omnipresent
+                             Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
+                             Entity.Scale := v3Dup (single (int % 10)) * 0.5f]]
+             Content.group "Other" []
+                [Content.skyBox "SkyBox" []
+                 Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
+
+    override this.Update (game, world) =
+        let world = base.Update (game, world)        
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world
+#else
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
@@ -76,53 +123,6 @@ type MyGameDispatcher () =
 #endif
 
     override this.Update (_, world) =
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
-#else
-type [<ReferenceEquality>] Ints =
-    { Ints : Map<int, int> }
-    static member init n =
-        { Ints = Seq.init n (fun a -> (a, a)) |> Map.ofSeq }
-    static member inc ints =
-        { Ints = ints.Ints |> Map.map (fun _ v -> inc v) }
-
-type [<ReferenceEquality>] Intss =
-    { Intss : Map<int, Ints> }
-    static member init n =
-        { Intss = Seq.init n (fun a -> (a, Ints.init n)) |> Map.ofSeq }
-    static member inc intss =
-        { Intss = intss.Intss |> Map.map (fun k v -> if k % 1 = 0 then Ints.inc v else v) }
-
-type MmccGameMessage =
-    | Inc
-    interface Message
-
-type MmccGameDispatcher () =
-    inherit GameDispatcher<Intss, MmccGameMessage, Command> (Intss.init 115) // 13,225 MMCC entities (goal: 60FPS, current: 60FPS)
-
-    override this.Definitions (_, _) =
-        [Game.UpdateEvent => Inc]
-
-    override this.Message (intss, message, _, _) =
-        match message with
-        | Inc -> just (Intss.inc intss)
-
-    override this.Content (intss, _) =
-        [Content.screen "Screen" Vanilla []
-            [for (i, ints) in intss.Intss.Pairs' do
-                Content.group (string i) []
-                    [for (j, int) in ints.Ints.Pairs' do
-                        Content.entity<MetricsEntityDispatcher> (string j)
-                            [Entity.Presence == Omnipresent
-                             Entity.Position == v3 (single i * 4.25f - 245.0f) (single j * 2.25f - 125.0f) -250.0f
-                             Entity.Scale := v3Dup (single (int % 10)) * 0.5f]]
-             Content.group "Other" []
-                [Content.skyBox "SkyBox" []
-                 Content.fps "Fps" [Entity.Position := v3 134.0f -168.0f 0.0f]]]]
-
-    override this.Update (game, world) =
-        let world = base.Update (game, world)        
         if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world
