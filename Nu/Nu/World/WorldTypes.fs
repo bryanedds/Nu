@@ -1788,6 +1788,7 @@ and GameDescriptor =
 and [<NoEquality; NoComparison>] internal SimulantImNui =
     { mutable SimulantInitializing : bool
       mutable SimulantUtilized : bool
+      InitializationTime : int64
       Result : obj }
 
 /// Provides subscription bookkeeping information with the ImNui API.

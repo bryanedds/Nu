@@ -32,6 +32,9 @@ module WorldModule2 =
     let mutable private FramePaceIssues = 0
     let mutable private FramePaceChecks = 0
 
+    (* ImNui Simulant Comparison *)
+    let private SimulantImNuiComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
+
     type World with
 
         static member internal rebuildQuadtree world =
@@ -400,7 +403,7 @@ module WorldModule2 =
                 match world.SimulantImNuis.TryGetValue screen.ScreenAddress with
                 | (true, screenImNui) -> (false, World.utilizeSimulantImNui screen.ScreenAddress screenImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; Result = (FQueue.empty<ScreenResult>, zero) } world
+                    let world = World.addSimulantImNui screen.ScreenAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = (FQueue.empty<ScreenResult>, zero) } world
                     let mapFstResult (mapper : ScreenResult FQueue -> ScreenResult FQueue) world =
                         let mapScreenImNui screenImNui =
                             let (screenResult, userResult) = screenImNui.Result :?> ScreenResult FQueue * 'r
@@ -1427,12 +1430,14 @@ module WorldModule2 =
 
         static member internal sweepSimulants (world : World) =
             if world.Advancing then
+
+                // update simulant bookkeeping, collecting simulants to destroy in the process
                 let simulantsToDestroy = List ()
                 let world =
                     UMap.fold (fun world simulantAddress simulantImNui ->
                         if not simulantImNui.SimulantUtilized then
                             let simulant = World.deriveFromAddress simulantAddress
-                            simulantsToDestroy.Add simulant
+                            simulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
                             World.setSimulantImNuis (UMap.remove simulantAddress world.SimulantImNuis) world
                         else
                             if world.Imperative then
@@ -1443,7 +1448,15 @@ module WorldModule2 =
                                 let simulantImNuis = UMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
                                 World.setSimulantImNuis simulantImNuis world)
                         world world.SimulantImNuis
-                let world = Seq.fold (flip World.destroy) world simulantsToDestroy
+                simulantsToDestroy.Sort SimulantImNuiComparer
+
+                // destroy simulants
+                let world =
+                    Seq.fold
+                        (fun world (_, simulant) -> World.destroy simulant world)
+                        world simulantsToDestroy
+
+                // update subscription bookkeeping
                 let world =
                     UMap.fold (fun world subscriptionKey subscriptionImNui ->
                         if not subscriptionImNui.SubscriptionUtilized then
@@ -1457,7 +1470,10 @@ module WorldModule2 =
                                 let simulantImNuis = UMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
                                 World.setSubscriptionImNuis simulantImNuis world)
                         world world.SubscriptionImNuis
+
+                // fin
                 world
+
             else world
 
         static member private preUpdateSimulants (world : World) =

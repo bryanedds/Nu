@@ -138,7 +138,7 @@ module WorldImNui =
                 match world.SimulantImNuis.TryGetValue game.GameAddress with
                 | (true, gameImNui) -> (false, World.utilizeSimulantImNui game.GameAddress gameImNui world)
                 | (false, _) ->
-                    let world = World.addSimulantImNui game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
+                    let world = World.addSimulantImNui game.GameAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     (true, world)
             let initializing = initializing || Reinitializing
             Seq.fold
@@ -191,7 +191,7 @@ module WorldImNui =
                                 | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
                             World.setGroupProtected true group world |> snd'
                         else world
-                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
+                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapGroupImNui groupImNui = { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }
                         World.tryMapSimulantImNui mapGroupImNui group.GroupAddress world
@@ -230,7 +230,7 @@ module WorldImNui =
                             let world = World.readGroup groupDescriptor None group.Screen world |> snd
                             World.setGroupProtected true group world |> snd'
                         else world
-                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
+                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world
                     (true, world)
             let initializing = initializing || Reinitializing
             Seq.fold
@@ -283,7 +283,7 @@ module WorldImNui =
                             let world = World.setEntityProtected true entity world |> snd'
                             if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
                         else world
-                    let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; Result = zero } world
+                    let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapEntityImNui entityImNui = { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }
                         World.tryMapSimulantImNui mapEntityImNui entity.EntityAddress world
@@ -317,7 +317,7 @@ module WorldImNui =
                 else world
             match world.SimulantImNuis.TryGetValue entity.EntityAddress with
             | (true, entityImNui) -> (false, entity, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
-            | (false, _) -> (true, entity, World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world)
+            | (false, _) -> (true, entity, World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; InitializationTime = Core.getTimeStampUnique (); Result = () } world)
 
         /// Begin the ImNui declaration of a group read from the given file path with the given arguments.
         /// Note that changing the file path over time has no effect as only the first moment is used.
