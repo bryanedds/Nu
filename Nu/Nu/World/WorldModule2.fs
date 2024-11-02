@@ -1443,10 +1443,7 @@ module WorldModule2 =
                                 let simulantImNuis = UMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
                                 World.setSimulantImNuis simulantImNuis world)
                         world world.SimulantImNuis
-                let world =
-                    Seq.fold
-                        (fun world simulant -> World.destroy simulant world)
-                        world simulantsToDestroy
+                let world = Seq.fold (flip World.destroy) world simulantsToDestroy
                 let world =
                     UMap.fold (fun world subscriptionKey subscriptionImNui ->
                         if not subscriptionImNui.SubscriptionUtilized then
