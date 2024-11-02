@@ -20,8 +20,8 @@ type JumpBoxDispatcher () =
     static member Properties =
         [define Game.Collisions 0]
 
-    // here we handle running the game
-    override this.Run (jumpBox, world) =
+    // here we define the game's top-level behavior
+    override this.Process (jumpBox, world) =
 
         // declare screen and group
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world

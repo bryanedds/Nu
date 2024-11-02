@@ -27,7 +27,7 @@ type GameplayDispatcher () =
         [define Screen.GameplayState Quit]
 
     // here we define the behavior of our gameplay
-    override this.Run (gameplay, world) =
+    override this.Process (gameplay, world) =
 
         // declare scene group while screen is selected
         let world =

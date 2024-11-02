@@ -1060,7 +1060,7 @@ module WorldModule2 =
 
         static member private processImNui world =
             WorldImNui.Reinitializing <- false
-            World.sweepImNui world
+            World.sweepSimulants world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
@@ -1379,10 +1379,10 @@ module WorldModule2 =
             let octree = World.getOctree world
             Octree.sweep octree
 
-        /// Run ImNui for a single frame.
-        /// Needed only as a hack for Gaia and other accompanying context to ensure ImGui simulants are created at a
-        /// meaningful time.
-        static member runImNui (world : World) =
+        /// Process ImNui for a single frame.
+        /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
+        /// meaningful time. Do NOT call this in the course of normal operations!
+        static member processSimulants (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1396,25 +1396,25 @@ module WorldModule2 =
                 World.getElements2dInPlay HashSet2dNormalCached world
                 world.Timers.UpdateGatherTimer.Stop ()
 
-                // run game
+                // process game
                 world.Timers.UpdateGameTimer.Restart ()
-                let world = World.runGame game world
+                let world = World.processGame game world
                 world.Timers.UpdateGameTimer.Stop ()
 
-                // run screen if any
+                // process screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.runScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.processScreen screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
-                // update groups
+                // process groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.runGroup group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.processGroup group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
-                // update entities
+                // process entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
-                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.runEntity element.Entry world else world) world HashSet3dNormalCached
-                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.runEntity element.Entry world else world) world HashSet2dNormalCached
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.processEntity element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.processEntity element.Entry world else world) world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
                 // fin
@@ -1425,7 +1425,7 @@ module WorldModule2 =
                 HashSet3dNormalCached.Clear ()
                 HashSet2dNormalCached.Clear ()
 
-        static member internal sweepImNui (world : World) =
+        static member internal sweepSimulants (world : World) =
             if world.Advancing then
                 let world =
                     OMap.fold (fun world simulantAddress simulantImNui ->
@@ -1503,7 +1503,7 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
-                let world = World.runGame game world
+                let world = World.processGame game world
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
@@ -1511,7 +1511,7 @@ module WorldModule2 =
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
                     Option.fold (fun world (screen : Screen) ->
-                        let world = if screen.GetExists world then World.runScreen screen world else world
+                        let world = if screen.GetExists world then World.processScreen screen world else world
                         let world = if advancing && screen.GetExists world then World.updateScreen screen world else world
                         world)
                         world screenOpt
@@ -1521,7 +1521,7 @@ module WorldModule2 =
                 world.Timers.UpdateGroupsTimer.Restart ()
                 let world =
                     Seq.fold (fun world (group : Group) ->
-                        let world = if group.GetExists world then World.runGroup group world else world
+                        let world = if group.GetExists world then World.processGroup group world else world
                         let world = if advancing && group.GetExists world then World.updateGroup group world else world
                         world)
                         world groups
@@ -1533,7 +1533,7 @@ module WorldModule2 =
                     Seq.fold (fun world (element : Entity Octelement) ->
                         let world =
                             if element.Entry.GetExists world
-                            then World.runEntity element.Entry world
+                            then World.processEntity element.Entry world
                             else world
                         let world =
                             if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
@@ -1545,7 +1545,7 @@ module WorldModule2 =
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         let world =
                             if element.Entry.GetExists world
-                            then World.runEntity element.Entry world
+                            then World.processEntity element.Entry world
                             else world
                         let world =
                             if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
@@ -2282,10 +2282,10 @@ module EntityDispatcherModule2 =
     type FacetImNui (physical, lightProbe, light) =
         inherit Facet (physical, lightProbe, light)
 
-        override this.Run (entity, world) =
+        override this.Process (entity, world) =
             let context = world.ContextImNui
             let world = World.scopeEntity entity [] world
-            let world = this.Run (entity, world)
+            let world = this.Process (entity, world)
             World.advanceContext entity.EntityAddress context world
 
 [<RequireQualifiedAccess>]

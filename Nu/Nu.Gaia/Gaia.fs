@@ -1325,8 +1325,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // initialize event filter as not to flood the log
             let world = World.setEventFilter Constants.Gaia.EventFilter world
 
-            // run ImNui once to make sure initial simulants are created
-            let world = World.runImNui world
+            // process ImNui once to make sure initial simulants are created
+            let world = World.processSimulants world
 
             // apply any selected mode
             let world =
@@ -1337,8 +1337,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | (false, _) -> world
                 | None -> world
 
-            // run ImNui again to ensure simulants in new mode are created
-            let world = World.runImNui world
+            // process ImNui again to ensure simulants in new mode are created
+            let world = World.processSimulants world
 
             // figure out which screen to use
             let (screen, world) =
@@ -2574,7 +2574,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = World.runImNui world
+                                        let world = World.processSimulants world
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world

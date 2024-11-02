@@ -8,10 +8,10 @@ open Nu
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
-    // here we handle running the game
-    override this.Run (_, world) =
+    // here we define the game's top-level behavior
+    override this.Process (_, world) =
 
-        // run in game context
+        // process in the game's ImNui context
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
         let world = World.beginGroup "Group" [] world
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)

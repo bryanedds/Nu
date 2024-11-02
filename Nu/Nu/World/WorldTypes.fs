@@ -442,9 +442,9 @@ and GameDispatcher () =
     abstract Unregister : Game * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui run a game.
-    abstract Run : Game * World -> World
-    default this.Run (_, world) = world
+    /// ImNui process a game.
+    abstract Process : Game * World -> World
+    default this.Process (_, world) = world
 
     /// Pre-update a game.
     abstract PreUpdate : Game * World -> World
@@ -498,9 +498,9 @@ and ScreenDispatcher () =
     abstract Unregister : Screen * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui run a screen.
-    abstract Run : Screen * World -> World
-    default this.Run (_, world) = world
+    /// ImNui process a screen.
+    abstract Process : Screen * World -> World
+    default this.Process (_, world) = world
 
     /// Pre-update a screen.
     abstract PreUpdate : Screen * World -> World
@@ -560,9 +560,9 @@ and GroupDispatcher () =
     abstract Unregister : Group * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui run a group.
-    abstract Run : Group * World -> World
-    default this.Run (_, world) = world
+    /// ImNui process a group.
+    abstract Process : Group * World -> World
+    default this.Process (_, world) = world
 
     /// Pre-update a group.
     abstract PreUpdate : Group * World -> World
@@ -652,9 +652,9 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
     abstract Unregister : Entity * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui run an entity.
-    abstract Run : Entity * World -> World
-    default this.Run (_, world) = world
+    /// ImNui process an entity.
+    abstract Process : Entity * World -> World
+    default this.Process (_, world) = world
 
     /// Update an entity.
     abstract Update : Entity * World -> World
@@ -737,9 +737,9 @@ and Facet (physical, lightProbe, light) =
     abstract UnregisterPhysics : Entity * World -> World
     default this.UnregisterPhysics (_, world) = world
 
-    /// ImNui run a facet.
-    abstract Run : Entity * World -> World
-    default this.Run (_, world) = world
+    /// ImNui process a facet.
+    abstract Process : Entity * World -> World
+    default this.Process (_, world) = world
 
     /// Update a facet.
     abstract Update : Entity * World -> World

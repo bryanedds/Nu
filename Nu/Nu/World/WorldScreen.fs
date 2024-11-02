@@ -230,7 +230,7 @@ module WorldScreenModule =
                     else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
             let world = World.addScreen false screenState screen world
-            let world = if WorldModule.UpdatingSimulants then WorldModule.runScreen screen world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.processScreen screen world else world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.
@@ -325,8 +325,8 @@ module WorldScreenModule =
             // read the screen's groups
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
 
-            // attempt to ImNui run screen first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.runScreen screen world else world
+            // attempt to process ImNui screen first time if in the middle of simulant update phase
+            let world = if WorldModule.UpdatingSimulants then WorldModule.processScreen screen world else world
             (screen, world)
 
         /// Read multiple screens from a game descriptor.

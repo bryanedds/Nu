@@ -29,8 +29,8 @@ type MyGameDispatcher () =
     static member Properties =
         [define Game.GameState Splash]
 
-    // here we handle running the game
-    override this.Run (myGame, world) =
+    // here we define the game's top-level behavior
+    override this.Process (myGame, world) =
 
         // declare splash screen
         let behavior = Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)
