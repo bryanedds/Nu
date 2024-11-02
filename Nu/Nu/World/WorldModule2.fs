@@ -1061,9 +1061,11 @@ module WorldModule2 =
             let taskletsNotRun = OMap.filter (fun simulant _ -> World.getExists simulant world) taskletsNotRun
             World.restoreTasklets taskletsNotRun world
 
-        static member private processImNui world =
-            WorldImNui.Reinitializing <- false
-            World.sweepSimulants world
+        static member private processImNui (world : World) =
+            if world.Advancing then
+                WorldImNui.Reinitializing <- false
+                World.sweepSimulants world
+            else world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
@@ -1429,52 +1431,49 @@ module WorldModule2 =
                 HashSet2dNormalCached.Clear ()
 
         static member internal sweepSimulants (world : World) =
-            if world.Advancing then
 
-                // update simulant bookkeeping, collecting simulants to destroy in the process
-                let simulantsToDestroy = List ()
-                let world =
-                    UMap.fold (fun world simulantAddress simulantImNui ->
-                        if not simulantImNui.SimulantUtilized then
-                            let simulant = World.deriveFromAddress simulantAddress
-                            simulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
-                            World.setSimulantImNuis (UMap.remove simulantAddress world.SimulantImNuis) world
+            // update simulant bookkeeping, collecting simulants to destroy in the process
+            let simulantsToDestroy = List ()
+            let world =
+                UMap.fold (fun world simulantAddress simulantImNui ->
+                    if not simulantImNui.SimulantUtilized then
+                        let simulant = World.deriveFromAddress simulantAddress
+                        simulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
+                        World.setSimulantImNuis (UMap.remove simulantAddress world.SimulantImNuis) world
+                    else
+                        if world.Imperative then
+                            simulantImNui.SimulantUtilized <- false
+                            simulantImNui.SimulantInitializing <- false
+                            world
                         else
-                            if world.Imperative then
-                                simulantImNui.SimulantUtilized <- false
-                                simulantImNui.SimulantInitializing <- false
-                                world
-                            else
-                                let simulantImNuis = UMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
-                                World.setSimulantImNuis simulantImNuis world)
-                        world world.SimulantImNuis
-                simulantsToDestroy.Sort SimulantImNuiComparer
+                            let simulantImNuis = UMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
+                            World.setSimulantImNuis simulantImNuis world)
+                    world world.SimulantImNuis
+            simulantsToDestroy.Sort SimulantImNuiComparer
 
-                // destroy simulants
-                let world =
-                    Seq.fold
-                        (fun world (_, simulant) -> World.destroy simulant world)
-                        world simulantsToDestroy
+            // destroy simulants
+            let world =
+                Seq.fold
+                    (fun world (_, simulant) -> World.destroy simulant world)
+                    world simulantsToDestroy
 
-                // update subscription bookkeeping
-                let world =
-                    UMap.fold (fun world subscriptionKey subscriptionImNui ->
-                        if not subscriptionImNui.SubscriptionUtilized then
-                            let world = World.unsubscribe subscriptionImNui.SubscriptionId world
-                            World.setSubscriptionImNuis (UMap.remove subscriptionKey world.SubscriptionImNuis) world
+            // update subscription bookkeeping
+            let world =
+                UMap.fold (fun world subscriptionKey subscriptionImNui ->
+                    if not subscriptionImNui.SubscriptionUtilized then
+                        let world = World.unsubscribe subscriptionImNui.SubscriptionId world
+                        World.setSubscriptionImNuis (UMap.remove subscriptionKey world.SubscriptionImNuis) world
+                    else
+                        if world.Imperative then
+                            subscriptionImNui.SubscriptionUtilized <- false
+                            world
                         else
-                            if world.Imperative then
-                                subscriptionImNui.SubscriptionUtilized <- false
-                                world
-                            else
-                                let simulantImNuis = UMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
-                                World.setSubscriptionImNuis simulantImNuis world)
-                        world world.SubscriptionImNuis
+                            let simulantImNuis = UMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
+                            World.setSubscriptionImNuis simulantImNuis world)
+                    world world.SubscriptionImNuis
 
-                // fin
-                world
-
-            else world
+            // fin
+            world
 
         static member private preUpdateSimulants (world : World) =
 
