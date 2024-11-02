@@ -179,18 +179,18 @@ module WorldImNui =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
-            let world =
-                if not (group.GetExists world) then
-                    let world =
-                        match groupFilePathOpt with
-                        | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
-                        | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
-                    World.setGroupProtected true group world |> snd'
-                else world
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group.GroupAddress with
                 | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
                 | (false, _) ->
+                    let world =
+                        if not (group.GetExists world) then
+                            let world =
+                                match groupFilePathOpt with
+                                | Some groupFilePath -> World.readGroupFromFile groupFilePath (Some name) group.Screen world |> snd
+                                | None -> World.createGroup<'d> (Some name) group.Screen world |> snd
+                            World.setGroupProtected true group world |> snd'
+                        else world
                     let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapGroupImNui groupImNui = { groupImNui with Result = mapper (groupImNui.Result :?> 'r) }
@@ -218,17 +218,20 @@ module WorldImNui =
             let groupAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext groupAddress world
             let group = Nu.Group groupAddress
-            let world =
-                if not (group.GetExists world) then
-                    let groupDescriptorStr = File.ReadAllText groupFilePath
-                    let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
-                    let world = World.readGroup groupDescriptor None group.Screen world |> snd
-                    World.setGroupProtected true group world |> snd'
-                else world
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue group.GroupAddress with
-                | (true, groupImNui) -> (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
-                | (false, _) -> (true, World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world)
+                | (true, groupImNui) ->
+                    (false, World.utilizeSimulantImNui group.GroupAddress groupImNui world)
+                | (false, _) ->
+                    let world =
+                        if not (group.GetExists world) then
+                            let groupDescriptorStr = File.ReadAllText groupFilePath
+                            let groupDescriptor = scvalue<GroupDescriptor> groupDescriptorStr
+                            let world = World.readGroup groupDescriptor None group.Screen world |> snd
+                            World.setGroupProtected true group world |> snd'
+                        else world
+                    let world = World.addSimulantImNui group.GroupAddress { SimulantInitializing = true; SimulantUtilized = true; Result = () } world
+                    (true, world)
             let initializing = initializing || Reinitializing
             Seq.fold
                 (fun world arg ->
@@ -270,16 +273,16 @@ module WorldImNui =
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
             let world = World.setContext entityAddress world
             let entity = Nu.Entity entityAddress
-            let world = 
-                if not (entity.GetExists world) then
-                    let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
-                    let world = World.setEntityProtected true entity world |> snd'
-                    if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
-                else world
             let (initializing, world) =
                 match world.SimulantImNuis.TryGetValue entity.EntityAddress with
                 | (true, entityImNui) -> (false, World.utilizeSimulantImNui entity.EntityAddress entityImNui world)
                 | (false, _) ->
+                    let world =
+                        if not (entity.GetExists world) then
+                            let world = World.createEntity<'d> OverlayNameDescriptor.DefaultOverlay (Some entity.Surnames) entity.Group world |> snd
+                            let world = World.setEntityProtected true entity world |> snd'
+                            if entity.Surnames.Length > 1 then entity.SetMountOpt (Some (Relation.makeParent ())) world else world
+                        else world
                     let world = World.addSimulantImNui entity.EntityAddress { SimulantInitializing = true; SimulantUtilized = true; Result = zero } world
                     let mapResult (mapper : 'r -> 'r) world =
                         let mapEntityImNui entityImNui = { entityImNui with Result = mapper (entityImNui.Result :?> 'r) }

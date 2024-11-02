@@ -1824,8 +1824,8 @@ and [<ReferenceEquality>] internal Subsystems =
 and [<ReferenceEquality>] internal WorldExtension =
     { mutable ContextImNui : Address
       mutable RecentImNui : Address
-      mutable SimulantImNuis : OMap<Address, SimulantImNui>
-      mutable SubscriptionImNuis : OMap<string * Address * Address, SubscriptionImNui>
+      mutable SimulantImNuis : UMap<Address, SimulantImNui>
+      mutable SubscriptionImNuis : UMap<string * Address * Address, SubscriptionImNui>
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin

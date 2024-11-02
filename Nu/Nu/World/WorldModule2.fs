@@ -1427,32 +1427,37 @@ module WorldModule2 =
 
         static member internal sweepSimulants (world : World) =
             if world.Advancing then
+                let simulantsToDestroy = List ()
                 let world =
-                    OMap.fold (fun world simulantAddress simulantImNui ->
+                    UMap.fold (fun world simulantAddress simulantImNui ->
                         if not simulantImNui.SimulantUtilized then
                             let simulant = World.deriveFromAddress simulantAddress
-                            let world = World.destroy simulant world
-                            World.setSimulantImNuis (OMap.remove simulantAddress world.SimulantImNuis) world
+                            simulantsToDestroy.Add simulant
+                            World.setSimulantImNuis (UMap.remove simulantAddress world.SimulantImNuis) world
                         else
                             if world.Imperative then
                                 simulantImNui.SimulantUtilized <- false
                                 simulantImNui.SimulantInitializing <- false
                                 world
                             else
-                                let simulantImNuis = OMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
+                                let simulantImNuis = UMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
                                 World.setSimulantImNuis simulantImNuis world)
                         world world.SimulantImNuis
                 let world =
-                    OMap.fold (fun world subscriptionKey subscriptionImNui ->
+                    Seq.fold
+                        (fun world simulant -> World.destroy simulant world)
+                        world simulantsToDestroy
+                let world =
+                    UMap.fold (fun world subscriptionKey subscriptionImNui ->
                         if not subscriptionImNui.SubscriptionUtilized then
                             let world = World.unsubscribe subscriptionImNui.SubscriptionId world
-                            World.setSubscriptionImNuis (OMap.remove subscriptionKey world.SubscriptionImNuis) world
+                            World.setSubscriptionImNuis (UMap.remove subscriptionKey world.SubscriptionImNuis) world
                         else
                             if world.Imperative then
                                 subscriptionImNui.SubscriptionUtilized <- false
                                 world
                             else
-                                let simulantImNuis = OMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
+                                let simulantImNuis = UMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
                                 World.setSubscriptionImNuis simulantImNuis world)
                         world world.SubscriptionImNuis
                 world

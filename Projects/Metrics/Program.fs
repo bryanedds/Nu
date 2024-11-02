@@ -31,13 +31,34 @@ type MetricsEntityDispatcher () =
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
-    override this.Register (game, world) =
-        let world = base.Register (game, world)
+#if IMNUI
+    override this.Process (_, world) =
+        let (_, world) = World.beginScreen "Screen" true Vanilla [] world
+        let world = World.beginGroup "Group" [] world
+        let world = World.doFps "Fps" [Entity.Position .= v3 134.0f -168.0f 0.0f] world
+        let world = World.doSkyBox "SkyBox" [] world
+        let positions = // 20,000 entities (goal: 60FPS, current 41FPS)
+            [|for i in 0 .. dec 50 do
+                for j in 0 .. dec 50 do
+                    for k in 0 .. dec 8 do
+                        yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
+        let world =
+            Array.foldi (fun i world position ->
+                World.doEntity<MetricsEntityDispatcher> (string i)
+                    [Entity.Presence .= Omnipresent
+                     Entity.Position .= position + v3 -12.5f -12.5f -20.0f
+                     Entity.Scale .= v3Dup 0.1f] world)
+                world positions
+        let world = World.endGroup world
+        let world = World.endScreen world
+        world
+#else
+    override this.Register (_, world) =
         let (screen, world) = World.createScreen (Some "Screen") world
         let (group, world) = World.createGroup (Some "Group") screen world
         let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
-        let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
+        let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
         let positions = // 40,000 entities (goal: 60FPS, current 55FPS)
             [|for i in 0 .. dec 50 do
                 for j in 0 .. dec 50 do
@@ -52,9 +73,9 @@ type MyGameDispatcher () =
                 world)
                 world positions
         World.selectScreen (IdlingState world.GameTime) screen world
+#endif
 
-    override this.Update (game, world) =
-        let world = base.Update (game, world)
+    override this.Update (_, world) =
         if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world
