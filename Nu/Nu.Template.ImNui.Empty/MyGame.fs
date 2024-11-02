@@ -8,7 +8,7 @@ open Nu
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
-    // here we define the game's top-level behavior
+    // here we define the game's behavior
     override this.Process (_, world) =
 
         // process in the game's ImNui context

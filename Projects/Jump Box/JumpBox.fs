@@ -20,7 +20,7 @@ type JumpBoxDispatcher () =
     static member Properties =
         [define Game.Collisions 0]
 
-    // here we define the game's top-level behavior
+    // here we define the game's behavior
     override this.Process (jumpBox, world) =
 
         // declare screen and group
