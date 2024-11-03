@@ -1435,18 +1435,18 @@ module WorldModule2 =
             // update simulant bookkeeping, collecting simulants to destroy in the process
             let simulantsToDestroy = List ()
             let world =
-                UMap.fold (fun world simulantAddress simulantImNui ->
+                SUMap.fold (fun world simulantAddress simulantImNui ->
                     if not simulantImNui.SimulantUtilized then
                         let simulant = World.deriveFromAddress simulantAddress
                         simulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
-                        World.setSimulantImNuis (UMap.remove simulantAddress world.SimulantImNuis) world
+                        World.setSimulantImNuis (SUMap.remove simulantAddress world.SimulantImNuis) world
                     else
                         if world.Imperative then
                             simulantImNui.SimulantUtilized <- false
                             simulantImNui.SimulantInitializing <- false
                             world
                         else
-                            let simulantImNuis = UMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
+                            let simulantImNuis = SUMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
                             World.setSimulantImNuis simulantImNuis world)
                     world world.SimulantImNuis
             simulantsToDestroy.Sort SimulantImNuiComparer
@@ -1459,16 +1459,16 @@ module WorldModule2 =
 
             // update subscription bookkeeping
             let world =
-                UMap.fold (fun world subscriptionKey subscriptionImNui ->
+                SUMap.fold (fun world subscriptionKey subscriptionImNui ->
                     if not subscriptionImNui.SubscriptionUtilized then
                         let world = World.unsubscribe subscriptionImNui.SubscriptionId world
-                        World.setSubscriptionImNuis (UMap.remove subscriptionKey world.SubscriptionImNuis) world
+                        World.setSubscriptionImNuis (SUMap.remove subscriptionKey world.SubscriptionImNuis) world
                     else
                         if world.Imperative then
                             subscriptionImNui.SubscriptionUtilized <- false
                             world
                         else
-                            let simulantImNuis = UMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
+                            let simulantImNuis = SUMap.add subscriptionKey { subscriptionImNui with SubscriptionUtilized = false } world.SubscriptionImNuis
                             World.setSubscriptionImNuis simulantImNuis world)
                     world world.SubscriptionImNuis
 

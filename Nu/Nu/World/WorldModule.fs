@@ -316,7 +316,7 @@ module WorldModule =
             world.SimulantImNuis.[simulant]
 
         static member internal addSimulantImNui simulant simulantImNui (world : World) =
-            let simulantImNuis = UMap.add simulant simulantImNui world.SimulantImNuis
+            let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
             World.setSimulantImNuis simulantImNuis world
 
         static member internal tryMapSimulantImNui mapper simulant (world : World) =
@@ -337,7 +337,7 @@ module WorldModule =
                 world
             else
                 let simulantImNui = { simulantImNui with SimulantUtilized = true }
-                let simulantImNuis = UMap.add simulant simulantImNui world.SimulantImNuis
+                let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
                 World.setSimulantImNuis simulantImNuis world
 
         static member internal getSubscriptionImNuis (world : World) =
@@ -355,7 +355,7 @@ module WorldModule =
             world.SubscriptionImNuis.[subscription]
 
         static member internal addSubscriptionImNui subscription subscriptionImNui (world : World) =
-            let subscriptionImNuis = UMap.add subscription subscriptionImNui world.SubscriptionImNuis
+            let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
             World.setSubscriptionImNuis subscriptionImNuis world
 
         static member internal tryMapSubscriptionImNui mapper subscription (world : World) =
@@ -376,7 +376,7 @@ module WorldModule =
                 world
             else
                 let subscriptionImNui = { subscriptionImNui with SubscriptionUtilized = true }
-                let subscriptionImNuis = UMap.add subscription subscriptionImNui world.SubscriptionImNuis
+                let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
                 World.setSubscriptionImNuis subscriptionImNuis world
 
         /// Switch simulation to use this ambient state.

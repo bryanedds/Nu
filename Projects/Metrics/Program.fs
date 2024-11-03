@@ -78,7 +78,7 @@ type MmccGameDispatcher () =
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
-    static let Positions = // 15,000 entities (goal: 60FPS, current 57FPS)
+    static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 6 do
