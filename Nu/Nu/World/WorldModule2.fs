@@ -32,7 +32,8 @@ module WorldModule2 =
     let mutable private FramePaceIssues = 0
     let mutable private FramePaceChecks = 0
 
-    (* ImNui Simulant Comparison *)
+    (* Cached ImNui Collections *)
+    let private ImNuiSimulantsToDestroy = List ()
     let private SimulantImNuiComparer = Comparer<int64 * Simulant>.Create (fun (a, _) (b, _) -> a.CompareTo b)
 
     type World with
@@ -1433,12 +1434,11 @@ module WorldModule2 =
         static member internal sweepSimulants (world : World) =
 
             // update simulant bookkeeping, collecting simulants to destroy in the process
-            let simulantsToDestroy = List ()
             let world =
                 SUMap.fold (fun world simulantAddress simulantImNui ->
                     if not simulantImNui.SimulantUtilized then
                         let simulant = World.deriveFromAddress simulantAddress
-                        simulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
+                        ImNuiSimulantsToDestroy.Add (simulantImNui.InitializationTime, simulant)
                         World.setSimulantImNuis (SUMap.remove simulantAddress world.SimulantImNuis) world
                     else
                         if world.Imperative then
@@ -1449,13 +1449,14 @@ module WorldModule2 =
                             let simulantImNuis = SUMap.add simulantAddress { simulantImNui with SimulantUtilized = false; SimulantInitializing = false } world.SimulantImNuis
                             World.setSimulantImNuis simulantImNuis world)
                     world world.SimulantImNuis
-            simulantsToDestroy.Sort SimulantImNuiComparer
+            ImNuiSimulantsToDestroy.Sort SimulantImNuiComparer
 
             // destroy simulants
             let world =
                 Seq.fold
                     (fun world (_, simulant) -> World.destroy simulant world)
-                    world simulantsToDestroy
+                    world ImNuiSimulantsToDestroy
+            ImNuiSimulantsToDestroy.Clear ()
 
             // update subscription bookkeeping
             let world =
