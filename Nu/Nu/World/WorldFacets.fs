@@ -980,6 +980,7 @@ module TextBoxFacetExtensions =
         member this.GetCursor world : int = this.Get (nameof this.Cursor) world
         member this.SetCursor (value : int) world = this.Set (nameof this.Cursor) value world
         member this.Cursor = lens (nameof this.Cursor) this this.GetCursor this.SetCursor
+        member this.TextEditEvent = Events.TextEditEvent --> this
         member this.FocusEvent = Events.FocusEvent --> this
 
 /// Augments an entity with text box behavior.
@@ -1014,23 +1015,44 @@ type TextBoxFacet () =
             let world =
                 if data.Down then
                     if data.KeyboardKey = KeyboardKey.Left then 
-                        if cursor > 0 then entity.SetCursor (dec cursor) world else world
+                        if cursor > 0 then
+                            let cursor = dec cursor
+                            let world = entity.SetCursor cursor world
+                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                        else world
                     elif data.KeyboardKey = KeyboardKey.Right then
-                        if cursor < text.Length then entity.SetCursor (inc cursor) world else world
+                        if cursor < text.Length then
+                            let cursor = inc cursor
+                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
+                        else world
                     elif data.KeyboardKey = KeyboardKey.Home || data.KeyboardKey = KeyboardKey.Up then
-                        entity.SetCursor 0 world
+                        let cursor = 0
+                        let world = entity.SetCursor cursor world
+                        let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
                     elif data.KeyboardKey = KeyboardKey.End || data.KeyboardKey = KeyboardKey.Down then
-                        entity.SetCursor text.Length world
+                        let cursor = text.Length
+                        let world = entity.SetCursor cursor world
+                        let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                        World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
                     elif data.KeyboardKey = KeyboardKey.Backspace then
                         if cursor > 0 && text.Length > 0 then
-                            let world = entity.SetText (String.take (dec cursor) text + String.skip cursor text) world
-                            let world = entity.SetCursor (dec cursor) world
-                            world
+                            let text = String.take (dec cursor) text + String.skip cursor text
+                            let cursor = dec cursor
+                            let world = entity.SetText text world
+                            let world = entity.SetCursor cursor world
+                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
                         else world
                     elif data.KeyboardKey = KeyboardKey.Delete then
                         let text = entity.GetText world
-                        if cursor >= 0 && cursor < text.Length
-                        then entity.SetText (String.take cursor text + String.skip (inc cursor) text) world
+                        if cursor >= 0 && cursor < text.Length then
+                            let text = String.take cursor text + String.skip (inc cursor) text
+                            let world = entity.SetText text world
+                            let eventTrace = EventTrace.debug "TextBoxFacet" "handleKeyboardKeyChange" "" EventTrace.empty
+                            World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
                         else world
                     else world
                 else world
@@ -1050,8 +1072,11 @@ type TextBoxFacet () =
                 if cursor < 0 || cursor >= text.Length
                 then text + string evt.Data.TextInput
                 else String.take cursor text + string evt.Data.TextInput + String.skip cursor text
+            let cursor = inc cursor
             let world = entity.SetText text world
-            let world = if cursor >= 0 then entity.SetCursor (inc cursor) world else world
+            let world = if cursor >= 0 then entity.SetCursor cursor world else world
+            let eventTrace = EventTrace.debug "TextBoxFacet" "handleTextInput" "" EventTrace.empty
+            let world = World.publishPlus { Text = text; Cursor = cursor } entity.TextEditEvent eventTrace entity true false world
             (Resolve, world)
         else (Cascade, world)
 

@@ -419,7 +419,7 @@ module WorldImNui =
 
         /// ImNui declare a text box entity with the given arguments.
         static member doTextBox name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.Text.ChangeEvent entity world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.TextEditEvent entity world
             let (textChanged, world) = World.doEntityPlus<TextBoxDispatcher, _> false init name args world
             (world.RecentEntity.GetText world, textChanged, world)
 
