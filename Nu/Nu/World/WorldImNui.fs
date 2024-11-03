@@ -399,13 +399,15 @@ module WorldImNui =
 
         /// ImNui declare a toggle button with the given arguments.
         static member doToggleButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun evt world -> (Cascade, mapResult (fun _ -> evt.Data) world)) entity.ToggleEvent entity world
-            World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.ToggleEvent entity world
+            let (toggleChanged, world) = World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
+            (world.RecentEntity.GetToggled world, toggleChanged, world)
 
         /// ImNui declare a radio button with the given arguments.
         static member doRadioButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun evt world -> (Cascade, mapResult (fun _ -> evt.Data) world)) entity.DialEvent entity world
-            World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.DialEvent entity world
+            let (dialChanged, world) = World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
+            (world.RecentEntity.GetDialed world, dialChanged, world)
 
         /// ImNui declare a fill bar with the given arguments.
         static member doFillBar name args world = World.doEntity<FillBarDispatcher> name args world
@@ -416,7 +418,10 @@ module WorldImNui =
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// ImNui declare a text box entity with the given arguments.
-        static member doTextBox name args world = World.doEntity<TextBoxDispatcher> name args world
+        /// TODO: implement and expose result for TextChange event?
+        static member doTextBox name args world =
+            let world = World.doEntity<TextBoxDispatcher> name args world
+            (world.RecentEntity.GetText world, world)
 
         /// ImNui declare an fps entity with the given arguments.
         static member doFps name args world = World.doEntity<FpsDispatcher> name args world
