@@ -267,7 +267,6 @@ module WorldImNui =
                 world args
 
         /// Begin the ImNui declaration of an entity with the given arguments.
-        /// TODO: P1: optimize this for large-scale use.
         static member beginEntityPlus<'d, 'r when 'd :> EntityDispatcher> (zero : 'r) init name (args : Entity ArgImNui seq) (world : World) : 'r * World =
             if world.ContextImNui.Names.Length < 3 then raise (InvalidOperationException "ImNui entity declared outside of valid ImNui context (must be called in either Group or Entity context).")
             let entityAddress = Address.makeFromArray (Array.add name world.ContextImNui.Names)
