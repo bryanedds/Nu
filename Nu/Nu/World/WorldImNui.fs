@@ -394,18 +394,18 @@ module WorldImNui =
 
         /// ImNui declare a button with the given arguments.
         static member doButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.ClickEvent entity world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.ClickEvent entity world
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// ImNui declare a toggle button with the given arguments.
         static member doToggleButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.ToggleEvent entity world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.ToggleEvent entity world
             let (toggleChanged, world) = World.doEntityPlus<ToggleButtonDispatcher, _> false init name args world
             (world.RecentEntity.GetToggled world, toggleChanged, world)
 
         /// ImNui declare a radio button with the given arguments.
         static member doRadioButton name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.DialEvent entity world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.DialEvent entity world
             let (dialChanged, world) = World.doEntityPlus<RadioButtonDispatcher, _> false init name args world
             (world.RecentEntity.GetDialed world, dialChanged, world)
 
@@ -414,14 +414,14 @@ module WorldImNui =
 
         /// ImNui declare a feeler with the given arguments.
         static member doFeeler name args world =
-            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult (fun _ -> true) world)) entity.TouchEvent entity world
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.TouchEvent entity world
             World.doEntityPlus<ButtonDispatcher, _> false init name args world
 
         /// ImNui declare a text box entity with the given arguments.
-        /// TODO: implement and expose result for TextChange event?
         static member doTextBox name args world =
-            let world = World.doEntity<TextBoxDispatcher> name args world
-            (world.RecentEntity.GetText world, world)
+            let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.Text.ChangeEvent entity world
+            let (textChanged, world) = World.doEntityPlus<TextBoxDispatcher, _> false init name args world
+            (world.RecentEntity.GetText world, textChanged, world)
 
         /// ImNui declare an fps entity with the given arguments.
         static member doFps name args world = World.doEntity<FpsDispatcher> name args world
