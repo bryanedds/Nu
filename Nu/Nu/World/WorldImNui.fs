@@ -415,7 +415,8 @@ module WorldImNui =
         /// ImNui declare a feeler with the given arguments.
         static member doFeeler name args world =
             let init mapResult (entity : Entity) world = World.monitor (fun _ world -> (Cascade, mapResult tautology world)) entity.TouchEvent entity world
-            World.doEntityPlus<ButtonDispatcher, _> false init name args world
+            let (touchChanged, world) = World.doEntityPlus<FeelerDispatcher, _> false init name args world
+            (world.RecentEntity.GetTouched world, touchChanged, world)
 
         /// ImNui declare a text box entity with the given arguments.
         static member doTextBox name args world =
