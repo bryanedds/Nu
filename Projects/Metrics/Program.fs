@@ -78,13 +78,13 @@ type MmccGameDispatcher () =
 type MyGameDispatcher () =
     inherit GameDispatcher ()
 
+#if IMNUI
     static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
                 for k in 0 .. dec 6 do
                     yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
 
-#if IMNUI
     override this.Process (_, world) =
         let (_, world) = World.beginScreen "Screen" true Vanilla [] world
         let world = World.beginGroup "Group" [] world
@@ -101,6 +101,12 @@ type MyGameDispatcher () =
         let world = World.endScreen world
         world
 #else
+    static let Positions = // 40,000 entities (goal: 60FPS, current 60FPS)
+        [|for i in 0 .. dec 50 do
+            for j in 0 .. dec 50 do
+                for k in 0 .. dec 16 do
+                    yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
+
     override this.Register (_, world) =
         let (screen, world) = World.createScreen (Some "Screen") world
         let (group, world) = World.createGroup (Some "Group") screen world
