@@ -35,7 +35,7 @@ type BreakoutDispatcher () =
         // declare splash screen
         let behavior = Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)
         let (results, world) = World.beginScreen Simulants.Splash.Name (breakout.GetGameState world = Splash) behavior [] world
-        let world = if FQueue.contains Deselecting results then breakout.SetGameState Title world else world
+        let world = if FQueue.contains Deselecting results && not world.ContextInitializing then breakout.SetGameState Title world else world
         let world = World.endScreen world
 
         // declare title screen
