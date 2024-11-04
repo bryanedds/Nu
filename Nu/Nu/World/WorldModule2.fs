@@ -102,7 +102,10 @@ module WorldModule2 =
                             let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
                             World.publishPlus () screen.SelectEvent eventTrace screen false false world
                         else world
-                    | None -> World.setSelectedScreen screen world
+                    | None ->
+                        let world = World.setSelectedScreen screen world
+                        let eventTrace = EventTrace.debug "World" "selectScreen" "Select" EventTrace.empty
+                        World.publishPlus () screen.SelectEvent eventTrace screen false false world
                 World.setScreenTransitionStatePlus transitionState screen world
             | None -> World.setSelectedScreenOpt None world
 
