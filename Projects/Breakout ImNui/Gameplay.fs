@@ -223,7 +223,7 @@ type GameplayDispatcher () =
         let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world
         let world = if clicked then gameplay.SetGameplayState Quitting world else world
 
-        // end group declaration
+        // end gui declaration
         let world = World.endGroup world
         world
 

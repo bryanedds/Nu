@@ -44,8 +44,6 @@ type GameplayDispatcher () =
         let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world
         let world = if clicked then gameplay.SetGameplayState Quitting world else world
         let world = World.endGroup world
-
-        // fin
         world
 
     // this is a semantic fix-up that allows the editor to avoid creating an unused group. This is specific to the

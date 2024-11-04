@@ -91,10 +91,6 @@ type BreakoutDispatcher () =
         let world = World.endScreen world
 
         // handle Alt+F4 when not in editor
-        let world =
-            if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-            then World.exit world
-            else world
-
-        // fin
-        world
+        if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world

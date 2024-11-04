@@ -21,11 +21,7 @@ type MyGameDispatcher () =
         let world = World.endGroup world
         let world = World.endScreen world
 
-        // handle Alt+F4
-        let world =
-            if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-            then World.exit world
-            else world
-
-        // return gameplay and world values
-        world
+        // handle Alt+F4 when not in editor
+        if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world

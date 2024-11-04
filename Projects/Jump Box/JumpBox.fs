@@ -53,10 +53,6 @@ type JumpBoxDispatcher () =
         let world = World.endScreen world
 
         // handle Alt+F4 while unaccompanied
-        let world =
-            if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world && world.Unaccompanied
-            then World.exit world
-            else world
-
-        // fin
-        world
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world && world.Unaccompanied
+        then World.exit world
+        else world
