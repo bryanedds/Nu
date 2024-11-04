@@ -68,7 +68,7 @@ type GameplayDispatcher () =
                 let world = World.doStaticModel "StaticModel" [Entity.Position .= v3 0.0f 0.0f -2.0f; Entity.Rotation @= rotation] world
 
                 // left wall
-                let (_, world) =
+                let (leftWallBodyId, _, world) =
                     World.doBlock2d "LeftWall"
                         [Entity.Position .= v3 -164.0f 0.0f 0.0f
                          Entity.Size .= v3 8.0f 360.0f 0.0f
@@ -76,7 +76,7 @@ type GameplayDispatcher () =
                          Entity.StaticImage .= Assets.Default.Black] world
 
                 // right wall
-                let (_, world) =
+                let (rightWallBodyId, _, world) =
                     World.doBlock2d "RightWall"
                         [Entity.Position .= v3 164.0f 0.0f 0.0f
                          Entity.Size .= v3 8.0f 360.0f 0.0f
@@ -84,7 +84,7 @@ type GameplayDispatcher () =
                          Entity.StaticImage .= Assets.Default.Black] world
 
                 // top wall
-                let (_, world) =
+                let (topWallBodyId, _, world) =
                     World.doBlock2d "TopWall"
                         [Entity.Position .= v3 0.0f 176.0f 0.0f
                          Entity.Size .= v3 320.0f 8.0f 0.0f
@@ -92,14 +92,13 @@ type GameplayDispatcher () =
                          Entity.StaticImage .= Assets.Default.Black] world
 
                 // paddle
-                let (_, world) =
+                let (paddleBodyId, _, world) =
                     World.doBlock2d "Paddle"
                         [Entity.Position .= PaddleOrigin
                          Entity.Size .= v3 64.0f 16.0f 0.0f
                          Entity.Sensor .= true
                          Entity.StaticImage .= Assets.Default.Paddle] world
                 let paddle = world.RecentEntity
-                let paddlePosition = paddle.GetPosition world
 
                 // move paddle while game is playing / playable
                 let world =
@@ -113,7 +112,7 @@ type GameplayDispatcher () =
                     else world
 
                 // ball
-                let (results, world) =
+                let (ballBodyId, ballResults, world) =
                     World.doBall2d "Ball"
                         [Entity.Position .= BallOrigin
                          Entity.Size .= v3 8.0f 8.0f 0.0f
@@ -124,8 +123,6 @@ type GameplayDispatcher () =
                          Entity.Observable .= true
                          Entity.StaticImage .= Assets.Default.Ball] world
                 let ball = world.RecentEntity
-                let ballBodyId = ball.GetBodyId world
-                let ballPosition = ball.GetPosition world
 
                 // ball life cycle
                 let world =
@@ -145,12 +142,12 @@ type GameplayDispatcher () =
                 let world =
                     FQueue.fold (fun world result ->
                         match result with
-                        | BodyPenetration data ->
-                            let penetratee = data.BodyShapePenetratee.BodyId.BodySource
-                            if penetratee = paddle then
+                        | BodyPenetration penetration ->
+                            let penetrateeId = penetration.BodyShapePenetratee.BodyId
+                            if penetrateeId = paddleBodyId then
 
                                 // paddle collision
-                                let bounce = (ballPosition - paddlePosition).Normalized * BallSpeed
+                                let bounce = (ball.GetPosition world - paddle.GetPosition world).Normalized * BallSpeed
                                 let world = World.setBodyLinearVelocity bounce ballBodyId world
                                 World.playSound 1.0f Assets.Default.Sound world
                                 world
@@ -158,21 +155,21 @@ type GameplayDispatcher () =
                             else
 
                                 // brick collision
-                                match (gameplay.GetBricks world).TryGetValue penetratee.Name with
+                                match (gameplay.GetBricks world).TryGetValue penetrateeId.BodySource.Name with
                                 | (true, brick) ->
-                                    let bounce = (ballPosition - brick.Position).Normalized * BallSpeed
+                                    let bounce = (ball.GetPosition world - brick.Position).Normalized * BallSpeed
                                     let world = World.setBodyLinearVelocity bounce ballBodyId world
                                     let world = gameplay.Score.Map ((+) 100) world
-                                    let world = gameplay.Bricks.Map (Map.remove penetratee.Name) world
+                                    let world = gameplay.Bricks.Map (Map.remove penetrateeId.BodySource.Name) world
                                     World.playSound 1.0f Assets.Default.Sound world
                                     world
 
                                 // wall collision
                                 | (false, _) ->
                                     let normal =
-                                        if penetratee.Name = "LeftWall" then v3Right
-                                        elif penetratee.Name = "RightWall" then v3Left
-                                        elif penetratee.Name = "TopWall" then v3Down
+                                        if penetrateeId = leftWallBodyId then v3Right
+                                        elif penetrateeId = rightWallBodyId then v3Left
+                                        elif penetrateeId = topWallBodyId then v3Down
                                         else failwithumf ()
                                     let world =
                                         let velocity = ball.GetLinearVelocity world
@@ -182,7 +179,7 @@ type GameplayDispatcher () =
                                     world
 
                         | _ -> world)
-                        world results
+                        world ballResults
 
                 // bricks
                 let world =
@@ -192,7 +189,7 @@ type GameplayDispatcher () =
                              Entity.Size .= brick.Size
                              Entity.Sensor .= true
                              Entity.Color @= brick.Color
-                             Entity.StaticImage .= Assets.Default.Brick] world |> snd)
+                             Entity.StaticImage .= Assets.Default.Brick] world |> __c)
                         world (gameplay.GetBricks world).Pairs
 
                 // end scene declaration

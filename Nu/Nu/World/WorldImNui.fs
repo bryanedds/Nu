@@ -437,22 +437,34 @@ module WorldImNui =
         static member doPanel name args world = World.doEntity<PanelDispatcher> name args world
 
         /// ImNui declare a 2d block with the given arguments.
-        static member doBlock2d name args world = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBlock2d name args world =
+            let (results, world) = World.doEntityPlus<Block2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 2d box with the given arguments.
-        static member doBox2d name args world = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBox2d name args world =
+            let (results, world) = World.doEntityPlus<Box2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 2d sphere with the given arguments.
-        static member doSphere2d name args world = World.doEntityPlus<Sphere2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doSphere2d name args world =
+            let (results, world) = World.doEntityPlus<Sphere2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 2d ball with the given arguments.
-        static member doBall2d name args world = World.doEntityPlus<Ball2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBall2d name args world =
+            let (results, world) = World.doEntityPlus<Ball2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 2d character with the given arguments.
-        static member doCharacter2d name args world = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doCharacter2d name args world =
+            let (results, world) = World.doEntityPlus<Character2dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a tile map with the given arguments.
-        static member doTileMap name args world = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doTileMap name args world =
+            let (results, world) = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 3d light probe with the given arguments.
         static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
@@ -470,16 +482,24 @@ module WorldImNui =
         static member doEffect3d name args world = World.doEntity<Effect3dDispatcher> name args world
 
         /// ImNui declare a 3d block with the given arguments.
-        static member doBlock3d name args world = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBlock3d name args world =
+            let (results, world) = World.doEntityPlus<Block3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 3d box with the given arguments.
-        static member doBox3d name args world = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBox3d name args world =
+            let (results, world) = World.doEntityPlus<Box3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 3d sphere with the given arguments.
-        static member doSphere3d name args world = World.doEntityPlus<Sphere3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doSphere3d name args world =
+            let (results, world) = World.doEntityPlus<Sphere3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 3d ball with the given arguments.
-        static member doBall3d name args world = World.doEntityPlus<Ball3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBall3d name args world =
+            let (results, world) = World.doEntityPlus<Ball3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a static billboard with the given arguments.
         static member doStaticBillboard name args world = World.doEntity<StaticBillboardDispatcher> name args world
@@ -491,22 +511,32 @@ module WorldImNui =
         static member doStaticModelSurface name args world = World.doEntity<StaticModelSurfaceDispatcher> name args world
 
         /// ImNui declare a rigid model with the given arguments.
-        static member doRigidModel name args world = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doRigidModel name args world =
+            let (results, world) = World.doEntityPlus<RigidModelDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a rigid model with the given arguments.
-        static member doRigidModelSurface name args world = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doRigidModelSurface name args world =
+            let (results, world) = World.doEntityPlus<RigidModelSurfaceDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a animated model with the given arguments.
         static member doAnimatedModel name args world = World.doEntity<AnimatedModelDispatcher> name args world
 
         /// ImNui declare a 3d character with the given arguments.
-        static member doCharacter3d name args world = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doCharacter3d name args world =
+            let (results, world) = World.doEntityPlus<Character3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 3d body joint with the given arguments.
-        static member doBodyJoint3d name args world = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doBodyJoint3d name args world =
+            let (results, world) = World.doEntityPlus<BodyJoint3dDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyJointId world, results, world)
 
         /// ImNui declare a terrain with the given arguments.
-        static member doTerrain name args world = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name args world
+        static member doTerrain name args world =
+            let (results, world) = World.doEntityPlus<TerrainDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
 
         /// ImNui declare a 3d nav config with the given arguments.
         static member doNav3dConfig name args world = World.doEntity<Nav3dConfigDispatcher> name args world
