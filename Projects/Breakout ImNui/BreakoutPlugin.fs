@@ -1,9 +1,10 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open Nu
+open Breakout
 
 // this is a plugin for the Nu game engine that directs the execution of your application and editor
-type MyGamePlugin () =
+type BreakoutPlugin () =
     inherit NuPlugin ()
 
     // this exposes different editing modes in the editor

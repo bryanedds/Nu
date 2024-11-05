@@ -18,6 +18,7 @@ open ImGuizmoNET
 open ImPlotNET
 open Prime
 open Nu
+open Nu.Gaia
 
 //////////////////////////////////////////////////////////////////////////////////////
 // TODO:                                                                            //
@@ -177,8 +178,8 @@ module Gaia =
 
     (* Memoization *)
 
-    let ToSymbolMemo = new ForgetfulDictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
-    let OfSymbolMemo = new ForgetfulDictionary<struct (Type * Symbol), obj> (HashIdentity.Structural)
+    let ToSymbolMemo = ForgetfulDictionary<struct (Type * obj), Symbol> (HashIdentity.FromFunctions hash objEq)
+    let OfSymbolMemo = ForgetfulDictionary<struct (Type * Symbol), obj> HashIdentity.Structural
 
     (* Fsi Session *)
 
@@ -441,11 +442,11 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureMouseGlobal) && (world.Halted || EditWhileAdvancing)
+        not io.WantCaptureMouseGlobal && (world.Halted || EditWhileAdvancing)
 
     let private canEditWithKeyboard (world : World) =
         let io = ImGui.GetIO ()
-        not (io.WantCaptureKeyboardGlobal) && (world.Halted || EditWhileAdvancing)
+        not io.WantCaptureKeyboardGlobal && (world.Halted || EditWhileAdvancing)
 
     let private snapshot snapshotType world =
         Pasts <- (snapshotType, world) :: Pasts
@@ -812,7 +813,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let eyeRotation = World.getEye3dRotation world
                 let entityPosition =
                     if atMouse then
-                        let ray = viewport.MouseToWorld3d (entity.GetAbsolute world, RightClickPosition, eyeCenter, eyeRotation)
+                        let ray = viewport.MouseToWorld3d (RightClickPosition, eyeCenter, eyeRotation)
                         let forward = eyeRotation.Forward
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
@@ -1324,8 +1325,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             // initialize event filter as not to flood the log
             let world = World.setEventFilter Constants.Gaia.EventFilter world
 
-            // run ImNui once to make sure initial simulants are created
-            let world = World.runImNui world
+            // process ImNui once to make sure initial simulants are created
+            let world = World.processSimulants world
 
             // apply any selected mode
             let world =
@@ -1336,8 +1337,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | (false, _) -> world
                 | None -> world
 
-            // run ImNui again to ensure simulants in new mode are created
-            let world = World.runImNui world
+            // process ImNui again to ensure simulants in new mode are created
+            let world = World.processSimulants world
 
             // figure out which screen to use
             let (screen, world) =
@@ -1969,21 +1970,28 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         let propertyDescriptorses = propertyDescriptors |> Array.groupBy EntityPropertyDescriptor.getCategory |> Map.ofSeq
         let world =
             Seq.fold (fun world (propertyCategory, propertyDescriptors) ->
-                let world =
-                    if ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
+                let (mountActive, modelUsed) =
+                    match simulant with
+                    | :? Entity as entity ->
                         let mountActive =
-                            match simulant with
-                            | :? Entity as entity ->
-                                match entity.GetMountOpt world with
-                                | Some mount ->
-                                    let parentAddress = Relation.resolve entity.EntityAddress mount
-                                    let parent = World.deriveFromAddress parentAddress
-                                    parent.Names.Length >= 4 && World.getExists parent world
-                                | None -> false
-                            | _ -> false
+                            match entity.GetMountOpt world with
+                            | Some mount ->
+                                let parentAddress = Relation.resolve entity.EntityAddress mount
+                                let parent = World.deriveFromAddress parentAddress
+                                parent.Names.Length >= 4 && World.getExists parent world
+                            | None -> false
+                        (mountActive, (entity.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    | :? Group as group -> (false, (group.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    | :? Screen as screen -> (false, (screen.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    | :? Game as game -> (false, (game.GetProperty Constants.Engine.ModelPropertyName world).PropertyType <> typeof<unit>)
+                    | _ -> failwithumf ()
+                let world =
+                    if  (propertyCategory <> "Basic Model Properties" || modelUsed) &&
+                        ImGui.CollapsingHeader (propertyCategory, ImGuiTreeNodeFlags.DefaultOpen ||| ImGuiTreeNodeFlags.OpenOnArrow) then
                         let propertyDescriptors =
                             propertyDescriptors |>
-                            Array.filter (fun pd -> SimulantPropertyDescriptor.getEditable pd simulant) |>
+                            Array.filter (fun pd ->
+                                SimulantPropertyDescriptor.getEditable pd simulant) |>
                             Array.filter (fun pd ->
                                 match pd.PropertyName with
                                 | nameof Entity.Position
@@ -1996,8 +2004,8 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 | nameof Entity.DegreesLocal
                                 | nameof Entity.ScaleLocal
                                 | nameof Entity.ElevationLocal
-                                | nameof Entity.VisibleLocal
-                                | nameof Entity.EnabledLocal -> mountActive
+                                | nameof Entity.EnabledLocal
+                                | nameof Entity.VisibleLocal -> mountActive
                                 | _ -> true) |>
                             Array.sortBy (fun pd ->
                                 match pd.PropertyName with
@@ -2126,7 +2134,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let projection = projectionMatrix.ToArray ()
             let operation =
                 ViewportOverlay
-                    { ViewportView = viewport.View3d (false, World.getEye3dCenter world, World.getEye3dRotation world)
+                    { ViewportView = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                       ViewportProjection = projectionMatrix
                       ViewportBounds = box2 v2Zero io.DisplaySize
                       EditContext = makeContext None None }
@@ -2138,7 +2146,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 | Some entity when entity.GetExists world && entity.GetIs3d world ->
                     let operation =
                         ViewportOverlay
-                            { ViewportView = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
+                            { ViewportView = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                               ViewportProjection = projectionMatrix
                               ViewportBounds = box2 v2Zero io.DisplaySize
                               EditContext = makeContext None None }
@@ -2155,7 +2163,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                             (World.getEye3dCenter world,
                              World.getEye3dRotation world,
                              World.getEye3dFrustumView world,
-                             entity.GetAbsolute world,
                              (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
                              &lightProbeBounds)
                     match manipulationResult with
@@ -2172,7 +2179,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             let world =
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal ->
-                    let viewMatrix = viewport.View3d (entity.GetAbsolute world, World.getEye3dCenter world, World.getEye3dRotation world)
+                    let viewMatrix = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                     let view = viewMatrix.ToArray ()
                     let affineMatrix = entity.GetAffineMatrix world
                     let affine = affineMatrix.ToArray ()
@@ -2567,7 +2574,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = World.runImNui world
+                                        let world = World.processSimulants world
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world
@@ -3324,7 +3331,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     let private imGuiNewProjectDialog world =
 
         // prompt user to create new project
-        let programDir = PathF.GetDirectoryName (Reflection.Assembly.GetEntryAssembly().Location)
+        let programDir = PathF.GetDirectoryName (Assembly.GetEntryAssembly().Location)
         let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowNewProjectDialog) then
@@ -4055,8 +4062,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if SList.notEmpty lightProbeModels then
             World.enqueueRenderMessage3d
                 (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightProbeModels
+                    { StaticModels = lightProbeModels
                       StaticModel = Assets.Default.LightProbeModel
                       RenderType = DeferredRenderType
                       RenderPass = NormalPass })
@@ -4072,8 +4078,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
         if SList.notEmpty lightModels then
             World.enqueueRenderMessage3d
                 (RenderStaticModels
-                    { Absolute = false
-                      StaticModels = lightModels
+                    { StaticModels = lightModels
                       StaticModel = Assets.Default.LightbulbModel
                       RenderType = DeferredRenderType
                       RenderPass = NormalPass })
@@ -4105,14 +4110,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                   Flip = FlipNone }})
                     world
             else
-                let absolute = entity.GetAbsolute world
                 let bounds = entity.GetBounds world
                 let mutable boundsMatrix = Matrix4x4.CreateScale (bounds.Size + v3Dup 0.01f) // slightly bigger to eye to prevent z-fighting with selected entity
                 boundsMatrix.Translation <- bounds.Center
                 World.enqueueRenderMessage3d
                     (RenderStaticModel
-                        { Absolute = absolute
-                          ModelMatrix = boundsMatrix
+                        { ModelMatrix = boundsMatrix
                           Presence = Omnipresent
                           InsetOpt = None
                           MaterialProperties = MaterialProperties.defaultProperties

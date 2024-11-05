@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open MyGame
 
 // this determines what state the game is in. To learn about ImNui in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
@@ -28,16 +29,18 @@ type MyGameDispatcher () =
     static member Properties =
         [define Game.GameState Splash]
 
-    // here we handle running the game
-    override this.Run (myGame, world) =
+    // here we define the game's top-level behavior
+    override this.Process (myGame, world) =
 
         // declare splash screen
-        let (results, world) = World.beginScreen Simulants.Splash.Name (myGame.GetGameState world = Splash) (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] world
-        let world = if FQueue.contains Deselecting results then myGame.SetGameState Title world else world
+        let behavior = Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)
+        let (results, world) = World.beginScreen Simulants.Splash.Name (myGame.GetGameState world = Splash) behavior [] world
+        let world = if FQueue.contains Deselecting results && not world.ContextInitializing then myGame.SetGameState Title world else world
         let world = World.endScreen world
 
         // declare title screen
-        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame.GetGameState world = Title) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Title.nugroup" [] world
+        let behavior = Dissolve (Constants.Dissolve.Default, None)
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (myGame.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world
         let world = World.beginGroup "Gui" [] world
         let (clicked, world) = World.doButton "Play" [] world
         let world = if clicked then myGame.SetGameState Gameplay world else world
@@ -49,7 +52,8 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // declare gameplay screen
-        let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame.GetGameState world = Gameplay) (Dissolve (Constants.Dissolve.Default, None)) [] world
+        let behavior = Dissolve (Constants.Dissolve.Default, None)
+        let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame.GetGameState world = Gameplay) behavior [] world
         let world =
             if FQueue.contains Select results
             then Simulants.Gameplay.SetGameplayState Playing world
@@ -59,13 +63,14 @@ type MyGameDispatcher () =
             then Simulants.Gameplay.SetGameplayState Quit world
             else world
         let world =
-            if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quitting
+            if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit
             then myGame.SetGameState Title world
             else world
         let world = World.endScreen world
 
         // declare credits screen
-        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame.GetGameState world = Credits) (Dissolve (Constants.Dissolve.Default, None)) "Assets/Gui/Credits.nugroup" [] world
+        let behavior = Dissolve (Constants.Dissolve.Default, None)
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (myGame.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world
         let world = World.beginGroup "Gui" [] world
         let (clicked, world) = World.doButton "Back" [] world
         let world = if clicked then myGame.SetGameState Title world else world
@@ -73,10 +78,6 @@ type MyGameDispatcher () =
         let world = World.endScreen world
 
         // handle Alt+F4 when not in editor
-        let world =
-            if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-            then World.exit world
-            else world
-
-        // fin
-        world
+        if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world

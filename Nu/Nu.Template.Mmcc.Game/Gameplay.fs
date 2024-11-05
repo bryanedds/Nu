@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open MyGame
 
 // this represents the state of gameplay simulation.
 type GameplayState =

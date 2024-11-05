@@ -20,45 +20,14 @@ type MetricsEntityDispatcher () =
         let presence = transform.Presence
         let properties = MaterialProperties.empty
         let material = Material.empty
-        World.renderStaticModelSurfaceFast (false, &affineMatrix, presence, ValueNone, &properties, &material, staticModel, 0, DeferredRenderType, renderPass, world)
+        World.renderStaticModelSurfaceFast (&affineMatrix, presence, ValueNone, &properties, &material, staticModel, 0, DeferredRenderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetModelGeneric world
         let bounds = (Metadata.getStaticModelMetadata staticModel).Bounds
         AttributesInferred.important bounds.Size bounds.Center
 
-#if !MMCC
-type MyGameDispatcher () =
-    inherit GameDispatcher ()
-
-    override this.Register (game, world) =
-        let world = base.Register (game, world)
-        let (screen, world) = World.createScreen (Some "Screen") world
-        let (group, world) = World.createGroup (Some "Group") screen world
-        let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
-        let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
-        let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
-        let positions = // 40,000 entities (goal: 60FPS, current 55FPS)
-            [|for i in 0 .. dec 50 do
-                for j in 0 .. dec 50 do
-                    for k in 0 .. dec 16 do
-                        yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
-        let world =
-            Array.fold (fun world position ->
-                let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
-                let world = entity.SetPresence Omnipresent world
-                let world = entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
-                let world = entity.SetScale (v3Dup 0.1f) world
-                world)
-                world positions
-        World.selectScreen (IdlingState world.GameTime) screen world
-
-    override this.Update (game, world) =
-        let world = base.Update (game, world)
-        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
-#else
+#if MMCC
 type [<ReferenceEquality>] Ints =
     { Ints : Map<int, int> }
     static member init n =
@@ -102,6 +71,60 @@ type MmccGameDispatcher () =
 
     override this.Update (game, world) =
         let world = base.Update (game, world)        
+        if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
+        then World.exit world
+        else world
+#else
+type MyGameDispatcher () =
+    inherit GameDispatcher ()
+
+#if IMNUI
+    static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
+        [|for i in 0 .. dec 50 do
+            for j in 0 .. dec 50 do
+                for k in 0 .. dec 6 do
+                    yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
+
+    override this.Process (_, world) =
+        let (_, world) = World.beginScreen "Screen" true Vanilla [] world
+        let world = World.beginGroup "Group" [] world
+        let world = World.doFps "Fps" [Entity.Position .= v3 134.0f -168.0f 0.0f] world
+        let world = World.doSkyBox "SkyBox" [] world
+        let world =
+            Array.foldi (fun i world position ->
+                World.doEntity<MetricsEntityDispatcher> (string i)
+                    [Entity.Presence .= Omnipresent
+                     Entity.Position .= position + v3 -12.5f -12.5f -20.0f
+                     Entity.Scale .= v3Dup 0.1f] world)
+                world Positions
+        let world = World.endGroup world
+        let world = World.endScreen world
+        world
+#else
+    static let Positions = // 40,000 entities (goal: 60FPS, current 60FPS)
+        [|for i in 0 .. dec 50 do
+            for j in 0 .. dec 50 do
+                for k in 0 .. dec 16 do
+                    yield v3 (single i * 0.5f) (single j * 0.5f) (single k * 0.5f)|]
+
+    override this.Register (_, world) =
+        let (screen, world) = World.createScreen (Some "Screen") world
+        let (group, world) = World.createGroup (Some "Group") screen world
+        let (fps, world) = World.createEntity<FpsDispatcher> DefaultOverlay (Some [|"Fps"|]) group world
+        let world = fps.SetPosition (v3 134.0f -168.0f 0.0f) world
+        let world = World.createEntity<SkyBoxDispatcher> DefaultOverlay None group world |> snd
+        let world =
+            Array.fold (fun world position ->
+                let (entity, world) = World.createEntity<MetricsEntityDispatcher> NoOverlay (Some [|string Gen.id64|]) group world
+                let world = entity.SetPresence Omnipresent world
+                let world = entity.SetPosition (position + v3 -12.5f -12.5f -20.0f) world
+                let world = entity.SetScale (v3Dup 0.1f) world
+                world)
+                world Positions
+        World.selectScreen (IdlingState world.GameTime) screen world
+#endif
+
+    override this.Update (_, world) =
         if World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
         then World.exit world
         else world

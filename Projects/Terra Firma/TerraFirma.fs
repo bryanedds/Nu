@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open TerraFirma
 
 // this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
 // https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC

@@ -45,6 +45,11 @@ type GamepadButtonData =
 type TextInputData =
     { TextInput : char }
 
+/// The data for a text edit event.
+type TextEditData =
+    { Text : string
+      Cursor : int }
+
 /// The data for a physics integration event.
 type IntegrationData =
     { /// The integration messages sourced from a physics engine.
@@ -133,6 +138,8 @@ module Events =
     let TouchEvent = stoa<Vector2> "Touch/Event"
     let TouchingEvent = stoa<Vector2> "Touching/Event"
     let UntouchEvent = stoa<Vector2> "Untouch/Event"
+    let TextEditEvent = stoa<TextEditData> "TextEdit/Event"
+    let FocusEvent = stoa<unit> "Focus/Event"
     let MouseMoveEvent = stoa<MouseMoveData> "Mouse/Move/Event"
     let MouseDragEvent = stoa<MouseMoveData> "Mouse/Drag/Event"
     let MouseWheelEvent = stoa<MouseWheelData> "Mouse/Wheel/Event"

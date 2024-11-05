@@ -1132,8 +1132,7 @@ module BasicStaticBillboardEmitter =
                 particle'.InsetOpt <- if particle.Inset.Equals box2Zero then ValueNone else ValueSome particle.Inset
                 particle'.Flip <- particle.Flip
         let descriptor =
-            { BillboardParticlesDescriptor.Absolute = emitter.Absolute
-              MaterialProperties = emitter.MaterialProperties
+            { MaterialProperties = emitter.MaterialProperties
               Material = emitter.Material
               Particles = particles'
               ShadowOffset = emitter.ShadowOffset

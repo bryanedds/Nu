@@ -73,10 +73,10 @@ type Nu () =
             WorldModule.unregisterScreenPhysics <- fun only3dHack screen world -> World.unregisterScreenPhysics only3dHack screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
-            WorldModule.runGame <- fun game world -> World.runGame game world
-            WorldModule.runScreen <- fun screen world -> World.runScreen screen world
-            WorldModule.runGroup <- fun group world -> World.runGroup group world
-            WorldModule.runEntity <- fun entity world -> World.runEntity entity world
+            WorldModule.processGame <- fun game world -> World.processGame game world
+            WorldModule.processScreen <- fun screen world -> World.processScreen screen world
+            WorldModule.processGroup <- fun group world -> World.processGroup group world
+            WorldModule.processEntity <- fun entity world -> World.processEntity entity world
             WorldModule.signal <- Nu.worldModuleSignal
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world
@@ -142,6 +142,7 @@ module WorldModule3 =
                  RadioButtonDispatcher ()
                  FillBarDispatcher ()
                  FeelerDispatcher ()
+                 TextBoxDispatcher ()
                  FpsDispatcher ()
                  PanelDispatcher ()
                  BasicStaticSpriteEmitterDispatcher ()
@@ -190,6 +191,7 @@ module WorldModule3 =
                  RadioButtonFacet ()
                  FillBarFacet ()
                  FeelerFacet ()
+                 TextBoxFacet ()
                  BasicStaticSpriteEmitterFacet ()
                  EffectFacet ()
                  RigidBodyFacet ()
@@ -282,8 +284,8 @@ module WorldModule3 =
             let worldExtension =
                 { ContextImNui = Address.empty
                   RecentImNui = Address.empty
-                  SimulantImNuis = OMap.makeEmpty HashIdentity.Structural config
-                  SubscriptionImNuis = OMap.makeEmpty HashIdentity.Structural config
+                  SimulantImNuis = SUMap.makeEmpty HashIdentity.Structural config
+                  SubscriptionImNuis = SUMap.makeEmpty HashIdentity.Structural config
                   DestructionListRev = []
                   Dispatchers = dispatchers
                   Plugin = plugin

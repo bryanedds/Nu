@@ -142,7 +142,7 @@ module Content =
                     let lens = propertyContent.PropertyLens
                     match lens.This :> obj with
                     | null -> World.setProperty lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } simulant world |> snd'
-                    | _ -> lens.TrySet propertyContent.PropertyValue world
+                    | _ -> lens.TrySet propertyContent.PropertyValue world |> snd'
                 else world)
                 world content.PropertyContentsOpt
         else world
@@ -164,7 +164,7 @@ module Content =
                     if strEq lens.Name "MountOpt" then mountOptFound <- true
                     match lens.This :> obj with
                     | null -> world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
-                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world
+                    | _ -> world <- lens.TrySet propertyContent.PropertyValue world |> snd'
             content.PropertyContentsOpt <- null // OPTIMIZATION: blank out property contents to avoid GC promotion.
             world
         else world
@@ -433,6 +433,9 @@ module Content =
     /// Describe a feeler with the given definitions.
     let feeler entityName definitions = entity<FeelerDispatcher> entityName definitions
 
+    /// Describe a text box entity with the given definitions.
+    let textBox entityName definitions = entity<TextBoxDispatcher> entityName definitions
+
     /// Describe an fps entity with the given definitions.
     let fps entityName definitions = entity<FpsDispatcher> entityName definitions
 
@@ -605,7 +608,7 @@ module Content =
             screenContents.Add (screen.ScreenName, screen)
 #if DEBUG
         if screenContents.Count > 2048 then // probably indicates a 4096 24-bit Dictionary.Entry array on the LOH
-            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screen (> 2048) in a single game may thrash the LOH."
+            Log.warnOnce "High MMCC scrren content count: having a large number of MMCC screens (> 2048) in a single game may thrash the LOH."
 #endif
         { InitialScreenNameOpt = initialScreenNameOpt; SimulantCachedOpt = Unchecked.defaultof<_>
           EventSignalContentsOpt = eventSignalContentsOpt; EventHandlerContentsOpt = eventHandlerContentsOpt; PropertyContentsOpt = propertyContentsOpt

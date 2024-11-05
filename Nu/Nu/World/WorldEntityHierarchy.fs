@@ -139,7 +139,6 @@ module WorldEntityHierarchy =
                         not (entity.Has<Light3dFacet> world) &&
                         entity.Has<StaticModelSurfaceFacet> world then
                         let mutable transform = entity.GetTransform world
-                        let absolute = transform.Absolute
                         let affineMatrix = transform.AffineMatrix
                         let entityBounds = transform.Bounds3d
                         let presence = transform.Presence
@@ -149,7 +148,7 @@ module WorldEntityHierarchy =
                         let staticModel = entity.GetStaticModel world
                         let surfaceIndex = entity.GetSurfaceIndex world
                         let renderType = match entity.GetRenderStyle world with Deferred -> DeferredRenderType | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-                        let surface = { Absolute = absolute; ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
+                        let surface = { ModelMatrix = affineMatrix; Presence = presence; InsetOpt = insetOpt; MaterialProperties = properties; Material = material; SurfaceIndex = surfaceIndex; StaticModel = staticModel; RenderType = renderType }
                         let frozenSurface = StructPair.make entityBounds surface
                         boundsOpt <- match boundsOpt with Some bounds -> Some (bounds.Combine entityBounds) | None -> Some entityBounds
                         world <- entity.SetVisibleLocal false world
@@ -259,7 +258,7 @@ module FreezerFacetModule =
                     let bounds = &boundsAndSurface.Fst
                     let surface = &boundsAndSurface.Snd
                     if intersects false false surface.Presence bounds then
-                        World.renderStaticModelSurfaceFast (surface.Absolute, &surface.ModelMatrix, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
+                        World.renderStaticModelSurfaceFast (&surface.ModelMatrix, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =
