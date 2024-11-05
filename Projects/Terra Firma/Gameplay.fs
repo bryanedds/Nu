@@ -7,8 +7,8 @@ open TerraFirma
 
 // this represents that state of gameplay simulation.
 type GameplayState =
-    | Quit
     | Playing
+    | Quit
 
 // this is our MMCC model type representing gameplay.
 type [<SymbolicExpansion>] Gameplay =
