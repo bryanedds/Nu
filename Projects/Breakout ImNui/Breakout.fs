@@ -76,7 +76,7 @@ type BreakoutDispatcher () =
                 world
             else world
         let world =
-            if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quitting
+            if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit
             then breakout.SetGameState Title world
             else world
         let world = World.endScreen world

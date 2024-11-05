@@ -8,7 +8,6 @@ open Breakout
 // this represents the state of gameplay simulation.
 type GameplayState =
     | Playing
-    | Quitting
     | Quit
 
 // the bricks to break out of.
@@ -50,7 +49,7 @@ type GameplayDispatcher () =
 
     // here we define default property values
     static member Properties =
-        [define Screen.GameplayState Quitting
+        [define Screen.GameplayState Quit
          define Screen.Bricks Map.empty
          define Screen.Score 0
          define Screen.Lives 0]
@@ -221,7 +220,7 @@ type GameplayDispatcher () =
 
         // declare quit button
         let (clicked, world) = World.doButton "Quit" [Entity.Position .= v3 232.0f -144.0f 0.0f; Entity.Text .= "Quit"] world
-        let world = if clicked then gameplay.SetGameplayState Quitting world else world
+        let world = if clicked then gameplay.SetGameplayState Quit world else world
 
         // end gui declaration
         let world = World.endGroup world
