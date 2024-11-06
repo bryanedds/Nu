@@ -4,6 +4,7 @@ open System.Collections.Generic
 open System.Numerics
 open Prime
 open Nu
+open Twenty48
 
 // this represent one of four cardinal directions.
 type Direction =

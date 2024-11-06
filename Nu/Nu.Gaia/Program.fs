@@ -6,6 +6,7 @@ open System
 open System.IO
 open Prime
 open Nu
+open Nu.Gaia
 module Program =
 
     let [<EntryPoint; STAThread>] main _ =

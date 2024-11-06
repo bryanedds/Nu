@@ -6,6 +6,7 @@ open System
 open NUnit.Framework
 open Prime
 open Nu
+open Nu.Tests
 module WorldTests =
 
     let [<Test>] runEmptyFrameThenCleanUp () =

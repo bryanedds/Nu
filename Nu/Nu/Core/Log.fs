@@ -12,11 +12,9 @@ open Prime
 module Log =
 
     let mutable private Initialized = false
-#if DEBUG
     let mutable private InfoOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private WarnOnceMessages = ConcurrentDictionary StringComparer.Ordinal
     let mutable private ErrorOnceMessages = ConcurrentDictionary StringComparer.Ordinal
-#endif
 
     let private getDateTimeNowStr () =
         let now = DateTimeOffset.Now
@@ -30,11 +28,7 @@ module Log =
     /// Log a purely informational message once with Trace.WriteLine.
     /// Thread-safe.
     let infoOnce (message : string) =
-#if DEBUG
         if InfoOnceMessages.TryAdd (message, 0) then info message
-#else
-        ignore message
-#endif
 
     /// Log a warning message with Trace.TraceWarning.
     /// Thread-safe.
@@ -44,11 +38,7 @@ module Log =
     /// Log a warning message once with Trace.WriteLine.
     /// Thread-safe.
     let warnOnce (message : string) =
-#if DEBUG
         if WarnOnceMessages.TryAdd (message, 0) then warn message
-#else
-        ignore message
-#endif
 
     /// Log an error message with Trace.TraceError.
     /// Thread-safe.
@@ -58,11 +48,7 @@ module Log =
     /// Log an error message once with Trace.WriteLine.
     /// Thread-safe.
     let errorOnce (message : string) =
-#if DEBUG
         if ErrorOnceMessages.TryAdd (message, 0) then warn message
-#else
-        ignore message
-#endif
 
     /// Log a failure message using Trace.Fail.
     /// Thread-safe.

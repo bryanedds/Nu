@@ -54,6 +54,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Active                  with get () = this.Flags_ &&& ActiveMask <> 0u                  and set value = this.Flags_ <- if value then this.Flags_ ||| ActiveMask else this.Flags_ &&& ~~~ActiveMask
     member this.Dirty                   with get () = this.Flags_ &&& DirtyMask <> 0u                   and set value = this.Flags_ <- if value then this.Flags_ ||| DirtyMask else this.Flags_ &&& ~~~DirtyMask
     member this.Invalidated             with get () = this.Flags_ &&& InvalidatedMask <> 0u             and set value = this.Flags_ <- if value then this.Flags_ ||| InvalidatedMask else this.Flags_ &&& ~~~InvalidatedMask
+    member this.Absolute                with get () = this.Flags_ &&& AbsoluteMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
     member this.Imperative              with get () = this.Flags_ &&& ImperativeMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| ImperativeMask else this.Flags_ &&& ~~~ImperativeMask
     member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
     member this.Enabled                 with get () = this.Flags_ &&& EnabledMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
@@ -76,25 +77,12 @@ type [<NoEquality; NoComparison>] Transform =
     member this.Size                    with get () = this.Size_                                        and set value = this.Size_ <- value
     member this.Elevation               with get () = this.Elevation_                                   and set value = this.Elevation_ <- value
     member this.Overflow                with get () = this.Overflow_                                    and set value = this.Overflow_ <- value
-
-    member this.Absolute
-        with get () = this.Flags_ &&& AbsoluteMask <> 0u
-        and set value =
-            this.Flags_ <- if value then this.Flags_ ||| AbsoluteMask else this.Flags_ &&& ~~~AbsoluteMask
-            if this.Absolute then // setting a transform to Absolute requires that it also be Omnipresent
-                this.Presence_ <- Omnipresent
+    member this.Presence                with get () = this.Presence_                                    and set value = this.Presence_ <- value
 
     member this.Optimized =
         this.Imperative &&
         this.Presence_.OmnipresentType &&
         not this.PublishChangeEvents
-
-    member this.Presence
-        with get () = this.Presence_
-        and set (value : Presence) =
-            let omnipresent = value.OmnipresentType
-            if omnipresent || not this.Absolute then // a transform that is Absolute must remain Omnipresent
-                this.Presence_ <- if omnipresent then Omnipresent else value
 
     member this.Rotation
         with get () = this.Rotation_

@@ -757,7 +757,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -780,7 +780,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -803,7 +803,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -826,7 +826,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -849,7 +849,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -870,7 +870,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let world =
                     if entityState.Imperative then
@@ -890,7 +890,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -1429,7 +1429,7 @@ module WorldModuleEntity =
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
                 let lightOld = entityState.Light
-                let presenceOld = entityState.Presence
+                let presenceOld = entityState.PresenceSpatial
                 let boundsOld = entityState.Bounds
                 let struct (entityState, world) =
                     if entityState.Imperative then
@@ -2143,12 +2143,12 @@ module WorldModuleEntity =
                         let quadtree = World.getQuadtree world
                         let entityState = World.getEntityState entity world
                         let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
-                        Quadtree.addElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                        Quadtree.addElement entityState.PresenceSpatial entityState.Bounds.Box2 element quadtree
                     else
                         let octree = World.getOctree world
                         let entityState = World.getEntityState entity world
-                        let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                        Octree.addElement entityState.Presence entityState.Bounds element octree
+                        let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.PresenceSpatial entityState.Bounds entity
+                        Octree.addElement entityState.PresenceSpatial entityState.Bounds element octree
 
                 // register entity
                 World.registerEntity entity world
@@ -2185,12 +2185,12 @@ module WorldModuleEntity =
                         let quadtree = World.getQuadtree world
                         let entityState = World.getEntityState entity world
                         let element = Quadelement.make entityState.VisibleSpatial entityState.StaticSpatial entity
-                        Quadtree.removeElement entityState.Presence entityState.Bounds.Box2 element quadtree
+                        Quadtree.removeElement entityState.PresenceSpatial entityState.Bounds.Box2 element quadtree
                     else
                         let octree = World.getOctree world
                         let entityState = World.getEntityState entity world
-                        let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.Presence entityState.Bounds entity
-                        Octree.removeElement entityState.Presence entityState.Bounds element octree
+                        let element = Octelement.make entityState.VisibleSpatial entityState.StaticSpatial entityState.LightProbe entityState.Light entityState.PresenceSpatial entityState.Bounds entity
+                        Octree.removeElement entityState.PresenceSpatial entityState.Bounds element octree
 
                 // remove cached entity event addresses
                 EventGraph.cleanEventAddressCache entity.EntityAddress
@@ -2299,8 +2299,8 @@ module WorldModuleEntity =
             // update publish update flag
             let world = World.updateEntityPublishUpdateFlag entity world |> snd'
 
-            // run entity first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.runEntity entity world else world
+            // process entity first time if in the middle of simulant update phase
+            let world = if WorldModule.UpdatingSimulants then WorldModule.processEntity entity world else world
 
             // propagate properties
             let world =
@@ -2360,7 +2360,7 @@ module WorldModuleEntity =
                         let destination = destination / child.Name
                         World.renameEntityImmediate child destination world)
                         world children
-                let world = if WorldModule.UpdatingSimulants then WorldModule.runEntity destination world else world
+                let world = if WorldModule.UpdatingSimulants then WorldModule.processEntity destination world else world
                 let world =
                     Seq.fold (fun world target ->
                         if World.getEntityExists target world
@@ -2554,8 +2554,8 @@ module WorldModuleEntity =
             // read the entity's children
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
 
-            // run entity first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.runEntity entity world else world
+            // process entity first time if in the middle of simulant update phase
+            let world = if WorldModule.UpdatingSimulants then WorldModule.processEntity entity world else world
 
             // insert a propagated descriptor if needed
             let world =
@@ -2657,7 +2657,7 @@ module WorldModuleEntity =
                 let staticNew = entityState.StaticSpatial
                 let lightProbeNew = entityState.LightProbe
                 let lightNew = entityState.Light
-                let presenceNew = entityState.Presence
+                let presenceNew = entityState.PresenceSpatial
                 let boundsNew = entityState.Bounds
 
                 // OPTIMIZATION: only update when relevant entity state has changed.

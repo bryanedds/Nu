@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open TerraFirma
 
 type CharacterType =
     | Player

@@ -10,7 +10,6 @@ open Prime
 module Gen =
 
     let private Lock = obj ()
-    let private Random = Random ()
     let mutable private Id32 = 0u
     let mutable private Id64 = 0UL
     let mutable private IdForEditor = 0UL
@@ -28,67 +27,67 @@ module Gen =
         /// Get the next random number integer.
         /// Thread-safe.
         static member random =
-            lock Lock (fun () -> Random.Next ())
+            Random.Shared.Next ()
 
         /// Get the next random boolean.
         /// Thread-safe.
         static member randomb =
-            lock Lock (fun () -> Random.Next () < Int32.MaxValue / 2)
+            Random.Shared.Next () < Int32.MaxValue / 2
 
         /// Get the next random byte.
         /// Thread-safe.
         static member randomy =
-            lock Lock (fun () -> byte (Random.Next ()))
+            byte (Random.Shared.Next ())
 
         /// Get the next random unsigned.
         /// Thread-safe.
         static member randomu =
-            lock Lock (fun () -> uint (Random.Next ()))
+            uint (Random.Shared.Next ())
 
         /// Get the next random long.
         /// Thread-safe.
         static member randoml =
-            lock Lock (fun () -> int64 (Random.Next () <<< 32 ||| Random.Next ()))
+            int64 (Random.Shared.Next () <<< 32 ||| Random.Shared.Next ())
 
         /// Get the next random unsigned long.
         /// Thread-safe.
         static member randomul =
-            lock Lock (fun () -> uint64 (Random.Next () <<< 32 ||| Random.Next ()))
+            uint64 (Random.Shared.Next () <<< 32 ||| Random.Shared.Next ())
 
         /// Get the next random single >= 0.0f and < 1.0f.
         /// Thread-safe.
         static member randomf =
-            lock Lock (fun () -> single (Random.NextDouble ()))
+            single (Random.Shared.NextDouble ())
 
         /// Get the next random double >= 0.0 and < 1.0.
         /// Thread-safe.
         static member randomd =
-            lock Lock (fun () -> Random.NextDouble ())
+            Random.Shared.NextDouble ()
             
         /// Get the next random number integer below ceiling.
         /// Thread-safe.
         static member random1 ceiling =
-            lock Lock (fun () -> Random.Next ceiling)
+            Random.Shared.Next ceiling
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomy1 (ceiling : byte) =
-            lock Lock (fun () -> byte (Random.Next (int ceiling)))
+            byte (Random.Shared.Next (int ceiling))
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomf1 ceiling =
-            lock Lock (fun () -> single (Random.NextDouble ()) * ceiling)
+            single (Random.Shared.NextDouble ()) * ceiling
             
         /// Get the next random number single below ceiling.
         /// Thread-safe.
         static member randomd1 ceiling =
-            lock Lock (fun () -> Random.NextDouble () * ceiling)
+            Random.Shared.NextDouble () * ceiling
 
         /// Get the next random number integer GTE minValue and LT ceiling.
         /// Thread-safe.
         static member random2 minValue ceiling =
-            lock Lock (fun () -> Random.Next (minValue, ceiling))
+            Random.Shared.Next (minValue, ceiling)
 
         /// Get a random element from a sequence if there are any elements or None.
         /// If seq is large, this may allocate to the LOH.
@@ -96,7 +95,7 @@ module Gen =
         static member randomItemOpt seq =
             let arr = Seq.toArray seq
             if Array.notEmpty arr
-            then lock Lock (fun () -> Some arr.[Gen.random1 arr.Length])
+            then Some arr.[Gen.random1 arr.Length]
             else None
 
         /// Get a random element from a sequence or a default if sequence is empty.
@@ -126,13 +125,12 @@ module Gen =
         /// If seq is large, this may allocate to the LOH and block other threads.
         /// Thread-safe.
         static member randomize (seq : 'a seq) =
-            lock Lock (fun () ->
-                seq |>
-                Array.ofSeq |>
-                Array.map (fun a -> (Random.Next (), a)) |>
-                Array.sortBy fst |>
-                Array.map snd |>
-                Array.toSeq)
+            seq |>
+            Array.ofSeq |>
+            Array.map (fun a -> (Random.Shared.Next (), a)) |>
+            Array.sortBy fst |>
+            Array.map snd |>
+            Array.toSeq
 
         /// Generate a unique name based on a 64-bit id.
         /// Thread-safe.
@@ -158,17 +156,7 @@ module Gen =
             let bytes = Array.create<byte> 8 (byte 0)
             Guid (m, int16 (n >>> 16), int16 n, bytes)
 
-        /// Generate an id deterministically.
-        /// HACK: this is an ugly hack to create a deterministic sequance of guids.
-        /// Limited to creating 65,536 guids.
-        /// Thread-safe.
-        static member idDeterministic offset (guid : Guid) =
-            let arr = guid.ToByteArray ()
-            if arr.[15] + byte offset < arr.[15] then arr.[14] <- arr.[14] + byte 1
-            arr.[15] <- arr.[15] + byte offset                    
-            Guid arr
-
-        /// Generate a unique non-zero 64-bit id.
+        /// Generate a unique non-zero 32-bit id.
         /// Thread-safe.
         static member id32 =
             lock Lock (fun () ->

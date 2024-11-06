@@ -75,16 +75,16 @@ module WorldModule =
     let mutable internal unregister : Simulant -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal runGame : Game -> World -> World =
+    let mutable internal processGame : Game -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal runScreen : Screen -> World -> World =
+    let mutable internal processScreen : Screen -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal runGroup : Group -> World -> World =
+    let mutable internal processGroup : Group -> World -> World =
         Unchecked.defaultof<_>
         
-    let mutable internal runEntity : Entity -> World -> World =
+    let mutable internal processEntity : Entity -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal signal : obj -> Simulant -> World -> World =
@@ -313,10 +313,10 @@ module WorldModule =
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSimulantImNui simulant (world : World) =
-            world.SimulantImNuis.[simulant] |> __c'
+            world.SimulantImNuis.[simulant]
 
         static member internal addSimulantImNui simulant simulantImNui (world : World) =
-            let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
+            let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
             World.setSimulantImNuis simulantImNuis world
 
         static member internal tryMapSimulantImNui mapper simulant (world : World) =
@@ -337,7 +337,7 @@ module WorldModule =
                 world
             else
                 let simulantImNui = { simulantImNui with SimulantUtilized = true }
-                let simulantImNuis = OMap.add simulant simulantImNui world.SimulantImNuis
+                let simulantImNuis = SUMap.add simulant simulantImNui world.SimulantImNuis
                 World.setSimulantImNuis simulantImNuis world
 
         static member internal getSubscriptionImNuis (world : World) =
@@ -352,10 +352,10 @@ module WorldModule =
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSubscriptionImNui subscription (world : World) =
-            world.SubscriptionImNuis.[subscription] |> __c'
+            world.SubscriptionImNuis.[subscription]
 
         static member internal addSubscriptionImNui subscription subscriptionImNui (world : World) =
-            let subscriptionImNuis = OMap.add subscription subscriptionImNui world.SubscriptionImNuis
+            let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
             World.setSubscriptionImNuis subscriptionImNuis world
 
         static member internal tryMapSubscriptionImNui mapper subscription (world : World) =
@@ -376,7 +376,7 @@ module WorldModule =
                 world
             else
                 let subscriptionImNui = { subscriptionImNui with SubscriptionUtilized = true }
-                let subscriptionImNuis = OMap.add subscription subscriptionImNui world.SubscriptionImNuis
+                let subscriptionImNuis = SUMap.add subscription subscriptionImNui world.SubscriptionImNuis
                 World.setSubscriptionImNuis subscriptionImNuis world
 
         /// Switch simulation to use this ambient state.

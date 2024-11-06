@@ -1,4 +1,4 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open Prime
 open Nu

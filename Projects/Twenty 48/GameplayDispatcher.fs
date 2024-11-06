@@ -3,6 +3,7 @@ open System
 open System.Numerics
 open Prime
 open Nu
+open Twenty48
 
 // this is our MMCC model type representing gameplay.
 type GameplayMessage =
@@ -95,15 +96,7 @@ type GameplayDispatcher () =
     // here we describe the content of the game including the level, the hud, and the player
     override this.Content (gameplay, _) =
 
-        [// the gui group
-         Content.group Simulants.GameplayGui.Name []
-            [Content.button Simulants.GameplayQuit.Name
-                [Entity.Position == v3 232.0f -144.0f 0.0f
-                 Entity.Elevation == 10.0f
-                 Entity.Text == "Quit"
-                 Entity.ClickEvent => StartQuitting]]
-
-         // the scene group
+        [// the scene group
          Content.group Simulants.GameplayScene.Name []
 
             [// board
@@ -138,4 +131,12 @@ type GameplayDispatcher () =
                     [Entity.Position == v3 0.0f 155.0f 0.0f
                      Entity.Elevation == 10.0f
                      Entity.Justification == Justified (JustifyCenter, JustifyMiddle)
-                     Entity.Text == "Game Over!"]]]
+                     Entity.Text == "Game Over!"]]
+        
+         // the gui group
+         Content.group Simulants.GameplayGui.Name []
+            [Content.button Simulants.GameplayQuit.Name
+                [Entity.Position == v3 232.0f -144.0f 0.0f
+                 Entity.Elevation == 10.0f
+                 Entity.Text == "Quit"
+                 Entity.ClickEvent => StartQuitting]]]

@@ -16,8 +16,8 @@
 		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<DefineConstants>$(DefineConstants);IMNUI</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
@@ -25,8 +25,8 @@
 		<NoWarn>FS0009;FS0052;FS1178;FS3391;FS3536;FS3560</NoWarn>
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
+		<DefineConstants>$(DefineConstants);IMNUI</DefineConstants>
 	</PropertyGroup>
 
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
@@ -67,7 +67,7 @@
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
 		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.10.0" />
 		<PackageReference Include="Pfim" Version="0.11.3" />
-		<PackageReference Include="Prime" Version="9.30.0" />
+		<PackageReference Include="Prime" Version="9.32.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="8.0.0" />
 		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />

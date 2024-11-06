@@ -1,4 +1,4 @@
-﻿namespace MyGame
+﻿namespace Breakout
 open System
 open System.IO
 open Nu
@@ -23,4 +23,4 @@ module Program =
         let worldConfig = { WorldConfig.defaultConfig with SdlConfig = sdlConfig }
 
         // run the engine with the given config and plugin
-        World.run worldConfig (MyGamePlugin ())
+        World.run worldConfig (BreakoutPlugin ())
