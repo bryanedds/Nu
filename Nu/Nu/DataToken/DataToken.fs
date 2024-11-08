@@ -23,7 +23,7 @@ type [<ReferenceEquality>] DataToken =
 [<RequireQualifiedAccess>]
 module DataToken =
 
-    /// Convert a data token to a seq of zero or more data tokens.
+    /// Flatten a data token to a linear sequence of zero or more data tokens.
     let rec toSeq dataToken =
         seq {
             match dataToken with
