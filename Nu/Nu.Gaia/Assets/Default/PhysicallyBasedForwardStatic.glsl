@@ -281,7 +281,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     for (int i = 0; i < SHADOW_POINT_SAMPLE_OFFSETS_COUNT; ++i)
     {
         // NOTE: we divide at each step to avoid overflow with an already large number.
-        shadowDepthExp += texture(shadowMap, normalize(positionShadow) + SHADOW_POINT_SAMPLE_OFFSETS[i]).y / SHADOW_POINT_SAMPLE_OFFSETS_COUNT;
+        shadowDepthExp += texture(shadowMap, positionShadow / shadowZ + SHADOW_POINT_SAMPLE_OFFSETS[i]).y / SHADOW_POINT_SAMPLE_OFFSETS_COUNT;
     }
     float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
     return pow(shadowScalar, lightShadowDensity);
