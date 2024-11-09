@@ -67,12 +67,37 @@ const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 4;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const float SHADOW_POINT_SAMPLE_SCALAR = 0.0025;
+const int SHADOW_POINT_SAMPLE_OFFSETS_COUNT = 20;
+const vec3 SHADOW_POINT_SAMPLE_OFFSETS[SHADOW_POINT_SAMPLE_OFFSETS_COUNT] =
+    vec3[](
+        vec3(1, 1, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, -1, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, -1, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, 1, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, 1, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, -1, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, -1, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, 1, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, 1, 0) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, -1, 0) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, -1, 0) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, 1, 0) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, 0, 1)* SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, 0, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(1, 0, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(-1, 0, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(0, 1, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(0, -1, 1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(0, -1, -1) * SHADOW_POINT_SAMPLE_SCALAR,
+        vec3(0, 1, -1) * SHADOW_POINT_SAMPLE_SCALAR);
+
 const vec4 SSVF_DITHERING[4] =
-vec4[4](
-    vec4(0.0, 0.5, 0.125, 0.625),
-    vec4(0.75, 0.22, 0.875, 0.375),
-    vec4(0.1875, 0.6875, 0.0625, 0.5625),
-    vec4(0.9375, 0.4375, 0.8125, 0.3125));
+    vec4[4](
+        vec4(0.0, 0.5, 0.125, 0.625),
+        vec4(0.75, 0.22, 0.875, 0.375),
+        vec4(0.1875, 0.6875, 0.0625, 0.5625),
+        vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform float lightCutoffMargin;
@@ -251,8 +276,15 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
-    float shadowDepth = texture(shadowMap, normalize(positionShadow)).x;
-    return shadowZ < shadowDepth + 0.05 ? 1.0 : 0.0;
+    float shadowZExp = exp(-lightShadowExponent * 0.1 * shadowZ);
+    float shadowDepthExp = 0.0;
+    for (int i = 0; i < SHADOW_POINT_SAMPLE_OFFSETS_COUNT; ++i)
+    {
+        // NOTE: we divide at each step to avoid overflow with an already large number.
+        shadowDepthExp += texture(shadowMap, normalize(positionShadow) + SHADOW_POINT_SAMPLE_OFFSETS[i]).y / SHADOW_POINT_SAMPLE_OFFSETS_COUNT;
+    }
+    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+    return pow(shadowScalar, lightShadowDensity);
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
