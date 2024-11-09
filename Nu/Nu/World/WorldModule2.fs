@@ -1766,7 +1766,7 @@ module WorldModule2 =
                             let (shadowView, shadowProjection) =
                                 match lightType with
                                 | PointLight ->
-                                    let shadowView = Matrix4x4.CreateTranslation (light.GetPosition world)
+                                    let shadowView = Matrix4x4.CreateTranslation (-light.GetPosition world)
                                     let shadowCutoff = max (light.GetLightCutoff world) 0.1f
                                     let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                     (shadowView, shadowProjection)
