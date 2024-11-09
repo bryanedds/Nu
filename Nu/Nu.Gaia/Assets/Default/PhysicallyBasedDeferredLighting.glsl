@@ -184,17 +184,10 @@ float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lig
 
 float computeShadowMapScalar(vec4 position, samplerCube shadowMap)
 {
-    // Compute the distance from the light to the fragment (in world space)
-    float shadowZ = length(position.xyz - eyeCenter);  // This is the fragment's distance to the light
-
-    // Calculate the direction vector from the light to the fragment
-    vec3 positionShadow = normalize(position.xyz - eyeCenter);
-
-    // Sample the depth from the cubemap (the depth is stored as the distance from the light to the geometry)
-    float shadowDepth = texture(shadowMap, positionShadow).x;
-
-    // Compare the fragment's distance to the cubemap depth
-    return shadowZ < shadowDepth ? 1.0 : 0.0;  // If the fragment is closer to the light than the shadow map depth, it's in shadow
+    vec3 positionShadow = position.xyz - eyeCenter;
+    float shadowZ = length(positionShadow);
+    float shadowDepth = texture(shadowMap, normalize(positionShadow)).x;
+    return shadowZ < shadowDepth ? 1.0 : 0.0;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)

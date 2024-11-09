@@ -251,7 +251,7 @@ float computeShadowMapScalar(vec4 position, samplerCube shadowMap)
 {
     vec3 positionShadow = normalize(position.xyz - eyeCenter);
     float shadowZ = length(positionShadow);
-    float shadowDepth = texture(shadowMap, positionShadow).x;
+    float shadowDepth = texture(shadowMap, normalize(positionShadow)).x;
     return shadowZ < shadowDepth ? 1.0 : 0.0;
 }
 
