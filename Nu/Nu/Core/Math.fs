@@ -1347,8 +1347,8 @@ type [<Struct>] Flip =
 /// Type of light.
 type LightType =
     | PointLight
-    | DirectionalLight
     | SpotLight of ConeInner : single * ConeOuter : single
+    | DirectionalLight
 
 [<RequireQualifiedAccess>]
 module Math =

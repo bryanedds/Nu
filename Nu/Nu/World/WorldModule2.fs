@@ -1759,7 +1759,7 @@ module WorldModule2 =
                 let lightBox = World.getLight3dBox world
                 let lights = World.getLights3dInBox lightBox HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
                 let eyeCenter = World.getEye3dCenter world
-                let sortableShadowPassDescriptors =
+                let shadowPassDescriptorsSortable =
                     [|for light in lights do
                         if light.GetDesireShadows world then
                             let lightType = light.GetLightType world
@@ -1803,16 +1803,34 @@ module WorldModule2 =
                                 let distanceSquared = Vector3.DistanceSquared (eyeCenter, light.GetPosition world)
                                 struct (struct (directionalSort, distanceSquared), struct (shadowFrustum, light))|]
 
-                // render simulant shadows in descriptor sort order
-                let world =
-                    sortableShadowPassDescriptors |>
+                // sort shadow pass descriptors
+                let shadowPassDescriptors =
+                    shadowPassDescriptorsSortable |>
                     Array.sortBy fst' |>
-                    Array.tryTake Constants.Render.ShadowsMax |>
-                    Array.fold (fun world struct (_, struct (shadowFrustum, light)) ->
-                        World.renderSimulantsInternal (ShadowPass (light.GetId world, light.GetLightType world, light.GetRotation world, shadowFrustum)) world)
-                        world
+                    Array.map snd'
 
-                // render simulants normally, remember to clear 3d shadow cache
+                // render simulant shadows
+                let mutable shadowTexturesCount = 0
+                let mutable shadowMapsCount = 0
+                let world =
+                    Array.fold (fun world struct (shadowFrustum, light : Entity) ->
+                        let lightType = light.GetLightType world
+                        match lightType with
+                        | PointLight ->
+                            if shadowMapsCount < Constants.Render.ShadowMapsMax then
+                                let world = World.renderSimulantsInternal (ShadowPass (light.GetId world, lightType, light.GetRotation world, shadowFrustum)) world
+                                shadowMapsCount <- inc shadowMapsCount
+                                world
+                            else world
+                        | SpotLight (_, _) | DirectionalLight ->
+                            if shadowTexturesCount < Constants.Render.ShadowTexturesMax then
+                                let world = World.renderSimulantsInternal (ShadowPass (light.GetId world, lightType, light.GetRotation world, shadowFrustum)) world
+                                shadowTexturesCount <- inc shadowTexturesCount
+                                world
+                            else world)
+                        world shadowPassDescriptors
+
+                // render simulants normally
                 World.renderSimulantsInternal NormalPass world
 
             // free cached values

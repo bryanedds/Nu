@@ -99,7 +99,7 @@ uniform samplerCube environmentFilterMap;
 uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
 uniform sampler2D shadowTextures[SHADOW_TEXTURES_MAX];
-uniform samplerCube shadowTextures[SHADOW_MAPS_MAX];
+uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -249,9 +249,9 @@ float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lig
 
 float computeShadowMapScalar(vec4 position, samplerCube shadowMap)
 {
-    vec3 positionShadow = position.xyz - eyeCenter;
+    vec3 positionShadow = normalize(position.xyz - eyeCenter);
     float shadowZ = length(positionShadow);
-    float shadowDepth = texture(shadowMap, positionShadow).r;
+    float shadowDepth = texture(shadowMap, positionShadow).x;
     return shadowZ < shadowDepth ? 1.0 : 0.0;
 }
 
