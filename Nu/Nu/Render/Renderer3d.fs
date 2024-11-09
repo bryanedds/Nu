@@ -2962,16 +2962,16 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                 shadowView.Translation <- lightOrigin
                                 shadowView <- shadowView.Inverted
-                                let shadowCutoff = lightCutoff
-                                let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                                let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
+                                let shadowCutoff = max lightCutoff 0.1f
+                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
                                 Some (lightOrigin, shadowView, shadowProjection)
                             | DirectionalLight ->
                                 let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
                                 shadowView.Translation <- lightOrigin
                                 shadowView <- shadowView.Inverted
-                                let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
-                                let shadowCutoff = max lightCutoff 0.1f
-                                let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                                let shadowCutoff = lightCutoff
+                                let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
                                 Some (lightOrigin, shadowView, shadowProjection)
                             | PointLight -> None
 
