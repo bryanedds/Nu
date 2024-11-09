@@ -2189,7 +2189,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = twoSided }
         surfaceMaterial
 
-    static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) lightDirectional renderTasks renderer =
+    static member private renderShadow lightOrigin (lightView : Matrix4x4) (lightProjection : Matrix4x4) lightType renderTasks renderer =
 
         // compute matrix arrays
         let lightViewArray = lightView.ToArray ()
@@ -2206,7 +2206,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 batchPhase lightOrigin lightViewArray lightProjectionArray [||] entry.Value
-                lightDirectional entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
+                lightType entry.Key renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
 
@@ -2217,27 +2217,27 @@ type [<ReferenceEquality>] GlRenderer3d =
             let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArray parameters
-                lightDirectional surfaceKey.AnimatedSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
+                lightType surfaceKey.AnimatedSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows
         for (descriptor, geometry) in renderTasks.DeferredTerrains do
             GlRenderer3d.renderPhysicallyBasedTerrain
-                lightViewArray lightProjectionArray lightOrigin lightDirectional renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                lightViewArray lightProjectionArray lightOrigin lightType renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 descriptor geometry renderer.PhysicallyBasedShadowTerrainShader renderer
 
         // forward render static surface shadows to filter buffer
         for struct (model, presence, texCoordsOffset, properties, surface) in renderTasks.ForwardStaticSorted do
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray [||] (List ([struct (model, presence, texCoordsOffset, properties)]))
-                lightDirectional surface renderer.PhysicallyBasedShadowStaticShader renderer
+                lightType surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
         // forward render static surface shadows to filter buffer
         for struct (model, presence, texCoordsOffset, properties, surface) in renderTasks.ForwardStaticSorted do
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray [||] (List ([struct (model, presence, texCoordsOffset, properties)]))
-                lightDirectional surface renderer.PhysicallyBasedShadowStaticShader renderer
+                lightType surface renderer.PhysicallyBasedShadowStaticShader renderer
             OpenGL.Hl.Assert ()
 
     static member private renderShadowTexture
