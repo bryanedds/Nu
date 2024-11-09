@@ -823,7 +823,6 @@ type [<ReferenceEquality>] GlRenderer3d =
           ShadowTextureBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowTextureBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
-          ShadowMapBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMatrices : Matrix4x4 array
           LightShadowIndices : Dictionary<uint64, int>
           GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
@@ -3158,14 +3157,6 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | Right shadowMapBuffers -> shadowMapBuffers
                 | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
 
-        // create second array of shadow map buffers
-        let shadowMapBuffers2Array =
-            [|for _ in 0 .. dec Constants.Render.ShadowMapsMax do
-                let shadowResolution = Constants.Render.ShadowResolution
-                match OpenGL.Framebuffer.TryCreateShadowMapBuffers (shadowResolution.X, shadowResolution.Y) with
-                | Right shadowMapBuffers -> shadowMapBuffers
-                | Left error -> failwith ("Could not create GlRenderer3d due to: " + error + ".")|]
-
         // create shadow matrices array
         let shadowMatrices = Array.zeroCreate<Matrix4x4> Constants.Render.ShadowTexturesMax
 
@@ -3431,7 +3422,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               ShadowTextureBuffersArray = shadowTextureBuffersArray
               ShadowTextureBuffers2Array = shadowTextureBuffers2Array
               ShadowMapBuffersArray = shadowMapBuffersArray
-              ShadowMapBuffers2Array = shadowMapBuffers2Array
               ShadowMatrices = shadowMatrices
               LightShadowIndices = lightShadowIndices
               GeometryBuffers = geometryBuffers
@@ -3539,4 +3529,3 @@ type [<ReferenceEquality>] GlRenderer3d =
             for shadowTextureBuffers in renderer.ShadowTextureBuffersArray do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers
             for shadowTextureBuffers2 in renderer.ShadowTextureBuffers2Array do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers2
             for shadowMapBuffers in renderer.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
-            for shadowMapBuffers2 in renderer.ShadowMapBuffers2Array do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers2
