@@ -241,7 +241,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
-          LightShadowDirectionalUniform : int
+          LightTypeUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
           SsvfEnabledUniform : int
@@ -275,7 +275,7 @@ module PhysicallyBased =
           LightAttenuationLinearsUniform : int
           LightAttenuationQuadraticsUniform : int
           LightCutoffsUniform : int
-          LightDirectionalsUniform : int
+          LightTypesUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
           LightShadowIndicesUniform : int
@@ -288,7 +288,7 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
-          LightShadowDirectionalUniform : int
+          LightTypeUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
           LayersCountUniform : int
@@ -364,7 +364,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
-          LightShadowDirectionalUniform : int
+          LightTypeUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
           SsvfEnabledUniform : int
@@ -406,7 +406,7 @@ module PhysicallyBased =
           LightAttenuationLinearsUniform : int
           LightAttenuationQuadraticsUniform : int
           LightCutoffsUniform : int
-          LightDirectionalsUniform : int
+          LightTypesUniform : int
           LightConeInnersUniform : int
           LightConeOutersUniform : int
           LightShadowIndicesUniform : int
@@ -1418,7 +1418,7 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
-        let lightShadowDirectionalUniform = Gl.GetUniformLocation (shader, "lightShadowDirectional")
+        let lightTypeUniform = Gl.GetUniformLocation (shader, "lightType")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
@@ -1460,7 +1460,7 @@ module PhysicallyBased =
         let lightAttenuationLinearsUniform = Gl.GetUniformLocation (shader, "lightAttenuationLinears")
         let lightAttenuationQuadraticsUniform = Gl.GetUniformLocation (shader, "lightAttenuationQuadratics")
         let lightCutoffsUniform = Gl.GetUniformLocation (shader, "lightCutoffs")
-        let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
+        let lightTypesUniform = Gl.GetUniformLocation (shader, "lightTypes")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
@@ -1477,7 +1477,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-          LightShadowDirectionalUniform = lightShadowDirectionalUniform
+          LightTypeUniform = lightTypeUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
           SsvfEnabledUniform = ssvfEnabledUniform
@@ -1511,7 +1511,7 @@ module PhysicallyBased =
           LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
           LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
           LightCutoffsUniform = lightCutoffsUniform
-          LightDirectionalsUniform = lightDirectionalsUniform
+          LightTypesUniform = lightTypesUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
@@ -1530,7 +1530,7 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let lightShadowDirectionalUniform = Gl.GetUniformLocation (shader, "lightShadowDirectional")
+        let lightTypeUniform = Gl.GetUniformLocation (shader, "lightType")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let layersCountUniform = Gl.GetUniformLocation (shader, "layersCount")
@@ -1554,7 +1554,7 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
-          LightShadowDirectionalUniform = lightShadowDirectionalUniform
+          LightTypeUniform = lightTypeUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
           LayersCountUniform = layersCountUniform
@@ -1717,7 +1717,7 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
-        let lightShadowDirectionalUniform = Gl.GetUniformLocation (shader, "lightShadowDirectional")
+        let lightTypeUniform = Gl.GetUniformLocation (shader, "lightType")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
         let ssvfEnabledUniform = Gl.GetUniformLocation (shader, "ssvfEnabled")
@@ -1763,7 +1763,7 @@ module PhysicallyBased =
         let lightAttenuationLinearsUniform = Gl.GetUniformLocation (shader, "lightAttenuationLinears")
         let lightAttenuationQuadraticsUniform = Gl.GetUniformLocation (shader, "lightAttenuationQuadratics")
         let lightCutoffsUniform = Gl.GetUniformLocation (shader, "lightCutoffs")
-        let lightDirectionalsUniform = Gl.GetUniformLocation (shader, "lightDirectionals")
+        let lightTypesUniform = Gl.GetUniformLocation (shader, "lightTypes")
         let lightConeInnersUniform = Gl.GetUniformLocation (shader, "lightConeInners")
         let lightConeOutersUniform = Gl.GetUniformLocation (shader, "lightConeOuters")
         let lightShadowIndicesUniform = Gl.GetUniformLocation (shader, "lightShadowIndices")
@@ -1779,7 +1779,7 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-          LightShadowDirectionalUniform = lightShadowDirectionalUniform
+          LightTypeUniform = lightTypeUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
           SsvfEnabledUniform = ssvfEnabledUniform
@@ -1821,7 +1821,7 @@ module PhysicallyBased =
           LightAttenuationLinearsUniform = lightAttenuationLinearsUniform
           LightAttenuationQuadraticsUniform = lightAttenuationQuadraticsUniform
           LightCutoffsUniform = lightCutoffsUniform
-          LightDirectionalsUniform = lightDirectionalsUniform
+          LightTypesUniform = lightTypesUniform
           LightConeInnersUniform = lightConeInnersUniform
           LightConeOutersUniform = lightConeOutersUniform
           LightShadowIndicesUniform = lightShadowIndicesUniform
@@ -2084,12 +2084,13 @@ module PhysicallyBased =
     /// Draw a batch of physically-based depth surfaces.
     let DrawPhysicallyBasedDepthSurfaces
         (batchPhase : BatchPhase,
+         eyeCenter : Vector3,
          view : single array,
          projection : single array,
          bones : single array array,
          surfacesCount : int,
          instanceFields : single array,
-         lightShadowDirectional : int,
+         lightType : int,
          lightShadowExponent : single,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
@@ -2109,11 +2110,12 @@ module PhysicallyBased =
 
             // setup shader
             Gl.UseProgram shader.PhysicallyBasedShader
+            Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
             Gl.UniformMatrix4 (shader.ViewUniform, false, view)
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-            Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
+            Gl.Uniform1 (shader.LightTypeUniform, lightType)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Hl.Assert ()
 
@@ -2167,7 +2169,7 @@ module PhysicallyBased =
          eyeCenter : Vector3,
          surfacesCount : int,
          instanceFields : single array,
-         lightShadowDirectional : int,
+         lightType : int,
          lightShadowExponent : single,
          lightShadowDensity : single,
          material : PhysicallyBasedMaterial,
@@ -2193,7 +2195,7 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-            Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
+            Gl.Uniform1 (shader.LightTypeUniform, lightType)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
             Gl.Uniform1 (shader.AlbedoTextureUniform, 0)
@@ -2291,7 +2293,7 @@ module PhysicallyBased =
          lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
-         lightShadowDirectional : int,
+         lightType : int,
          lightShadowExponent : single,
          lightShadowDensity : single,
          ssvfEnabled : int,
@@ -2318,7 +2320,7 @@ module PhysicallyBased =
          lightAttenuationLinears : single array,
          lightAttenuationQuadratics : single array,
          lightCutoffs : single array,
-         lightDirectionals : int array,
+         lightTypes : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
          lightShadowIndices : int array,
@@ -2352,7 +2354,7 @@ module PhysicallyBased =
             if lightAmbientColor.Length = 3 then
                 Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
             Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-            Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
+            Gl.Uniform1 (shader.LightTypeUniform, lightType)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
             Gl.Uniform1 (shader.SsvfEnabledUniform, ssvfEnabled)
@@ -2390,7 +2392,7 @@ module PhysicallyBased =
             Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
             Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
             Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
-            Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
+            Gl.Uniform1 (shader.LightTypesUniform, lightTypes)
             Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
             Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
             Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)
@@ -2510,7 +2512,7 @@ module PhysicallyBased =
          projection : single array,
          eyeCenter : Vector3,
          instanceFields : single array,
-         lightShadowDirectional : int,
+         lightType : int,
          lightShadowExponent : single,
          lightShadowDensity : single,
          elementsCount : int,
@@ -2532,7 +2534,7 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.LightShadowDirectionalUniform, lightShadowDirectional)
+        Gl.Uniform1 (shader.LightTypeUniform, lightType)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
         Gl.Uniform1 (shader.LayersCountUniform, layersCount)
@@ -2965,7 +2967,7 @@ module PhysicallyBased =
          lightAttenuationLinears : single array,
          lightAttenuationQuadratics : single array,
          lightCutoffs : single array,
-         lightDirectionals : int array,
+         lightTypes : int array,
          lightConeInners : single array,
          lightConeOuters : single array,
          lightShadowIndices : int array,
@@ -3023,7 +3025,7 @@ module PhysicallyBased =
         Gl.Uniform1 (shader.LightAttenuationLinearsUniform, lightAttenuationLinears)
         Gl.Uniform1 (shader.LightAttenuationQuadraticsUniform, lightAttenuationQuadratics)
         Gl.Uniform1 (shader.LightCutoffsUniform, lightCutoffs)
-        Gl.Uniform1 (shader.LightDirectionalsUniform, lightDirectionals)
+        Gl.Uniform1 (shader.LightTypesUniform, lightTypes)
         Gl.Uniform1 (shader.LightConeInnersUniform, lightConeInners)
         Gl.Uniform1 (shader.LightConeOutersUniform, lightConeOuters)
         Gl.Uniform1 (shader.LightShadowIndicesUniform, lightShadowIndices)

@@ -113,7 +113,7 @@ uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightAttenuationLinears[LIGHTS_MAX];
 uniform float lightAttenuationQuadratics[LIGHTS_MAX];
 uniform float lightCutoffs[LIGHTS_MAX];
-uniform int lightDirectionals[LIGHTS_MAX];
+uniform int lightTypes[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
@@ -247,19 +247,19 @@ float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lig
     return 1.0;
 }
 
-float computeShadowMapScalar(vec4 position, samplerCube shadowMap)
+float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
 {
-    vec3 positionShadow = normalize(position.xyz - eyeCenter);
+    vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
     float shadowDepth = texture(shadowMap, normalize(positionShadow)).x;
-    return shadowZ < shadowDepth ? 1.0 : 0.0;
+    return shadowZ < shadowDepth + 0.05 ? 1.0 : 0.0;
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     vec3 result = vec3(0.0);
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (lightsCount > 0 && lightDirectionals[lightIndex] != 0 && shadowIndex >= 0)
+    if (lightsCount > 0 && lightTypes[lightIndex] == 2 && shadowIndex >= 0)
     {
         // compute shadow space
         mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -363,11 +363,12 @@ void main()
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
-        bool lightDirectional = lightDirectionals[i] == 1;
+        vec3 lightOrigin = lightOrigins[i];
+        bool lightDirectional = lightTypes[i] == 2;
         vec3 l, h, radiance;
         if (!lightDirectional)
         {
-            vec3 d = lightOrigins[i] - position.xyz;
+            vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
@@ -398,7 +399,7 @@ void main()
             shadowScalar =
                 shadowIndex < SHADOW_TEXTURES_MAX ?
                 computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
-                computeShadowMapScalar(position, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
+                computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
 
         // cook-torrance brdf
         float hDotV = max(dot(h, v), 0.0);

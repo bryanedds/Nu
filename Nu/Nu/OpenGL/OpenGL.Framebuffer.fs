@@ -351,12 +351,12 @@ module Framebuffer =
         Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
         Hl.Assert ()
 
-        // assert shadow framebuffer completion
+        // assert shadow map framebuffer completion
         let result =
             if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
                 let shadowMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowMapId }
                 Right (shadowMap, shadowRenderbuffer, shadowFramebuffer)
-            else Left "Reflection framebuffer is incomplete!"
+            else Left "Shadow map framebuffer is incomplete!"
 
         // teardown attachments
         for i in 0 .. dec 6 do
