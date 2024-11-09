@@ -2274,7 +2274,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer
         (lightOrigin : Vector3)
         (shadowResolution : Vector2i)
-        (shadowTexture : OpenGL.Texture.Texture)
+        (_(*shadowMapBufferIndex*) : int)
+        (shadowMap : OpenGL.Texture.Texture)
         (renderbuffer : uint)
         (framebuffer : uint) =
 
@@ -2304,7 +2305,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
             // setup reflection cube map face for rendering
             let target = LanguagePrimitives.EnumOfValue (int OpenGL.TextureTarget.TextureCubeMapPositiveX + i)
-            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, shadowTexture.TextureId, 0)
+            OpenGL.Gl.FramebufferTexture2D (OpenGL.FramebufferTarget.Framebuffer, OpenGL.FramebufferAttachment.ColorAttachment0, target, shadowMap.TextureId, 0)
             OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit)
             OpenGL.Hl.Assert ()
 
@@ -3018,12 +3019,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | PointLight ->
                             let shadowResolution = Constants.Render.ShadowResolution
                             let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
-                            GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
+                            GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowMapBufferIndex shadowTexture shadowRenderbuffer shadowFramebuffer
                             renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
-
-                            // TODO: filter shadow map
-
-                            // next shadow
                             shadowMapBufferIndex <- inc shadowMapBufferIndex
                         | SpotLight (_, _) | DirectionalLight -> ()
                     | _ -> ()
