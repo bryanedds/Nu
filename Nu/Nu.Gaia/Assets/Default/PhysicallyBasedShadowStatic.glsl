@@ -32,5 +32,5 @@ in float depthDirectionalOut;
 void main()
 {
 	depths.x = lightType == 0 ? length(positionOut.xyz - eyeCenter) : gl_FragCoord.z;
-	depths.y = exp(lightShadowExponent * lightType == 2 ? depthDirectionalOut : gl_FragCoord.z);
+	depths.y = exp(lightShadowExponent * (lightType == 2 ? depthDirectionalOut : gl_FragCoord.z));
 }
