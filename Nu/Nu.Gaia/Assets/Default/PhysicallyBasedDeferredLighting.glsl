@@ -184,10 +184,16 @@ float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lig
 
 float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
 {
+    //vec3 positionShadow = position.xyz - lightOrigin;
+    //float shadowZ = length(positionShadow);
+    //float shadowDepth = texture(shadowMap, positionShadow).x;
+    //return shadowZ < shadowDepth + 0.05 ? 1.0 : 0.0;
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
-    float shadowDepth = texture(shadowMap, positionShadow).x;
-    return shadowZ < shadowDepth + 0.05 ? 1.0 : 0.0;
+    float shadowZExp = exp(-lightShadowExponent * 0.1 * shadowZ);
+    float shadowDepthExp = texture(shadowMap, positionShadow).y;
+    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+    return pow(shadowScalar, lightShadowDensity);
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)

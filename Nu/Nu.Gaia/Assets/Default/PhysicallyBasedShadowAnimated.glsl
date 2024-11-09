@@ -47,6 +47,19 @@ in float depthDirectionalOut;
 
 void main()
 {
-    depths.x = lightType == 0 ? length(positionOut.xyz - eyeCenter) : gl_FragCoord.z;
-    depths.y = exp(lightShadowExponent * (lightType == 2 ? depthDirectionalOut : gl_FragCoord.z));
+	switch (lightType)
+	{
+	case 0: // point light
+		depths.x = length(positionOut.xyz - eyeCenter);
+		depths.y = exp(lightShadowExponent * 0.1 * depths.x);
+		break;
+	case 1: // spot light
+		depths.x = gl_FragCoord.z;
+		depths.y = exp(lightShadowExponent * depths.x);
+		break;
+	case 2: // directional light
+		depths.x = gl_FragCoord.z;
+		depths.y = exp(lightShadowExponent * depthDirectionalOut);
+		break;
+	}
 }
