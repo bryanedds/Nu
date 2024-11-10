@@ -56,7 +56,6 @@ type private KinematicCharacter3d =
       Ghost : GhostObject }
 
 /// The 3d implementation of PhysicsEngine in terms of Bullet Physics.
-/// TODO: only record the collisions for bodies that have event subscriptions associated with them?
 type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : DynamicsWorld
