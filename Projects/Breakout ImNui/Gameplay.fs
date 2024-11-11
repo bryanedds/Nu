@@ -99,7 +99,10 @@ type GameplayDispatcher () =
 
         // move paddle while game is playing / playable
         let world =
-            if gameplay.GetGameplayState world = Playing && gameplay.GetLives world > 0 && (gameplay.GetBricks world).Count > 0 then
+            if  world.Advancing &&
+                gameplay.GetGameplayState world = Playing &&
+                gameplay.GetLives world > 0 &&
+                (gameplay.GetBricks world).Count > 0 then
                 let paddlePosition = paddle.GetPosition world
                 if World.isKeyboardKeyDown KeyboardKey.Left world then
                     paddle.SetPosition (paddlePosition.MapX (fun x -> max -128.0f (x - 4.0f))) world

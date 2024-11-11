@@ -63,15 +63,26 @@ const float GAMMA = 2.2;
 const float ATTENUATION_CONSTANT = 1.0f;
 const int LIGHT_MAPS_MAX = 2;
 const int LIGHTS_MAX = 8;
-const int SHADOWS_MAX = 16;
+const int SHADOW_TEXTURES_MAX = 16;
+const int SHADOW_MAPS_MAX = 4;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
+const float SHADOW_SAMPLE_SCALAR = 0.0025;
+const int SHADOW_SAMPLE_OFFSETS_COUNT = 20;
+const vec3 SHADOW_SAMPLE_OFFSETS[SHADOW_SAMPLE_OFFSETS_COUNT] =
+    vec3[](
+        vec3(1, 1, 1),      vec3(1, -1, 1),     vec3(-1, -1, 1),    vec3(-1, 1, 1),
+        vec3(1, 1, -1),     vec3(1, -1, -1),    vec3(-1, -1, -1),   vec3(-1, 1, -1),
+        vec3(1, 1, 0),      vec3(1, -1, 0),     vec3(-1, -1, 0),    vec3(-1, 1, 0),
+        vec3(1, 0, 1),      vec3(-1, 0, 1),     vec3(1, 0, -1),     vec3(-1, 0, -1),
+        vec3(0, 1, 1),      vec3(0, -1, 1),     vec3(0, -1, -1),    vec3(0, 1, -1));
+
 const vec4 SSVF_DITHERING[4] =
-vec4[4](
-    vec4(0.0, 0.5, 0.125, 0.625),
-    vec4(0.75, 0.22, 0.875, 0.375),
-    vec4(0.1875, 0.6875, 0.0625, 0.5625),
-    vec4(0.9375, 0.4375, 0.8125, 0.3125));
+    vec4[4](
+        vec4(0.0, 0.5, 0.125, 0.625),
+        vec4(0.75, 0.22, 0.875, 0.375),
+        vec4(0.1875, 0.6875, 0.0625, 0.5625),
+        vec4(0.9375, 0.4375, 0.8125, 0.3125));
 
 uniform vec3 eyeCenter;
 uniform float lightCutoffMargin;
@@ -97,7 +108,8 @@ uniform samplerCube irradianceMap;
 uniform samplerCube environmentFilterMap;
 uniform samplerCube irradianceMaps[LIGHT_MAPS_MAX];
 uniform samplerCube environmentFilterMaps[LIGHT_MAPS_MAX];
-uniform sampler2D shadowTextures[SHADOWS_MAX];
+uniform sampler2D shadowTextures[SHADOW_TEXTURES_MAX];
+uniform samplerCube shadowMaps[SHADOW_MAPS_MAX];
 uniform vec3 lightMapOrigins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapMins[LIGHT_MAPS_MAX];
 uniform vec3 lightMapSizes[LIGHT_MAPS_MAX];
@@ -111,12 +123,12 @@ uniform float lightBrightnesses[LIGHTS_MAX];
 uniform float lightAttenuationLinears[LIGHTS_MAX];
 uniform float lightAttenuationQuadratics[LIGHTS_MAX];
 uniform float lightCutoffs[LIGHTS_MAX];
-uniform int lightDirectionals[LIGHTS_MAX];
+uniform int lightTypes[LIGHTS_MAX];
 uniform float lightConeInners[LIGHTS_MAX];
 uniform float lightConeOuters[LIGHTS_MAX];
 uniform int lightShadowIndices[LIGHTS_MAX];
 uniform int lightsCount;
-uniform mat4 shadowMatrices[SHADOWS_MAX];
+uniform mat4 shadowMatrices[SHADOW_TEXTURES_MAX];
 
 in vec4 positionOut;
 in vec2 texCoordsOut;
@@ -225,7 +237,7 @@ vec3 fresnelSchlickRoughness(float cosTheta, vec3 f0, float roughness)
     return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-float computeShadowScalar(vec4 position, bool lightDirectional, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
+float computeShadowTextureScalar(vec4 position, bool lightDirectional, float lightConeOuter, mat4 shadowMatrix, sampler2D shadowTexture)
 {
     vec4 positionShadow = shadowMatrix * position;
     vec3 shadowTexCoordsProj = positionShadow.xyz / positionShadow.w;
@@ -245,11 +257,26 @@ float computeShadowScalar(vec4 position, bool lightDirectional, float lightConeO
     return 1.0;
 }
 
+float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadowMap)
+{
+    vec3 positionShadow = position.xyz - lightOrigin;
+    float shadowZ = length(positionShadow);
+    float shadowZExp = exp(-lightShadowExponent * 0.1 * shadowZ);
+    float shadowDepthExp = 0.0;
+    for (int i = 0; i < SHADOW_SAMPLE_OFFSETS_COUNT; ++i)
+    {
+        // NOTE: we divide at each step to avoid overflow with an already large number.
+        shadowDepthExp += texture(shadowMap, positionShadow / shadowZ + SHADOW_SAMPLE_OFFSETS[i] * SHADOW_SAMPLE_SCALAR).y / SHADOW_SAMPLE_OFFSETS_COUNT;
+    }
+    float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
+    return pow(shadowScalar, lightShadowDensity);
+}
+
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)
 {
     vec3 result = vec3(0.0);
     int shadowIndex = lightShadowIndices[lightIndex];
-    if (lightsCount > 0 && lightDirectionals[lightIndex] != 0 && shadowIndex >= 0)
+    if (lightsCount > 0 && lightTypes[lightIndex] == 2 && shadowIndex >= 0)
     {
         // compute shadow space
         mat4 shadowMatrix = shadowMatrices[shadowIndex];
@@ -353,11 +380,12 @@ void main()
     for (int i = 0; i < lightsCount; ++i)
     {
         // per-light radiance
-        bool lightDirectional = lightDirectionals[i] == 1;
+        vec3 lightOrigin = lightOrigins[i];
+        bool lightDirectional = lightTypes[i] == 2;
         vec3 l, h, radiance;
         if (!lightDirectional)
         {
-            vec3 d = lightOrigins[i] - position.xyz;
+            vec3 d = lightOrigin - position.xyz;
             l = normalize(d);
             h = normalize(v + l);
             float distanceSquared = dot(d, d);
@@ -383,10 +411,12 @@ void main()
 
         // shadow scalar
         int shadowIndex = lightShadowIndices[i];
-        float shadowScalar =
-            shadowIndex >= 0 ?
-            computeShadowScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
-            1.0;
+        float shadowScalar = 1.0f;
+        if (shadowIndex >= 0)
+            shadowScalar =
+                shadowIndex < SHADOW_TEXTURES_MAX ?
+                computeShadowTextureScalar(position, lightDirectional, lightConeOuters[i], shadowMatrices[shadowIndex], shadowTextures[shadowIndex]) :
+                computeShadowMapScalar(position, lightOrigin, shadowMaps[shadowIndex - SHADOW_TEXTURES_MAX]);
 
         // cook-torrance brdf
         float hDotV = max(dot(h, v), 0.0);

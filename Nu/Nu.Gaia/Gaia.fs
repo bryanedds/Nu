@@ -1627,6 +1627,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
 
     (* Top-Level Functions *)
 
+    // TODO: split this function up or at least apply intention blocks?
     let private imGuiEntity branch filtering (entity : Entity) world =
         let selected = match SelectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
@@ -3464,7 +3465,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.EndPopup ()
 
     let private imGuiOpenProjectDialog world =
-
         let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog) then

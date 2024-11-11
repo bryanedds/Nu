@@ -1347,8 +1347,15 @@ type [<Struct>] Flip =
 /// Type of light.
 type LightType =
     | PointLight
-    | DirectionalLight
     | SpotLight of ConeInner : single * ConeOuter : single
+    | DirectionalLight
+
+    /// Convert to an int tag that can be utilized by a shader.
+    member this.Enumerate =
+        match this with
+        | PointLight -> 0
+        | SpotLight _ -> 1
+        | DirectionalLight -> 2
 
 [<RequireQualifiedAccess>]
 module Math =

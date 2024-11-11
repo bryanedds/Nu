@@ -274,8 +274,8 @@ module Framebuffer =
         Gl.DeleteFramebuffers [|framebuffer|]
         color.Destroy ()
 
-    /// Create shadow buffers.
-    let TryCreateShadowBuffers (shadowResolutionX, shadowResolutionY) =
+    /// Create shadow texture buffers.
+    let TryCreateShadowTextureBuffers (shadowResolutionX, shadowResolutionY) =
 
         // create frame buffer object
         let framebuffer = Gl.GenFramebuffer ()
@@ -311,11 +311,66 @@ module Framebuffer =
             Right (shadowTexture, renderbuffer, framebuffer)
         else Left "Could not create complete shadow texture framebuffer."
 
-    /// Destroy shadow buffers.
-    let DestroyShadowBuffers (shadowTexture : Texture.Texture, renderbuffer, framebuffer) =
+    /// Destroy shadow texture buffers.
+    let DestroyShadowTextureBuffers (shadowTexture : Texture.Texture, renderbuffer, framebuffer) =
         Gl.DeleteRenderbuffers [|renderbuffer|]
         Gl.DeleteFramebuffers [|framebuffer|]
         shadowTexture.Destroy ()
+
+    let TryCreateShadowMapBuffers (shadowResolutionX, shadowResolutionY) =
+
+        // create shadow renderbuffer
+        let shadowRenderbuffer = Gl.GenRenderbuffer ()
+        Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, shadowResolutionX, shadowResolutionY)
+        Hl.Assert ()
+
+        // create shadow framebuffer
+        let shadowFramebuffer = Gl.GenFramebuffer ()
+        Gl.BindFramebuffer (FramebufferTarget.Framebuffer, shadowFramebuffer)
+        Gl.FramebufferRenderbuffer (FramebufferTarget.Framebuffer, FramebufferAttachment.DepthStencilAttachment, RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+        Hl.Assert ()
+
+        // create shadow map
+        let shadowMapId = Gl.GenTexture ()
+        Gl.BindTexture (TextureTarget.TextureCubeMap, shadowMapId)
+        Gl.FramebufferTexture (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, shadowMapId, 0)
+        Hl.Assert ()
+
+        // setup shadow map textures
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.TexImage2D (target, 0, InternalFormat.Rg32f, shadowResolutionX, shadowResolutionY, 0, PixelFormat.Rg, PixelType.Float, nativeint 0)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, shadowMapId, 0)
+            Hl.Assert ()
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, int TextureMagFilter.Linear)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, int TextureWrapMode.ClampToEdge)
+        Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, int TextureWrapMode.ClampToEdge)
+        Gl.BindTexture (TextureTarget.TextureCubeMap, 0u)
+        Hl.Assert ()
+
+        // assert shadow map framebuffer completion
+        let result =
+            if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer = FramebufferStatus.FramebufferComplete then
+                let shadowMap = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; TextureId = shadowMapId }
+                Right (shadowMap, shadowRenderbuffer, shadowFramebuffer)
+            else Left "Shadow map framebuffer is incomplete!"
+
+        // teardown attachments
+        for i in 0 .. dec 6 do
+            let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
+            Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, 0u, 0)
+            Hl.Assert ()
+
+        result
+
+    /// Destroy shadow map buffers.
+    let DestroyShadowMapBuffers (shadowMap : Texture.Texture, renderbuffer, framebuffer) =
+        Gl.DeleteRenderbuffers [|renderbuffer|]
+        Gl.DeleteFramebuffers [|framebuffer|]
+        shadowMap.Destroy ()
 
     /// Create a geometry buffers.
     let TryCreateGeometryBuffers () =
