@@ -532,7 +532,10 @@ module Texture =
 
         member this.Start () =
             if not started then
-                let thread = Thread (ThreadStart (fun () -> this.Run ()))
+                let thread =
+                    Thread (ThreadStart (fun () ->
+                        try this.Run ()
+                        with _ -> Environment.Exit Constants.Engine.ExitCodeFailure))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()

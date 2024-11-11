@@ -6,9 +6,7 @@ open System
 open System.Numerics
 open System.Runtime.CompilerServices
 open ImGuiNET
-open Vulkan.Hl
 open Vortice.Vulkan
-open type Vulkan
 open Vortice.ShaderCompiler
 open Prime
 
@@ -271,10 +269,10 @@ module GlRendererImGui =
         rendererImGui
 
 /// Renders an imgui view via Vulkan.
-type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
+type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
     
     let device = vulkanGlobal.Device
-    let vmaAllocator = vulkanGlobal.VmaAllocator
+    let allocator = vulkanGlobal.VmaAllocator
     let transferCommandPool = vulkanGlobal.TransferCommandPool
     let renderCommandBuffer = vulkanGlobal.RenderCommandBuffer
     let graphicsQueue = vulkanGlobal.GraphicsQueue
@@ -284,11 +282,11 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
     let mutable fontDescriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
     let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
     let mutable pipeline = Unchecked.defaultof<VkPipeline>
-    let mutable fontImage = Unchecked.defaultof<AllocatedImage>
+    let mutable fontImage = Unchecked.defaultof<Hl.AllocatedImage>
     let mutable fontImageView = Unchecked.defaultof<VkImageView>
     let mutable fontDescriptorSet = Unchecked.defaultof<VkDescriptorSet>
-    let mutable vertexBuffer = Unchecked.defaultof<AllocatedBuffer>
-    let mutable indexBuffer = Unchecked.defaultof<AllocatedBuffer>
+    let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
+    let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
     let mutable vertexBufferSize = 8192
     let mutable indexBufferSize = 1024
     
@@ -300,7 +298,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         
         // pool size
         let mutable poolSize = VkDescriptorPoolSize ()
-        poolSize.``type`` <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        poolSize.``type`` <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         poolSize.descriptorCount <- 1u
 
         // create descriptor pool
@@ -308,23 +306,23 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.maxSets <- 1u
         info.poolSizeCount <- 1u
         info.pPoolSizes <- asPointer &poolSize
-        vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> check
+        Vulkan.vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> Hl.check
         descriptorPool
 
     /// Create the sampler used to sample the font atlas.
     static member createFontSampler device =
         let mutable sampler = Unchecked.defaultof<VkSampler>
         let mutable info = VkSamplerCreateInfo ()
-        info.magFilter <- VK_FILTER_LINEAR
-        info.minFilter <- VK_FILTER_LINEAR
-        info.mipmapMode <- VK_SAMPLER_MIPMAP_MODE_LINEAR
-        info.addressModeU <- VK_SAMPLER_ADDRESS_MODE_REPEAT
-        info.addressModeV <- VK_SAMPLER_ADDRESS_MODE_REPEAT
-        info.addressModeW <- VK_SAMPLER_ADDRESS_MODE_REPEAT
+        info.magFilter <- Vulkan.VK_FILTER_LINEAR
+        info.minFilter <- Vulkan.VK_FILTER_LINEAR
+        info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
+        info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+        info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+        info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
         info.maxAnisotropy <- 1.0f
         info.minLod <- -1000f
         info.maxLod <- 1000f
-        vkCreateSampler (device, &info, nullPtr, &sampler) |> check
+        Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
         sampler
     
     /// Create the descriptor set layout for the font atlas.
@@ -335,15 +333,15 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // binding
         let mutable binding = VkDescriptorSetLayoutBinding ()
-        binding.descriptorType <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        binding.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         binding.descriptorCount <- 1u
-        binding.stageFlags <- VK_SHADER_STAGE_FRAGMENT_BIT
+        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
 
         // create descriptor set layout
         let mutable info = VkDescriptorSetLayoutCreateInfo ()
         info.bindingCount <- 1u
         info.pBindings <- asPointer &binding
-        vkCreateDescriptorSetLayout (device, &info, nullPtr, &descriptorSetLayout) |> check
+        Vulkan.vkCreateDescriptorSetLayout (device, &info, nullPtr, &descriptorSetLayout) |> Hl.check
         descriptorSetLayout
     
     /// Create the pipeline layout for the font atlas.
@@ -355,7 +353,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // push constant range
         let mutable pushConstantRange = VkPushConstantRange ()
-        pushConstantRange.stageFlags <- VK_SHADER_STAGE_VERTEX_BIT
+        pushConstantRange.stageFlags <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT
         pushConstantRange.offset <- 0u
         pushConstantRange.size <- uint sizeof<Single> * 4u
 
@@ -365,7 +363,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.pSetLayouts <- asPointer &descriptorSetLayout
         info.pushConstantRangeCount <- 1u
         info.pPushConstantRanges <- asPointer &pushConstantRange
-        vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> check
+        Vulkan.vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> Hl.check
         pipelineLayout
 
     /// Create the pipeline.
@@ -375,45 +373,45 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable pipeline = Unchecked.defaultof<VkPipeline>
 
         // create shader modules
-        let vertModule = createShaderModuleFromGLSL "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
-        let fragModule = createShaderModuleFromGLSL "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
+        let vertModule = Hl.createShaderModuleFromGlsl "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
+        let fragModule = Hl.createShaderModuleFromGlsl "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
 
         // shader stage infos
-        use entryPoint = StringWrap "main"
+        use entryPoint = new StringWrap ("main")
         let ssInfos = Array.zeroCreate<VkPipelineShaderStageCreateInfo> 2
         ssInfos[0] <- VkPipelineShaderStageCreateInfo ()
-        ssInfos[0].stage <- VK_SHADER_STAGE_VERTEX_BIT
+        ssInfos[0].stage <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT
         ssInfos[0].``module`` <- vertModule
         ssInfos[0].pName <- entryPoint.Pointer
         ssInfos[1] <- VkPipelineShaderStageCreateInfo ()
-        ssInfos[1].stage <- VK_SHADER_STAGE_FRAGMENT_BIT
+        ssInfos[1].stage <- Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
         ssInfos[1].``module`` <- fragModule
         ssInfos[1].pName <- entryPoint.Pointer
-        use ssInfosPin = ArrayPin ssInfos
+        use ssInfosPin = new ArrayPin<_> (ssInfos)
 
         // vertex input binding description
         let mutable binding = VkVertexInputBindingDescription ()
         binding.stride <- uint sizeof<ImDrawVert>
-        binding.inputRate <- VK_VERTEX_INPUT_RATE_VERTEX
+        binding.inputRate <- Vulkan.VK_VERTEX_INPUT_RATE_VERTEX
 
         // vertex input attribute descriptions
         let attributes = Array.zeroCreate<VkVertexInputAttributeDescription> 3
         attributes[0] <- VkVertexInputAttributeDescription ()
         attributes[0].location <- 0u
         attributes[0].binding <- 0u
-        attributes[0].format <- VK_FORMAT_R32G32_SFLOAT
-        attributes[0].offset <- offsetOf<ImDrawVert> "pos"
+        attributes[0].format <- Vulkan.VK_FORMAT_R32G32_SFLOAT
+        attributes[0].offset <- NativePtr.offsetOf<ImDrawVert> "pos"
         attributes[1] <- VkVertexInputAttributeDescription ()
         attributes[1].location <- 1u
         attributes[1].binding <- 0u
-        attributes[1].format <- VK_FORMAT_R32G32_SFLOAT
-        attributes[1].offset <- offsetOf<ImDrawVert> "uv"
+        attributes[1].format <- Vulkan.VK_FORMAT_R32G32_SFLOAT
+        attributes[1].offset <- NativePtr.offsetOf<ImDrawVert> "uv"
         attributes[2] <- VkVertexInputAttributeDescription ()
         attributes[2].location <- 2u
         attributes[2].binding <- 0u
-        attributes[2].format <- VK_FORMAT_R8G8B8A8_UNORM
-        attributes[2].offset <- offsetOf<ImDrawVert> "col"
-        use attributesPin = ArrayPin attributes
+        attributes[2].format <- Vulkan.VK_FORMAT_R8G8B8A8_UNORM
+        attributes[2].offset <- NativePtr.offsetOf<ImDrawVert> "col"
+        use attributesPin = new ArrayPin<_> (attributes)
 
         // vertex input info
         let mutable viInfo = VkPipelineVertexInputStateCreateInfo ()
@@ -423,7 +421,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         viInfo.pVertexAttributeDescriptions <- attributesPin.Pointer
 
         // input assembly info
-        let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
 
         // viewport info
         let mutable vInfo = VkPipelineViewportStateCreateInfo ()
@@ -432,24 +430,24 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
         // rasterization info
         let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
-        rInfo.polygonMode <- VK_POLYGON_MODE_FILL
-        rInfo.cullMode <- VK_CULL_MODE_NONE
-        rInfo.frontFace <- VK_FRONT_FACE_COUNTER_CLOCKWISE
+        rInfo.polygonMode <- Vulkan.VK_POLYGON_MODE_FILL
+        rInfo.cullMode <- Vulkan.VK_CULL_MODE_NONE
+        rInfo.frontFace <- Vulkan.VK_FRONT_FACE_COUNTER_CLOCKWISE
         rInfo.lineWidth <- 1.0f
 
         // multisample info
-        let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = VK_SAMPLE_COUNT_1_BIT)
+        let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = Vulkan.VK_SAMPLE_COUNT_1_BIT)
 
         // color attachment
         let mutable color = VkPipelineColorBlendAttachmentState ()
         color.blendEnable <- true
-        color.srcColorBlendFactor <- VK_BLEND_FACTOR_SRC_ALPHA
-        color.dstColorBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-        color.colorBlendOp <- VK_BLEND_OP_ADD
-        color.srcAlphaBlendFactor <- VK_BLEND_FACTOR_ONE
-        color.dstAlphaBlendFactor <- VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-        color.alphaBlendOp <- VK_BLEND_OP_ADD
-        color.colorWriteMask <- VK_COLOR_COMPONENT_R_BIT ||| VK_COLOR_COMPONENT_G_BIT ||| VK_COLOR_COMPONENT_B_BIT ||| VK_COLOR_COMPONENT_A_BIT
+        color.srcColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_SRC_ALPHA
+        color.dstColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        color.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
+        color.srcAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE
+        color.dstAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        color.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
+        color.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
 
         // depth and blend info
         let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
@@ -458,8 +456,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         bInfo.pAttachments <- asPointer &color
 
         // dynamic state info
-        let dynamicStates = [|VK_DYNAMIC_STATE_VIEWPORT; VK_DYNAMIC_STATE_SCISSOR|]
-        use dynamicStatesPin = ArrayPin dynamicStates
+        let dynamicStates = [|Vulkan.VK_DYNAMIC_STATE_VIEWPORT; Vulkan.VK_DYNAMIC_STATE_SCISSOR|]
+        use dynamicStatesPin = new ArrayPin<_> (dynamicStates)
         let mutable dsInfo = VkPipelineDynamicStateCreateInfo ()
         dsInfo.dynamicStateCount <- 2u
         dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
@@ -479,29 +477,29 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.layout <- pipelineLayout
         info.renderPass <- renderPass
         info.subpass <- 0u
-        vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &pipeline) |> check
+        Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &pipeline) |> Hl.check
 
         // destroy shader modules
-        vkDestroyShaderModule (device, vertModule, nullPtr)
-        vkDestroyShaderModule (device, fragModule, nullPtr)
+        Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
+        Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
 
         // fin
         pipeline
 
     /// Create the image for the font atlas.
-    static member createFontImage format extent vmaAllocator =
+    static member createFontImage format extent allocator =
         let mutable info = VkImageCreateInfo ()
-        info.imageType <- VK_IMAGE_TYPE_2D
+        info.imageType <- Vulkan.VK_IMAGE_TYPE_2D
         info.format <- format
         info.extent <- extent
         info.mipLevels <- 1u
         info.arrayLayers <- 1u
-        info.samples <- VK_SAMPLE_COUNT_1_BIT
-        info.tiling <- VK_IMAGE_TILING_OPTIMAL
-        info.usage <- VK_IMAGE_USAGE_SAMPLED_BIT ||| VK_IMAGE_USAGE_TRANSFER_DST_BIT
-        info.sharingMode <- VK_SHARING_MODE_EXCLUSIVE
-        info.initialLayout <- VK_IMAGE_LAYOUT_UNDEFINED
-        let allocatedImage = AllocatedImage.make info vmaAllocator
+        info.samples <- Vulkan.VK_SAMPLE_COUNT_1_BIT
+        info.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
+        info.usage <- Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+        info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+        info.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
+        let allocatedImage = Hl.AllocatedImage.create info allocator
         allocatedImage
 
     /// Create the descriptor set for the font atlas.
@@ -512,7 +510,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         info.descriptorPool <- descriptorPool
         info.descriptorSetCount <- 1u
         info.pSetLayouts <- asPointer &descriptorSetLayout
-        vkAllocateDescriptorSets (device, asPointer &info, asPointer &descriptorSet) |> check
+        Vulkan.vkAllocateDescriptorSets (device, asPointer &info, asPointer &descriptorSet) |> Hl.check
         descriptorSet
 
     /// Write the data to the descriptor set.
@@ -522,88 +520,94 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
         let mutable info = VkDescriptorImageInfo ()
         info.sampler <- sampler
         info.imageView <- imageView
-        info.imageLayout <- VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 
         // write descriptor set
         let mutable write = VkWriteDescriptorSet ()
         write.dstSet <- descriptorSet
         write.descriptorCount <- 1u
-        write.descriptorType <- VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
         write.pImageInfo <- asPointer &info
-        vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
+        Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
     
     /// Copy font atlas from the upload buffer to the image.
     static member copyFont extent uploadBuffer image graphicsQueue transferCommandPool device =
         
         // create command buffer for transfer
-        let mutable commandBuffer = allocateCommandBuffer transferCommandPool device
+        let mutable commandBuffer = Hl.allocateCommandBuffer transferCommandPool device
 
         // reset command buffer and begin recording
-        vkResetCommandPool (device, transferCommandPool, VkCommandPoolResetFlags.None) |> check
-        let mutable cbInfo = VkCommandBufferBeginInfo (flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-        vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+        Vulkan.vkResetCommandPool (device, transferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
+        let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> Hl.check
 
         // transition image layout for data transfer
-        let mutable copyBarrier = imageBarrierTypical ()
-        copyBarrier.dstAccessMask <- VK_ACCESS_TRANSFER_WRITE_BIT
-        copyBarrier.oldLayout <- VK_IMAGE_LAYOUT_UNDEFINED
-        copyBarrier.newLayout <- VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        let mutable copyBarrier = VkImageMemoryBarrier ()
+        copyBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        copyBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        copyBarrier.subresourceRange <- Hl.makeSubresourceRangeColor 1u
+        copyBarrier.dstAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+        copyBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
+        copyBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
         copyBarrier.image <- image
-        vkCmdPipelineBarrier
+        Vulkan.vkCmdPipelineBarrier
             (commandBuffer,
-             VK_PIPELINE_STAGE_HOST_BIT,
-             VK_PIPELINE_STAGE_TRANSFER_BIT,
+             Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
+             Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
              VkDependencyFlags.None,
              0u, nullPtr, 0u, nullPtr,
              1u, asPointer &copyBarrier)
 
         // copy data from upload buffer to image
         let mutable region = VkBufferImageCopy ()
-        region.imageSubresource <- subresourceLayersColor ()
+        region.imageSubresource <- Hl.makeSubresourceLayersColor ()
         region.imageExtent <- extent
-        vkCmdCopyBufferToImage
+        Vulkan.vkCmdCopyBufferToImage
             (commandBuffer,
              uploadBuffer, image,
-             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+             Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
              1u, asPointer &region)
 
         // transition image layout for usage
-        let mutable useBarrier = imageBarrierTypical ()
-        useBarrier.srcAccessMask <- VK_ACCESS_TRANSFER_WRITE_BIT
-        useBarrier.dstAccessMask <- VK_ACCESS_SHADER_READ_BIT
-        useBarrier.oldLayout <- VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        useBarrier.newLayout <- VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        let mutable useBarrier = VkImageMemoryBarrier ()
+        useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        useBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+        useBarrier.subresourceRange <- Hl.makeSubresourceRangeColor 1u
+        useBarrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+        useBarrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
+        useBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+        useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
         useBarrier.image <- image
-        vkCmdPipelineBarrier
+        Vulkan.vkCmdPipelineBarrier
             (commandBuffer,
-             VK_PIPELINE_STAGE_TRANSFER_BIT,
-             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+             Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+             Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
              VkDependencyFlags.None,
              0u, nullPtr, 0u, nullPtr,
              1u, asPointer &useBarrier)
 
         // execute commands
-        vkEndCommandBuffer commandBuffer |> check
+        Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
         let mutable sInfo = VkSubmitInfo ()
         sInfo.commandBufferCount <- 1u
         sInfo.pCommandBuffers <- asPointer &commandBuffer
-        vkQueueSubmit (graphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> check
-        vkQueueWaitIdle graphicsQueue |> check
+        Vulkan.vkQueueSubmit (graphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> Hl.check
+        Vulkan.vkQueueWaitIdle graphicsQueue |> Hl.check
     
     /// Upload the font atlas to the image.
-    static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool vmaAllocator device =
+    static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool allocator device =
         
         // create upload buffer
-        let uploadBuffer = AllocatedBuffer.createStaging uploadSize vmaAllocator
+        let uploadBuffer = Hl.AllocatedBuffer.createStaging uploadSize allocator
 
         // upload font atlas
-        uploadBuffer.TryUpload 0 uploadSize (nintToVoidPointer pixels)
+        Hl.AllocatedBuffer.upload 0 uploadSize (NativePtr.nativeintToVoidPtr pixels) uploadBuffer allocator
 
         // copy font atlas to image
         VulkanRendererImGui.copyFont extent uploadBuffer.Buffer image graphicsQueue transferCommandPool device
 
         // destroy upload buffer
-        uploadBuffer.Destroy ()
+        Hl.AllocatedBuffer.destroy uploadBuffer allocator
     
     interface RendererImGui with
         
@@ -626,18 +630,18 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             fonts.GetTexDataAsRGBA32 (&pixels, &fontWidth, &fontHeight, &bytesPerPixel)
             let uploadSize = fontWidth * fontHeight * bytesPerPixel
             let fontExtent = VkExtent3D (fontWidth, fontHeight, 1)
-            let fontImageFormat = VK_FORMAT_R8G8B8A8_UNORM
+            let fontImageFormat = Vulkan.VK_FORMAT_R8G8B8A8_UNORM
 
             // create image and image view for font atlas
-            fontImage <- VulkanRendererImGui.createFontImage fontImageFormat fontExtent vmaAllocator
-            fontImageView <- createImageView fontImageFormat fontImage.Image device
+            fontImage <- VulkanRendererImGui.createFontImage fontImageFormat fontExtent allocator
+            fontImageView <- Hl.createImageView fontImageFormat 1u fontImage.Image device
 
             // create and write descriptor set for font atlas
             fontDescriptorSet <- VulkanRendererImGui.createFontDescriptorSet fontDescriptorSetLayout descriptorPool device
             VulkanRendererImGui.writeFontDescriptorSet fontSampler fontImageView fontDescriptorSet device
 
             // upload font atlas
-            VulkanRendererImGui.uploadFont fontExtent uploadSize pixels fontImage.Image graphicsQueue transferCommandPool vmaAllocator device
+            VulkanRendererImGui.uploadFont fontExtent uploadSize pixels fontImage.Image graphicsQueue transferCommandPool allocator device
             
             // store identifier
             fonts.SetTexID (nativeint fontDescriptorSet.Handle)
@@ -646,8 +650,8 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- AllocatedBuffer.createVertex true vertexBufferSize vmaAllocator
-            indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
+            vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize allocator
+            indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize allocator
         
         member this.Render (drawData : ImDrawDataPtr) =
             
@@ -665,41 +669,41 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                     let vertexSize = drawData.TotalVtxCount * sizeof<ImDrawVert>
                     let indexSize = drawData.TotalIdxCount * sizeof<uint16>
 
-                    // enlargen vertex buffer if needed
+                    // enlarge vertex buffer if needed
                     if vertexSize > vertexBufferSize then
                         while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                        vertexBuffer.Destroy ()
-                        vertexBuffer <- AllocatedBuffer.createVertex true vertexBufferSize vmaAllocator
+                        Hl.AllocatedBuffer.destroy vertexBuffer allocator
+                        vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize allocator
 
-                    // enlargen index buffer if needed
+                    // enlarge index buffer if needed
                     if indexSize > indexBufferSize then
                         while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                        indexBuffer.Destroy ()
-                        indexBuffer <- AllocatedBuffer.createIndex true indexBufferSize vmaAllocator
+                        Hl.AllocatedBuffer.destroy indexBuffer allocator
+                        indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize allocator
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
                     let mutable indexOffset = 0
                     for i in 0 .. dec drawData.CmdListsCount do
-                        let drawList = drawData.CmdListsRange.[i]
+                        let drawList = let range = drawData.CmdListsRange in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
                         
                         // TODO: try a persistently mapped buffer and compare performance
-                        vertexBuffer.TryUpload vertexOffset vertexSize (nintToVoidPointer drawList.VtxBuffer.Data)
-                        indexBuffer.TryUpload indexOffset indexSize (nintToVoidPointer drawList.IdxBuffer.Data)
+                        Hl.AllocatedBuffer.upload vertexOffset vertexSize (NativePtr.nativeintToVoidPtr drawList.VtxBuffer.Data) vertexBuffer allocator
+                        Hl.AllocatedBuffer.upload indexOffset indexSize (NativePtr.nativeintToVoidPtr drawList.IdxBuffer.Data) indexBuffer allocator
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                vkCmdBindPipeline (renderCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline)
+                Vulkan.vkCmdBindPipeline (renderCommandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline)
 
                 // bind vertex and index buffer
                 if drawData.TotalVtxCount > 0 then
                     let mutable vertexBuffer = vertexBuffer.Buffer
                     let mutable vertexOffset = 0UL
-                    vkCmdBindVertexBuffers (renderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                    vkCmdBindIndexBuffer (renderCommandBuffer, indexBuffer.Buffer, 0UL, VK_INDEX_TYPE_UINT16)
+                    Vulkan.vkCmdBindVertexBuffers (renderCommandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                    Vulkan.vkCmdBindIndexBuffer (renderCommandBuffer, indexBuffer.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
 
                 // set up viewport
                 let mutable viewport = VkViewport ()
@@ -709,27 +713,27 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                 viewport.height <- framebufferHeight
                 viewport.minDepth <- 0.0f
                 viewport.maxDepth <- 1.0f
-                vkCmdSetViewport (renderCommandBuffer, 0u, 1u, asPointer &viewport)
+                Vulkan.vkCmdSetViewport (renderCommandBuffer, 0u, 1u, asPointer &viewport)
 
                 // set up scale and translation
                 let scale = Array.zeroCreate<single> 2
                 scale[0] <- 2.0f / drawData.DisplaySize.X
                 scale[1] <- 2.0f / drawData.DisplaySize.Y
-                use scalePin = ArrayPin scale
+                use scalePin = new ArrayPin<_> (scale)
                 let translate = Array.zeroCreate<single> 2
                 translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
                 translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
-                use translatePin = ArrayPin translate
-                vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
-                vkCmdPushConstants (renderCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
+                use translatePin = new ArrayPin<_> (translate)
+                Vulkan.vkCmdPushConstants (renderCommandBuffer, pipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (renderCommandBuffer, pipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists
                 let mutable globalVtxOffset = 0
                 let mutable globalIdxOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let drawList = drawData.CmdListsRange.[i]
+                    let drawList = let range = drawData.CmdListsRange in range.[i]
                     for j in 0 .. dec drawList.CmdBuffer.Size do
-                        let pcmd = drawList.CmdBuffer[j]
+                        let pcmd = let buffer = drawList.CmdBuffer in buffer.[j]
                         if pcmd.UserCallback = nativeint 0 then
                             
                             // project scissor/clipping rectangles into framebuffer space
@@ -743,7 +747,7 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                                     ((pcmd.ClipRect.Z - drawData.DisplayPos.X) * drawData.FramebufferScale.X)
                                     ((pcmd.ClipRect.W - drawData.DisplayPos.Y) * drawData.FramebufferScale.Y)
 
-                            // clamp to viewport as vkCmdSetScissor won't accept values that are off bounds
+                            // clamp to viewport as Vulkan.vkCmdSetScissor won't accept values that are off bounds
                             if clipMin.X < 0.0f then clipMin.X <- 0.0f
                             if clipMin.Y < 0.0f then clipMin.Y <- 0.0f
                             if clipMax.X > framebufferWidth then clipMax.X <- framebufferWidth
@@ -756,19 +760,19 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
                                 let width = uint (clipMax.X - clipMin.X)
                                 let height = uint (clipMax.Y - clipMin.Y)
                                 let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                                vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
+                                Vulkan.vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
 
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
-                                vkCmdBindDescriptorSets
+                                Vulkan.vkCmdBindDescriptorSets
                                     (renderCommandBuffer,
-                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
                                      pipelineLayout, 0u,
                                      1u, asPointer &descriptorSet,
                                      0u, nullPtr)
 
                                 // draw
-                                vkCmdDrawIndexed
+                                Vulkan.vkCmdDrawIndexed
                                     (renderCommandBuffer,
                                      pcmd.ElemCount, 1u,
                                      pcmd.IdxOffset + uint globalIdxOffset,
@@ -781,18 +785,18 @@ type VulkanRendererImGui (vulkanGlobal : VulkanGlobal) =
 
                 // reset scissor
                 let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
+                Vulkan.vkCmdSetScissor (renderCommandBuffer, 0u, 1u, asPointer &scissor)
         
         member this.CleanUp () =
-            indexBuffer.Destroy ()
-            vertexBuffer.Destroy ()
-            vkDestroyImageView (device, fontImageView, nullPtr)
-            fontImage.Destroy ()
-            vkDestroyPipeline (device, pipeline, nullPtr)
-            vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
-            vkDestroyDescriptorSetLayout (device, fontDescriptorSetLayout, nullPtr)
-            vkDestroySampler (device, fontSampler, nullPtr)
-            vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
+            Hl.AllocatedBuffer.destroy indexBuffer allocator
+            Hl.AllocatedBuffer.destroy vertexBuffer allocator
+            Vulkan.vkDestroyImageView (device, fontImageView, nullPtr)
+            Hl.AllocatedImage.destroy fontImage allocator
+            Vulkan.vkDestroyPipeline (device, pipeline, nullPtr)
+            Vulkan.vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
+            Vulkan.vkDestroyDescriptorSetLayout (device, fontDescriptorSetLayout, nullPtr)
+            Vulkan.vkDestroySampler (device, fontSampler, nullPtr)
+            Vulkan.vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =

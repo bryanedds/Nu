@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
+open Vortice.Vulkan
 open SDL2
 open ImGuiNET
 open Prime
@@ -326,10 +327,10 @@ type RendererThread () =
                 // extract window
                 let window = match window with SglWindow window -> window.SglWindow
 
-                // try create global vulkan object
-                match Vulkan.Hl.VulkanGlobal.tryMake window with
+                // attempt to create global vulkan object
+                match Hl.VulkanGlobal.tryCreate window with
                 | Some vulkanGlobal ->
-                    
+
                     // create 3d renderer
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
 
@@ -342,13 +343,9 @@ type RendererThread () =
                     // fin
                     (Some vulkanGlobal, renderer3d, renderer2d, rendererImGui)
 
-                // create stub renderers
-                | None ->
-                    let renderer3d = StubRenderer3d.make () :> Renderer3d
-                    let renderer2d = StubRenderer2d.make () :> Renderer2d
-                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-                    (None, renderer3d, renderer2d, rendererImGui)
-            
+                // fail
+                | None -> Log.fail "Could not create VulkanGlobal instance."
+
             // create stub renderers
             | None ->
                 let renderer3d = StubRenderer3d.make () :> Renderer3d
@@ -375,10 +372,10 @@ type RendererThread () =
                 // receie submission
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
-                
+
                 // begin frame
-                imageIndex <- Vulkan.Hl.VulkanGlobal.tryBeginFrame vulkanGlobalOpt
-                
+                match vulkanGlobalOpt with Some vulkanGlobal -> imageIndex <- Hl.VulkanGlobal.beginFrame vulkanGlobal | None -> ()
+
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
                 freeStaticModelMessages messages3d
@@ -394,7 +391,7 @@ type RendererThread () =
                 rendererImGui.Render drawData
 
                 // end frame
-                Vulkan.Hl.VulkanGlobal.tryEndFrame vulkanGlobalOpt
+                match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.endFrame vulkanGlobal | None -> ()
 
                 // loop until swap is requested
                 while not terminated && not swap do Thread.Sleep 1
@@ -403,16 +400,18 @@ type RendererThread () =
                 if not terminated then
 
                     // present image to screen
-                    Vulkan.Hl.VulkanGlobal.tryPresent imageIndex vulkanGlobalOpt
+                    match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.present imageIndex vulkanGlobal | None -> ()
                     
                     // acknowledge swap request
                     swap <- false
 
+        // wait for finish
+        match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.waitIdle vulkanGlobal | None -> ()
+        
         // clean up
-        Vulkan.Hl.VulkanGlobal.tryWaitIdle vulkanGlobalOpt
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
-        Vulkan.Hl.VulkanGlobal.tryCleanup vulkanGlobalOpt
+        match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.cleanup vulkanGlobal | None -> ()
 
     interface RendererProcess with
 
@@ -425,7 +424,10 @@ type RendererThread () =
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
 
             // start thread
-            let thread = Thread (ThreadStart (fun () -> this.Run fonts windowOpt))
+            let thread =
+                Thread (ThreadStart (fun () ->
+                    try this.Run fonts windowOpt
+                    with _ -> Environment.Exit Constants.Engine.ExitCodeFailure))
             threadOpt <- Some thread
             thread.IsBackground <- true
             thread.Start ()
