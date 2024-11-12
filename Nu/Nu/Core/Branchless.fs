@@ -3,7 +3,7 @@
 
 namespace Nu
 open System
-#nowarn "42"
+#nowarn "42" // for reinterpret definition
 
 /// Provides operators for branchless programming.
 /// NOTE: implemented in terms of a static class to enable overloading.

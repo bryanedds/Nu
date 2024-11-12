@@ -6,9 +6,7 @@ open System
 open System.Runtime.InteropServices
 open SDL2
 open Prime
-
-// for NativeInterop with KeyboardState
-#nowarn "9"
+#nowarn "9" // for NativeInterop with KeyboardState
 
 /// Describes a mouse button.
 type MouseButton =
