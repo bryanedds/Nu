@@ -65,8 +65,8 @@ type GameplayDispatcher () =
         [Screen.SelectEvent => StartPlaying
          Screen.DeselectingEvent => FinishQuitting
          Screen.PostUpdateEvent => TrackPlayer
-         Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> AttackCharacter evt.Data
-         Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard =|> fun evt -> Die evt.Data]
+         Events.AttackEvent --> Simulants.GameplayScene --> Address.makeWildcard () =|> fun evt -> AttackCharacter evt.Data
+         Events.DieEvent --> Simulants.GameplayScene --> Address.makeWildcard () =|> fun evt -> Die evt.Data]
 
     // here we handle the gameplay messages
     override this.Message (gameplay, message, _, world) =

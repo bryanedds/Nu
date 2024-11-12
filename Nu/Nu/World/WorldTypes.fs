@@ -314,10 +314,10 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
 
     /// Set a lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline (<--) (lens : Lens<_, _>, value) = lens.Set value
+    static member inline ( <-- ) (lens : Lens<_, _>, value) = lens.Set value
 
     /// Get a lensed property's value.
-    static member inline (!.) (lens : Lens<_, _>) = fun world -> lens.Get world
+    static member inline ( !. ) (lens : Lens<_, _>) = fun world -> lens.Get world
 
     interface Lens with
         member this.Name = this.Name
