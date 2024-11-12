@@ -9,19 +9,13 @@ open System.Text
 open FSharp.NativeInterop
 open Prime
 
-[<AutoOpen>]
-module NativeOperators =
-
-    /// Null Pointer.
-    let nullPtr = NativePtr.nullPtr
+[<RequireQualifiedAccess>]
+module NativePtr =
 
     /// Convert a managed pointer to a typed native pointer.
     let asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
         let voidPtr = Unsafe.AsPointer<'a> &managedPtr
         NativePtr.ofVoidPtr<'a> voidPtr
-
-[<RequireQualifiedAccess>]
-module NativePtr =
 
     /// Get the byte offset of a field within the unmanaged form of a managed type.
     /// This is valid for any struct that does not contain non-blittable types like bool.
@@ -72,6 +66,17 @@ module NativePtr =
     /// Convert a ReadOnlySpan<byte> to a string.
     let spanToString (span : ReadOnlySpan<byte>) =
         Encoding.UTF8.GetString span
+
+[<AutoOpen>]
+module NativePtrOperators =
+
+    /// Null Pointer.
+    let nullPtr =
+        NativePtr.nullPtr
+
+    /// Convert a managed pointer to a typed native pointer.
+    let inline asPointer<'a when 'a : unmanaged> (managedPtr : byref<'a>) : nativeptr<'a> =
+        NativePtr.asPointer<'a> &managedPtr
 
 /// Abstraction for native pointer pinning for arrays.
 type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =
