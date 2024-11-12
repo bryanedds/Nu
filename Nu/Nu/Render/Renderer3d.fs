@@ -2884,6 +2884,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 // nothing to do
                 | None -> ()
 
+            // render light map
             match renderPass with
             | LightMapPass (lightProbeId, _) ->
                 if renderTasks.LightMapRenders.Contains lightProbeId then
