@@ -2273,7 +2273,6 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer
         (lightOrigin : Vector3)
         (shadowResolution : Vector2i)
-        (_(*shadowMapBufferIndex*) : int)
         (shadowMap : OpenGL.Texture.Texture)
         (renderbuffer : uint)
         (framebuffer : uint) =
@@ -3018,7 +3017,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | PointLight ->
                             let shadowResolution = Constants.Render.ShadowResolution
                             let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
-                            GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowMapBufferIndex shadowTexture shadowRenderbuffer shadowFramebuffer
+                            GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
                             renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
                             shadowMapBufferIndex <- inc shadowMapBufferIndex
                         | SpotLight (_, _) | DirectionalLight -> ()
