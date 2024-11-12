@@ -76,16 +76,16 @@ module NativePtr =
 /// Abstraction for native pointer pinning for arrays.
 type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, ptr : nativeptr<'a>) =
 
-    ///
+    /// Create an ArrayPin for a given array.
     new (array : 'a array) =
         let handle = array.AsMemory().Pin()
         let ptr = NativePtr.ofVoidPtr<'a> handle.Pointer
         new ArrayPin<'a> (handle, ptr)
 
-    ///
+    /// The native pointer to the pinned array.
     member this.Pointer = ptr
 
-    ///
+    /// The void pointer to the pinned array.
     member this.VoidPtr = NativePtr.toVoidPtr ptr
 
     interface IDisposable with
@@ -95,12 +95,12 @@ type ArrayPin<'a when 'a : unmanaged> private (handle : Buffers.MemoryHandle, pt
 /// Container for a single unmanaged string.
 type StringWrap private (strPtr : nativeptr<byte>) =
 
-    ///
+    /// Create a StringWrap for a given string.
     new (str : string) =
         let strPtr = NativePtr.stringToUnmanaged str
         new StringWrap (strPtr)
 
-    ///
+    /// The native pointer to the unmanaged string.
     member this.Pointer = strPtr
 
     interface IDisposable with
@@ -112,13 +112,13 @@ type StringArrayWrap private (array : nativeptr<byte> array) =
 
     let pin = new ArrayPin<_> (array)
 
-    ///
+    /// Create a StringArrayWrap for a given array of strings.
     new (strs : string array) =
         let ptrs = Array.zeroCreate<nativeptr<byte>> strs.Length
         for i in 0 .. dec strs.Length do ptrs.[i] <- NativePtr.stringToUnmanaged strs.[i]
         new StringArrayWrap (ptrs)
 
-    ///
+    /// The native pointer to the pinned array of unmanaged strings.
     member this.Pointer = pin.Pointer
 
     interface IDisposable with
