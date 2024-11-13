@@ -17,7 +17,7 @@
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-		<DefineConstants>$(DefineConstants);IMNUI</DefineConstants>
+		<DefineConstants>$(DefineConstants)</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCpu'">
@@ -26,7 +26,7 @@
 		<Tailcalls>False</Tailcalls>
 		<WarningLevel>5</WarningLevel>
 		<WarningsAsErrors>FS0026;FS0049;FS3239;$(WarningsAsErrors)</WarningsAsErrors>
-		<DefineConstants>$(DefineConstants);IMNUI</DefineConstants>
+		<DefineConstants>$(DefineConstants)</DefineConstants>
 	</PropertyGroup>
 
 	<Target Name="AfterCleanNuPipe" AfterTargets="Clean">
