@@ -94,7 +94,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
     /// Make a relation from a '/' delimited string.
     /// NOTE: do not move this function as the RelationConverter's reflection code relies on it being exactly here!
     static member makeFromString<'a> (relationStr : string) : 'a Relation =
-        let names = relationStr.Split Constants.Address.Separator
+        let names = relationStr.Split Constants.Address.SeparatorName
         Relation.makeFromArray<'a> names
 
     /// Hash a Relation.
@@ -114,7 +114,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
         let relationStr = string relation
         let pathStr = relationStr.Replace("^", "..").Replace('~', '.').Replace('?', '\b')
         let resultStr =
-            addressStr + Constants.Address.SeparatorStr + pathStr |>
+            addressStr + Constants.Address.SeparatorName + pathStr |>
             (fun path -> Uri(Uri("http://example.com/"), path).AbsolutePath.TrimStart('/')) |>
             Uri.UnescapeDataString
         let resultStr =
@@ -169,7 +169,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
                 | Parent -> Constants.Relation.ParentName
                 | Name name -> name)
                 this.Links
-        String.concat Constants.Address.SeparatorStr names
+        String.concat Constants.Address.SeparatorName names
 
 [<RequireQualifiedAccess>]
 module Relation =

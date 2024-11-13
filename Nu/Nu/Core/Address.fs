@@ -7,9 +7,8 @@ open Nu
 
 [<RequireQualifiedAccess>]
 module Address =
-    
-    let [<Literal>] Separator = '/'
-    let [<Literal>] SeparatorStr = "/"
+
+    let [<Literal>] SeparatorName = "/"
     let [<Literal>] WildcardName = "*"
     let [<Literal>] EllipsisName = "..."
 
@@ -86,7 +85,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     /// Make an address from a '/' delimited string.
     /// NOTE: do not move this function as the AddressConverter's reflection code relies on it being exactly here!
     static member makeFromString<'a> (addressStr : string) : 'a Address =
-        let names = addressStr.Split Constants.Address.Separator
+        let names = addressStr.Split Constants.Address.SeparatorName
         { Names = names; HashCode = String.hashMany names; Anonymous = false }
 
     /// Hash an Address.
@@ -138,7 +137,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     /// Convert a string into an address.
     static member atos<'a> (address : 'a Address) =
-        String.concat Constants.Address.SeparatorStr address.Names
+        String.concat Constants.Address.SeparatorName address.Names
 
     /// Convert an address of type 'a to an address of type 'b.
     static member atoa<'a, 'b> (address : 'a Address) : 'b Address =
