@@ -14,7 +14,7 @@ module JumpBoxExtensions =
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type JumpBoxDispatcher () =
-    inherit GameDispatcher ()
+    inherit GameDispatcherImNui ()
 
     // here we define default property values
     static member Properties =

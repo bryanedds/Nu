@@ -48,38 +48,21 @@ module WorldImNui =
 
     type World with
 
-        static member internal processGame (game : Game) (world : World) =
-            let context = world.ContextImNui
-            let world = World.scopeGame [] world
+        static member internal tryProcessGame (game : Game) (world : World) =
             let dispatcher = game.GetDispatcher world
-            let world = dispatcher.Process (game, world)
-            World.advanceContext game.GameAddress context world
+            dispatcher.TryProcess (game, world)
 
-        static member internal processScreen (screen : Screen) (world : World) =
-            let context = world.ContextImNui
-            let world = World.scopeScreen screen [] world
+        static member internal tryProcessScreen (screen : Screen) (world : World) =
             let dispatcher = World.getScreenDispatcher screen world
-            let world = dispatcher.Process (screen, world)
-            World.advanceContext screen.ScreenAddress context world
+            dispatcher.TryProcess (screen, world)
 
-        static member internal processGroup (group : Group) (world : World) =
-            let context = world.ContextImNui
-            let world = World.scopeGroup group [] world
+        static member internal tryProcessGroup (group : Group) (world : World) =
             let dispatcher = group.GetDispatcher world
-            let world = dispatcher.Process (group, world)
-            World.advanceContext group.GroupAddress context world
+            dispatcher.TryProcess (group, world)
 
-        static member internal processEntity (entity : Entity) (world : World) =
-            let context = world.ContextImNui
-            let world = World.scopeEntity entity [] world
-            let facets = entity.GetFacets world
-            let mutable world = world // OPTIMIZATION: inlining fold for speed.
-            if Array.notEmpty facets then // OPTIMIZATION: eliding iteration setup for speed.
-                for facet in facets do
-                    world <- facet.Process (entity, world)
+        static member internal tryProcessEntity (entity : Entity) (world : World) =
             let dispatcher = entity.GetDispatcher world
-            let world = dispatcher.Process (entity, world)
-            World.advanceContext entity.EntityAddress context world
+            dispatcher.TryProcess (entity, world)
 
         /// Whether ImNui is reinitializing this frame (such as on a code reload).
         member this.ReinitializingImNui =
