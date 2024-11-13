@@ -278,46 +278,46 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
 
     /// Adds the specified value to the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( += ) (lens : Lens<_, _>, value) =  lens.Map (flip (+) value)
+    static member inline ( += ) (lens : Lens<_, _>, value) = lens.Map (flip (+) value)
 
     /// Subtracts the specified value from the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Map (flip (-) value)
+    static member inline ( -= ) (lens : Lens<_, _>, value) = lens.Map (flip (-) value)
 
     /// Multiplies the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Map (flip (*) value)
+    static member inline ( *= ) (lens : Lens<_, _>, value) = lens.Map (flip (*) value)
 
     /// Divides the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Map (flip (/) value)
+    static member inline ( /= ) (lens : Lens<_, _>, value) = lens.Map (flip (/) value)
 
     /// Computes the modulus of the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Map (flip (%) value)
+    static member inline ( %= ) (lens : Lens<_, _>, value) = lens.Map (flip (%) value)
 
     /// Negates the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( ~+ ) (lens : Lens<_, _>) =  lens.Map (~+)
+    static member inline ( ~+ ) (lens : Lens<_, _>) = lens.Map (~+)
 
     /// Negates the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( ~- ) (lens : Lens<_, _>) =  lens.Map (~-)
+    static member inline ( ~- ) (lens : Lens<_, _>) = lens.Map (~-)
 
     /// Increments the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( !+ ) (lens : Lens<_, _>) =  lens.Map inc
+    static member inline ( !+ ) (lens : Lens<_, _>) = lens.Map inc
 
     /// Decrements the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( !- ) (lens : Lens<_, _>) =  lens.Map dec
+    static member inline ( !- ) (lens : Lens<_, _>) = lens.Map dec
 
     /// Set a lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline (<--) (lens : Lens<_, _>, value) = lens.Set value
+    static member inline ( <-- ) (lens : Lens<_, _>, value) = lens.Set value
 
     /// Get a lensed property's value.
-    static member inline (!.) (lens : Lens<_, _>) = fun world -> lens.Get world
+    static member inline ( !. ) (lens : Lens<_, _>) = fun world -> lens.Get world
 
     interface Lens with
         member this.Name = this.Name
@@ -442,9 +442,9 @@ and GameDispatcher () =
     abstract Unregister : Game * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui process a game.
-    abstract Process : Game * World -> World
-    default this.Process (_, world) = world
+    /// Attempt to ImNui process a game.
+    abstract TryProcess : Game * World -> World
+    default this.TryProcess (_, world) = world
 
     /// Pre-update a game.
     abstract PreUpdate : Game * World -> World
@@ -498,9 +498,9 @@ and ScreenDispatcher () =
     abstract Unregister : Screen * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui process a screen.
-    abstract Process : Screen * World -> World
-    default this.Process (_, world) = world
+    /// Attempt to ImNui process a screen.
+    abstract TryProcess : Screen * World -> World
+    default this.TryProcess (_, world) = world
 
     /// Pre-update a screen.
     abstract PreUpdate : Screen * World -> World
@@ -560,9 +560,9 @@ and GroupDispatcher () =
     abstract Unregister : Group * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui process a group.
-    abstract Process : Group * World -> World
-    default this.Process (_, world) = world
+    /// Attempt to ImNui process a group.
+    abstract TryProcess : Group * World -> World
+    default this.TryProcess (_, world) = world
 
     /// Pre-update a group.
     abstract PreUpdate : Group * World -> World
@@ -653,9 +653,9 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
     abstract Unregister : Entity * World -> World
     default this.Unregister (_, world) = world
 
-    /// ImNui process an entity.
-    abstract Process : Entity * World -> World
-    default this.Process (_, world) = world
+    /// Attempt to ImNui process an entity.
+    abstract TryProcess : Entity * World -> World
+    default this.TryProcess (_, world) = world
 
     /// Update an entity.
     abstract Update : Entity * World -> World
@@ -740,10 +740,6 @@ and Facet (physical, lightProbe, light) =
     /// Participate in the unregistration of an entity's physics from the physics subsystem.
     abstract UnregisterPhysics : Entity * World -> World
     default this.UnregisterPhysics (_, world) = world
-
-    /// ImNui process a facet.
-    abstract Process : Entity * World -> World
-    default this.Process (_, world) = world
 
     /// Update a facet.
     abstract Update : Entity * World -> World

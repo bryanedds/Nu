@@ -76,9 +76,9 @@ type MmccGameDispatcher () =
         else world
 #else
 type MyGameDispatcher () =
-    inherit GameDispatcher ()
-
 #if IMNUI
+    inherit GameDispatcherImNui ()
+
     static let Positions = // 15,000 entities (goal: 60FPS, current 55FPS)
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do
@@ -101,6 +101,8 @@ type MyGameDispatcher () =
         let world = World.endScreen world
         world
 #else
+    inherit GameDispatcher ()
+
     static let Positions = // 40,000 entities (goal: 60FPS, current 60FPS)
         [|for i in 0 .. dec 50 do
             for j in 0 .. dec 50 do

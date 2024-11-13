@@ -185,7 +185,7 @@ module WorldScreenModule =
             match simulants.TryGetValue (Game.Handle :> Simulant) with
             | (true, screensOpt) ->
                 match screensOpt with
-                | Some screens -> screens |> Seq.map cast<Screen>
+                | Some screens -> Seq.map cast<Screen> screens
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
@@ -230,7 +230,7 @@ module WorldScreenModule =
                     else failwith ("Screen '" + scstring screen + "' already exists and cannot be created."); world
                 else world
             let world = World.addScreen false screenState screen world
-            let world = if WorldModule.UpdatingSimulants then WorldModule.processScreen screen world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessScreen screen world else world
             (screen, world)
 
         /// Create a screen from a simulant descriptor.
@@ -326,7 +326,7 @@ module WorldScreenModule =
             let world = World.readGroups screenDescriptor.GroupDescriptors screen world |> snd
 
             // attempt to process ImNui screen first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.processScreen screen world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessScreen screen world else world
             (screen, world)
 
         /// Read multiple screens from a game descriptor.

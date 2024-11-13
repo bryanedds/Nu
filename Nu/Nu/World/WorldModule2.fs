@@ -149,12 +149,12 @@ module WorldModule2 =
                 let world = World.unsubscribe ScreenTransitionKeyboardKeyId world
                 world
             | IncomingState _ | OutgoingState _ ->
-                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
-                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseLeftId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Left/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseMiddleId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Middle/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseRightId World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/Right/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX1Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X1/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionMouseX2Id World.handleAsSwallow (stoa<MouseButtonData> ("Mouse/X2/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
+                let world = World.subscribePlus ScreenTransitionKeyboardKeyId World.handleAsSwallow (stoa<KeyboardKeyData> ("KeyboardKey/" + Constants.Address.WildcardName + "/Event/Game")) Nu.Game.Handle world |> snd
                 world
                 
         static member private updateScreenTransition3 transitionType (selectedScreen : Screen) world =
@@ -809,8 +809,8 @@ module WorldModule2 =
                     match eventFirstName with
                     | "Update" ->
 #if DEBUG
-                        if  Array.contains Address.WildcardName eventNames ||
-                            Array.contains Address.EllipsisName eventNames then
+                        if  Array.contains Constants.Address.WildcardName eventNames ||
+                            Array.contains Constants.Address.EllipsisName eventNames then
                             Log.error
                                 ("Subscribing to entity update events with a wildcard or ellipsis is not supported. " +
                                  "This will cause a bug where some entity update events are not published.")
@@ -854,8 +854,8 @@ module WorldModule2 =
                                     let world = if entity.GetExists world then World.setEntityPublishChangeEvents true entity world |> snd' else world
                                     World.mapKeyValueStore (SUMap.add EntityChangeCountsKey (UMap.add entityAddress 1 entityChangeCounts)) world // no event
                             else world
-                        if  Array.contains Address.WildcardName eventNames ||
-                            Array.contains Address.EllipsisName eventNames then
+                        if  Array.contains Constants.Address.WildcardName eventNames ||
+                            Array.contains Constants.Address.EllipsisName eventNames then
                             Log.error "Subscribing to change events with a wildcard or ellipsis is not supported."
                         world
                     | _ -> world
@@ -1395,7 +1395,7 @@ module WorldModule2 =
         /// Process ImNui for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
         /// meaningful time. Do NOT call this in the course of normal operations!
-        static member processSimulants (world : World) =
+        static member tryProcessSimulants (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1409,25 +1409,25 @@ module WorldModule2 =
                 World.getElements2dInPlay HashSet2dNormalCached world
                 world.Timers.UpdateGatherTimer.Stop ()
 
-                // process game
+                // attempt to process game
                 world.Timers.UpdateGameTimer.Restart ()
-                let world = World.processGame game world
+                let world = World.tryProcessGame game world
                 world.Timers.UpdateGameTimer.Stop ()
 
-                // process screen if any
+                // attempt to process screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.processScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
-                // process groups
+                // attempt to process groups
                 world.Timers.UpdateGroupsTimer.Restart ()
-                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.processGroup group world else world) world groups
+                let world = Seq.fold (fun world (group : Group) -> if group.GetExists world then World.tryProcessGroup group world else world) world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
 
-                // process entities
+                // attempt to process entities
                 world.Timers.UpdateEntitiesTimer.Restart ()
-                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.processEntity element.Entry world else world) world HashSet3dNormalCached
-                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.processEntity element.Entry world else world) world HashSet2dNormalCached
+                let world = Seq.fold (fun world (element : Entity Octelement) -> if element.Entry.GetExists world then World.tryProcessEntity element.Entry world else world) world HashSet3dNormalCached
+                let world = Seq.fold (fun world (element : Entity Quadelement) -> if element.Entry.GetExists world then World.tryProcessEntity element.Entry world else world) world HashSet2dNormalCached
                 world.Timers.UpdateEntitiesTimer.Stop ()
 
                 // fin
@@ -1528,7 +1528,7 @@ module WorldModule2 =
 
                 // update game
                 world.Timers.UpdateGameTimer.Restart ()
-                let world = World.processGame game world
+                let world = World.tryProcessGame game world
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
@@ -1536,7 +1536,7 @@ module WorldModule2 =
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
                     Option.fold (fun world (screen : Screen) ->
-                        let world = if screen.GetExists world then World.processScreen screen world else world
+                        let world = if screen.GetExists world then World.tryProcessScreen screen world else world
                         let world = if advancing && screen.GetExists world then World.updateScreen screen world else world
                         world)
                         world screenOpt
@@ -1546,7 +1546,7 @@ module WorldModule2 =
                 world.Timers.UpdateGroupsTimer.Restart ()
                 let world =
                     Seq.fold (fun world (group : Group) ->
-                        let world = if group.GetExists world then World.processGroup group world else world
+                        let world = if group.GetExists world then World.tryProcessGroup group world else world
                         let world = if advancing && group.GetExists world then World.updateGroup group world else world
                         world)
                         world groups
@@ -1558,7 +1558,7 @@ module WorldModule2 =
                     Seq.fold (fun world (element : Entity Octelement) ->
                         let world =
                             if element.Entry.GetExists world
-                            then World.processEntity element.Entry world
+                            then World.tryProcessEntity element.Entry world
                             else world
                         let world =
                             if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
@@ -1570,7 +1570,7 @@ module WorldModule2 =
                     Seq.fold (fun world (element : Entity Quadelement) ->
                         let world =
                             if element.Entry.GetExists world
-                            then World.processEntity element.Entry world
+                            then World.tryProcessEntity element.Entry world
                             else world
                         let world =
                             if element.Entry.GetExists world && (advancing && not (element.Entry.GetStatic world) || element.Entry.GetAlwaysUpdate world)
@@ -2122,6 +2122,68 @@ module WorldModule2 =
 [<AutoOpen>]
 module EntityDispatcherModule2 =
 
+    /// The ImNui dispatcher for entities.
+    type [<AbstractClass>] EntityDispatcherImNui (is2d, perimeterCentered, physical, lightProbe, light) =
+        inherit EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light)
+
+        static member Properties =
+            [define Entity.Presence Omnipresent]
+
+        override this.TryProcess (entity, world) =
+            let context = world.ContextImNui
+            let world = World.scopeEntity entity [] world
+            let world = this.Process (entity, world)
+            World.advanceContext entity.EntityAddress context world
+
+        /// ImNui process an entity.
+        abstract Process : Entity * World -> World
+        default this.Process (_, world) = world
+
+    /// An ImNui 2d entity dispatcher.
+    type [<AbstractClass>] Entity2dDispatcherImNui (physical, lightProbe, light) =
+        inherit EntityDispatcherImNui (true, Constants.Engine.Entity2dPerimeterCenteredDefault, physical, lightProbe, light)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.Entity2dSizeDefault]
+
+    /// An ImNui gui entity dispatcher.
+    type [<AbstractClass>] GuiDispatcherImNui () =
+        inherit EntityDispatcherImNui (true, Constants.Engine.EntityGuiPerimeterCenteredDefault, false, false, false)
+
+        static member Facets =
+            [typeof<LayoutFacet>]
+
+        static member Properties =
+            [define Entity.Absolute true
+             define Entity.Presence Omnipresent
+             define Entity.ColorDisabled Constants.Gui.ColorDisabledDefault
+             define Entity.Layout Manual
+             define Entity.LayoutMargin v2Zero
+             define Entity.LayoutOrder 0
+             define Entity.DockType DockCenter
+             define Entity.GridPosition v2iZero]
+
+    /// An ImNui 3d entity dispatcher.
+    type [<AbstractClass>] Entity3dDispatcherImNui (physical, lightProbe, light) =
+        inherit EntityDispatcherImNui (false, true, physical, lightProbe, light)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.Entity3dSizeDefault]
+
+        override this.RayCast (ray, entity, world) =
+            if Array.isEmpty (entity.GetFacets world) then
+                let intersectionOpt = ray.Intersects (entity.GetBounds world)
+                if intersectionOpt.HasValue then [|intersectionOpt.Value|]
+                else [||]
+            else base.RayCast (ray, entity, world)
+
+    /// An ImNui vui dispatcher (gui in 3d).
+    type [<AbstractClass>] VuiDispatcherImNui () =
+        inherit EntityDispatcherImNui (false, true, false, false, false)
+
+        static member Properties =
+            [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
+
     type World with
 
         static member inline internal signalEntity<'model, 'message, 'command when 'message :> Message and 'command :> Command> (signal : Signal) (entity : Entity) world =
@@ -2334,16 +2396,6 @@ module EntityDispatcherModule2 =
         static member Properties =
             [define Entity.Size Constants.Engine.EntityVuiSizeDefault]
 
-    /// Dynamically augments an entity's behavior in a composable way via ImNui.
-    type FacetImNui (physical, lightProbe, light) =
-        inherit Facet (physical, lightProbe, light)
-
-        override this.Process (entity, world) =
-            let context = world.ContextImNui
-            let world = World.scopeEntity entity [] world
-            let world = this.Process (entity, world)
-            World.advanceContext entity.EntityAddress context world
-
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
@@ -2461,6 +2513,20 @@ module EntityPropertyDescriptor =
 
 [<AutoOpen>]
 module GroupDispatcherModule =
+
+    /// The ImNui dispatcher for groups.
+    type [<AbstractClass>] GroupDispatcherImNui () =
+        inherit GroupDispatcher ()
+
+        override this.TryProcess (group, world) =
+            let context = world.ContextImNui
+            let world = World.scopeGroup group [] world
+            let world = this.Process (group, world)
+            World.advanceContext group.GroupAddress context world
+
+        /// ImNui process a group.
+        abstract Process : Group * World -> World
+        default this.Process (_, world) = world
 
     type World with
 
@@ -2645,6 +2711,20 @@ module GroupPropertyDescriptor =
 [<AutoOpen>]
 module ScreenDispatcherModule =
 
+    /// The ImNui dispatcher for screens.
+    type [<AbstractClass>] ScreenDispatcherImNui () =
+        inherit ScreenDispatcher ()
+
+        override this.TryProcess (screen, world) =
+            let context = world.ContextImNui
+            let world = World.scopeScreen screen [] world
+            let world = this.Process (screen, world)
+            World.advanceContext screen.ScreenAddress context world
+
+        /// ImNui process a screen.
+        abstract Process : Screen * World -> World
+        default this.Process (_, world) = world
+
     type World with
 
         static member inline internal signalScreen<'model, 'message, 'command when 'message :> Message and 'command :> Command> signal (screen : Screen) world =
@@ -2827,6 +2907,20 @@ module ScreenPropertyDescriptor =
 
 [<AutoOpen>]
 module GameDispatcherModule =
+
+    /// The ImNui dispatcher for games.
+    type [<AbstractClass>] GameDispatcherImNui () =
+        inherit GameDispatcher ()
+
+        override this.TryProcess (game, world) =
+            let context = world.ContextImNui
+            let world = World.scopeGame [] world
+            let world = this.Process (game, world)
+            World.advanceContext game.GameAddress context world
+
+        /// ImNui process a game.
+        abstract Process : Game * World -> World
+        default this.Process (_, world) = world
 
     type World with
 

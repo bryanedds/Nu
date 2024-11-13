@@ -2059,7 +2059,7 @@ type LayoutFacet () =
             | layout ->
                 let children =
                     World.getEntityMounters entity world |>
-                    Array.ofSeq |>
+                    Array.ofSeq |> // array for sorting
                     Array.map (fun child ->
                         let layoutOrder =
                             if child.Has<LayoutFacet> world

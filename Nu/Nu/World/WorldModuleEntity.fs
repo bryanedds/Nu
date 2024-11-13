@@ -397,7 +397,7 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange (nameof entityState.PublishChangeEvents) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
-        
+
         static member internal setEntityPublishUpdates value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.PublishUpdates
@@ -413,7 +413,7 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange (nameof entityState.PublishUpdates) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
-        
+
         static member internal setEntityProtected value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Protected
@@ -426,7 +426,7 @@ module WorldModuleEntity =
                     entityState.Protected <- value
                     struct (true, World.setEntityState entityState entity world)
             else struct (false, world)
-        
+
         static member internal setEntityPersistent value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Persistent
@@ -442,7 +442,7 @@ module WorldModuleEntity =
                 let world = World.publishEntityChange (nameof entityState.Persistent) previous value entityState.PublishChangeEvents entity world
                 struct (true, world)
             else struct (false, world)
-        
+
         static member internal setEntityMounted value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Mounted
@@ -526,7 +526,7 @@ module WorldModuleEntity =
             match simulants.TryGetValue (entity :> Simulant) with
             | (true, entitiesOpt) ->
                 match entitiesOpt with
-                | Some entities -> entities |> Seq.map cast<Entity> |> seq
+                | Some entities -> Seq.map cast<Entity> entities
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
@@ -568,12 +568,12 @@ module WorldModuleEntity =
         /// Get all of the entities directly mounted on an entity.
         static member getEntityMounters entity world =
             match world.EntityMounts.TryGetValue entity with
-            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters |> SList.ofSeq |> seq
+            | (true, mounters) -> Seq.filter (flip World.getEntityExists world) mounters
             | (false, _) -> Seq.empty
 
         /// Traverse all of the entities directly mounted on an entity.
         static member traverseEntityMounters effect (entity : Entity) (world : World) =
-            let mounters = World.getEntityMounters entity world
+            let mounters = world |> World.getEntityMounters entity |> SList.ofSeq // eager to avoid inconsistency
             Seq.fold (fun world mounter -> effect entity mounter world) world mounters
 
         static member internal addEntityToMounts mountOpt entity world =
@@ -2316,7 +2316,7 @@ module WorldModuleEntity =
             let world = World.updateEntityPublishUpdateFlag entity world |> snd'
 
             // process entity first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.processEntity entity world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessEntity entity world else world
 
             // propagate properties
             let world =
@@ -2376,7 +2376,7 @@ module WorldModuleEntity =
                         let destination = destination / child.Name
                         World.renameEntityImmediate child destination world)
                         world children
-                let world = if WorldModule.UpdatingSimulants then WorldModule.processEntity destination world else world
+                let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessEntity destination world else world
                 let world =
                     Seq.fold (fun world target ->
                         if World.getEntityExists target world
@@ -2571,7 +2571,7 @@ module WorldModuleEntity =
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
 
             // process entity first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.processEntity entity world else world
+            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessEntity entity world else world
 
             // insert a propagated descriptor if needed
             let world =

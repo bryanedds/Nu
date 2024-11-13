@@ -10,7 +10,6 @@ open nkast.Aether.Physics2D.Dynamics
 open nkast.Aether.Physics2D.Dynamics.Contacts
 open nkast.Aether.Physics2D.Dynamics.Joints
 open Prime
-
 #nowarn "44" // ignore aether deprecation warnings
 
 /// The 2d implementation of PhysicsEngine in terms of Aether Physics.

@@ -6,7 +6,7 @@ open Nu
 
 // this is the dispatcher that customizes the top-level behavior of our game.
 type MyGameDispatcher () =
-    inherit GameDispatcher ()
+    inherit GameDispatcherImNui ()
 
     // here we define the game's behavior
     override this.Process (_, world) =

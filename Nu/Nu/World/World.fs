@@ -73,10 +73,10 @@ type Nu () =
             WorldModule.unregisterScreenPhysics <- fun only3dHack screen world -> World.unregisterScreenPhysics only3dHack screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
-            WorldModule.processGame <- fun game world -> World.processGame game world
-            WorldModule.processScreen <- fun screen world -> World.processScreen screen world
-            WorldModule.processGroup <- fun group world -> World.processGroup group world
-            WorldModule.processEntity <- fun entity world -> World.processEntity entity world
+            WorldModule.tryProcessGame <- fun game world -> World.tryProcessGame game world
+            WorldModule.tryProcessScreen <- fun screen world -> World.tryProcessScreen screen world
+            WorldModule.tryProcessGroup <- fun group world -> World.tryProcessGroup group world
+            WorldModule.tryProcessEntity <- fun entity world -> World.tryProcessEntity entity world
             WorldModule.signal <- Nu.worldModuleSignal
             WorldModule.destroyImmediate <- fun simulant world -> World.destroyImmediate simulant world
             WorldModule.destroy <- fun simulant world -> World.destroy simulant world

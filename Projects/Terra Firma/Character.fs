@@ -167,17 +167,42 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         // fin
         character
 
-    static member private updateMotion time position (rotation : Quaternion) grounded (playerPosition : Vector3) character world =
-
-        // update jump state
+    static member private updateJumpState time grounded character =
         let lastTimeOnGround = if grounded then time else character.JumpState.LastTimeOnGround
-        let character = { character with Character.JumpState.LastTimeOnGround = lastTimeOnGround }
+        { character with Character.JumpState.LastTimeOnGround = lastTimeOnGround }
 
-        // update traversal
+    static member private updateInput time position (rotation : Quaternion) grounded (playerPosition : Vector3) character world =
         match character.CharacterType with
         | Player ->
 
-            // player traversal
+            // action
+            let (jump, character) =
+
+                // jumping
+                if World.isKeyboardKeyPressed KeyboardKey.Space world then
+                    let sinceJump = time - character.JumpState.LastTime
+                    let sinceOnGround = time - character.JumpState.LastTimeOnGround
+                    if sinceJump >= 12L && sinceOnGround < 10L && character.ActionState = NormalState then
+                        let character = { character with Character.JumpState.LastTime = time }
+                        (true, character)
+                    else (false, character)
+
+                // attacking
+                elif World.isKeyboardKeyPressed KeyboardKey.RShift world then
+                    let character =
+                        match character.ActionState with
+                        | NormalState ->
+                            { character with ActionState = AttackState (AttackState.make time) }
+                        | AttackState attack ->
+                            let localTime = time - attack.AttackTime
+                            if localTime > 10L && not attack.FollowUpBuffered
+                            then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
+                            else character
+                        | ObstructedState _ | InjuryState _ | WoundState _ -> character
+                    (false, character)
+                else (false, character)
+
+            // movement
             if character.ActionState = NormalState || not grounded then
 
                 // compute new position
@@ -197,13 +222,33 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                     (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
                 let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
-                (position, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
+                (jump, position, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
 
-            else (position, rotation, v3Zero, v3Zero, character)
+            else (jump, position, rotation, v3Zero, v3Zero, character)
 
         | Enemy ->
-        
-            // enemy traversal
+            
+            // attacking
+            let character =
+                match character.ActionState with
+                | NormalState ->
+                    let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
+                    let positionFlat = position.WithY 0.0f
+                    let playerPositionFlat = playerPosition.WithY 0.0f
+                    if position.Y - playerPosition.Y >= 0.25f then // above player
+                        if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
+                            rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
+                            { character with ActionState = AttackState (AttackState.make time) }
+                        else character
+                    elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
+                        if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
+                            rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
+                            { character with ActionState = AttackState (AttackState.make time) }
+                        else character
+                    else character
+                | _ -> character
+
+            // navigation
             let (navSpeedsOpt, character) =
                 match character.ActionState with
                 | NormalState | ObstructedState _ ->
@@ -235,32 +280,10 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
-                (followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
-            | None -> (position, rotation, v3Zero, v3Zero, character)
+                (false, followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
+            | None -> (false, position, rotation, v3Zero, v3Zero, character)
 
-    static member private updateAction time (position : Vector3) (rotation : Quaternion) (playerPosition : Vector3) character =
-        match character.CharacterType with
-        | Enemy ->
-            match character.ActionState with
-            | NormalState ->
-                let rotationForwardFlat = rotation.Forward.WithY(0.0f).Normalized
-                let positionFlat = position.WithY 0.0f
-                let playerPositionFlat = playerPosition.WithY 0.0f
-                if position.Y - playerPosition.Y >= 0.25f then // above player
-                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
-                        rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
-                        { character with ActionState = AttackState (AttackState.make time) }
-                    else character
-                elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
-                    if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
-                        rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
-                        { character with ActionState = AttackState (AttackState.make time) }
-                    else character
-                else character
-            | _ -> character
-        | Player -> character
-
-    static member private updateState time character =
+    static member private updateActionState time character =
         match character.ActionState with
         | NormalState -> character
         | ObstructedState _ -> character
@@ -305,44 +328,14 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             else (Set.empty, { character with ActionState = AttackState attack })
         | _ -> (Set.empty, character)
 
-    static member updateInputKey time keyboardKeyData character =
-        match character.CharacterType with
-        | Player ->
-
-            // jumping
-            if keyboardKeyData.KeyboardKey = KeyboardKey.Space && not keyboardKeyData.Repeated then
-                let sinceJump = time - character.JumpState.LastTime
-                let sinceOnGround = time - character.JumpState.LastTimeOnGround
-                if sinceJump >= 12L && sinceOnGround < 10L && character.ActionState = NormalState then
-                    let character = { character with Character.JumpState.LastTime = time }
-                    (true, character)
-                else (false, character)
-
-            // attacking
-            elif keyboardKeyData.KeyboardKey = KeyboardKey.RShift && not keyboardKeyData.Repeated then
-                let character =
-                    match character.ActionState with
-                    | NormalState ->
-                        { character with ActionState = AttackState (AttackState.make time) }
-                    | AttackState attack ->
-                        let localTime = time - attack.AttackTime
-                        if localTime > 10L && not attack.FollowUpBuffered
-                        then { character with ActionState = AttackState { attack with FollowUpBuffered = true }}
-                        else character
-                    | ObstructedState _ | InjuryState _ | WoundState _ -> character
-                (false, character)
-            else (false, character)
-
-        | Enemy -> (false, character)
-
     static member update time position rotation linearVelocity angularVelocity grounded playerPosition character world =
         let character = Character.updateInterps position rotation linearVelocity angularVelocity character
-        let (position, rotation, linearVelocity, angularVelocity, character) = Character.updateMotion time position rotation grounded playerPosition character world
-        let character = Character.updateAction time position rotation playerPosition character
-        let character = Character.updateState time character
+        let character = Character.updateJumpState time grounded character
+        let (jump, position, rotation, linearVelocity, angularVelocity, character) = Character.updateInput time position rotation grounded playerPosition character world
+        let character = Character.updateActionState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
         let (animations, invisible) = Character.updateAnimations time position rotation linearVelocity angularVelocity character world
-        (animations, invisible, attackedCharacters, position, rotation, character)
+        (animations, invisible, attackedCharacters, jump, position, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType

@@ -868,12 +868,23 @@ module WorldImGui =
                         ImGui.Text name
                         (changed, value)
                     else
-                        let mutable valueStr = converter.ConvertToString value
                         let (changed, value) =
-                            if ImGui.InputText (name, &valueStr, 131072u) then
-                                try (true, converter.ConvertFromString valueStr)
-                                with _ -> (false, value)
-                            else (false, value)
+                            let valueStr = converter.ConvertToString value
+                            let prettyPrinter = (SyntaxAttribute.defaultValue ty).PrettyPrinter
+                            let mutable valueStrPretty = PrettyPrinter.prettyPrint valueStr prettyPrinter
+                            let lines = valueStrPretty |> Seq.filter ((=) '\n') |> Seq.length |> inc
+                            if lines = 1 then
+                                let mutable valueStr = valueStr
+                                if ImGui.InputText (name, &valueStr, 131072u) then
+                                    try (true, converter.ConvertFromString valueStr)
+                                    with _ -> (false, value)
+                                else (false, value)
+                            else
+                                ImGui.Text name
+                                if ImGui.InputTextMultiline ("##" + name + "InputTextMultiline", &valueStrPretty, 131072u, v2 -1.0f (single (min 6 lines) * 13.0f + 7.0f)) then
+                                    try (true, converter.ConvertFromString valueStrPretty)
+                                    with _ -> (false, value)
+                                else (false, value)
                         if ImGui.IsItemFocused () then context.FocusProperty ()
                         (changed, value)
                 else (changed, value)

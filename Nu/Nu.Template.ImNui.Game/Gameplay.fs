@@ -19,7 +19,7 @@ module GameplayExtensions =
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type GameplayDispatcher () =
-    inherit ScreenDispatcher ()
+    inherit ScreenDispatcherImNui ()
 
     // here we define default property values
     static member Properties =

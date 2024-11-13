@@ -40,7 +40,7 @@ module GameplayExtensions =
 
 // this is the dispatcher that defines the behavior of the screen where gameplay takes place.
 type GameplayDispatcher () =
-    inherit ScreenDispatcher ()
+    inherit ScreenDispatcherImNui ()
 
     // here we define some gameplay-specific constants
     static let PaddleOrigin = v3 0.0f -160.0f 0.0f

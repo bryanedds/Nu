@@ -133,7 +133,7 @@ module EventGraph =
             Array.iteri (fun i _ ->
                 let eventAddressNamesAny = Array.zeroCreate eventAddressNamesLength
                 Array.Copy (eventAddressNames, 0, eventAddressNamesAny, 0, eventAddressNamesLength)
-                eventAddressNamesAny.[i] <- Address.WildcardName
+                eventAddressNamesAny.[i] <- Constants.Address.WildcardName
                 let eventAddressAny = Address.rtoa eventAddressNamesAny
                 eventAddresses.[i] <- eventAddressAny)
                 eventAddressNames
@@ -155,7 +155,7 @@ module EventGraph =
             for i in 0 .. dec eventAddressNamesLength do
                 let eventAddressNames' = Array.zeroCreate eventAddressNamesLength
                 Array.Copy (eventAddressNames, 0, eventAddressNames', 0, eventAddressNamesLength)
-                eventAddressNames'.[i] <- Address.WildcardName
+                eventAddressNames'.[i] <- Constants.Address.WildcardName
                 let eventAddress' = Address.rtoa eventAddressNames'
                 eventAddresses.[i] <- eventAddress'
 
@@ -165,7 +165,7 @@ module EventGraph =
                 let k = eventAddressNamesLength + i
                 let eventAddressNames' = Array.zeroCreate (j + 1)
                 Array.Copy (eventAddressNames, 0, eventAddressNames', 0, j)
-                eventAddressNames'.[j] <- Address.EllipsisName
+                eventAddressNames'.[j] <- Constants.Address.EllipsisName
                 let eventAddress' = Address.rtoa eventAddressNames'
                 eventAddresses.[k] <- eventAddress'
 

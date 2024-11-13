@@ -12,7 +12,6 @@ type CharacterMessage =
     | WeaponPenetration of BodyPenetrationData
     | WeaponSeparationExplicit of BodySeparationExplicitData
     | WeaponSeparationImplicit of BodySeparationImplicitData
-    | UpdateInputKey of KeyboardKeyData
     | Update
     interface Message
 
@@ -52,7 +51,6 @@ type CharacterDispatcher (character : Character) =
          Entity.Observable == true
          Entity.FollowTargetOpt := match character.CharacterType with Enemy -> Some Simulants.GameplayPlayer | Player -> None
          Entity.RegisterEvent => Register
-         Game.KeyboardKeyDownEvent =|> fun evt -> UpdateInputKey evt.Data
          Entity.UpdateEvent => Update
          Entity.BodyPenetrationEvent =|> fun evt -> CharacterPenetration evt.Data
          Entity.BodySeparationExplicitEvent =|> fun evt -> CharacterSeparationExplicit evt.Data
@@ -62,10 +60,6 @@ type CharacterDispatcher (character : Character) =
     override this.Message (character, message, entity, world) =
 
         match message with
-        | UpdateInputKey keyboardKeyData ->
-            let (jump, character) = Character.updateInputKey world.UpdateTime keyboardKeyData character
-            withSignals (if jump then [Jump] else []) character
-
         | Update ->
 
             // update character
@@ -77,11 +71,12 @@ type CharacterDispatcher (character : Character) =
             let bodyId = entity.GetBodyId world
             let grounded = World.getBodyGrounded bodyId world
             let playerPosition = Simulants.GameplayPlayer.GetPosition world
-            let (animations, invisible, attackedCharacters, position, rotation, character) =
+            let (animations, invisible, attackedCharacters, jump, position, rotation, character) =
                 Character.update time position rotation linearVelocity angularVelocity grounded playerPosition character world
 
             // deploy signals from update
-            let signals = [UpdateTransform (position, rotation) :> Signal; UpdateAnimations (position, rotation, Array.ofList animations, invisible)]
+            let signals = if jump then [Jump :> Signal] else []
+            let signals = UpdateTransform (position, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
             let signals = match character.ActionState with WoundState wound when wound.WoundTime = world.UpdateTime - 60L -> PublishDie :> Signal :: signals | _ -> signals
             let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
             withSignals signals character
