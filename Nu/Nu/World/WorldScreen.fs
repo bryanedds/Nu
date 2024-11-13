@@ -185,7 +185,7 @@ module WorldScreenModule =
             match simulants.TryGetValue (Game.Handle :> Simulant) with
             | (true, screensOpt) ->
                 match screensOpt with
-                | Some screens -> screens |> Seq.map cast<Screen>
+                | Some screens -> Seq.map cast<Screen> screens
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 

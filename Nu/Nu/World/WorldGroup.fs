@@ -151,7 +151,7 @@ module WorldGroupModule =
             match simulants.TryGetValue (screen :> Simulant) with
             | (true, groupsOpt) ->
                 match groupsOpt with
-                | Some groups -> groups |> Seq.map cast<Group>
+                | Some groups -> Seq.map cast<Group> groups
                 | None -> Seq.empty
             | (false, _) -> Seq.empty
 
