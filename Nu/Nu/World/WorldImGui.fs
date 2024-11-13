@@ -881,7 +881,7 @@ module WorldImGui =
                                 else (false, value)
                             else
                                 ImGui.Text name
-                                if ImGui.InputTextMultiline ("##" + name + "InputTextMultiline", &valueStrPretty, 131072u, v2 -1.0f (single (min 6 lines) * 13.0f + 6.0f)) then
+                                if ImGui.InputTextMultiline ("##" + name + "InputTextMultiline", &valueStrPretty, 131072u, v2 -1.0f (single (min 6 lines) * 13.0f + 7.0f)) then
                                     try (true, converter.ConvertFromString valueStrPretty)
                                     with _ -> (false, value)
                                 else (false, value)
