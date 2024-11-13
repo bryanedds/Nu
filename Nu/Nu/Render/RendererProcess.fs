@@ -89,13 +89,8 @@ type RendererInline () =
                     // fin
                     renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
 
-                // create stub renderers
-                | None ->
-                    let renderer3d = StubRenderer3d.make () :> Renderer3d
-                    let renderer2d = StubRenderer2d.make () :> Renderer2d
-                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-                    renderersOpt <- Some (renderer3d, renderer2d, rendererImGui)
-                    OpenGL.Hl.Assert ()
+                // no renderers
+                | None -> renderersOpt <- None
 
                 // fin
                 started <- true
@@ -145,7 +140,7 @@ type RendererInline () =
         member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize windowSize drawData =
             match renderersOpt with
             | Some (renderer3d, renderer2d, rendererImGui) ->
-                
+
                 // begin frame
                 OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
                 OpenGL.Hl.Assert ()
@@ -310,41 +305,26 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private this.Run fonts windowOpt =
-
-        // create renderers
-        let (glFinishRequired, renderer3d, renderer2d, rendererImGui) =
-            match windowOpt with
-            | Some window ->
+    member private this.Run fonts window =
                 
-                // create gl context
-                let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
-                OpenGL.Hl.Assert ()
+        // create gl context
+        let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+        OpenGL.Hl.Assert ()
 
-                // initialize gl context
-                OpenGL.Hl.InitContext ()
-                OpenGL.Hl.Assert ()
+        // initialize gl context
+        OpenGL.Hl.InitContext ()
+        OpenGL.Hl.Assert ()
 
-                // create 3d renderer
-                let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
-                OpenGL.Hl.Assert ()
+        // create 3d renderer
+        let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
+        OpenGL.Hl.Assert ()
 
-                // create 2d renderer
-                let renderer2d = GlRenderer2d.make window :> Renderer2d
-                OpenGL.Hl.Assert ()
+        // create 2d renderer
+        let renderer2d = GlRenderer2d.make window :> Renderer2d
+        OpenGL.Hl.Assert ()
 
-                // create imgui renderer
-                let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
-
-                // fin
-                (glFinishRequired, renderer3d, renderer2d, rendererImGui)
-
-            // create stub renderers
-            | None ->
-                let renderer3d = StubRenderer3d.make () :> Renderer3d
-                let renderer2d = StubRenderer2d.make () :> Renderer2d
-                let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
-                (false, renderer3d, renderer2d, rendererImGui)
+        // create imgui renderer
+        let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
 
         // mark as started
         started <- true
@@ -358,7 +338,7 @@ type RendererThread () =
             // guard against early termination
             if not terminated then
 
-                // receie submission
+                // receive submission
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
                 
@@ -396,31 +376,47 @@ type RendererThread () =
                     // acknowledge swap request
                     swap <- false
 
-                    // attempt to swap
-                    match windowOpt with
-                    | Some (SglWindow window) ->
-                        if glFinishRequired then OpenGL.Gl.Finish ()
-                        SDL.SDL_GL_SwapWindow window.SglWindow
-                    | None -> ()
+                    // swap, optionally finishing
+                    if glFinishRequired then OpenGL.Gl.Finish ()
+                    match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
 
         // clean up
+        renderer3d.CleanUp ()
         renderer2d.CleanUp ()
+        rendererImGui.CleanUp ()
 
     interface RendererProcess with
 
         member this.Renderer3dConfig =
-            renderer3dConfig        
+            renderer3dConfig
 
         member this.Start fonts windowOpt =
 
             // validate state
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
 
-            // start thread
-            let thread = Thread (ThreadStart (fun () -> this.Run fonts windowOpt))
-            threadOpt <- Some thread
-            thread.IsBackground <- true
-            thread.Start ()
+            // attempt to start thread
+            match windowOpt with
+            | Some window ->
+
+                // start real thread
+                let thread = Thread (ThreadStart (fun () -> this.Run fonts window))
+                threadOpt <- Some thread
+                thread.IsBackground <- true
+                thread.Start ()
+
+            | None ->
+
+                // start fake thread
+                let thread = Thread (ThreadStart (fun () ->
+                    started <- true
+                    while not terminated do
+                        submissionOpt <- None
+                        swap <- false // ack swap immediately
+                        Thread.Sleep 0))
+                threadOpt <- Some thread
+                thread.IsBackground <- true
+                thread.Start ()
 
             // wait for thread to finish starting
             while not started do Thread.Yield () |> ignore<bool>
