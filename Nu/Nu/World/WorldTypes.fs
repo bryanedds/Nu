@@ -278,39 +278,39 @@ and [<ReferenceEquality>] Lens<'a, 's when 's :> Simulant> =
 
     /// Adds the specified value to the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( += ) (lens : Lens<_, _>, value) =  lens.Map (flip (+) value)
+    static member inline ( += ) (lens : Lens<_, _>, value) = lens.Map (flip (+) value)
 
     /// Subtracts the specified value from the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( -= ) (lens : Lens<_, _>, value) =  lens.Map (flip (-) value)
+    static member inline ( -= ) (lens : Lens<_, _>, value) = lens.Map (flip (-) value)
 
     /// Multiplies the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( *= ) (lens : Lens<_, _>, value) =  lens.Map (flip (*) value)
+    static member inline ( *= ) (lens : Lens<_, _>, value) = lens.Map (flip (*) value)
 
     /// Divides the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( /= ) (lens : Lens<_, _>, value) =  lens.Map (flip (/) value)
+    static member inline ( /= ) (lens : Lens<_, _>, value) = lens.Map (flip (/) value)
 
     /// Computes the modulus of the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( %= ) (lens : Lens<_, _>, value) =  lens.Map (flip (%) value)
+    static member inline ( %= ) (lens : Lens<_, _>, value) = lens.Map (flip (%) value)
 
     /// Negates the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( ~+ ) (lens : Lens<_, _>) =  lens.Map (~+)
+    static member inline ( ~+ ) (lens : Lens<_, _>) = lens.Map (~+)
 
     /// Negates the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( ~- ) (lens : Lens<_, _>) =  lens.Map (~-)
+    static member inline ( ~- ) (lens : Lens<_, _>) = lens.Map (~-)
 
     /// Increments the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( !+ ) (lens : Lens<_, _>) =  lens.Map inc
+    static member inline ( !+ ) (lens : Lens<_, _>) = lens.Map inc
 
     /// Decrements the lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
-    static member inline ( !- ) (lens : Lens<_, _>) =  lens.Map dec
+    static member inline ( !- ) (lens : Lens<_, _>) = lens.Map dec
 
     /// Set a lensed property's value.
     /// Returns the updated world or throws an exception if the lens is readonly.
