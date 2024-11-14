@@ -214,7 +214,7 @@ module Address =
         { Names = [||]; HashCode = String.hashMany [||]; Anonymous = false }
 
     /// Test address equality.
-    let equals (left : 'a Address) (right : 'a Address) =
+    let equals (left : Address) (right : Address) =
         Address<'a>.equals left right
 
     /// Make an address from a sequence of names.

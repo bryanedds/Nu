@@ -208,7 +208,7 @@ module Relation =
         Relation.makeFromArray [|Constants.Relation.ParentName|]
 
     /// Test relation equality.
-    let equals (left : 'a Relation) (right : 'a Relation) =
+    let equals (left : Relation) (right : Relation) =
         Relation<'a>.equals left right
 
     /// Get the links of a relation.
