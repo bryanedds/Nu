@@ -215,7 +215,7 @@ module Address =
 
     /// Test address equality.
     let equals (left : Address) (right : Address) =
-        Address<'a>.equals left right
+        Address<obj>.equals left right
 
     /// Make an address from a sequence of names.
     let makeFromSeq<'a> names : 'a Address =

@@ -209,7 +209,7 @@ module Relation =
 
     /// Test relation equality.
     let equals (left : Relation) (right : Relation) =
-        Relation<'a>.equals left right
+        Relation<obj>.equals left right
 
     /// Get the links of a relation.
     let getLinks relation =
