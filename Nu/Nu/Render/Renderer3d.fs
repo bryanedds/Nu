@@ -2213,10 +2213,17 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key
             let parameters = entry.Value
-            let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
+            let boneArrays = List ()
+            let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
+            for i in 0 .. dec surfaceKey.BoneTransforms.Length do
+                let boneArray = new ArrayPooled<single> (16, false)
+                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Array, 0)
+                boneArrays.Add boneArray
+                bonesArrays.[i] <- boneArray.Array
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArray parameters
+                SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays parameters
                 lightType surfaceKey.AnimatedSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
+            for boneArray in boneArrays do boneArray.Dispose ()
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows
@@ -2492,11 +2499,18 @@ type [<ReferenceEquality>] GlRenderer3d =
         for entry in renderTasks.DeferredAnimated do
             let surfaceKey = entry.Key
             let parameters = entry.Value
-            let bonesArray = Array.map (fun (boneTransform : Matrix4x4) -> boneTransform.ToArray ()) surfaceKey.BoneTransforms
+            let boneArrays = List ()
+            let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
+            for i in 0 .. dec surfaceKey.BoneTransforms.Length do
+                let boneArray = new ArrayPooled<single> (16, false)
+                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Array, 0)
+                boneArrays.Add boneArray
+                bonesArrays.[i] <- boneArray.Array
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
-                SingletonPhase viewArray geometryProjectionArray bonesArray eyeCenter parameters
+                SingletonPhase viewArray geometryProjectionArray bonesArrays eyeCenter parameters
                 PointLight renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surfaceKey.AnimatedSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
+            for boneArray in boneArrays do boneArray.Dispose ()
             OpenGL.Hl.Assert ()
 
         // render terrains deferred

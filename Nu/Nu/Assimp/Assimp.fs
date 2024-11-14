@@ -404,7 +404,7 @@ module AssimpExtensions =
         static member private UpdateBoneTransforms
             (time : single,
              boneIds : Dictionary<string, int>,
-             boneInfos : BoneInfo array,
+             boneInfos : BoneInfo ArrayPooled,
              boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
@@ -501,7 +501,7 @@ module AssimpExtensions =
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
             let boneIds = dictPlus StringComparer.Ordinal []
-            let boneInfos = Array.zeroCreate<BoneInfo> mesh.Bones.Count
+            use boneInfos = new ArrayPooled<BoneInfo> (mesh.Bones.Count, false)
             for boneId in 0 .. dec mesh.Bones.Count do
                 let bone = mesh.Bones.[boneId]
                 let boneName = bone.Name
@@ -512,6 +512,10 @@ module AssimpExtensions =
             Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
 
             // convert bone info transforms to Nu's m4 representation
-            let boneOffsets = Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneOffset) boneInfos
-            let boneTransforms = Array.map (fun (boneInfo : BoneInfo) -> Assimp.ExportMatrix boneInfo.BoneTransform) boneInfos
+            let boneOffsets = Array.zeroCreate boneInfos.Length
+            let boneTransforms = Array.zeroCreate boneInfos.Length
+            for i in 0 .. dec boneInfos.Length do
+                let boneInfo = &boneInfos.[i]
+                boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset
+                boneTransforms.[i] <- Assimp.ExportMatrix boneInfo.BoneTransform
             (boneIds, boneOffsets, boneTransforms)
