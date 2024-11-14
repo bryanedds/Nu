@@ -67,6 +67,12 @@ type RelationConverter (pointType : Type) =
             if pointType.IsInstanceOfType source then source
             else failconv "Invalid RelationConverter conversion from source." None
 
+/// A generalized address.
+type Relation =
+    interface
+        abstract Links : Link array
+        end
+
 /// A relation that can be resolved to an address via contextual resolution.
 type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>] 'a Relation =
     { Links : Link array }
@@ -98,11 +104,11 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
         Relation.makeFromArray<'a> names
 
     /// Hash a Relation.
-    static member hash (relation : 'a Relation) =
+    static member hash (relation : Relation) =
         Array.hash relation.Links
 
     /// Equate Relations.
-    static member equals (relation : 'a Relation) (relation2 : 'a Relation) =
+    static member equals (relation : Relation) (relation2 : Relation) =
         refEq relation relation2 || // OPTIMIZATION: first check ref equality
         seqEq relation.Links relation2.Links
 
@@ -155,7 +161,7 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
 
     override this.Equals that =
         match that with
-        | :? ('a Relation) as that -> Relation<'a>.equals this that
+        | :? Relation as that -> Relation<'a>.equals this that
         | _ -> false
 
     override this.GetHashCode () =
@@ -170,6 +176,9 @@ type [<CustomEquality; NoComparison; TypeConverter (typeof<RelationConverter>)>]
                 | Name name -> name)
                 this.Links
         String.concat Constants.Address.SeparatorName names
+
+    interface Relation with
+        member this.Links = this.Links
 
 [<RequireQualifiedAccess>]
 module Relation =

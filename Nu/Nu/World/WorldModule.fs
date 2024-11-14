@@ -619,24 +619,19 @@ module WorldModule =
             hierarchical
             selectedOnly
             (world : World) =
-
-            // OPTIMIZATION: generalize only once
-            let eventAddressObj = Address.generalize eventAddress
-
 #if DEBUG
             // log event based on event filter
-            EventGraph.logEvent eventAddressObj eventTrace world.EventGraph
+            EventGraph.logEvent eventAddress eventTrace world.EventGraph
 #endif
-
             // get subscriptions the fastest way possible
             // OPTIMIZATION: subscriptions nullable to elide allocation via Seq.empty.
             let subscriptionsOpt =
                 if hierarchical then
                     EventGraph.getSubscriptionsSorted
-                        sortSubscriptionsByElevation eventAddressObj world.EventGraph world
+                        sortSubscriptionsByElevation eventAddress world.EventGraph world
                 else
                     let subscriptions = EventGraph.getSubscriptions world.EventGraph
-                    match UMap.tryFind eventAddressObj subscriptions with
+                    match UMap.tryFind (eventAddress :> Address) subscriptions with
                     | Some subscriptions -> OMap.toSeq subscriptions
                     | None -> null
 
@@ -714,27 +709,26 @@ module WorldModule =
             (subscriber : 's)
             (world : World) =
             if not (Address.isEmpty eventAddress) then
-                let eventAddressObj = atooa eventAddress
                 let (subscriptions, unsubscriptions) = (World.getSubscriptions world, World.getUnsubscriptions world)
                 let subscriptions =
-                    match UMap.tryFind eventAddressObj subscriptions with
+                    match UMap.tryFind (eventAddress :> Address) subscriptions with
                     | Some subscriptionEntries ->
                         match OMap.tryFind subscriptionId subscriptionEntries with
                         | Some subscriptionEntry ->
                             let subscriptionEntry = { subscriptionEntry with SubscriptionCallback = World.boxCallback callback }
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
-                            UMap.add eventAddressObj subscriptionEntries subscriptions
+                            UMap.add (eventAddress :> Address) subscriptionEntries subscriptions
                         | None ->
                             let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                             let subscriptionEntries = OMap.add subscriptionId subscriptionEntry subscriptionEntries
-                            UMap.add eventAddressObj subscriptionEntries subscriptions
+                            UMap.add eventAddress subscriptionEntries subscriptions
                     | None ->
                         let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
-                        UMap.add eventAddressObj (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
-                let unsubscriptions = UMap.add subscriptionId (eventAddressObj, subscriber :> Simulant) unsubscriptions
+                        UMap.add eventAddress (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
+                let unsubscriptions = UMap.add subscriptionId (eventAddress :> Address, subscriber :> Simulant) unsubscriptions
                 let world = World.setSubscriptions subscriptions world
                 let world = World.setUnsubscriptions unsubscriptions world
-                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddressObj Game.Handle world :?> World
+                let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddress Game.Handle world :?> World
                 (World.unsubscribe subscriptionId, world)
             else failwith "Event name cannot be empty."
 
