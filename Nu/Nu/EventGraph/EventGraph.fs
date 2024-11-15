@@ -192,8 +192,8 @@ module EventGraph =
             | None ->
                 failwith
                     ("The event address '" + scstring eventAddress +
-                        "' is missing the 'Event' name. All event addresses must separate the event names from the publisher names with 'Event', " +
-                        "like 'Click/Event/Button', or 'Mouse/Left/Down/Event' if there is no publisher.")
+                     "' is missing the 'Event' name. All event addresses must separate the event names from the publisher names with 'Event', " +
+                     "like 'Click/Event/Button', or 'Mouse/Left/Down/Event' if there is no publisher.")
         | (true, eventAddressesObj) -> eventAddressesObj :?> 'a Address array
 
     /// Get subscriptions for eventAddress sorted by publishSorter.

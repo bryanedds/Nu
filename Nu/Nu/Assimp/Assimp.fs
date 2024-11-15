@@ -230,7 +230,7 @@ module AssimpExtensions =
     type Assimp.Material with
 
         member this.RenderStyleOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof RenderStyle) with
+            match this.GetNonTextureProperty Constants.Assimp.RenderStylePropertyName with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
@@ -239,7 +239,7 @@ module AssimpExtensions =
                 else None
 
         member this.PresenceOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Presence) with
+            match this.GetNonTextureProperty Constants.Assimp.PresencePropertyName with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
@@ -248,7 +248,7 @@ module AssimpExtensions =
                 else None
 
         member this.IgnoreLightMapsOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Constants.Render.IgnoreLightMapsName) with
+            match this.GetNonTextureProperty Constants.Assimp.IgnoreLightMapsPropertyName with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
@@ -257,7 +257,7 @@ module AssimpExtensions =
                 else None
 
         member this.OpaqueDistanceOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + nameof Constants.Render.OpaqueDistanceName) with
+            match this.GetNonTextureProperty Constants.Assimp.OpaqueDistancePropertyName with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
@@ -266,7 +266,7 @@ module AssimpExtensions =
                 else None
 
         member this.TwoSidedOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.TwoSidedName) with
+            match this.GetNonTextureProperty Constants.Assimp.TwoSidedPropertyName with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then
@@ -275,7 +275,7 @@ module AssimpExtensions =
                 else Some true
 
         member this.NavShapeOpt =
-            match this.GetNonTextureProperty (Constants.Assimp.RawPropertyPrefix + Constants.Render.NavShapeName) with
+            match this.GetNonTextureProperty Constants.Assimp.NavShapePropertyName with
             | null -> None
             | property ->
                 if property.PropertyType = Assimp.PropertyType.String then

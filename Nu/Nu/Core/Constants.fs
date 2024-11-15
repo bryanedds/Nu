@@ -23,6 +23,12 @@ module Assimp =
 
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
     let [<Literal>] RawPropertyPrefix = "$raw."
+    let [<Literal>] RenderStylePropertyName = RawPropertyPrefix + "RenderStyle"
+    let [<Literal>] PresencePropertyName = RawPropertyPrefix + "Presence"
+    let [<Literal>] IgnoreLightMapsPropertyName = RawPropertyPrefix + "IgnoreLightMaps"
+    let [<Literal>] OpaqueDistancePropertyName = RawPropertyPrefix + "OpaqueDistance"
+    let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
+    let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
 
 [<RequireQualifiedAccess>]
 module Engine =
