@@ -214,7 +214,7 @@ module AssimpExtensions =
         override this.GetHashCode () =
             this.HashCode
 
-    type [<NoEquality; NoComparison>] AnimationDecomposition =
+    type [<Struct; NoEquality; NoComparison>] AnimationDecomposition =
         { Translation : Assimp.Vector3D
           Rotation : Assimp.Quaternion
           Scaling : Assimp.Vector3D
@@ -413,9 +413,8 @@ module AssimpExtensions =
              scene : Assimp.Scene) =
 
             // compute local transform of the current node.
-            // TODO: see if there's a clean way to get rid of allocation here.
             let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
-            let decompositions = List animations.Length
+            let decompositions = List animations.Length // TODO: see if there's a way to get rid of allocation here.
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
@@ -449,13 +448,13 @@ module AssimpExtensions =
                 let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
                 let mutable scalingAccumulated = Assimp.Vector3D 1.0f
                 let mutable weightAccumulated = 0.0f
-                for i in 0 .. dec decompositions.Count do
-                    let factor = weightAccumulated / (weightAccumulated + decompositions.[i].Weight)
+                for decomposition in decompositions do
+                    let factor = weightAccumulated / (weightAccumulated + decomposition.Weight)
                     let factor2 = 1.0f - factor
-                    translationAccumulated <- translationAccumulated * factor + decompositions.[i].Translation * factor2
-                    rotationAccumulated <- Assimp.Quaternion.Slerp (rotationAccumulated, decompositions.[i].Rotation, factor2)
-                    scalingAccumulated <- scalingAccumulated * factor + decompositions.[i].Scaling * factor2
-                    weightAccumulated <- weightAccumulated + decompositions.[i].Weight
+                    translationAccumulated <- translationAccumulated * factor + decomposition.Translation * factor2
+                    rotationAccumulated <- Assimp.Quaternion.Slerp (rotationAccumulated, decomposition.Rotation, factor2)
+                    scalingAccumulated <- scalingAccumulated * factor + decomposition.Scaling * factor2
+                    weightAccumulated <- weightAccumulated + decomposition.Weight
                 nodeTransform <-
                     Assimp.Matrix4x4.FromScaling scalingAccumulated *
                     Assimp.Matrix4x4 (rotationAccumulated.GetMatrix ()) *
@@ -472,8 +471,7 @@ module AssimpExtensions =
 
             // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
-                for i in 0 .. dec node.Children.Count do
-                    let child = node.Children.[i]
+                for child in node.Children do
                     Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
         /// Compute the bone ids, offsets, and animated transforms of the mesh's bones in the given scene.
@@ -485,10 +483,8 @@ module AssimpExtensions =
                 match AnimationChannelsCached.TryGetValue this with
                 | (false, _) ->
                     let animationChannels = dictPlus HashIdentity.Structural []
-                    for animationId in 0 .. dec this.Animations.Count do
-                        let animation = this.Animations.[animationId]
-                        for channelId in 0 .. dec animation.NodeAnimationChannels.Count do
-                            let channel = animation.NodeAnimationChannels.[channelId]
+                    for animation in this.Animations do
+                        for channel in animation.NodeAnimationChannels do
                             let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
                             animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
                     AnimationChannelsCached.[this] <- animationChannels
