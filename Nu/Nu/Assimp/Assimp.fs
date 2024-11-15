@@ -430,8 +430,8 @@ module AssimpExtensions =
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
-                match animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name) with
-                | (true, channel) ->
+                let mutable animationChannel = Unchecked.defaultof<_>
+                if animationChannels.TryGetValue (AnimationChannelKey.make animation.Name node.Name, &animationChannel) then
                     let localTime = time - animationStartTime
                     if  localTime >= 0.0f &&
                         (match animationLifeTimeOpt with Some lifeTime -> localTime < animationStartTime + lifeTime | None -> true) &&
@@ -441,20 +441,19 @@ module AssimpExtensions =
                             | Once ->
                                 localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
                             | Loop ->
-                                let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
+                                let length = single animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
                                 localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar % length
                             | Bounce ->
-                                let length = single channel.RotationKeys.[dec channel.RotationKeys.Length].Time
+                                let length = single animationChannel.RotationKeys.[dec animationChannel.RotationKeys.Length].Time
                                 let localTimeScaled = localTime * animation.Rate * Constants.Render.AnimatedModelRateScalar
                                 let remainingTime = localTimeScaled % length
                                 if int (localTimeScaled / length) % 2 = 1
                                 then length - remainingTime
                                 else remainingTime
-                        let translation = Assimp.InterpolatePosition (localTimeScaled, channel.TranslationKeys)
-                        let rotation = Assimp.InterpolateRotation (localTimeScaled, channel.RotationKeys)
-                        let scaling = Assimp.InterpolateScaling (localTimeScaled, channel.ScalingKeys)
+                        let translation = Assimp.InterpolatePosition (localTimeScaled, animationChannel.TranslationKeys)
+                        let rotation = Assimp.InterpolateRotation (localTimeScaled, animationChannel.RotationKeys)
+                        let scaling = Assimp.InterpolateScaling (localTimeScaled, animationChannel.ScalingKeys)
                         decompositions.Add (AnimationDecomposition.make translation rotation scaling animation.Weight)
-                | (false, _) -> ()
             if decompositions.Count > 0 then
                 let mutable translationAccumulated = Assimp.Vector3D 0.0f
                 let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
