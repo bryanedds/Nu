@@ -233,12 +233,13 @@ module AssimpExtensions =
     type Assimp.Material with
 
         member this.TryGetMaterialProperty propertyName =
-            match MaterialPropertyCached.TryGetValue ((this, propertyName)) with
-            | (false, _) ->
+            let key = (this, propertyName)
+            let mutable property = Unchecked.defaultof<_>
+            if not (MaterialPropertyCached.TryGetValue (key, &property)) then
                 let propertyOpt = Option.ofObj (this.GetNonTextureProperty propertyName)
-                MaterialPropertyCached.[(this, propertyName)] <- propertyOpt
+                MaterialPropertyCached.[key] <- propertyOpt
                 propertyOpt
-            | (true, property) -> property
+            else property
 
         member this.RenderStyleOpt =
             match this.TryGetMaterialProperty Constants.Assimp.RenderStylePropertyName with
