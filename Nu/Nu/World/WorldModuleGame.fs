@@ -412,10 +412,10 @@ module WorldModuleGame =
         /// Check that the given bounds is within the 3d eye's sight (or a light probe / light in the light box that may be lighting something within it).
         static member boundsInView3d lightProbe light presence (bounds : Box3) world =
             Presence.intersects3d
-                (Some (World.getGameEye3dFrustumInterior Game.Handle world))
+                (ValueSome (World.getGameEye3dFrustumInterior Game.Handle world))
                 (World.getGameEye3dFrustumExterior Game.Handle world)
                 (World.getGameEye3dFrustumImposter Game.Handle world)
-                (Some (World.getLight3dBox world))
+                (ValueSome (World.getLight3dBox world))
                 lightProbe light presence bounds
 
         /// Check that the given bounds is within the 3d eye's play bounds.
