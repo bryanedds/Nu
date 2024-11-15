@@ -174,8 +174,17 @@ module AssimpExtensions =
     let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
 
+    type MaterialPropertyComparer<'e when 'e : equality> () =
+        interface struct (Assimp.Material * string) IEqualityComparer with
+            member this.Equals (struct (leftMaterial, leftPropertyName), struct (rightMaterial, rightPropertyName)) =
+                leftMaterial = rightMaterial &&
+                leftPropertyName = rightPropertyName
+            member this.GetHashCode struct (material, propertyName) =
+                material.GetHashCode () ^^^
+                propertyName.GetHashCode ()
+
     let private MaterialPropertyCached =
-        ConcurrentDictionary<_, _> HashIdentity.Structural
+        ConcurrentDictionary<_, _> (MaterialPropertyComparer ())
 
     let private NodeEmpty =
         Assimp.Node ()
@@ -233,7 +242,7 @@ module AssimpExtensions =
     type Assimp.Material with
 
         member this.TryGetMaterialProperty propertyName =
-            let key = (this, propertyName)
+            let key = struct (this, propertyName)
             let mutable property = Unchecked.defaultof<_>
             if not (MaterialPropertyCached.TryGetValue (key, &property)) then
                 let propertyOpt = Option.ofObj (this.GetNonTextureProperty propertyName)
