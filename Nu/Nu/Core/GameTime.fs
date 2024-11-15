@@ -80,17 +80,17 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
 
     /// A binary operation on game time.
     static member inline binary op op2 left right =
-        match (left, right) with
-        | (UpdateTime leftTime, UpdateTime rightTime) -> op leftTime rightTime
-        | (ClockTime leftTime, ClockTime rightTime) -> op2 leftTime rightTime
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+        match struct (left, right) with
+        | struct (UpdateTime leftTime, UpdateTime rightTime) -> op leftTime rightTime
+        | struct (ClockTime leftTime, ClockTime rightTime) -> op2 leftTime rightTime
+        | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Ap for game time (as in Haskell Apply).
     static member inline ap op op2 left right =
-        match (left, right) with
-        | (UpdateTime leftTime, UpdateTime rightTime) -> UpdateTime (op leftTime rightTime)
-        | (ClockTime leftTime, ClockTime rightTime) -> ClockTime (op2 leftTime rightTime)
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+        match struct (left, right) with
+        | struct (UpdateTime leftTime, UpdateTime rightTime) -> UpdateTime (op leftTime rightTime)
+        | struct (ClockTime leftTime, ClockTime rightTime) -> ClockTime (op2 leftTime rightTime)
+        | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Construct a game time from updates or clock time.
     static member make updateTime clockTime =
@@ -112,17 +112,17 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
 
     /// Get the number of updates assuming desired frame rate is met.
     static member toUpdates time =
-        match (Constants.GameTime.DesiredFrameRate, time) with
-        | (_, UpdateTime time) -> time
-        | (DynamicFrameRate frameRate, ClockTime time) -> int64 (time / (1.0f / single frameRate))
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+        match struct (Constants.GameTime.DesiredFrameRate, time) with
+        | struct (_, UpdateTime time) -> time
+        | struct (DynamicFrameRate frameRate, ClockTime time) -> int64 (time / (1.0f / single frameRate))
+        | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Get the total amount of seconds assuming desired frame rate is met.
     static member toSeconds time =
-        match (Constants.GameTime.DesiredFrameRate, time) with
-        | (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
-        | (_, ClockTime time) -> time
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+        match struct (Constants.GameTime.DesiredFrameRate, time) with
+        | struct (StaticFrameRate frameRate, UpdateTime time) -> 1.0f / single frameRate * single time
+        | struct (_, ClockTime time) -> time
+        | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// Get the total amount of milliseconds assuming desired frame rate is met.
     static member toMilliseconds time =
@@ -134,17 +134,17 @@ and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeCo
 
     /// Compare GameTimes.
     static member compare left right =
-        match (left, right) with
-        | (UpdateTime leftTime, UpdateTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
-        | (ClockTime leftTime, ClockTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
-        | (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
+        match struct (left, right) with
+        | struct (UpdateTime leftTime, UpdateTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
+        | struct (ClockTime leftTime, ClockTime rightTime) -> if leftTime < rightTime then -1 elif leftTime > rightTime then 1 else 0
+        | struct (_, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     /// The progress of time down a bounded time range.
     static member progress startTime currentTime lifeTime =
-        match (startTime, currentTime, lifeTime) with
-        | (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime
-        | (ClockTime startTime, ClockTime currentTime, ClockTime lifeTime) -> (currentTime - startTime) / lifeTime
-        | (_, _, _) -> failwith "Cannot apply operation to mixed GameTimes."
+        match struct (startTime, currentTime, lifeTime) with
+        | struct (UpdateTime startTime, UpdateTime currentTime, UpdateTime lifeTime) -> (single (currentTime - startTime)) / single lifeTime
+        | struct (ClockTime startTime, ClockTime currentTime, ClockTime lifeTime) -> (currentTime - startTime) / lifeTime
+        | struct (_, _, _) -> failwith "Cannot apply operation to mixed GameTimes."
 
     static member (+) (left, right) = GameTime.ap (+) (+) left right
     static member (-) (left, right) = GameTime.ap (-) (-) left right
