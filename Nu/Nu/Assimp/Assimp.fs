@@ -338,54 +338,54 @@ module AssimpExtensions =
             node
 
         member this.RenderStyleOpt =
-            match this.Metadata.TryGetValue (nameof RenderStyle) with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (nameof RenderStyle, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<RenderStyle> |> Some
                     with _ -> None
                 | _ -> None
-            | (false, _) -> None
+            else None
 
         member this.PresenceOpt =
-            match this.Metadata.TryGetValue (nameof Presence) with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (nameof Presence, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<Presence> |> Some
                     with _ -> None
                 | _ -> None
-            | (false, _) -> None
+            else None
 
         member this.IgnoreLightMapsOpt =
-            match this.Metadata.TryGetValue Constants.Render.IgnoreLightMapsName with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.IgnoreLightMapsName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<bool> |> Some
                     with _ -> None
                 | _ -> None
-            | (false, _) -> None
+            else None
 
         member this.OpaqueDistanceOpt =
-            match this.Metadata.TryGetValue Constants.Render.OpaqueDistanceName with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.OpaqueDistanceName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<single> |> Some
                     with _ -> None
                 | _ -> None
-            | (false, _) -> None
+            else None
 
         member this.NavShapeOpt =
-            match this.Metadata.TryGetValue Constants.Render.NavShapeName with
-            | (true, entry) ->
+            let mutable entry = Unchecked.defaultof<_>
+            if this.Metadata.TryGetValue (Constants.Render.NavShapeName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
                     try entry.Data :?> string |> scvalueMemo<NavShape> |> Some
                     with _ -> None
                 | _ -> None
-            | (false, _) -> None
+            else None
 
     /// Scene extensions.
     type Assimp.Scene with
