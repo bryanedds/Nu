@@ -171,8 +171,8 @@ module Assimp =
 [<AutoOpen>]
 module AssimpExtensions =
 
-    let private AnimationChannelsCached =
-        ConcurrentDictionary<_, _> HashIdentity.Reference
+    let private NodeEmpty =
+        Assimp.Node ()
 
     type MaterialPropertyComparer<'e when 'e : equality> () =
         interface struct (Assimp.Material * string) IEqualityComparer with
@@ -185,9 +185,6 @@ module AssimpExtensions =
 
     let private MaterialPropertyCached =
         ConcurrentDictionary<_, _> (MaterialPropertyComparer ())
-
-    let private NodeEmpty =
-        Assimp.Node ()
 
     type [<Struct>] private BoneInfo =
         { BoneOffset : Assimp.Matrix4x4
@@ -207,7 +204,7 @@ module AssimpExtensions =
               RotationKeys = rotationKeys
               ScalingKeys = scalingKeys }
 
-    type [<CustomEquality; NoComparison>] private AnimationChannelKey =
+    type [<Struct; CustomEquality; NoComparison>] private AnimationChannelKey =
         { AnimationName : string
           NodeName : string
           HashCode : int }
@@ -218,13 +215,25 @@ module AssimpExtensions =
               NodeName = nodeName
               HashCode = hashCode }
 
+        static member equals left right =
+            left.AnimationName = right.AnimationName &&
+            left.NodeName = right.NodeName
+
+        static member hash key =
+            key.HashCode
+
         override this.Equals thatObj =
             match thatObj with
-            | :? AnimationChannelKey as that -> this.AnimationName = that.AnimationName && this.NodeName = that.NodeName
+            | :? AnimationChannelKey as that -> AnimationChannelKey.equals this that
             | _ -> false
 
         override this.GetHashCode () =
-            this.HashCode
+            AnimationChannelKey.hash this
+
+    type private AnimationChannelKeyComparer<'e when 'e : equality> () =
+        interface AnimationChannelKey IEqualityComparer with
+            member _.Equals (leftKey, rightKey) = AnimationChannelKey.equals leftKey rightKey
+            member _.GetHashCode key = AnimationChannelKey.hash key
 
     type [<Struct; NoEquality; NoComparison>] AnimationDecomposition =
         { Translation : Assimp.Vector3D
@@ -237,6 +246,9 @@ module AssimpExtensions =
               Rotation = rotation
               Scaling = scaling
               Weight = weight }
+
+    let private AnimationChannelsCached =
+        ConcurrentDictionary<_, _> HashIdentity.Reference
 
     /// Material extensions.
     type Assimp.Material with
@@ -499,17 +511,14 @@ module AssimpExtensions =
         member this.ComputeBoneTransforms (time : GameTime, animations : Animation array, mesh : Assimp.Mesh) =
 
             // pre-compute animation channels
-            let animationChannels =
-                match AnimationChannelsCached.TryGetValue this with
-                | (false, _) ->
-                    let animationChannels = dictPlus HashIdentity.Structural []
-                    for animation in this.Animations do
-                        for channel in animation.NodeAnimationChannels do
-                            let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
-                            animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
-                    AnimationChannelsCached.[this] <- animationChannels
-                    animationChannels
-                | (true, animationChannels) -> animationChannels
+            let mutable animationChannels = Unchecked.defaultof<_>
+            if not (AnimationChannelsCached.TryGetValue (this, &animationChannels)) then
+                animationChannels <- dictPlus (AnimationChannelKeyComparer ()) []
+                for animation in this.Animations do
+                    for channel in animation.NodeAnimationChannels do
+                        let animationChannel = AnimationChannel.make (Array.ofSeq channel.PositionKeys) (Array.ofSeq channel.RotationKeys) (Array.ofSeq channel.ScalingKeys)
+                        animationChannels.[AnimationChannelKey.make animation.Name channel.NodeName] <- animationChannel
+                AnimationChannelsCached.[this] <- animationChannels
 
             // log if there are more bones than we currently support
             if mesh.Bones.Count >= Constants.Render.BonesMax then
