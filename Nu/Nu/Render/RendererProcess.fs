@@ -24,7 +24,7 @@ type RendererProcess =
         /// Potential fast-path for rendering static model surfaces.
         abstract RenderStaticModelSurfaceFast : Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * Material inref * StaticModel AssetTag * int * RenderType * RenderPass -> unit
         /// Potential fast-path for rendering animated models.
-        abstract RenderAnimatedModelFast : Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * Matrix4x4 array * AnimatedModel AssetTag * RenderPass -> unit
+        abstract RenderAnimatedModelFast : Matrix4x4 inref * Presence * Box2 voption * MaterialProperties inref * Matrix4x4 ArrayPooled * AnimatedModel AssetTag * RenderPass -> unit
         /// Enqueue a 2d rendering message.
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.

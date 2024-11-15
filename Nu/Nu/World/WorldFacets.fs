@@ -2766,11 +2766,11 @@ module AnimatedModelFacetExtensions =
         member this.GetBoneIdsOpt world : Dictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
         member this.SetBoneIdsOpt (value : Dictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
         member this.BoneIdsOpt = lens (nameof this.BoneIdsOpt) this this.GetBoneIdsOpt this.SetBoneIdsOpt
-        member this.GetBoneOffsetsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneOffsetsOpt) world
-        member this.SetBoneOffsetsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneOffsetsOpt) value world
+        member this.GetBoneOffsetsOpt world : Matrix4x4 ArrayPooled option = this.Get (nameof this.BoneOffsetsOpt) world
+        member this.SetBoneOffsetsOpt (value : Matrix4x4 ArrayPooled option) world = this.Set (nameof this.BoneOffsetsOpt) value world
         member this.BoneOffsetsOpt = lens (nameof this.BoneOffsetsOpt) this this.GetBoneOffsetsOpt this.SetBoneOffsetsOpt
-        member this.GetBoneTransformsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneTransformsOpt) world
-        member this.SetBoneTransformsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneTransformsOpt) value world
+        member this.GetBoneTransformsOpt world : Matrix4x4 ArrayPooled option = this.Get (nameof this.BoneTransformsOpt) world
+        member this.SetBoneTransformsOpt (value : Matrix4x4 ArrayPooled option) world = this.Set (nameof this.BoneTransformsOpt) value world
         member this.BoneTransformsOpt = lens (nameof this.BoneTransformsOpt) this this.GetBoneTransformsOpt this.SetBoneTransformsOpt
 
         /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
@@ -2854,7 +2854,7 @@ type AnimatedModelFacet () =
         let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
         let resultOpt =
             match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-            | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+            | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 ArrayPooled * Matrix4x4 ArrayPooled) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
             | _ -> None
         let world =
             match resultOpt with
