@@ -398,7 +398,7 @@ module WorldImGui =
                         | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
                             let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
                             match Metadata.tryGetAnimatedModelMetadata animatedModel with
-                            | Some metadata when metadata.SceneOpt.IsSome ->
+                            | ValueSome metadata when metadata.SceneOpt.IsSome ->
                                 let animationNames = metadata.SceneOpt.Value.Animations |> Seq.map _.Name
                                 let mutable animationName = field :?> string
                                 let mutable animationNameChanged = false
@@ -411,7 +411,7 @@ module WorldImGui =
                                     ImGui.EndCombo ()
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
                                 Some (animationNameChanged, animationName :> obj)
-                            | Some _ | None -> None
+                            | ValueSome _ | ValueNone -> None
                         | Some _ | None -> None
                     | _ -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world

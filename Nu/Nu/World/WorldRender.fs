@@ -132,8 +132,8 @@ module WorldRender =
                     let slice = box3Slice i margin perimeter
                     let insetOpt =
                         match Metadata.tryGetTextureSizeF spriteImage with
-                        | Some imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
-                        | None -> ValueNone
+                        | ValueSome imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
+                        | ValueNone -> ValueNone
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation // out-of-box gui ignores rotation
                     let perimeter = ValueSome perimeter.Box2
                     let blend = Color.Zero

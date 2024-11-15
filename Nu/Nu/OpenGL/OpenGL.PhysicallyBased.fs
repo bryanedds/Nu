@@ -86,53 +86,53 @@ module PhysicallyBased =
 
         static member extractPresence presenceDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.PresenceOpt with
-            | None ->
+            | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    Option.defaultValue presenceDefault material.PresenceOpt
+                    ValueOption.defaultValue presenceDefault material.PresenceOpt
                 | Some _ | None -> presenceDefault
-            | Some presence -> presence
+            | ValueSome presence -> presence
 
         static member extractRenderStyle renderStyleDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.RenderStyleOpt with
-            | None ->
+            | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    Option.defaultValue renderStyleDefault material.RenderStyleOpt
+                    ValueOption.defaultValue renderStyleDefault material.RenderStyleOpt
                 | Some _ | None -> renderStyleDefault
-            | Some renderStyle -> renderStyle
+            | ValueSome renderStyle -> renderStyle
 
         static member extractIgnoreLightMaps ignoreLightMapsDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.IgnoreLightMapsOpt with
-            | None ->
+            | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    Option.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
+                    ValueOption.defaultValue ignoreLightMapsDefault material.IgnoreLightMapsOpt
                 | Some _ | None -> ignoreLightMapsDefault
-            | Some ignoreLightMaps -> ignoreLightMaps
+            | ValueSome ignoreLightMaps -> ignoreLightMaps
 
         static member extractOpaqueDistance opaqueDistanceDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.OpaqueDistanceOpt with
-            | None ->
+            | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    Option.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
+                    ValueOption.defaultValue opaqueDistanceDefault material.OpaqueDistanceOpt
                 | Some _ | None -> opaqueDistanceDefault
-            | Some opaqueDistance -> opaqueDistance
+            | ValueSome opaqueDistance -> opaqueDistance
 
         static member extractNavShape shapeDefault (sceneOpt : Assimp.Scene option) surface =
             match surface.SurfaceNode.NavShapeOpt with
-            | None ->
+            | ValueNone ->
                 match sceneOpt with
                 | Some scene when surface.SurfaceMaterialIndex < scene.Materials.Count ->
                     let material = scene.Materials.[surface.SurfaceMaterialIndex]
-                    Option.defaultValue shapeDefault material.NavShapeOpt
+                    ValueOption.defaultValue shapeDefault material.NavShapeOpt
                 | Some _ | None -> shapeDefault
-            | Some shape -> shape
+            | ValueSome shape -> shape
 
         static member inline hash surface =
             surface.HashCode
@@ -651,20 +651,20 @@ module PhysicallyBased =
         // compute ignore light maps
         let ignoreLightMaps =
             match material.IgnoreLightMapsOpt with
-            | Some ignoreLightMaps -> ignoreLightMaps
-            | None -> Constants.Render.IgnoreLightMapsDefault
+            | ValueSome ignoreLightMaps -> ignoreLightMaps
+            | ValueNone -> Constants.Render.IgnoreLightMapsDefault
 
         // compute opaque distance
         let opaqueDistance =
             match material.OpaqueDistanceOpt with
-            | Some opqaqueDistance -> opqaqueDistance
-            | None -> Constants.Render.OpaqueDistanceDefault
+            | ValueSome opqaqueDistance -> opqaqueDistance
+            | ValueNone -> Constants.Render.OpaqueDistanceDefault
 
         // compute two-sidedness
         let twoSided =
             match material.TwoSidedOpt with
-            | Some twoSided -> twoSided
-            | None -> material.IsTwoSided
+            | ValueSome twoSided -> twoSided
+            | ValueNone -> material.IsTwoSided
 
         // make properties
         let properties =

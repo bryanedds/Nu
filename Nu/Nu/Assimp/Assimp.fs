@@ -257,64 +257,64 @@ module AssimpExtensions =
             let key = struct (this, propertyName)
             let mutable property = Unchecked.defaultof<_>
             if not (MaterialPropertyCached.TryGetValue (key, &property)) then
-                let propertyOpt = Option.ofObj (this.GetNonTextureProperty propertyName)
+                let propertyOpt = ValueOption.ofObj (this.GetNonTextureProperty propertyName)
                 MaterialPropertyCached.[key] <- propertyOpt
                 propertyOpt
             else property
 
         member this.RenderStyleOpt =
             match this.TryGetMaterialProperty Constants.Assimp.RenderStylePropertyName with
-            | Some property ->
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<RenderStyle> |> Some
-                    with _ -> None
-                else None
-            | None -> None
+                    try property.GetStringValue () |> scvalueMemo<RenderStyle> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.PresenceOpt =
             match this.TryGetMaterialProperty Constants.Assimp.PresencePropertyName with
-            | Some property ->
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<Presence> |> Some
-                    with _ -> None
-                else None
-            | None -> None
+                    try property.GetStringValue () |> scvalueMemo<Presence> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.IgnoreLightMapsOpt =
             match this.TryGetMaterialProperty Constants.Assimp.IgnoreLightMapsPropertyName with
-            | Some property ->
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                else None
-            | None -> None
+                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.OpaqueDistanceOpt =
             match this.TryGetMaterialProperty Constants.Assimp.OpaqueDistancePropertyName with
-            | Some property ->
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<single> |> Some
-                    with _ -> None
-                else None
-            | None -> None
+                    try property.GetStringValue () |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                else ValueNone
+            | ValueNone -> ValueNone
 
         member this.TwoSidedOpt =
             match this.TryGetMaterialProperty Constants.Assimp.TwoSidedPropertyName with
-            | Some property ->
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                else Some true
-            | None -> None
+                    try property.GetStringValue () |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome true
+            | ValueNone -> ValueNone
 
         member this.NavShapeOpt =
             match this.TryGetMaterialProperty Constants.Assimp.NavShapePropertyName with
-            | Some property ->
+            | ValueSome property ->
                 if property.PropertyType = Assimp.PropertyType.String then
-                    try property.GetStringValue () |> scvalueMemo<NavShape> |> Some
-                    with _ -> None
-                else Some EmptyNavShape
-            | None -> None
+                    try property.GetStringValue () |> scvalueMemo<NavShape> |> ValueSome
+                    with _ -> ValueNone
+                else ValueSome EmptyNavShape
+            | ValueNone -> ValueNone
 
     /// Node extensions.
     type Assimp.Node with
@@ -363,50 +363,50 @@ module AssimpExtensions =
             if this.Metadata.TryGetValue (nameof RenderStyle, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> Some
-                    with _ -> None
-                | _ -> None
-            else None
+                    try entry.Data :?> string |> scvalueMemo<RenderStyle> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.PresenceOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (nameof Presence, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<Presence> |> Some
-                    with _ -> None
-                | _ -> None
-            else None
+                    try entry.Data :?> string |> scvalueMemo<Presence> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.IgnoreLightMapsOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.IgnoreLightMapsName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<bool> |> Some
-                    with _ -> None
-                | _ -> None
-            else None
+                    try entry.Data :?> string |> scvalueMemo<bool> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.OpaqueDistanceOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.OpaqueDistanceName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<single> |> Some
-                    with _ -> None
-                | _ -> None
-            else None
+                    try entry.Data :?> string |> scvalueMemo<single> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
         member this.NavShapeOpt =
             let mutable entry = Unchecked.defaultof<_>
             if this.Metadata.TryGetValue (Constants.Render.NavShapeName, &entry) then
                 match entry.DataType with
                 | Assimp.MetaDataType.String ->
-                    try entry.Data :?> string |> scvalueMemo<NavShape> |> Some
-                    with _ -> None
-                | _ -> None
-            else None
+                    try entry.Data :?> string |> scvalueMemo<NavShape> |> ValueSome
+                    with _ -> ValueNone
+                | _ -> ValueNone
+            else ValueNone
 
     /// Scene extensions.
     type Assimp.Scene with

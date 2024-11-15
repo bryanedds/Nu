@@ -138,8 +138,8 @@ module TmxMap =
 
     let tryGetTileMap (tileMapAsset : TileMap AssetTag) =
         match Metadata.tryGetTileMapMetadata tileMapAsset with
-        | Some tileMapMetadata -> Some tileMapMetadata.TileMap
-        | None -> None
+        | ValueSome tileMapMetadata -> Some tileMapMetadata.TileMap
+        | ValueNone -> None
 
     let tryGetTileDescriptor tileIndex (tl : TmxLayer) tmd (tileDescriptor : TileDescriptor outref) =
         let tileMapRun = tmd.TileMapSizeM.X
