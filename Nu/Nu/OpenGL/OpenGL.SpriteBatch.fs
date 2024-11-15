@@ -24,7 +24,7 @@ module SpriteBatch =
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
-             | struct (ValueSome c, ValueSome c2) -> c <> c2) ||
+             | struct (ValueSome c, ValueSome c2) -> box2Neq c c2) ||
             state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
             state.BlendingFactorDst <> state2.BlendingFactorDst ||
             state.BlendingEquation <> state2.BlendingEquation ||
