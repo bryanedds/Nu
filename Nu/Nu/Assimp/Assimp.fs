@@ -174,6 +174,9 @@ module AssimpExtensions =
     let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
 
+    let private MaterialPropertyCached =
+        ConcurrentDictionary<_, _> HashIdentity.Structural
+
     let private NodeEmpty =
         Assimp.Node ()
 
@@ -229,59 +232,67 @@ module AssimpExtensions =
     /// Material extensions.
     type Assimp.Material with
 
+        member this.TryGetMaterialProperty propertyName =
+            match MaterialPropertyCached.TryGetValue ((this, propertyName)) with
+            | (false, _) ->
+                let propertyOpt = Option.ofObj (this.GetNonTextureProperty propertyName)
+                MaterialPropertyCached.[(this, propertyName)] <- propertyOpt
+                propertyOpt
+            | (true, property) -> property
+
         member this.RenderStyleOpt =
-            match this.GetNonTextureProperty Constants.Assimp.RenderStylePropertyName with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.RenderStylePropertyName with
+            | Some property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<RenderStyle> |> Some
                     with _ -> None
                 else None
+            | None -> None
 
         member this.PresenceOpt =
-            match this.GetNonTextureProperty Constants.Assimp.PresencePropertyName with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.PresencePropertyName with
+            | Some property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<Presence> |> Some
                     with _ -> None
                 else None
+            | None -> None
 
         member this.IgnoreLightMapsOpt =
-            match this.GetNonTextureProperty Constants.Assimp.IgnoreLightMapsPropertyName with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.IgnoreLightMapsPropertyName with
+            | Some property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<bool> |> Some
                     with _ -> None
                 else None
+            | None -> None
 
         member this.OpaqueDistanceOpt =
-            match this.GetNonTextureProperty Constants.Assimp.OpaqueDistancePropertyName with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.OpaqueDistancePropertyName with
+            | Some property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<single> |> Some
                     with _ -> None
                 else None
+            | None -> None
 
         member this.TwoSidedOpt =
-            match this.GetNonTextureProperty Constants.Assimp.TwoSidedPropertyName with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.TwoSidedPropertyName with
+            | Some property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<bool> |> Some
                     with _ -> None
                 else Some true
+            | None -> None
 
         member this.NavShapeOpt =
-            match this.GetNonTextureProperty Constants.Assimp.NavShapePropertyName with
-            | null -> None
-            | property ->
+            match this.TryGetMaterialProperty Constants.Assimp.NavShapePropertyName with
+            | Some property ->
                 if property.PropertyType = Assimp.PropertyType.String then
                     try property.GetStringValue () |> scvalueMemo<NavShape> |> Some
                     with _ -> None
                 else Some EmptyNavShape
+            | None -> None
 
     /// Node extensions.
     type Assimp.Node with
