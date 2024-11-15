@@ -482,7 +482,8 @@ module AssimpExtensions =
 
             // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
-                for child in node.Children do
+                for i in 0 .. dec node.ChildCount do
+                    let child = node.Children.[i]
                     Assimp.Scene.UpdateBoneTransforms (time, boneIds, boneInfos, boneWrites, animationChannels, animations, child, accumulatedTransform, scene)
 
         /// Compute the bone ids, offsets, and animated transforms of the mesh's bones in the given scene.
