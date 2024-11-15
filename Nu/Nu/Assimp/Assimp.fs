@@ -473,12 +473,11 @@ module AssimpExtensions =
 
             // compute current transform and assign the final bone transform where applicable
             let accumulatedTransform = nodeTransform * parentTransform
-            match boneIds.TryGetValue node.Name with
-            | (true, boneId) ->
+            let mutable boneId = Unchecked.defaultof<_>
+            if boneIds.TryGetValue (node.Name, &boneId) then
                 let boneOffset = boneInfos.[boneId].BoneOffset
                 boneInfos.[boneId].BoneTransform <- boneOffset * accumulatedTransform
                 boneWrites.Value <- inc boneWrites.Value
-            | (false, _) -> ()
 
             // recur if there are still bones left to write
             if boneWrites.Value < boneInfos.Length then
