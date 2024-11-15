@@ -221,18 +221,19 @@ module Metadata =
     /// Attempt to get the metadata package containing the given asset, attempt to load it if it isn't already.
     /// Thread-safe.
     let private tryGetMetadataPackage (assetTag : AssetTag) =
-        match MetadataPackagesLoaded.TryGetValue assetTag.PackageName with
-        | (true, package) -> Some package
-        | (false, _) ->
+        let mutable package = Unchecked.defaultof<_>
+        if MetadataPackagesLoaded.TryGetValue (assetTag.PackageName, &package)
+        then ValueSome package // OPTIMIZATION: eliding allocation with voption.
+        else
             match AssetGraphOpt with
             | Some assetGraph ->
                 if assetGraph.PackageDescriptors.ContainsKey assetTag.PackageName then
                     Log.info ("Loading Metadata package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
                     let package = tryGenerateMetadataPackage assetTag.PackageName assetGraph
                     MetadataPackagesLoaded.TryAdd (assetTag.PackageName, package) |> ignore<bool>
-                    Some package
-                else None
-            | None -> None
+                    ValueSome package
+                else ValueNone
+            | None -> ValueNone
 
     /// Get the metadate packages that have been loaded.
     /// NOTE: this is a potentially expensive call as the tree of ConcurrentDictionaries must be copied to avoid
@@ -246,31 +247,32 @@ module Metadata =
     /// Thread-safe.
     let getMetadataExists (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
-        | Some package ->
+        | ValueSome package ->
             match package.TryGetValue assetTag.AssetName with
             | (true, (_, _, _)) -> true
             | (false, _) -> false
-        | None -> false
+        | ValueNone -> false
 
     /// Attempt to get the file path of the given asset.
     /// Thread-safe.
     let tryGetFilePath (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
-        | Some package ->
+        | ValueSome package ->
             match package.TryGetValue assetTag.AssetName with
             | (true, (_, filePath, _)) -> Some filePath
             | (false, _) -> None
-        | None -> None
+        | ValueNone -> None
 
     /// Attempt to get the metadata of the given asset.
     /// Thread-safe.
     let tryGetMetadata (assetTag : AssetTag) =
         match tryGetMetadataPackage assetTag with
-        | Some package ->
-            match package.TryGetValue assetTag.AssetName with
-            | (true, (_, _, asset)) -> Some asset
-            | (false, _) -> None
-        | None -> None
+        | ValueSome package ->
+            let mutable asset = Unchecked.defaultof<_>
+            if package.TryGetValue (assetTag.AssetName, &asset)
+            then Some (__c asset)
+            else None
+        | ValueNone -> None
 
     /// Attempt to get the texture metadata of the given image.
     /// Thread-safe.
