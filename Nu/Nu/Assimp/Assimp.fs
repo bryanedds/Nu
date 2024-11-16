@@ -247,6 +247,9 @@ module AssimpExtensions =
               Scaling = scaling
               Weight = weight }
 
+    let private CreateAnimationDecompositionList =
+        Func<_> (fun () -> List<AnimationDecomposition> ())
+
     let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
 
@@ -447,7 +450,7 @@ module AssimpExtensions =
 
             // compute local transform of the current node.
             let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
-            let decompositions = List animations.Length // TODO: see if there's a way to get rid of allocation here.
+            use decompositions = new CollectionPooled<_, _> (CreateAnimationDecompositionList)
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
@@ -480,7 +483,7 @@ module AssimpExtensions =
                 let mutable rotationAccumulated = Assimp.Quaternion (1.0f, 0.0f, 0.0f, 0.0f)
                 let mutable scalingAccumulated = Assimp.Vector3D 1.0f
                 let mutable weightAccumulated = 0.0f
-                for decomposition in decompositions do
+                for decomposition in decompositions.Deref do
                     let factor = weightAccumulated / (weightAccumulated + decomposition.Weight)
                     let factor2 = 1.0f - factor
                     translationAccumulated <- translationAccumulated * factor + decomposition.Translation * factor2

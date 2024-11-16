@@ -19,7 +19,6 @@ namespace Nu
         {
             array = Alloc(length);
             this.clearOnFree = clearOnFree;
-            this.length = length;
         }
 
         /// <summary>
@@ -30,7 +29,6 @@ namespace Nu
             get
             {
                 ThrowIfDisposed();
-                if (index >= length) throw new ArgumentOutOfRangeException(nameof(index));
                 return ref array[index];
             }
         }
@@ -43,7 +41,7 @@ namespace Nu
             get
             {
                 ThrowIfDisposed();
-                return length;
+                return array.Length;
             }
         }
 
@@ -51,7 +49,7 @@ namespace Nu
         /// The underlying pooled array.
         /// Do NOT hold onto this past this object's life time!
         /// </summary>
-        public T[] Array
+        public T[] Deref
         {
             get
             {
@@ -66,7 +64,7 @@ namespace Nu
         public ArrayPooled<T> Clone()
         {
             ThrowIfDisposed();
-            var arr = new ArrayPooled<T>(length, clearOnFree);
+            var arr = new ArrayPooled<T>(array.Length, clearOnFree);
             array.CopyTo(arr.array, 0);
             return arr;
         }
@@ -87,9 +85,7 @@ namespace Nu
         {
             ThrowIfDisposed();
             var thatArrayPooled = that as ArrayPooled<T>;
-            return
-                length == thatArrayPooled.length &&
-                array == thatArrayPooled.array;
+            return array == thatArrayPooled.array;
         }
 
         /// <summary>
@@ -134,14 +130,11 @@ namespace Nu
         private void ThrowIfDisposed()
         {
             if (Interlocked.CompareExchange(ref disposed, 0, 0) == 1)
-            {
                 throw new ObjectDisposedException(GetType().FullName);
-            }
         }
 
         private readonly T[] array;
         private readonly bool clearOnFree;
-        private readonly int length;
         private int disposed;
 
         private static T[] Alloc(int length)
@@ -153,7 +146,9 @@ namespace Nu
                 if (poolA.Count == 0) poolA.Add(new T[length]);
 
                 // allocate arr
-                var arr = poolA.First();
+                var enr = poolA.GetEnumerator();
+                enr.MoveNext();
+                var arr = enr.Current;
                 poolA.Remove(arr);
                 poolB.Add(arr);
                 return arr;
@@ -192,7 +187,7 @@ namespace Nu
                 }
             }
 
-            // lock
+            // transform pools
             lock (poolLock)
             {
                 var length = arr.Length;
