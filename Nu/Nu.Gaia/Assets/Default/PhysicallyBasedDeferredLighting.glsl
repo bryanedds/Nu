@@ -187,7 +187,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
-    float shadowHits = 0;
+    float shadowHits = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i)
     {
         for (int j = 0; j < SHADOW_SAMPLES; ++j)
