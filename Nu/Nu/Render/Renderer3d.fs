@@ -2217,9 +2217,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
                 let boneArray = new ArrayPooled<single> (16, false)
-                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Array, 0)
+                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
                 boneArrays.Add boneArray
-                bonesArrays.[i] <- boneArray.Array
+                bonesArrays.[i] <- boneArray.Deref
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays parameters
                 lightType surfaceKey.AnimatedSurface renderer.PhysicallyBasedShadowAnimatedShader renderer
@@ -2503,9 +2503,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
                 let boneArray = new ArrayPooled<single> (16, false)
-                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Array, 0)
+                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
                 boneArrays.Add boneArray
-                bonesArrays.[i] <- boneArray.Array
+                bonesArrays.[i] <- boneArray.Deref
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 SingletonPhase viewArray geometryProjectionArray bonesArrays eyeCenter parameters
                 PointLight renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
