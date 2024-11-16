@@ -66,6 +66,7 @@ const int LIGHTS_MAX = 8;
 const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 4;
 const int SHADOW_SAMPLES = 3;
+const float SHADOW_BIAS = 0.005;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
 
@@ -252,7 +253,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
 {
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
-    float shadowHits = 0;
+    float shadowHits = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i)
     {
         for (int j = 0; j < SHADOW_SAMPLES; ++j)
@@ -260,7 +261,7 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
             for (int k = 0; k < SHADOW_SAMPLES; ++k)
             {
                 vec3 offset = (vec3(i, j, k) - vec3(SHADOW_SAMPLES / 2.0)) * (lightShadowSampleScalar / SHADOW_SAMPLES);
-                shadowHits += shadowZ - 0.005f > texture(shadowMap, positionShadow + offset).x ? 1.0 : 0.0;
+                shadowHits += shadowZ - SHADOW_BIAS > texture(shadowMap, positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
