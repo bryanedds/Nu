@@ -250,6 +250,9 @@ module AssimpExtensions =
     let private CreateAnimationDecompositionList =
         Func<_> (fun () -> List<AnimationDecomposition> ())
 
+    let private CreateBoneIdDictionary =
+        Func<_> (fun () -> Dictionary<string, int> ())
+
     let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
 
@@ -439,7 +442,7 @@ module AssimpExtensions =
 
         static member private UpdateBoneTransforms
             (time : single,
-             boneIds : Dictionary<string, int>,
+             boneIds : DictionaryPooled<string, int>,
              boneInfos : BoneInfo ArrayPooled,
              boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
@@ -528,7 +531,7 @@ module AssimpExtensions =
                 Log.info ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
-            let boneIds = dictPlus StringComparer.Ordinal []
+            let boneIds = new DictionaryPooled<_, _> (CreateBoneIdDictionary)
             use boneInfos = new ArrayPooled<BoneInfo> (mesh.Bones.Count, false)
             for boneId in 0 .. dec mesh.Bones.Count do
                 let bone = mesh.Bones.[boneId]
