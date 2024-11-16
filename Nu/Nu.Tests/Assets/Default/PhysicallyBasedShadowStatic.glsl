@@ -35,7 +35,6 @@ void main()
 	{
 	case 0: // point light
 		depths.x = length(positionOut.xyz - eyeCenter);
-		depths.y = exp(lightShadowExponent * 0.1 * depths.x);
 		break;
 	case 1: // spot light
 		depths.x = gl_FragCoord.z;
