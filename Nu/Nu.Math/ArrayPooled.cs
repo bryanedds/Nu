@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -93,22 +92,27 @@ namespace Nu
         /// </summary>
         public override string ToString()
         {
+            ThrowIfDisposed();
             return array.ToString();
         }
 
         /// <summary>
         /// Generic enumeration.
+        /// Do NOT hold onto this past this object's life time!
         /// </summary>
         public IEnumerator<T> GetEnumerator()
         {
+            ThrowIfDisposed();
             return ((IEnumerable<T>)array).GetEnumerator();
         }
 
         /// <summary>
         /// General enumeration.
+        /// Do NOT hold onto this past this object's life time!
         /// </summary>
         IEnumerator IEnumerable.GetEnumerator()
         {
+            ThrowIfDisposed();
             return array.GetEnumerator();
         }
 

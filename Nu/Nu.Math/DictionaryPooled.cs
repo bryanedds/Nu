@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -9,7 +7,6 @@ namespace Nu
 {
     /// <summary>
     /// A dictionary from a sychronized global dictionary pool.
-    /// Note that you'll have to Deref in order to enumerate this efficiently.
     /// </summary>
     public class DictionaryPooled<K, V> : IDisposable
     {
@@ -109,6 +106,16 @@ namespace Nu
         }
 
         /// <summary>
+        /// The underlying dictionary enumerator.
+        /// Do NOT hold onto this past this object's life time!
+        /// </summary>
+        public Dictionary<K, V>.Enumerator GetEnumerator()
+        {
+            ThrowIfDisposed();
+            return dict.GetEnumerator();
+        }
+
+        /// <summary>
         /// Hashing.
         /// </summary>
         public override int GetHashCode()
@@ -133,6 +140,7 @@ namespace Nu
         /// </summary>
         public override string ToString()
         {
+            ThrowIfDisposed();
             return dict.ToString();
         }
 

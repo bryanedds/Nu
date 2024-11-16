@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -127,6 +126,7 @@ namespace Nu
         /// </summary>
         public override string ToString()
         {
+            ThrowIfDisposed();
             return coll.ToString();
         }
 
