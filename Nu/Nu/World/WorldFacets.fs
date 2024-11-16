@@ -2108,8 +2108,7 @@ type SkyBoxFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.Absolute true
-         define Entity.Presence Omnipresent
+        [define Entity.Presence Omnipresent
          define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f

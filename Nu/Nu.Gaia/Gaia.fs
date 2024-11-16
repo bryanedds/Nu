@@ -817,9 +817,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let forward = eyeRotation.Forward
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
-                    elif not (entity.GetAbsolute world) then
-                        eyeCenter + v3Forward.Transform eyeRotation * NewEntityDistance
-                    else v3Zero
+                    else eyeCenter + v3Forward.Transform eyeRotation * NewEntityDistance
                 let attributes = entity.GetAttributesInferred world
                 entityTransform.Position <- entityPosition
                 entityTransform.Size <- attributes.SizeInferred
