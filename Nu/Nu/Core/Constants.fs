@@ -206,6 +206,7 @@ module Render =
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
+    let [<Literal>] LightShadowSampleScalarDefault = 0.001f
     let [<Literal>] LightShadowExponentDefault = 80.0f
     let [<Literal>] LightShadowDensityDefault = 12.0f
     let [<Literal>] SsaoEnabledDefault = true
