@@ -67,14 +67,6 @@ const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 4;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
-const int SHADOW_SAMPLE_OFFSETS_COUNT = 20;
-const vec3 SHADOW_SAMPLE_OFFSETS[SHADOW_SAMPLE_OFFSETS_COUNT] =
-    vec3[](
-        vec3(1, 1, 1),      vec3(1, -1, 1),     vec3(-1, -1, 1),    vec3(-1, 1, 1),
-        vec3(1, 1, -1),     vec3(1, -1, -1),    vec3(-1, -1, -1),   vec3(-1, 1, -1),
-        vec3(1, 1, 0),      vec3(1, -1, 0),     vec3(-1, -1, 0),    vec3(-1, 1, 0),
-        vec3(1, 0, 1),      vec3(-1, 0, 1),     vec3(1, 0, -1),     vec3(-1, 0, -1),
-        vec3(0, 1, 1),      vec3(0, -1, 1),     vec3(0, -1, -1),    vec3(0, 1, -1));
 
 const vec4 SSVF_DITHERING[4] =
     vec4[4](
@@ -261,11 +253,13 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     float shadowZ = length(positionShadow);
     float shadowZExp = exp(-lightShadowExponent * 0.1 * shadowZ);
     float shadowDepthExp = 0.0;
-    for (int i = 0; i < SHADOW_SAMPLE_OFFSETS_COUNT; ++i)
-    {
-        // NOTE: we divide at each step to avoid overflow with an already large number.
-        shadowDepthExp += texture(shadowMap, positionShadow / shadowZ + SHADOW_SAMPLE_OFFSETS[i] * lightShadowSampleScalar).y / SHADOW_SAMPLE_OFFSETS_COUNT;
-    }
+    for (float i = 0.0; i < 3.0; ++i)
+        for (float j = 0.0; j < 3.0; ++j)
+            for (float k = 0.0; k < 3.0; ++k)
+            {
+                // NOTE: we divide at each step to avoid overflow with an already large number.
+                shadowDepthExp += texture(shadowMap, positionShadow / shadowZ + vec3(i, j, k) * lightShadowSampleScalar).y / 27.0f;
+            }
     float shadowScalar = clamp(shadowZExp * shadowDepthExp, 0.0, 1.0);
     return pow(shadowScalar, lightShadowDensity);
 }
