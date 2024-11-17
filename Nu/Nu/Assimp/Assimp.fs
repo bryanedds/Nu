@@ -442,7 +442,7 @@ module AssimpExtensions =
 
         static member private UpdateBoneTransforms
             (time : single,
-             boneIds : DictionaryPooled<string, int>,
+             boneIds : PooledDictionary<string, int>,
              boneInfos : BoneInfo array,
              boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
@@ -453,7 +453,7 @@ module AssimpExtensions =
 
             // compute local transform of the current node.
             let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
-            use decompositions = new CollectionPooled<_, _> (CreateAnimationDecompositionList)
+            use decompositions = new PooledCollection<_, _> (CreateAnimationDecompositionList)
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
@@ -531,7 +531,7 @@ module AssimpExtensions =
                 Log.info ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
-            let boneIds = new DictionaryPooled<_, _> (CreateBoneIdDictionary)
+            let boneIds = new PooledDictionary<_, _> (CreateBoneIdDictionary)
             let boneInfos = Array.zeroCreate<_> mesh.Bones.Count
             for boneId in 0 .. dec mesh.Bones.Count do
                 let bone = mesh.Bones.[boneId]

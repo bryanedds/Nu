@@ -2762,8 +2762,8 @@ module AnimatedModelFacetExtensions =
         member this.GetAnimatedModel world : AnimatedModel AssetTag = this.Get (nameof this.AnimatedModel) world
         member this.SetAnimatedModel (value : AnimatedModel AssetTag) world = this.Set (nameof this.AnimatedModel) value world
         member this.AnimatedModel = lens (nameof this.AnimatedModel) this this.GetAnimatedModel this.SetAnimatedModel
-        member this.GetBoneIdsOpt world : DictionaryPooled<string, int> option = this.Get (nameof this.BoneIdsOpt) world
-        member this.SetBoneIdsOpt (value : DictionaryPooled<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
+        member this.GetBoneIdsOpt world : PooledDictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
+        member this.SetBoneIdsOpt (value : PooledDictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
         member this.BoneIdsOpt = lens (nameof this.BoneIdsOpt) this this.GetBoneIdsOpt this.SetBoneIdsOpt
         member this.GetBoneOffsetsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneOffsetsOpt) world
         member this.SetBoneOffsetsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneOffsetsOpt) value world
@@ -2806,7 +2806,7 @@ module AnimatedModelFacetExtensions =
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
             match this.TryComputeBoneTransforms time animations sceneOpt with
             | Some (boneIds, boneOffsets, boneTransforms) ->
-                let world = this.SetBoneIdsOpt (Some boneIds) world
+                let world = this.BoneIdsOpt.Map (fun boneIdsOpt -> (match boneIdsOpt with Some boneIds -> boneIds.Dispose () | None -> ()); Some boneIds) world
                 let world = this.SetBoneOffsetsOpt (Some boneOffsets) world
                 let world = this.SetBoneTransformsOpt (Some boneTransforms) world
                 world
@@ -2853,12 +2853,12 @@ type AnimatedModelFacet () =
         let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
         let resultOpt =
             match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-            | Some (JobCompletion (_, _, (:? ((DictionaryPooled<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+            | Some (JobCompletion (_, _, (:? ((PooledDictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
             | _ -> None
         let world =
             match resultOpt with
             | Some (boneIds, boneOffsets, boneTransforms) ->
-                let world = entity.SetBoneIdsOpt (Some boneIds) world
+                let world = entity.BoneIdsOpt.Map (fun boneIdsOpt -> (match boneIdsOpt with Some boneIds -> boneIds.Dispose () | None -> ()); Some boneIds) world
                 let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
                 let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
                 world

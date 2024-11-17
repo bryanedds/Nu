@@ -9,12 +9,12 @@ namespace Nu
     /// <summary>
     /// An array from a sychronized global array pool.
     /// </summary>
-    public class ArrayPooled<T> : IDisposable, IEnumerable<T>
+    public class PooledArray<T> : IDisposable, IEnumerable<T>
     {
         /// <summary>
         /// Create a pooled array.
         /// </summary>
-        public ArrayPooled(int length, bool clearOnFree)
+        public PooledArray(int length, bool clearOnFree)
         {
             array = Alloc(length);
             this.clearOnFree = clearOnFree;
@@ -60,10 +60,10 @@ namespace Nu
         /// <summary>
         /// Clone the pooled array.
         /// </summary>
-        public ArrayPooled<T> Clone()
+        public PooledArray<T> Clone()
         {
             ThrowIfDisposed();
-            var arr = new ArrayPooled<T>(array.Length, clearOnFree);
+            var arr = new PooledArray<T>(array.Length, clearOnFree);
             array.CopyTo(arr.array, 0);
             return arr;
         }
@@ -83,7 +83,7 @@ namespace Nu
         public override bool Equals(object that)
         {
             ThrowIfDisposed();
-            var thatArrayPooled = that as ArrayPooled<T>;
+            var thatArrayPooled = that as PooledArray<T>;
             return array == thatArrayPooled.array;
         }
 
@@ -125,7 +125,7 @@ namespace Nu
             GC.SuppressFinalize(this);
         }
 
-        ~ArrayPooled()
+        ~PooledArray()
         {
             Free(array, clearOnFree);
         }

@@ -6,113 +6,99 @@ using System.Threading;
 namespace Nu
 {
     /// <summary>
-    /// A dictionary from a sychronized global dictionary pool.
+    /// A collection from a sychronized global collection pool.
+    /// Note that you'll have to Deref in order to enumerate this efficiently.
     /// </summary>
-    public class DictionaryPooled<K, V> : IDisposable
+    public class PooledCollection<C, T> : IDisposable where C : ICollection<T>
     {
         /// <summary>
-        /// Create a pooled dictionary.
+        /// Create a pooled collection.
         /// </summary>
-        public DictionaryPooled(Func<Dictionary<K,V>> create)
+        public PooledCollection(Func<C> create)
         {
-            dict = Alloc(create);
+            coll = Alloc(create);
         }
 
         /// <summary>
-        /// The underlying pooled dictionary.
+        /// The underlying pooled collection.
         /// Do NOT hold onto this past this object's life time!
         /// </summary>
-        public Dictionary<K, V> Deref
+        public C Deref
         {
             get
             {
                 ThrowIfDisposed();
-                return dict;
+                return coll;
             }
         }
 
         /// <summary>
-        /// Get the value stored with the given key.
-        /// </summary>
-        public V this[K key]
-        {
-            get
-            {
-                ThrowIfDisposed();
-                return dict[key];
-            }
-            set
-            {
-                ThrowIfDisposed();
-                dict[key] = value;
-            }
-        }
-
-        /// <summary>
-        /// Number of items in the dictionary.
+        /// Number of items in the collection.
         /// </summary>
         public int Count
         {
             get
             {
                 ThrowIfDisposed();
-                return dict.Count;
+                return coll.Count;
             }
         }
 
         /// <summary>
-        /// Attempt to get the value associated with the given key.
+        /// Whether the collection is read-only.
         /// </summary>
-        public bool TryGetValue(K key, out V value)
+        public bool IsReadOnly
         {
-            ThrowIfDisposed();
-            return dict.TryGetValue(key, out value);
+            get
+            {
+                ThrowIfDisposed(); 
+                return coll.IsReadOnly;
+            }
         }
 
         /// <summary>
-        /// Add a value.
+        /// Add an item.
         /// </summary>
-        public void Add(K key, V value)
+        public void Add(T item)
         {
             ThrowIfDisposed();
-            dict.Add(key, value);
+            coll.Add(item);
         }
 
         /// <summary>
-        /// Remove a value.
+        /// Remove an item.
         /// </summary>
-        public void Remove(K key)
+        public void Remove(T item)
         {
             ThrowIfDisposed();
-            dict.Remove(key);
+            coll.Remove(item);
         }
 
         /// <summary>
-        /// Check that dictionary contain the given key.
+        /// Check that collection contain the given item.
         /// </summary>
-        public bool ContainsKey(K key)
+        public bool Contains(T item)
         {
             ThrowIfDisposed();
-            return dict.ContainsKey(key);
+            return coll.Contains(item);
         }
 
         /// <summary>
-        /// Clear the dictionary.
+        /// Clear the collection.
         /// </summary>
         public void Clear()
         {
             ThrowIfDisposed();
-            dict.Clear();
+            coll.Clear();
         }
 
         /// <summary>
-        /// The underlying dictionary enumerator.
-        /// Do NOT hold onto this past this object's life time!
+        /// Copy the collection starting at the given array index.
         /// </summary>
-        public Dictionary<K, V>.Enumerator GetEnumerator()
+        public void CopyTo(T[] array, int arrayIndex)
         {
             ThrowIfDisposed();
-            return dict.GetEnumerator();
+            coll.CopyTo(array, arrayIndex);
         }
 
         /// <summary>
@@ -121,7 +107,7 @@ namespace Nu
         public override int GetHashCode()
         {
             ThrowIfDisposed();
-            return dict.GetHashCode();
+            return coll.GetHashCode();
         }
 
         /// <summary>
@@ -131,8 +117,8 @@ namespace Nu
         {
             if (that == null) return false;
             ThrowIfDisposed();
-            var thatObjectPooled = that as DictionaryPooled<K, V>;
-            return dict.Equals(thatObjectPooled.dict);
+            var thatObjectPooled = that as PooledCollection<C, T>;
+            return coll.Equals(thatObjectPooled.coll);
         }
 
         /// <summary>
@@ -141,7 +127,7 @@ namespace Nu
         public override string ToString()
         {
             ThrowIfDisposed();
-            return dict.ToString();
+            return coll.ToString();
         }
 
         /// <summary>
@@ -149,13 +135,13 @@ namespace Nu
         /// </summary>
         public void Dispose()
         {
-            Free(dict);
+            Free(coll);
             GC.SuppressFinalize(this);
         }
 
-        ~DictionaryPooled()
+        ~PooledCollection()
         {
-            Free(dict);
+            Free(coll);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -165,40 +151,40 @@ namespace Nu
                 throw new ObjectDisposedException(GetType().FullName);
         }
 
-        private readonly Dictionary<K, V> dict;
+        private readonly C coll;
         private int disposed;
 
-        private static Dictionary<K, V> Alloc(Func<Dictionary<K, V>> create)
+        private static C Alloc(Func<C> create)
         {
             lock (poolLock)
             {
-                // add dict if missing
+                // add coll if missing
                 if (poolA.Count == 0)
                     poolA.Add(create());
 
-                // allocate dict
+                // allocate coll
                 var enr = poolA.GetEnumerator();
                 enr.MoveNext();
-                var dict = enr.Current;
-                poolA.Remove(dict);
-                poolB.Add(dict);
-                return dict;
+                var coll = enr.Current;
+                poolA.Remove(coll);
+                poolB.Add(coll);
+                return coll;
             }
         }
 
-        private static void Free(Dictionary<K, V> dict)
+        private static void Free(C coll)
         {
             // clear
-            dict.Clear();
+            coll.Clear();
 
             // transfer pools
             lock (poolLock)
-                if (poolB.Remove(dict))
-                    poolA.Add(dict);
+                if (poolB.Remove(coll))
+                    poolA.Add(coll);
         }
 
         private static readonly object poolLock = new object();
-        private static readonly HashSet<Dictionary<K, V>> poolA = new HashSet<Dictionary<K, V>>();
-        private static readonly HashSet<Dictionary<K, V>> poolB = new HashSet<Dictionary<K, V>>();
+        private static readonly HashSet<C> poolA = new HashSet<C>();
+        private static readonly HashSet<C> poolB = new HashSet<C>();
     }
 }

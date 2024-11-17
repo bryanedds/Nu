@@ -2218,7 +2218,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let boneArrays = List ()
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
-                let boneArray = new ArrayPooled<single> (16, false)
+                let boneArray = new PooledArray<single> (16, false)
                 surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
                 boneArrays.Add boneArray
                 bonesArrays.[i] <- boneArray.Deref
@@ -2504,7 +2504,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let boneArrays = List ()
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
-                let boneArray = new ArrayPooled<single> (16, false)
+                let boneArray = new PooledArray<single> (16, false)
                 surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
                 boneArrays.Add boneArray
                 bonesArrays.[i] <- boneArray.Deref
