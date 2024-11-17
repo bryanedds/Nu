@@ -106,7 +106,9 @@ namespace Nu
         /// </summary>
         public PooledCollection<C, T> Clone(Func<C> create)
         {
-            return new PooledCollection<C, T>(create);
+            var coll = new PooledCollection<C, T>(create);
+            foreach (var item in this.coll) coll.Add(item);
+            return coll;
         }
 
         /// <summary>

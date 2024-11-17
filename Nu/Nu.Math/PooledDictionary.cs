@@ -8,12 +8,12 @@ namespace Nu
     /// <summary>
     /// A dictionary from a sychronized global dictionary pool.
     /// </summary>
-    public class PooledDictionary<K, V> : IDisposable
+    public class PooledDictionary<D, K, V> : IDisposable where D : IDictionary<K, V>
     {
         /// <summary>
         /// Create a pooled dictionary.
         /// </summary>
-        public PooledDictionary(Func<Dictionary<K,V>> create)
+        public PooledDictionary(Func<D> create)
         {
             dict = Alloc(create);
         }
@@ -22,7 +22,7 @@ namespace Nu
         /// The underlying pooled dictionary.
         /// Do NOT hold onto this past this object's life time!
         /// </summary>
-        public Dictionary<K, V> Deref
+        public D Deref
         {
             get
             {
@@ -108,19 +108,12 @@ namespace Nu
         /// <summary>
         /// Clone.
         /// </summary>
-        public PooledDictionary<K, V> Clone(Func<Dictionary<K, V>> create)
+        public PooledDictionary<D, K, V> Clone(Func<D> create)
         {
-            return new PooledDictionary<K, V>(create);
-        }
-
-        /// <summary>
-        /// The underlying dictionary enumerator.
-        /// Do NOT hold onto this past this object's life time!
-        /// </summary>
-        public Dictionary<K, V>.Enumerator GetEnumerator()
-        {
-            ThrowIfDisposed();
-            return dict.GetEnumerator();
+            var dict = new PooledDictionary<D, K, V>(create);
+            var deref = dict.Deref;
+            foreach (var entry in this.dict) deref.Add(entry.Key, entry.Value);
+            return dict;
         }
 
         /// <summary>
@@ -139,7 +132,7 @@ namespace Nu
         {
             if (that == null) return false;
             ThrowIfDisposed();
-            var thatObjectPooled = that as PooledDictionary<K, V>;
+            var thatObjectPooled = that as PooledDictionary<D, K, V>;
             return dict.Equals(thatObjectPooled.dict);
         }
 
@@ -178,10 +171,10 @@ namespace Nu
             }
         }
 
-        private readonly Dictionary<K, V> dict;
+        private readonly D dict;
         private volatile int disposed;
 
-        private static Dictionary<K, V> Alloc(Func<Dictionary<K, V>> create)
+        private static D Alloc(Func<D> create)
         {
             lock (poolLock)
             {
@@ -199,7 +192,7 @@ namespace Nu
             }
         }
 
-        private static void Free(Dictionary<K, V> dict)
+        private static void Free(D dict)
         {
             // clear
             dict.Clear();
@@ -211,7 +204,7 @@ namespace Nu
         }
 
         private static readonly object poolLock = new object();
-        private static readonly HashSet<Dictionary<K, V>> poolA = new HashSet<Dictionary<K, V>>();
-        private static readonly HashSet<Dictionary<K, V>> poolB = new HashSet<Dictionary<K, V>>();
+        private static readonly HashSet<D> poolA = new HashSet<D>();
+        private static readonly HashSet<D> poolB = new HashSet<D>();
     }
 }
