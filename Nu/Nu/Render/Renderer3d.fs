@@ -278,7 +278,7 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelPresence : Presence
       mutable CachedAnimatedModelInsetOpt : Box2 voption
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
-      mutable CachedAnimatedModelBoneTransforms : Matrix4x4 ArrayPooled
+      mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
       mutable CachedAnimatedModelRenderPass : RenderPass }        
 
@@ -402,12 +402,12 @@ type RenderAnimatedModel =
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
-      BoneTransforms : Matrix4x4 ArrayPooled
+      BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
 type RenderAnimatedModels =
-    { BoneTransforms : Matrix4x4 ArrayPooled
+    { BoneTransforms : Matrix4x4 array
       AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
@@ -430,6 +430,7 @@ type RenderTerrain =
 /// Configures 3d lighting and ssao.
 type [<SymbolicExpansion>] Lighting3dConfig =
     { LightCutoffMargin : single
+      LightShadowSampleScalar : single
       LightShadowExponent : single
       LightShadowDensity : single
       SsaoIntensity : single
@@ -460,6 +461,7 @@ type [<SymbolicExpansion>] Lighting3dConfig =
 
     static member defaultConfig =
         { LightCutoffMargin = Constants.Render.LightCutoffMarginDefault
+          LightShadowSampleScalar = Constants.Render.LightShadowSampleScalarDefault
           LightShadowExponent = Constants.Render.LightShadowExponentDefault
           LightShadowDensity = Constants.Render.LightShadowDensityDefault
           SsaoIntensity = Constants.Render.SsaoIntensityDefault
@@ -673,7 +675,7 @@ type private SortableLight =
 
 /// Enables efficient comparison of animated model surfaces.
 type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
-    { BoneTransforms : Matrix4x4 ArrayPooled
+    { BoneTransforms : Matrix4x4 array
       AnimatedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
 
     static member hash amsKey =
@@ -1716,7 +1718,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
-         boneTransforms : Matrix4x4 ArrayPooled,
+         boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          renderPass : RenderPass,
          renderer) =
@@ -1757,7 +1759,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private categorizeAnimatedModels
         (animatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList,
-         boneTransforms : Matrix4x4 ArrayPooled,
+         boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          renderPass : RenderPass,
          renderer) =
@@ -1875,7 +1877,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private renderPhysicallyBasedDeferredSurfaces
         batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List)
-        (lightType : LightType) lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
+        (lightType : LightType) lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
                                                                       
         // ensure we have a large enough instance fields array
         let mutable length = renderer.InstanceFields.Length
@@ -1914,11 +1916,11 @@ type [<ReferenceEquality>] GlRenderer3d =
         // draw deferred surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredSurfaces
             (batchPhase, viewArray, projectionArray, bonesArray, eyeCenter,
-             parameters.Count, renderer.InstanceFields, lightType.Enumerate, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
+             parameters.Count, renderer.InstanceFields, lightType.Enumerate, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
                                                                                                                                             
     static member private renderPhysicallyBasedForwardSurfaces
         blending viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) SList)
-        eyeCenter lightCutoffMargin lightAmbientColor lightAmbientBrightness (lightType : LightType) lightShadowExponent lightShadowDensity ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity
+        eyeCenter lightCutoffMargin lightAmbientColor lightAmbientBrightness (lightType : LightType) lightShadowSampleScalar lightShadowExponent lightShadowDensity ssvfEnabled ssvfSteps ssvfAsymmetry ssvfIntensity
         brdfTexture irradianceMap environmentFilterMap irradianceMaps environmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
         lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
@@ -1960,12 +1962,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         // draw forward surfaces
         OpenGL.PhysicallyBased.DrawPhysicallyBasedForwardSurfaces
             (blending, viewArray, projectionArray, bonesArray, parameters.Length, renderer.InstanceFields,
-             eyeCenter, lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightType.Enumerate, lightShadowExponent, lightShadowDensity, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity,
+             eyeCenter, lightCutoffMargin, lightAmbientColor, lightAmbientBrightness, lightType.Enumerate, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, ssvfEnabled, ssvfSteps, ssvfAsymmetry, ssvfIntensity,
              brdfTexture, irradianceMap, environmentFilterMap, irradianceMaps, environmentFilterMaps, shadowTextures, shadowMaps, lightMapOrigins, lightMapMins, lightMapSizes, lightMapAmbientColors, lightMapAmbientBrightnesses, lightMapsCount,
              lightOrigins, lightDirections, lightColors, lightBrightnesses, lightAttenuationLinears, lightAttenuationQuadratics, lightCutoffs, lightTypes, lightConeInners, lightConeOuters, lightShadowIndices, lightsCount, shadowMatrices,
              surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
-    static member private renderPhysicallyBasedTerrain viewArray geometryProjectionArray eyeCenter (lightType : LightType) lightShadowExponent lightShadowDensity terrainDescriptor geometry shader renderer =
+    static member private renderPhysicallyBasedTerrain viewArray geometryProjectionArray eyeCenter (lightType : LightType) lightShadowSampleScalar lightShadowExponent lightShadowDensity terrainDescriptor geometry shader renderer =
         let (resolutionX, resolutionY) = Option.defaultValue (0, 0) (GlRenderer3d.tryGetHeightMapResolution terrainDescriptor.HeightMap renderer)                
         let elementsCount = dec resolutionX * dec resolutionY * 6
         let terrainMaterialProperties = terrainDescriptor.MaterialProperties
@@ -2071,7 +2073,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                    texelHeight * materialProperties.Height|])
         OpenGL.PhysicallyBased.DrawPhysicallyBasedTerrain
             (viewArray, geometryProjectionArray, eyeCenter,
-             instanceFields, lightType.Enumerate, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader)
+             instanceFields, lightType.Enumerate, lightShadowSampleScalar, lightShadowExponent, lightShadowDensity, elementsCount, materials, geometry, shader)
         OpenGL.Hl.Assert ()
 
     static member private makeBillboardMaterial (properties : MaterialProperties inref, material : Material inref, renderer) =
@@ -2216,7 +2218,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             let boneArrays = List ()
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
-                let boneArray = new ArrayPooled<single> (16, false)
+                let boneArray = new PooledArray<single> (16, false)
                 surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
                 boneArrays.Add boneArray
                 bonesArrays.[i] <- boneArray.Deref
@@ -2229,7 +2231,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // attempt to deferred render terrain shadows
         for (descriptor, geometry) in renderTasks.DeferredTerrains do
             GlRenderer3d.renderPhysicallyBasedTerrain
-                lightViewArray lightProjectionArray lightOrigin lightType renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                lightViewArray lightProjectionArray lightOrigin lightType renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 descriptor geometry renderer.PhysicallyBasedShadowTerrainShader renderer
 
         // forward render static surface shadows to filter buffer
@@ -2490,7 +2492,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | count -> if i = 0 then StartingPhase elif i = dec count then StoppingPhase else ResumingPhase
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 batchPhase viewArray geometryProjectionArray [||] eyeCenter entry.Value
-                PointLight renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                PointLight renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 entry.Key renderer.PhysicallyBasedDeferredStaticShader renderer
             OpenGL.Hl.Assert ()
             i <- inc i
@@ -2502,13 +2504,13 @@ type [<ReferenceEquality>] GlRenderer3d =
             let boneArrays = List ()
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
-                let boneArray = new ArrayPooled<single> (16, false)
+                let boneArray = new PooledArray<single> (16, false)
                 surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
                 boneArrays.Add boneArray
                 bonesArrays.[i] <- boneArray.Deref
             GlRenderer3d.renderPhysicallyBasedDeferredSurfaces
                 SingletonPhase viewArray geometryProjectionArray bonesArrays eyeCenter parameters
-                PointLight renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                PointLight renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 surfaceKey.AnimatedSurface renderer.PhysicallyBasedDeferredAnimatedShader renderer
             for boneArray in boneArrays do boneArray.Dispose ()
             OpenGL.Hl.Assert ()
@@ -2516,7 +2518,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         // render terrains deferred
         for (descriptor, geometry) in renderTasks.DeferredTerrains do
             GlRenderer3d.renderPhysicallyBasedTerrain
-                viewArray geometryProjectionArray eyeCenter PointLight renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                viewArray geometryProjectionArray eyeCenter PointLight renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowDensity
                 descriptor geometry renderer.PhysicallyBasedDeferredTerrainShader renderer
 
         // run light mapping pass
@@ -2650,7 +2652,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let ssrEnabled = if renderer.RendererConfig.SsrEnabled && renderer.LightingConfig.SsrEnabled then 1 else 0
         let ssrLightColor = Array.take 3 (renderer.LightingConfig.SsrLightColor.ToArray ())
         OpenGL.PhysicallyBased.DrawPhysicallyBasedDeferredLightingSurface
-            (eyeCenter, viewArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
+            (eyeCenter, viewArray, rasterProjectionArray, renderer.LightingConfig.LightCutoffMargin, renderer.LightingConfig.LightShadowSampleScalar, renderer.LightingConfig.LightShadowExponent, renderer.LightingConfig.LightShadowDensity,
              ssvfEnabled, renderer.LightingConfig.SsvfSteps, renderer.LightingConfig.SsvfAsymmetry, renderer.LightingConfig.SsvfIntensity,
              ssrEnabled, renderer.LightingConfig.SsrDetail, renderer.LightingConfig.SsrRefinementsMax, renderer.LightingConfig.SsrRayThickness, renderer.LightingConfig.SsrTowardEyeCutoff,
              renderer.LightingConfig.SsrDepthCutoff, renderer.LightingConfig.SsrDepthCutoffMargin, renderer.LightingConfig.SsrDistanceCutoff, renderer.LightingConfig.SsrDistanceCutoffMargin, renderer.LightingConfig.SsrRoughnessCutoff, renderer.LightingConfig.SsrRoughnessCutoffMargin,
@@ -2738,7 +2740,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 SortableLight.sortLightShadowIndices renderer.LightShadowIndices lightIds lightSortedsCount
             GlRenderer3d.renderPhysicallyBasedForwardSurfaces
                 true viewArray rasterProjectionArray [||] (SList.singleton (model, presence, texCoordsOffset, properties))
-                eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness PointLight renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
+                eyeCenter renderer.LightingConfig.LightCutoffMargin lightAmbientColor lightAmbientBrightness PointLight renderer.LightingConfig.LightShadowSampleScalar renderer.LightingConfig.LightShadowExponent renderer.LightingConfig.LightShadowDensity
                 ssvfEnabled ssvfSteps renderer.LightingConfig.SsvfAsymmetry renderer.LightingConfig.SsvfIntensity
                 renderer.BrdfTexture lightMapFallback.IrradianceMap lightMapFallback.EnvironmentFilterMap lightMapIrradianceMaps lightMapEnvironmentFilterMaps shadowTextures shadowMaps lightMapOrigins lightMapMins lightMapSizes lightMapAmbientColors lightMapAmbientBrightnesses lightMapsCount
                 lightOrigins lightDirections lightColors lightBrightnesses lightAttenuationLinears lightAttenuationQuadratics lightCutoffs lightTypes lightConeInners lightConeOuters lightShadowIndices lightsCount shadowMatrices

@@ -250,9 +250,6 @@ module AssimpExtensions =
     let private CreateAnimationDecompositionList =
         Func<_> (fun () -> List<AnimationDecomposition> ())
 
-    let private CreateBoneIdDictionary =
-        Func<_> (fun () -> Dictionary<string, int> ())
-
     let private AnimationChannelsCached =
         ConcurrentDictionary<_, _> HashIdentity.Reference
 
@@ -442,8 +439,8 @@ module AssimpExtensions =
 
         static member private UpdateBoneTransforms
             (time : single,
-             boneIds : DictionaryPooled<string, int>,
-             boneInfos : BoneInfo ArrayPooled,
+             boneIds : Dictionary<string, int>,
+             boneInfos : BoneInfo array,
              boneWrites : int ref, // OPTIMIZATION: bones writes counter prevents us from traversing nodes in the hierarchy that would be redundant (once per duplicated armature).
              animationChannels : Dictionary<AnimationChannelKey, AnimationChannel>,
              animations : Animation array,
@@ -453,7 +450,7 @@ module AssimpExtensions =
 
             // compute local transform of the current node.
             let mutable nodeTransform = node.Transform // NOTE: if the node is animated, its transform is replaced by that animation entirely.
-            use decompositions = new CollectionPooled<_, _> (CreateAnimationDecompositionList)
+            use decompositions = new PooledCollection<_, _> (CreateAnimationDecompositionList)
             for animation in animations do
                 let animationStartTime = animation.StartTime.Seconds
                 let animationLifeTimeOpt = Option.map (fun (lifeTime : GameTime) -> lifeTime.Seconds) animation.LifeTimeOpt
@@ -531,8 +528,8 @@ module AssimpExtensions =
                 Log.info ("Assimp mesh bone count exceeded currently supported number of bones in scene '" + this.Name + "'.")
 
             // pre-compute bone id dict and bone info storage (these should probably persist outside of this function and be reused)
-            let boneIds = new DictionaryPooled<_, _> (CreateBoneIdDictionary)
-            use boneInfos = new ArrayPooled<BoneInfo> (mesh.Bones.Count, false)
+            let boneIds = dictPlus StringComparer.Ordinal []
+            let boneInfos = Array.zeroCreate<_> mesh.Bones.Count
             for boneId in 0 .. dec mesh.Bones.Count do
                 let bone = mesh.Bones.[boneId]
                 let boneName = bone.Name
@@ -543,8 +540,8 @@ module AssimpExtensions =
             Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
 
             // convert bone info transforms to Nu's m4 representation
-            let boneOffsets = new ArrayPooled<Matrix4x4> (boneInfos.Length, false)
-            let boneTransforms = new ArrayPooled<Matrix4x4> (boneInfos.Length, false)
+            let boneOffsets = Array.zeroCreate boneInfos.Length
+            let boneTransforms = Array.zeroCreate boneInfos.Length
             for i in 0 .. dec boneInfos.Length do
                 let boneInfo = &boneInfos.[i]
                 boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset

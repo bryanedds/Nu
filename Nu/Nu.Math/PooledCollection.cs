@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -10,12 +9,12 @@ namespace Nu
     /// A collection from a sychronized global collection pool.
     /// Note that you'll have to Deref in order to enumerate this efficiently.
     /// </summary>
-    public class CollectionPooled<C, T> : IDisposable where C : ICollection<T>
+    public class PooledCollection<C, T> : IDisposable where C : ICollection<T>
     {
         /// <summary>
         /// Create a pooled collection.
         /// </summary>
-        public CollectionPooled(Func<C> create)
+        public PooledCollection(Func<C> create)
         {
             coll = Alloc(create);
         }
@@ -103,6 +102,16 @@ namespace Nu
         }
 
         /// <summary>
+        /// Clone.
+        /// </summary>
+        public PooledCollection<C, T> Clone(Func<C> create)
+        {
+            var coll = new PooledCollection<C, T>(create);
+            foreach (var item in this.coll) coll.Add(item);
+            return coll;
+        }
+
+        /// <summary>
         /// Hashing.
         /// </summary>
         public override int GetHashCode()
@@ -118,7 +127,7 @@ namespace Nu
         {
             if (that == null) return false;
             ThrowIfDisposed();
-            var thatObjectPooled = that as CollectionPooled<C, T>;
+            var thatObjectPooled = that as PooledCollection<C, T>;
             return coll.Equals(thatObjectPooled.coll);
         }
 
@@ -127,6 +136,7 @@ namespace Nu
         /// </summary>
         public override string ToString()
         {
+            ThrowIfDisposed();
             return coll.ToString();
         }
 
@@ -135,11 +145,14 @@ namespace Nu
         /// </summary>
         public void Dispose()
         {
-            Free(coll);
-            GC.SuppressFinalize(this);
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) == 0)
+            {
+                Free(coll);
+                GC.SuppressFinalize(this);
+            }
         }
 
-        ~CollectionPooled()
+        ~PooledCollection()
         {
             Free(coll);
         }
@@ -148,11 +161,13 @@ namespace Nu
         private void ThrowIfDisposed()
         {
             if (Interlocked.CompareExchange(ref disposed, 0, 0) == 1)
+            {
                 throw new ObjectDisposedException(GetType().FullName);
+            }
         }
 
         private readonly C coll;
-        private int disposed;
+        private volatile int disposed;
 
         private static C Alloc(Func<C> create)
         {
