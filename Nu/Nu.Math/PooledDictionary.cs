@@ -106,6 +106,14 @@ namespace Nu
         }
 
         /// <summary>
+        /// Clone.
+        /// </summary>
+        public PooledDictionary<K, V> Clone(Func<Dictionary<K, V>> create)
+        {
+            return new PooledDictionary<K, V>(create);
+        }
+
+        /// <summary>
         /// The underlying dictionary enumerator.
         /// Do NOT hold onto this past this object's life time!
         /// </summary>

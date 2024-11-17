@@ -102,6 +102,14 @@ namespace Nu
         }
 
         /// <summary>
+        /// Clone.
+        /// </summary>
+        public PooledCollection<C, T> Clone(Func<C> create)
+        {
+            return new PooledCollection<C, T>(create);
+        }
+
+        /// <summary>
         /// Hashing.
         /// </summary>
         public override int GetHashCode()

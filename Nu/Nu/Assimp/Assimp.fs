@@ -543,8 +543,8 @@ module AssimpExtensions =
             Assimp.Scene.UpdateBoneTransforms (time.Seconds, boneIds, boneInfos, ref 0, animationChannels, animations, this.RootNode, Assimp.Matrix4x4.Identity, this)
 
             // convert bone info transforms to Nu's m4 representation
-            let boneOffsets = Array.zeroCreate boneInfos.Length
-            let boneTransforms = Array.zeroCreate boneInfos.Length
+            let boneOffsets = new PooledArray<_> (boneInfos.Length, false)
+            let boneTransforms = new PooledArray<_> (boneInfos.Length, false)
             for i in 0 .. dec boneInfos.Length do
                 let boneInfo = &boneInfos.[i]
                 boneOffsets.[i] <- Assimp.ExportMatrix boneInfo.BoneOffset

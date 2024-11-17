@@ -2765,11 +2765,11 @@ module AnimatedModelFacetExtensions =
         member this.GetBoneIdsOpt world : PooledDictionary<string, int> option = this.Get (nameof this.BoneIdsOpt) world
         member this.SetBoneIdsOpt (value : PooledDictionary<string, int> option) world = this.Set (nameof this.BoneIdsOpt) value world
         member this.BoneIdsOpt = lens (nameof this.BoneIdsOpt) this this.GetBoneIdsOpt this.SetBoneIdsOpt
-        member this.GetBoneOffsetsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneOffsetsOpt) world
-        member this.SetBoneOffsetsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneOffsetsOpt) value world
+        member this.GetBoneOffsetsOpt world : Matrix4x4 PooledArray option = this.Get (nameof this.BoneOffsetsOpt) world
+        member this.SetBoneOffsetsOpt (value : Matrix4x4 PooledArray option) world = this.Set (nameof this.BoneOffsetsOpt) value world
         member this.BoneOffsetsOpt = lens (nameof this.BoneOffsetsOpt) this this.GetBoneOffsetsOpt this.SetBoneOffsetsOpt
-        member this.GetBoneTransformsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneTransformsOpt) world
-        member this.SetBoneTransformsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneTransformsOpt) value world
+        member this.GetBoneTransformsOpt world : Matrix4x4 PooledArray option = this.Get (nameof this.BoneTransformsOpt) world
+        member this.SetBoneTransformsOpt (value : Matrix4x4 PooledArray option) world = this.Set (nameof this.BoneTransformsOpt) value world
         member this.BoneTransformsOpt = lens (nameof this.BoneTransformsOpt) this this.GetBoneTransformsOpt this.SetBoneTransformsOpt
 
         /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
@@ -2807,8 +2807,8 @@ module AnimatedModelFacetExtensions =
             match this.TryComputeBoneTransforms time animations sceneOpt with
             | Some (boneIds, boneOffsets, boneTransforms) ->
                 let world = this.BoneIdsOpt.Map (fun boneIdsOpt -> (match boneIdsOpt with Some boneIds -> boneIds.Dispose () | None -> ()); Some boneIds) world
-                let world = this.SetBoneOffsetsOpt (Some boneOffsets) world
-                let world = this.SetBoneTransformsOpt (Some boneTransforms) world
+                let world = this.BoneOffsetsOpt.Map (fun boneOffsetsOpt -> (match boneOffsetsOpt with Some boneOffsets -> boneOffsets.Dispose () | None -> ()); Some boneOffsets) world
+                let world = this.BoneTransformsOpt.Map (fun boneTransformsOpt -> (match boneTransformsOpt with Some boneTransforms -> boneTransforms.Dispose () | None -> ()); Some boneTransforms) world
                 world
             | None -> world
 
@@ -2853,14 +2853,14 @@ type AnimatedModelFacet () =
         let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
         let resultOpt =
             match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-            | Some (JobCompletion (_, _, (:? ((PooledDictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+            | Some (JobCompletion (_, _, (:? ((PooledDictionary<string, int> * Matrix4x4 PooledArray * Matrix4x4 PooledArray) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
             | _ -> None
         let world =
             match resultOpt with
             | Some (boneIds, boneOffsets, boneTransforms) ->
                 let world = entity.BoneIdsOpt.Map (fun boneIdsOpt -> (match boneIdsOpt with Some boneIds -> boneIds.Dispose () | None -> ()); Some boneIds) world
-                let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
-                let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
+                let world = entity.BoneOffsetsOpt.Map (fun boneOffsetsOpt -> (match boneOffsetsOpt with Some boneOffsets -> boneOffsets.Dispose () | None -> ()); Some boneOffsets) world
+                let world = entity.BoneTransformsOpt.Map (fun boneTransformsOpt -> (match boneTransformsOpt with Some boneTransforms -> boneTransforms.Dispose () | None -> ()); Some boneTransforms) world
                 world
             | None -> world
         let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
@@ -2875,7 +2875,7 @@ type AnimatedModelFacet () =
         let properties = entity.GetMaterialProperties world
         let animatedModel = entity.GetAnimatedModel world
         match entity.GetBoneTransformsOpt world with
-        | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
+        | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, presence, insetOpt, &properties, Array.copy boneTransforms.Deref, animatedModel, renderPass, world)
         | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
