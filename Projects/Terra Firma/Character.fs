@@ -279,7 +279,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     then Sphere (playerPosition, 0.1f) // when above player
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
-                let followOutput = World.nav3dFollow (Some 1.0f) (Some 10.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
+                let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
                 (false, followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
             | None -> (false, position, rotation, v3Zero, v3Zero, character)
 
