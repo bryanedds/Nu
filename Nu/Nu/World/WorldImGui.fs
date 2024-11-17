@@ -503,7 +503,7 @@ module WorldImGui =
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
                 let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow SampleScalar", &lightShadowSampleScalar, 0.0f, 0.01f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow SampleScalar", &lightShadowSampleScalar, 0.0f, 0.02f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 87.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
