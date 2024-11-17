@@ -278,7 +278,7 @@ type CachedAnimatedModelMessage =
       mutable CachedAnimatedModelPresence : Presence
       mutable CachedAnimatedModelInsetOpt : Box2 voption
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
-      mutable CachedAnimatedModelBoneTransforms : Matrix4x4 ArrayPooled
+      mutable CachedAnimatedModelBoneTransforms : Matrix4x4 array
       mutable CachedAnimatedModel : AnimatedModel AssetTag
       mutable CachedAnimatedModelRenderPass : RenderPass }        
 
@@ -402,12 +402,12 @@ type RenderAnimatedModel =
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
-      BoneTransforms : Matrix4x4 ArrayPooled
+      BoneTransforms : Matrix4x4 array
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
 type RenderAnimatedModels =
-    { BoneTransforms : Matrix4x4 ArrayPooled
+    { BoneTransforms : Matrix4x4 array
       AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
@@ -675,7 +675,7 @@ type private SortableLight =
 
 /// Enables efficient comparison of animated model surfaces.
 type [<CustomEquality; NoComparison; Struct>] private AnimatedModelSurfaceKey =
-    { BoneTransforms : Matrix4x4 ArrayPooled
+    { BoneTransforms : Matrix4x4 array
       AnimatedSurface : OpenGL.PhysicallyBased.PhysicallyBasedSurface }
 
     static member hash amsKey =
@@ -1718,7 +1718,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
-         boneTransforms : Matrix4x4 ArrayPooled,
+         boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          renderPass : RenderPass,
          renderer) =
@@ -1759,7 +1759,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
     static member private categorizeAnimatedModels
         (animatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList,
-         boneTransforms : Matrix4x4 ArrayPooled,
+         boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          renderPass : RenderPass,
          renderer) =
