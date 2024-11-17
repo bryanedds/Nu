@@ -157,8 +157,11 @@ namespace Nu
         /// </summary>
         public void Dispose()
         {
-            Free(dict);
-            GC.SuppressFinalize(this);
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) == 0)
+            {
+                Free(dict);
+                GC.SuppressFinalize(this);
+            }
         }
 
         ~PooledDictionary()
@@ -170,11 +173,13 @@ namespace Nu
         private void ThrowIfDisposed()
         {
             if (Interlocked.CompareExchange(ref disposed, 0, 0) == 1)
+            {
                 throw new ObjectDisposedException(GetType().FullName);
+            }
         }
 
         private readonly Dictionary<K, V> dict;
-        private int disposed;
+        private volatile int disposed;
 
         private static Dictionary<K, V> Alloc(Func<Dictionary<K, V>> create)
         {

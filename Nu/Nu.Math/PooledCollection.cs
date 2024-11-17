@@ -143,8 +143,11 @@ namespace Nu
         /// </summary>
         public void Dispose()
         {
-            Free(coll);
-            GC.SuppressFinalize(this);
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) == 0)
+            {
+                Free(coll);
+                GC.SuppressFinalize(this);
+            }
         }
 
         ~PooledCollection()
@@ -156,11 +159,13 @@ namespace Nu
         private void ThrowIfDisposed()
         {
             if (Interlocked.CompareExchange(ref disposed, 0, 0) == 1)
+            {
                 throw new ObjectDisposedException(GetType().FullName);
+            }
         }
 
         private readonly C coll;
-        private int disposed;
+        private volatile int disposed;
 
         private static C Alloc(Func<C> create)
         {

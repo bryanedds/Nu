@@ -121,8 +121,11 @@ namespace Nu
         /// </summary>
         public void Dispose()
         {
-            Free(array, clearOnFree);
-            GC.SuppressFinalize(this);
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) == 0)
+            {
+                Free(array, clearOnFree);
+                GC.SuppressFinalize(this);
+            }
         }
 
         ~PooledArray()
@@ -134,12 +137,14 @@ namespace Nu
         private void ThrowIfDisposed()
         {
             if (Interlocked.CompareExchange(ref disposed, 0, 0) == 1)
+            {
                 throw new ObjectDisposedException(GetType().FullName);
+            }
         }
 
         private readonly T[] array;
         private readonly bool clearOnFree;
-        private int disposed;
+        private volatile int disposed;
 
         private static T[] Alloc(int length)
         {
