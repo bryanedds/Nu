@@ -820,7 +820,7 @@ module WorldModule2 =
                     match eventNames.[0] with
                     | "Change" ->
                         let world =
-                            if eventNamesLength >= 6 then
+                            if eventNamesLength >= 7 then
                                 let entityAddress = rtoa (Array.skip 3 eventNames)
                                 let entity = Nu.Entity entityAddress
                                 match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with

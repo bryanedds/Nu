@@ -2164,6 +2164,13 @@ type LightProbe3dFacet () =
             else world
         (Cascade, world)
 
+    static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
+        let world =
+            if evt.Data.Value :?> bool
+            then evt.Subscriber.SetProbeStale true world
+            else world
+        (Cascade, world)
+
     static member Properties =
         [define Entity.Size (v3Dup 0.25f)
          define Entity.LightProbe true
@@ -2176,6 +2183,7 @@ type LightProbe3dFacet () =
 
     override this.Register (entity, world) =
         let world = World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
+        let world = World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
