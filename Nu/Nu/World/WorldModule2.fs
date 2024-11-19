@@ -796,12 +796,12 @@ module WorldModule2 =
             let sourceTypes = List.map (fun source -> source.GetType ()) sources
             Overlay.makeIntrinsicOverlays requiresFacetNames sourceTypes
 
-        static member internal handleSubscribeAndUnsubscribeEvent subscribing (eventAddress : obj Address) (_ : Simulant) world =
+        static member internal handleSubscribeAndUnsubscribeEvent subscribing (eventAddress : Address) (_ : Simulant) world =
             // here we need to update the event publish flags for entities based on whether there are subscriptions to
             // these events. These flags exists solely for efficiency reasons. We also look for subscription patterns
             // that these optimizations do not support, and warn the developer if they are invoked. Additionally, we
             // warn if the user attempts to subscribe to a Change event with a wildcard as doing so is not supported.
-            let eventNames = Address.getNames eventAddress
+            let eventNames = eventAddress.Names
             let eventNamesLength = Array.length eventNames
             let world =
                 if eventNamesLength >= 6 then
@@ -824,7 +824,7 @@ module WorldModule2 =
                     match eventNames.[0] with
                     | "Change" ->
                         let world =
-                            if eventNamesLength >= 6 then
+                            if eventNamesLength >= 7 then
                                 let entityAddress = rtoa (Array.skip 3 eventNames)
                                 let entity = Nu.Entity entityAddress
                                 match World.tryGetKeyedValueFast<UMap<Entity Address, int>> (EntityChangeCountsKey, world) with

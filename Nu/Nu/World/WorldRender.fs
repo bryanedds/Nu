@@ -120,9 +120,10 @@ module WorldRender =
         /// Render a gui sprite.
         static member renderGuiSprite absolute perimeter spriteImage offset elevation perimeterCentered color world =
             let mutable spriteTransform = Transform.makePerimeter absolute perimeter offset elevation perimeterCentered // out-of-box gui ignores rotation
-            let descriptor = { Transform = spriteTransform; InsetOpt = ValueNone; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
-            let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
-            World.enqueueLayeredOperation2d operation world
+            let insetOpt = ValueOption<Box2>.None
+            let perimeter = ValueSome perimeter.Box2
+            let blend = Color.Zero
+            World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
 
         /// Render a gui sprite with 9-way slicing.
         static member renderGuiSpriteSliced absolute perimeter margin spriteImage offset elevation perimeterCentered color world =
@@ -131,10 +132,10 @@ module WorldRender =
                     let slice = box3Slice i margin perimeter
                     let insetOpt =
                         match Metadata.tryGetTextureSizeF spriteImage with
-                        | Some imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
-                        | None -> ValueNone
+                        | ValueSome imageSize -> ValueSome (box2SliceInverted i margin (box2 v2Zero imageSize))
+                        | ValueNone -> ValueNone
                     let mutable spriteTransform = Transform.makePerimeter absolute slice offset elevation perimeterCentered // out-of-box gui ignores rotation
-                    let descriptor = { Transform = spriteTransform; InsetOpt = insetOpt; ClipOpt = ValueSome perimeter.Box2; Image = spriteImage; Color = color; Blend = Transparent; Emission = Color.Zero; Flip = FlipNone }
-                    let operation = { Elevation = spriteTransform.Elevation; Horizon = spriteTransform.Horizon; AssetTag = spriteImage; RenderOperation2d = RenderSprite descriptor }
-                    World.enqueueLayeredOperation2d operation world
+                    let perimeter = ValueSome perimeter.Box2
+                    let blend = Color.Zero
+                    World.renderLayeredSpriteFast (spriteTransform.Elevation, spriteTransform.Horizon, spriteImage, &spriteTransform, &insetOpt, &perimeter, spriteImage, &color, Transparent, &blend, FlipNone, world)
             else World.renderGuiSprite absolute perimeter spriteImage offset elevation perimeterCentered color world

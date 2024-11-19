@@ -398,7 +398,7 @@ module WorldImGui =
                         | Some property when (property.PropertyValue :? AnimatedModel AssetTag) ->
                             let animatedModel = property.PropertyValue :?> AnimatedModel AssetTag
                             match Metadata.tryGetAnimatedModelMetadata animatedModel with
-                            | Some metadata when metadata.SceneOpt.IsSome ->
+                            | ValueSome metadata when metadata.SceneOpt.IsSome ->
                                 let animationNames = metadata.SceneOpt.Value.Animations |> Seq.map _.Name
                                 let mutable animationName = field :?> string
                                 let mutable animationNameChanged = false
@@ -411,7 +411,7 @@ module WorldImGui =
                                     ImGui.EndCombo ()
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
                                 Some (animationNameChanged, animationName :> obj)
-                            | Some _ | None -> None
+                            | ValueSome _ | ValueNone -> None
                         | Some _ | None -> None
                     | _ -> None
                 World.imGuiEditPropertyRecordPlus tryReplaceAnimationName true name (typeof<Animation>) animation context world
@@ -474,6 +474,7 @@ module WorldImGui =
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dChanged = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
+                let mutable lightShadowSampleScalar = lighting3dConfig.LightShadowSampleScalar
                 let mutable lightShadowExponent = lighting3dConfig.LightShadowExponent
                 let mutable lightShadowDensity = lighting3dConfig.LightShadowDensity
                 let mutable ssaoIntensity = lighting3dConfig.SsaoIntensity
@@ -502,6 +503,7 @@ module WorldImGui =
                 let mutable ssrLightColor = let color = lighting3dConfig.SsrLightColor in color.Vector4
                 let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow SampleScalar", &lightShadowSampleScalar, 0.0f, 0.02f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 87.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -532,6 +534,7 @@ module WorldImGui =
                 if lighting3dChanged then
                     let lighting3dConfig =
                         { LightCutoffMargin = lightCutoffMargin
+                          LightShadowSampleScalar = lightShadowSampleScalar
                           LightShadowExponent = lightShadowExponent
                           LightShadowDensity = lightShadowDensity
                           SsaoIntensity = ssaoIntensity
@@ -698,7 +701,8 @@ module WorldImGui =
                                             (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
                                         elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
                                             (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
-                                        else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
+                                        else
+                                            (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<string> then (true, Activator.CreateInstance (ty, [|"" :> obj|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<Slide> then (true, Activator.CreateInstance (ty, [|{ IdlingTime = GameTime.zero; Destination = context.SelectedScreen } :> obj|]))
                                     elif ty.GenericTypeArguments.[0] = typeof<Image AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Image :> obj|]))
@@ -776,49 +780,52 @@ module WorldImGui =
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>>) ||
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                           ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
-                        let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
+                        let mutable isSome = ty.GetProperty("IsSome").GetValue(value, [||]) :?> bool
                         let (changed, value) =
                             if ImGui.Checkbox ("##" + name, &isSome) then
+                                let createValueOption value =
+                                    ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value :> obj|])
                                 if isSome then
                                     if ty.GenericTypeArguments.[0].IsValueType then
                                         if ty.GenericTypeArguments.[0] = typeof<Color> then
-                                            (true, Activator.CreateInstance (ty, [|colorOne :> obj|]))
+                                            (true, createValueOption colorOne)
                                         elif ty.GenericTypeArguments.[0].Name = typedefof<_ AssetTag>.Name then
-                                            (true, Activator.CreateInstance (ty, [|Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])|]))
-                                        else (true, Activator.CreateInstance (ty, [|Activator.CreateInstance ty.GenericTypeArguments.[0]|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<string> then (true, Activator.CreateInstance (ty, [|"" :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<Slide> then (true, Activator.CreateInstance (ty, [|{ IdlingTime = GameTime.zero; Destination = context.SelectedScreen } :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<Image AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Image :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<Font AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Font :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.TileMap :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<CubeMap AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.SkyBoxMap :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<Sound AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Sound :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.Song :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.StaticModel :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, Activator.CreateInstance (ty, [|Assets.Default.AnimatedModel :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, Activator.CreateInstance (ty, [|{ Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound } :> obj|]))
-                                    elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, Activator.CreateInstance (ty, [|{ FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song } :> obj|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, Activator.CreateInstance (ty, [|Reflection.objsToArray ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, Activator.CreateInstance (ty, [|Reflection.objsToList ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FQueue> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FQueue>.Name ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FDeque> then (true, Activator.CreateInstance (ty, [|Reflection.objsToCollection typedefof<_ FDeque>.Name ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Set> then (true, Activator.CreateInstance (ty, [|Reflection.objsToSet ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, Activator.CreateInstance (ty, [|Reflection.objsToFSet ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToMap ty.GenericTypeArguments.[0] []|]))
-                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, Activator.CreateInstance (ty, [|Reflection.pairsToFMap ty.GenericTypeArguments.[0] []|]))
+                                            (true, createValueOption (Activator.CreateInstance (ty.GenericTypeArguments.[0], [|""; ""|])))
+                                        else
+                                            (true, createValueOption (Activator.CreateInstance ty.GenericTypeArguments.[0]))
+                                    elif ty.GenericTypeArguments.[0] = typeof<string> then (true, createValueOption "")
+                                    elif ty.GenericTypeArguments.[0] = typeof<Slide> then (true, createValueOption { IdlingTime = GameTime.zero; Destination = context.SelectedScreen })
+                                    elif ty.GenericTypeArguments.[0] = typeof<Image AssetTag> then (true, createValueOption Assets.Default.Image)
+                                    elif ty.GenericTypeArguments.[0] = typeof<Font AssetTag> then (true, createValueOption Assets.Default.Font)
+                                    elif ty.GenericTypeArguments.[0] = typeof<TileMap AssetTag> then (true, createValueOption Assets.Default.TileMap)
+                                    elif ty.GenericTypeArguments.[0] = typeof<CubeMap AssetTag> then (true, createValueOption Assets.Default.SkyBoxMap)
+                                    elif ty.GenericTypeArguments.[0] = typeof<Sound AssetTag> then (true, createValueOption Assets.Default.Sound)
+                                    elif ty.GenericTypeArguments.[0] = typeof<Song AssetTag> then (true, createValueOption Assets.Default.Song)
+                                    elif ty.GenericTypeArguments.[0] = typeof<StaticModel AssetTag> then (true, createValueOption Assets.Default.StaticModel)
+                                    elif ty.GenericTypeArguments.[0] = typeof<AnimatedModel AssetTag> then (true, createValueOption Assets.Default.AnimatedModel)
+                                    elif ty.GenericTypeArguments.[0] = typeof<SoundDescriptor> then (true, createValueOption { Volume = Constants.Audio.SongVolumeDefault; Sound = Assets.Default.Sound })
+                                    elif ty.GenericTypeArguments.[0] = typeof<SongDescriptor> then (true, createValueOption { FadeInTime = GameTime.zero; FadeOutTime = Constants.Audio.FadeOutTimeDefault; StartTime = GameTime.zero; RepeatLimitOpt = None; Volume = Constants.Audio.SongVolumeDefault; Song = Assets.Default.Song })
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ array> then (true, createValueOption (Reflection.objsToArray ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ list> then (true, createValueOption (Reflection.objsToList ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FList> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FList>.Name ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FQueue> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FQueue>.Name ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FDeque> then (true, createValueOption (Reflection.objsToCollection typedefof<_ FDeque>.Name ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Set> then (true, createValueOption (Reflection.objsToSet ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ FSet> then (true, createValueOption (Reflection.objsToFSet ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<Map<_, _>> then (true, createValueOption (Reflection.pairsToMap ty.GenericTypeArguments.[0] []))
+                                    elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<FMap<_, _>> then (true, createValueOption (Reflection.pairsToFMap ty.GenericTypeArguments.[0] []))
                                     elif ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation> then
                                         let relationType = ty.GenericTypeArguments.[0]
                                         let makeFromStringFunction = relationType.GetMethod ("makeFromString", BindingFlags.Static ||| BindingFlags.Public)
                                         let makeFromStringFunctionGeneric = makeFromStringFunction.MakeGenericMethod ((relationType.GetGenericArguments ()).[0])
                                         let relationValue = makeFromStringFunctionGeneric.Invoke (null, [|"^"|])
-                                        (true, Activator.CreateInstance (ty, [|relationValue|]))
+                                        (true, createValueOption relationValue)
                                     elif ty.GenericTypeArguments.[0] = typeof<Entity> then
-                                        (true, Activator.CreateInstance (ty, [|Nu.Entity (Array.add "???" context.SelectedGroup.Names) :> obj|]))
+                                        (true, createValueOption (Nu.Entity (Array.add "???" context.SelectedGroup.Names)))
                                     elif FSharpType.isNullTrueValue ty.GenericTypeArguments.[0] then
-                                        (true, Activator.CreateInstance (ty, [|null|]))
+                                        (true, createValueOption null)
                                     else failwithumf ()
-                                else (true, ValueNone)
+                                else (true, ty.GetProperty("None", BindingFlags.Public ||| BindingFlags.Static).GetValue(null))
                             else (false, value)
                         if ImGui.IsItemFocused () then context.FocusProperty ()
                         if isSome then
@@ -826,7 +833,7 @@ module WorldImGui =
                             ImGui.PushID name
                             let (changed2, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
                             ImGui.PopID ()
-                            let value = Activator.CreateInstance (ty, [|value'|])
+                            let value = ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value'|])
                             (changed || changed2, value)
                         else
                             ImGui.SameLine ()

@@ -18,7 +18,7 @@
 #r "../../../Nu/Nu.Dependencies/SDL2-CS/netstandard2.0/SDL2-CS.dll"
 #r "../../../Nu/Nu.Dependencies/TiledSharp/lib/netstandard2.0/TiledSharp.dll"
 #r "../../../Nu/Nu.Math/bin/Debug/netstandard2.1/Nu.Math.dll"
-#r "../../../Nu/Nu/bin/Debug/net8.0/Nu.dll"
+#r "../../../Nu/Nu/bin/Debug/net9.0/Nu.dll"
 
 open System
 open System.Text.RegularExpressions

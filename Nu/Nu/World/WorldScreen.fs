@@ -365,16 +365,16 @@ module WorldScreenModule =
                 | NavShape.BoundsNavShape -> Left bounds
                 | NavShape.StaticModelSurfaceNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
+                    | ValueSome physicallyBasedModel ->
                         if surfaceIndex >= 0 && surfaceIndex < physicallyBasedModel.Surfaces.Length then
                             Right (bounds, affineMatrix, physicallyBasedModel.Surfaces.[surfaceIndex])
-                    | None -> ()
+                    | ValueNone -> ()
                 | NavShape.StaticModelNavShape ->
                     match Metadata.tryGetStaticModelMetadata staticModel with
-                    | Some physicallyBasedModel ->
+                    | ValueSome physicallyBasedModel ->
                         for surface in physicallyBasedModel.Surfaces do
                             Right (bounds, affineMatrix, surface)
-                    | None -> ()]
+                    | ValueNone -> ()]
 
         static member internal tryBuildNav3dMesh contents config =
 

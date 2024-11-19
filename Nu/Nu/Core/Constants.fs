@@ -23,6 +23,12 @@ module Assimp =
 
     let [<Literal>] PostProcessSteps = Assimp.PostProcessSteps.Triangulate ||| Assimp.PostProcessSteps.GlobalScale
     let [<Literal>] RawPropertyPrefix = "$raw."
+    let [<Literal>] RenderStylePropertyName = RawPropertyPrefix + "RenderStyle"
+    let [<Literal>] PresencePropertyName = RawPropertyPrefix + "Presence"
+    let [<Literal>] IgnoreLightMapsPropertyName = RawPropertyPrefix + "IgnoreLightMaps"
+    let [<Literal>] OpaqueDistancePropertyName = RawPropertyPrefix + "OpaqueDistance"
+    let [<Literal>] TwoSidedPropertyName = RawPropertyPrefix + "TwoSided"
+    let [<Literal>] NavShapePropertyName = RawPropertyPrefix + "NavShape"
 
 [<RequireQualifiedAccess>]
 module Engine =
@@ -194,7 +200,7 @@ module Render =
     let [<Literal>] ShadowMapsMaxShader = 8 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowTexturesMax = match ConfigurationManager.AppSettings.["ShadowTexturesMax"] with null -> 8 | shadowTexturesMax -> min (scvalue shadowTexturesMax) ShadowTexturesMaxShader
     let [<Uniform>] mutable ShadowMapsMax = match ConfigurationManager.AppSettings.["ShadowMapsMax"] with null -> 4 | shadowMapsMax -> min (scvalue shadowMapsMax) ShadowMapsMaxShader
-    let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 3 | scalar -> scvalue scalar
+    let [<Uniform>] mutable ShadowDetailedResolutionScalar = match ConfigurationManager.AppSettings.["ShadowDetailedResolutionScalar"] with null -> 2 | scalar -> scvalue scalar
     let [<Literal>] ShadowFovMax = 2.1f // NOTE: remember to update SHADOW_FOV_MAX in shaders when changing this!
     let [<Literal>] ReflectionMapResolution = 1024
     let [<Literal>] IrradianceMapResolution = 32
@@ -202,6 +208,7 @@ module Render =
     let [<Literal>] EnvironmentFilterMips = 7 // NOTE: changing this requires changing the REFLECTION_LOD_MAX constants in shader code.
     let [<Literal>] LightMappingEnabledDefault = true
     let [<Literal>] LightCutoffMarginDefault = 0.333f
+    let [<Literal>] LightShadowSampleScalarDefault = 0.01f
     let [<Literal>] LightShadowExponentDefault = 80.0f
     let [<Literal>] LightShadowDensityDefault = 12.0f
     let [<Literal>] SsaoEnabledDefault = true

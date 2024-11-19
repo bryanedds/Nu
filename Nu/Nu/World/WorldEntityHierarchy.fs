@@ -16,7 +16,7 @@ module WorldEntityHierarchy =
         /// Attempt to import a static model hierarchy below the target entity.
         static member tryImportEntityHierarchy presenceConferred staticModel surfaceMaterialsPopulated rigid (parent : Either<Group, Entity>) world =
             match Metadata.tryGetStaticModelMetadata staticModel with
-            | Some staticModelMetadata ->
+            | ValueSome staticModelMetadata ->
                 let mutable (world', i) = (world, 0) // using mutation due to imperative API
                 staticModelMetadata.PhysicallyBasedHierarchy.Traverse (fun nodes ->
                     for node in nodes do
@@ -100,14 +100,14 @@ module WorldEntityHierarchy =
                             let world = child.SetSurfaceIndex i world
                             let world = child.SetStaticModel staticModel world
                             let properties =
-                                { AlbedoOpt = Some surface.SurfaceMaterialProperties.Albedo
-                                  RoughnessOpt = Some surface.SurfaceMaterialProperties.Roughness
-                                  MetallicOpt = Some surface.SurfaceMaterialProperties.Metallic
-                                  AmbientOcclusionOpt = Some surface.SurfaceMaterialProperties.AmbientOcclusion
-                                  EmissionOpt = Some surface.SurfaceMaterialProperties.Emission
-                                  HeightOpt = Some surface.SurfaceMaterialProperties.Height
-                                  IgnoreLightMapsOpt = Some ignoreLightMaps
-                                  OpaqueDistanceOpt = Some opaqueDistance }
+                                { AlbedoOpt = ValueSome surface.SurfaceMaterialProperties.Albedo
+                                  RoughnessOpt = ValueSome surface.SurfaceMaterialProperties.Roughness
+                                  MetallicOpt = ValueSome surface.SurfaceMaterialProperties.Metallic
+                                  AmbientOcclusionOpt = ValueSome surface.SurfaceMaterialProperties.AmbientOcclusion
+                                  EmissionOpt = ValueSome surface.SurfaceMaterialProperties.Emission
+                                  HeightOpt = ValueSome surface.SurfaceMaterialProperties.Height
+                                  IgnoreLightMapsOpt = ValueSome ignoreLightMaps
+                                  OpaqueDistanceOpt = ValueSome opaqueDistance }
                             let world = child.SetMaterialProperties properties world
                             let material =
                                 if surfaceMaterialsPopulated then
@@ -126,7 +126,7 @@ module WorldEntityHierarchy =
                             world' <- world
                             i <- inc i)
                 world'
-            | None -> world
+            | ValueNone -> world
 
         /// Attempt to freeze an entity hierarchy where certain types of children's rendering functionality are baked
         /// into a manually renderable array.
@@ -237,10 +237,10 @@ module FreezerFacetModule =
 
             // compute intersection function based on render pass
             let intersects =
-                let interiorOpt = Some (World.getGameEye3dFrustumInterior Game world)
+                let interiorOpt = ValueSome (World.getGameEye3dFrustumInterior Game world)
                 let exterior = World.getGameEye3dFrustumExterior Game world
                 let imposter = World.getGameEye3dFrustumImposter Game world
-                let lightBoxOpt = Some (World.getLight3dBox world)
+                let lightBoxOpt = ValueSome (World.getLight3dBox world)
                 fun probe light presence bounds ->
                     match renderPass with
                     | NormalPass -> Presence.intersects3d interiorOpt exterior imposter lightBoxOpt probe light presence bounds

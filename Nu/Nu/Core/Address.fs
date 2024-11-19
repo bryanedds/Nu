@@ -89,17 +89,17 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
         { Names = names; HashCode = String.hashMany names; Anonymous = false }
 
     /// Hash an Address.
-    static member inline hash (address : 'a Address) =
+    static member inline hash (address : Address) =
         address.HashCode
 
     /// Equate Addresses.
-    static member equals left right =
+    static member equals (left : Address) (right : Address) =
         refEq left right || // OPTIMIZATION: first check ref equality.
         left.HashCode = right.HashCode && // OPTIMIZATION: check hash equality to bail as quickly as possible.
         String.equateMany left.Names right.Names
 
     /// Compare Addresses.
-    static member compare left right =
+    static member compare (left : Address) (right : Address) =
         String.compareMany left.Names right.Names
 
     /// Convert any address to an obj Address.
@@ -188,8 +188,8 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
     interface IComparable with
         member this.CompareTo that =
             match that with
-            | :? ('a Address) as that -> Address<'a>.compare this that
-            | _ -> failwith "Invalid Address comparison (comparee not of type Address)."
+            | :? Address as that -> Address<'a>.compare this that
+            | _ -> failwith "Cannot compare Address (comparee not of type Address)."
 
     interface 'a Address IEquatable with
         member this.Equals that =
@@ -197,7 +197,7 @@ type [<CustomEquality; CustomComparison; TypeConverter (typeof<AddressConverter>
 
     override this.Equals that =
         match that with
-        | :? ('a Address) as that -> Address<'a>.equals this that
+        | :? Address as that -> Address<'a>.equals this that
         | _ -> false
 
     override this.GetHashCode () =
@@ -214,8 +214,8 @@ module Address =
         { Names = [||]; HashCode = String.hashMany [||]; Anonymous = false }
 
     /// Test address equality.
-    let equals (left : 'a Address) (right : 'a Address) =
-        Address<'a>.equals left right
+    let equals (left : Address) (right : Address) =
+        Address<obj>.equals left right
 
     /// Make an address from a sequence of names.
     let makeFromSeq<'a> names : 'a Address =

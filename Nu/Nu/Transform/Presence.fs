@@ -28,18 +28,18 @@ type Presence =
         | Exterior | Interior -> Constants.Render.FarPlaneDistanceExterior
 
     /// Determines if a bounds intersection is taking place in the context of the given presence configuration.
-    static member intersects3d (frustumInteriorOpt : Frustum option) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 option) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
+    static member intersects3d (frustumInteriorOpt : Frustum voption) (frustumExterior : Frustum) (frustumImposter : Frustum) (lightBoxOpt : Box3 voption) (lightProbe : bool) (light : bool) presence (bounds : Box3) =
         if lightProbe then
             true
         elif not light then
             match presence with
-            | Interior -> match frustumInteriorOpt with Some frustumInterior -> frustumInterior.Intersects bounds | None -> false
-            | Exterior -> frustumExterior.Intersects bounds || (match frustumInteriorOpt with Some frustumInterior -> frustumInterior.Intersects bounds | None -> false)
+            | Interior -> match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false
+            | Exterior -> frustumExterior.Intersects bounds || (match frustumInteriorOpt with ValueSome frustumInterior -> frustumInterior.Intersects bounds | ValueNone -> false)
             | Imposter -> frustumImposter.Intersects bounds
             | Omnipresent -> true
         else
             match presence with
-            | Interior | Exterior | Imposter -> match lightBoxOpt with Some lightBox -> lightBox.Intersects bounds | None -> false
+            | Interior | Exterior | Imposter -> match lightBoxOpt with ValueSome lightBox -> lightBox.Intersects bounds | ValueNone -> false
             | Omnipresent -> true
 
 [<AutoOpen>]

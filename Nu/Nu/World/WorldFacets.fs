@@ -74,8 +74,8 @@ type StaticSpriteFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetStaticImage world) with
-        | Some size -> AttributesInferred.important size.V3 v3Zero
-        | None -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
+        | ValueSome size -> AttributesInferred.important size.V3 v3Zero
+        | ValueNone -> AttributesInferred.important Constants.Engine.Entity2dSizeDefault v3Zero
 
 [<AutoOpen>]
 module AnimatedSpriteFacetExtensions =
@@ -515,8 +515,8 @@ type BackdroppableFacet () =
         match entity.GetBackdropImageOpt world with
         | Some backdropImage ->
             match Metadata.tryGetTextureSizeF backdropImage with
-            | Some size -> AttributesInferred.important size.V3 v3Zero
-            | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+            | ValueSome size -> AttributesInferred.important size.V3 v3Zero
+            | ValueNone -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
         | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
@@ -612,8 +612,8 @@ type ButtonFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUpImage world) with
-        | Some size -> AttributesInferred.important size.V3 v3Zero
-        | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+        | ValueSome size -> AttributesInferred.important size.V3 v3Zero
+        | ValueNone -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module ToggleButtonFacetExtensions =
@@ -726,8 +726,8 @@ type ToggleButtonFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUntoggledImage world) with
-        | Some size -> AttributesInferred.important size.V3 v3Zero
-        | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+        | ValueSome size -> AttributesInferred.important size.V3 v3Zero
+        | ValueNone -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module RadioButtonFacetExtensions =
@@ -835,8 +835,8 @@ type RadioButtonFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetUndialedImage world) with
-        | Some size -> AttributesInferred.important size.V3 v3Zero
-        | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+        | ValueSome size -> AttributesInferred.important size.V3 v3Zero
+        | ValueNone -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module FillBarFacetExtensions =
@@ -899,8 +899,8 @@ type FillBarFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetTextureSizeF (entity.GetBorderImage world) with
-        | Some size -> AttributesInferred.important size.V3 v3Zero
-        | None -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
+        | ValueSome size -> AttributesInferred.important size.V3 v3Zero
+        | ValueNone -> AttributesInferred.important Constants.Engine.EntityGuiSizeDefault v3Zero
 
 [<AutoOpen>]
 module FeelerFacetExtensions =
@@ -2149,8 +2149,7 @@ type SkyBoxFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.Absolute true
-         define Entity.Presence Omnipresent
+        [define Entity.Presence Omnipresent
          define Entity.Static true
          define Entity.AmbientColor Color.White
          define Entity.AmbientBrightness 0.5f
@@ -2199,6 +2198,14 @@ module LightProbe3dFacetExtensions =
 type LightProbe3dFacet () =
     inherit Facet (false, true, false)
 
+    static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        let world =
+            if evt.Data.Value :?> bool && entity.Group.GetVisible world
+            then entity.SetProbeStale true world
+            else world
+        (Cascade, world)
+
     static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
         let world =
             if evt.Data.Value :?> bool
@@ -2217,6 +2224,8 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
+        let world = World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        let world = World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
         let world = World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
         entity.SetProbeStale true world
 
@@ -2636,24 +2645,24 @@ type BasicStaticBillboardEmitterFacet () =
                     | Particles.BillboardParticlesDescriptor descriptor ->
                         let emitterProperties = entity.GetEmitterMaterialProperties world
                         let properties =
-                            { AlbedoOpt = match emitterProperties.AlbedoOpt with Some albedo -> Some albedo | None -> descriptor.MaterialProperties.AlbedoOpt
-                              RoughnessOpt = match emitterProperties.RoughnessOpt with Some roughness -> Some roughness | None -> descriptor.MaterialProperties.RoughnessOpt
-                              MetallicOpt = match emitterProperties.MetallicOpt with Some metallic -> Some metallic | None -> descriptor.MaterialProperties.MetallicOpt
-                              AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with Some ambientOcclusion -> Some ambientOcclusion | None -> descriptor.MaterialProperties.AmbientOcclusionOpt
-                              EmissionOpt = match emitterProperties.EmissionOpt with Some emission -> Some emission | None -> descriptor.MaterialProperties.EmissionOpt
-                              HeightOpt = match emitterProperties.HeightOpt with Some height -> Some height | None -> descriptor.MaterialProperties.HeightOpt
-                              IgnoreLightMapsOpt = match emitterProperties.IgnoreLightMapsOpt with Some ignoreLightMaps -> Some ignoreLightMaps | None -> descriptor.MaterialProperties.IgnoreLightMapsOpt
-                              OpaqueDistanceOpt = None }
+                            { AlbedoOpt = match emitterProperties.AlbedoOpt with ValueSome albedo -> ValueSome albedo | ValueNone -> descriptor.MaterialProperties.AlbedoOpt
+                              RoughnessOpt = match emitterProperties.RoughnessOpt with ValueSome roughness -> ValueSome roughness | ValueNone -> descriptor.MaterialProperties.RoughnessOpt
+                              MetallicOpt = match emitterProperties.MetallicOpt with ValueSome metallic -> ValueSome metallic | ValueNone -> descriptor.MaterialProperties.MetallicOpt
+                              AmbientOcclusionOpt = match emitterProperties.AmbientOcclusionOpt with ValueSome ambientOcclusion -> ValueSome ambientOcclusion | ValueNone -> descriptor.MaterialProperties.AmbientOcclusionOpt
+                              EmissionOpt = match emitterProperties.EmissionOpt with ValueSome emission -> ValueSome emission | ValueNone -> descriptor.MaterialProperties.EmissionOpt
+                              HeightOpt = match emitterProperties.HeightOpt with ValueSome height -> ValueSome height | ValueNone -> descriptor.MaterialProperties.HeightOpt
+                              IgnoreLightMapsOpt = match emitterProperties.IgnoreLightMapsOpt with ValueSome ignoreLightMaps -> ValueSome ignoreLightMaps | ValueNone -> descriptor.MaterialProperties.IgnoreLightMapsOpt
+                              OpaqueDistanceOpt = ValueNone }
                         let emitterMaterial = entity.GetEmitterMaterial world
                         let material =
-                            { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with Some albedoImage -> Some albedoImage | None -> descriptor.Material.AlbedoImageOpt
-                              RoughnessImageOpt = match emitterMaterial.RoughnessImageOpt with Some roughnessImage -> Some roughnessImage | None -> descriptor.Material.RoughnessImageOpt
-                              MetallicImageOpt = match emitterMaterial.MetallicImageOpt with Some metallicImage -> Some metallicImage | None -> descriptor.Material.MetallicImageOpt
-                              AmbientOcclusionImageOpt = match emitterMaterial.AmbientOcclusionImageOpt with Some ambientOcclusionImage -> Some ambientOcclusionImage | None -> descriptor.Material.AmbientOcclusionImageOpt
-                              EmissionImageOpt = match emitterMaterial.EmissionImageOpt with Some emissionImage -> Some emissionImage | None -> descriptor.Material.EmissionImageOpt
-                              NormalImageOpt = match emitterMaterial.NormalImageOpt with Some normalImage -> Some normalImage | None -> descriptor.Material.NormalImageOpt
-                              HeightImageOpt = match emitterMaterial.HeightImageOpt with Some heightImage -> Some heightImage | None -> descriptor.Material.HeightImageOpt
-                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with Some twoSided -> Some twoSided | None -> descriptor.Material.TwoSidedOpt }
+                            { AlbedoImageOpt = match emitterMaterial.AlbedoImageOpt with ValueSome albedoImage -> ValueSome albedoImage | ValueNone -> descriptor.Material.AlbedoImageOpt
+                              RoughnessImageOpt = match emitterMaterial.RoughnessImageOpt with ValueSome roughnessImage -> ValueSome roughnessImage | ValueNone -> descriptor.Material.RoughnessImageOpt
+                              MetallicImageOpt = match emitterMaterial.MetallicImageOpt with ValueSome metallicImage -> ValueSome metallicImage | ValueNone -> descriptor.Material.MetallicImageOpt
+                              AmbientOcclusionImageOpt = match emitterMaterial.AmbientOcclusionImageOpt with ValueSome ambientOcclusionImage -> ValueSome ambientOcclusionImage | ValueNone -> descriptor.Material.AmbientOcclusionImageOpt
+                              EmissionImageOpt = match emitterMaterial.EmissionImageOpt with ValueSome emissionImage -> ValueSome emissionImage | ValueNone -> descriptor.Material.EmissionImageOpt
+                              NormalImageOpt = match emitterMaterial.NormalImageOpt with ValueSome normalImage -> ValueSome normalImage | ValueNone -> descriptor.Material.NormalImageOpt
+                              HeightImageOpt = match emitterMaterial.HeightImageOpt with ValueSome heightImage -> ValueSome heightImage | ValueNone -> descriptor.Material.HeightImageOpt
+                              TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt }
                         Some
                             (RenderBillboardParticles
                                 { Presence = presence
@@ -2705,17 +2714,17 @@ type StaticModelFacet () =
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
         match Metadata.tryGetStaticModelMetadata staticModel with
-        | Some staticModelMetadata ->
+        | ValueSome staticModelMetadata ->
             let bounds = staticModelMetadata.Bounds
             AttributesInferred.important bounds.Size bounds.Center
-        | None -> base.GetAttributesInferred (entity, world)
+        | ValueNone -> base.GetAttributesInferred (entity, world)
 
     override this.RayCast (ray, entity, world) =
         let affineMatrix = entity.GetAffineMatrix world
         let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
         let rayEntity = ray.Transform inverseMatrix
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-        | Some staticModelMetadata ->
+        | ValueSome staticModelMetadata ->
             let intersectionses =
                 Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                     let geometry = surface.PhysicallyBasedGeometry
@@ -2732,7 +2741,7 @@ type StaticModelFacet () =
                     else [||])
                     staticModelMetadata.Surfaces
             Array.concat intersectionses
-        | None -> [||]
+        | ValueNone -> [||]
 
 [<AutoOpen>]
 module StaticModelSurfaceFacetExtensions =
@@ -2770,18 +2779,18 @@ type StaticModelSurfaceFacet () =
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-        | Some staticModelMetadata ->
+        | ValueSome staticModelMetadata ->
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex > -1 && surfaceIndex < staticModelMetadata.Surfaces.Length then
                 let bounds = staticModelMetadata.Surfaces.[surfaceIndex].SurfaceBounds
                 AttributesInferred.important bounds.Size bounds.Center
             else base.GetAttributesInferred (entity, world)
-        | None -> base.GetAttributesInferred (entity, world)
+        | ValueNone -> base.GetAttributesInferred (entity, world)
 
     override this.RayCast (ray, entity, world) =
         let rayEntity = ray.Transform (Matrix4x4.Invert (entity.GetAffineMatrix world) |> snd)
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
-        | Some staticModelMetadata ->
+        | ValueSome staticModelMetadata ->
             let surfaceIndex = entity.GetSurfaceIndex world
             if surfaceIndex < staticModelMetadata.Surfaces.Length then
                 let surface = staticModelMetadata.Surfaces.[surfaceIndex]
@@ -2792,7 +2801,7 @@ type StaticModelSurfaceFacet () =
                     intersections |> Seq.map snd' |> Seq.toArray
                 else [||]
             else [||]
-        | None -> [||]
+        | ValueNone -> [||]
 
 [<AutoOpen>]
 module AnimatedModelFacetExtensions =
@@ -2845,7 +2854,7 @@ module AnimatedModelFacetExtensions =
             let time = world.GameTime
             let animations = this.GetAnimations world
             let animatedModel = this.GetAnimatedModel world
-            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
+            let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
             match this.TryComputeBoneTransforms time animations sceneOpt with
             | Some (boneIds, boneOffsets, boneTransforms) ->
                 let world = this.SetBoneIdsOpt (Some boneIds) world
@@ -2892,7 +2901,7 @@ type AnimatedModelFacet () =
         let time = world.GameTime
         let animations = entity.GetAnimations world
         let animatedModel = entity.GetAnimatedModel world
-        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with Some model -> model.SceneOpt | None -> None
+        let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
         let resultOpt =
             match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
             | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
@@ -2923,17 +2932,17 @@ type AnimatedModelFacet () =
     override this.GetAttributesInferred (entity, world) =
         let animatedModel = entity.GetAnimatedModel world
         match Metadata.tryGetAnimatedModelMetadata animatedModel with
-        | Some animatedModelMetadata ->
+        | ValueSome animatedModelMetadata ->
             let bounds = animatedModelMetadata.Bounds
             AttributesInferred.important bounds.Size bounds.Center
-        | None -> base.GetAttributesInferred (entity, world)
+        | ValueNone -> base.GetAttributesInferred (entity, world)
 
     override this.RayCast (ray, entity, world) =
         let affineMatrix = entity.GetAffineMatrix world
         let inverseMatrix = Matrix4x4.Invert affineMatrix |> snd
         let rayEntity = ray.Transform inverseMatrix
         match Metadata.tryGetAnimatedModelMetadata (entity.GetAnimatedModel world) with
-        | Some animatedModelMetadata ->
+        | ValueSome animatedModelMetadata ->
             let intersectionses =
                 Array.map (fun (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) ->
                     let geometry = surface.PhysicallyBasedGeometry
@@ -2950,7 +2959,7 @@ type AnimatedModelFacet () =
                     else [||])
                     animatedModelMetadata.Surfaces
             Array.concat intersectionses
-        | None -> [||]
+        | ValueNone -> [||]
 
     override this.Edit (op, entity, world) =
         match op with
@@ -2997,8 +3006,8 @@ module TerrainFacetExtensions =
             match this.GetHeightMap world with
             | ImageHeightMap map ->
                 match Metadata.tryGetTextureSize map with
-                | Some textureSize -> Some textureSize
-                | None -> None
+                | ValueSome textureSize -> Some textureSize
+                | ValueNone -> None
             | RawHeightMap map -> Some map.Resolution
 
         /// Attempt to get the size of each terrain quad.
@@ -3187,8 +3196,9 @@ type NavBodyFacet () =
         let world = World.sense callback3 entity.UnregisteringEvent entity (nameof NavBodyFacet) world
 
         // unconditional registration behavior
-        let world = World.sense (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
-        let world = World.sense (fun _ world -> (Cascade, propagateNavBody entity world)) (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
+        let callbackPnb evt world = (Cascade, propagateNavBody evt.Subscriber world)
+        let world = World.sense callbackPnb (entity.ChangeEvent (nameof entity.StaticModel)) entity (nameof NavBodyFacet) world
+        let world = World.sense callbackPnb (entity.ChangeEvent (nameof entity.SurfaceIndex)) entity (nameof NavBodyFacet) world
         propagateNavBody entity world
 
     override this.Unregister (entity, world) =

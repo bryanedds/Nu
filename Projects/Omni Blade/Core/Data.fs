@@ -1008,11 +1008,11 @@ module FieldData =
                 match fieldData.FieldTileMap with
                 | FieldStatic fieldAsset ->
                     match Metadata.tryGetTileMapMetadata fieldAsset with
-                    | Some tileMapMetadata -> Some (Choice1Of4 tileMapMetadata.TileMap)
-                    | None -> None
+                    | ValueSome tileMapMetadata -> Some (Choice1Of4 tileMapMetadata.TileMap)
+                    | ValueNone -> None
                 | FieldConnector (fieldAsset, fieldFadeAsset) ->
                     match (Metadata.tryGetTileMapMetadata fieldAsset, Metadata.tryGetTileMapMetadata fieldFadeAsset) with
-                    | (Some tileMapMetadata, Some tileMapFadeMetadata) -> Some (Choice2Of4 (tileMapMetadata.TileMap, tileMapFadeMetadata.TileMap))
+                    | (ValueSome tileMapMetadata, ValueSome tileMapFadeMetadata) -> Some (Choice2Of4 (tileMapMetadata.TileMap, tileMapFadeMetadata.TileMap))
                     | (_, _) -> None
                 | FieldRandom (walkCount, walkLength, bias, origin, floor, fieldPath) ->
                     let rand = Rand.makeFromSeedState rotatedSeedState
@@ -1022,8 +1022,8 @@ module FieldData =
                     Some (Choice3Of4 (randMap, tileMap, origin))
                 | FieldRoom fieldAsset ->
                     match Metadata.tryGetTileMapMetadata fieldAsset with
-                    | Some tileMapMetadata -> Some (Choice4Of4 tileMapMetadata.TileMap)
-                    | None -> None
+                    | ValueSome tileMapMetadata -> Some (Choice4Of4 tileMapMetadata.TileMap)
+                    | ValueNone -> None
             match tileMapOpt with
             | Some tileMapChc -> tileMapsMemoized <- Map.add memoKey tileMapChc tileMapsMemoized
             | None -> ()
