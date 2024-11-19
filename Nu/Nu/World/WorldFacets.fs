@@ -2157,17 +2157,18 @@ module LightProbe3dFacetExtensions =
 type LightProbe3dFacet () =
     inherit Facet (false, true, false)
 
+    static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
+        let entity = evt.Subscriber
+        let world =
+            if evt.Data.Value :?> bool && entity.Group.GetVisible world
+            then entity.SetProbeStale true world
+            else world
+        (Cascade, world)
+
     static let handleProbeStaleChange (evt : Event<ChangeData, Entity>) world =
         let world =
             if evt.Data.Value :?> bool
             then World.requestLightMapRender world
-            else world
-        (Cascade, world)
-
-    static let handleProbeVisibleChange (evt : Event<ChangeData, Entity>) world =
-        let world =
-            if evt.Data.Value :?> bool
-            then evt.Subscriber.SetProbeStale true world
             else world
         (Cascade, world)
 
@@ -2182,8 +2183,9 @@ type LightProbe3dFacet () =
          nonPersistent Entity.ProbeStale false]
 
     override this.Register (entity, world) =
-        let world = World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
         let world = World.sense handleProbeVisibleChange entity.Group.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        let world = World.sense handleProbeVisibleChange entity.Visible.ChangeEvent entity (nameof LightProbe3dFacet) world
+        let world = World.sense handleProbeStaleChange entity.ProbeStale.ChangeEvent entity (nameof LightProbe3dFacet) world
         entity.SetProbeStale true world
 
     override this.Render (renderPass, entity, world) =
