@@ -15,7 +15,7 @@ module Program =
 
         // this specifies the window configuration used to display the game
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Terra Firma" }
-        
+
         // this specifies the configuration of the game engine's use of SDL
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
 
