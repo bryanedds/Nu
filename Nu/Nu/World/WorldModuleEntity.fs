@@ -19,12 +19,32 @@ module WorldModuleEntity =
     let private EntityGetters = Dictionary<string, PropertyGetter> StringComparer.Ordinal
     let private EntitySetters = Dictionary<string, PropertySetter> StringComparer.Ordinal
 
-    // OPTIMIZATION: cache one entity change address to reduce allocation where possible.
-    let mutable private ChangeEventNamesFree = true
-    let private ChangeEventNamesCached = [|Constants.Lens.ChangeName; ""; Constants.Lens.EventName; ""; ""; ""; ""|]
-
     /// Entity change (publishing) count key.
     let internal EntityChangeCountsKey = string Gen.id
+
+    /// Names of properties that will trigger body property changes.
+    let BodyPropertyAffectingPropertyNames =
+        hashSetPlus StringComparer.Ordinal
+            ["Scale"
+             "Offset"
+             "Size"
+             "BodyEnabled"
+             "BodyType"
+             "SleepingAllowed"
+             "Friction"
+             "Restitution"
+             "LinearDamping"
+             "AngularDamping"
+             "AngularFactor"
+             "Substance"
+             "GravityOverride"
+             "CharacterProperties"
+             "CollisionDetection"
+             "CollisionCategories"
+             "CollisionMask"
+             "BodyShape"
+             "Sensor"
+             "Observable"]
 
     type World with
 
@@ -109,25 +129,16 @@ module WorldModuleEntity =
             if publishChangeEvents then
                 let changeData = { Name = propertyName; Previous = previousValue; Value = propertyValue }
                 let entityNames = Address.getNames entity.EntityAddress
-                let mutable changeEventNamesUtilized = false
-                let changeEventAddress =
-                    // OPTIMIZATION: this optimization should be hit >= 90% of the time. The 10% of cases where
-                    // it isn't should be acceptable.
-                    if  Array.length entityNames = 4 &&
-                        ChangeEventNamesFree then
-                        ChangeEventNamesFree <- false
-                        changeEventNamesUtilized <- true
-                        ChangeEventNamesCached.[1] <- propertyName
-                        ChangeEventNamesCached.[3] <- entityNames.[0]
-                        ChangeEventNamesCached.[4] <- entityNames.[1]
-                        ChangeEventNamesCached.[5] <- entityNames.[2]
-                        ChangeEventNamesCached.[6] <- entityNames.[3]
-                        rtoa<ChangeData> ChangeEventNamesCached
-                    else rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
+                let entityDispatcher = World.getEntityDispatcher entity world : EntityDispatcher
+                let world =
+                    if entityDispatcher.Physical && BodyPropertyAffectingPropertyNames.Contains propertyName then
+                        let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
+                        let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
+                        World.publishPlus changeData changeEventAddress eventTrace entity false false world
+                    else world
+                let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; propertyName; Constants.Lens.EventName|] entityNames)
                 let eventTrace = EventTrace.debug "World" "publishEntityChange" "" EventTrace.empty
-                let world = World.publishPlus changeData changeEventAddress eventTrace entity false false world
-                if changeEventNamesUtilized then ChangeEventNamesFree <- true
-                world
+                World.publishPlus changeData changeEventAddress eventTrace entity false false world
             else world
 
         static member inline internal getEntityStateOpt entity world =

@@ -1327,6 +1327,9 @@ module RigidBodyFacetExtensions =
         member this.GetBodyType world : BodyType = this.Get (nameof this.BodyType) world
         member this.SetBodyType (value : BodyType) world = this.Set (nameof this.BodyType) value world
         member this.BodyType = lens (nameof this.BodyType) this this.GetBodyType this.SetBodyType
+        member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
+        member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
+        member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
         member this.GetSleepingAllowed world : bool = this.Get (nameof this.SleepingAllowed) world
         member this.SetSleepingAllowed (value : bool) world = this.Set (nameof this.SleepingAllowed) value world
         member this.SleepingAllowed = lens (nameof this.SleepingAllowed) this this.GetSleepingAllowed this.SetSleepingAllowed
@@ -1369,9 +1372,6 @@ module RigidBodyFacetExtensions =
         member this.GetCollisionMask world : string = this.Get (nameof this.CollisionMask) world
         member this.SetCollisionMask (value : string) world = this.Set (nameof this.CollisionMask) value world
         member this.CollisionMask = lens (nameof this.CollisionMask) this this.GetCollisionMask this.SetCollisionMask
-        member this.GetBodyShape world : BodyShape = this.Get (nameof this.BodyShape) world
-        member this.SetBodyShape (value : BodyShape) world = this.Set (nameof this.BodyShape) value world
-        member this.BodyShape = lens (nameof this.BodyShape) this this.GetBodyShape this.SetBodyShape
         member this.GetPhysicsMotion world : PhysicsMotion = this.Get (nameof this.PhysicsMotion) world
         member this.SetPhysicsMotion (value : PhysicsMotion) world = this.Set (nameof this.PhysicsMotion) value world
         member this.PhysicsMotion = lens (nameof this.PhysicsMotion) this this.GetPhysicsMotion this.SetPhysicsMotion
@@ -1447,11 +1447,12 @@ type RigidBodyFacet () =
         [define Entity.Static true
          define Entity.BodyEnabled true
          define Entity.BodyType Static
+         define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
          define Entity.SleepingAllowed true
          define Entity.Friction 0.5f
          define Entity.Restitution 0.0f
          define Entity.LinearVelocity v3Zero
-         define Entity.LinearDamping 0.0f // leave this up to friction by default
+         define Entity.LinearDamping 0.0f
          define Entity.AngularVelocity v3Zero
          define Entity.AngularDamping 0.2f
          define Entity.AngularFactor v3One
@@ -1461,7 +1462,6 @@ type RigidBodyFacet () =
          define Entity.CollisionDetection Discontinuous
          define Entity.CollisionCategories "1"
          define Entity.CollisionMask Constants.Physics.CollisionWildcard
-         define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
          define Entity.PhysicsMotion SynchronizedMotion
          define Entity.Sensor false
          define Entity.Observable false
@@ -1473,31 +1473,13 @@ type RigidBodyFacet () =
 
         // OPTIMIZATION: using manual unsubscription in order to use less live objects for subscriptions.
         // OPTIMIZATION: share lambdas to reduce live object count.
-        let subIds = Array.init 24 (fun _ -> Gen.id64)
+        // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
+        let subIds = Array.init 5 (fun _ -> Gen.id64)
         let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
         let world = World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd
-        let world = World.subscribePlus subIds.[4] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Scale)) entity world |> snd
-        let world = World.subscribePlus subIds.[5] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Offset)) entity world |> snd
-        let world = World.subscribePlus subIds.[6] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Size)) entity world |> snd
-        let world = World.subscribePlus subIds.[7] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyEnabled)) entity world |> snd
-        let world = World.subscribePlus subIds.[8] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyType)) entity world |> snd
-        let world = World.subscribePlus subIds.[9] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.SleepingAllowed)) entity world |> snd
-        let world = World.subscribePlus subIds.[10] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Friction)) entity world |> snd
-        let world = World.subscribePlus subIds.[11] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Restitution)) entity world |> snd
-        let world = World.subscribePlus subIds.[12] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.LinearDamping)) entity world |> snd
-        let world = World.subscribePlus subIds.[13] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularDamping)) entity world |> snd
-        let world = World.subscribePlus subIds.[14] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.AngularFactor)) entity world |> snd
-        let world = World.subscribePlus subIds.[15] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Substance)) entity world |> snd
-        let world = World.subscribePlus subIds.[16] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.GravityOverride)) entity world |> snd
-        let world = World.subscribePlus subIds.[17] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CharacterProperties)) entity world |> snd
-        let world = World.subscribePlus subIds.[18] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionDetection)) entity world |> snd
-        let world = World.subscribePlus subIds.[19] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionCategories)) entity world |> snd
-        let world = World.subscribePlus subIds.[20] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.CollisionMask)) entity world |> snd
-        let world = World.subscribePlus subIds.[21] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.BodyShape)) entity world |> snd
-        let world = World.subscribePlus subIds.[22] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Sensor)) entity world |> snd
-        let world = World.subscribePlus subIds.[23] (propagatePhysics entity) (entity.ChangeEvent (nameof entity.Observable)) entity world |> snd
+        let world = World.subscribePlus subIds.[4] (propagatePhysics entity) (entity.ChangeEvent "BodyPropertiesAffecting") entity world |> snd
         let unsubscribe = fun world ->
             Array.fold (fun world subId -> World.unsubscribe subId world) world subIds
         let callback = fun evt world ->
@@ -1515,13 +1497,13 @@ type RigidBodyFacet () =
     override this.RegisterPhysics (entity, world) =
         let mutable transform = entity.GetTransform world
         let bodyProperties =
-            { Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
+            { Enabled = entity.GetBodyEnabled world
+              Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
               Rotation = transform.Rotation
               Scale = transform.Scale
               BodyShape = getBodyShape entity world
               BodyType = entity.GetBodyType world
               SleepingAllowed = entity.GetSleepingAllowed world
-              Enabled = entity.GetBodyEnabled world
               Friction = entity.GetFriction world
               Restitution = entity.GetRestitution world
               LinearVelocity = entity.GetLinearVelocity world
@@ -3041,13 +3023,13 @@ type TerrainFacet () =
                   TransformOpt = None
                   PropertiesOpt = None }
             let bodyProperties =
-                { Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
+                { Enabled = entity.GetBodyEnabled world
+                  Center = if entity.GetIs2d world then transform.PerimeterCenter else transform.Position
                   Rotation = transform.Rotation
                   Scale = transform.Scale
                   BodyShape = TerrainShape terrainShape
                   BodyType = Static
                   SleepingAllowed = true
-                  Enabled = entity.GetBodyEnabled world
                   Friction = entity.GetFriction world
                   Restitution = entity.GetRestitution world
                   LinearVelocity = v3Zero

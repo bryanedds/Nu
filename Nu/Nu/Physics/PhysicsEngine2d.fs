@@ -101,8 +101,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : Body) =
         body.BodyType <- PhysicsEngine2d.toPhysicsBodyType bodyProperties.BodyType // NOTE: BodyType must be set first or other configurations may be ignored!
-        body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Enabled <- bodyProperties.Enabled
+        body.SleepingAllowed <- bodyProperties.SleepingAllowed
         body.Position <- PhysicsEngine2d.toPhysicsV2 bodyProperties.Center
         body.Rotation <- bodyProperties.Rotation.RollPitchYaw.Z
         body.SetFriction bodyProperties.Friction
