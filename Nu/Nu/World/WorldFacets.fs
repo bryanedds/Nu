@@ -1411,13 +1411,6 @@ type RigidBodyFacet () =
             (Cascade, World.setBodyCenter center bodyId world)
         else (Cascade, world)
 
-    static let propagatePhysicsPosition (entity : Entity) (evt : Event<ChangeData, Entity>) world =
-        if entity.GetPhysicsMotion world <> ManualMotion then
-            let bodyId = entity.GetBodyId world
-            let center = evt.Data.Value :?> Vector3
-            (Cascade, World.setBodyCenter center bodyId world)
-        else (Cascade, world)
-
     static let propagatePhysicsRotation (entity : Entity) (evt : Event<ChangeData, Entity>) world =
         if entity.GetPhysicsMotion world <> ManualMotion then
             let bodyId = entity.GetBodyId world
@@ -1475,7 +1468,7 @@ type RigidBodyFacet () =
         // OPTIMIZATION: share lambdas to reduce live object count.
         // OPTIMIZATION: using special BodyPropertiesAffecting change event to reduce subscription count.
         let subIds = Array.init 5 (fun _ -> Gen.id64)
-        let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Position)) entity world |> snd
+        let world = World.subscribePlus subIds.[0] (propagatePhysicsCenter entity) (entity.ChangeEvent (nameof entity.Transform)) entity world |> snd
         let world = World.subscribePlus subIds.[1] (propagatePhysicsRotation entity) (entity.ChangeEvent (nameof entity.Rotation)) entity world |> snd
         let world = World.subscribePlus subIds.[2] (propagatePhysicsLinearVelocity entity) (entity.ChangeEvent (nameof entity.LinearVelocity)) entity world |> snd
         let world = World.subscribePlus subIds.[3] (propagatePhysicsAngularVelocity entity) (entity.ChangeEvent (nameof entity.AngularVelocity)) entity world |> snd

@@ -23,7 +23,7 @@ module WorldModuleEntity =
     let internal EntityChangeCountsKey = string Gen.id
 
     /// Names of properties that will trigger body property changes.
-    let BodyPropertyAffectingPropertyNames =
+    let private BodyPropertyAffectingPropertyNames =
         hashSetPlus StringComparer.Ordinal
             ["Scale"
              "Offset"
