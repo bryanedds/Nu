@@ -39,11 +39,11 @@ Rendering made efficient with instancing-by-default.
 ![image](https://github.com/user-attachments/assets/37ca553f-5a6c-4056-9177-a4e1f4cff54d)
 Our new soft-shadow, screen-space reflection, and volumetric fog systems.
 
-![image](https://user-images.githubusercontent.com/1625560/209454635-b55ecb09-bbb9-4d71-9bd8-fa715c51cd4c.png)
+![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
 First class support for unified 2D game development in our fully realized 20-hour indie RPG, OmniBlade.
 
-![image](https://user-images.githubusercontent.com/1625560/209454643-7142731e-ede7-48d3-8a97-d691fd9263e7.png)
-A critical battle with evil itself!
+![image](https://github.com/user-attachments/assets/81f64a06-ffac-487e-8a59-6ca827b4c67a)
+Wandering the lake in Omni Blade.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/c9f0a9a1-d071-48f7-9175-c0b08f5768f0)
 Directly editing the entire game state in the new editor.
@@ -56,12 +56,6 @@ Our little 3D dog-fooding demo, Terra Firma.
 
 ![image](https://github.com/bryanedds/Nu/assets/1625560/e8571dd1-bdd1-4663-b2ae-87abeef179d9)
 Recursive Prefab-like functionality via Entity Structure Propagation.
-
-![image](https://github.com/user-attachments/assets/0789e71d-fc49-496c-b9fc-2c9855a9e8e7)
-Another Omni Blade screenie.
-
-![image](https://github.com/user-attachments/assets/81f64a06-ffac-487e-8a59-6ca827b4c67a)
-And another.
 
 **Public Sponsors We Wish to Thank**
 ====================================
