@@ -11,6 +11,7 @@ open Prime
 module WorldModuleGame =
 
     /// Dynamic property getters / setters.
+    /// TODO: make these FrozenDictionaries.
     let private GameGetters = Dictionary<string, Game -> World -> Property> StringComparer.Ordinal
     let private GameSetters = Dictionary<string, Property -> Game -> World -> struct (bool * World)> StringComparer.Ordinal
 

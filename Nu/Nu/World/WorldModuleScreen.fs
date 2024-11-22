@@ -10,6 +10,7 @@ open Prime
 module WorldModuleScreen =
 
     /// Dynamic property getters / setters.
+    /// TODO: make these FrozenDictionaries.
     let private ScreenGetters = Dictionary<string, Screen -> World -> Property> StringComparer.Ordinal
     let private ScreenSetters = Dictionary<string, Property -> Screen -> World -> struct (bool * World)> StringComparer.Ordinal
 

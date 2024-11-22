@@ -8,7 +8,7 @@ open Prime
 open Nu
 
 /// Logical operations that can be applied to an effect behavior.
-type LogicApplicator =
+type [<Struct>] LogicApplicator =
     | Or
     | Nor
     | Xor
@@ -17,7 +17,7 @@ type LogicApplicator =
     | Equal
 
 /// Algorithms for tweening (interpolating) effect behavior.
-type TweenAlgorithm =
+type [<Struct>] TweenAlgorithm =
     | Constant
     | Linear
     | Random
@@ -26,12 +26,12 @@ type TweenAlgorithm =
     | EaseIn
     | EaseOut
     | Sin
-    | SinScaled of single
+    | SinScaled of Scalar : single
     | Cos
-    | CosScaled of single
+    | CosScaled of Scalar : single
 
 /// The manners in which to apply tweening to effect values.
-type TweenApplicator =
+type [<Struct>] TweenApplicator =
     | Sum
     | Delta
     | Scalar
@@ -132,12 +132,12 @@ type Tween2IKeyFrame =
         member this.KeyFrameLength = this.TweenLength
 
 /// Represents a rate of progress for an effect behavior.
-type Rate =
-    Rate of single
+type [<Struct>] Rate =
+    Rate of Rate : single
 
 /// Represents a shift (offset) of an effect value.
-type Shift =
-    Shift of single
+type [<Struct>] Shift =
+    Shift of Shift : single
 
 /// Represents a resource used in effect content.
 type Resource =
