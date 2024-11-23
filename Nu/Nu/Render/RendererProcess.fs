@@ -163,7 +163,7 @@ type RendererInline () =
                 OpenGL.Hl.EndFrame ()
                 OpenGL.Hl.Assert ()
 
-            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+            | None -> ()
 
         member this.Swap () =
             match windowOpt with
@@ -180,7 +180,7 @@ type RendererInline () =
                 rendererImGui.CleanUp ()
                 renderersOpt <- None
                 terminated <- true
-            | None -> raise (InvalidOperationException "Redundant Terminate calls.")
+            | None -> ()
 
 /// A threaded render process.
 type RendererThread () =
