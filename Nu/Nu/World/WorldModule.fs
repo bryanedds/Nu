@@ -725,7 +725,7 @@ module WorldModule =
                     | None ->
                         let subscriptionEntry = { SubscriptionCallback = World.boxCallback callback; SubscriptionSubscriber = subscriber }
                         UMap.add eventAddress (OMap.singleton HashIdentity.Structural (World.getCollectionConfig world) subscriptionId subscriptionEntry) subscriptions
-                let unsubscriptions = UMap.add subscriptionId (eventAddress :> Address, subscriber :> Simulant) unsubscriptions
+                let unsubscriptions = UMap.add subscriptionId struct (eventAddress :> Address, subscriber :> Simulant) unsubscriptions
                 let world = World.setSubscriptions subscriptions world
                 let world = World.setUnsubscriptions unsubscriptions world
                 let world = WorldTypes.handleSubscribeAndUnsubscribeEvent true eventAddress Game.Handle world :?> World
