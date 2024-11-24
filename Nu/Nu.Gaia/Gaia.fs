@@ -67,7 +67,7 @@ module Gaia =
     let mutable private OpenProjectImperativeExecution = false
     let mutable private CloseProjectImperativeExecution = false
     let mutable private NewProjectName = "My Game"
-    let mutable private NewProjectType = "MMCC Empty"
+    let mutable private NewProjectType = "MMCC Game"
     let mutable private NewGroupDispatcherName = nameof GroupDispatcher
     let mutable private NewEntityDispatcherName = null // this will be initialized on start
     let mutable private NewEntityOverlayName = "(Default Overlay)"
@@ -1400,13 +1400,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         | Some (_, entity) ->
                             if entity.GetIs2d world then
                                 if World.isKeyboardAltDown world then
-                                    let world = snapshot RotateEntity world
                                     let viewport = World.getViewport world
                                     let eyeCenter = World.getEye2dCenter world
                                     let eyeSize = World.getEye2dSize world
                                     let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
                                     let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
-                                    DragEntityState <- DragEntityRotation2d (DateTimeOffset.Now, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
+                                    DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                                     world
                                 else
                                     let (entity, world) =
@@ -1440,15 +1439,13 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                             ImGui.SetWindowFocus "Viewport"
                                             ShowSelectedEntity <- true
                                             (duplicate, world)
-                                        else
-                                            let world = snapshot TranslateEntity world
-                                            (entity, world)
+                                        else (entity, world)
                                     let viewport = World.getViewport world
                                     let eyeCenter = World.getEye2dCenter world
                                     let eyeSize = World.getEye2dSize world
                                     let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
                                     let entityPosition = entity.GetPosition world
-                                    DragEntityState <- DragEntityPosition2d (DateTimeOffset.Now, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
+                                    DragEntityState <- DragEntityPosition2d (world.DateTime, ref false, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                                     world
                             else world
                         | None -> world
@@ -1457,9 +1454,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 // attempt to continue dragging
                 let world =
                     match DragEntityState with
-                    | DragEntityPosition2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                        let localTime = DateTimeOffset.Now - time
+                    | DragEntityPosition2d (time, snapshottedRef, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                        let localTime = world.DateTime - time
                         if entity.GetExists world && localTime.TotalSeconds >= Constants.Gaia.DragMinimumSeconds then
+                            let world =
+                                if not snapshottedRef.Value then
+                                    let world = snapshot TranslateEntity world
+                                    snapshottedRef.Value <- true
+                                    world
+                                else world
                             let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                             let entityPosition = (entityDragOffset - mousePositionWorldOriginal) + (mousePositionWorld - mousePositionWorldOriginal)
                             let entityPositionSnapped =
@@ -1484,9 +1487,15 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                                 else world
                             world
                         else world
-                    | DragEntityRotation2d (time, mousePositionWorldOriginal, entityDragOffset, entity) ->
-                        let localTime = DateTimeOffset.Now - time
+                    | DragEntityRotation2d (time, snapshottedRef, mousePositionWorldOriginal, entityDragOffset, entity) ->
+                        let localTime = world.DateTime - time
                         if entity.GetExists world && localTime.TotalSeconds >= Constants.Gaia.DragMinimumSeconds then
+                            let world =
+                                if not snapshottedRef.Value then
+                                    let world = snapshot RotateEntity world
+                                    snapshottedRef.Value <- true
+                                    world
+                                else world
                             let mousePositionWorld = World.getMousePostion2dWorld (entity.GetAbsolute world) world
                             let entityDegree = (entityDragOffset - mousePositionWorldOriginal.Y) + (mousePositionWorld.Y - mousePositionWorldOriginal.Y)
                             let entityDegreeSnapped =
@@ -1626,12 +1635,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
     (* Top-Level Functions *)
 
     // TODO: split this function up or at least apply intention blocks?
-    let private imGuiEntity branch filtering (entity : Entity) world =
+    let private imGuiEntity branch filtering (entity : Entity) (world : World) =
         let selected = match SelectedEntityOpt with Some selectedEntity -> entity = selectedEntity | None -> false
         let treeNodeFlags =
             (if selected then ImGuiTreeNodeFlags.Selected else ImGuiTreeNodeFlags.None) |||
             (if not branch || filtering then ImGuiTreeNodeFlags.Leaf else ImGuiTreeNodeFlags.None) |||
-            (if NewEntityParentOpt = Some entity && DateTimeOffset.Now.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
+            (if NewEntityParentOpt = Some entity && world.DateTime.Millisecond / 400 % 2 = 0 then ImGuiTreeNodeFlags.Bullet else ImGuiTreeNodeFlags.None) |||
             ImGuiTreeNodeFlags.OpenOnArrow
         if not filtering then
             if ExpandEntityHierarchy then ImGui.SetNextItemOpen true
@@ -3221,12 +3230,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world
         else world
 
-    let private imGuiLogWindow world =
+    let private imGuiLogWindow (world : World) =
         let lines = LogStr.Split '\n'
         let warnings = lines |> Seq.filter (fun line -> line.Contains "|Warning|") |> Seq.length
         let errors = lines |> Seq.filter (fun line -> line.Contains "|Error|") |> Seq.length
         let flag = warnings > 0 || errors > 0
-        let flash = flag && DateTimeOffset.Now.Millisecond / 400 % 2 = 0
+        let flash = flag && world.DateTime.Millisecond / 400 % 2 = 0
         if flash then
             let flashColor =
                 if errors > 0 then let red = Color.Red in red.Abgr

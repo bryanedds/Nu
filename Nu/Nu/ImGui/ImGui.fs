@@ -17,7 +17,7 @@ type ImGuiEditResult =
 
 /// Wraps ImGui context, state, and calls. Also extends the ImGui interface with static methods.
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port.
-type ImGui (windowWidth : int, windowHeight : int) =
+type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
 
     static let mutable MouseLeftIdInternal = 0L
 
@@ -112,10 +112,12 @@ type ImGui (windowWidth : int, windowHeight : int) =
         charsPressed.Add keyChar
 
     member this.BeginFrame () =
-        ImGui.NewFrame ()
-        ImGuiIOPtr.BeginFrame ()
-        ImGuizmo.BeginFrame ()
-        if ImGui.IsMouseClicked ImGuiMouseButton.Left then MouseLeftIdInternal <- inc MouseLeftIdInternal
+        if not stub then
+            ImGui.NewFrame ()
+            ImGuiIOPtr.BeginFrame ()
+            ImGuizmo.BeginFrame ()
+        if ImGui.IsMouseClicked ImGuiMouseButton.Left then
+            MouseLeftIdInternal <- inc MouseLeftIdInternal
 
     member this.EndFrame () =
         () // nothing to do
@@ -145,7 +147,7 @@ type ImGui (windowWidth : int, windowHeight : int) =
         charsPressed.Clear ()
 
     member this.RenderFrame () =
-        ImGui.Render ()
+        if not stub then ImGui.Render ()
         ImGui.GetDrawData ()
 
     member this.CleanUp () =

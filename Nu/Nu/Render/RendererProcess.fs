@@ -163,7 +163,7 @@ type RendererInline () =
                 OpenGL.Hl.EndFrame ()
                 OpenGL.Hl.Assert ()
 
-            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+            | None -> ()
 
         member this.Swap () =
             match windowOpt with
@@ -180,7 +180,7 @@ type RendererInline () =
                 rendererImGui.CleanUp ()
                 renderersOpt <- None
                 terminated <- true
-            | None -> raise (InvalidOperationException "Redundant Terminate calls.")
+            | None -> ()
 
 /// A threaded render process.
 type RendererThread () =
@@ -190,7 +190,9 @@ type RendererThread () =
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
-    let [<VolatileField>] mutable swap = false
+    let submissionProvided = new SemaphoreSlim (0, 1)
+    let swapRequested = new SemaphoreSlim (0, 1)
+    let swapCompleted = new SemaphoreSlim (0, 1)
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
@@ -306,7 +308,7 @@ type RendererThread () =
                 | _ -> ())
 
     member private this.Run fonts window =
-                
+
         // create gl context
         let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
         OpenGL.Hl.Assert ()
@@ -332,8 +334,8 @@ type RendererThread () =
         // loop until terminated
         while not terminated do
 
-            // loop until submission exists
-            while Option.isNone submissionOpt && not terminated do Thread.Sleep 1
+            // wait until submission is provided
+            submissionProvided.Wait ()
 
             // guard against early termination
             if not terminated then
@@ -341,7 +343,7 @@ type RendererThread () =
                 // receive submission
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
-                
+
                 // begin frame
                 OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
                 OpenGL.Hl.Assert ()
@@ -358,7 +360,7 @@ type RendererThread () =
                 renderer2d.Render eye2dCenter eye2dSize windowSize messages2d
                 freeSpriteMessages messages2d
                 OpenGL.Hl.Assert ()
-            
+
                 // render imgui
                 rendererImGui.Render drawData
                 OpenGL.Hl.Assert ()
@@ -367,18 +369,21 @@ type RendererThread () =
                 OpenGL.Hl.EndFrame ()
                 OpenGL.Hl.Assert ()
 
-                // loop until swap is requested
-                while not terminated && not swap do Thread.Sleep 1
-
                 // guard against early termination
                 if not terminated then
+            
+                    // wait until swap is requested
+                    swapRequested.Wait ()
 
-                    // acknowledge swap request
-                    swap <- false
+                    // guard against early termination
+                    if not terminated then
 
-                    // swap, optionally finishing
-                    if glFinishRequired then OpenGL.Gl.Finish ()
-                    match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
+                        // notify swap is completed
+                        swapCompleted.Release () |> ignore<int>
+
+                        // swap, optionally finishing
+                        if glFinishRequired then OpenGL.Gl.Finish ()
+                        match window with SglWindow window -> SDL.SDL_GL_SwapWindow window.SglWindow
 
         // clean up
         renderer3d.CleanUp ()
@@ -407,13 +412,15 @@ type RendererThread () =
 
             | None ->
 
-                // start fake thread
+                // start empty thread
                 let thread = Thread (ThreadStart (fun () ->
                     started <- true
                     while not terminated do
-                        submissionOpt <- None
-                        swap <- false // ack swap immediately
-                        Thread.Sleep 0))
+                        submissionProvided.Wait ()
+                        if not terminated then
+                            swapRequested.Wait ()
+                            if not terminated then
+                                swapCompleted.Release () |> ignore<int>))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
@@ -576,12 +583,12 @@ type RendererThread () =
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
+            submissionProvided.Release () |> ignore<int>
 
         member this.Swap () =
-            if swap then raise (InvalidOperationException "Render process already swapping.")
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            swap <- true
-            while swap do Thread.Sleep 1
+            swapRequested.Release () |> ignore<int>
+            swapCompleted.Wait ()
 
         member this.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

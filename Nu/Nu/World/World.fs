@@ -335,7 +335,7 @@ module WorldModule3 =
                   GameDispatchers = Map.ofList [defaultGameDispatcher] }
 
             // make the world's subsystems
-            let imGui = ImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
+            let imGui = ImGui (true, Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
             let rendererProcess = RendererInline () :> RendererProcess
@@ -415,7 +415,7 @@ module WorldModule3 =
                     | None -> GameDispatcher ()
 
                 // make the world's subsystems, loading initial packages where applicable
-                let imGui = ImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
+                let imGui = ImGui (false, Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
                 let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
                 let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
                 let rendererProcess =

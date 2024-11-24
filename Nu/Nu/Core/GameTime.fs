@@ -59,7 +59,7 @@ type GameTimeConverter () =
         | :? GameTime -> source
         | _ -> failconv "Invalid GameTimeConverter conversion from source." None
 
-/// Provide a variable representation of time based on whether the engine is configured to use a static or a dynamic
+/// Provides a variable representation of time based on whether the engine is configured to use a static or a dynamic
 /// frame rate.
 and [<Struct; CustomEquality; CustomComparison; TypeConverter (typeof<GameTimeConverter>)>] GameTime =
     | UpdateTime of UpdateTime : int64 // in updates

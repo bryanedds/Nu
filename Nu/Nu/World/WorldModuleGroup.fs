@@ -10,6 +10,7 @@ open Prime
 module WorldModuleGroup =
 
     /// Dynamic property getters / setters.
+    /// TODO: make these FrozenDictionaries.
     let private GroupGetters = Dictionary<string, Group -> World -> Property> StringComparer.Ordinal
     let private GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> StringComparer.Ordinal
 

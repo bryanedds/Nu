@@ -424,13 +424,13 @@ type [<SymbolicExpansion>] CharacterProperties =
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
-    { Center : Vector3
+    { Enabled : bool
+      Center : Vector3
       Rotation : Quaternion
       Scale : Vector3
       BodyType : BodyType
       BodyShape : BodyShape
       SleepingAllowed : bool
-      Enabled : bool
       Friction : single
       Restitution : single
       LinearVelocity : Vector3
