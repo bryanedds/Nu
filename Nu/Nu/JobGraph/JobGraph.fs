@@ -1,4 +1,7 @@
-﻿namespace Nu
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds.
+
+namespace Nu
 open System
 open System.Collections.Concurrent
 open System.Threading

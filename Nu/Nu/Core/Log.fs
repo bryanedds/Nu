@@ -1,6 +1,5 @@
-﻿
-// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
