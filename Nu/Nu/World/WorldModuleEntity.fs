@@ -131,8 +131,7 @@ module WorldModuleEntity =
                 let changeData = { Name = propertyName; Previous = previousValue; Value = propertyValue }
                 let entityNames = Address.getNames entity.EntityAddress
                 let world =
-                    if  BodyPropertyAffectingPropertyNames.Contains propertyName &&
-                        (World.getEntityFacetNames entity world : string Set).Contains "RigidBodyFacet" then
+                    if BodyPropertyAffectingPropertyNames.Contains propertyName then
                         let changeEventAddress = rtoa<ChangeData> (Array.append [|Constants.Lens.ChangeName; "BodyPropertiesAffecting"; Constants.Lens.EventName|] entityNames)
                         let eventTrace = EventTrace.debug "World" "publishEntityChange" "BodyPropertiesAffecting" EventTrace.empty
                         World.publishPlus changeData changeEventAddress eventTrace entity false false world
