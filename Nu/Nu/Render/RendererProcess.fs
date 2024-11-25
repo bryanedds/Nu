@@ -592,6 +592,8 @@ type RendererThread () =
 
         member this.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            let thread = Option.get threadOpt
             if terminated then raise (InvalidOperationException "Redundant Terminate calls.")
             terminated <- true
+            thread.Join ()
             threadOpt <- None
