@@ -384,18 +384,18 @@ type [<ReferenceEquality>] GlRenderer2d =
         inline
 #endif
         private batchSprite
-        absolute
-        min
-        size
-        pivot
-        rotation
+        (absolute : bool)
+        (min : Vector2)
+        (size : Vector2)
+        (pivot : Vector2)
+        (rotation : single)
         (insetOpt : Box2 voption)
         (clipOpt : Box2 voption)
         (texture : OpenGL.Texture.Texture)
         (color : Color)
-        blend
+        (blend : Blend)
         (emission : Color)
-        flip
+        (flip : Flip)
         windowSize
         renderer =
 
