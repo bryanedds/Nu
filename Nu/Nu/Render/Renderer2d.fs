@@ -445,7 +445,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             | Additive -> struct (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
             | Overwrite -> struct (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero, OpenGL.BlendEquationMode.FuncAdd)
 
-        // attempt to draw normal sprite
+        // attempt to draw regular sprite
         if color.A <> 0.0f then
             OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, bfs, bfd, beq, texture, windowSize, renderer.SpriteBatchEnv)
 
