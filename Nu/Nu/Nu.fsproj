@@ -86,7 +86,6 @@
 		<Compile Include="Render\RendererProcess.fs" />
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
-		<Compile Include="DataToken\DataToken.fs" />
 		<Compile Include="Particles\Particles.fs" />
 		<Compile Include="Effects\Effects.fs" />
 		<Compile Include="World\WorldPrelude.fs" />

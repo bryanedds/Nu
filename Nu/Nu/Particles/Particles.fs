@@ -959,6 +959,9 @@ module BasicStaticSpriteEmitter =
             time Body.defaultBody false 0.0f Transparent image lifeTimeOpt particleLifeTimeMaxOpt particleRate particleMax particleSeed
             Constraint.empty particleInitializer particleBehavior particleBehaviors emitterBehavior emitterBehaviors
 
+/// A tag interface for emitter descriptors.
+type EmitterDescriptor = interface end
+
 /// Describes a sprite emitter.
 type [<ReferenceEquality>] SpriteEmitterDescriptor<'a when 'a :> Particle and 'a : struct> =
     { Body : Body
@@ -971,6 +974,7 @@ type [<ReferenceEquality>] SpriteEmitterDescriptor<'a when 'a :> Particle and 'a
       ParticleSeed : 'a
       Constraint : Constraint
       Style : string }
+    interface EmitterDescriptor
 
 /// A map of basic sprite emitters.
 type SpriteEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =
@@ -1226,6 +1230,7 @@ type [<ReferenceEquality>] BillboardEmitterDescriptor<'a when 'a :> Particle and
       ParticleSeed : 'a
       Constraint : Constraint
       Style : string }
+    interface EmitterDescriptor
 
 /// A map of basic billboard emitters.
 type BillboardEmitterDescriptors<'a when 'a :> Particle and 'a : struct> =

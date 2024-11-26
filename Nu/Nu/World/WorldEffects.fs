@@ -134,7 +134,7 @@ module Effect =
             let particleSystem =
                 dataTokens |>
                 Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
-                Seq.choose (fun (name : string, descriptorObj : obj) ->
+                Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
                     match descriptorObj with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with
