@@ -87,7 +87,9 @@
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
 		<Compile Include="Particles\Particles.fs" />
-		<Compile Include="Effects\Effects.fs" />
+		<Compile Include="Effects\EffectDescriptor.fs" />
+		<Compile Include="Effects\DataToken.fs" />
+		<Compile Include="Effects\EffectSystem.fs" />
 		<Compile Include="World\WorldPrelude.fs" />
 		<Compile Include="World\WorldTypes.fs" />
 		<Compile Include="World\WorldAssets.fs" />
