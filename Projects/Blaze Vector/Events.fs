@@ -2,7 +2,7 @@
 open System
 open Nu
 
-// this module specifies user-defined event types for BlazeVector.
+// this module specifies user-defined event types for Blaze Vector.
 [<RequireQualifiedAccess>]
 module Events =
 
