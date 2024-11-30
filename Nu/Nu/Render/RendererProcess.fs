@@ -373,7 +373,7 @@ type RendererThread () =
                 if not terminated then
             
                     // wait until swap is requested
-                    swapRequested.Wait ()
+                    while not (swapRequested.Wait 33) && not terminated do ()
 
                     // guard against early termination
                     if not terminated then
@@ -418,7 +418,7 @@ type RendererThread () =
                     while not terminated do
                         submissionProvided.Wait ()
                         if not terminated then
-                            swapRequested.Wait ()
+                            while not (swapRequested.Wait 33) && not terminated do ()
                             if not terminated then
                                 swapCompleted.Release () |> ignore<int>))
                 threadOpt <- Some thread
