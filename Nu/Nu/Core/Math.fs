@@ -601,12 +601,6 @@ module Quaternion =
         Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
     let inline quatNeqApprox v v2 epsilon = not (quatEqApprox v v2 epsilon)
 
-    /// Create a look-at rotation quaternion.
-    /// NOTE: this might be less efficient since it uses Matrix4x4's look-at function then converts to quaternion.
-    let CreateLookAt (position, direction, up) =
-        Quaternion.CreateFromRotationMatrix
-            (Matrix4x4.CreateLookAt (position, direction, up))
-
 /// Converts Quaternion types.
 type QuaternionConverter () =
     inherit TypeConverter ()

@@ -48,8 +48,7 @@ module Viewport =
 
         /// Compute the absolute 2d position from the given relative 3d position.
         member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion, resolution : Vector2i) =
-            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
-            let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+            let view = this.View3d (eyeCenter, eyeRotation)
             let projection = this.Projection3d
             let viewProjection : Matrix4x4 = view * projection
             let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
@@ -60,15 +59,13 @@ module Viewport =
         /// Compute the relative 3d ray from the given absolute 2d position.
         /// TODO: also implement Position2dToPosition3d.
         member this.Position2dToRay3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, resolution : Vector2i) =
-            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
-            let eyeRotationInverse = eyeRotation.Inverted
-            let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+            let view = this.View3d (eyeCenter, eyeRotation)
             let projection = this.Projection3d
             let viewProjectionInverse = (view * projection).Inverted
             let positionNdc = v3 (position.X / single (resolution.X * 2)) (position.Y / single (resolution.Y * 2)) 0.0f
             let positionViewProjection = positionNdc.Transform viewProjectionInverse
             let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
-            let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotationInverse)).V3
+            let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)).V3
             let rayDirection = (position3d - eyeCenter).Normalized
             let ray = Ray3 (eyeCenter, rayDirection)
             ray
@@ -92,8 +89,7 @@ module Viewport =
 
         /// Compute the 3d view matrix.
         member this.View3d (eyeCenter : Vector3, eyeRotation : Quaternion) =
-            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
-            Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+            (Matrix4x4.CreateFromQuaternion eyeRotation * Matrix4x4.CreateTranslation eyeCenter).Inverted
 
         /// Compute the 3d projection matrix.
         member this.Projection3d : Matrix4x4 =
@@ -111,8 +107,7 @@ module Viewport =
 
         /// Compute a 3d view frustum.
         member this.Frustum (eyeCenter, eyeRotation : Quaternion) =
-            let eyeTarget = eyeCenter + v3Forward.Transform eyeRotation
-            let view = Matrix4x4.CreateLookAt (eyeCenter, eyeTarget, v3Up)
+            let view = this.View3d (eyeCenter, eyeRotation)
             let projection = this.Projection3d
             let viewProjection = view * projection
             Frustum viewProjection
