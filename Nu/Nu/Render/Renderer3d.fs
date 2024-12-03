@@ -3091,6 +3091,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             // draw shadow texture when not cached
                             let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
+                                //| (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some shadowTextureBufferIndex -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                 | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                 | (_, _) -> true
                             if shouldDraw then
@@ -3172,6 +3173,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // draw shadow texture when not cached
                                 let shouldDraw =
                                     match renderer.RenderPasses2.TryGetValue renderPass with
+                                    //| (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                     | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                     | (_, _) -> true
                                 if shouldDraw then
