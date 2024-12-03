@@ -629,7 +629,7 @@ type private SortableLight =
     static member sortShadowingSpotAndDirectionalLightsIntoArray lightsMax position lights =
         let lightsArray = Array.zeroCreate<_> lightsMax
         for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
-        let lightsSorted = lights |> Seq.toArray |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType > 0) |> Array.sortBy SortableLight.project
+        let lightsSorted = lights |> Seq.toArray |> Array.filter (fun light -> light.SortableLightDesireShadows = 1 && light.SortableLightType <> 0) |> Array.sortBy SortableLight.project
         for i in 0 .. dec lightsMax do
             if i < lightsSorted.Length then
                 let light = lightsSorted.[i]
@@ -637,7 +637,7 @@ type private SortableLight =
         lightsArray
 
     /// Sort lights into float array for uploading to OpenGL.
-    /// TODO: consider getting rid of allocation here.
+    /// TODO: see if we can get rid of allocation here.
     static member sortLightsIntoFloatArrays lightsMax position lights =
         let lightIds = Array.zeroCreate<uint64> lightsMax
         let lightOrigins = Array.zeroCreate<single> (lightsMax * 3)
@@ -3088,12 +3088,12 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
                                     OpenGL.Hl.Assert ()
 
+                                // mark shadow up to date
+                                renderTasks.ShadowValidated <- true
+
                                 // update renderer values
                                 renderer.ShadowMatrices.[shadowTextureBufferIndex] <- shadowView * shadowProjection
                                 renderer.LightShadowIndices.[lightId] <- shadowTextureBufferIndex
-
-                                // mark shadow up to date
-                                renderTasks.ShadowValidated <- true
 
                                 // next shadow
                                 shadowTextureBufferIndex <- inc shadowTextureBufferIndex
@@ -3126,11 +3126,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                     GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
-                                // update renderer values
-                                renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
-
                                 // mark shadow up to date
                                 renderTasks.ShadowValidated <- true
+
+                                // update renderer values
+                                renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
 
                                 // next shadow
                                 shadowMapBufferIndex <- inc shadowMapBufferIndex
