@@ -876,7 +876,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMatrices : Matrix4x4 array
           mutable LightShadowIndices : Dictionary<uint64, int>
-          mutable LightShadowIndicesCached : Dictionary<uint64, int>
+          mutable LightShadowIndices2 : Dictionary<uint64, int>
           GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
           AmbientBuffers : OpenGL.Texture.Texture * uint * uint
@@ -3022,7 +3022,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let normalPass = NormalPass
         let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
         let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter normalTasks.Lights
-        let spotAndDirectionalLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndicesCached.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) spotAndDirectionalLightsArray
+        let spotAndDirectionalLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndices2.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) spotAndDirectionalLightsArray
 
         // shadow texture pre-passes
         let mutable shadowTextureBufferIndex = 0
@@ -3098,7 +3098,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort point lights according to how they are utilized by shadows, then sort lights to facilitate buffer reuse
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
-        let pointLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndicesCached.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) pointLightsArray
+        let pointLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndices2.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) pointLightsArray
 
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
@@ -3157,8 +3157,9 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.RenderPasses2 <- renderPasses
 
         // clear light shadow indices
-        renderer.LightShadowIndicesCached <- renderer.LightShadowIndices
+        let lightShadowIndices = renderer.LightShadowIndices
         renderer.LightShadowIndices <- dictPlus HashIdentity.Structural []
+        renderer.LightShadowIndices2 <- lightShadowIndices
 
         // clear lights desiring shadows
         renderer.LightsDesiringShadows.Clear ()
@@ -3549,7 +3550,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               ShadowMapBuffersArray = shadowMapBuffersArray
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
-              LightShadowIndicesCached = dictPlus HashIdentity.Structural []
+              LightShadowIndices2 = dictPlus HashIdentity.Structural []
               GeometryBuffers = geometryBuffers
               LightMappingBuffers = lightMappingBuffers
               IrradianceBuffers = irradianceBuffers
