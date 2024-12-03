@@ -3089,11 +3089,11 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 | PointLight -> failwithumf ()
 
                             // draw shadow texture when not cached
-                            let draw =
+                            let shouldDraw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                 | (_, _) -> true
-                            if draw then
+                            if shouldDraw then
 
                                 // draw shadow texture
                                 let shadowResolution = GlRenderer3d.getShadowTextureBufferResolution shadowTextureBufferIndex
@@ -3152,31 +3152,29 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
                                 | (true, renderTasks) ->
                                     match renderTasks.ShadowBufferIndexOpt with
-                                    | Some indexOffset ->
-                                        let index = indexOffset - Constants.Render.ShadowTexturesMaxShader
-                                        if index <> shadowMapBufferIndex then
+                                    | Some index when index - Constants.Render.ShadowTexturesMaxShader <> shadowMapBufferIndex ->
 
-                                            // swap tracked buffer indices
-                                            // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
-                                            for renderPassEntry in renderer.RenderPasses2 do
-                                                if renderPassEntry.Value.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) then
-                                                    renderPassEntry.Value.ShadowBufferIndexOpt <- Some indexOffset
-                                            renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
+                                        // swap tracked buffer indices
+                                        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
+                                        for renderPassEntry in renderer.RenderPasses2 do
+                                            if renderPassEntry.Value.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) then
+                                                renderPassEntry.Value.ShadowBufferIndexOpt <- Some index
+                                        renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
 
-                                            // swap buffers
-                                            let buffer = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
-                                            renderer.ShadowMapBuffersArray.[shadowMapBufferIndex] <- renderer.ShadowMapBuffersArray.[index]
-                                            renderer.ShadowMapBuffersArray.[index] <- buffer
+                                        // swap buffers
+                                        let buffer = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
+                                        renderer.ShadowMapBuffersArray.[shadowMapBufferIndex] <- renderer.ShadowMapBuffersArray.[index - Constants.Render.ShadowTexturesMaxShader]
+                                        renderer.ShadowMapBuffersArray.[index - Constants.Render.ShadowTexturesMaxShader] <- buffer
 
-                                    | None -> ()
+                                    | Some _ | None -> ()
                                 | (false, _) -> ()
 
                                 // draw shadow texture when not cached
-                                let draw =
+                                let shouldDraw =
                                     match renderer.RenderPasses2.TryGetValue renderPass with
                                     | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                     | (_, _) -> true
-                                if draw then
+                                if shouldDraw then
                                     let shadowResolution = Constants.Render.ShadowResolution
                                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                     GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
