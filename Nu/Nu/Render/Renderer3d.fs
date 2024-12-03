@@ -3021,8 +3021,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter normalTasks.Lights
 
         // sort spot and directional lights so that shadows that have the possibility of cache reuse come to the front
-        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized. However, the constant factor
-        // should always be too small here to worry about.
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let spotAndDirectionalLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs |>
@@ -3130,8 +3129,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
 
         // sort point lights so that shadows that have the possibility of cache reuse come to the front
-        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized. However, the constant factor
-        // should always be too small here to worry about.
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
         let pointLightsArray =
             Array.sortBy (fun struct (id, _, _, _, _) ->
                 renderer.RenderPasses2.Pairs |>
