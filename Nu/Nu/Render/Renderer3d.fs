@@ -731,7 +731,7 @@ type [<ReferenceEquality>] private RenderTasks =
       ForwardStaticSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
       DeferredStaticRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
       DeferredAnimatedRemovals : AnimatedModelSurfaceKey List
-      mutable ShadowValidated : bool }
+      mutable ShadowValidated : int option }
 
     member this.Populated =
         this.SkyBoxes.Count > 0 ||
@@ -757,7 +757,7 @@ type [<ReferenceEquality>] private RenderTasks =
           ForwardStaticSorted = List ()
           DeferredStaticRemovals = List ()
           DeferredAnimatedRemovals = List ()
-          ShadowValidated = false }
+          ShadowValidated = None }
 
     static member clear renderTasks =
 
@@ -786,34 +786,32 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.ForwardStaticSorted.Clear ()
         renderTasks.DeferredTerrains.Clear ()
 
-        renderTasks.ShadowValidated <- false
+        renderTasks.ShadowValidated <- None
 
     static member shadowUpToDate renderTasks renderTasksCached =
-        if renderTasksCached.ShadowValidated then
-            let deferredStaticCached =
-                renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
-                (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic) ||>
-                Seq.forall2 (fun static_ staticCached ->
-                    OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
-                    (static_.Value, staticCached.Value) ||>
-                    Seq.forall2 (fun struct (m, _, _, _) struct (mCached, _, _, _) -> m4Eq m mCached))
-            let deferredAnimatedCached =
-                renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
-                (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated) ||>
-                Seq.forall2 (fun animated animatedCached ->
-                    AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
-                    (animated.Value, animatedCached.Value) ||>
-                    Seq.forall2 (fun struct (m, _, _, _) struct (mCached, _, _, _) -> m4Eq m mCached))
-            let deferredTerrainsCached =
-                renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
-                (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains) ||>
-                Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
-                    box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
-                    terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
-            deferredStaticCached &&
-            deferredAnimatedCached &&
-            deferredTerrainsCached
-        else false
+        let deferredStaticCached =
+            renderTasks.DeferredStatic.Count = renderTasksCached.DeferredStatic.Count &&
+            (renderTasks.DeferredStatic, renderTasksCached.DeferredStatic) ||>
+            Seq.forall2 (fun static_ staticCached ->
+                OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
+                (static_.Value, staticCached.Value) ||>
+                Seq.forall2 (fun struct (m, _, _, _) struct (mCached, _, _, _) -> m4Eq m mCached))
+        let deferredAnimatedCached =
+            renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
+            (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated) ||>
+            Seq.forall2 (fun animated animatedCached ->
+                AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
+                (animated.Value, animatedCached.Value) ||>
+                Seq.forall2 (fun struct (m, _, _, _) struct (mCached, _, _, _) -> m4Eq m mCached))
+        let deferredTerrainsCached =
+            renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
+            (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains) ||>
+            Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
+                box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
+                terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
+        deferredStaticCached &&
+        deferredAnimatedCached &&
+        deferredTerrainsCached
 
 /// The 3d renderer. Represents a 3d rendering subsystem in Nu generally.
 type Renderer3d =
@@ -875,8 +873,7 @@ type [<ReferenceEquality>] GlRenderer3d =
           ShadowTextureBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
           ShadowMatrices : Matrix4x4 array
-          mutable LightShadowIndices : Dictionary<uint64, int>
-          mutable LightShadowIndices2 : Dictionary<uint64, int>
+          LightShadowIndices : Dictionary<uint64, int>
           GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
           LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
           AmbientBuffers : OpenGL.Texture.Texture * uint * uint
@@ -3018,11 +3015,10 @@ type [<ReferenceEquality>] GlRenderer3d =
                     | (false, _) -> ()
             | _ -> ()
 
-        // sort spot and directional lights according to how they are utilized by shadows, then sort lights to facilitate buffer reuse
+        // sort spot and directional lights according to how they are utilized by shadows
         let normalPass = NormalPass
         let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
         let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter normalTasks.Lights
-        let spotAndDirectionalLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndices2.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) spotAndDirectionalLightsArray
 
         // shadow texture pre-passes
         let mutable shadowTextureBufferIndex = 0
@@ -3062,8 +3058,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                             // draw shadow texture when not cached
                             let draw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
-                                | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
-                                | (false, _) -> true
+                                | (true, renderTasksCached) when renderTasksCached.ShadowValidated = Some shadowTextureBufferIndex -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
+                                | (_, _) -> true
                             if draw then
 
                                 // draw shadow texture
@@ -3085,7 +3081,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 OpenGL.Hl.Assert ()
 
                             // validate shadow
-                            renderTasks.ShadowValidated <- true
+                            renderTasks.ShadowValidated <- Some shadowTextureBufferIndex
 
                             // update renderer values
                             renderer.ShadowMatrices.[shadowTextureBufferIndex] <- shadowView * shadowProjection
@@ -3096,9 +3092,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                         | _ -> ()
 
-        // sort point lights according to how they are utilized by shadows, then sort lights to facilitate buffer reuse
+        // sort point lights according to how they are utilized by shadows
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
-        let pointLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndices2.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) pointLightsArray
 
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
@@ -3114,15 +3109,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 // draw shadow texture when not cached
                                 let draw =
                                     match renderer.RenderPasses2.TryGetValue renderPass with
-                                    | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
-                                    | (false, _) -> true
+                                    | (true, renderTasksCached) when renderTasksCached.ShadowValidated = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
+                                    | (_, _) -> true
                                 if draw then
                                     let shadowResolution = Constants.Render.ShadowResolution
                                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                     GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
                                 // validate shadow
-                                renderTasks.ShadowValidated <- true
+                                renderTasks.ShadowValidated <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
 
                                 // update renderer values
                                 renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
@@ -3150,16 +3145,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
 
         // swap render passes
-        for renderTasks in renderer.RenderPasses.Values do if not renderTasks.ShadowValidated then RenderTasks.clear renderTasks
+        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowValidated.IsNone then RenderTasks.clear renderTasks
         for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
         renderer.RenderPasses2 <- renderPasses
 
         // clear light shadow indices
-        let lightShadowIndices = renderer.LightShadowIndices
-        renderer.LightShadowIndices <- dictPlus HashIdentity.Structural []
-        renderer.LightShadowIndices2 <- lightShadowIndices
+        renderer.LightShadowIndices.Clear ()
 
         // clear lights desiring shadows
         renderer.LightsDesiringShadows.Clear ()
@@ -3550,7 +3543,6 @@ type [<ReferenceEquality>] GlRenderer3d =
               ShadowMapBuffersArray = shadowMapBuffersArray
               ShadowMatrices = shadowMatrices
               LightShadowIndices = dictPlus HashIdentity.Structural []
-              LightShadowIndices2 = dictPlus HashIdentity.Structural []
               GeometryBuffers = geometryBuffers
               LightMappingBuffers = lightMappingBuffers
               IrradianceBuffers = irradianceBuffers
