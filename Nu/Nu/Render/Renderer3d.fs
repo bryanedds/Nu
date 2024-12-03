@@ -731,7 +731,7 @@ type [<ReferenceEquality>] private RenderTasks =
       ForwardStaticSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
       DeferredStaticRemovals : OpenGL.PhysicallyBased.PhysicallyBasedSurface List
       DeferredAnimatedRemovals : AnimatedModelSurfaceKey List
-      mutable ShadowValidated : int option }
+      mutable ShadowBufferIndexOpt : int option }
 
     member this.Populated =
         this.SkyBoxes.Count > 0 ||
@@ -757,7 +757,7 @@ type [<ReferenceEquality>] private RenderTasks =
           ForwardStaticSorted = List ()
           DeferredStaticRemovals = List ()
           DeferredAnimatedRemovals = List ()
-          ShadowValidated = None }
+          ShadowBufferIndexOpt = None }
 
     static member clear renderTasks =
 
@@ -786,7 +786,7 @@ type [<ReferenceEquality>] private RenderTasks =
         renderTasks.ForwardStaticSorted.Clear ()
         renderTasks.DeferredTerrains.Clear ()
 
-        renderTasks.ShadowValidated <- None
+        renderTasks.ShadowBufferIndexOpt <- None
 
     static member shadowUpToDate renderTasks renderTasksCached =
         let deferredStaticCached =
@@ -3020,6 +3020,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
         let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter normalTasks.Lights
 
+        // sort spot and directional lights so that shadows that have the possibility of cache reuse come to the front
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized. However, the constant factor
+        // should always be too small here to worry about.
+        let spotAndDirectionalLightsArray =
+            Array.sortBy (fun struct (id, _, _, _, _) ->
+                renderer.RenderPasses2.Pairs |>
+                Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, _, _, _) when id2 = id -> renderTasks.ShadowBufferIndexOpt | _ -> None) |>
+                Seq.headOrDefault Int32.MaxValue)
+                spotAndDirectionalLightsArray
+
         // shadow texture pre-passes
         let mutable shadowTextureBufferIndex = 0
         for struct (lightId, lightOrigin, lightCutoff, lightConeOuter, lightDesireShadows) in spotAndDirectionalLightsArray do
@@ -3034,6 +3044,29 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 shadowTextureBufferIndex < dec Constants.Render.ShadowTexturesMax &&
                                 shadowLightType <> DirectionalLight then
                                 shadowTextureBufferIndex <- 1
+
+                            // attempt to swap buffers to facilitate reuse
+                            match renderer.RenderPasses2.TryGetValue renderPass with
+                            | (true, renderTasks) ->
+                                match renderTasks.ShadowBufferIndexOpt with
+                                | Some index when index <> shadowTextureBufferIndex ->
+
+                                    // swap tracked buffer indices
+                                    for renderPassEntry in renderer.RenderPasses2 do
+                                        if renderPassEntry.Value.ShadowBufferIndexOpt = Some shadowTextureBufferIndex then
+                                            renderPassEntry.Value.ShadowBufferIndexOpt <- Some index
+                                    renderTasks.ShadowBufferIndexOpt <- Some shadowTextureBufferIndex
+
+                                    // swap buffers
+                                    let buffer = renderer.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
+                                    let buffer2 = renderer.ShadowTextureBuffers2Array.[shadowTextureBufferIndex]
+                                    renderer.ShadowTextureBuffersArray.[shadowTextureBufferIndex] <- renderer.ShadowTextureBuffersArray.[index]
+                                    renderer.ShadowTextureBuffers2Array.[shadowTextureBufferIndex] <- renderer.ShadowTextureBuffers2Array.[index]
+                                    renderer.ShadowTextureBuffersArray.[index] <- buffer
+                                    renderer.ShadowTextureBuffers2Array.[index] <- buffer2
+
+                                | Some _ | None -> ()
+                            | (false, _) -> ()
 
                             // attempt to set up shadow texture drawing
                             let (shadowOrigin, shadowView, shadowProjection) =
@@ -3058,7 +3091,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             // draw shadow texture when not cached
                             let draw =
                                 match renderer.RenderPasses2.TryGetValue renderPass with
-                                | (true, renderTasksCached) when renderTasksCached.ShadowValidated = Some shadowTextureBufferIndex -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
+                                | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                 | (_, _) -> true
                             if draw then
 
@@ -3080,8 +3113,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
                                 OpenGL.Hl.Assert ()
 
-                            // validate shadow
-                            renderTasks.ShadowValidated <- Some shadowTextureBufferIndex
+                            // remember the utilized index for the next frame
+                            renderTasks.ShadowBufferIndexOpt <- Some shadowTextureBufferIndex
 
                             // update renderer values
                             renderer.ShadowMatrices.[shadowTextureBufferIndex] <- shadowView * shadowProjection
@@ -3095,6 +3128,16 @@ type [<ReferenceEquality>] GlRenderer3d =
         // sort point lights according to how they are utilized by shadows
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
 
+        // sort point lights so that shadows that have the possibility of cache reuse come to the front
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized. However, the constant factor
+        // should always be too small here to worry about.
+        let pointLightsArray =
+            Array.sortBy (fun struct (id, _, _, _, _) ->
+                renderer.RenderPasses2.Pairs |>
+                Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, _, _, _) when id2 = id -> renderTasks.ShadowBufferIndexOpt | _ -> None) |>
+                Seq.headOrDefault Int32.MaxValue)
+                pointLightsArray
+
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
         for struct (lightId, lightOrigin, _, _, lightDesireShadows) in pointLightsArray do
@@ -3106,18 +3149,40 @@ type [<ReferenceEquality>] GlRenderer3d =
                             match shadowLightType with
                             | PointLight ->
 
+                                // attempt to swap buffers to facilitate reuse
+                                match renderer.RenderPasses2.TryGetValue renderPass with
+                                | (true, renderTasks) ->
+                                    match renderTasks.ShadowBufferIndexOpt with
+                                    | Some indexOffset ->
+                                        let index = indexOffset - Constants.Render.ShadowTexturesMaxShader
+                                        if index <> shadowMapBufferIndex then
+
+                                            // swap tracked buffer indices
+                                            for renderPassEntry in renderer.RenderPasses2 do
+                                                if renderPassEntry.Value.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) then
+                                                    renderPassEntry.Value.ShadowBufferIndexOpt <- Some indexOffset
+                                            renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
+
+                                            // swap buffers
+                                            let buffer = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
+                                            renderer.ShadowMapBuffersArray.[shadowMapBufferIndex] <- renderer.ShadowMapBuffersArray.[index]
+                                            renderer.ShadowMapBuffersArray.[index] <- buffer
+
+                                    | None -> ()
+                                | (false, _) -> ()
+
                                 // draw shadow texture when not cached
                                 let draw =
                                     match renderer.RenderPasses2.TryGetValue renderPass with
-                                    | (true, renderTasksCached) when renderTasksCached.ShadowValidated = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
+                                    | (true, renderTasksCached) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                     | (_, _) -> true
                                 if draw then
                                     let shadowResolution = Constants.Render.ShadowResolution
                                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                     GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
-                                // validate shadow
-                                renderTasks.ShadowValidated <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
+                                // remember the utilized index for the next frame
+                                renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
 
                                 // update renderer values
                                 renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
@@ -3145,7 +3210,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
 
         // swap render passes
-        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowValidated.IsNone then RenderTasks.clear renderTasks
+        for renderTasks in renderer.RenderPasses.Values do if renderTasks.ShadowBufferIndexOpt.IsNone then RenderTasks.clear renderTasks
         for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
