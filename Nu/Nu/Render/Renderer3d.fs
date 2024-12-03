@@ -3020,6 +3020,15 @@ type [<ReferenceEquality>] GlRenderer3d =
         let normalTasks = GlRenderer3d.getRenderTasks normalPass renderer
         let spotAndDirectionalLightsArray = SortableLight.sortShadowingSpotAndDirectionalLightsIntoArray Constants.Render.ShadowTexturesMax eyeCenter normalTasks.Lights
 
+        // sort spot and directional lights so that shadows that have the possibility of cache reuse come to the front
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
+        let spotAndDirectionalLightsArray =
+            Array.sortBy (fun struct (id, _, _, _, _) ->
+                renderer.RenderPasses2.Pairs |>
+                Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, _, _, _) when id2 = id -> renderTasks.ShadowBufferIndexOpt | _ -> None) |>
+                Seq.headOrDefault Int32.MaxValue)
+                spotAndDirectionalLightsArray
+
         // shadow texture pre-passes
         let mutable shadowTextureBufferIndex = 0
         for struct (lightId, lightOrigin, lightCutoff, lightConeOuter, lightDesireShadows) in spotAndDirectionalLightsArray do
@@ -3094,6 +3103,15 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // sort point lights according to how they are utilized by shadows
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
+
+        // sort point lights so that shadows that have the possibility of cache reuse come to the front
+        // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
+        let pointLightsArray =
+            Array.sortBy (fun struct (id, _, _, _, _) ->
+                renderer.RenderPasses2.Pairs |>
+                Seq.choose (fun (renderPass, renderTasks) -> match renderPass with ShadowPass (id2, _, _, _) when id2 = id -> renderTasks.ShadowBufferIndexOpt | _ -> None) |>
+                Seq.headOrDefault Int32.MaxValue)
+                pointLightsArray
 
         // shadow map pre-passes
         let mutable shadowMapBufferIndex = 0
