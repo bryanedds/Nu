@@ -3026,72 +3026,71 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     if renderTasks.Populated then
                         match renderPass with
-                        | ShadowPass (shadowLightId, shadowLightType, shadowRotation, _) when lightId = shadowLightId ->
-                            if shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax then
+                        | ShadowPass (shadowLightId, shadowLightType, shadowRotation, _) when lightId = shadowLightId && shadowTextureBufferIndex < Constants.Render.ShadowTexturesMax ->
 
-                                // skip index 0 when no lights are directional and there are at least two shadows allowed
-                                if  shadowTextureBufferIndex = 0 &&
-                                    shadowTextureBufferIndex < dec Constants.Render.ShadowTexturesMax &&
-                                    shadowLightType <> DirectionalLight then
-                                    shadowTextureBufferIndex <- 1
+                            // skip index 0 when no lights are directional and there are at least two shadows allowed
+                            if  shadowTextureBufferIndex = 0 &&
+                                shadowTextureBufferIndex < dec Constants.Render.ShadowTexturesMax &&
+                                shadowLightType <> DirectionalLight then
+                                shadowTextureBufferIndex <- 1
 
-                                // attempt to set up shadow texture drawing
-                                let shadowDescriptorOpt =
-                                    match shadowLightType with
-                                    | SpotLight (_, _) ->
-                                        let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                                        shadowView.Translation <- lightOrigin
-                                        shadowView <- shadowView.Inverted
-                                        let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
-                                        let shadowCutoff = max lightCutoff 0.1f
-                                        let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
-                                        Some (lightOrigin, shadowView, shadowProjection)
-                                    | DirectionalLight ->
-                                        let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
-                                        shadowView.Translation <- lightOrigin
-                                        shadowView <- shadowView.Inverted
-                                        let shadowCutoff = lightCutoff
-                                        let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
-                                        Some (lightOrigin, shadowView, shadowProjection)
-                                    | PointLight -> None
+                            // attempt to set up shadow texture drawing
+                            let shadowDescriptorOpt =
+                                match shadowLightType with
+                                | SpotLight (_, _) ->
+                                    let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                                    shadowView.Translation <- lightOrigin
+                                    shadowView <- shadowView.Inverted
+                                    let shadowFov = max (min lightConeOuter Constants.Render.ShadowFovMax) 0.01f
+                                    let shadowCutoff = max lightCutoff 0.1f
+                                    let shadowProjection = Matrix4x4.CreatePerspectiveFieldOfView (shadowFov, 1.0f, Constants.Render.NearPlaneDistanceInterior, shadowCutoff)
+                                    Some (lightOrigin, shadowView, shadowProjection)
+                                | DirectionalLight ->
+                                    let mutable shadowView = Matrix4x4.CreateFromYawPitchRoll (0.0f, -MathF.PI_OVER_2, 0.0f) * Matrix4x4.CreateFromQuaternion shadowRotation
+                                    shadowView.Translation <- lightOrigin
+                                    shadowView <- shadowView.Inverted
+                                    let shadowCutoff = lightCutoff
+                                    let shadowProjection = Matrix4x4.CreateOrthographic (shadowCutoff * 2.0f, shadowCutoff * 2.0f, -shadowCutoff, shadowCutoff)
+                                    Some (lightOrigin, shadowView, shadowProjection)
+                                | PointLight -> None
 
-                                // draw shadow texture where applicable
-                                match shadowDescriptorOpt with
-                                | Some (shadowOrigin, shadowView, shadowProjection) ->
+                            // draw shadow texture where applicable
+                            match shadowDescriptorOpt with
+                            | Some (shadowOrigin, shadowView, shadowProjection) ->
 
-                                    // draw shadow texture when not cached
-                                    let draw =
-                                        match renderer.RenderPasses2.TryGetValue renderPass with
-                                        | (true, renderTasksCached) -> not (RenderTasks.cached renderTasks renderTasksCached)
-                                        | (false, _) -> true
-                                    if draw then
+                                // draw shadow texture when not cached
+                                let draw =
+                                    match renderer.RenderPasses2.TryGetValue renderPass with
+                                    | (true, renderTasksCached) -> not (RenderTasks.cached renderTasks renderTasksCached)
+                                    | (false, _) -> true
+                                if draw then
 
-                                        // draw shadow texture
-                                        let shadowResolution = GlRenderer3d.getShadowTextureBufferResolution shadowTextureBufferIndex
-                                        let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
-                                        GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
+                                    // draw shadow texture
+                                    let shadowResolution = GlRenderer3d.getShadowTextureBufferResolution shadowTextureBufferIndex
+                                    let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
+                                    GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
 
-                                        // filter shadows on the x (presuming that viewport already configured correctly)
-                                        let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowTextureBuffers2Array.[shadowTextureBufferIndex]
-                                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
-                                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
-                                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
-                                        OpenGL.Hl.Assert ()
+                                    // filter shadows on the x (presuming that viewport already configured correctly)
+                                    let (shadowTexture2, shadowRenderbuffer2, shadowFramebuffer2) = renderer.ShadowTextureBuffers2Array.[shadowTextureBufferIndex]
+                                    OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer2)
+                                    OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer2)
+                                    OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 (1.0f / single shadowResolution.X) 0.0f, shadowTexture, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                                    OpenGL.Hl.Assert ()
 
-                                        // filter shadows on the y (presuming that viewport already configured correctly)
-                                        OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
-                                        OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
-                                        OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
-                                        OpenGL.Hl.Assert ()
+                                    // filter shadows on the y (presuming that viewport already configured correctly)
+                                    OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, shadowRenderbuffer)
+                                    OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, shadowFramebuffer)
+                                    OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
+                                    OpenGL.Hl.Assert ()
 
-                                    // update renderer values
-                                    renderer.ShadowMatrices.[shadowTextureBufferIndex] <- shadowView * shadowProjection
-                                    renderer.LightShadowIndices.[lightId] <- shadowTextureBufferIndex
+                                // update renderer values
+                                renderer.ShadowMatrices.[shadowTextureBufferIndex] <- shadowView * shadowProjection
+                                renderer.LightShadowIndices.[lightId] <- shadowTextureBufferIndex
 
-                                    // next shadow
-                                    shadowTextureBufferIndex <- inc shadowTextureBufferIndex
+                                // next shadow
+                                shadowTextureBufferIndex <- inc shadowTextureBufferIndex
 
-                                | None -> ()
+                            | None -> ()
                         | _ -> ()
         // sort spot and directional lights according to how they are utilized by shadows, then sort lights to facilitate buffer reuse
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
@@ -3104,28 +3103,27 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for (renderPass, renderTasks) in renderer.RenderPasses.Pairs do
                     if renderTasks.Populated then
                         match renderPass with
-                        | ShadowPass (shadowLightId, shadowLightType, _, _) when lightId = shadowLightId ->
-                            if shadowMapBufferIndex < Constants.Render.ShadowMapsMax then
-                                match shadowLightType with
-                                | PointLight ->
+                        | ShadowPass (shadowLightId, shadowLightType, _, _) when lightId = shadowLightId && shadowMapBufferIndex < Constants.Render.ShadowMapsMax ->
+                            match shadowLightType with
+                            | PointLight ->
 
-                                    // draw shadow texture when not cached
-                                    let draw =
-                                        match renderer.RenderPasses2.TryGetValue renderPass with
-                                        | (true, renderTasksCached) -> not (RenderTasks.cached renderTasks renderTasksCached)
-                                        | (false, _) -> true
-                                    if draw then
-                                        let shadowResolution = Constants.Render.ShadowResolution
-                                        let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
-                                        GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
+                                // draw shadow texture when not cached
+                                let draw =
+                                    match renderer.RenderPasses2.TryGetValue renderPass with
+                                    | (true, renderTasksCached) -> not (RenderTasks.cached renderTasks renderTasksCached)
+                                    | (false, _) -> true
+                                if draw then
+                                    let shadowResolution = Constants.Render.ShadowResolution
+                                    let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
+                                    GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
-                                    // update renderer values
-                                    renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
+                                // update renderer values
+                                renderer.LightShadowIndices.[lightId] <- shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader
 
-                                    // next shadow
-                                    shadowMapBufferIndex <- inc shadowMapBufferIndex
+                                // next shadow
+                                shadowMapBufferIndex <- inc shadowMapBufferIndex
 
-                                | SpotLight (_, _) | DirectionalLight -> ()
+                            | SpotLight (_, _) | DirectionalLight -> ()
                         | _ -> ()
 
         // compute the viewports for the given window size
