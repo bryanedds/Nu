@@ -3149,9 +3149,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // reset terrain geometry book-keeping
         renderer.PhysicallyBasedTerrainGeometriesUtilized.Clear ()
 
-        // swap render passes, clearing the second one
-        // TODO: consider clearing all non-deferred render tasks from renderer.RenderPasses before swapping in order to shorten unused object lifetimes.
-        // NOTE: invalidating all shadows here is overly pessimistic, but it does keep this otherwise complicated logic simple.
+        // swap render passes
+        for renderTasks in renderer.RenderPasses.Values do if not renderTasks.ShadowValidated then RenderTasks.clear renderTasks
         for renderTasks in renderer.RenderPasses2.Values do RenderTasks.clear renderTasks
         let renderPasses = renderer.RenderPasses
         renderer.RenderPasses <- renderer.RenderPasses2
