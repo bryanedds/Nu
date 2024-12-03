@@ -3052,6 +3052,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 | Some index when index <> shadowTextureBufferIndex ->
 
                                     // swap tracked buffer indices
+                                    // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
                                     for renderPassEntry in renderer.RenderPasses2 do
                                         if renderPassEntry.Value.ShadowBufferIndexOpt = Some shadowTextureBufferIndex then
                                             renderPassEntry.Value.ShadowBufferIndexOpt <- Some index
@@ -3158,6 +3159,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                         if index <> shadowMapBufferIndex then
 
                                             // swap tracked buffer indices
+                                            // NOTE: this approach has O(n^2) complexity altho perhaps it could be optimized.
                                             for renderPassEntry in renderer.RenderPasses2 do
                                                 if renderPassEntry.Value.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) then
                                                     renderPassEntry.Value.ShadowBufferIndexOpt <- Some indexOffset
