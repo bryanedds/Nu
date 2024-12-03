@@ -612,8 +612,8 @@ type private SortableLight =
         let directionalWeight = match light.SortableLightType with 2 -> -1 | _ -> 0
         struct (directionalWeight, light.SortableLightDistanceSquared)
 
-    /// Sort shadowing point lights for ordering shadow operations.
-    /// TODO: consider getting rid of allocation here.
+    /// Sort shadowing point lights.
+    /// TODO: see if we can get rid of allocation here.
     static member sortShadowingPointLightsIntoArray lightsMax position lights =
         let lightsArray = Array.zeroCreate<_> lightsMax
         for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
@@ -624,8 +624,8 @@ type private SortableLight =
                 lightsArray.[i] <- struct (light.SortableLightId, light.SortableLightOrigin, light.SortableLightCutoff, light.SortableLightConeOuter, light.SortableLightDesireShadows)
         lightsArray
 
-    /// Sort shadowing spot and directional lights for ordering shadow operations.
-    /// TODO: consider getting rid of allocation here.
+    /// Sort shadowing spot and directional lights.
+    /// TODO: see if we can get rid of allocation here.
     static member sortShadowingSpotAndDirectionalLightsIntoArray lightsMax position lights =
         let lightsArray = Array.zeroCreate<_> lightsMax
         for light in lights do light.SortableLightDistanceSquared <- (light.SortableLightOrigin - position).MagnitudeSquared
@@ -3092,7 +3092,8 @@ type [<ReferenceEquality>] GlRenderer3d =
 
                             | None -> ()
                         | _ -> ()
-        // sort spot and directional lights according to how they are utilized by shadows, then sort lights to facilitate buffer reuse
+
+        // sort point lights according to how they are utilized by shadows, then sort lights to facilitate buffer reuse
         let pointLightsArray = SortableLight.sortShadowingPointLightsIntoArray Constants.Render.ShadowMapsMax eyeCenter normalTasks.Lights
         let pointLightsArray = Array.sortBy (fun struct (id, _, _, _, _) -> match renderer.LightShadowIndicesCached.TryGetValue id with (true, index) -> index | (false, _) -> Int32.MaxValue) pointLightsArray
 
