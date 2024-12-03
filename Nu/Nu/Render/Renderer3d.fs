@@ -3080,7 +3080,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                 OpenGL.PhysicallyBased.DrawFilterGaussianSurface (v2 0.0f (1.0f / single shadowResolution.Y), shadowTexture2, renderer.PhysicallyBasedQuad, renderer.FilterGaussian2dShader)
                                 OpenGL.Hl.Assert ()
 
-                            // validate shadow
+                            // remember the utilized index for the next frame
                             renderTasks.ShadowBufferIndexOpt <- Some shadowTextureBufferIndex
 
                             // update renderer values
@@ -3116,7 +3116,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                     GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
-                                // validate shadow
+                                // remember the utilized index for the next frame
                                 renderTasks.ShadowBufferIndexOpt <- Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader)
 
                                 // update renderer values
