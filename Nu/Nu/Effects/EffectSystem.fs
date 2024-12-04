@@ -510,7 +510,7 @@ module EffectSystem =
         // build billboard tokens
         let effectSystem =
             if slice.Enabled then
-                let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
+                let affineMatrix = Matrix4x4.CreateAffine (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
                     { AlbedoOpt = ValueSome slice.Color
@@ -557,7 +557,7 @@ module EffectSystem =
         let effectSystem =
             if slice.Enabled then
                 let staticModel = AssetTag.specialize<StaticModel> staticModel
-                let affineMatrix = Matrix4x4.CreateFromTrs (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
+                let affineMatrix = Matrix4x4.CreateAffine (slice.Position, slice.Angles.RollPitchYaw, slice.Scale)
                 let insetOpt = if slice.Inset.Equals box2Zero then None else Some slice.Inset
                 let properties =
                     { AlbedoOpt = ValueSome slice.Color

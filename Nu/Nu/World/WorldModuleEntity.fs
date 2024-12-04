@@ -508,7 +508,7 @@ module WorldModuleEntity =
 
         static member internal getEntityAffineMatrixLocal entity world =
             let entityState = World.getEntityState entity world
-            Matrix4x4.CreateFromTrs (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
+            Matrix4x4.CreateAffine (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
 
         static member
 #if !DEBUG

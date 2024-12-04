@@ -2885,7 +2885,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
                     let billboardMatrix =
-                        Matrix4x4.CreateFromTrs
+                        Matrix4x4.CreateAffine
                             (particle.Transform.Position,
                              particle.Transform.Rotation,
                              particle.Transform.Size * particle.Transform.Scale)

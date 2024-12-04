@@ -2188,10 +2188,23 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     | ImGuiEditInactive -> world
                 | Some _ | None -> world
 
-            // guizmo manipulation
+            // setup guizmo manipulations
             ImGuizmo.SetOrthographic false
             ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
             ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
+
+            // view manipulation
+            if not CaptureMode && not io.WantCaptureMouseGlobal then
+                let eyeRotationOld = World.getEye3dRotation world
+                let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray ()
+                ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 1375.0f 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                let eyeRotation = (Matrix4x4.CreateFromArray eyeRotationArray).Transposed.Rotation
+                DesiredEye3dRotation <- eyeRotation
+                // TODO: see if we can implement something like the following when ImGuizmo is updated to a version
+                // after this - https://github.com/CedricGuillemet/ImGuizmo/pull/336
+                //if ImGuizmo.IsUsingViewManipulated then io.SwallowMouse ()
+
+            // transform manipulation
             let world =
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal ->
@@ -2348,19 +2361,6 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         else world
                     else world
                 | Some _ | None -> world
-
-            // view manipulation
-            // NOTE: this code is the current failed attempt to integrate ImGuizmo view manipulation as reported in #867.
-            //if not io.WantCaptureMouseMinus then
-            //    let eyeCenter = (World.getEye3dCenter world |> Matrix4x4.CreateTranslation).ToArray ()
-            //    let eyeRotation = (World.getEye3dRotation world |> Matrix4x4.CreateFromQuaternion).ToArray ()
-            //    let eyeScale = m4Identity.ToArray ()
-            //    let view = m4Identity.ToArray ()
-            //    ImGuizmo.RecomposeMatrixFromComponents (&eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0], &view.[0])
-            //    ImGuizmo.ViewManipulate (&view.[0], 1.0f, v2 1400.0f 100.0f, v2 150.0f 150.0f, uint 0x10101010)
-            //    ImGuizmo.DecomposeMatrixToComponents (&view.[0], &eyeCenter.[0], &eyeRotation.[0], &eyeScale.[0])
-            //    desiredEye3dCenter <- (eyeCenter |> Matrix4x4.CreateFromArray).Translation
-            //    desiredEye3dRotation <- (eyeRotation |> Matrix4x4.CreateFromArray |> Quaternion.CreateFromRotationMatrix)
 
             // fin
             ImGui.End ()

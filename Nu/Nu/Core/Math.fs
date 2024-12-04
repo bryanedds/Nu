@@ -1063,6 +1063,10 @@ module Matrix4x4 =
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
 
+        /// The transposed value of a matrix.
+        member inline this.Transposed =
+            Matrix4x4.Transpose this
+
         member inline this.IsZero =
             this.M11 = 0.0f && this.M12 = 0.0f && this.M13 = 0.0f && this.M13 = 0.0f &&
             this.M21 = 0.0f && this.M22 = 0.0f && this.M23 = 0.0f && this.M23 = 0.0f &&
@@ -1105,14 +1109,6 @@ module Matrix4x4 =
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
-    /// Create a matrix from translation, rotation, and scale.
-    let CreateFromTrs (translation, rotation, scale : Vector3) =
-        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-        let scaleMatrix = Matrix4x4.CreateScale scale
-        let mutable trs = scaleMatrix * rotationMatrix
-        trs.Translation <- translation
-        trs
-
     /// Create a rotation matrix from three orthogonal vectors.
     let CreateRotation (right : Vector3, up : Vector3, forward : Vector3) =
         Matrix4x4
@@ -1120,6 +1116,14 @@ module Matrix4x4 =
              right.Y, up.Y, forward.Y, 0.0f,
              right.Z, up.Z, forward.Z, 0.0f,
              0.0f, 0.0f, 0.0f, 1.0f)
+
+    /// Create an affine matrix from translation, rotation, and scale.
+    let CreateAffine (translation, rotation, scale : Vector3) =
+        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+        let scaleMatrix = Matrix4x4.CreateScale scale
+        let mutable affineMatrix = scaleMatrix * rotationMatrix
+        affineMatrix.Translation <- translation
+        affineMatrix
 
 [<AutoOpen>]
 module Color =
@@ -1274,7 +1278,7 @@ type [<Struct>] Affine =
 
     /// Create an affine matrix (lossy).
     member this.Matrix =
-        Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
+        Matrix4x4.CreateAffine (this.Translation, this.Rotation, this.Scale)
 
     /// Create from components (lossless).
     static member make translation rotation scale =

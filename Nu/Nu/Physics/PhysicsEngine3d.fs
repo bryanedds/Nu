@@ -140,7 +140,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private configureBodyProperties (bodyProperties : BodyProperties) (body : RigidBody) gravity =
         PhysicsEngine3d.configureCollisionObjectProperties bodyProperties body
-        body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, v3One)
+        body.WorldTransform <- Matrix4x4.CreateAffine (bodyProperties.Center, bodyProperties.Rotation, v3One)
         body.MotionState.WorldTransform <- body.WorldTransform
         if bodyProperties.SleepingAllowed // TODO: see if we can find a more reliable way to disable sleeping.
         then body.SetSleepingThresholds (Constants.Physics.SleepingThresholdLinear, Constants.Physics.SleepingThresholdAngular)
@@ -275,7 +275,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let inertia = hull.CalculateLocalInertia mass
         match pointsShape.TransformOpt with
         | Some transform ->
-            compoundShape.AddChildShape (Matrix4x4.CreateFromTrs (center, transform.Rotation, v3One), hull)
+            compoundShape.AddChildShape (Matrix4x4.CreateAffine (center, transform.Rotation, v3One), hull)
         | None ->
             compoundShape.AddChildShape (Matrix4x4.CreateTranslation center, hull)
         (center, mass, inertia, id) :: centerMassInertiaDisposes
@@ -437,7 +437,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let ghost = new GhostObject ()
             ghost.CollisionShape <- shape
             ghost.CollisionFlags <- ghost.CollisionFlags ||| CollisionFlags.NoContactResponse
-            ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+            ghost.WorldTransform <- Matrix4x4.CreateAffine (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
             ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
             ghost.UserIndex <- userIndex
             PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
@@ -458,7 +458,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let ghost = new PairCachingGhostObject ()
                 ghost.CollisionShape <- convexShape
                 ghost.CollisionFlags <- ghost.CollisionFlags &&& ~~~CollisionFlags.NoContactResponse
-                ghost.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
+                ghost.WorldTransform <- Matrix4x4.CreateAffine (bodyProperties.Center + shapeTransform.Translation, bodyProperties.Rotation, bodyProperties.Scale)
                 ghost.UserObject <- { BodyId = bodyId; Dispose = disposer }
                 ghost.UserIndex <- userIndex
                 PhysicsEngine3d.configureCollisionObjectProperties bodyProperties ghost
@@ -487,7 +487,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         else
             let constructionInfo = new RigidBodyConstructionInfo (mass, new DefaultMotionState (), shape, inertia)
             let body = new RigidBody (constructionInfo)
-            body.WorldTransform <- Matrix4x4.CreateFromTrs (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
+            body.WorldTransform <- Matrix4x4.CreateAffine (bodyProperties.Center, bodyProperties.Rotation, bodyProperties.Scale)
             body.MotionState.WorldTransform <- body.WorldTransform
             body.UserObject <- { BodyId = bodyId; Dispose = disposer }
             body.UserIndex <- userIndex
@@ -599,8 +599,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         hinge.SetLimit (hingeJoint.AngleMin, hingeJoint.AngleMax, hingeJoint.Softness, hingeJoint.BiasFactor, hingeJoint.RelaxationFactor)
                         Some (hinge :> TypedConstraint)
                     | SliderJoint sliderJoint ->
-                        let frameInA = Matrix4x4.CreateFromTrs (sliderJoint.Anchor, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis.Y, sliderJoint.Axis.X, sliderJoint.Axis.Z), v3One)
-                        let frameInB = Matrix4x4.CreateFromTrs (sliderJoint.Anchor2, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis2.Y, sliderJoint.Axis2.X, sliderJoint.Axis2.Z), v3One)
+                        let frameInA = Matrix4x4.CreateAffine (sliderJoint.Anchor, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis.Y, sliderJoint.Axis.X, sliderJoint.Axis.Z), v3One)
+                        let frameInB = Matrix4x4.CreateAffine (sliderJoint.Anchor2, Quaternion.CreateFromYawPitchRoll (sliderJoint.Axis2.Y, sliderJoint.Axis2.X, sliderJoint.Axis2.Z), v3One)
                         let slider = new SliderConstraint (body, body2, frameInA, frameInB, true)
                         slider.LowerLinearLimit <- sliderJoint.LinearLimitLower
                         slider.UpperLinearLimit <- sliderJoint.LinearLimitUpper
