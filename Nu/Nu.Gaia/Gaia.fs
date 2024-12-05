@@ -2194,12 +2194,12 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
 
             // view manipulation
-            if not CaptureMode && not io.WantCaptureMouseGlobal then
+            if not CaptureMode then
                 let eyeRotationOld = World.getEye3dRotation world
-                let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray ()
+                let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                 ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 1375.0f 100.0f, v2 128.0f 128.0f, uint 0x00000000)
-                let eyeRotation = (Matrix4x4.CreateFromArray eyeRotationArray).Transposed.Rotation
-                DesiredEye3dRotation <- eyeRotation
+                let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
+                if not io.WantCaptureMouseGlobal then DesiredEye3dRotation <- eyeRotation
                 // TODO: see if we can implement something like the following when ImGuizmo is updated to a version
                 // after this - https://github.com/CedricGuillemet/ImGuizmo/pull/336
                 //if ImGuizmo.IsUsingViewManipulated then io.SwallowMouse ()
