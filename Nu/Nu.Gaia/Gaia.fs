@@ -2199,7 +2199,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                 let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                 ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 1375.0f 100.0f, v2 128.0f 128.0f, uint 0x00000000)
                 let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
-                if not io.WantCaptureMouseGlobal then DesiredEye3dRotation <- eyeRotation
+                if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f then DesiredEye3dRotation <- eyeRotation
                 // TODO: see if we can implement something like the following when ImGuizmo is updated to a version
                 // after this - https://github.com/CedricGuillemet/ImGuizmo/pull/336
                 //if ImGuizmo.IsUsingViewManipulated then io.SwallowMouse ()
