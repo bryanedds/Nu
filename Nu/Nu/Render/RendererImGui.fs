@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Numerics
 open System.Runtime.CompilerServices
 open ImGuiNET
@@ -38,7 +39,10 @@ module StubRendererImGui =
         rendererImGui
 
 /// Renders an imgui view via OpenGL.
-type GlRendererImGui (windowWidth : int, windowHeight : int) =
+type GlRendererImGui
+    (windowWidth : int, windowHeight : int,
+     assetTextureRequests : ConcurrentDictionary<AssetTag, unit>,
+     assetTextureOpts : ConcurrentDictionary<AssetTag, uint32 voption>) =
 
     let mutable vertexArrayObject = 0u
     let mutable vertexBufferSize = 8192u
@@ -148,6 +152,22 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             fonts.ClearTexData ()
 
         member this.Render (drawData : ImDrawDataPtr) =
+
+            // prepare asset textures for a finite period of time
+            let now = DateTimeOffset.Now
+            let assetTags = Array.ofSeq assetTextureRequests.Keys // eager copy to allow modification during enumeration
+            let mutable assetTagsEnr = (seq assetTags).GetEnumerator ()
+            while assetTagsEnr.MoveNext () && DateTimeOffset.Now - now <= TimeSpan.FromMilliseconds 4 do
+                let assetTag = assetTagsEnr.Current
+                if not (assetTextureOpts.ContainsKey assetTag) then
+                    match Metadata.tryGetFilePath assetTag with
+                    | Some filePath ->
+                        match OpenGL.Texture.TryCreateTextureGl (true, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.BlockCompressable filePath, filePath) with
+                        | Right (_, textureId) -> assetTextureOpts.[assetTag] <- ValueSome textureId
+                        | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
+                    | None -> ()
+                let mutable removed = ()
+                assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
             // attempt to draw imgui draw data
             let mutable vertexOffsetInVertices = 0
@@ -261,7 +281,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
 module GlRendererImGui =
 
     /// Make a gl-based imgui renderer.
-    let make fonts =
-        let rendererImGui = GlRendererImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
+    let make assetTextureRequests assetTextures fonts =
+        let rendererImGui = GlRendererImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y, assetTextureRequests, assetTextures)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui

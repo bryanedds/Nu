@@ -3312,7 +3312,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.Checkbox ("Reregister Physics Workaround", &ReregisterPhysicsWorkaround) |> ignore<bool>
             ImGui.End ()
 
-    let private imGuiAssetViewerWindow () =
+    let private imGuiAssetViewerWindow world =
         if ImGui.Begin "Asset Viewer" then
             ImGui.SetNextItemWidth -1.0f
             let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
@@ -3331,15 +3331,34 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                     for assetEntry in packageEntry.Value |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                         let assetName = assetEntry.Key
                         if (assetName.ToLowerInvariant ()).Contains (AssetViewerSearchStr.ToLowerInvariant ()) then
+                            let assetDragDrop () =
+                                if ImGui.BeginDragDropSource () then
+                                    let packageNameText = if Symbol.shouldBeExplicit packageEntry.Key then String.surround "\"" packageEntry.Key else packageEntry.Key
+                                    let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
+                                    let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
+                                    DragDropPayloadOpt <- Some assetTagStr
+                                    ImGui.Text assetTagStr
+                                    ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                    ImGui.EndDragDropSource ()
+                            match World.imGuiTryGetTextureId (asset packageEntry.Key assetName) world with
+                            | ValueSome textureId ->
+                                ImGui.Image (nativeint textureId, v2Dup 16.0f)
+                                // NOTE: it appears that drag-dropping only works from nodes on our current version of ImGui.
+                                // TODO: P1: see if this will work with an updated version of ImGui.
+                                assetDragDrop ()
+                                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayShort then
+                                    let zoom = ImGui.IsShiftDown ()
+                                    let size = if zoom then v2Dup 256.0f else v2Dup 128.0f
+                                    let offset = if zoom then v2 -288.0f -128.0f else v2 -160.0f -64.0f
+                                    let tooltipPosition = ImGui.GetMousePos () + offset
+                                    ImGui.SetNextWindowPos tooltipPosition
+                                    if ImGui.BeginTooltip () then
+                                        ImGui.Image (nativeint textureId, size)
+                                        ImGui.EndTooltip ()
+                            | ValueNone -> ImGui.Dummy (v2Dup 16.0f)
+                            ImGui.SameLine ()
                             ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
-                            if ImGui.BeginDragDropSource () then
-                                let packageNameText = if Symbol.shouldBeExplicit packageEntry.Key then String.surround "\"" packageEntry.Key else packageEntry.Key
-                                let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
-                                let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
-                                DragDropPayloadOpt <- Some assetTagStr
-                                ImGui.Text assetTagStr
-                                ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
-                                ImGui.EndDragDropSource ()
+                            assetDragDrop ()
                             ImGui.TreePop ()
                     ImGui.TreePop ()
             ImGui.End ()
@@ -4016,7 +4035,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
                         let world = imGuiAudioPlayerWindow world
                         let world = imGuiRendererWindow world
                         imGuiEditorConfigWindow ()
-                        imGuiAssetViewerWindow ()
+                        imGuiAssetViewerWindow world
                         (entityHierarchyFocused, world)
 
                 // prompt dialogs

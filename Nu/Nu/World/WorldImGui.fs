@@ -19,6 +19,10 @@ module WorldImGui =
         static member internal getImGui world =
             world.Subsystems.ImGui
 
+        static member imGuiTryGetTextureId assetTag world =
+            let rendererProcess = World.getRendererProcess world
+            rendererProcess.TryGetImGuiTextureId assetTag
+
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
         static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) world =
             let drawList = ImGui.GetBackgroundDrawList ()

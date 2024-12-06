@@ -3,6 +3,7 @@
 
 namespace Nu
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Numerics
 open System.Threading
@@ -17,6 +18,8 @@ type RendererProcess =
         abstract Start : ImFontAtlasPtr -> Window option -> unit
         /// The current configuration of the 3d renderer.
         abstract Renderer3dConfig : Renderer3dConfig
+        /// Attempt to get a texture id that can be used to visually represent the specified asset.
+        abstract TryGetImGuiTextureId : AssetTag -> uint32 voption
         /// Enqueue a 3d rendering message.
         abstract EnqueueMessage3d : RenderMessage3d -> unit
         /// Potential fast-path for rendering static models.
@@ -49,6 +52,8 @@ type RendererInline () =
     let mutable messages3d = List ()
     let mutable messages2d = List ()
     let mutable renderersOpt = Option<Renderer3d * Renderer2d * RendererImGui>.None
+    let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
+    let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
 
     interface RendererProcess with
 
@@ -83,7 +88,7 @@ type RendererInline () =
                     OpenGL.Hl.Assert ()
 
                     // create imgui renderer
-                    let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+                    let rendererImGui = GlRendererImGui.make assetTextureRequests assetTextureOpts fonts :> RendererImGui
                     OpenGL.Hl.Assert ()
 
                     // fin
@@ -102,6 +107,12 @@ type RendererInline () =
             match renderersOpt with
             | Some (renderer3d, _, _) -> renderer3d.RendererConfig
             | None -> Renderer3dConfig.defaultConfig
+
+        member this.TryGetImGuiTextureId assetTag =
+            assetTextureRequests.[assetTag] <- ()
+            match assetTextureOpts.TryGetValue assetTag with
+            | (true, textureIdOpt) -> textureIdOpt
+            | (false, _) -> ValueNone
 
         member this.EnqueueMessage3d message =
             match renderersOpt with
@@ -196,6 +207,8 @@ type RendererThread () =
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
+    let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
+    let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
     let cachedSpriteMessagesLock = obj ()
     let cachedSpriteMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
@@ -326,7 +339,7 @@ type RendererThread () =
         OpenGL.Hl.Assert ()
 
         // create imgui renderer
-        let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+        let rendererImGui = GlRendererImGui.make assetTextureRequests assetTextureOpts fonts :> RendererImGui
 
         // mark as started
         started <- true
@@ -392,9 +405,6 @@ type RendererThread () =
 
     interface RendererProcess with
 
-        member this.Renderer3dConfig =
-            renderer3dConfig
-
         member this.Start fonts windowOpt =
 
             // validate state
@@ -427,6 +437,15 @@ type RendererThread () =
 
             // wait for thread to finish starting
             while not started do Thread.Yield () |> ignore<bool>
+
+        member this.Renderer3dConfig =
+            renderer3dConfig
+
+        member this.TryGetImGuiTextureId assetTag =
+            assetTextureRequests.[assetTag] <- ()
+            match assetTextureOpts.TryGetValue assetTag with
+            | (true, textureIdOpt) -> textureIdOpt
+            | (false, _) -> ValueNone
 
         member this.EnqueueMessage3d message =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
