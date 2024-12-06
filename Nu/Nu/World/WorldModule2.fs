@@ -2127,6 +2127,13 @@ module EntityDispatcherModule2 =
             let context = world.ContextImNui
             let world = World.scopeEntity entity [] world
             let world = this.Process (entity, world)
+#if DEBUG
+            if world.ContextImNui <> entity.EntityAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring entity.EntityAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+#endif
             World.advanceContext entity.EntityAddress context world
 
         /// ImNui process an entity.
@@ -2507,6 +2514,13 @@ module GroupDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeGroup group [] world
             let world = this.Process (group, world)
+#if DEBUG
+            if world.ContextImNui <> group.GroupAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring group.GroupAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+#endif
             World.advanceContext group.GroupAddress context world
 
         /// ImNui process a group.
@@ -2704,6 +2718,13 @@ module ScreenDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
             let world = this.Process (screen, world)
+#if DEBUG
+            if world.ContextImNui <> screen.ScreenAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring screen.ScreenAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call World.endGroup?")
+#endif
             World.advanceContext screen.ScreenAddress context world
 
         /// ImNui process a screen.
@@ -2901,6 +2922,13 @@ module GameDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeGame [] world
             let world = this.Process (game, world)
+#if DEBUG
+            if world.ContextImNui <> game.GameAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring game.GameAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call World.endScreen?")
+#endif
             World.advanceContext game.GameAddress context world
 
         /// ImNui process a game.
