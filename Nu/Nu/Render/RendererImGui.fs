@@ -262,6 +262,13 @@ type GlRendererImGui
 
         member this.CleanUp () =
 
+            // destroy asset textures
+            for assetTextureOpt in assetTextureOpts.Values do
+                match assetTextureOpt with
+                | ValueSome textureId -> OpenGL.Gl.DeleteTextures [|textureId|]
+                | ValueNone -> ()
+            OpenGL.Hl.Assert ()
+
             // destroy vao
             OpenGL.Gl.BindVertexArray vertexArrayObject
             OpenGL.Gl.DeleteBuffers [|vertexBuffer|]

@@ -374,7 +374,6 @@ module Texture =
           TextureId : uint }
         member this.Destroy () =
             Gl.DeleteTextures [|this.TextureId|]
-            Hl.Assert ()
 
     /// A texture that can be loaded from another thread.
     type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalId : uint, fullMinFilter : TextureMinFilter, fullMagFilter : TextureMagFilter, fullAnisoFilter) =
