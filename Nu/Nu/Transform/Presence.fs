@@ -6,7 +6,7 @@ open System
 open Prime
 
 /// Describes the form of an element's presence.
-type [<Struct>] Presence =
+type [<StructuralEquality; StructuralComparison; Struct>] Presence =
     /// An interior element so you have to be closer to see them.
     | Interior
     /// An exterior element so you can see them from a distance.
@@ -50,5 +50,5 @@ module PresenceOperators =
         | struct (_, _) -> false
 
     /// Test two presence values for inequality.
-    let presenceNeq left right =
+    let inline presenceNeq left right =
         not (presenceEq left right)
