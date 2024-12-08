@@ -14,11 +14,11 @@ type [<Struct>] Endianness =
     | BigEndian
 
 /// The format of a raw asset.
-type RawFormat =
+type [<Struct>] RawFormat =
     | RawUInt8
-    | RawUInt16 of Endianness
-    | RawUInt32 of Endianness
-    | RawSingle of Endianness
+    | RawUInt16 of Endianness : Endianness
+    | RawUInt32 of Endianness : Endianness
+    | RawSingle of Endianness : Endianness
 
 /// A height map for 3d terrain constructed from a raw asset.
 type [<Struct>] RawHeightMap =
