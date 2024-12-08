@@ -1432,19 +1432,21 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match geometryDescriptor.NormalImageOpt with
                 | Some normalImage ->
                     match GlRenderer3d.tryGetTextureData false normalImage renderer with
-                    | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                        if not blockCompressed then
-                            let scalar = 1.0f / single Byte.MaxValue
-                            bytes |>
-                            Array.map (fun b -> single b * scalar) |>
-                            Array.chunkBySize 4 |>
-                            Array.map (fun b ->
-                                let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
-                                let normal = v3 tangent.X tangent.Z -tangent.Y
-                                normal) |>
-                            Some
-                        else Log.info "Block-compressed images not supported for terrain normal images."; None
-                    | _ -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
+                    | Some (metadata, blockCompressed, bytes) ->
+                        if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                            if not blockCompressed then
+                                let scalar = 1.0f / single Byte.MaxValue
+                                bytes |>
+                                Array.map (fun b -> single b * scalar) |>
+                                Array.chunkBySize 4 |>
+                                Array.map (fun b ->
+                                    let tangent = (v3 b.[2] b.[1] b.[0] * 2.0f - v3One).Normalized
+                                    let normal = v3 tangent.X tangent.Z -tangent.Y
+                                    normal) |>
+                                Some
+                            else Log.info "Block-compressed images not supported for terrain normal images."; None
+                        else Log.info "Normal image resolution does not match terrain resolution."; None
+                    | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
                 | None -> Some (GlRenderer3d.createPhysicallyBasedTerrainNormals resolution positionsAndTexCoordses)
 
             // compute tint
@@ -1452,16 +1454,18 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match geometryDescriptor.TintImageOpt with
                 | Some tintImage ->
                     match GlRenderer3d.tryGetTextureData false tintImage renderer with
-                    | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                        if not blockCompressed then
-                            let scalar = 1.0f / single Byte.MaxValue
-                            bytes |>
-                            Array.map (fun b -> single b * scalar) |>
-                            Array.chunkBySize 4 |>
-                            Array.map (fun b -> v3 b.[2] b.[1] b.[0]) |>
-                            Some
-                        else Log.info "Block-compressed images not supported for terrain tint images."; None
-                    | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
+                    | Some (metadata, blockCompressed, bytes) ->
+                        if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                            if not blockCompressed then
+                                let scalar = 1.0f / single Byte.MaxValue
+                                bytes |>
+                                Array.map (fun b -> single b * scalar) |>
+                                Array.chunkBySize 4 |>
+                                Array.map (fun b -> v3 b.[2] b.[1] b.[0]) |>
+                                Some
+                            else Log.info "Block-compressed images not supported for terrain tint images."; None
+                        else Log.info "Tint image resolution does not match terrain resolution."; None
+                    | None -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
                 | _ -> Some (Array.init positionsAndTexCoordses.Length (fun _ -> v3One))
 
             // compute blendses, logging if more than the safe number of terrain layers is utilized
@@ -1477,29 +1481,33 @@ type [<ReferenceEquality>] GlRenderer3d =
                 match blendMaterial.BlendMap with
                 | RgbaMap rgbaMap ->
                     match GlRenderer3d.tryGetTextureData false rgbaMap renderer with
-                    | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                        if not blockCompressed then
-                            let scalar = 1.0f / single Byte.MaxValue
-                            for i in 0 .. dec positionsAndTexCoordses.Length do
-                                // ARGB reverse byte order, from Drawing.Bitmap (windows).
-                                // TODO: confirm it is the same for SDL (linux).
-                                blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
-                                blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
-                                blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
-                                blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
-                        else Log.info "Block-compressed images not supported for terrain blend iamges."
-                    | _ -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
+                    | Some (metadata, blockCompressed, bytes) ->
+                        if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                            if not blockCompressed then
+                                let scalar = 1.0f / single Byte.MaxValue
+                                for i in 0 .. dec positionsAndTexCoordses.Length do
+                                    // ARGB reverse byte order, from Drawing.Bitmap (windows).
+                                    // TODO: confirm it is the same for SDL (linux).
+                                    blendses.[i, 0] <- single bytes.[i * 4 + 2] * scalar
+                                    blendses.[i, 1] <- single bytes.[i * 4 + 1] * scalar
+                                    blendses.[i, 2] <- single bytes.[i * 4 + 0] * scalar
+                                    blendses.[i, 3] <- single bytes.[i * 4 + 3] * scalar
+                            else Log.info "Block-compressed images not supported for terrain blend iamges."
+                        else Log.info "Blend image resolution does not match terrain resolution."
+                    | None -> Log.info ("Could not locate texture data for blend image '" + scstring rgbaMap + "'.")
                 | RedsMap reds ->
                     let scalar = 1.0f / single Byte.MaxValue
                     for i in 0 .. dec (min reds.Length 8) do
                         let red = reds.[i]
                         match GlRenderer3d.tryGetTextureData false red renderer with
-                        | Some (metadata, blockCompressed, bytes) when metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length ->
-                            if not blockCompressed then
-                                for j in 0 .. dec positionsAndTexCoordses.Length do
-                                    blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
-                            else Log.info "Block-compressed images not supported for terrain blend images."
-                        | _ -> Log.info ("Could not locate texture data for blend image '" + scstring red + "'.")
+                        | Some (metadata, blockCompressed, bytes) ->
+                            if metadata.TextureWidth * metadata.TextureHeight = positionsAndTexCoordses.Length then
+                                if not blockCompressed then
+                                    for j in 0 .. dec positionsAndTexCoordses.Length do
+                                        blendses.[j, i] <- single bytes.[j * 4 + 2] * scalar
+                                else Log.info "Block-compressed images not supported for terrain blend images."
+                            else Log.info "Blend image resolution does not match terrain resolution."
+                        | None -> Log.info ("Could not locate texture data for blend image '" + scstring red + "'.")
             | FlatMaterial _ ->
                 for i in 0 .. dec positionsAndTexCoordses.Length do
                     blendses.[i,0] <- 1.0f
