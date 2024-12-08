@@ -180,9 +180,7 @@ type GlRendererImGui
             // handle render messages
             for renderMessage in renderMessages do
                 match renderMessage with
-                | ReloadRenderAssets ->
-                    this.DestroyAssetTextures (Some textureIdBlacklist)
-                    assetTextureRequests.Clear ()
+                | ReloadRenderAssets -> this.DestroyAssetTextures (Some textureIdBlacklist)
 
             // prepare asset textures for a finite period of time
             let now = DateTimeOffset.Now
