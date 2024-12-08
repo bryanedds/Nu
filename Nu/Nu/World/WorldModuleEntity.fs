@@ -857,7 +857,7 @@ module WorldModuleEntity =
         static member internal setEntityPresence (value : Presence) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
-            if presenceNeq value previous && (value.OmnipresentType || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
+            if presenceNeq value previous && (value.IsOmnipresent || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
                 let visibleOld = entityState.VisibleSpatial
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
@@ -2015,13 +2015,13 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView2dAbsolute transform.Bounds2d.Box2 world
+            presence.IsOmnipresent || World.boundsInView2dAbsolute transform.Bounds2d.Box2 world
 
         static member internal getEntityInView2dRelative entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView2dRelative transform.Bounds2d.Box2 world
+            presence.IsOmnipresent || World.boundsInView2dRelative transform.Bounds2d.Box2 world
 
         static member internal getEntityInPlay2dAbsolute entity world =
             World.getEntityInView2dAbsolute entity world
@@ -2033,7 +2033,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInPlay3d transform.Bounds3d world
+            presence.IsOmnipresent || World.boundsInPlay3d transform.Bounds3d world
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
@@ -2041,7 +2041,7 @@ module WorldModuleEntity =
             let light = entityState.Dispatcher.Light
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView3d lightProbe light presence transform.Bounds3d world
+            presence.IsOmnipresent || World.boundsInView3d lightProbe light presence transform.Bounds3d world
 
         static member internal getEntityAttributesInferred (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world

@@ -6,7 +6,7 @@ open System
 open Prime
 
 /// Describes the form of an element's presence.
-type Presence =
+type [<Struct>] Presence =
     /// An interior element so you have to be closer to see them.
     | Interior
     /// An exterior element so you can see them from a distance.
@@ -15,11 +15,6 @@ type Presence =
     | Imposter
     /// Always visible.
     | Omnipresent
-
-    member this.InteriorType = match this with Interior -> true | _ -> false
-    member this.ExteriorType = match this with Exterior -> true | _ -> false
-    member this.ImposterType = match this with Imposter -> true | _ -> false
-    member this.OmnipresentType = match this with Omnipresent -> true | _ -> false
 
     member this.DepthCutoff =
         match this with

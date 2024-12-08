@@ -81,7 +81,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Optimized =
         this.Imperative &&
-        this.Presence_.OmnipresentType &&
+        this.Presence_.IsOmnipresent &&
         not this.PublishChangeEvents
 
     member this.Rotation

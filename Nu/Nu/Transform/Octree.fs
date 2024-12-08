@@ -35,9 +35,6 @@ module Octelement =
         member this.Static = this.Flags_ &&& StaticMask <> 0u
         member this.LightProbe = this.Flags_ &&& LightProbeMask <> 0u
         member this.Light = this.Flags_ &&& LightMask <> 0u
-        member this.Interior = this.Presence_.InteriorType
-        member this.Exterior = this.Presence_.ExteriorType
-        member this.Imposter = this.Presence_.ImposterType
         member this.Presence = this.Presence_
         member this.Bounds = this.Bounds_
         member this.Entry = this.Entry_
@@ -389,12 +386,13 @@ module internal Octnode =
                     getElementsInViewFrustum interior exterior frustum set node
         | ElementChildren elements ->
             for element in elements do
+                let presence = element.Presence
                 if interior then
-                    if element.Interior || element.Exterior then
+                    if presence.IsInterior || presence.IsExterior then
                         if element.Visible && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
                 elif exterior then
-                    if element.Exterior then
+                    if presence.IsExterior then
                         if element.Visible && frustum.Intersects element.Bounds then
                             set.Add element |> ignore
 
@@ -507,10 +505,10 @@ module Octree =
 
     /// Add an element with the given presence and bounds to the tree.
     let addElement (presence : Presence) bounds (element : 'e Octelement) tree =
-        if presence.ImposterType then
+        if presence.IsImposter then
             tree.Imposter.Remove element |> ignore
             tree.Imposter.Add element |> ignore
-        elif presence.OmnipresentType then
+        elif presence.IsOmnipresent then
             tree.Omnipresent.Remove element |> ignore
             tree.Omnipresent.Add element |> ignore
         else
@@ -522,9 +520,9 @@ module Octree =
 
     /// Remove an element with the given presence and bounds from the tree.
     let removeElement (presence : Presence) bounds (element : 'e Octelement) tree =
-        if presence.ImposterType then 
+        if presence.IsImposter then 
             tree.Imposter.Remove element |> ignore
-        elif presence.OmnipresentType then 
+        elif presence.IsOmnipresent then 
             tree.Omnipresent.Remove element |> ignore
         else
             if not (Octnode.isIntersectingBox bounds tree.Node) then
@@ -534,8 +532,8 @@ module Octree =
 
     /// Update an existing element in the tree.
     let updateElement (presenceOld : Presence) boundsOld (presenceNew : Presence) boundsNew element tree =
-        let wasInNode = not presenceOld.ImposterType && not presenceOld.OmnipresentType && Octnode.isIntersectingBox boundsOld tree.Node
-        let isInNode = not presenceNew.ImposterType && not presenceNew.OmnipresentType && Octnode.isIntersectingBox boundsNew tree.Node
+        let wasInNode = not presenceOld.IsImposter && not presenceOld.IsOmnipresent && Octnode.isIntersectingBox boundsOld tree.Node
+        let isInNode = not presenceNew.IsImposter && not presenceNew.IsOmnipresent && Octnode.isIntersectingBox boundsNew tree.Node
         if wasInNode then
             if isInNode then
                 match tryFindLeafFast boundsOld tree with
@@ -549,15 +547,15 @@ module Octree =
                 | None -> Octnode.updateElement boundsOld boundsNew &element tree.Node |> ignore
             else
                 Octnode.removeElement boundsOld &element tree.Node |> ignore
-                if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
-                if presenceNew.ImposterType then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
+                if presenceOld.IsImposter then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
+                if presenceNew.IsImposter then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
         else
             if isInNode then
-                if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
+                if presenceOld.IsImposter then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
                 Octnode.addElement boundsNew &element tree.Node |> ignore
             else
-                if presenceOld.ImposterType then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
-                if presenceNew.ImposterType then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
+                if presenceOld.IsImposter then tree.Imposter.Remove element |> ignore else tree.Omnipresent.Remove element |> ignore
+                if presenceNew.IsImposter then tree.Imposter.Add element |> ignore else tree.Omnipresent.Add element |> ignore
 
     /// Clear the contents of the tree.
     let clear tree =
