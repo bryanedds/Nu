@@ -32,6 +32,8 @@ type RendererProcess =
         abstract EnqueueMessage2d : RenderMessage2d -> unit
         /// Potential fast-path for rendering layered sprite.
         abstract RenderLayeredSpriteFast : single * single * AssetTag * Transform inref * Box2 ValueOption inref * Box2 ValueOption inref * Image AssetTag * Color inref * Blend * Color inref * Flip -> unit
+        /// Enqueue an ImGui rendering message.
+        abstract EnqueueMessageImGui : RenderMessageImGui -> unit
         /// Clear enqueued render messages.
         abstract ClearMessages : unit -> unit
         /// Submit enqueued render messages for processing.
@@ -51,6 +53,7 @@ type RendererInline () =
     let mutable glFinishRequired = false
     let mutable messages3d = List ()
     let mutable messages2d = List ()
+    let mutable messagesImGui = List ()
     let mutable renderersOpt = Option<Renderer3d * Renderer2d * RendererImGui>.None
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
@@ -144,9 +147,15 @@ type RendererInline () =
             | Some _ -> messages2d.Add (LayeredOperation2d { Elevation = elevation; Horizon = horizon; AssetTag = assetTag; RenderOperation2d = RenderSprite { Transform = transform; InsetOpt = insetOpt; ClipOpt = clipOpt; Image = image; Color = color; Blend = blend; Emission = emission; Flip = flip }})
             | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
 
+        member this.EnqueueMessageImGui message =
+            match renderersOpt with
+            | Some _ -> messagesImGui.Add message 
+            | None -> raise (InvalidOperationException "Renderers are not yet or are no longer valid.")
+
         member this.ClearMessages () =
             messages3d.Clear ()
             messages2d.Clear ()
+            messagesImGui.Clear ()
 
         member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize windowSize drawData =
             match renderersOpt with
@@ -167,7 +176,8 @@ type RendererInline () =
                 OpenGL.Hl.Assert ()
 
                 // render imgui
-                rendererImGui.Render drawData
+                rendererImGui.Render drawData messagesImGui
+                messagesImGui.Clear ()
                 OpenGL.Hl.Assert ()
 
                 // end frame
@@ -199,7 +209,7 @@ type RendererThread () =
     let [<VolatileField>] mutable threadOpt = None
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
-    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
+    let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
     let submissionProvided = new SemaphoreSlim (0, 1)
     let swapRequested = new SemaphoreSlim (0, 1)
@@ -207,6 +217,7 @@ type RendererThread () =
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
+    let messageBuffersImGui = [|List (); List ()|]
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
     let cachedSpriteMessagesLock = obj ()
@@ -354,7 +365,7 @@ type RendererThread () =
             if not terminated then
 
                 // receive submission
-                let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
+                let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
 
                 // begin frame
@@ -375,7 +386,7 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // render imgui
-                rendererImGui.Render drawData
+                rendererImGui.Render drawData messagesImGui
                 OpenGL.Hl.Assert ()
 
                 // end frame
@@ -589,19 +600,26 @@ type RendererThread () =
                 | _ -> failwithumf ()
             | _ -> failwithumf ()
 
+        member this.EnqueueMessageImGui message =
+            if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
+            messageBuffersImGui.[messageBufferIndex].Add message
+
         member this.ClearMessages () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
+            messageBuffersImGui.[messageBufferIndex].Clear ()
 
         member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye2dCenter eye2dSize eyeMargin drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
+            let messagesImGui = messageBuffersImGui.[messageBufferIndex]
             messageBufferIndex <- if messageBufferIndex = 0 then 1 else 0
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
-            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
+            messageBuffersImGui.[messageBufferIndex].Clear ()
+            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
             submissionProvided.Release () |> ignore<int>
 
         member this.Swap () =

@@ -957,6 +957,7 @@ module WorldModule2 =
             let world = World.reloadPhysicsAssets world
             let world = World.reloadRenderAssets2d world
             let world = World.reloadRenderAssets3d world
+            let world = World.reloadRenderAssetsImGui world
             let world = World.reloadAudioAssets world
             let world = World.reloadSymbols world
             world

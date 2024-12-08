@@ -3,17 +3,22 @@
 
 namespace Nu
 open System
+open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Numerics
 open System.Runtime.CompilerServices
 open ImGuiNET
 open Prime
 
+/// A message to the ImGui rendering subsystem.
+type RenderMessageImGui =
+    | ReloadRenderAssets
+
 /// Renders an imgui view.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port.
 type RendererImGui =
     abstract Initialize : ImFontAtlasPtr -> unit
-    abstract Render : ImDrawDataPtr -> unit
+    abstract Render : ImDrawDataPtr -> RenderMessageImGui List -> unit
     abstract CleanUp : unit -> unit
 
 /// A stub imgui renderer.
@@ -26,7 +31,7 @@ type StubRendererImGui () =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
-        member this.Render _ = ()
+        member this.Render _ _ = ()
         member this.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
@@ -56,6 +61,18 @@ type GlRendererImGui
     let mutable fontTextureHeight = 0
     let mutable fontTexture = Unchecked.defaultof<OpenGL.Texture.Texture>
     do ignore windowWidth
+
+    member private this.DestroyAssetTextures (destroyedTextureIdsOpt : uint HashSet option) =
+        for assetTextureOpt in assetTextureOpts.Values do
+            match assetTextureOpt with
+            | ValueSome textureId ->
+                OpenGL.Gl.DeleteTextures [|textureId|]
+                match destroyedTextureIdsOpt with
+                | Some destroyedTextureIds -> destroyedTextureIds.Add textureId |> ignore<bool>
+                | None -> ()
+            | ValueNone -> ()
+        OpenGL.Hl.Assert ()
+        assetTextureOpts.Clear ()
 
     interface RendererImGui with
 
@@ -151,7 +168,21 @@ type GlRendererImGui
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 
-        member this.Render (drawData : ImDrawDataPtr) =
+        member this.Render (drawData : ImDrawDataPtr) renderMessages =
+
+            // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently
+            // destroyed. In the following code, we make an attempt to clear all artifacts that might have a
+            // potentially invalidated texture id laying around, but one might already be on the stack on another
+            // thread, so we use this extra caution. This blacklist only lasts for the current render frame, so if any
+            // texture id lasts beyond one frame, it indicates a bug.
+            let textureIdBlacklist = hashSetPlus HashIdentity.Structural []
+
+            // handle render messages
+            for renderMessage in renderMessages do
+                match renderMessage with
+                | ReloadRenderAssets ->
+                    this.DestroyAssetTextures (Some textureIdBlacklist)
+                    assetTextureRequests.Clear ()
 
             // prepare asset textures for a finite period of time
             let now = DateTimeOffset.Now
@@ -225,7 +256,7 @@ type GlRendererImGui
                 OpenGL.Gl.Uniform1 (shaderFontTextureUniform, 0) // TODO: use bindless textures for imgui?
                 OpenGL.Hl.Assert ()
 
-                // draw command lists
+                // draw command lists, ignoring any commands that use blacklisted textures
                 let mutable vertexOffset = 0
                 let mutable indexOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
@@ -234,15 +265,16 @@ type GlRendererImGui
                     for cmd in 0 .. dec cmds.CmdBuffer.Size do
                         let pcmds = cmds.CmdBuffer
                         let pcmd = pcmds.[cmd]
-                        if pcmd.UserCallback = nativeint 0 then
-                            let clip = pcmd.ClipRect
-                            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
-                            OpenGL.Gl.Scissor (int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
-                            OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)
-                            OpenGL.Hl.ReportDrawCall 1
-                            OpenGL.Hl.Assert ()
-                        else raise (NotImplementedException ())
+                        if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
+                            if pcmd.UserCallback = nativeint 0 then
+                                let clip = pcmd.ClipRect
+                                OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+                                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
+                                OpenGL.Gl.Scissor (int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
+                                OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)
+                                OpenGL.Hl.ReportDrawCall 1
+                                OpenGL.Hl.Assert ()
+                            else raise (NotImplementedException ())
                         indexOffset <- indexOffset + int pcmd.ElemCount
                     vertexOffset <- vertexOffset + cmds.VtxBuffer.Size
 
@@ -263,11 +295,7 @@ type GlRendererImGui
         member this.CleanUp () =
 
             // destroy asset textures
-            for assetTextureOpt in assetTextureOpts.Values do
-                match assetTextureOpt with
-                | ValueSome textureId -> OpenGL.Gl.DeleteTextures [|textureId|]
-                | ValueNone -> ()
-            OpenGL.Hl.Assert ()
+            this.DestroyAssetTextures None
 
             // destroy vao
             OpenGL.Gl.BindVertexArray vertexArrayObject
