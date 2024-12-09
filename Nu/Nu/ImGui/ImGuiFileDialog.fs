@@ -135,9 +135,9 @@ module ImGui =
                 // Draw path
                 ImGui.Text ("Path: " + PathF.Normalize dialogState.DirectoryPath.FullName)
 
-                let contentRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X
+                let contentRegionWidth = ImGui.GetContentRegionAvail().X
 
-                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, true, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
                 ImGui.Columns 4
 
                 // Columns size

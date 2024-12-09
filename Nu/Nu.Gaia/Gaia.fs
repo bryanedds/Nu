@@ -3168,7 +3168,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if enter then InteractiveInputStr <- ""
             if eval || enter then InteractiveInputFocusRequested <- true
             ImGui.Separator ()
-            ImGui.BeginChild ("##interactiveOutputStr", v2Zero, false, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+            ImGui.BeginChild ("##interactiveOutputStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
             ImGui.TextUnformatted InteractiveOutputStr
             if toBottom then ImGui.SetScrollHereY 1.0f
             ImGui.EndChild ()
@@ -3253,10 +3253,9 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             ImGui.PushStyleColor (ImGuiCol.TitleBgActive, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TitleBgCollapsed, flashColor)
             ImGui.PushStyleColor (ImGuiCol.Tab, flashColor)
-            ImGui.PushStyleColor (ImGuiCol.TabActive, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TabSelected, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TabHovered, flashColor)
-            ImGui.PushStyleColor (ImGuiCol.TabUnfocused, flashColor)
-            ImGui.PushStyleColor (ImGuiCol.TabUnfocusedActive, flashColor)
+            ImGui.PushStyleColor (ImGuiCol.TabDimmed, flashColor)
         if ImGui.Begin ("Log", ImGuiWindowFlags.NoNav) then
             ImGui.Text "Log:"
             ImGui.SameLine ()
@@ -3264,7 +3263,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                 ImGui.Text "Clear evaluation output (Alt+C)"
                 ImGui.EndTooltip ()
-            ImGui.BeginChild ("##outputBufferStr", v2Zero, false, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+            ImGui.BeginChild ("##outputBufferStr", v2Zero, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
             ImGui.TextUnformatted LogStr
             ImGui.EndChild ()
             ImGui.End ()
@@ -3794,7 +3793,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             world
         else world
 
-    let private imGuiMessageBoxDialog message world =
+    let private imGuiMessageBoxDialog (message : string) world =
         let title = "Message!"
         let mutable showing = true
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -4001,7 +4000,7 @@ DockSpace             ID=0x8B93E3BD Window=0xA787BDB4 Pos=0,0 Size=1920,1080 Spl
             EyeChangedElsewhere <- true
 
         // enable global docking
-        ImGui.DockSpaceOverViewport (ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
+        ImGui.DockSpaceOverViewport (0u, ImGui.GetMainViewport (), ImGuiDockNodeFlags.PassthruCentralNode) |> ignore<uint>
 
         // attempt to proceed with normal operation
         match RecoverableExceptionOpt with
