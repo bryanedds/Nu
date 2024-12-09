@@ -1102,7 +1102,7 @@ module WorldModule2 =
             | _ ->
                 if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> ValueSome
                 elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> ValueSome
-                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F9 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> ValueSome
+                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> ValueSome
                 else ValueNone
 
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
