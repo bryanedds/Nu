@@ -24,12 +24,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
     let charsPressed =
         List<char> ()
 
-    let keyboardKeys =
-        Enum.GetValues typeof<KeyboardKey> |>
-        enumerable |>
-        Seq.map cast<KeyboardKey> |>
-        Array.ofSeq
-
     let context =
         ImGui.CreateContext ()
 
@@ -111,9 +105,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         io.KeyCtrl <- KeyboardState.isCtrlDown ()
         io.KeyAlt <- KeyboardState.isAltDown ()
         io.KeyShift <- KeyboardState.isShiftDown ()
-        //let keysDown = io.KeysDown
-        //for keyboardKey in keyboardKeys do
-        //    keysDown.[int keyboardKey] <- KeyboardState.isKeyDown keyboardKey
 
         // register key char input
         for c in charsPressed do
