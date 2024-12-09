@@ -341,7 +341,8 @@ module ImGui =
 
                     opened <- false
 
-            ImGui.EndPopup ()
+                ImGui.EndPopup ()
+
             ImGui.PopID ()
 
             complete
