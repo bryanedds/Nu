@@ -193,7 +193,8 @@ module Gaia =
 
     (* Initial imgui.ini File Content *)
 
-    let private ImGuiIniFileStr = """[Window][Gaia]
+    let private ImGuiIniFileStr = """
+[Window][Gaia]
 Pos=0,0
 Size=1920,54
 Collapsed=0
@@ -348,7 +349,7 @@ Collapsed=0
 
 [Window][Choose a nugroup file...]
 Pos=587,326
-Size=747,451
+Size=747,398
 Collapsed=0
 
 [Window][Save a nugroup file...]
