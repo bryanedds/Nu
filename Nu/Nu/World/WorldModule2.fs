@@ -2071,7 +2071,7 @@ module WorldModule2 =
                                                                 world.Timers.ImGuiTimer.Restart ()
                                                                 let imGui = World.getImGui world
                                                                 if not firstFrame then imGui.EndFrame ()
-                                                                imGui.BeginFrame ()
+                                                                imGui.BeginFrame (single world.DateDelta.TotalSeconds)
                                                                 let world = World.imGuiProcess world
                                                                 let (world : World) = imGuiProcess world
                                                                 imGui.InputFrame ()

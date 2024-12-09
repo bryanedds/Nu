@@ -56,9 +56,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         // configure docking enabled
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
 
-        // configure imgui advance time to a constant speed regardless of frame-rate
-        io.DeltaTime <- 1.0f / 60.0f
-
         // add default font
         fonts.AddFontDefault () |> ignore<ImFontPtr>
 
@@ -79,8 +76,10 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
     member this.HandleKeyChar (keyChar : char) =
         charsPressed.Add keyChar
 
-    member this.BeginFrame () =
+    member this.BeginFrame deltaTime =
         if not stub then
+            let io = ImGui.GetIO ()
+            io.DeltaTime <- max 0.001f deltaTime // 0 delta time will cause an exception
             ImGui.NewFrame ()
             ImGuiIOPtr.BeginFrame ()
             ImGuizmo.BeginFrame ()
