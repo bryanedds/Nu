@@ -79,7 +79,11 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
     member this.BeginFrame deltaTime =
         if not stub then
             let io = ImGui.GetIO ()
-            io.DeltaTime <- max 0.001f deltaTime // 0 delta time will cause an exception
+            let deltaTimeBounded =
+                if deltaTime <= 0.001f || deltaTime >= 0.1f // when time is close to zero or negative (such as with undo), suppose default time delta
+                then 1.0f / 60.0f
+                else deltaTime
+            io.DeltaTime <- deltaTimeBounded
             ImGui.NewFrame ()
             ImGuiIOPtr.BeginFrame ()
             ImGuizmo.BeginFrame ()
@@ -90,8 +94,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         () // nothing to do
 
     member this.InputFrame () =
-
-        // register key char input
         let io = ImGui.GetIO ()
         for c in charsPressed do
             io.AddInputCharacter (uint32 c)

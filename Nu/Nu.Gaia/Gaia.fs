@@ -554,7 +554,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         focusPropertyOpt None world
         selectEntityOpt None world
 
-    let private tryUndo world =
+    let private tryUndo (world : World) =
         match
             (if not (World.getImperative world) then
                 match Pasts with
