@@ -149,7 +149,6 @@ module WorldImGui =
                     itemOpt|]
             let items = Array.definitize itemOpts
             ImGui.Unindent ()
-            ImGui.PopID ()
             (changed, items)
 
         /// Edit a list value via ImGui.
@@ -182,7 +181,6 @@ module WorldImGui =
                     itemOpt]
             let items = List.definitize itemOpts
             ImGui.Unindent ()
-            ImGui.PopID ()
             (changed, items)
 
         /// Edit a record value via ImGui, optionally replacing the instructed fields.
