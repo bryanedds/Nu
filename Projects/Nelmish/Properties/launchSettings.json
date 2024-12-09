@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nelmish": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
