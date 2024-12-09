@@ -65,31 +65,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         // configure imgui advance time to a constant speed regardless of frame-rate
         io.DeltaTime <- 1.0f / 60.0f
 
-        // configure key mappings
-        //io.SetKeyEventNativeData (ImGuiKey.Space, int KeyboardKey.Space, int KeyboardKey.Space)
-        //keyMap.[int ImGuiKey.Tab] <- int KeyboardKey.Tab
-        //keyMap.[int ImGuiKey.LeftArrow] <- int KeyboardKey.Left
-        //keyMap.[int ImGuiKey.RightArrow] <- int KeyboardKey.Right
-        //keyMap.[int ImGuiKey.UpArrow] <- int KeyboardKey.Up
-        //keyMap.[int ImGuiKey.DownArrow] <- int KeyboardKey.Down
-        //keyMap.[int ImGuiKey.PageUp] <- int KeyboardKey.PageUp
-        //keyMap.[int ImGuiKey.PageDown] <- int KeyboardKey.PageDown
-        //keyMap.[int ImGuiKey.Home] <- int KeyboardKey.Home
-        //keyMap.[int ImGuiKey.End] <- int KeyboardKey.End
-        //keyMap.[int ImGuiKey.Delete] <- int KeyboardKey.Delete
-        //keyMap.[int ImGuiKey.Backspace] <- int KeyboardKey.Backspace
-        //keyMap.[int ImGuiKey.Enter] <- int KeyboardKey.Enter
-        //keyMap.[int ImGuiKey.Escape] <- int KeyboardKey.Escape
-        //keyMap.[int ImGuiKey.LeftCtrl] <- int KeyboardKey.LCtrl
-        //keyMap.[int ImGuiKey.RightCtrl] <- int KeyboardKey.RCtrl
-        //keyMap.[int ImGuiKey.LeftAlt] <- int KeyboardKey.LAlt
-        //keyMap.[int ImGuiKey.RightAlt] <- int KeyboardKey.RAlt
-        //keyMap.[int ImGuiKey.LeftShift] <- int KeyboardKey.LShift
-        //keyMap.[int ImGuiKey.RightShift] <- int KeyboardKey.RShift
-        //for i in 0 .. dec 10 do keyMap.[int ImGuiKey._1 + i] <- int KeyboardKey.Num1 + i
-        //for i in 0 .. dec 26 do keyMap.[int ImGuiKey.A + i] <- int KeyboardKey.A + i
-        //for i in 0 .. dec 12 do keyMap.[int ImGuiKey.F1 + i] <- int KeyboardKey.F1 + i
-
         // add default font
         fonts.AddFontDefault () |> ignore<ImFontPtr>
 

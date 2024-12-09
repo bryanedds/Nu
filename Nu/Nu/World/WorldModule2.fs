@@ -1077,7 +1077,34 @@ module WorldModule2 =
             let world = List.foldBack (fun simulant world -> World.destroyImmediate simulant world) destructionListRev world
             if List.notEmpty (World.getDestructionListRev world) then World.destroySimulants world else world
 
-        /// Process an input event from SDL and ultimately publish any related game events.
+        static member private keyboardKeyToImGuiKeyOpt keyboardKey =
+            match keyboardKey with
+            | KeyboardKey.Space -> ValueSome ImGuiKey.Space
+            | KeyboardKey.Tab -> ValueSome ImGuiKey.Tab
+            | KeyboardKey.Left -> ValueSome ImGuiKey.LeftArrow
+            | KeyboardKey.Right -> ValueSome ImGuiKey.RightArrow
+            | KeyboardKey.Up -> ValueSome ImGuiKey.UpArrow
+            | KeyboardKey.Down -> ValueSome ImGuiKey.DownArrow
+            | KeyboardKey.PageUp -> ValueSome ImGuiKey.PageUp
+            | KeyboardKey.PageDown -> ValueSome ImGuiKey.PageDown
+            | KeyboardKey.Home -> ValueSome ImGuiKey.Home
+            | KeyboardKey.End -> ValueSome ImGuiKey.End
+            | KeyboardKey.Delete -> ValueSome ImGuiKey.Delete
+            | KeyboardKey.Backspace -> ValueSome ImGuiKey.Backspace
+            | KeyboardKey.Enter -> ValueSome ImGuiKey.Enter
+            | KeyboardKey.Escape -> ValueSome ImGuiKey.Escape
+            | KeyboardKey.LCtrl -> ValueSome ImGuiKey.LeftCtrl
+            | KeyboardKey.RCtrl -> ValueSome ImGuiKey.RightCtrl
+            | KeyboardKey.LAlt -> ValueSome ImGuiKey.LeftAlt
+            | KeyboardKey.RAlt -> ValueSome ImGuiKey.RightAlt
+            | KeyboardKey.LShift -> ValueSome ImGuiKey.LeftShift
+            | KeyboardKey.RShift -> ValueSome ImGuiKey.RightShift
+            | _ ->
+                if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> ValueSome
+                elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> ValueSome
+                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F9 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> ValueSome
+                else ValueNone
+
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
                 match evt.``type`` with
@@ -1142,10 +1169,13 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let io = ImGui.GetIO ()
+                    let keyboard = evt.key
+                    let key = keyboard.keysym
+                    let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                    let imGuiKeyOpt = World.keyboardKeyToImGuiKeyOpt keyboardKey
+                    match imGuiKeyOpt with ValueSome imGuiKey -> io.AddKeyEvent (imGuiKey, true) | ValueNone -> ()
                     if not (io.WantCaptureKeyboardGlobal) then
-                        let keyboard = evt.key
-                        let key = keyboard.keysym
-                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
+                        let eventData = { KeyboardKey = keyboardKey; Repeated = keyboard.repeat <> byte 0; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                         let world = World.publishPlus eventData Nu.Game.Handle.KeyboardKeyDownEvent eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
@@ -1153,9 +1183,12 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let io = ImGui.GetIO ()
+                    let keyboard = evt.key
+                    let key = keyboard.keysym
+                    let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                    let imGuiKeyOpt = World.keyboardKeyToImGuiKeyOpt keyboardKey
+                    match imGuiKeyOpt with ValueSome imGuiKey -> io.AddKeyEvent (imGuiKey, false) | ValueNone -> ()
                     if not (io.WantCaptureKeyboardGlobal) then
-                        let keyboard = evt.key
-                        let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
                         let world = World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
@@ -1307,10 +1340,6 @@ module WorldModule2 =
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
             Octree.getElementsInView interior exterior imposter lightBox set octree
-
-        static member private getElements3d set world =
-            let octree = World.getOctree world
-            Octree.getElements set octree
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =

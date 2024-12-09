@@ -3357,21 +3357,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     for assetEntry in packageEntry.Value |> Array.sortWith (fun a b -> String.Compare (a.Key, b.Key, true)) do
                         let assetName = assetEntry.Key
                         if (assetName.ToLowerInvariant ()).Contains (AssetViewerSearchStr.ToLowerInvariant ()) then
-                            let assetDragDrop () =
-                                if ImGui.BeginDragDropSource () then
-                                    let packageNameText = if Symbol.shouldBeExplicit packageEntry.Key then String.surround "\"" packageEntry.Key else packageEntry.Key
-                                    let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
-                                    let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
-                                    DragDropPayloadOpt <- Some assetTagStr
-                                    ImGui.Text assetTagStr
-                                    ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
-                                    ImGui.EndDragDropSource ()
                             match World.imGuiTryGetTextureId (asset packageEntry.Key assetName) world with
                             | ValueSome textureId ->
                                 ImGui.Image (nativeint textureId, v2Dup 16.0f)
-                                // NOTE: it appears that drag-dropping only works from nodes on our current version of ImGui.
-                                // TODO: P1: see if this will work with an updated version of ImGui.
-                                //assetDragDrop ()
                                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayShort then
                                     let zoom = ImGui.IsShiftDown ()
                                     let size = if zoom then v2Dup 256.0f else v2Dup 128.0f
@@ -3384,7 +3372,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             | ValueNone -> ImGui.Dummy (v2Dup 16.0f)
                             ImGui.SameLine ()
                             ImGui.TreeNodeEx (assetName, flags ||| ImGuiTreeNodeFlags.Leaf) |> ignore<bool>
-                            assetDragDrop ()
+                            if ImGui.BeginDragDropSource () then // NOTE: it appears that drag-dropping only works from nodes in Dear ImGui.
+                                let packageNameText = if Symbol.shouldBeExplicit packageEntry.Key then String.surround "\"" packageEntry.Key else packageEntry.Key
+                                let assetNameText = if Symbol.shouldBeExplicit assetName then String.surround "\"" assetName else assetName
+                                let assetTagStr = "[" + packageNameText + " " + assetNameText + "]"
+                                DragDropPayloadOpt <- Some assetTagStr
+                                ImGui.Text assetTagStr
+                                ImGui.SetDragDropPayload ("Asset", IntPtr.Zero, 0u) |> ignore<bool>
+                                ImGui.EndDragDropSource ()
                             ImGui.TreePop ()
                     ImGui.TreePop ()
         ImGui.End ()
