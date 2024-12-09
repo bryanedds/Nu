@@ -38,19 +38,6 @@ type AnimatedModel = private { __ : unit }
 exception TileSetPropertyNotFoundException of string
 
 [<AutoOpen>]
-module AssetPatterns =
-
-    let (|RawExtension|_|) extension = match extension with ".raw" -> Some extension | _ -> None
-    let (|ImageExtension|_|) extension = match extension with ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" -> Some extension | _ -> None
-    let (|FontExtension|_|) extension = match extension with ".ttf" -> Some extension | _ -> None
-    let (|TileMapExtension|_|) extension = match extension with ".tmx" -> Some extension | _ -> None
-    let (|CubeMapExtension|_|) extension = match extension with ".cbm" -> Some extension | _ -> None
-    let (|SoundExtension|_|) extension = match extension with ".wav" -> Some extension | _ -> None
-    let (|SongExtension|_|) extension = match extension with ".ogg" | ".mp3" -> Some extension | _ -> None
-    let (|ModelExtension|_|) extension = match extension with ".fbx" | ".dae" | ".obj" -> Some extension | _ -> None
-    let (|CsvExtension|_|) extension = match extension with ".csv" -> Some extension | _ -> None
-
-[<AutoOpen>]
 module TmxExtensions =
 
     type TmxTileset with

@@ -338,12 +338,16 @@ module Texture =
 
             // attempt to load data as any format supported by Drawing.Bitmap on Windows
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-                try let bitmap = new Drawing.Bitmap (filePath)
-                    let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
-                    let metadata = TextureMetadata.make bitmap.Width bitmap.Height
-                    let scan0 = data.Scan0
-                    Some (TextureDataNative (metadata, scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () })) // NOTE: calling UnlockBits explicitly since I can't figure out if Dispose does.
-                with _ -> None
+                let extension = Path.GetExtension filePath
+                match extension with
+                | ImageExtension _ ->
+                    try let bitmap = new Drawing.Bitmap (filePath)
+                        let data = bitmap.LockBits (Drawing.Rectangle (0, 0, bitmap.Width, bitmap.Height), Drawing.Imaging.ImageLockMode.ReadOnly, Drawing.Imaging.PixelFormat.Format32bppArgb)
+                        let metadata = TextureMetadata.make bitmap.Width bitmap.Height
+                        let scan0 = data.Scan0
+                        Some (TextureDataNative (metadata, scan0, { new IDisposable with member this.Dispose () = bitmap.UnlockBits data; bitmap.Dispose () })) // NOTE: calling UnlockBits explicitly since I can't figure out if Dispose does.
+                    with _ -> None
+                | _ -> None
 
             // attempt to load data as any format supported by SDL_image on any device
             else
