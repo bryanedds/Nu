@@ -91,21 +91,8 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
 
     member this.InputFrame () =
 
-        // update mouse states
-        let io = ImGui.GetIO ()
-        let mouseDown = io.MouseDown
-        mouseDown.[0] <- MouseState.isButtonDown MouseLeft
-        mouseDown.[1] <- MouseState.isButtonDown MouseRight
-        mouseDown.[2] <- MouseState.isButtonDown MouseMiddle
-        io.MousePos <- MouseState.getPosition ()
-
-        // update keyboard states.
-        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
-        io.KeyCtrl <- KeyboardState.isCtrlDown ()
-        io.KeyAlt <- KeyboardState.isAltDown ()
-        io.KeyShift <- KeyboardState.isShiftDown ()
-
         // register key char input
+        let io = ImGui.GetIO ()
         for c in charsPressed do
             io.AddInputCharacter (uint32 c)
         charsPressed.Clear ()

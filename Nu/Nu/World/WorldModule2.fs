@@ -1077,7 +1077,15 @@ module WorldModule2 =
             let world = List.foldBack (fun simulant world -> World.destroyImmediate simulant world) destructionListRev world
             if List.notEmpty (World.getDestructionListRev world) then World.destroySimulants world else world
 
-        static member private keyboardKeyToImGuiKeyOpt keyboardKey =
+        static member private toImGuiMouseButton mouseButton =
+            match mouseButton with
+            | MouseLeft -> 0
+            | MouseRight -> 1
+            | MouseMiddle -> 2
+            | MouseX1 -> 3
+            | MouseX2 -> 4
+
+        static member private toImGuiKeyOpt keyboardKey =
             match keyboardKey with
             | KeyboardKey.Space -> ValueSome ImGuiKey.Space
             | KeyboardKey.Tab -> ValueSome ImGuiKey.Tab
@@ -1113,6 +1121,8 @@ module WorldModule2 =
                     then World.exit world
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                    let io = ImGui.GetIO ()
+                    io.AddMousePosEvent (single evt.button.x, single evt.button.y)
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
@@ -1123,9 +1133,10 @@ module WorldModule2 =
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseMoveEvent eventTrace Nu.Game.Handle true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let io = ImGui.GetIO ()
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                    io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, true)
                     if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
-                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event/" + Constants.Engine.GameName)
                         let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
                         let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
@@ -1136,6 +1147,8 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let io = ImGui.GetIO ()
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                    io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, false)
                     if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -1172,7 +1185,7 @@ module WorldModule2 =
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
-                    let imGuiKeyOpt = World.keyboardKeyToImGuiKeyOpt keyboardKey
+                    let imGuiKeyOpt = World.toImGuiKeyOpt keyboardKey
                     match imGuiKeyOpt with ValueSome imGuiKey -> io.AddKeyEvent (imGuiKey, true) | ValueNone -> ()
                     if not (io.WantCaptureKeyboardGlobal) then
                         let eventData = { KeyboardKey = keyboardKey; Repeated = keyboard.repeat <> byte 0; Down = true }
@@ -1186,7 +1199,7 @@ module WorldModule2 =
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
-                    let imGuiKeyOpt = World.keyboardKeyToImGuiKeyOpt keyboardKey
+                    let imGuiKeyOpt = World.toImGuiKeyOpt keyboardKey
                     match imGuiKeyOpt with ValueSome imGuiKey -> io.AddKeyEvent (imGuiKey, false) | ValueNone -> ()
                     if not (io.WantCaptureKeyboardGlobal) then
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
