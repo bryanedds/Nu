@@ -241,6 +241,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
+          LightShadowSamplesUniform : int
+          LightShadowBiasUniform : int
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
@@ -288,6 +290,8 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
+          LightShadowSamplesUniform : int
+          LightShadowBiasUniform : int
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
@@ -364,6 +368,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
+          LightShadowSamplesUniform : int
+          LightShadowBiasUniform : int
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
@@ -1418,6 +1424,8 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
+        let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
+        let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
@@ -1477,6 +1485,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
+          LightShadowSamplesUniform = lightShadowSamplesUniform
+          LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
@@ -1530,6 +1540,8 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
+        let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
+        let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
@@ -1554,6 +1566,8 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
+          LightShadowSamplesUniform = lightShadowSamplesUniform
+          LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
@@ -1717,6 +1731,8 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
+        let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
+        let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
@@ -1779,6 +1795,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
+          LightShadowSamplesUniform = lightShadowSamplesUniform
+          LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
@@ -2188,6 +2206,8 @@ module PhysicallyBased =
          eyeCenter : Vector3,
          surfacesCount : int,
          instanceFields : single array,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2214,6 +2234,8 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+            Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+            Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
             Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -2312,6 +2334,8 @@ module PhysicallyBased =
          lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2373,6 +2397,8 @@ module PhysicallyBased =
             if lightAmbientColor.Length = 3 then
                 Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
             Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
+            Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+            Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
             Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -2531,6 +2557,8 @@ module PhysicallyBased =
          projection : single array,
          eyeCenter : Vector3,
          instanceFields : single array,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2553,6 +2581,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
+        Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+        Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
         Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -2945,6 +2975,8 @@ module PhysicallyBased =
          view : single array,
          projection : single array,
          lightCutoffMargin : single,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -3002,6 +3034,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
+        Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+        Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
         Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
