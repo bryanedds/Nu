@@ -2799,7 +2799,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.BeginListBox ("##history", v2 -1.0f -1.0f) then
                     for (snapshotType, _) in List.rev Pasts do
                         let snapshotLabel = snapshotType.Label
-                        ImGui.Button snapshotLabel |> ignore<bool>
+                        ImGui.Text snapshotLabel
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                             ImGui.Text snapshotLabel
                             ImGui.EndTooltip ()
@@ -2809,7 +2809,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         TimelineChanged <- false
                     for (snapshotType, _) in Futures do
                         let snapshotLabel = snapshotType.Label
-                        ImGui.Button snapshotLabel |> ignore<bool>
+                        ImGui.Text snapshotLabel
                         if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                             ImGui.Text snapshotLabel
                             ImGui.EndTooltip ()
@@ -2958,27 +2958,22 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     PropertyValueStrPrevious <- propertyValueStr
                                     world
                                 else world
-                            if isPropertyAssetTag then
+                            if isPropertyAssetTag && ImGui.BeginDragDropTarget () then
                                 let world =
-                                    if ImGui.BeginDragDropTarget () then
-                                        let world =
-                                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                                match DragDropPayloadOpt with
-                                                | Some payload ->
-                                                    let pasts = Pasts
-                                                    try let propertyValueEscaped = payload
-                                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                        setPropertyValue propertyValue propertyDescriptor simulant world
-                                                    with _ ->
-                                                        Pasts <- pasts
-                                                        world
-                                                | None -> world
-                                            else world
-                                        ImGui.EndDragDropTarget  ()
-                                        world
+                                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                        match DragDropPayloadOpt with
+                                        | Some payload ->
+                                            let pasts = Pasts
+                                            try let propertyValueEscaped = payload
+                                                let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                setPropertyValue propertyValue propertyDescriptor simulant world
+                                            with _ ->
+                                                Pasts <- pasts
+                                                world
+                                        | None -> world
                                     else world
-                                ImGui.EndDragDropTarget ()
+                                ImGui.EndDragDropTarget  ()
                                 world
                             else world
                         with :? TargetException as exn ->
