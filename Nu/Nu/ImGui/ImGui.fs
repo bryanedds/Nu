@@ -47,6 +47,9 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         let io = ImGui.GetIO ()
         let fonts = io.Fonts
 
+        // configure imgui error handling to NOT crash the .NET Runtime!
+        io.ConfigErrorRecoveryEnableAssert <- false
+
         // configure the imgui backend to presume the use of vertex offsets (necessary since we're using 16 bit indices)
         io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
 
