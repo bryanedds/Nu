@@ -44,6 +44,8 @@ module Gaia =
 
     let mutable private Pasts = [] : (SnapshotType * World) list
     let mutable private Futures = [] : (SnapshotType * World) list
+    let mutable private SelectedWindowOpt = Option<string>.None
+    let mutable private SelectedWindowRestoreRequested = 0
     let mutable private TimelineChanged = false
     let mutable private ManipulationActive = false
     let mutable private ManipulationOperation = OPERATION.TRANSLATE
@@ -439,6 +441,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 """
 
     (* Prelude Functions *)
+
+    let private setFullScreen fullScreen =
+        if FullScreen && not fullScreen then SelectedWindowRestoreRequested <- 1
+        FullScreen <- fullScreen
+        if not FullScreen then CaptureMode <- false
+
+    let private setCaptureMode captureMode =
+        CaptureMode <- captureMode
+        if CaptureMode then setFullScreen true
 
     let private canEditWithMouse (world : World) =
         let io = ImGui.GetIO ()
@@ -1606,8 +1617,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
-            elif ImGui.IsKeyPressed ImGuiKey.F11 then FullScreen <- not FullScreen; (if not FullScreen then CaptureMode <- false); world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then CaptureMode <- not CaptureMode; (if CaptureMode then FullScreen <- true); world
+            elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen); world
+            elif ImGui.IsKeyPressed ImGuiKey.F12 then setCaptureMode (not CaptureMode); world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowNewGroupDialog <- true; world
@@ -2374,18 +2385,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiFullScreenWindow () =
         if not CaptureMode then
-            if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
+            if ImGui.Begin "Full Screen Enabled" then
                 ImGui.Text "Full Screen (F11)"
                 ImGui.SameLine ()
-                ImGui.Checkbox ("##fullScreen", &FullScreen) |> ignore<bool>
-                if not FullScreen then CaptureMode <- false
+                let mutable fullScreen = FullScreen
+                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                setFullScreen fullScreen
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
                 ImGui.Text "Capture Mode (F12)"
                 ImGui.SameLine ()
-                ImGui.Checkbox ("##captureMode", &CaptureMode) |> ignore<bool>
-                if CaptureMode then FullScreen <- true
+                let mutable captureMode = CaptureMode
+                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+                setCaptureMode captureMode
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
@@ -2395,7 +2408,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         
         // menu window
         let world =
-            if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar ||| ImGuiWindowFlags.NoNav) then
+            if ImGui.Begin ("Gaia", ImGuiWindowFlags.MenuBar) then
             
                 // menu bar
                 let world =
@@ -2634,16 +2647,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 ImGui.Text "Full Screen"
                 ImGui.SameLine ()
-                ImGui.Checkbox ("##fullScreen", &FullScreen) |> ignore<bool>
-                if not FullScreen then CaptureMode <- false
+                let mutable fullScreen = FullScreen
+                ImGui.Checkbox ("##fullScreen", &fullScreen) |> ignore<bool>
+                setFullScreen fullScreen
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 ImGui.Text "Capture Mode (F12)"
                 ImGui.SameLine ()
-                ImGui.Checkbox ("##captureMode", &CaptureMode) |> ignore<bool>
-                if CaptureMode then FullScreen <- true
+                let mutable captureMode = CaptureMode
+                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+                setCaptureMode captureMode
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode view (F12 to toggle)."
                     ImGui.EndTooltip ()
@@ -2657,7 +2672,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // track state for hot key input
         let (entityHierarchyFocused, world) =
             let mutable entityHierarchyFocused = false
-            if ImGui.Begin "Entity Hierarchy" then
+            let windowName = "Entity Hierarchy"
+            if ImGui.Begin windowName then
+                
+                // store focus
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             
                 // allow defocus of entity hierarchy?
                 entityHierarchyFocused <- ImGui.IsWindowFocused ()
@@ -2792,7 +2811,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiTimelineWindow world =
         let world =
-            if ImGui.Begin ("Timeline", ImGuiWindowFlags.NoNav) then
+            let windowName = "Timeline"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let world = if ImGui.Button "Undo" && List.notEmpty Pasts then tryUndo world |> snd else world
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Redo" && List.notEmpty Futures then tryRedo world |> snd else world
@@ -2821,31 +2842,39 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiGamePropertiesWindow world =
         let world =
-            if ImGui.Begin ("Game Properties", ImGuiWindowFlags.NoNav)
-            then imGuiEditProperties Game world
+            let windowName = "Game Properties"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties Game world
             else world
         ImGui.End ()
         world
 
     let private imGuiScreenPropertiesWindow world =
         let world =
-            if ImGui.Begin ("Screen Properties", ImGuiWindowFlags.NoNav)
-            then imGuiEditProperties SelectedScreen world
+            let windowName = "Screen Properties"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties SelectedScreen world
             else world
         ImGui.End ()
         world
 
     let private imGuiGroupPropertiesWindow world =
         let world =
-            if ImGui.Begin ("Group Properties", ImGuiWindowFlags.NoNav)
-            then imGuiEditProperties SelectedGroup world
+            let windowName = "Group Properties"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
+                imGuiEditProperties SelectedGroup world
             else world
         ImGui.End ()
         world
 
     let private imGuiEntityPropertiesWindow world =
         let world =
-            if ImGui.Begin ("Entity Properties", ImGuiWindowFlags.NoNav) then
+            let windowName = "Entity Properties"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 match SelectedEntityOpt with
                 | Some entity when entity.GetExists world -> imGuiEditProperties entity world
                 | Some _ | None -> world
@@ -2855,7 +2884,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiOverlayerWindow world =
         let world =
-            if ImGui.Begin ("Edit Overlayer", ImGuiWindowFlags.NoNav) then
+            let windowName = "Edit Overlayer"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 if ImGui.Button "Save" then
                     let overlayerSourceDir = TargetDir + "/../../.."
                     let overlayerFilePath = overlayerSourceDir + "/" + Assets.Global.AssetGraphFilePath
@@ -2880,7 +2911,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAssetGraphWindow world =
         let world =
-            if ImGui.Begin ("Edit Asset Graph", ImGuiWindowFlags.NoNav) then
+            let windowName = "Edit Asset Graph"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 if ImGui.Button "Save" then
                     let assetSourceDir = TargetDir + "/../../.."
                     let assetGraphFilePath = assetSourceDir + "/" + Assets.Global.AssetGraphFilePath
@@ -2907,7 +2940,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.SetNextWindowFocus ()
             PropertyEditorFocusRequested <- false
         let world =
-            if ImGui.Begin ("Edit Property", ImGuiWindowFlags.NoNav) then
+            let windowName = "Edit Property"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let world =
                     match PropertyFocusedOpt with
                     | Some (propertyDescriptor, simulant) when
@@ -2990,7 +3025,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         // metrics window
         let world =
-            if ImGui.Begin ("Metrics", ImGuiWindowFlags.NoNav) then
+            let windowName = "Metrics"
+            if ImGui.Begin windowName then
+                
+                // store focus
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
 
                 // fps
                 ImGui.Text "Fps:"
@@ -3074,7 +3113,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiInteractiveWindow world =
         let world =
-            if ImGui.Begin ("Interactive", ImGuiWindowFlags.NoNav) then
+            let windowName = "Interactive"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let mutable toBottom = false
                 let eval = ImGui.Button "Eval" || ImGui.IsAnyItemActive () && ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlDown () && ImGui.IsShiftUp ()
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
@@ -3202,7 +3243,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiEventTracingWindow world =
         let world =
-            if ImGui.Begin ("Event Tracing", ImGuiWindowFlags.NoNav) then
+            let windowName = "Event Tracing"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let mutable traceEvents = world |> World.getEventTracerOpt |> Option.isSome
                 let world =
                     if ImGui.Checkbox ("Trace Events", &traceEvents)
@@ -3224,7 +3267,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiAudioPlayerWindow world =
         let world =
-            if ImGui.Begin ("Audio Player", ImGuiWindowFlags.NoNav) then
+            let windowName = "Audio Player"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 ImGui.Text "Master Sound Volume"
                 let mutable masterSoundVolume = World.getMasterSoundVolume world
                 if ImGui.SliderFloat ("##masterSoundVolume", &masterSoundVolume, 0.0f, 1.0f) then World.setMasterSoundVolume masterSoundVolume world
@@ -3242,7 +3287,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiRendererWindow world =
         let world =
-            if ImGui.Begin ("Renderer", ImGuiWindowFlags.NoNav) then
+            let windowName = "Renderer"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let renderer3dConfig = World.getRenderer3dConfig world
                 let mutable renderer3dChanged = false
                 let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
@@ -3288,7 +3335,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.PushStyleColor (ImGuiCol.TabDimmed, flashColor)
             ImGui.PushStyleColor (ImGuiCol.TabDimmedSelected, flashColor)
         let world =
-            if ImGui.Begin ("Log", ImGuiWindowFlags.NoNav) then
+            let windowName = "Log"
+            if ImGui.Begin windowName then
+                if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 ImGui.Text "Log:"
                 ImGui.SameLine ()
                 if ImGui.SmallButton "Clear" || ImGui.IsKeyReleased ImGuiKey.C && ImGui.IsAltDown () then LogStr <- ""
@@ -3304,7 +3353,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         world
 
     let private imGuiEditorConfigWindow () =
-        if ImGui.Begin ("Editor", ImGuiWindowFlags.NoNav) then
+        let windowName = "Editor"
+        if ImGui.Begin windowName then
+            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             ImGui.Text "Transform Snapping"
             ImGui.SetNextItemWidth 50.0f
             let mutable index = if Snaps2dSelected then 0 else 1
@@ -3345,7 +3396,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         ImGui.End ()
 
     let private imGuiAssetViewerWindow world =
-        if ImGui.Begin "Asset Viewer" then
+        let windowName = "Asset Viewer"
+        if ImGui.Begin windowName then
+            if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
             ImGui.SetNextItemWidth -1.0f
             let searchActivePrevious = not (String.IsNullOrWhiteSpace AssetViewerSearchStr)
             if AssetViewerSearchRequested then
@@ -3996,6 +4049,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             world
         else world
 
+    let private imGuiSelectedWindowRestoration () =
+        SelectedWindowRestoreRequested <- inc SelectedWindowRestoreRequested
+        if SelectedWindowRestoreRequested = 4 then
+            match SelectedWindowOpt with
+            | Some window -> ImGui.SetWindowFocus window
+            | None -> ()
+            SelectedWindowRestoreRequested <- 0
+
     let private imGuiExceptionDialog exn worldOld world =
         let title = "Unhandled Exception!"
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
@@ -4106,6 +4167,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world = if ReloadAssetsRequested > 0 then imGuiReloadingAssetsDialog world else world
                 let world = if ReloadCodeRequested > 0 then imGuiReloadingCodeDialog world else world
                 let world = if ReloadAllRequested > 0 then imGuiReloadingAllDialog world else world
+
+                // selected window restoration
+                if SelectedWindowRestoreRequested > 0 then imGuiSelectedWindowRestoration ()
                 world
 
             // propagate exception to dialog
@@ -4113,6 +4177,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         // exception handling dialog
         | Some (exn, worldOld) -> imGuiExceptionDialog exn worldOld world
+
 
     let private imGuiRender world =
 
