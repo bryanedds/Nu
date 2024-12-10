@@ -2208,21 +2208,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGuizmo.SetRect (0.0f, 0.0f, io.DisplaySize.X, io.DisplaySize.Y)
                 ImGuizmo.SetDrawlist (ImGui.GetBackgroundDrawList ())
 
-                // view manipulation
-                if not CaptureMode then
-                    let eyeRotationOld = World.getEye3dRotation world
-                    let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 1375.0f 100.0f, v2 128.0f 128.0f, uint 0x00000000)
-                    let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
-                    if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f then DesiredEye3dRotation <- eyeRotation
-                    // TODO: see if we can implement something like the following when ImGuizmo is updated to a version
-                    // after this - https://github.com/CedricGuillemet/ImGuizmo/pull/336
-                    //if ImGuizmo.IsUsingViewManipulated then io.SwallowMouse ()
-
                 // transform manipulation
                 let world =
                     match SelectedEntityOpt with
-                    | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal ->
+                    | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
                         let viewMatrix = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
@@ -2376,6 +2365,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             else world
                         else world
                     | Some _ | None -> world
+
+                // view manipulation
+                if not CaptureMode && not ManipulationActive then
+                    let eyeRotationOld = World.getEye3dRotation world
+                    let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
+                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 1375.0f 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                    let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
+                    if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f then DesiredEye3dRotation <- eyeRotation
+                    if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
 
                 // fin
                 world
