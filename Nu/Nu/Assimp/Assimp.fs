@@ -81,19 +81,21 @@ module Assimp =
              m.A4, m.B4, m.C4, m.D4)
 
     let internal ComputePositionKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
-        let mutable low = 0
-        let mutable high = keys.Length - 1
-        let mutable found = false
-        let mutable i = 0
-        while low <= high && not found do
-            let mid = (low + high) / 2
-            let midTime = single keys.[inc mid].Time
-            if animationTime < midTime then high <- mid - 1
-            elif animationTime > midTime then low <- mid + 1
-            else found <- true; i <- mid
-        if not found then
-            i <- if animationTime < single keys.[inc low].Time then low else dec low
-        i
+            let mutable low = 0
+            let mutable high = keys.Length - 1
+            let mutable found = false
+            let mutable i = 0
+            while low <= high && not found do
+                let mid = (low + high) / 2
+                if mid < high then
+                    let midTime = single keys.[inc mid].Time
+                    if animationTime < midTime then high <- mid - 1
+                    elif animationTime > midTime then low <- mid + 1
+                    else found <- true; i <- mid
+                else found <- true; i <- high
+            if not found then
+                i <- if animationTime < single keys.[inc low].Time then low else dec low
+            i
 
     let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
         let mutable low = 0
@@ -102,10 +104,12 @@ module Assimp =
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            let midTime = single keys.[inc mid].Time
-            if animationTime < midTime then high <- mid - 1
-            elif animationTime > midTime then low <- mid + 1
-            else found <- true; i <- mid
+            if mid < high then
+                let midTime = single keys.[inc mid].Time
+                if animationTime < midTime then high <- mid - 1
+                elif animationTime > midTime then low <- mid + 1
+                else found <- true; i <- mid
+            else found <- true; i <- high
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
@@ -117,10 +121,12 @@ module Assimp =
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            let midTime = single keys.[inc mid].Time
-            if animationTime < midTime then high <- mid - 1
-            elif animationTime > midTime then low <- mid + 1
-            else found <- true; i <- mid
+            if mid < high then
+                let midTime = single keys.[inc mid].Time
+                if animationTime < midTime then high <- mid - 1
+                elif animationTime > midTime then low <- mid + 1
+                else found <- true; i <- mid
+            else found <- true; i <- high
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
