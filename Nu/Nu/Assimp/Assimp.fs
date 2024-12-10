@@ -81,52 +81,55 @@ module Assimp =
              m.A4, m.B4, m.C4, m.D4)
 
     let internal ComputePositionKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
-            let mutable low = 0
-            let mutable high = dec keys.Length
-            let mutable found = false
-            let mutable i = 0
-            while low <= high && not found do
-                let mid = (low + high) / 2
-                if mid < dec keys.Length then
-                    let midTime = single keys.[inc mid].Time
-                    if animationTime < midTime then high <- mid - 1
-                    elif animationTime > midTime then low <- mid + 1
-                    else found <- true; i <- mid
-                else found <- true; i <- high
-            if not found then
-                i <- if animationTime < single keys.[inc low].Time then low else dec low
-            i
-
-    let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
+        let last = dec keys.Length
         let mutable low = 0
-        let mutable high = dec keys.Length
+        let mutable high = last
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            if mid < dec keys.Length then
+            if mid < last then
                 let midTime = single keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
-            else found <- true; i <- high
+            else found <- true; i <- last
+        if not found then
+            i <- if animationTime < single keys.[inc low].Time then low else dec low
+        i
+
+    let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
+        let last = dec keys.Length
+        let mutable low = 0
+        let mutable high = last
+        let mutable found = false
+        let mutable i = 0
+        while low <= high && not found do
+            let mid = (low + high) / 2
+            if mid < last then
+                let midTime = single keys.[inc mid].Time
+                if animationTime < midTime then high <- mid - 1
+                elif animationTime > midTime then low <- mid + 1
+                else found <- true; i <- mid
+            else found <- true; i <- last
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
 
     let internal ComputeScalingKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
+        let last = dec keys.Length
         let mutable low = 0
-        let mutable high = dec keys.Length
+        let mutable high = last
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            if mid < dec keys.Length then
+            if mid < last then
                 let midTime = single keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
                 else found <- true; i <- mid
-            else found <- true; i <- high
+            else found <- true; i <- last
         if not found then
             i <- if animationTime < single keys.[inc low].Time then low else dec low
         i
