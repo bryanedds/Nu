@@ -2793,11 +2793,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiTimelineWindow world =
         let world =
             if ImGui.Begin ("Timeline", ImGuiWindowFlags.NoNav) then
-                let world =
-                    if ImGui.Button "Undo" && List.notEmpty Pasts then
-                        Log.warn "XXX"
-                        tryUndo world |> snd
-                    else world
+                let world = if ImGui.Button "Undo" && List.notEmpty Pasts then tryUndo world |> snd else world
                 ImGui.SameLine ()
                 let world = if ImGui.Button "Redo" && List.notEmpty Futures then tryRedo world |> snd else world
                 if ImGui.BeginListBox ("##history", v2 -1.0f -1.0f) then
