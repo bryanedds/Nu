@@ -82,12 +82,12 @@ module Assimp =
 
     let internal ComputePositionKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
             let mutable low = 0
-            let mutable high = keys.Length - 1
+            let mutable high = dec keys.Length
             let mutable found = false
             let mutable i = 0
             while low <= high && not found do
                 let mid = (low + high) / 2
-                if mid < high then
+                if mid < dec keys.Length then
                     let midTime = single keys.[inc mid].Time
                     if animationTime < midTime then high <- mid - 1
                     elif animationTime > midTime then low <- mid + 1
@@ -99,12 +99,12 @@ module Assimp =
 
     let internal ComputeRotationKeyFrameIndex (animationTime : single, keys : Assimp.QuaternionKey array) =
         let mutable low = 0
-        let mutable high = keys.Length - 1
+        let mutable high = dec keys.Length
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            if mid < high then
+            if mid < dec keys.Length then
                 let midTime = single keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
@@ -116,12 +116,12 @@ module Assimp =
 
     let internal ComputeScalingKeyFrameIndex (animationTime : single, keys : Assimp.VectorKey array) =
         let mutable low = 0
-        let mutable high = keys.Length - 1
+        let mutable high = dec keys.Length
         let mutable found = false
         let mutable i = 0
         while low <= high && not found do
             let mid = (low + high) / 2
-            if mid < high then
+            if mid < dec keys.Length then
                 let midTime = single keys.[inc mid].Time
                 if animationTime < midTime then high <- mid - 1
                 elif animationTime > midTime then low <- mid + 1
