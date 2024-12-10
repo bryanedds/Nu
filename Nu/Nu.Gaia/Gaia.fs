@@ -1732,102 +1732,105 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             else world
         if openPopupContextItemWhenUnselected then
             ImGui.OpenPopup popupContextItemTitle
+        let world =
+            if ImGui.BeginDragDropTarget () then
+                let world =
+                    if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                        match DragDropPayloadOpt with
+                        | Some payload ->
+                            let sourceEntityAddressStr = payload
+                            let sourceEntity = Nu.Entity sourceEntityAddressStr
+                            if not (sourceEntity.GetProtected world) then
+                                if ImGui.IsCtrlDown () then
+                                    let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
+                                    let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
+                                    let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                                    let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
+                                    let world =
+                                        if ImGui.IsShiftDown () then
+                                            duplicate.SetPropagationSourceOpt None world
+                                        elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                            duplicate.SetPropagationSourceOpt (Some sourceEntity) world
+                                        else world
+                                    let rec getDescendantPairs source entity world =
+                                        [for child in World.getEntityChildren entity world do
+                                            let childSource = source / child.Name
+                                            yield (childSource, child)
+                                            yield! getDescendantPairs childSource child world]
+                                    let world =
+                                        List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
+                                            if descendantDuplicate.GetExists world then
+                                                let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                                if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
+                                                then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                                else world
+                                            else world)
+                                            world (getDescendantPairs entity duplicate world)
+                                    selectEntityOpt (Some duplicate) world
+                                    ShowSelectedEntity <- true
+                                    world
+                                elif ImGui.IsAltDown () then
+                                    let next = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                                    let previousOpt = World.tryGetPreviousEntity next world
+                                    let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
+                                    let canMove =
+                                        match parentOpt with
+                                        | Some parent ->
+                                            let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
+                                            Array.contains Parent parentToSource.Links
+                                        | None -> true
+                                    if canMove then
+                                        let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
+                                        let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> SelectedGroup / sourceEntity.Name
+                                        if sourceEntity'.GetExists world then
+                                            let world = snapshot ReorderEntities world
+                                            let world = World.insertEntityOrder sourceEntity previousOpt next world
+                                            ShowSelectedEntity <- true
+                                            world
+                                        else
+                                            let world = snapshot ReorderEntities world
+                                            let world = World.insertEntityOrder sourceEntity previousOpt next world
+                                            let world = World.renameEntityImmediate sourceEntity sourceEntity' world
+                                            let world =
+                                                if World.getEntityAllowedToMount sourceEntity' world
+                                                then sourceEntity'.SetMountOptWithAdjustment mountOpt world
+                                                else world
+                                            if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
+                                            selectEntityOpt (Some sourceEntity') world
+                                            ShowSelectedEntity <- true
+                                            world
+                                    else Log.warn "Cannot mount an entity circularly."; world
+                                else
+                                    let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
+                                    let sourceEntity' = parent / sourceEntity.Name
+                                    let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
+                                    if Array.contains Parent parentToSource.Links then
+                                        if sourceEntity'.GetExists world
+                                        then MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."; world
+                                        else
+                                            let world = snapshot RenameEntity world
+                                            let world = World.renameEntityImmediate sourceEntity sourceEntity' world
+                                            let world =
+                                                if World.getEntityAllowedToMount sourceEntity' world
+                                                then sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
+                                                else world
+                                            if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
+                                            selectEntityOpt (Some sourceEntity') world
+                                            ShowSelectedEntity <- true
+                                            world
+                                    else Log.warn "Cannot mount an entity circularly."; world
+                            else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                        | None -> world
+                    else world
+                ImGui.EndDragDropTarget ()
+                world
+            else world
         if ImGui.BeginDragDropSource () then
-            let entityAddressStr = entity.EntityAddress |> scstringMemo  |> Symbol.distill
+            let entityAddressStr = entity.EntityAddress |> scstringMemo |> Symbol.distill
             DragDropPayloadOpt <- Some entityAddressStr
             ImGui.Text (entity.Name + if ImGui.IsCtrlDown () then " (Copy)" else "")
             ImGui.SetDragDropPayload ("Entity", IntPtr.Zero, 0u) |> ignore<bool>
             ImGui.EndDragDropSource ()
-        let world =
-            if ImGui.BeginDragDropTarget () then
-                if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
-                    match DragDropPayloadOpt with
-                    | Some payload ->
-                        let sourceEntityAddressStr = payload
-                        let sourceEntity = Nu.Entity sourceEntityAddressStr
-                        if not (sourceEntity.GetProtected world) then
-                            if ImGui.IsCtrlDown () then
-                                let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
-                                let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
-                                let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
-                                let world =
-                                    if ImGui.IsShiftDown () then
-                                        duplicate.SetPropagationSourceOpt None world
-                                    elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
-                                        duplicate.SetPropagationSourceOpt (Some sourceEntity) world
-                                    else world
-                                let rec getDescendantPairs source entity world =
-                                    [for child in World.getEntityChildren entity world do
-                                        let childSource = source / child.Name
-                                        yield (childSource, child)
-                                        yield! getDescendantPairs childSource child world]
-                                let world =
-                                    List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
-                                        if descendantDuplicate.GetExists world then
-                                            let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                            if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
-                                            then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
-                                            else world
-                                        else world)
-                                        world (getDescendantPairs entity duplicate world)
-                                selectEntityOpt (Some duplicate) world
-                                ShowSelectedEntity <- true
-                                world
-                            elif ImGui.IsAltDown () then
-                                let next = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                let previousOpt = World.tryGetPreviousEntity next world
-                                let parentOpt = match next.Parent with :? Entity as parent -> Some parent | _ -> None
-                                let canMove =
-                                    match parentOpt with
-                                    | Some parent ->
-                                        let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                                        Array.contains Parent parentToSource.Links
-                                    | None -> true
-                                if canMove then
-                                    let mountOpt = match parentOpt with Some _ -> Some (Relation.makeParent ()) | None -> None
-                                    let sourceEntity' = match parentOpt with Some parent -> parent / sourceEntity.Name | None -> SelectedGroup / sourceEntity.Name
-                                    if sourceEntity'.GetExists world then
-                                        let world = snapshot ReorderEntities world
-                                        let world = World.insertEntityOrder sourceEntity previousOpt next world
-                                        ShowSelectedEntity <- true
-                                        world
-                                    else
-                                        let world = snapshot ReorderEntities world
-                                        let world = World.insertEntityOrder sourceEntity previousOpt next world
-                                        let world = World.renameEntityImmediate sourceEntity sourceEntity' world
-                                        let world =
-                                            if World.getEntityAllowedToMount sourceEntity' world
-                                            then sourceEntity'.SetMountOptWithAdjustment mountOpt world
-                                            else world
-                                        if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
-                                        selectEntityOpt (Some sourceEntity') world
-                                        ShowSelectedEntity <- true
-                                        world
-                                else Log.warn "Cannot mount an entity circularly."; world
-                            else
-                                let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                let sourceEntity' = parent / sourceEntity.Name
-                                let parentToSource = Relation.relate sourceEntity.EntityAddress parent.EntityAddress
-                                if Array.contains Parent parentToSource.Links then
-                                    if sourceEntity'.GetExists world
-                                    then MessageBoxOpt <- Some "Cannot reparent an entity where the parent entity contains a child with the same name."; world
-                                    else
-                                        let world = snapshot RenameEntity world
-                                        let world = World.renameEntityImmediate sourceEntity sourceEntity' world
-                                        let world =
-                                            if World.getEntityAllowedToMount sourceEntity' world
-                                            then sourceEntity'.SetMountOptWithAdjustment (Some (Relation.makeParent ())) world
-                                            else world
-                                        if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
-                                        selectEntityOpt (Some sourceEntity') world
-                                        ShowSelectedEntity <- true
-                                        world
-                                else Log.warn "Cannot mount an entity circularly."; world
-                        else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
-                    | None -> world
-                else world
-            else world
         let world =
             if entity.GetExists world && entity.Has<FreezerFacet> world then // check for existence since entity may have been deleted just above
                 let frozen = entity.GetFrozen world
@@ -2710,56 +2713,59 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             if group.Name = selectedGroupName then ImGui.SetItemDefaultFocus ()
                         ImGui.EndCombo ()
                     if ImGui.BeginDragDropTarget () then
-                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
-                            match DragDropPayloadOpt with
-                            | Some payload ->
-                                let sourceEntityAddressStr = payload
-                                let sourceEntity = Nu.Entity sourceEntityAddressStr
-                                if not (sourceEntity.GetProtected world) then
-                                    if ImGui.IsCtrlDown () then
-                                        let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
-                                        let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
-                                        let parent = sourceEntity.Group
-                                        let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
-                                        let world =
-                                            if ImGui.IsShiftDown () then
-                                                duplicate.SetPropagationSourceOpt None world
-                                            elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
-                                                duplicate.SetPropagationSourceOpt (Some sourceEntity) world
-                                            else world
-                                        let rec getDescendantPairs source entity world =
-                                            [for child in World.getEntityChildren entity world do
-                                                let childSource = source / child.Name
-                                                yield (childSource, child)
-                                                yield! getDescendantPairs childSource child world]
-                                        let world =
-                                            List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
-                                                if descendantDuplicate.GetExists world then
-                                                    let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
-                                                    if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
-                                                    then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
-                                                    else world
-                                                else world)
-                                                world (getDescendantPairs sourceEntity duplicate world)
-                                        selectEntityOpt (Some duplicate) world
-                                        ShowSelectedEntity <- true
-                                        world
-                                    else
-                                        let sourceEntity' = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
-                                        if not (sourceEntity'.GetExists world) then
+                        let world =
+                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Entity").NativePtr) then
+                                match DragDropPayloadOpt with
+                                | Some payload ->
+                                    let sourceEntityAddressStr = payload
+                                    let sourceEntity = Nu.Entity sourceEntityAddressStr
+                                    if not (sourceEntity.GetProtected world) then
+                                        if ImGui.IsCtrlDown () then
+                                            let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
+                                            let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
+                                            let parent = sourceEntity.Group
+                                            let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
                                             let world =
-                                                if World.getEntityAllowedToMount sourceEntity world
-                                                then sourceEntity.SetMountOptWithAdjustment None world
+                                                if ImGui.IsShiftDown () then
+                                                    duplicate.SetPropagationSourceOpt None world
+                                                elif Option.isNone (duplicate.GetPropagationSourceOpt world) then
+                                                    duplicate.SetPropagationSourceOpt (Some sourceEntity) world
                                                 else world
-                                            let world = World.renameEntityImmediate sourceEntity sourceEntity' world
-                                            if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
-                                            selectEntityOpt (Some sourceEntity') world
+                                            let rec getDescendantPairs source entity world =
+                                                [for child in World.getEntityChildren entity world do
+                                                    let childSource = source / child.Name
+                                                    yield (childSource, child)
+                                                    yield! getDescendantPairs childSource child world]
+                                            let world =
+                                                List.fold (fun world (descendantSource : Entity, descendantDuplicate : Entity) ->
+                                                    if descendantDuplicate.GetExists world then
+                                                        let world = descendantDuplicate.SetPropagatedDescriptorOpt None world
+                                                        if descendantSource.GetExists world && descendantSource.HasPropagationTargets world
+                                                        then descendantDuplicate.SetPropagationSourceOpt (Some descendantSource) world
+                                                        else world
+                                                    else world)
+                                                    world (getDescendantPairs sourceEntity duplicate world)
+                                            selectEntityOpt (Some duplicate) world
                                             ShowSelectedEntity <- true
                                             world
-                                        else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."; world
-                                else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
-                            | None -> world
-                        else world
+                                        else
+                                            let sourceEntity' = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromName sourceEntity.Name)
+                                            if not (sourceEntity'.GetExists world) then
+                                                let world =
+                                                    if World.getEntityAllowedToMount sourceEntity world
+                                                    then sourceEntity.SetMountOptWithAdjustment None world
+                                                    else world
+                                                let world = World.renameEntityImmediate sourceEntity sourceEntity' world
+                                                if NewEntityParentOpt = Some sourceEntity then NewEntityParentOpt <- Some sourceEntity'
+                                                selectEntityOpt (Some sourceEntity') world
+                                                ShowSelectedEntity <- true
+                                                world
+                                            else MessageBoxOpt <- Some "Cannot unparent an entity when there exists another unparented entity with the same name."; world
+                                    else MessageBoxOpt <- Some "Cannot relocate a protected simulant (such as an entity created by the ImNui or MMCC API)."; world
+                                | None -> world
+                            else world
+                        ImGui.EndDragDropTarget ()
+                        world
                     else world
 
                 // entity editing
@@ -2953,24 +2959,27 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     world
                                 else world
                             if isPropertyAssetTag then
-                                if ImGui.BeginDragDropTarget () then
-                                    let world =
-                                        if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
-                                            match DragDropPayloadOpt with
-                                            | Some payload ->
-                                                let pasts = Pasts
-                                                try let propertyValueEscaped = payload
-                                                    let propertyValueUnescaped = String.unescape propertyValueEscaped
-                                                    let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                    setPropertyValue propertyValue propertyDescriptor simulant world
-                                                with _ ->
-                                                    Pasts <- pasts
-                                                    world
-                                            | None -> world
-                                        else world
-                                    ImGui.EndDragDropTarget ()
-                                    world
-                                else world
+                                let world =
+                                    if ImGui.BeginDragDropTarget () then
+                                        let world =
+                                            if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
+                                                match DragDropPayloadOpt with
+                                                | Some payload ->
+                                                    let pasts = Pasts
+                                                    try let propertyValueEscaped = payload
+                                                        let propertyValueUnescaped = String.unescape propertyValueEscaped
+                                                        let propertyValue = converter.ConvertFromString propertyValueUnescaped
+                                                        setPropertyValue propertyValue propertyDescriptor simulant world
+                                                    with _ ->
+                                                        Pasts <- pasts
+                                                        world
+                                                | None -> world
+                                            else world
+                                        ImGui.EndDragDropTarget  ()
+                                        world
+                                    else world
+                                ImGui.EndDragDropTarget ()
+                                world
                             else world
                         with :? TargetException as exn ->
                             PropertyFocusedOpt <- None
