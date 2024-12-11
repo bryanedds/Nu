@@ -406,7 +406,7 @@ module WorldImGui =
                                 let mutable animationNameChanged = false
                                 if ImGui.BeginCombo (name, animationName) then
                                     for animationName' in animationNames do
-                                        if ImGui.Selectable (animationName', strEq animationName' animationName) then
+                                        if String.notEmpty animationName' && ImGui.Selectable (animationName', strEq animationName' animationName) then
                                             if strNeq animationName animationName' then
                                                 animationName <- animationName'
                                                 animationNameChanged <- true
