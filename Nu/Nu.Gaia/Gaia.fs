@@ -102,6 +102,7 @@ module Gaia =
     let mutable private SnapDrag = 0.1f
     let mutable private AlternativeEyeTravelInput = false
     let mutable private ReregisterPhysicsWorkaround = true
+    let mutable private ImGuiDebugWindow = false
     let mutable private EntityHierarchySearchStr = ""
     let mutable private EntityHierarchyFilterPropagationSources = false
     let mutable private AssetViewerSearchStr = ""
@@ -204,68 +205,68 @@ Collapsed=0
 DockId=0x0000000F,0
 
 [Window][Edit Overlayer]
-Pos=286,846
-Size=675,234
+Pos=286,833
+Size=675,247
 Collapsed=0
 DockId=0x0000000E,2
 
 [Window][Edit Asset Graph]
-Pos=286,846
-Size=675,234
+Pos=286,833
+Size=675,247
 Collapsed=0
 DockId=0x0000000E,1
 
 [Window][Edit Property]
-Pos=286,846
-Size=675,234
+Pos=286,833
+Size=675,247
 Collapsed=0
 DockId=0x0000000E,0
 
 [Window][Log]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,7
 
 [Window][Metrics]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,6
 
 [Window][Interactive]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,5
 
 [Window][Event Tracing]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,4
 
 [Window][Renderer]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,3
 
 [Window][Audio Player]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,2
 
 [Window][Editor]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,1
 
 [Window][Asset Viewer]
-Pos=963,846
-Size=650,234
+Pos=963,833
+Size=650,247
 Collapsed=0
 DockId=0x00000002,0
 
@@ -301,13 +302,13 @@ Collapsed=0
 
 [Window][Entity Hierarchy]
 Pos=0,56
-Size=284,788
+Size=284,775
 Collapsed=0
 DockId=0x00000009,0
 
 [Window][Timeline]
-Pos=0,846
-Size=284,234
+Pos=0,833
+Size=284,247
 Collapsed=0
 DockId=0x0000000A,0
 
@@ -334,6 +335,11 @@ Pos=1615,56
 Size=305,1024
 Collapsed=0
 DockId=0x00000001,0
+
+[Window][Dear ImGui Debug Log]
+Pos=1206,610
+Size=398,211
+Collapsed=0
 
 [Window][Create Nu Project... *EDITOR RESTART REQUIRED!*]
 Pos=699,495
@@ -430,13 +436,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
   DockNode          ID=0x00000010 Parent=0x7C6B3D9B SizeRef=1920,1024 Split=X
     DockNode        ID=0x0000000C Parent=0x00000010 SizeRef=1613,1080 Split=X
       DockNode      ID=0x00000004 Parent=0x0000000C SizeRef=284,1080 Split=Y
-        DockNode    ID=0x00000009 Parent=0x00000004 SizeRef=284,788 Selected=0xAE464409
-        DockNode    ID=0x0000000A Parent=0x00000004 SizeRef=284,234 Selected=0x0F18B61B
+        DockNode    ID=0x00000009 Parent=0x00000004 SizeRef=284,775 Selected=0xAE464409
+        DockNode    ID=0x0000000A Parent=0x00000004 SizeRef=284,247 Selected=0x0F18B61B
       DockNode      ID=0x0000000B Parent=0x0000000C SizeRef=1327,1080 Split=Y
-        DockNode    ID=0x0000000D Parent=0x0000000B SizeRef=1327,788 CentralNode=1
-        DockNode    ID=0x00000003 Parent=0x0000000B SizeRef=1327,234 Split=X Selected=0xB205577F
+        DockNode    ID=0x0000000D Parent=0x0000000B SizeRef=1327,775 CentralNode=1
+        DockNode    ID=0x00000003 Parent=0x0000000B SizeRef=1327,247 Split=X Selected=0xB205577F
           DockNode  ID=0x0000000E Parent=0x00000003 SizeRef=675,205 Selected=0x9CF3CB04
-          DockNode  ID=0x00000002 Parent=0x00000003 SizeRef=650,205 Selected=0xD92922EC
+          DockNode  ID=0x00000002 Parent=0x00000003 SizeRef=650,205 Selected=0x9F27EDF6
     DockNode        ID=0x00000001 Parent=0x00000010 SizeRef=305,1080 Selected=0xD5116FF8
 
 """
@@ -3384,6 +3390,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.Text "Input"
             ImGui.Checkbox ("Alternative Eye Travel Input", &AlternativeEyeTravelInput) |> ignore<bool>
             ImGui.Text "Misc"
+            ImGui.Checkbox ("ImGui Debug Window", &ImGuiDebugWindow) |> ignore<bool>
             ImGui.Checkbox ("Reregister Physics Workaround", &ReregisterPhysicsWorkaround) |> ignore<bool>
         ImGui.End ()
 
@@ -3434,6 +3441,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             ImGui.TreePop ()
                     ImGui.TreePop ()
         ImGui.End ()
+
+    let private imGuiDebugWindow () =
+        if ImGuiDebugWindow then
+            ImGui.ShowDebugLogWindow ()
 
     let private imGuiNewProjectDialog world =
 
@@ -4121,6 +4132,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let world = imGuiRendererWindow world
                         imGuiEditorConfigWindow ()
                         imGuiAssetViewerWindow world
+                        imGuiDebugWindow ()
                         (entityHierarchyFocused, world)
 
                 // prompt dialogs
@@ -4162,7 +4174,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // selected window restoration
                 if SelectedWindowRestoreRequested > 0 then imGuiSelectedWindowRestoration ()
-                ImGui.ShowDebugLogWindow ()
                 world
 
             // propagate exception to dialog
