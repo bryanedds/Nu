@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu.Template.Mmcc.Game": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

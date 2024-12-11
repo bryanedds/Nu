@@ -222,15 +222,15 @@ type GlRendererImGui
                     OpenGL.Hl.Assert ()
 
                 // compute offsets
-                let cmdsRange = drawData.CmdListsRange
+                let cmdLists = drawData.CmdLists
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let cmds = cmdsRange.[i]
+                    let cmdList = cmdLists.[i]
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * sizeof<ImDrawVert>), uint (cmds.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmds.VtxBuffer.Data)
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * sizeof<ImDrawVert>), uint (cmdList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmdList.VtxBuffer.Data)
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ElementArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmds.IdxBuffer.Size * sizeof<uint16>), cmds.IdxBuffer.Data)
-                    vertexOffsetInVertices <- vertexOffsetInVertices + cmds.VtxBuffer.Size
-                    indexOffsetInElements <- indexOffsetInElements + cmds.IdxBuffer.Size
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ElementArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmdList.IdxBuffer.Size * sizeof<uint16>), cmdList.IdxBuffer.Data)
+                    vertexOffsetInVertices <- vertexOffsetInVertices + cmdList.VtxBuffer.Size
+                    indexOffsetInElements <- indexOffsetInElements + cmdList.IdxBuffer.Size
                     OpenGL.Hl.Assert ()
 
                 // compute orthographic projection
@@ -258,10 +258,10 @@ type GlRendererImGui
                 let mutable vertexOffset = 0
                 let mutable indexOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let cmdsRange = drawData.CmdListsRange
-                    let cmds = cmdsRange.[i]
-                    for cmd in 0 .. dec cmds.CmdBuffer.Size do
-                        let pcmds = cmds.CmdBuffer
+                    let cmdLists = drawData.CmdLists
+                    let cmdList = cmdLists.[i]
+                    for cmd in 0 .. dec cmdList.CmdBuffer.Size do
+                        let pcmds = cmdList.CmdBuffer
                         let pcmd = pcmds.[cmd]
                         if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
                             if pcmd.UserCallback = nativeint 0 then
@@ -274,7 +274,7 @@ type GlRendererImGui
                                 OpenGL.Hl.Assert ()
                             else raise (NotImplementedException ())
                         indexOffset <- indexOffset + int pcmd.ElemCount
-                    vertexOffset <- vertexOffset + cmds.VtxBuffer.Size
+                    vertexOffset <- vertexOffset + cmdList.VtxBuffer.Size
 
                 // teardown shader
                 OpenGL.Gl.UseProgram 0u

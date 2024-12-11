@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu.Template.ImNui.Game": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

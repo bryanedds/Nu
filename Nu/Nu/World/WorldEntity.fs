@@ -56,6 +56,7 @@ module WorldEntityModule =
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Visible = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable VisibleLocal = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable CastShadow = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Pickable = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysRender = Unchecked.defaultof<Lens<bool, Entity>>
@@ -200,6 +201,9 @@ module WorldEntityModule =
         member this.GetVisibleLocal world = World.getEntityVisibleLocal this world
         member this.SetVisibleLocal value world = World.setEntityVisibleLocal value this world |> snd'
         member this.VisibleLocal = if notNull (this :> obj) then lens (nameof this.VisibleLocal) this this.GetVisibleLocal this.SetVisibleLocal else Cached.VisibleLocal
+        member this.GetCastShadow world = World.getEntityCastShadow this world
+        member this.SetCastShadow value world = World.setEntityCastShadow value this world |> snd'
+        member this.CastShadow = if notNull (this :> obj) then lens (nameof this.CastShadow) this this.GetCastShadow this.SetCastShadow else Cached.CastShadow
         member this.GetPickable world = World.getEntityPickable this world
         member this.SetPickable value world = World.setEntityPickable value this world |> snd'
         member this.Pickable = if notNull (this :> obj) then lens (nameof this.Pickable) this this.GetPickable this.SetPickable else Cached.Pickable
@@ -284,6 +288,7 @@ module WorldEntityModule =
             Cached.EnabledLocal <- lens (nameof Cached.EnabledLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.VisibleLocal <- lens (nameof Cached.VisibleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.CastShadow <- lens (nameof Cached.CastShadow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Pickable <- lens (nameof Cached.Pickable) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysRender <- lens (nameof Cached.AlwaysRender) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>

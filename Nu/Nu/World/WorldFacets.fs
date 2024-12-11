@@ -1149,9 +1149,9 @@ module EffectFacetExtensions =
         member this.GetEffectOffset world : Vector3 = this.Get (nameof this.EffectOffset) world
         member this.SetEffectOffset (value : Vector3) world = this.Set (nameof this.EffectOffset) value world
         member this.EffectOffset = lens (nameof this.EffectOffset) this this.GetEffectOffset this.SetEffectOffset
-        member this.GetEffectShadowEnabled world : bool = this.Get (nameof this.EffectShadowEnabled) world
-        member this.SetEffectShadowEnabled (value : bool) world = this.Set (nameof this.EffectShadowEnabled) value world
-        member this.EffectShadowEnabled = lens (nameof this.EffectShadowEnabled) this this.GetEffectShadowEnabled this.SetEffectShadowEnabled
+        member this.GetEffectCastShadow world : bool = this.Get (nameof this.EffectCastShadow) world
+        member this.SetEffectCastShadow (value : bool) world = this.Set (nameof this.EffectCastShadow) value world
+        member this.EffectCastShadow = lens (nameof this.EffectCastShadow) this this.GetEffectCastShadow this.SetEffectCastShadow
         member this.GetEffectShadowOffset world : single = this.Get (nameof this.EffectShadowOffset) world
         member this.SetEffectShadowOffset (value : single) world = this.Set (nameof this.EffectShadowOffset) value world
         member this.EffectShadowOffset = lens (nameof this.EffectShadowOffset) this this.GetEffectShadowOffset this.SetEffectShadowOffset
@@ -1257,7 +1257,7 @@ type EffectFacet () =
          define Entity.EffectDefinitions Map.empty
          define Entity.EffectDescriptor Effects.EffectDescriptor.empty
          define Entity.EffectOffset v3Zero
-         define Entity.EffectShadowEnabled true
+         define Entity.EffectCastShadow true
          define Entity.EffectShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          define Entity.EffectRenderType (ForwardRenderType (0.0f, 0.0f))
          define Entity.EffectHistoryMax Constants.Effects.EffectHistoryMaxDefault
@@ -1278,11 +1278,8 @@ type EffectFacet () =
     override this.Render (renderPass, entity, world) =
 
         // ensure rendering is applicable for this pass
-        let shouldRender =
-            match renderPass with
-            | ShadowPass (_, _, _, _) -> entity.GetEffectShadowEnabled world
-            | _ -> true
-        if shouldRender then
+        let castShadow = entity.GetEffectCastShadow world
+        if not renderPass.IsShadowPass || castShadow then
 
             // render effect data token
             let time = world.GameTime
@@ -1305,7 +1302,8 @@ type EffectFacet () =
                 | BillboardParticlesDescriptor descriptor ->
                     let message =
                         RenderBillboardParticles
-                            { Presence = presence
+                            { CastShadow = castShadow
+                              Presence = presence
                               MaterialProperties = descriptor.MaterialProperties
                               Material = descriptor.Material
                               ShadowOffset = descriptor.ShadowOffset
@@ -2299,9 +2297,6 @@ module StaticBillboardFacetExtensions =
         member this.GetRenderStyle world : RenderStyle = this.Get (nameof this.RenderStyle) world
         member this.SetRenderStyle (value : RenderStyle) world = this.Set (nameof this.RenderStyle) value world
         member this.RenderStyle = lens (nameof this.RenderStyle) this this.GetRenderStyle this.SetRenderStyle
-        member this.GetShadowEnabled world : bool = this.Get (nameof this.ShadowEnabled) world
-        member this.SetShadowEnabled (value : bool) world = this.Set (nameof this.ShadowEnabled) value world
-        member this.ShadowEnabled = lens (nameof this.ShadowEnabled) this this.GetShadowEnabled this.SetShadowEnabled
         member this.GetShadowOffset world : single = this.Get (nameof this.ShadowOffset) world
         member this.SetShadowOffset (value : single) world = this.Set (nameof this.ShadowOffset) value world
         member this.ShadowOffset = lens (nameof this.ShadowOffset) this this.GetShadowOffset this.SetShadowOffset
@@ -2315,26 +2310,27 @@ type StaticBillboardFacet () =
          define Entity.MaterialProperties MaterialProperties.defaultProperties
          define Entity.Material Material.defaultMaterial
          define Entity.RenderStyle Deferred
-         define Entity.ShadowEnabled true
          define Entity.ShadowOffset Constants.Engine.BillboardShadowOffsetDefault]
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let affineMatrix = transform.AffineMatrix
-        let presence = transform.Presence
-        let insetOpt = entity.GetInsetOpt world
-        let properties = entity.GetMaterialProperties world
-        let material = entity.GetMaterial world
-        let shadowOffset = entity.GetShadowOffset world
-        let renderType =
-            match entity.GetRenderStyle world with
-            | Deferred -> DeferredRenderType
-            | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.enqueueRenderMessage3d
-            (RenderBillboard
-                { Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
-                  MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
-            world
+        let castShadow = transform.CastShadow
+        if not renderPass.IsShadowPass || castShadow then
+            let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
+            let insetOpt = entity.GetInsetOpt world
+            let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
+            let shadowOffset = entity.GetShadowOffset world
+            let renderType =
+                match entity.GetRenderStyle world with
+                | Deferred -> DeferredRenderType
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+            World.enqueueRenderMessage3d
+                (RenderBillboard
+                    { CastShadow = castShadow; Presence = presence; ModelMatrix = affineMatrix; InsetOpt = insetOpt
+                      MaterialProperties = properties; Material = material; ShadowOffset = shadowOffset; RenderType = renderType; RenderPass = renderPass })
+                world
 
     override this.RayCast (ray, entity, world) =
         // TODO: P1: intersect against oriented quad rather than bounds.
@@ -2352,9 +2348,9 @@ module BasicStaticBillboardEmitterFacetExtensions =
         member this.GetEmitterMaterial world : Material = this.Get (nameof this.EmitterMaterial) world
         member this.SetEmitterMaterial (value : Material) world = this.Set (nameof this.EmitterMaterial) value world
         member this.EmitterMaterial = lens (nameof this.EmitterMaterial) this this.GetEmitterMaterial this.SetEmitterMaterial
-        member this.GetEmitterShadowEnabled world : bool = this.Get (nameof this.EmitterShadowEnabled) world
-        member this.SetEmitterShadowEnabled (value : bool) world = this.Set (nameof this.EmitterShadowEnabled) value world
-        member this.EmitterShadowEnabled = lens (nameof this.EmitterShadowEnabled) this this.GetEmitterShadowEnabled this.SetEmitterShadowEnabled
+        member this.GetEmitterCastShadow world : bool = this.Get (nameof this.EmitterCastShadow) world
+        member this.SetEmitterCastShadow (value : bool) world = this.Set (nameof this.EmitterCastShadow) value world
+        member this.EmitterCastShadow = lens (nameof this.EmitterCastShadow) this this.GetEmitterCastShadow this.SetEmitterCastShadow
         member this.GetEmitterShadowOffset world : single = this.Get (nameof this.EmitterShadowOffset) world
         member this.SetEmitterShadowOffset (value : single) world = this.Set (nameof this.EmitterShadowOffset) value world
         member this.EmitterShadowOffset = lens (nameof this.EmitterShadowOffset) this this.GetEmitterShadowOffset this.SetEmitterShadowOffset
@@ -2524,7 +2520,7 @@ type BasicStaticBillboardEmitterFacet () =
          define Entity.EmitterConstraint Particles.Constraint.empty
          define Entity.EmitterStyle "BasicStaticBillboardEmitter"
          define Entity.EmitterRenderStyle Deferred
-         define Entity.EmitterShadowEnabled true
+         define Entity.EmitterCastShadow true
          define Entity.EmitterShadowOffset Constants.Engine.ParticleShadowOffsetDefault
          nonPersistent Entity.ParticleSystem Particles.ParticleSystem.empty]
 
@@ -2564,11 +2560,8 @@ type BasicStaticBillboardEmitterFacet () =
         else world
 
     override this.Render (renderPass, entity, world) =
-        let shouldRender =
-            match renderPass with
-            | ShadowPass (_, _, _, _) -> entity.GetEmitterShadowEnabled world 
-            | _ -> true
-        if shouldRender then
+        let castShadow = entity.GetEmitterCastShadow world
+        if not renderPass.IsShadowPass || castShadow then
             let time = world.GameTime
             let presence = entity.GetPresence world
             let particleSystem = entity.GetParticleSystem world
@@ -2600,7 +2593,8 @@ type BasicStaticBillboardEmitterFacet () =
                               TwoSidedOpt = match emitterMaterial.TwoSidedOpt with ValueSome twoSided -> ValueSome twoSided | ValueNone -> descriptor.Material.TwoSidedOpt }
                         Some
                             (RenderBillboardParticles
-                                { Presence = presence
+                                { CastShadow = castShadow
+                                  Presence = presence
                                   MaterialProperties = properties
                                   Material = material
                                   ShadowOffset = descriptor.ShadowOffset
@@ -2635,16 +2629,18 @@ type StaticModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let affineMatrix = transform.AffineMatrix
-        let presence = transform.Presence
-        let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
-        let properties = entity.GetMaterialProperties world
-        let staticModel = entity.GetStaticModel world
-        let renderType =
-            match entity.GetRenderStyle world with
-            | Deferred -> DeferredRenderType
-            | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.renderStaticModelFast (&affineMatrix, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
+        let castShadow = transform.CastShadow
+        if not renderPass.IsShadowPass || castShadow then
+            let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
+            let insetOpt = ValueOption.ofOption (entity.GetInsetOpt world)
+            let properties = entity.GetMaterialProperties world
+            let staticModel = entity.GetStaticModel world
+            let renderType =
+                match entity.GetRenderStyle world with
+                | Deferred -> DeferredRenderType
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+            World.renderStaticModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, staticModel, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         let staticModel = entity.GetStaticModel world
@@ -2699,18 +2695,20 @@ type StaticModelSurfaceFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let affineMatrix = transform.AffineMatrix
-        let presence = transform.Presence
-        let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-        let properties = entity.GetMaterialProperties world
-        let material = entity.GetMaterial world
-        let staticModel = entity.GetStaticModel world
-        let surfaceIndex = entity.GetSurfaceIndex world
-        let renderType =
-            match entity.GetRenderStyle world with
-            | Deferred -> DeferredRenderType
-            | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
-        World.renderStaticModelSurfaceFast (&affineMatrix, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
+        let castShadow = transform.CastShadow
+        if not renderPass.IsShadowPass || castShadow then
+            let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
+            let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
+            let properties = entity.GetMaterialProperties world
+            let material = entity.GetMaterial world
+            let staticModel = entity.GetStaticModel world
+            let surfaceIndex = entity.GetSurfaceIndex world
+            let renderType =
+                match entity.GetRenderStyle world with
+                | Deferred -> DeferredRenderType
+                | Forward (subsort, sort) -> ForwardRenderType (subsort, sort)
+            World.renderStaticModelSurfaceFast (&affineMatrix, castShadow, presence, insetOpt, &properties, &material, staticModel, surfaceIndex, renderType, renderPass, world)
 
     override this.GetAttributesInferred (entity, world) =
         match Metadata.tryGetStaticModelMetadata (entity.GetStaticModel world) with
@@ -2855,14 +2853,16 @@ type AnimatedModelFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let affineMatrix = transform.AffineMatrix
-        let presence = transform.Presence
-        let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
-        let properties = entity.GetMaterialProperties world
-        let animatedModel = entity.GetAnimatedModel world
-        match entity.GetBoneTransformsOpt world with
-        | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
-        | None -> ()
+        let castShadow = transform.CastShadow
+        if not renderPass.IsShadowPass || castShadow then
+            let affineMatrix = transform.AffineMatrix
+            let presence = transform.Presence
+            let insetOpt = Option.toValueOption (entity.GetInsetOpt world)
+            let properties = entity.GetMaterialProperties world
+            let animatedModel = entity.GetAnimatedModel world
+            match entity.GetBoneTransformsOpt world with
+            | Some boneTransforms -> World.renderAnimatedModelFast (&affineMatrix, castShadow, presence, insetOpt, &properties, boneTransforms, animatedModel, renderPass, world)
+            | None -> ()
 
     override this.GetAttributesInferred (entity, world) =
         let animatedModel = entity.GetAnimatedModel world
@@ -3049,22 +3049,25 @@ type TerrainFacet () =
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
-        let terrainDescriptor =
-            { Bounds = transform.Bounds3d
-              InsetOpt = entity.GetInsetOpt world
-              MaterialProperties = entity.GetTerrainMaterialProperties world
-              Material = entity.GetTerrainMaterial world
-              TintImageOpt = entity.GetTintImageOpt world
-              NormalImageOpt = entity.GetNormalImageOpt world
-              Tiles = entity.GetTiles world
-              HeightMap = entity.GetHeightMap world
-              Segments = entity.GetSegments world }
-        World.enqueueRenderMessage3d
-            (RenderTerrain
-                { Visible = transform.Visible
-                  TerrainDescriptor = terrainDescriptor
-                  RenderPass = renderPass })
-            world
+        let castShadow = transform.CastShadow
+        if not renderPass.IsShadowPass || castShadow then
+            let terrainDescriptor =
+                { Bounds = transform.Bounds3d
+                  CastShadow = castShadow
+                  InsetOpt = entity.GetInsetOpt world
+                  MaterialProperties = entity.GetTerrainMaterialProperties world
+                  Material = entity.GetTerrainMaterial world
+                  TintImageOpt = entity.GetTintImageOpt world
+                  NormalImageOpt = entity.GetNormalImageOpt world
+                  Tiles = entity.GetTiles world
+                  HeightMap = entity.GetHeightMap world
+                  Segments = entity.GetSegments world }
+            World.enqueueRenderMessage3d
+                (RenderTerrain
+                    { Visible = transform.Visible
+                      TerrainDescriptor = terrainDescriptor
+                      RenderPass = renderPass })
+                world
 
     override this.GetAttributesInferred (entity, world) =
         match entity.TryGetTerrainResolution world with

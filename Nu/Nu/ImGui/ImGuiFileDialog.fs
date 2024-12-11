@@ -135,9 +135,9 @@ module ImGui =
                 // Draw path
                 ImGui.Text ("Path: " + PathF.Normalize dialogState.DirectoryPath.FullName)
 
-                let contentRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X
+                let contentRegionWidth = ImGui.GetContentRegionAvail().X
 
-                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, true, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
                 ImGui.Columns 4
 
                 // Columns size
@@ -280,7 +280,7 @@ module ImGui =
 
                 fileNameBuffer <- fileNameStr.Substring(0, fileNameSize)
 
-                ImGui.PushItemWidth contentRegionWidth
+                ImGui.PushItemWidth (ImGui.GetContentRegionAvail().X - 65.0f)
                 if ImGui.InputText ("File Name", &fileNameBuffer, uint fileNameBufferSize, ImGuiInputTextFlags.AutoSelectAll) then
                     dialogState.FileName <- fileNameBuffer
                     dialogState.CurrentIndex <- 0UL
@@ -341,7 +341,8 @@ module ImGui =
 
                     opened <- false
 
-            ImGui.EndPopup ()
+                ImGui.EndPopup ()
+
             ImGui.PopID ()
 
             complete

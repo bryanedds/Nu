@@ -24,12 +24,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
     let charsPressed =
         List<char> ()
 
-    let keyboardKeys =
-        Enum.GetValues typeof<KeyboardKey> |>
-        enumerable |>
-        Seq.map cast<KeyboardKey> |>
-        Array.ofSeq
-
     let context =
         ImGui.CreateContext ()
 
@@ -51,8 +45,10 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
 
         // retrieve configuration targets
         let io = ImGui.GetIO ()
-        let keyMap = io.KeyMap
         let fonts = io.Fonts
+
+        // configure imgui error handling to NOT crash the .NET Runtime!
+        io.ConfigErrorRecoveryEnableAssert <- false
 
         // configure the imgui backend to presume the use of vertex offsets (necessary since we're using 16 bit indices)
         io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
@@ -62,34 +58,6 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
 
         // configure docking enabled
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
-
-        // configure imgui advance time to a constant speed regardless of frame-rate
-        io.DeltaTime <- 1.0f / 60.0f
-
-        // configure key mappings
-        keyMap.[int ImGuiKey.Space] <- int KeyboardKey.Space
-        keyMap.[int ImGuiKey.Tab] <- int KeyboardKey.Tab
-        keyMap.[int ImGuiKey.LeftArrow] <- int KeyboardKey.Left
-        keyMap.[int ImGuiKey.RightArrow] <- int KeyboardKey.Right
-        keyMap.[int ImGuiKey.UpArrow] <- int KeyboardKey.Up
-        keyMap.[int ImGuiKey.DownArrow] <- int KeyboardKey.Down
-        keyMap.[int ImGuiKey.PageUp] <- int KeyboardKey.PageUp
-        keyMap.[int ImGuiKey.PageDown] <- int KeyboardKey.PageDown
-        keyMap.[int ImGuiKey.Home] <- int KeyboardKey.Home
-        keyMap.[int ImGuiKey.End] <- int KeyboardKey.End
-        keyMap.[int ImGuiKey.Delete] <- int KeyboardKey.Delete
-        keyMap.[int ImGuiKey.Backspace] <- int KeyboardKey.Backspace
-        keyMap.[int ImGuiKey.Enter] <- int KeyboardKey.Enter
-        keyMap.[int ImGuiKey.Escape] <- int KeyboardKey.Escape
-        keyMap.[int ImGuiKey.LeftCtrl] <- int KeyboardKey.LCtrl
-        keyMap.[int ImGuiKey.RightCtrl] <- int KeyboardKey.RCtrl
-        keyMap.[int ImGuiKey.LeftAlt] <- int KeyboardKey.LAlt
-        keyMap.[int ImGuiKey.RightAlt] <- int KeyboardKey.RAlt
-        keyMap.[int ImGuiKey.LeftShift] <- int KeyboardKey.LShift
-        keyMap.[int ImGuiKey.RightShift] <- int KeyboardKey.RShift
-        for i in 0 .. dec 10 do keyMap.[int ImGuiKey._1 + i] <- int KeyboardKey.Num1 + i
-        for i in 0 .. dec 26 do keyMap.[int ImGuiKey.A + i] <- int KeyboardKey.A + i
-        for i in 0 .. dec 12 do keyMap.[int ImGuiKey.F1 + i] <- int KeyboardKey.F1 + i
 
         // add default font
         fonts.AddFontDefault () |> ignore<ImFontPtr>
@@ -111,8 +79,14 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
     member this.HandleKeyChar (keyChar : char) =
         charsPressed.Add keyChar
 
-    member this.BeginFrame () =
+    member this.BeginFrame deltaTime =
         if not stub then
+            let io = ImGui.GetIO ()
+            let deltaTimeBounded =
+                if deltaTime <= 0.001f || deltaTime >= 0.1f // when time is close to zero or negative (such as with undo), suppose default time delta
+                then 1.0f / 60.0f
+                else deltaTime
+            io.DeltaTime <- deltaTimeBounded
             ImGui.NewFrame ()
             ImGuiIOPtr.BeginFrame ()
             ImGuizmo.BeginFrame ()
@@ -123,25 +97,7 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         () // nothing to do
 
     member this.InputFrame () =
-
-        // update mouse states
         let io = ImGui.GetIO ()
-        let mouseDown = io.MouseDown
-        mouseDown.[0] <- MouseState.isButtonDown MouseLeft
-        mouseDown.[1] <- MouseState.isButtonDown MouseRight
-        mouseDown.[2] <- MouseState.isButtonDown MouseMiddle
-        io.MousePos <- MouseState.getPosition ()
-
-        // update keyboard states.
-        // NOTE: using modifier detection from sdl since it works better given how things have been configued.
-        io.KeyCtrl <- KeyboardState.isCtrlDown ()
-        io.KeyAlt <- KeyboardState.isAltDown ()
-        io.KeyShift <- KeyboardState.isShiftDown ()
-        let keysDown = io.KeysDown
-        for keyboardKey in keyboardKeys do
-            keysDown.[int keyboardKey] <- KeyboardState.isKeyDown keyboardKey
-
-        // register key char input
         for c in charsPressed do
             io.AddInputCharacter (uint32 c)
         charsPressed.Clear ()

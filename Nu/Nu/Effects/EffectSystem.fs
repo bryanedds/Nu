@@ -19,6 +19,7 @@ module EffectSystem =
               EffectTimeOriginal : GameTime
               EffectProgressOffset : single
               EffectAbsolute : bool
+              EffectCastShadow : bool
               EffectPresence : Presence
               EffectShadowOffset : single
               EffectRenderType : RenderType
@@ -533,6 +534,7 @@ module EffectSystem =
                 let billboardToken =
                     BillboardToken
                         { ModelMatrix = affineMatrix
+                          CastShadow = effectSystem.EffectCastShadow
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
@@ -571,6 +573,7 @@ module EffectSystem =
                 let staticModelToken =
                     StaticModelToken
                         { ModelMatrix = affineMatrix
+                          CastShadow = effectSystem.EffectCastShadow
                           Presence = effectSystem.EffectPresence
                           InsetOpt = insetOpt
                           MaterialProperties = properties
@@ -739,12 +742,13 @@ module EffectSystem =
     ///   - shadowOffset: How far to offset shadows of any billboards.
     ///   - renderType: The render type of the effect.
     ///   - globalEnv: The global environment for the effect.
-    let make localTime delta absolute presence shadowOffset renderType globalEnv =
+    let make localTime delta absolute castShadow presence shadowOffset renderType globalEnv =
         { EffectDelta = delta
           EffectTime = localTime
           EffectTimeOriginal = localTime
           EffectProgressOffset = 0.0f
           EffectAbsolute = absolute
+          EffectCastShadow = castShadow
           EffectPresence = presence
           EffectShadowOffset = shadowOffset
           EffectRenderType = renderType

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Breakout ImNui": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

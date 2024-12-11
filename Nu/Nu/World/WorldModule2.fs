@@ -1077,7 +1077,42 @@ module WorldModule2 =
             let world = List.foldBack (fun simulant world -> World.destroyImmediate simulant world) destructionListRev world
             if List.notEmpty (World.getDestructionListRev world) then World.destroySimulants world else world
 
-        /// Process an input event from SDL and ultimately publish any related game events.
+        static member private toImGuiMouseButton mouseButton =
+            match mouseButton with
+            | MouseLeft -> 0
+            | MouseRight -> 1
+            | MouseMiddle -> 2
+            | MouseX1 -> 3
+            | MouseX2 -> 4
+
+        static member private toImGuiKeys keyboardKey =
+            match keyboardKey with
+            | KeyboardKey.Space -> [ImGuiKey.Space]
+            | KeyboardKey.Tab -> [ImGuiKey.Tab]
+            | KeyboardKey.Left -> [ImGuiKey.LeftArrow]
+            | KeyboardKey.Right -> [ImGuiKey.RightArrow]
+            | KeyboardKey.Up -> [ImGuiKey.UpArrow]
+            | KeyboardKey.Down -> [ImGuiKey.DownArrow]
+            | KeyboardKey.PageUp -> [ImGuiKey.PageUp]
+            | KeyboardKey.PageDown -> [ImGuiKey.PageDown]
+            | KeyboardKey.Home -> [ImGuiKey.Home]
+            | KeyboardKey.End -> [ImGuiKey.End]
+            | KeyboardKey.Delete -> [ImGuiKey.Delete]
+            | KeyboardKey.Backspace -> [ImGuiKey.Backspace]
+            | KeyboardKey.Enter -> [ImGuiKey.Enter]
+            | KeyboardKey.Escape -> [ImGuiKey.Escape]
+            | KeyboardKey.LCtrl -> [ImGuiKey.LeftCtrl; ImGuiKey.ModCtrl]
+            | KeyboardKey.RCtrl -> [ImGuiKey.RightCtrl; ImGuiKey.ModCtrl]
+            | KeyboardKey.LAlt -> [ImGuiKey.LeftAlt; ImGuiKey.ModAlt]
+            | KeyboardKey.RAlt -> [ImGuiKey.RightAlt; ImGuiKey.ModAlt]
+            | KeyboardKey.LShift -> [ImGuiKey.LeftShift; ImGuiKey.ModShift]
+            | KeyboardKey.RShift -> [ImGuiKey.RightShift; ImGuiKey.ModShift]
+            | _ ->
+                if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> List.singleton
+                elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> List.singleton
+                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> List.singleton
+                else []
+
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
                 match evt.``type`` with
@@ -1086,6 +1121,8 @@ module WorldModule2 =
                     then World.exit world
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                    let io = ImGui.GetIO ()
+                    io.AddMousePosEvent (single evt.button.x, single evt.button.y)
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
@@ -1096,9 +1133,10 @@ module WorldModule2 =
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseMoveEvent eventTrace Nu.Game.Handle true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let io = ImGui.GetIO ()
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                    io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, true)
                     if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
-                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event/" + Constants.Engine.GameName)
                         let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
                         let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
@@ -1109,6 +1147,8 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let io = ImGui.GetIO ()
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                    io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, false)
                     if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -1142,10 +1182,13 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let io = ImGui.GetIO ()
+                    let keyboard = evt.key
+                    let key = keyboard.keysym
+                    let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                    for imGuiKey in World.toImGuiKeys keyboardKey do
+                        io.AddKeyEvent (imGuiKey, true)
                     if not (io.WantCaptureKeyboardGlobal) then
-                        let keyboard = evt.key
-                        let key = keyboard.keysym
-                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
+                        let eventData = { KeyboardKey = keyboardKey; Repeated = keyboard.repeat <> byte 0; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                         let world = World.publishPlus eventData Nu.Game.Handle.KeyboardKeyDownEvent eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
@@ -1153,9 +1196,12 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let io = ImGui.GetIO ()
+                    let keyboard = evt.key
+                    let key = keyboard.keysym
+                    let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                    for imGuiKey in World.toImGuiKeys keyboardKey do
+                        io.AddKeyEvent (imGuiKey, false)
                     if not (io.WantCaptureKeyboardGlobal) then
-                        let keyboard = evt.key
-                        let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
                         let world = World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
@@ -1307,10 +1353,6 @@ module WorldModule2 =
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
             Octree.getElementsInView interior exterior imposter lightBox set octree
-
-        static member private getElements3d set world =
-            let octree = World.getOctree world
-            Octree.getElements set octree
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =
@@ -2042,7 +2084,7 @@ module WorldModule2 =
                                                                 world.Timers.ImGuiTimer.Restart ()
                                                                 let imGui = World.getImGui world
                                                                 if not firstFrame then imGui.EndFrame ()
-                                                                imGui.BeginFrame ()
+                                                                imGui.BeginFrame (single world.DateDelta.TotalSeconds)
                                                                 let world = World.imGuiProcess world
                                                                 let (world : World) = imGuiProcess world
                                                                 imGui.InputFrame ()
