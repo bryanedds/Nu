@@ -259,7 +259,7 @@ module FreezerFacetModule =
                     let bounds = &boundsAndSurface.Fst
                     let surface = &boundsAndSurface.Snd
                     if (not renderPass.IsShadowPass || surface.CastShadow) && intersects false false surface.Presence bounds then
-                        World.renderStaticModelSurfaceFast (&surface.ModelMatrix, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
+                        World.renderStaticModelSurfaceFast (&surface.ModelMatrix, surface.CastShadow, surface.Presence, Option.toValueOption surface.InsetOpt, &surface.MaterialProperties, &surface.Material, surface.StaticModel, surface.SurfaceIndex, surface.RenderType, renderPass, world)
 
 [<AutoOpen>]
 module StaticModelHierarchyDispatcherModule =

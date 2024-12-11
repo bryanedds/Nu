@@ -51,8 +51,9 @@ module WorldDataToken =
             // render billboard
             | BillboardToken billboard ->
                 let renderBillboard =
-                    { Presence = billboard.Presence
-                      ModelMatrix = billboard.ModelMatrix
+                    { ModelMatrix = billboard.ModelMatrix
+                      CastShadow = billboard.CastShadow
+                      Presence = billboard.Presence
                       InsetOpt = billboard.InsetOpt
                       MaterialProperties = billboard.MaterialProperties
                       Material = billboard.Material
@@ -65,6 +66,7 @@ module WorldDataToken =
             | StaticModelToken staticModel ->
                 let renderStaticModel =
                     { ModelMatrix = staticModel.ModelMatrix
+                      CastShadow = staticModel.CastShadow
                       Presence = staticModel.Presence
                       InsetOpt = staticModel.InsetOpt
                       MaterialProperties = staticModel.MaterialProperties
@@ -77,6 +79,7 @@ module WorldDataToken =
             | StaticModelSurfaceToken staticModelSurface ->
                 let renderStaticModelSurface =
                     { ModelMatrix = staticModelSurface.ModelMatrix
+                      CastShadow = staticModelSurface.CastShadow
                       Presence = staticModelSurface.Presence
                       InsetOpt = staticModelSurface.InsetOpt
                       MaterialProperties = staticModelSurface.MaterialProperties

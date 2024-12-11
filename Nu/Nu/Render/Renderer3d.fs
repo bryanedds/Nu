@@ -184,6 +184,7 @@ type [<Struct>] Light3dValue =
 /// A mutable billboard value.
 type [<Struct>] BillboardValue =
     { mutable ModelMatrix : Matrix4x4
+      mutable CastShadow : bool
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
@@ -194,6 +195,7 @@ type [<Struct>] BillboardValue =
 /// A mutable static model value.
 type [<Struct>] StaticModelValue =
     { mutable ModelMatrix : Matrix4x4
+      mutable CastShadow : bool
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
@@ -202,8 +204,8 @@ type [<Struct>] StaticModelValue =
 
 /// A mutable static model surface value.
 type [<Struct>] StaticModelSurfaceValue =
-    { mutable CastShadow : bool
-      mutable ModelMatrix : Matrix4x4
+    { mutable ModelMatrix : Matrix4x4
+      mutable CastShadow : bool
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties
@@ -233,6 +235,7 @@ type TerrainGeometryDescriptor =
 /// Describes a static 3d terrain.
 type TerrainDescriptor =
     { Bounds : Box3
+      CastShadow : bool
       InsetOpt : Box2 option
       MaterialProperties : TerrainMaterialProperties
       Material : TerrainMaterial
@@ -254,6 +257,7 @@ type TerrainDescriptor =
 /// An internally cached static model used to reduce GC promotion or pressure.
 type CachedStaticModelMessage =
     { mutable CachedStaticModelMatrix : Matrix4x4
+      mutable CachedStaticModelCastShadow : bool
       mutable CachedStaticModelPresence : Presence
       mutable CachedStaticModelInsetOpt : Box2 voption
       mutable CachedStaticModelMaterialProperties : MaterialProperties
@@ -264,6 +268,7 @@ type CachedStaticModelMessage =
 /// An internally cached static model surface used to reduce GC promotion or pressure.
 type CachedStaticModelSurfaceMessage =
     { mutable CachedStaticModelSurfaceMatrix : Matrix4x4
+      mutable CachedStaticModelSurfaceCastShadow : bool
       mutable CachedStaticModelSurfacePresence : Presence
       mutable CachedStaticModelSurfaceInsetOpt : Box2 voption
       mutable CachedStaticModelSurfaceMaterialProperties : MaterialProperties
@@ -276,6 +281,7 @@ type CachedStaticModelSurfaceMessage =
 /// An internally cached animated model used to reduce GC promotion or pressure.
 type CachedAnimatedModelMessage =
     { mutable CachedAnimatedModelMatrix : Matrix4x4
+      mutable CachedAnimatedModelCastShadow : bool
       mutable CachedAnimatedModelPresence : Presence
       mutable CachedAnimatedModelInsetOpt : Box2 voption
       mutable CachedAnimatedModelMaterialProperties : MaterialProperties
@@ -347,6 +353,7 @@ type RenderLight3d =
 
 type RenderBillboard =
     { ModelMatrix : Matrix4x4
+      CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
@@ -356,7 +363,7 @@ type RenderBillboard =
       RenderPass : RenderPass }
 
 type RenderBillboards =
-    { Billboards : (Matrix4x4 * Presence * Box2 option) SList
+    { Billboards : (Matrix4x4 * bool * Presence * Box2 option) SList
       MaterialProperties : MaterialProperties
       Material : Material
       ShadowOffset : single
@@ -364,7 +371,8 @@ type RenderBillboards =
       RenderPass : RenderPass }
 
 type RenderBillboardParticles =
-    { Presence : Presence
+    { CastShadow : bool
+      Presence : Presence
       MaterialProperties : MaterialProperties
       Material : Material
       ShadowOffset : single
@@ -374,6 +382,7 @@ type RenderBillboardParticles =
 
 type RenderStaticModelSurface =
     { ModelMatrix : Matrix4x4
+      CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
@@ -385,6 +394,7 @@ type RenderStaticModelSurface =
 
 type RenderStaticModel =
     { ModelMatrix : Matrix4x4
+      CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
@@ -393,13 +403,14 @@ type RenderStaticModel =
       RenderPass : RenderPass }
 
 type RenderStaticModels =
-    { StaticModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
+    { StaticModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
       StaticModel : StaticModel AssetTag
       RenderType : RenderType
       RenderPass : RenderPass }
 
 type RenderAnimatedModel =
     { ModelMatrix : Matrix4x4
+      CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
@@ -409,12 +420,13 @@ type RenderAnimatedModel =
 
 type RenderAnimatedModels =
     { BoneTransforms : Matrix4x4 array
-      AnimatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList
+      AnimatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList
       AnimatedModel : AnimatedModel AssetTag
       RenderPass : RenderPass }
 
 type RenderUserDefinedStaticModel =
     { ModelMatrix : Matrix4x4
+      CastShadow : bool
       Presence : Presence
       InsetOpt : Box2 option
       MaterialProperties : MaterialProperties
@@ -729,8 +741,8 @@ type [<ReferenceEquality>] private RenderTasks =
       LightMaps : SortableLightMap List
       LightMapRenders : uint64 HashSet
       Lights : SortableLight List
-      DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List>
-      DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List>
+      DeferredStatic : Dictionary<OpenGL.PhysicallyBased.PhysicallyBasedSurface, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
+      DeferredAnimated : Dictionary<AnimatedModelSurfaceKey, struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List>
       DeferredTerrains : struct (TerrainDescriptor * OpenGL.PhysicallyBased.PhysicallyBasedGeometry) List
       ForwardStatic : struct (single * single * Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
       ForwardStaticSorted : struct (Matrix4x4 * Presence * Box2 * MaterialProperties * OpenGL.PhysicallyBased.PhysicallyBasedSurface) List
@@ -800,19 +812,20 @@ type [<ReferenceEquality>] private RenderTasks =
             Seq.forall2 (fun static_ staticCached ->
                 OpenGL.PhysicallyBased.PhysicallyBasedSurfaceFns.equals static_.Key staticCached.Key &&
                 (static_.Value, staticCached.Value) ||>
-                Seq.forall2 (fun struct (m, _, _, _) struct (mCached, _, _, _) -> m4Eq m mCached))
+                Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
         let deferredAnimatedCached =
             renderTasks.DeferredAnimated.Count = renderTasksCached.DeferredAnimated.Count &&
             (renderTasks.DeferredAnimated, renderTasksCached.DeferredAnimated) ||>
             Seq.forall2 (fun animated animatedCached ->
                 AnimatedModelSurfaceKey.equals animated.Key animatedCached.Key &&
                 (animated.Value, animatedCached.Value) ||>
-                Seq.forall2 (fun struct (m, _, _, _) struct (mCached, _, _, _) -> m4Eq m mCached))
+                Seq.forall2 (fun struct (m, cs, _, _, _) struct (mCached, csCached, _, _, _) -> m4Eq m mCached && cs = csCached))
         let deferredTerrainsCached =
             renderTasks.DeferredTerrains.Count = renderTasksCached.DeferredTerrains.Count &&
             (renderTasks.DeferredTerrains, renderTasksCached.DeferredTerrains) ||>
             Seq.forall2 (fun struct (terrainDescriptor, _) struct (terrainDescriptorCached, _) ->
                 box3Eq terrainDescriptor.Bounds terrainDescriptorCached.Bounds &&
+                terrainDescriptor.CastShadow = terrainDescriptorCached.CastShadow &&
                 terrainDescriptor.HeightMap = terrainDescriptorCached.HeightMap)
         deferredStaticCached &&
         deferredAnimatedCached &&
@@ -1597,6 +1610,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member private categorizeBillboardSurface
         (eyeRotation : Quaternion,
          model : Matrix4x4,
+         castShadow : bool,
          presence : Presence,
          insetOpt : Box2 option,
          albedoMetadata : OpenGL.Texture.TextureMetadata,
@@ -1643,13 +1657,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
             if renderTasks.DeferredStatic.TryGetValue (billboardSurface, &renderOps)
-            then renderOps.Add struct (billboardMatrix, presence, texCoordsOffset, properties)
-            else renderTasks.DeferredStatic.Add (billboardSurface, List ([struct (billboardMatrix, presence, texCoordsOffset, properties)]))
+            then renderOps.Add struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)
+            else renderTasks.DeferredStatic.Add (billboardSurface, List ([struct (billboardMatrix, castShadow, presence, texCoordsOffset, properties)]))
         | ForwardRenderType (subsort, sort) ->
             renderTasks.ForwardStatic.Add struct (subsort, sort, billboardMatrix, presence, texCoordsOffset, properties, billboardSurface)
 
     static member private categorizeStaticModelSurface
         (model : Matrix4x4 inref,
+         castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
@@ -1678,13 +1693,14 @@ type [<ReferenceEquality>] GlRenderer3d =
         | DeferredRenderType ->
             let mutable renderOps = Unchecked.defaultof<_> // OPTIMIZATION: TryGetValue using the auto-pairing syntax of F# allocation when the 'TValue is a struct tuple.
             if renderTasks.DeferredStatic.TryGetValue (surface, &renderOps)
-            then renderOps.Add struct (model, presence, texCoordsOffset, properties)
-            else renderTasks.DeferredStatic.Add (surface, List ([struct (model, presence, texCoordsOffset, properties)]))
+            then renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+            else renderTasks.DeferredStatic.Add (surface, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
         | ForwardRenderType (subsort, sort) ->
             renderTasks.ForwardStatic.Add struct (subsort, sort, model, presence, texCoordsOffset, properties, surface)
 
     static member private categorizeStaticModelSurfaceByIndex
         (model : Matrix4x4 inref,
+         castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
@@ -1705,7 +1721,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             let surfaceMaterial = GlRenderer3d.applySurfaceMaterial (&material, &surface.SurfaceMaterial, renderer)
                             { surface with SurfaceMaterial = surfaceMaterial }
                         else surface
-                    GlRenderer3d.categorizeStaticModelSurface (&model, presence, &insetOpt, &properties, surface, renderType, renderPass, ValueNone, renderer)
+                    GlRenderer3d.categorizeStaticModelSurface (&model, castShadow, presence, &insetOpt, &properties, surface, renderType, renderPass, ValueNone, renderer)
             | _ -> Log.infoOnce ("Cannot render static model surface with a non-static model asset for '" + scstring staticModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render static model surface due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
@@ -1715,6 +1731,7 @@ type [<ReferenceEquality>] GlRenderer3d =
          frustumImposter : Frustum,
          lightBox : Box3,
          model : Matrix4x4 inref,
+         castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
@@ -1771,12 +1788,13 @@ type [<ReferenceEquality>] GlRenderer3d =
                         | ShadowPass (_, shadowLightType, _, shadowFrustum) -> Presence.intersects3d (if shadowLightType <> DirectionalLight then ValueSome shadowFrustum else ValueNone) shadowFrustum shadowFrustum ValueNone false false presence surfaceBounds
                         | ReflectionPass (_, reflFrustum) -> Presence.intersects3d ValueNone reflFrustum reflFrustum ValueNone false false presence surfaceBounds
                     if unculled then
-                        GlRenderer3d.categorizeStaticModelSurface (&surfaceMatrix, presence, &insetOpt, &properties, surface, renderType, renderPass, ValueSome renderTasks, renderer)
+                        GlRenderer3d.categorizeStaticModelSurface (&surfaceMatrix, castShadow, presence, &insetOpt, &properties, surface, renderType, renderPass, ValueSome renderTasks, renderer)
             | _ -> Log.infoOnce ("Cannot render static model with a non-static model asset for '" + scstring staticModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render static model due to unloadable asset(s) for '" + scstring staticModel + "'.")
 
     static member private categorizeAnimatedModel
         (model : Matrix4x4 inref,
+         castShadow : bool,
          presence : Presence,
          insetOpt : Box2 voption inref,
          properties : MaterialProperties inref,
@@ -1812,15 +1830,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                     // render animated surface
                     let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                     match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                    | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
-                    | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, presence, texCoordsOffset, properties)]))
+                    | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                    | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
         | ValueNone -> Log.infoOnce ("Cannot render animated model due to unloadable asset(s) for '" + scstring animatedModel + "'.")
 
     static member private categorizeAnimatedModels
-        (animatedModels : (Matrix4x4 * Presence * Box2 option * MaterialProperties) SList,
+        (animatedModels : (Matrix4x4 * bool * Presence * Box2 option * MaterialProperties) SList,
          boneTransforms : Matrix4x4 array,
          animatedModel : AnimatedModel AssetTag,
          renderPass : RenderPass,
@@ -1837,7 +1855,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 for surface in modelAsset.Surfaces do
 
                     // render animated surfaces
-                    for (model, presence, insetOpt, properties) in animatedModels do
+                    for (model, castShadow, presence, insetOpt, properties) in animatedModels do // TODO: see if these should a struct tuples.
 
                         // compute tex coords offset
                         let texCoordsOffset =
@@ -1856,8 +1874,8 @@ type [<ReferenceEquality>] GlRenderer3d =
                         // render animated surface
                         let animatedModelSurfaceKey = { BoneTransforms = boneTransforms; AnimatedSurface = surface }
                         match renderTasks.DeferredAnimated.TryGetValue animatedModelSurfaceKey with
-                        | (true, renderOps) -> renderOps.Add struct (model, presence, texCoordsOffset, properties)
-                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, presence, texCoordsOffset, properties)]))
+                        | (true, renderOps) -> renderOps.Add struct (model, castShadow, presence, texCoordsOffset, properties)
+                        | (false, _) -> renderTasks.DeferredAnimated.Add (animatedModelSurfaceKey, List ([struct (model, castShadow, presence, texCoordsOffset, properties)]))
 
             // unable to render
             | _ -> Log.infoOnce ("Cannot render animated model with a non-animated model asset '" + scstring animatedModel + "'.")
@@ -1918,7 +1936,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         forwardSurfacesSortBuffer
 
     static member private renderPhysicallyBasedDepthSurfaces
-        batchPhase eyeCenter viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List)
+        batchPhase eyeCenter viewArray projectionArray bonesArray (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
         (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
 
         // ensure we have a large enough instance fields array
@@ -1929,7 +1947,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // blit parameters to instance fields
         for i in 0 .. dec parameters.Count do
-            let struct (model, _, _, _) = parameters.[i]
+            let struct (model, _, _, _, _) = parameters.[i]
             model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
 
         // draw surfaces
@@ -1938,7 +1956,7 @@ type [<ReferenceEquality>] GlRenderer3d =
              renderer.InstanceFields, renderer.LightingConfig.LightShadowExponent, surface.SurfaceMaterial, surface.PhysicallyBasedGeometry, shader)
 
     static member private renderPhysicallyBasedDeferredSurfaces
-        batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * Presence * Box2 * MaterialProperties) List)
+        batchPhase viewArray projectionArray bonesArray eyeCenter (parameters : struct (Matrix4x4 * bool * Presence * Box2 * MaterialProperties) List)
         lightShadowSamples lightShadowBias lightShadowSampleScalar lightShadowExponent lightShadowDensity (surface : OpenGL.PhysicallyBased.PhysicallyBasedSurface) shader renderer =
                                                                       
         // ensure we have a large enough instance fields array
@@ -1949,7 +1967,7 @@ type [<ReferenceEquality>] GlRenderer3d =
 
         // blit parameters to instance fields
         for i in 0 .. dec parameters.Count do
-            let struct (model, presence, texCoordsOffset, properties) = parameters.[i]
+            let struct (model, _, presence, texCoordsOffset, properties) = parameters.[i]
             model.ToArray (renderer.InstanceFields, i * Constants.Render.InstanceFieldCount)
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16] <- texCoordsOffset.Min.X
             renderer.InstanceFields.[i * Constants.Render.InstanceFieldCount + 16 + 1] <- texCoordsOffset.Min.Y
@@ -2322,7 +2340,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 | SpotLight (_, _)-> renderer.PhysicallyBasedShadowStaticSpotShader
                 | DirectionalLight -> renderer.PhysicallyBasedShadowStaticDirectionalShader
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
-                SingletonPhase lightOrigin lightViewArray lightProjectionArray [||] (List ([struct (model, presence, texCoordsOffset, properties)]))
+                SingletonPhase lightOrigin lightViewArray lightProjectionArray [||] (List ([struct (model, false, presence, texCoordsOffset, properties)]))
                 surface shadowShader renderer
             OpenGL.Hl.Assert ()
 
@@ -2894,12 +2912,12 @@ type [<ReferenceEquality>] GlRenderer3d =
             | RenderBillboard rb ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rb.MaterialProperties, &rb.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f 0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                GlRenderer3d.categorizeBillboardSurface (eyeRotation, rb.ModelMatrix, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, true, rb.ShadowOffset, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
+                GlRenderer3d.categorizeBillboardSurface (eyeRotation, rb.ModelMatrix, rb.CastShadow, rb.Presence, rb.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rb.MaterialProperties, true, rb.ShadowOffset, billboardSurface, rb.RenderType, rb.RenderPass, renderer)
             | RenderBillboards rbs ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbs.MaterialProperties, &rbs.Material, renderer)
                 let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3 (v3 -0.5f -0.5f -0.5f) v3One, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                for (model, presence, insetOpt) in rbs.Billboards do
-                    GlRenderer3d.categorizeBillboardSurface (eyeRotation, model, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, true, rbs.ShadowOffset, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
+                for (model, castShadow, presence, insetOpt) in rbs.Billboards do
+                    GlRenderer3d.categorizeBillboardSurface (eyeRotation, model, castShadow, presence, insetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbs.MaterialProperties, true, rbs.ShadowOffset, billboardSurface, rbs.RenderType, rbs.RenderPass, renderer)
             | RenderBillboardParticles rbps ->
                 let struct (billboardProperties, billboardMaterial) = GlRenderer3d.makeBillboardMaterial (&rbps.MaterialProperties, &rbps.Material, renderer)
                 for particle in rbps.Particles do
@@ -2910,34 +2928,34 @@ type [<ReferenceEquality>] GlRenderer3d =
                              particle.Transform.Size * particle.Transform.Scale)
                     let billboardProperties = { billboardProperties with Albedo = billboardProperties.Albedo * particle.Color; Emission = particle.Emission.R }
                     let billboardSurface = OpenGL.PhysicallyBased.CreatePhysicallyBasedSurface (Array.empty, m4Identity, box3Zero, billboardProperties, billboardMaterial, -1, Assimp.Node.Empty, renderer.BillboardGeometry)
-                    GlRenderer3d.categorizeBillboardSurface (eyeRotation, billboardMatrix, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, false, rbps.ShadowOffset, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
+                    GlRenderer3d.categorizeBillboardSurface (eyeRotation, billboardMatrix, rbps.CastShadow, rbps.Presence, Option.ofValueOption particle.InsetOpt, billboardMaterial.AlbedoTexture.TextureMetadata, rbps.MaterialProperties, false, rbps.ShadowOffset, billboardSurface, rbps.RenderType, rbps.RenderPass, renderer)
             | RenderStaticModelSurface rsms ->
                 let insetOpt = Option.toValueOption rsms.InsetOpt
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&rsms.ModelMatrix, rsms.CastShadow, rsms.Presence, &insetOpt, &rsms.MaterialProperties, &rsms.Material, rsms.StaticModel, rsms.SurfaceIndex, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderStaticModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.RenderType, rsm.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.StaticModel, rsm.RenderType, rsm.RenderPass, renderer)
             | RenderStaticModels rsms ->
-                for (model, presence, insetOpt, properties) in rsms.StaticModels do
+                for (model, castShadow, presence, insetOpt, properties) in rsms.StaticModels do // TODO: see if these should be struct tuples.
                     let insetOpt = Option.toValueOption insetOpt
-                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, presence, &insetOpt, &properties, rsms.StaticModel, rsms.RenderType, rsms.RenderPass, renderer)
+                    GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &model, castShadow, presence, &insetOpt, &properties, rsms.StaticModel, rsms.RenderType, rsms.RenderPass, renderer)
             | RenderCachedStaticModel csmm ->
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &csmm.CachedStaticModelMatrix, csmm.CachedStaticModelCastShadow, csmm.CachedStaticModelPresence, &csmm.CachedStaticModelInsetOpt, &csmm.CachedStaticModelMaterialProperties, csmm.CachedStaticModel, csmm.CachedStaticModelRenderType, csmm.CachedStaticModelRenderPass, renderer)
             | RenderCachedStaticModelSurface csmsm ->
-                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
+                GlRenderer3d.categorizeStaticModelSurfaceByIndex (&csmsm.CachedStaticModelSurfaceMatrix, csmsm.CachedStaticModelSurfaceCastShadow, csmsm.CachedStaticModelSurfacePresence, &csmsm.CachedStaticModelSurfaceInsetOpt, &csmsm.CachedStaticModelSurfaceMaterialProperties, &csmsm.CachedStaticModelSurfaceMaterial, csmsm.CachedStaticModelSurfaceModel, csmsm.CachedStaticModelSurfaceIndex, csmsm.CachedStaticModelSurfaceRenderType, csmsm.CachedStaticModelSurfaceRenderPass, renderer)
             | RenderUserDefinedStaticModel rudsm ->
                 let insetOpt = Option.toValueOption rudsm.InsetOpt
                 let assetTag = asset Assets.Default.PackageName Gen.name // TODO: see if we should instead use a specialized package for temporary assets like these.
                 GlRenderer3d.tryCreateUserDefinedStaticModel rudsm.StaticModelSurfaceDescriptors rudsm.Bounds assetTag renderer
-                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.RenderType, rudsm.RenderPass, renderer)
+                GlRenderer3d.categorizeStaticModel (frustumInterior, frustumExterior, frustumImposter, lightBox, &rudsm.ModelMatrix, rudsm.CastShadow, rudsm.Presence, &insetOpt, &rudsm.MaterialProperties, assetTag, rudsm.RenderType, rudsm.RenderPass, renderer)
                 userDefinedStaticModelsToDestroy.Add assetTag
             | RenderAnimatedModel rsm ->
                 let insetOpt = Option.toValueOption rsm.InsetOpt
-                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.RenderPass, renderer)
+                GlRenderer3d.categorizeAnimatedModel (&rsm.ModelMatrix, rsm.CastShadow, rsm.Presence, &insetOpt, &rsm.MaterialProperties, rsm.BoneTransforms, rsm.AnimatedModel, rsm.RenderPass, renderer)
             | RenderAnimatedModels rams ->
                 GlRenderer3d.categorizeAnimatedModels (rams.AnimatedModels, rams.BoneTransforms, rams.AnimatedModel, rams.RenderPass, renderer)
             | RenderCachedAnimatedModel camm ->
-                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelRenderPass, renderer)
+                GlRenderer3d.categorizeAnimatedModel (&camm.CachedAnimatedModelMatrix, camm.CachedAnimatedModelCastShadow, camm.CachedAnimatedModelPresence, &camm.CachedAnimatedModelInsetOpt, &camm.CachedAnimatedModelMaterialProperties, camm.CachedAnimatedModelBoneTransforms, camm.CachedAnimatedModel, camm.CachedAnimatedModelRenderPass, renderer)
             | RenderTerrain rt ->
                 GlRenderer3d.categorizeTerrain (rt.Visible, rt.TerrainDescriptor, rt.RenderPass, renderer)
             | ConfigureLighting3d l3c ->
