@@ -202,7 +202,8 @@ type [<Struct>] StaticModelValue =
 
 /// A mutable static model surface value.
 type [<Struct>] StaticModelSurfaceValue =
-    { mutable ModelMatrix : Matrix4x4
+    { mutable CastShadow : bool
+      mutable ModelMatrix : Matrix4x4
       mutable Presence : Presence
       mutable InsetOpt : Box2 option
       mutable MaterialProperties : MaterialProperties

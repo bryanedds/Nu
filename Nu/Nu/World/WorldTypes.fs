@@ -634,6 +634,7 @@ and EntityDispatcher (is2d, physical, lightProbe, light) =
          Define? EnabledLocal true
          Define? Visible true
          Define? VisibleLocal true
+         Define? CastShadow true
          Define? Pickable true
          Define? Static false
          Define? AlwaysUpdate false
@@ -1180,6 +1181,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
     member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
     member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
+    member this.CastShadow with get () = this.Transform.CastShadow and set value = this.Transform.CastShadow <- value
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
