@@ -3276,7 +3276,7 @@ module PhysicallyBased =
                                 yield (light, node)|]
 
                         // construct bounds and hierarchy
-                        // TODO: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                        // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
                         let lightProbes = SList.make ()
                         let lights = SList.make ()
                         let surfaces = SList.make ()
