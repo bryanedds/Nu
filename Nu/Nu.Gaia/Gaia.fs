@@ -46,6 +46,7 @@ module Gaia =
     let mutable private Futures = [] : (SnapshotType * World) list
     let mutable private SelectedWindowOpt = Option<string>.None
     let mutable private SelectedWindowRestoreRequested = 0
+    let mutable private EntityPropertiesFocusRequested = false
     let mutable private TimelineChanged = false
     let mutable private ManipulationActive = false
     let mutable private ManipulationOperation = OPERATION.TRANSLATE
@@ -550,7 +551,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | None -> ()
 
             // make sure entity properties are showing
-            if entityOpt.IsSome then ImGui.SetWindowFocus "Entity Properties"
+            if entityOpt.IsSome then EntityPropertiesFocusRequested <- true
 
         // actually set the selection
         SelectedEntityOpt <- entityOpt
@@ -4171,6 +4172,12 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Some (exn, worldOld) -> imGuiExceptionDialog exn worldOld world
 
     let private imGuiRender world =
+
+        // HACK: in order to successfully focus entity properties when clicking in the viewport in the current version
+        // of Dear ImGui, we seem to have to the the window focus command AFTER normal processing.
+        if EntityPropertiesFocusRequested then
+            ImGui.SetWindowFocus "Entity Properties"
+            EntityPropertiesFocusRequested <- false
 
         // render light probes of the selected group in light box and view frustum
         let lightBox = World.getLight3dBox world
