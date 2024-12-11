@@ -549,15 +549,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             | Some _ -> focusPropertyOpt None world
             | None -> ()
 
-            // make sure entity properties are showing5
+            // make sure entity properties are showing
             if entityOpt.IsSome then ImGui.SetWindowFocus "Entity Properties"
-
-            // HACK: in order to keep the property of one simulant from being copied to another when the selected
-            // simulant is changed, we have to move focus away from the property windows. We chose to focus on the
-            // "Entity Hierarchy" window in order to avoid disrupting drag and drop when selecting a different entity
-            // in it. Then if there is no entity selected, we'll select the viewport instead
-            ImGui.SetWindowFocus "Entity Hierarchy"
-            if entityOpt.IsNone then ImGui.SetWindowFocus "Viewport"
 
         // actually set the selection
         SelectedEntityOpt <- entityOpt
@@ -4168,6 +4161,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // selected window restoration
                 if SelectedWindowRestoreRequested > 0 then imGuiSelectedWindowRestoration ()
+                ImGui.ShowDebugLogWindow ()
                 world
 
             // propagate exception to dialog
@@ -4175,7 +4169,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
         // exception handling dialog
         | Some (exn, worldOld) -> imGuiExceptionDialog exn worldOld world
-
 
     let private imGuiRender world =
 
