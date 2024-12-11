@@ -1085,33 +1085,33 @@ module WorldModule2 =
             | MouseX1 -> 3
             | MouseX2 -> 4
 
-        static member private toImGuiKeyOpt keyboardKey =
+        static member private toImGuiKeys keyboardKey =
             match keyboardKey with
-            | KeyboardKey.Space -> ValueSome ImGuiKey.Space
-            | KeyboardKey.Tab -> ValueSome ImGuiKey.Tab
-            | KeyboardKey.Left -> ValueSome ImGuiKey.LeftArrow
-            | KeyboardKey.Right -> ValueSome ImGuiKey.RightArrow
-            | KeyboardKey.Up -> ValueSome ImGuiKey.UpArrow
-            | KeyboardKey.Down -> ValueSome ImGuiKey.DownArrow
-            | KeyboardKey.PageUp -> ValueSome ImGuiKey.PageUp
-            | KeyboardKey.PageDown -> ValueSome ImGuiKey.PageDown
-            | KeyboardKey.Home -> ValueSome ImGuiKey.Home
-            | KeyboardKey.End -> ValueSome ImGuiKey.End
-            | KeyboardKey.Delete -> ValueSome ImGuiKey.Delete
-            | KeyboardKey.Backspace -> ValueSome ImGuiKey.Backspace
-            | KeyboardKey.Enter -> ValueSome ImGuiKey.Enter
-            | KeyboardKey.Escape -> ValueSome ImGuiKey.Escape
-            | KeyboardKey.LCtrl -> ValueSome ImGuiKey.LeftCtrl
-            | KeyboardKey.RCtrl -> ValueSome ImGuiKey.RightCtrl
-            | KeyboardKey.LAlt -> ValueSome ImGuiKey.LeftAlt
-            | KeyboardKey.RAlt -> ValueSome ImGuiKey.RightAlt
-            | KeyboardKey.LShift -> ValueSome ImGuiKey.LeftShift
-            | KeyboardKey.RShift -> ValueSome ImGuiKey.RightShift
+            | KeyboardKey.Space -> [ImGuiKey.Space]
+            | KeyboardKey.Tab -> [ImGuiKey.Tab]
+            | KeyboardKey.Left -> [ImGuiKey.LeftArrow]
+            | KeyboardKey.Right -> [ImGuiKey.RightArrow]
+            | KeyboardKey.Up -> [ImGuiKey.UpArrow]
+            | KeyboardKey.Down -> [ImGuiKey.DownArrow]
+            | KeyboardKey.PageUp -> [ImGuiKey.PageUp]
+            | KeyboardKey.PageDown -> [ImGuiKey.PageDown]
+            | KeyboardKey.Home -> [ImGuiKey.Home]
+            | KeyboardKey.End -> [ImGuiKey.End]
+            | KeyboardKey.Delete -> [ImGuiKey.Delete]
+            | KeyboardKey.Backspace -> [ImGuiKey.Backspace]
+            | KeyboardKey.Enter -> [ImGuiKey.Enter]
+            | KeyboardKey.Escape -> [ImGuiKey.Escape]
+            | KeyboardKey.LCtrl -> [ImGuiKey.LeftCtrl; ImGuiKey.ModCtrl]
+            | KeyboardKey.RCtrl -> [ImGuiKey.RightCtrl; ImGuiKey.ModCtrl]
+            | KeyboardKey.LAlt -> [ImGuiKey.LeftAlt; ImGuiKey.ModAlt]
+            | KeyboardKey.RAlt -> [ImGuiKey.RightAlt; ImGuiKey.ModAlt]
+            | KeyboardKey.LShift -> [ImGuiKey.LeftShift; ImGuiKey.ModShift]
+            | KeyboardKey.RShift -> [ImGuiKey.RightShift; ImGuiKey.ModShift]
             | _ ->
-                if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> ValueSome
-                elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> ValueSome
-                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> ValueSome
-                else ValueNone
+                if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> List.singleton
+                elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> List.singleton
+                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> List.singleton
+                else []
 
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
@@ -1185,8 +1185,8 @@ module WorldModule2 =
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
-                    let imGuiKeyOpt = World.toImGuiKeyOpt keyboardKey
-                    match imGuiKeyOpt with ValueSome imGuiKey -> io.AddKeyEvent (imGuiKey, true) | ValueNone -> ()
+                    for imGuiKey in World.toImGuiKeys keyboardKey do
+                        io.AddKeyEvent (imGuiKey, true)
                     if not (io.WantCaptureKeyboardGlobal) then
                         let eventData = { KeyboardKey = keyboardKey; Repeated = keyboard.repeat <> byte 0; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
@@ -1199,8 +1199,8 @@ module WorldModule2 =
                     let keyboard = evt.key
                     let key = keyboard.keysym
                     let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
-                    let imGuiKeyOpt = World.toImGuiKeyOpt keyboardKey
-                    match imGuiKeyOpt with ValueSome imGuiKey -> io.AddKeyEvent (imGuiKey, false) | ValueNone -> ()
+                    for imGuiKey in World.toImGuiKeys keyboardKey do
+                        io.AddKeyEvent (imGuiKey, false)
                     if not (io.WantCaptureKeyboardGlobal) then
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
