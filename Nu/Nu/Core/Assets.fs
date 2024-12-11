@@ -13,7 +13,7 @@ module AssetPatterns =
     let (|CubeMapExtension|_|) extension = match extension with ".cbm" -> Some extension | _ -> None
     let (|SoundExtension|_|) extension = match extension with ".wav" -> Some extension | _ -> None
     let (|SongExtension|_|) extension = match extension with ".ogg" | ".mp3" -> Some extension | _ -> None
-    let (|ModelExtension|_|) extension = match extension with ".fbx" | ".dae" | ".obj" -> Some extension | _ -> None
+    let (|ModelExtension|_|) extension = match extension with ".fbx" | ".gltf" | ".glb" | ".dae" | ".obj" -> Some extension | _ -> None
     let (|CsvExtension|_|) extension = match extension with ".csv" -> Some extension | _ -> None
 
 [<RequireQualifiedAccess>]
