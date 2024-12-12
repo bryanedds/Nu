@@ -275,6 +275,7 @@ module WorldImGui =
                 let sizeChanged = ImGui.DragFloat2 (nameof b.Size, &size, context.SnapDrag)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
+                ImGui.PopID ()
                 (minChanged || sizeChanged, box2 min size :> obj)
             | :? Box3 as b ->
                 ImGui.Text name
@@ -287,6 +288,7 @@ module WorldImGui =
                 let sizeChanged = ImGui.DragFloat3 (nameof b.Size, &size, context.SnapDrag)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
+                ImGui.PopID ()
                 (minChanged || sizeChanged, box3 min size :> obj)
             | :? Box2i as b ->
                 ImGui.Text name
@@ -299,6 +301,7 @@ module WorldImGui =
                 let sizeChanged = ImGui.DragInt2 (nameof b.Size, &size.X, context.SnapDrag)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
+                ImGui.PopID ()
                 (minChanged || sizeChanged, box2i min size :> obj)
             | :? Box3i as b ->
                 ImGui.Text name
@@ -311,6 +314,7 @@ module WorldImGui =
                 let sizeChanged = ImGui.DragInt3 (nameof b.Size, &size.X, context.SnapDrag)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
+                ImGui.PopID ()
                 (minChanged || sizeChanged, box3i min size :> obj)
             | :? Quaternion as q ->
                 let mutable v = v4 q.X q.Y q.Z q.W
