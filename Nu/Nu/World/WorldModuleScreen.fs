@@ -224,28 +224,6 @@ module WorldModuleScreen =
             | true -> property
             | false -> failwithf "Could not find property '%s'." propertyName
 
-        static member internal getScreenXtensionValue<'a> propertyName screen world =
-            let screenState = World.getScreenState screen world
-            let mutable property = Unchecked.defaultof<_>
-            if ScreenState.tryGetProperty (propertyName, screenState, &property) then
-                match property.PropertyValue with
-                | :? 'a as value -> value
-                | null -> null :> obj :?> 'a
-                | valueObj -> valueObj |> valueToSymbol |> symbolToValue
-            else
-                let definitions = Reflection.getPropertyDefinitions (getType screenState.Dispatcher)
-                let value =
-                    match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
-                    | Some definition ->
-                        match definition.PropertyExpr with
-                        | DefineExpr value -> value :?> 'a
-                        | VariableExpr _ -> failwith "ScreenDispatchers do not support variable properties."
-                        | ComputedExpr _ -> failwith "ScreenDispatchers do not support computed properties."
-                    | None -> failwithumf ()
-                let property = { PropertyType = typeof<'a>; PropertyValue = value }
-                screenState.Xtension <- Xtension.attachProperty propertyName property screenState.Xtension
-                value
-
         static member internal tryGetScreenProperty (propertyName, screen, world, property : _ outref) =
             match ScreenGetters.TryGetValue propertyName with
             | (true, getter) ->
@@ -254,36 +232,131 @@ module WorldModuleScreen =
                     true
                 else false
             | (false, _) ->
-                World.tryGetScreenXtensionProperty (propertyName, screen, world, &property)
+                let screenState = World.getScreenState screen world
+                if ScreenState.tryGetProperty (propertyName, screenState, &property) then
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> property <- { PropertyType = dp.DesignerType; PropertyValue = dp.DesignerValue }; true
+                    | :? ComputedProperty as cp -> property <- { PropertyType = cp.ComputedType; PropertyValue = cp.ComputedGet (screen :> obj) (world :> obj) }; true
+                    | _ -> true
+                else false
+
+        static member internal getScreenXtensionValue<'a> propertyName screen world =
+            let screenState = World.getScreenState screen world
+            let mutable property = Unchecked.defaultof<_>
+            if ScreenState.tryGetProperty (propertyName, screenState, &property) then
+                let valueObj =
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerValue
+                    | :? ComputedProperty as cp -> cp.ComputedGet screen world
+                    | _ -> property.PropertyValue
+                match valueObj with
+                | :? 'a as value -> value
+                | null -> null :> obj :?> 'a
+                | value -> value |> valueToSymbol |> symbolToValue
+            else
+                let definitions = Reflection.getPropertyDefinitions (getType screenState.Dispatcher)
+                let value =
+                    match List.tryFind (fun (pd : PropertyDefinition) -> pd.PropertyName = propertyName) definitions with
+                    | Some definition ->
+                        match definition.PropertyExpr with
+                        | DefineExpr value -> value :?> 'a
+                        | VariableExpr eval -> eval world :?> 'a
+                        | ComputedExpr property -> property.ComputedGet screen world :?> 'a
+                    | None -> failwithumf ()
+                let property = { PropertyType = typeof<'a>; PropertyValue = value }
+                screenState.Xtension <- Xtension.attachProperty propertyName property screenState.Xtension
+                value
 
         static member internal getScreenProperty propertyName screen world =
             match ScreenGetters.TryGetValue propertyName with
             | (true, getter) -> getter screen world
             | (false, _) -> World.getScreenXtensionProperty propertyName screen world
 
+        static member internal trySetScreenXtensionPropertyWithoutEvent propertyName (property : Property) screenState screen world =
+            let mutable propertyOld = Unchecked.defaultof<_>
+            match ScreenState.tryGetProperty (propertyName, screenState, &propertyOld) with
+            | true ->
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    let previous = dp.DesignerValue
+                    if property.PropertyValue =/= previous then
+                        let property = { property with PropertyValue = { dp with DesignerValue = property.PropertyValue }}
+                        match ScreenState.trySetProperty propertyName property screenState with
+                        | struct (true, screenState) -> struct (true, true, previous, World.setScreenState screenState screen world)
+                        | struct (false, _) -> struct (false, false, previous, world)
+                    else (true, false, previous, world)
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        let previous = cp.ComputedGet (box screen) (box world)
+                        if property.PropertyValue =/= previous
+                        then struct (true, true, previous, computedSet property.PropertyValue screen world :?> World)
+                        else struct (true, false, previous, world)
+                    | None -> struct (false, false, Unchecked.defaultof<_>, world)
+                | _ ->
+                    let previous = propertyOld.PropertyValue
+                    if property.PropertyValue =/= previous then
+                        match ScreenState.trySetProperty propertyName property screenState with
+                        | struct (true, screenState) -> (true, true, previous, World.setScreenState screenState screen world)
+                        | struct (false, _) -> struct (false, false, previous, world)
+                    else struct (true, false, previous, world)
+            | false -> struct (false, false, Unchecked.defaultof<_>, world)
+
         static member internal trySetScreenXtensionPropertyFast propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
-            match ScreenState.tryGetProperty (propertyName, screenState) with
-            | (true, propertyOld) ->
-                if property.PropertyValue =/= propertyOld.PropertyValue then
-                    let struct (success, screenState) = ScreenState.trySetProperty propertyName property screenState
-                    let world = World.setScreenState screenState screen world
-                    if success then World.publishScreenChange propertyName propertyOld.PropertyValue property.PropertyValue screen world else world
+            match World.trySetScreenXtensionPropertyWithoutEvent propertyName property screenState screen world with
+            | struct (true, changed, previous, world) ->
+                if changed
+                then World.publishScreenChange propertyName previous property.PropertyValue screen world
                 else world
-            | (false, _) -> world
+            | struct (false, _, _, world) -> world
 
         static member internal trySetScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world
-            match ScreenState.tryGetProperty (propertyName, screenState) with
-            | (true, propertyOld) ->
-                if property.PropertyValue =/= propertyOld.PropertyValue then
-                    let struct (success, screenState) = ScreenState.trySetProperty propertyName property screenState
-                    let world = World.setScreenState screenState screen world
-                    if success
-                    then struct (success, true, World.publishScreenChange propertyName propertyOld.PropertyValue property.PropertyValue screen world)
-                    else struct (false, true, world)
-                else struct (false, false, world)
-            | (false, _) -> struct (false, false, world)
+            match World.trySetScreenXtensionPropertyWithoutEvent propertyName property screenState screen world with
+            | struct (true, changed, previous, world) ->
+                let world =
+                    if changed
+                    then World.publishScreenChange propertyName previous property.PropertyValue screen world
+                    else world
+                struct (true, changed, world)
+            | struct (false, changed, _, world) -> struct (false, changed, world)
+
+        static member internal setScreenXtensionValue<'a> propertyName (value : 'a) screen world =
+            let screenState = World.getScreenState screen world
+            let propertyOld = ScreenState.getProperty propertyName screenState
+            let mutable previous = Unchecked.defaultof<obj> // OPTIMIZATION: avoid passing around structs.
+            let mutable changed = false // OPTIMIZATION: avoid passing around structs.
+            let world =
+                match propertyOld.PropertyValue with
+                | :? DesignerProperty as dp ->
+                    previous <- dp.DesignerValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = { dp with DesignerValue = value }}
+                        let screenState = ScreenState.setProperty propertyName property screenState
+                        World.setScreenState screenState screen world
+                    else world
+                | :? ComputedProperty as cp ->
+                    match cp.ComputedSetOpt with
+                    | Some computedSet ->
+                        previous <- cp.ComputedGet (box screen) (box world)
+                        if value =/= previous then
+                            changed <- true
+                            computedSet propertyOld.PropertyValue screen world :?> World
+                        else world
+                    | None -> world
+                | _ ->
+                    previous <- propertyOld.PropertyValue
+                    if value =/= previous then
+                        changed <- true
+                        let property = { propertyOld with PropertyValue = value }
+                        let screenState = ScreenState.setProperty propertyName property screenState
+                        World.setScreenState screenState screen world
+                    else world
+            if changed
+            then World.publishScreenChange propertyName previous value screen world
+            else world
 
         static member internal setScreenXtensionProperty propertyName (property : Property) screen world =
             let screenState = World.getScreenState screen world

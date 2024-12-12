@@ -68,8 +68,7 @@ module WorldGroupModule =
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setGroupXtensionProperty propertyName property this world |> snd'
+            World.setGroupXtensionValue<'a> propertyName value this world
 
         /// Check that a group is selected.
         member this.GetSelected world =
