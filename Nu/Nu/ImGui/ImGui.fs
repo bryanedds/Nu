@@ -172,7 +172,7 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
 
         // transform the position from world coordinates to clip space coordinates
         let mutable position = (Vector4 (position, 1.0f)).Transform modelViewProjection
-        position <- position * (0.5f / position.W)
+        position <- position * 0.5f / position.W
 
         // transform the position from normalized device coordinates to window coordinates
         position <- position + v4 0.5f 0.5f 0.0f 0.0f

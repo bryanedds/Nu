@@ -41,9 +41,9 @@ module ImGuizmo =
               (corners.[3], corners.[7])|]
         for (a, b) in segments do
             match Math.TryUnionSegmentAndFrustum a b eyeFrustum with
-            | Some (a, b) ->
-                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a)
-                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b)
+            | Some (a', b') ->
+                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
+                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
                 drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
             | None -> ()
 

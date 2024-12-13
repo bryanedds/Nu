@@ -1432,21 +1432,21 @@ module Math =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then
-            let start =
+            let start' =
                 if not startContained then
-                    let ray = Ray3 (start, (start - stop).Normalized)
+                    let ray = Ray3 (start, (stop - start).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (start, stop, tOpt.Value / (start - stop).Magnitude)
+                    then Vector3.Lerp (start, stop, tOpt.Value / (stop - start).Magnitude)
                     else start // TODO: figure out why intersection could fail here.
                 else start
-            let stop =
+            let stop' =
                 if not stopContained then
-                    let ray = Ray3 (stop, (start - stop).Normalized)
+                    let ray = Ray3 (stop, (start' - stop).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (stop, start, tOpt.Value / (start - stop).Magnitude)
+                    then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some (start, stop)
+            Some (start', stop')
         else None
