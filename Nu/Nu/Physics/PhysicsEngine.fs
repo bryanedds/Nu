@@ -724,7 +724,6 @@ type PhysicsMessage =
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
-    | ClearPhysicsMessageInternal
 
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
@@ -752,6 +751,8 @@ type PhysicsEngine =
     abstract HandleMessage : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : GameTime -> IntegrationMessage SArray option
+    /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
+    abstract ClearInternal : unit -> bool
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
@@ -771,6 +772,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.RayCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
+        member physicsEngine.ClearInternal () = false
         member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]

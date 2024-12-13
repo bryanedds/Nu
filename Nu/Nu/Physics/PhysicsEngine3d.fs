@@ -829,50 +829,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | Some gravity -> character.CharacterController.Gravity <- gravity
                 | None -> character.CharacterController.Gravity <- gravity
 
-        | ClearPhysicsMessageInternal ->
-
-            // collect body user objects as we proceed
-            let bodyUserObjects = List ()
-
-            // destroy constraints
-            for constrain in physicsEngine.Constraints.Values do
-                physicsEngine.PhysicsContext.RemoveConstraint constrain
-            physicsEngine.Constraints.Clear ()
-
-            // destroy bullet objects
-            for object in physicsEngine.Objects.Values do
-                bodyUserObjects.Add (object.UserObject :?> BodyUserObject)
-            physicsEngine.Objects.Clear ()
-
-            // destroy ghosts
-            for ghost in physicsEngine.Ghosts.Values do
-                bodyUserObjects.Add (ghost.UserObject :?> BodyUserObject)
-                physicsEngine.PhysicsContext.RemoveCollisionObject ghost
-            physicsEngine.Ghosts.Clear ()
-
-            // destroy kinematic characters
-            for character in physicsEngine.KinematicCharacters.Values do
-                bodyUserObjects.Add (character.Ghost.UserObject :?> BodyUserObject)
-                physicsEngine.PhysicsContext.RemoveCollisionObject character.Ghost
-                physicsEngine.PhysicsContext.RemoveAction character.CharacterController
-                character.CharacterController.Dispose ()
-            physicsEngine.KinematicCharacters.Clear ()
-
-            // clear gravitating bodies
-            physicsEngine.BodiesGravitating.Clear ()
-
-            // destroy bodies
-            for body in physicsEngine.Bodies.Values do
-                physicsEngine.PhysicsContext.RemoveRigidBody body
-            physicsEngine.Bodies.Clear ()
-
-            // dispose body user objects
-            for bodyUserObject in bodyUserObjects do
-                bodyUserObject.Dispose ()
-
-            // clear integration messages
-            physicsEngine.IntegrationMessages.Clear ()
-
     static member private tryIntegrate stepTime physicsEngine =        
         match (Constants.GameTime.DesiredFrameRate, stepTime) with
         | (StaticFrameRate frameRate, UpdateTime frames) ->
@@ -1131,6 +1087,67 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages
             else None
+
+        member physicsEngine.ClearInternal () =
+
+            // compute whether the physics engine will be affected by this clear request
+            let affected =
+                physicsEngine.Constraints.Count > 0 ||
+                physicsEngine.Objects.Count > 0 ||
+                physicsEngine.Ghosts.Count > 0 ||
+                physicsEngine.KinematicCharacters.Count > 0 ||
+                physicsEngine.BodiesGravitating.Count > 0 ||
+                physicsEngine.Bodies.Count > 0 ||
+                physicsEngine.CreateBodyJointMessages.Count > 0 ||
+                physicsEngine.IntegrationMessages.Count > 0
+
+            // destroy constraints
+            for constrain in physicsEngine.Constraints.Values do
+                physicsEngine.PhysicsContext.RemoveConstraint constrain
+            physicsEngine.Constraints.Clear ()
+
+            // collect body user objects as we proceed
+            let bodyUserObjects = List ()
+
+            // destroy bullet objects
+            for object in physicsEngine.Objects.Values do
+                bodyUserObjects.Add (object.UserObject :?> BodyUserObject)
+            physicsEngine.Objects.Clear ()
+
+            // destroy ghosts
+            for ghost in physicsEngine.Ghosts.Values do
+                bodyUserObjects.Add (ghost.UserObject :?> BodyUserObject)
+                physicsEngine.PhysicsContext.RemoveCollisionObject ghost
+            physicsEngine.Ghosts.Clear ()
+
+            // destroy kinematic characters
+            for character in physicsEngine.KinematicCharacters.Values do
+                bodyUserObjects.Add (character.Ghost.UserObject :?> BodyUserObject)
+                physicsEngine.PhysicsContext.RemoveCollisionObject character.Ghost
+                physicsEngine.PhysicsContext.RemoveAction character.CharacterController
+                character.CharacterController.Dispose ()
+            physicsEngine.KinematicCharacters.Clear ()
+
+            // clear gravitating bodies
+            physicsEngine.BodiesGravitating.Clear ()
+
+            // destroy bodies
+            for body in physicsEngine.Bodies.Values do
+                physicsEngine.PhysicsContext.RemoveRigidBody body
+            physicsEngine.Bodies.Clear ()
+
+            // dispose body user objects
+            for bodyUserObject in bodyUserObjects do
+                bodyUserObject.Dispose ()
+
+            // clear joint creation messages
+            physicsEngine.CreateBodyJointMessages.Clear ()
+
+            // clear integration messages
+            physicsEngine.IntegrationMessages.Clear ()
+
+            // fin
+            affected
 
         member physicsEngine.CleanUp () =
             PhysicsEngine3d.cleanUp physicsEngine

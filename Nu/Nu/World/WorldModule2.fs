@@ -999,8 +999,8 @@ module WorldModule2 =
             | (Left _, world) -> (false, world)
 
         /// Switch simulation to this world, resynchronizing the imperative subsystems with its current state.
-        /// Needed when abandoning execution of the current world in favor of an old world, such as in the case of an
-        /// exception where the try expression resulted in a transformed world that is to be discarded.
+        /// Needed when abandoning execution of the current world in favor of a previous world, such as in the case of
+        /// an exception where the try expression resulted in a transformed world that is to be discarded.
         static member switch (world : World) =
 
             // manually choose world to override choose count check
@@ -1016,25 +1016,23 @@ module WorldModule2 =
             let world = World.rebuildOctree world
             let world = World.rebuildQuadtree world
 
-            // clear existing physics
-            let world = World.handlePhysicsMessage3d ClearPhysicsMessageInternal world
-            let world = World.handlePhysicsMessage2d ClearPhysicsMessageInternal world
-
-            // register the physics of entities in the current screen
-            match World.getSelectedScreenOpt world with
-            | Some screen ->
-                let groups = World.getGroups screen world
-                Seq.fold (fun world (group : Group) ->
-                    if group.GetExists world then
-                        let entities = World.getEntities group world
-                        Seq.fold (fun world (entity : Entity) ->
-                            if entity.GetExists world
-                            then World.registerEntityPhysics entity world
+            // clear existing physics, then register them again if any physics objects were present
+            if World.clearPhysics world then
+                match World.getSelectedScreenOpt world with
+                | Some screen ->
+                    let groups = World.getGroups screen world
+                    Seq.fold (fun world (group : Group) ->
+                        if group.GetExists world then
+                            let entities = World.getEntities group world
+                            Seq.fold (fun world (entity : Entity) ->
+                                if entity.GetExists world
+                                then World.registerEntityPhysics entity world
+                                else world)
+                                world entities
                             else world)
-                            world entities
-                        else world)
-                    world groups
-            | None -> world
+                        world groups
+                | None -> world
+            else world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
