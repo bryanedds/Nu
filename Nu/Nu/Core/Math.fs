@@ -1434,10 +1434,10 @@ module Math =
         if startContained || stopContained then
             let start =
                 if not startContained then
-                    let ray = Ray3 (start, (stop - start).Normalized)
+                    let ray = Ray3 (start, (start - stop).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (start, stop, tOpt.Value)
+                    then Vector3.Lerp (start, stop, tOpt.Value / (start - stop).Magnitude)
                     else start // TODO: figure out why intersection could fail here.
                 else start
             let stop =
@@ -1445,7 +1445,7 @@ module Math =
                     let ray = Ray3 (stop, (start - stop).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (stop, start, tOpt.Value)
+                    then Vector3.Lerp (stop, start, tOpt.Value / (start - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
             Some (start, stop)

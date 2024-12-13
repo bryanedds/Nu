@@ -44,10 +44,7 @@ module ImGuizmo =
             | Some (a, b) ->
                 let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a)
                 let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b)
-                let xWindow = box2 v2Zero Constants.Render.Resolution.V2
-                if  xWindow.Contains aWindow <> ContainmentType.Disjoint &&
-                    xWindow.Contains bWindow <> ContainmentType.Disjoint then
-                    drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
+                drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
             | None -> ()
 
         // manipulate centers
