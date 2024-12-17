@@ -18,10 +18,11 @@ module WorldTests =
     let [<Test; Category "Integration">] runIntegrationFrameThenCleanUp () =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }
-        match SdlDeps.tryMake worldConfig.SdlConfig with
+        let viewport = Viewport.makeDisplay ()
+        match SdlDeps.tryMake worldConfig.SdlConfig viewport.Resolution with
         | Right sdlDeps ->
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-            match World.tryMake sdlDeps worldConfig (TestPlugin ()) with
+            match World.tryMake sdlDeps worldConfig viewport (TestPlugin ()) with
             | Right world ->
                 let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id id Live true world
                 Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
