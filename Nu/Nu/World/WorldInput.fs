@@ -41,7 +41,8 @@ module WorldInputModule =
         static member getMousePosition world =
             match World.tryGetWindowSize world with
             | Some windowSize ->
-                let marginI = Constants.Render.OffsetMargin windowSize
+                let viewport = world.Viewport
+                let marginI = viewport.OffsetMargin windowSize
                 let margin = v2 (single marginI.X) (single marginI.Y)
                 MouseState.getPosition () - margin
             | None -> MouseState.getPosition ()
@@ -70,7 +71,8 @@ module WorldInputModule =
             let viewport = World.getViewport world
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
-            viewport.MouseToWorld3d (World.getMousePosition world, eyeCenter, eyeRotation)
+            let eyeFieldOfView = World.getEye3dFieldOfView world
+            viewport.MouseToWorld3d (World.getMousePosition world, eyeCenter, eyeRotation, eyeFieldOfView)
 
         /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown key world =
@@ -109,6 +111,11 @@ module WorldInputModule =
         static member isKeyboardEnterUp world =
             ignore (world : World)
             KeyboardState.isEnterUp ()
+
+        /// Check that a keyboard enter key was just pressed.
+        static member isKeyboardEnterPressed world =
+            ignore (world : World)
+            KeyboardState.isEnterPressed ()
 
         /// Check that a keyboard ctrl key is down.
         static member isKeyboardCtrlDown world =

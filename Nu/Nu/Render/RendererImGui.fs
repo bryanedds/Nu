@@ -18,7 +18,7 @@ type RenderMessageImGui =
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port.
 type RendererImGui =
     abstract Initialize : ImFontAtlasPtr -> unit
-    abstract Render : ImDrawDataPtr -> RenderMessageImGui List -> unit
+    abstract Render : Vector2i -> Viewport -> ImDrawDataPtr -> RenderMessageImGui List -> unit
     abstract CleanUp : unit -> unit
 
 /// A stub imgui renderer.
@@ -31,7 +31,7 @@ type StubRendererImGui () =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
-        member this.Render _ _ = ()
+        member this.Render _ _ _ _ = ()
         member this.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
@@ -45,10 +45,11 @@ module StubRendererImGui =
 
 /// Renders an imgui view via OpenGL.
 type GlRendererImGui
-    (windowWidth : int, windowHeight : int,
-     assetTextureRequests : ConcurrentDictionary<AssetTag, unit>,
-     assetTextureOpts : ConcurrentDictionary<AssetTag, uint32 voption>) =
+    (assetTextureRequests : ConcurrentDictionary<AssetTag, unit>,
+     assetTextureOpts : ConcurrentDictionary<AssetTag, uint32 voption>,
+     viewport : Viewport) =
 
+    let mutable viewport = viewport
     let mutable vertexArrayObject = 0u
     let mutable vertexBufferSize = 8192u
     let mutable vertexBuffer = 0u
@@ -60,7 +61,6 @@ type GlRendererImGui
     let mutable fontTextureWidth = 0
     let mutable fontTextureHeight = 0
     let mutable fontTexture = Unchecked.defaultof<OpenGL.Texture.Texture>
-    do ignore windowWidth
 
     member private this.DestroyAssetTextures (destroyedTextureIdsOpt : uint HashSet option) =
         for assetTextureOpt in assetTextureOpts.Values do
@@ -168,7 +168,13 @@ type GlRendererImGui
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 
-        member this.Render (drawData : ImDrawDataPtr) renderMessages =
+        member this.Render windowSize viewport_ (drawData : ImDrawDataPtr) renderMessages =
+
+            // update viewport and imgui display size when needed
+            if viewport <> viewport_ then
+                let io = ImGui.GetIO ()
+                io.DisplaySize <- viewport_.DisplayResolution.V2
+                viewport <- viewport_
 
             // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently
             // destroyed. In the following code, we make an attempt to clear all artifacts that might have a
@@ -197,6 +203,10 @@ type GlRendererImGui
                     | None -> ()
                 let mutable removed = ()
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
+
+            // set viewport to offset bounds
+            let offsetBounds = viewport.OffsetBounds windowSize
+            OpenGL.Gl.Viewport (offsetBounds.Min.X, offsetBounds.Min.Y, offsetBounds.Size.X, offsetBounds.Size.Y)
 
             // attempt to draw imgui draw data
             let mutable vertexOffsetInVertices = 0
@@ -234,7 +244,7 @@ type GlRendererImGui
                     OpenGL.Hl.Assert ()
 
                 // compute orthographic projection
-                let projection = Matrix4x4.CreateOrthographicOffCenter (0.0f, single windowWidth, single windowHeight, 0.0f, -1.0f, 1.0f)
+                let projection = Matrix4x4.CreateOrthographicOffCenter (0.0f, single viewport.Resolution.X, single viewport.Resolution.Y, 0.0f, -1.0f, 1.0f)
                 let projectionArray = projection.ToArray ()
 
                 // setup state
@@ -268,7 +278,11 @@ type GlRendererImGui
                                 let clip = pcmd.ClipRect
                                 OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
                                 OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
-                                OpenGL.Gl.Scissor (int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
+                                OpenGL.Gl.Scissor
+                                    (int clip.X + offsetBounds.Min.X,
+                                     viewport.DisplayResolution.Y - int clip.W + offsetBounds.Min.Y,
+                                     int (clip.Z - clip.X),
+                                     int (clip.W - clip.Y))
                                 OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)
                                 OpenGL.Hl.ReportDrawCall 1
                                 OpenGL.Hl.Assert ()
@@ -314,7 +328,7 @@ type GlRendererImGui
 module GlRendererImGui =
 
     /// Make a gl-based imgui renderer.
-    let make assetTextureRequests assetTextures fonts =
-        let rendererImGui = GlRendererImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y, assetTextureRequests, assetTextures)
+    let make assetTextureRequests assetTextures fonts viewport =
+        let rendererImGui = GlRendererImGui (assetTextureRequests, assetTextures, viewport)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui

@@ -615,6 +615,27 @@ module AmbientState =
         | Some deps -> { state with SdlDepsOpt = Some (SdlDeps.trySetWindowFullScreen fullScreen deps) }
         | None -> state
 
+    /// Attempt to toggle the window's full screen state.
+    let tryToggleWindowFullScreen state =
+        match tryGetWindowFullScreen state with
+        | Some fullScreen -> trySetWindowFullScreen (not fullScreen) state
+        | None -> state
+
+    /// Attempt to get the window position.
+    let tryGetWindowPosition state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) ->
+            let (x, y) = (ref 0, ref 0)
+            SDL.SDL_GetWindowPosition (window.SglWindow, x, y) |> ignore
+            Some (v2i x.Value y.Value)
+        | _ -> None
+
+    /// Attempt to set the window's position.
+    let trySetWindowPosition (position : Vector2i) state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) -> SDL.SDL_SetWindowPosition (window.SglWindow, position.X, position.Y) |> ignore
+        | None -> ()
+
     /// Attempt to get the window size.
     let tryGetWindowSize state =
         match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
@@ -623,6 +644,12 @@ module AmbientState =
             SDL.SDL_GetWindowSize (window.SglWindow, width, height) |> ignore
             Some (v2i width.Value height.Value)
         | _ -> None
+
+    /// Attempt to set the window's size.
+    let trySetWindowSize (size : Vector2i) state =
+        match Option.flatten (Option.map SdlDeps.getWindowOpt state.SdlDepsOpt) with
+        | Some (SglWindow window) -> SDL.SDL_SetWindowSize (window.SglWindow, size.X, size.Y) |> ignore
+        | None -> ()
 
     /// Get symbolics with the by map.
     let getSymbolicsBy by state =

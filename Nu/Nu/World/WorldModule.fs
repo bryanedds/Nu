@@ -437,6 +437,19 @@ module WorldModule =
         static member trySetWindowFullScreen fullScreen world =
             World.mapAmbientState (AmbientState.trySetWindowFullScreen fullScreen) world
 
+        /// Attempt to toggle the window's full screen state.
+        static member tryToggleWindowFullScreen world =
+            World.mapAmbientState AmbientState.tryToggleWindowFullScreen world
+
+        /// Attempt to get the window position.
+        static member tryGetWindowPosition world =
+            World.getAmbientStateBy (AmbientState.tryGetWindowPosition) world
+
+        /// Attempt to set the window position.
+        static member trySetWindowPosition position world =
+            World.getAmbientStateBy (AmbientState.trySetWindowPosition position) world
+            world
+
         /// Attempt to get the window size.
         static member tryGetWindowSize world =
             World.getAmbientStateBy (AmbientState.tryGetWindowSize) world
@@ -445,17 +458,20 @@ module WorldModule =
         static member getWindowSize world =
             match World.tryGetWindowSize world with
             | Some windowsSize -> windowsSize
-            | None -> Constants.Render.Resolution
+            | None -> world.Viewport.DisplayResolution
+
+        /// Attempt to set the window size.
+        static member trySetWindowSize size world =
+            World.getAmbientStateBy (AmbientState.trySetWindowSize size) world
+            world
 
         /// Get the viewport.
         static member getViewport (world : World) =
-            ignore world
-            Constants.Render.Viewport
+            world.Viewport
 
-        /// Get the offset viewport.
-        static member getOffsetViewport world =
-            let windowSize = World.getWindowSize world
-            Constants.Render.OffsetViewport windowSize
+        /// Set the viewport.
+        static member internal setViewport viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with Viewport = viewport }}
 
         static member internal getSymbolicsBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world

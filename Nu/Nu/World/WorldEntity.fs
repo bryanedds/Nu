@@ -664,10 +664,11 @@ module WorldEntityModule =
             let viewport = World.getViewport world
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
+            let eyeFieldOfView = World.getEye3dFieldOfView world
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
-                        let rayWorld = viewport.MouseToWorld3d (position, eyeCenter, eyeRotation)
+                        let rayWorld = viewport.MouseToWorld3d (position, eyeCenter, eyeRotation, eyeFieldOfView)
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
@@ -802,11 +803,12 @@ module WorldEntityModule =
                     else
                         let eyeCenter = World.getEye3dCenter world
                         let eyeRotation = World.getEye3dRotation world
+                        let eyeFieldOfView = World.getEye3dFieldOfView world
                         let position =
                             match pasteType with
                             | PasteAtMouse ->
-                                let viewport = Constants.Render.Viewport
-                                let ray = viewport.MouseToWorld3d (rightClickPosition, eyeCenter, eyeRotation)
+                                let viewport = world.Viewport
+                                let ray = viewport.MouseToWorld3d (rightClickPosition, eyeCenter, eyeRotation, eyeFieldOfView)
                                 let forward = eyeRotation.Forward
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane

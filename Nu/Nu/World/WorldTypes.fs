@@ -927,6 +927,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Eye2dSize : Vector2
       Eye3dCenter : Vector3
       Eye3dRotation : Quaternion
+      Eye3dFieldOfView : single
       Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
       Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
       Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
@@ -968,9 +969,10 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     static member make (dispatcher : GameDispatcher) =
         let eye3dCenter = Constants.Engine.Eye3dCenterDefault
         let eye3dRotation = quatIdentity
-        let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
-        let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
-        let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
+        let eye3dFieldOfView = Constants.Engine.Eye3dFieldOfViewDefault
+        let viewportInterior = Viewport.makeInterior ()
+        let viewportExterior = Viewport.makeExterior ()
+        let viewportImposter = Viewport.makeImposter ()
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -979,12 +981,13 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           DesiredScreen = DesireIgnore
           ScreenTransitionDestinationOpt = None
           Eye2dCenter = v2Zero
-          Eye2dSize = Constants.Render.VirtualResolution.V2
+          Eye2dSize = Constants.Render.DisplayVirtualResolution.V2
           Eye3dCenter = eye3dCenter
           Eye3dRotation = eye3dRotation
-          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation)
-          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation)
-          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation)
+          Eye3dFieldOfView = eye3dFieldOfView
+          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation, eye3dFieldOfView)
+          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation, eye3dFieldOfView)
+          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation, eye3dFieldOfView)
           Order = Core.getTimeStampUnique ()
           Id = Gen.id64 }
 
@@ -1821,11 +1824,14 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { mutable ContextImNui : Address
+    { // cache line 1 (assuming 16 byte header)
+      mutable ContextImNui : Address
       mutable RecentImNui : Address
       mutable SimulantImNuis : SUMap<Address, SimulantImNui>
       mutable SubscriptionImNuis : SUMap<string * Address * Address, SubscriptionImNui>
+      Viewport : Viewport
       DestructionListRev : Simulant list
+      // cache line 2
       Dispatchers : Dispatchers
       Plugin : NuPlugin
       PropagationTargets : UMap<Entity, Entity USet> }
@@ -1998,6 +2004,9 @@ and [<ReferenceEquality>] World =
 
     member internal this.SubscriptionImNuis =
         this.WorldExtension.SubscriptionImNuis
+
+    member this.Viewport =
+        this.WorldExtension.Viewport
 
 #if DEBUG
     member internal this.Choose () =

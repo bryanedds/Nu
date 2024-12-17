@@ -1111,6 +1111,18 @@ module WorldModule2 =
                 elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> List.singleton
                 else []
 
+        static member private updateViewport world =
+
+            // update display virtual scalar
+            let windowSize = World.getWindowSize world
+            let xScalar = windowSize.X / Constants.Render.DisplayVirtualResolution.X
+            let yScalar = windowSize.Y / Constants.Render.DisplayVirtualResolution.Y
+            Viewport.DisplayVirtualScalar <- min xScalar yScalar
+
+            // update view port
+            let viewport = Viewport.makeDisplay ()
+            World.setViewport viewport world
+
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
                 match evt.``type`` with
@@ -1118,9 +1130,28 @@ module WorldModule2 =
                     if world.Unaccompanied
                     then World.exit world
                     else world
+                | SDL.SDL_EventType.SDL_WINDOWEVENT ->
+                    if evt.window.windowEvent = SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED then
+                        let windowSize = World.getWindowSize world
+                        let windowScalar =
+                            max
+                                (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                                (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+                        let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+                        let world = World.trySetWindowSize windowSize' world
+                        let world =
+                            let windowSize'' = World.getWindowSize world
+                            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y
+                            then World.trySetWindowFullScreen true world
+                            else world
+                        World.updateViewport world
+                    else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let io = ImGui.GetIO ()
-                    io.AddMousePosEvent (single evt.button.x, single evt.button.y)
+                    let viewport = world.Viewport
+                    let windowSize = World.getWindowSize world
+                    let offsetBounds = viewport.OffsetBounds windowSize
+                    io.AddMousePosEvent (single (evt.button.x - offsetBounds.Min.X), single (evt.button.y - offsetBounds.Min.Y))
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
@@ -2097,9 +2128,11 @@ module WorldModule2 =
                                                                     (World.getLight3dBox world)
                                                                     (World.getEye3dCenter world)
                                                                     (World.getEye3dRotation world)
+                                                                    (World.getEye3dFieldOfView world)
                                                                     (World.getEye2dCenter world)
                                                                     (World.getEye2dSize world)
                                                                     (World.getWindowSize world)
+                                                                    (World.getViewport world)
                                                                     drawData
 
                                                                 // post-process imgui frame
@@ -3128,7 +3161,7 @@ module GamePropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "DesiredScreen" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
-             propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" then
+             propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" || propertyName = "Eye3dFieldOfView" then
              "Built-In Properties"
         else "Xtension Properties"
 

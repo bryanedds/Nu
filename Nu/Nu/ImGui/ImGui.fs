@@ -17,7 +17,7 @@ type ImGuiEditResult =
 
 /// Wraps ImGui context, state, and calls. Also extends the ImGui interface with static methods.
 /// NOTE: API is primarily object-oriented / mutation-based because it's ported from a port.
-type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
+type ImGui (stub : bool, displaySize : Vector2i) =
 
     static let mutable MouseLeftIdInternal = 0L
 
@@ -54,7 +54,7 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
         io.BackendFlags <- io.BackendFlags ||| ImGuiBackendFlags.RendererHasVtxOffset
 
         // configure initial display size
-        io.DisplaySize <- v2 (single windowWidth) (single windowHeight)
+        io.DisplaySize <- displaySize.V2
 
         // configure docking enabled
         io.ConfigFlags <- io.ConfigFlags ||| ImGuiConfigFlags.DockingEnable
@@ -67,6 +67,10 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
 
     static member MouseLeftId =
         MouseLeftIdInternal
+
+    static member MainViewportCenter =
+        let mainViewport = ImGui.GetMainViewport ()
+        mainViewport.GetCenter ()
 
     member this.Fonts =
         let io = ImGui.GetIO ()
@@ -154,14 +158,14 @@ type ImGui (stub : bool, windowWidth : int, windowHeight : int) =
     static member IsCtrlPlusKeyPressed (key : ImGuiKey) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
-    static member Position2dToWindow (absolute, eyeSize : Vector2, eyeCenter, position) =
-        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+    static member Position2dToWindow (absolute, eyeSize : Vector2, eyeCenter, viewport, position) =
+        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
         if absolute
         then position * virtualScalar * v2 1.0f -1.0f + eyeSize * 0.5f * virtualScalar
         else position * virtualScalar * v2 1.0f -1.0f - eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
 
-    static member WindowToPosition2d (absolute, eyeSize : Vector2, eyeCenter, position) =
-        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+    static member WindowToPosition2d (absolute, eyeSize : Vector2, eyeCenter, viewport, position) =
+        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
         if absolute
         then position / virtualScalar * v2 1.0f -1.0f - eyeSize * 0.5f * virtualScalar
         else position / virtualScalar * v2 1.0f -1.0f + eyeCenter * virtualScalar - eyeSize * 0.5f * virtualScalar

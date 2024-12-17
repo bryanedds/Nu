@@ -827,9 +827,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             else
                 let eyeCenter = World.getEye3dCenter world
                 let eyeRotation = World.getEye3dRotation world
+                let eyeFieldOfView = World.getEye3dFieldOfView world
                 let entityPosition =
                     if atMouse then
-                        let ray = viewport.MouseToWorld3d (RightClickPosition, eyeCenter, eyeRotation)
+                        let ray = viewport.MouseToWorld3d (RightClickPosition, eyeCenter, eyeRotation, eyeFieldOfView)
                         let forward = eyeRotation.Forward
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
@@ -1317,7 +1318,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let gaiaDirectory = Directory.GetCurrentDirectory ()
         match trySelectTargetDirAndMakeNuPluginFromFilePathOpt gaiaState.ProjectDllPath with
         | Right (Some (filePath, targetDir, plugin)) ->
-            Constants.Override.fromAppConfig filePath
+            Configure.fromAppConfig filePath
             try File.WriteAllText (gaiaDirectory + "/" + Constants.Gaia.StateFilePath, printGaiaState gaiaState)
             with _ -> Log.info "Could not save gaia state."
             (gaiaState, targetDir, plugin)
@@ -1330,10 +1331,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 Log.error ("Invalid Nu Assembly: " + gaiaState.ProjectDllPath)
             (GaiaState.defaultState, ".", gaiaPlugin)
 
-    let private tryMakeWorld sdlDeps worldConfig (plugin : NuPlugin) =
+    let private tryMakeWorld sdlDeps worldConfig viewport (plugin : NuPlugin) =
 
         // attempt to make the world
-        match World.tryMake sdlDeps worldConfig plugin with
+        match World.tryMake sdlDeps worldConfig viewport plugin with
         | Right world ->
 
             // initialize event filter as not to flood the log
@@ -1386,10 +1387,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // error
         | Left error -> Left error
 
-    let private tryMakeSdlDeps () =
+    let private tryMakeSdlDeps windowSize =
         let sdlWindowConfig = { SdlWindowConfig.defaultConfig with WindowTitle = "Gaia" }
         let sdlConfig = { SdlConfig.defaultConfig with WindowConfig = sdlWindowConfig }
-        match SdlDeps.tryMake sdlConfig with
+        match SdlDeps.tryMake sdlConfig windowSize with
         | Left msg -> Left msg
         | Right sdlDeps -> Right (sdlConfig, sdlDeps)
 
@@ -1624,8 +1625,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen); world
             elif ImGui.IsKeyPressed ImGuiKey.F12 then setCaptureMode (not CaptureMode); world
-            elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsAltDown () then tryReorderSelectedEntity true world
-            elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsAltDown () then tryReorderSelectedEntity false world
+            elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
+            elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
+            elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
             elif ImGui.IsKeyPressed ImGuiKey.C && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then LogStr <- ""; world
             elif ImGui.IsKeyPressed ImGuiKey.N && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowNewGroupDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowOpenGroupDialog <- true; world
@@ -2155,7 +2157,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let appendProperties : AppendProperties = { EditContext = makeContext None (Some unfocusProperty) }
         World.edit (AppendProperties appendProperties) simulant world
 
-    let private imGuiViewportManipulation world =
+    let private imGuiViewportManipulation (world : World) =
 
         // viewport
         let io = ImGui.GetIO ()
@@ -2166,8 +2168,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Begin ("Viewport", ImGuiWindowFlags.NoBackground ||| ImGuiWindowFlags.NoTitleBar ||| ImGuiWindowFlags.NoInputs ||| ImGuiWindowFlags.NoNav) then
 
                 // user-defined viewport manipulation
-                let viewport = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceOmnipresent, v2iZero, Constants.Render.Resolution)
-                let projectionMatrix = viewport.Projection3d
+                let viewport = world.Viewport
+                let projectionMatrix = viewport.Projection3d (World.getEye3dFieldOfView world)
                 let projection = projectionMatrix.ToArray ()
                 let operation =
                     ViewportOverlay
@@ -2199,7 +2201,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             ImGuizmo.ManipulateBox3
                                 (World.getEye3dCenter world,
                                  World.getEye3dRotation world,
-                                 World.getEye3dFrustumView world,
+                                 World.getEye3dFieldOfView world,
+                                 viewport,
                                  (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
                                  &lightProbeBounds)
                         match manipulationResult with
@@ -2376,7 +2379,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if not CaptureMode && not ManipulationActive then
                     let eyeRotationOld = World.getEye3dRotation world
                     let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
-                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 1375.0f 100.0f, v2 128.0f 128.0f, uint 0x00000000)
+                    let viewport = world.Viewport
+                    ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single viewport.DisplayResolution.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
                     if not io.WantCaptureMouseGlobal && eyeRotationOld.Up.Dot eyeRotation.Up >= 0.0f then DesiredEye3dRotation <- eyeRotation
                     if ImGuizmo.IsUsingViewManipulate () then io.SwallowMouse ()
@@ -2667,6 +2671,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle capture mode view (F12 to toggle)."
                     ImGui.EndTooltip ()
+                ImGui.SameLine ()
                 world
             else world
         ImGui.End ()
@@ -3458,6 +3463,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // prompt user to create new project
         let programDir = PathF.GetDirectoryName (Assembly.GetEntryAssembly().Location)
         let title = "Create Nu Project... *EDITOR RESTART REQUIRED!*"
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowNewProjectDialog) then
             ImGui.Text "Project Name"
@@ -3593,6 +3599,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiOpenProjectDialog world =
         let title = "Choose a project .dll... *EDITOR RESTART REQUIRED!*"
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowOpenProjectDialog) then
             ImGui.Text "Game Assembly Path:"
@@ -3631,6 +3638,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiCloseProjectDialog (world : World) =
         let title = "Close project... *EDITOR RESTART REQUIRED!*"
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowCloseProjectDialog) then
             ImGui.Text "Close the project and use Gaia in its default state?"
@@ -3654,6 +3662,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiNewGroupDialog world =
         let title = "Create a group..."
         let opening = not (ImGui.IsPopupOpen title)
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if opening then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowNewGroupDialog) then
             ImGui.Text "Group Name:"
@@ -3714,6 +3723,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match SelectedGroup with
         | group when group.GetExists world ->
             let title = "Rename group..."
+            ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             let opening = not (ImGui.IsPopupOpen title)
             if opening then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &ShowRenameGroupDialog) then
@@ -3763,6 +3773,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             let title = "Rename entity..."
+            ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             let opening = not (ImGui.IsPopupOpen title)
             if opening then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &ShowRenameEntityDialog) then
@@ -3791,6 +3802,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             let title = "Entity deletion confirmation..."
+            ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             let opening = not (ImGui.IsPopupOpen title)
             if opening then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &ShowDeleteEntityDialog) then
@@ -3824,6 +3836,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
             let title = "Entity cut confirmation..."
+            ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             let opening = not (ImGui.IsPopupOpen title)
             if opening then ImGui.OpenPopup title
             if ImGui.BeginPopupModal (title, &ShowCutEntityDialog) then
@@ -3855,6 +3868,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiConfirmExitDialog world =
         let title = "Are you okay with exiting Gaia?"
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &ShowConfirmExitDialog) then
             ImGui.Text "Any unsaved changes will be lost."
@@ -3876,6 +3890,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiRestartDialog world =
         let title = "Editor restart required."
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal title then
             ImGui.Text "Gaia will apply your configuration changes and exit. Restart Gaia after exiting."
@@ -3890,6 +3905,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiMessageBoxDialog (message : string) world =
         let title = "Message!"
         let mutable showing = true
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal (title, &showing) then
             ImGui.TextWrapped message
@@ -4022,6 +4038,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiReloadingAssetsDialog world =
         let title = "Reloading assets..."
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal title then
             ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
@@ -4035,6 +4052,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiReloadingCodeDialog world =
         let title = "Reloading code..."
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal title then
             ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
@@ -4048,6 +4066,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiReloadingAllDialog world =
         let title = "Reloading assets and code..."
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal title then
             ImGui.Text "Gaia is processing your request. Please wait for processing to complete."
@@ -4069,6 +4088,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiExceptionDialog exn worldOld world =
         let title = "Unhandled Exception!"
+        ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
         if not (ImGui.IsPopupOpen title) then ImGui.OpenPopup title
         if ImGui.BeginPopupModal title then
             ImGui.Text "Exception text:"
@@ -4387,7 +4407,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             File.WriteAllText (imguiIniFilePath, ImGuiIniFileStr)
 
         // attempt to create SDL dependencies
-        match tryMakeSdlDeps () with
+        let viewport = Viewport.makeDisplay ()
+        match tryMakeSdlDeps viewport.Resolution with
         | Right (sdlConfig, sdlDeps) ->
 
             // attempt to create the world
@@ -4398,7 +4419,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                   FramePacing = false
                   ModeOpt = gaiaState.ProjectEditModeOpt
                   SdlConfig = sdlConfig }
-            match tryMakeWorld sdlDeps worldConfig plugin with
+            match tryMakeWorld sdlDeps worldConfig viewport plugin with
             | Right (screen, world) ->
 
                 // subscribe to events related to editing

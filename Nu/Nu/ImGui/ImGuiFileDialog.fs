@@ -124,8 +124,8 @@ module ImGui =
             let mutable complete = false
 
             ImGui.PushID (dialogState.GetHashCode ())
-            ImGui.SetNextWindowSize (v2 740.0f 410.0f, ImGuiCond.FirstUseEver)
-
+            ImGui.SetNextWindowSize (v2 740.0f 410.0f, ImGuiCond.Appearing)
+            ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             if not (ImGui.IsPopupOpen dialogState.Title) then ImGui.OpenPopup dialogState.Title
             if ImGui.BeginPopupModal (dialogState.Title, &opened, ImGuiWindowFlags.NoDocking) then
 
