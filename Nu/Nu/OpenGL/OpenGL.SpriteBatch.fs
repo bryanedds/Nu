@@ -98,7 +98,7 @@ module SpriteBatch =
             Gl.Enable EnableCap.CullFace
             match env.State.ClipOpt with
             | ValueSome clip ->
-                let offsetBounds = viewport.OffsetBounds windowSize
+                let offsetBounds = Viewport.getOffsetBounds windowSize viewport
                 let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
                 let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
                 let minNdc = minClip / minClip.W * single viewport.DisplayVirtualScalar

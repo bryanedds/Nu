@@ -451,7 +451,7 @@ module PhysicallyBased =
         // create shadow texture buffers array
         let shadowTextureBuffersArray =
             [|for shadowTextureBufferIndex in 0 .. dec Constants.Render.ShadowTexturesMax do
-                let shadowResolution = viewport.ShadowTextureBufferResolution shadowTextureBufferIndex
+                let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex viewport
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
@@ -459,7 +459,7 @@ module PhysicallyBased =
         // create second array of shadow texture buffers
         let shadowTextureBuffers2Array =
             [|for shadoTexturewBufferIndex in 0 .. dec Constants.Render.ShadowTexturesMax do
-                let shadowResolution = viewport.ShadowTextureBufferResolution shadoTexturewBufferIndex
+                let shadowResolution = Viewport.getShadowTextureBufferResolution shadoTexturewBufferIndex viewport
                 match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
                 | Right shadowTextureBuffers -> shadowTextureBuffers
                 | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]

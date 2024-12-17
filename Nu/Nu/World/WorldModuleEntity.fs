@@ -517,9 +517,8 @@ module WorldModuleEntity =
 #endif
             internal getEntityTransform entity world =
             let entityState = World.getEntityState entity world
-            let transform = &entityState.Transform
-            transform.CleanRotationMatrix () // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
-            transform
+            Transform.cleanRotationMatrixInternal &entityState.Transform // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
+            entityState.Transform
 
         /// Check that an entity has any children.
         static member getEntityHasChildren (entity : Entity) world =

@@ -144,7 +144,7 @@ module Sprite =
         Gl.Enable EnableCap.CullFace
         match clipOpt with
         | ValueSome clip ->
-            let offsetBounds = viewport.OffsetBounds windowSize
+            let offsetBounds = Viewport.getOffsetBounds windowSize viewport
             let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single viewport.DisplayVirtualScalar
             let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.DisplayResolution.V2

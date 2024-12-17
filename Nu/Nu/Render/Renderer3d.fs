@@ -3092,7 +3092,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             if shouldDraw then
 
                                 // draw shadow texture
-                                let shadowResolution = renderer.Viewport.ShadowTextureBufferResolution shadowTextureBufferIndex
+                                let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex renderer.Viewport
                                 let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
                                 GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
 
@@ -3170,12 +3170,12 @@ type [<ReferenceEquality>] GlRenderer3d =
         GlRenderer3d.renderGeometry
             normalPass normalTasks renderer
             true None eyeCenter
-            (viewport.View3d (eyeCenter, eyeRotation))
+            (Viewport.getView3d eyeCenter eyeRotation)
             (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)
-            (viewport.Frustum (eyeCenter, eyeRotation, eyeFieldOfView))
-            (viewport.Projection3d eyeFieldOfView)
-            (viewport.OffsetBounds windowSize)
-            (viewport.Projection3d eyeFieldOfView)
+            (Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport)
+            (Viewport.getProjection3d eyeFieldOfView viewport)
+            (Viewport.getOffsetBounds windowSize viewport)
+            (Viewport.getProjection3d eyeFieldOfView viewport)
             renderbuffer
             framebuffer
 

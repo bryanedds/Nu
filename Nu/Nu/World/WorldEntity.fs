@@ -332,7 +332,7 @@ module WorldEntityModule =
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformPositionSnapped positionSnap (value : Transform) world =
             let mutable transform = value
-            transform.SnapPosition positionSnap
+            Transform.snapPosition (positionSnap, &transform)
             this.SetTransform transform world
 
         /// Try to get a property value and type.
@@ -653,7 +653,7 @@ module WorldEntityModule =
             let eyeSize = World.getEye2dSize world
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
-                    let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyeCenter, eyeSize)
+                    let positionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize position viewport
                     let bounds = (entity.GetBounds world).Box2
                     bounds.Intersects positionWorld
                 else false)
@@ -668,7 +668,7 @@ module WorldEntityModule =
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
-                        let rayWorld = viewport.MouseToWorld3d (position, eyeCenter, eyeRotation, eyeFieldOfView)
+                        let rayWorld = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView position viewport
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
@@ -794,7 +794,7 @@ module WorldEntityModule =
                         let eyeSize = World.getEye2dSize world
                         let position =
                             match pasteType with
-                            | PasteAtMouse -> (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
+                            | PasteAtMouse -> (Viewport.mouseToWorld2d absolute eyeCenter eyeSize rightClickPosition viewport).V3
                             | PasteAtLook -> eyeCenter.V3
                             | PasteAt position -> position
                         match positionSnapEir with
@@ -808,7 +808,7 @@ module WorldEntityModule =
                             match pasteType with
                             | PasteAtMouse ->
                                 let viewport = world.Viewport
-                                let ray = viewport.MouseToWorld3d (rightClickPosition, eyeCenter, eyeRotation, eyeFieldOfView)
+                                let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView rightClickPosition viewport
                                 let forward = eyeRotation.Forward
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
@@ -820,9 +820,7 @@ module WorldEntityModule =
                         | Left _ -> (position, None)
                 let mutable transform = entity.GetTransform world
                 transform.Position <- position
-                match positionSnapOpt with
-                | Some positionSnap -> transform.SnapPosition positionSnap
-                | None -> ()
+                match positionSnapOpt with Some positionSnap -> Transform.snapPosition (positionSnap, &transform) | None -> ()
                 let world = entity.SetTransform transform world
                 let world =
                     if tryForwardPropagationSource && not cut then

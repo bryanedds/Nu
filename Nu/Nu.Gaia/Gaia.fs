@@ -811,10 +811,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let eyeCenter = World.getEye2dCenter world
                 let eyeSize = World.getEye2dSize world
                 let entityPosition =
-                    if atMouse then
-                        viewport.MouseToWorld2d (entity.GetAbsolute world, RightClickPosition, eyeCenter, eyeSize)
-                    elif not (entity.GetAbsolute world) then
-                        eyeCenter
+                    if atMouse then Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize RightClickPosition viewport
+                    elif not (entity.GetAbsolute world) then eyeCenter
                     else v2Zero
                 let attributes = entity.GetAttributesInferred world
                 entityTransform.Position <- entityPosition.V3
@@ -830,7 +828,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let eyeFieldOfView = World.getEye3dFieldOfView world
                 let entityPosition =
                     if atMouse then
-                        let ray = viewport.MouseToWorld3d (RightClickPosition, eyeCenter, eyeRotation, eyeFieldOfView)
+                        let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView RightClickPosition viewport
                         let forward = eyeRotation.Forward
                         let plane = plane3 (eyeCenter + forward * NewEntityDistance) -forward
                         (ray.Intersection plane).Value
@@ -1420,7 +1418,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     let viewport = World.getViewport world
                                     let eyeCenter = World.getEye2dCenter world
                                     let eyeSize = World.getEye2dSize world
-                                    let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                                    let mousePositionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize mousePosition viewport
                                     let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
                                     DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                                     world
@@ -1460,7 +1458,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     let viewport = World.getViewport world
                                     let eyeCenter = World.getEye2dCenter world
                                     let eyeSize = World.getEye2dSize world
-                                    let mousePositionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, mousePosition, eyeCenter, eyeSize)
+                                    let mousePositionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize mousePosition viewport
                                     let entityPosition = entity.GetPosition world
                                     DragEntityState <- DragEntityPosition2d (world.DateTime, ref false, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                                     world
@@ -2169,11 +2167,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // user-defined viewport manipulation
                 let viewport = world.Viewport
-                let projectionMatrix = viewport.Projection3d (World.getEye3dFieldOfView world)
+                let projectionMatrix = Viewport.getProjection3d (World.getEye3dFieldOfView world) viewport
                 let projection = projectionMatrix.ToArray ()
                 let operation =
                     ViewportOverlay
-                        { ViewportView = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
+                        { ViewportView = Viewport.getView3d (World.getEye3dCenter world) (World.getEye3dRotation world)
                           ViewportProjection = projectionMatrix
                           ViewportBounds = box2 v2Zero io.DisplaySize
                           EditContext = makeContext None None }
@@ -2185,7 +2183,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     | Some entity when entity.GetExists world && entity.GetIs3d world ->
                         let operation =
                             ViewportOverlay
-                                { ViewportView = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
+                                { ViewportView = Viewport.getView3d (World.getEye3dCenter world) (World.getEye3dRotation world)
                                   ViewportProjection = projectionMatrix
                                   ViewportBounds = box2 v2Zero io.DisplaySize
                                   EditContext = makeContext None None }
@@ -2221,7 +2219,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world =
                     match SelectedEntityOpt with
                     | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
-                        let viewMatrix = viewport.View3d (World.getEye3dCenter world, World.getEye3dRotation world)
+                        let viewMatrix = Viewport.getView3d (World.getEye3dCenter world) (World.getEye3dRotation world)
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()

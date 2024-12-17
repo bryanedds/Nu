@@ -95,7 +95,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Angles
         with get () =
-            this.CleanAngles ()
+            Transform.cleanAngles &this
             this.Angles_
         and set (value : Vector3) =
             this.Angles_ <- value
@@ -110,7 +110,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles <- Math.DegreesToRadians3d value
 
     member this.RotationMatrix =
-        this.CleanRotationMatrix ()
+        Transform.cleanRotationMatrixInternal &this
         this.RotationMatrixOpt_
 
     member this.AffineMatrix =
@@ -279,7 +279,7 @@ type [<NoEquality; NoComparison>] Transform =
         let perimeter = this.Perimeter
         -perimeter.Center + perimeter.Size * this.Offset_
 
-    member this.CleanAngles () =
+    static member private cleanAngles (this : Transform byref) =
         if this.AnglesDirty then
             let rollPitchYaw = this.Rotation_.RollPitchYaw
             this.Angles_.X <- rollPitchYaw.X
@@ -287,16 +287,16 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles_.Z <- rollPitchYaw.Z
             this.AnglesDirty <- false
 
-    member this.CleanRotationMatrix () =
+    static member cleanRotationMatrixInternal (this : Transform byref) =
         if this.RotationMatrixDirty || this.RotationMatrixOpt_.IsZero then
             this.RotationMatrixOpt_ <- Matrix4x4.CreateFromQuaternion this.Rotation_
             this.RotationMatrixDirty <- false
 
-    member this.SnapPosition positionSnap =
-        this.Position <- Math.SnapF3d positionSnap this.Position
-
-    member this.InvalidateFast () =
+    static member invalidateFastInternal (this : Transform byref) =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
+
+    static member snapPosition (positionSnap, transform : Transform byref) =
+        transform.Position <- Math.SnapF3d positionSnap transform.Position
 
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =

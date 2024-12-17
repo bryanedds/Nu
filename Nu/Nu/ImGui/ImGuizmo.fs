@@ -21,9 +21,9 @@ module ImGuizmo =
         let drawList = ImGui.GetBackgroundDrawList ()
         let windowPosition = ImGui.GetWindowPos ()
         let windowSize = ImGui.GetWindowSize ()
-        let eyeFrustum = viewport.Frustum (eyeCenter, eyeRotation, eyeFieldOfView)
-        let view = viewport.View3d (eyeCenter, eyeRotation)
-        let projection = viewport.Projection3d eyeFieldOfView
+        let eyeFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjection = view * projection
         let corners = box.Corners
         let segments =
@@ -70,7 +70,7 @@ module ImGuizmo =
             if dragging then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                 let direction = (center - box.Center).Absolute.Normalized
-                let ray = viewport.MouseToWorld3d (mouseWindow, eyeCenter, eyeRotation, eyeFieldOfView)
+                let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView mouseWindow viewport
                 let forward = eyeRotation.Forward
                 let plane = plane3 center -forward
                 let mouse = (ray.Intersection plane).Value

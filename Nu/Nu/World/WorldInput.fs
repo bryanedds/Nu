@@ -42,7 +42,7 @@ module WorldInputModule =
             match World.tryGetWindowSize world with
             | Some windowSize ->
                 let viewport = world.Viewport
-                let marginI = viewport.OffsetMargin windowSize
+                let marginI = Viewport.getOffsetMargin windowSize viewport
                 let margin = v2 (single marginI.X) (single marginI.Y)
                 MouseState.getPosition () - margin
             | None -> MouseState.getPosition ()
@@ -52,19 +52,19 @@ module WorldInputModule =
             let viewport = World.getViewport world
             let eyeCenter = World.getEye2dCenter world
             let eyeSize = World.getEye2dSize world
-            viewport.MouseTo2dScreen (World.getMousePosition world, eyeCenter, eyeSize)
+            Viewport.mouseTo2dScreen eyeCenter eyeSize (World.getMousePosition world) viewport
 
         /// Get the 2d world position of the mouse.
         static member getMousePostion2dWorld absolute world =
             let viewport = World.getViewport world
             let eyeCenter = World.getEye2dCenter world
             let eyeSize = World.getEye2dSize world
-            viewport.MouseToWorld2d (absolute, World.getMousePosition world, eyeCenter, eyeSize)
+            Viewport.mouseToWorld2d absolute eyeCenter eyeSize (World.getMousePosition world) viewport
 
         /// Get the 3d screen position of the mouse.
         static member getMousePosition3dScreen world =
             let viewport = World.getViewport world
-            viewport.MouseToScreen3d (World.getMousePosition world)
+            Viewport.mouseToScreen3d (World.getMousePosition world) viewport
 
         /// Get the 3d world ray of the mouse.
         static member getMouseRay3dWorld world =
@@ -72,7 +72,7 @@ module WorldInputModule =
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
-            viewport.MouseToWorld3d (World.getMousePosition world, eyeCenter, eyeRotation, eyeFieldOfView)
+            Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView (World.getMousePosition world) viewport
 
         /// Check that the given keyboard key is down.
         static member isKeyboardKeyDown key world =

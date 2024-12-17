@@ -29,37 +29,37 @@ type [<StructuralEquality; NoComparison>] Viewport =
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
     member this.ReflectionMapResolution = Constants.Render.ReflectionMapResolution
 
-    member this.ShadowTextureBufferResolution shadowBufferIndex =
+    static member getShadowTextureBufferResolution shadowBufferIndex (viewport : Viewport) =
         let scalar = if shadowBufferIndex = 0 then Constants.Render.ShadowDetailedResolutionScalar else 1
-        this.ShadowResolution * scalar
+        viewport.ShadowResolution * scalar
 
-    member this.OffsetMargin (windowSize : Vector2i) =
-        Vector2i ((windowSize.X - this.DisplayResolution.X) / 2, (windowSize.Y - this.DisplayResolution.Y) / 2)
+    static member getOffsetMargin (windowSize : Vector2i) (viewport : Viewport) =
+        Vector2i ((windowSize.X - viewport.DisplayResolution.X) / 2, (windowSize.Y - viewport.DisplayResolution.Y) / 2)
 
-    member this.OffsetBounds (windowSize : Vector2i) =
-        box2i (this.OffsetMargin windowSize) this.DisplayResolution
+    static member getOffsetBounds (windowSize : Vector2i) (viewport : Viewport) =
+        box2i (Viewport.getOffsetMargin windowSize viewport) viewport.DisplayResolution
 
     /// Project to the given frame.
-    member this.Project (source: Vector3, frame: Matrix4x4) =
+    static member project (source : Vector3) (frame : Matrix4x4) viewport =
         let mutable vector = Vector3.Transform(source, frame)
         let a = source.X * frame.M14 + source.Y * frame.M24 + source.Z * frame.M34 + frame.M44
         if not (Viewport.withinEpsilon a 1.0f) then
             vector.X <- vector.X / a
             vector.Y <- vector.Y / a
             vector.Z <- vector.Z / a
-        vector.X <- (vector.X + 1.0f) * 0.5f * single this.Bounds.Size.X + single this.Bounds.Min.X
-        vector.Y <- (-vector.Y + 1.0f) * 0.5f * single this.Bounds.Size.Y + single this.Bounds.Min.Y
-        vector.Z <- vector.Z * (this.DistanceFar - this.DistanceNear) + this.DistanceNear
+        vector.X <- (vector.X + 1.0f) * 0.5f * single viewport.Bounds.Size.X + single viewport.Bounds.Min.X
+        vector.Y <- (-vector.Y + 1.0f) * 0.5f * single viewport.Bounds.Size.Y + single viewport.Bounds.Min.Y
+        vector.Z <- vector.Z * (viewport.DistanceFar - viewport.DistanceNear) + viewport.DistanceNear
         vector
 
     /// Unproject from the given frame.
-    member this.Unproject (source : Vector3, frame : Matrix4x4) =
+    static member unproject (source : Vector3) (frame : Matrix4x4) viewport =
         let mutable matrix = Unchecked.defaultof<_>
         Matrix4x4.Invert (frame, &matrix) |> ignore<bool>
         let mutable source = source
-        source.X <- (source.X - single this.Bounds.Min.X) / single this.Bounds.Size.X * 2.0f - 1.0f
-        source.Y <- -((source.Y - single this.Bounds.Min.Y) / single this.Bounds.Size.Y * 2.0f - 1.0f)
-        source.Z <- (source.Z - this.DistanceNear) / (this.DistanceFar - this.DistanceNear)
+        source.X <- (source.X - single viewport.Bounds.Min.X) / single viewport.Bounds.Size.X * 2.0f - 1.0f
+        source.Y <- -((source.Y - single viewport.Bounds.Min.Y) / single viewport.Bounds.Size.Y * 2.0f - 1.0f)
+        source.Z <- (source.Z - viewport.DistanceNear) / (viewport.DistanceFar - viewport.DistanceNear)
         let mutable vector = Vector3.Transform (source, matrix)
         let a = source.X * matrix.M14 + source.Y * matrix.M24 + source.Z * matrix.M34 + matrix.M44
         if not (Viewport.withinEpsilon a 1.0f) then
@@ -69,22 +69,22 @@ type [<StructuralEquality; NoComparison>] Viewport =
         vector
 
     /// Compute the 2d absolute view matrix.
-    member this.View2dAbsolute (_ : Vector2, eyeSize : Vector2) =
-        let virtualScalar = (v2iDup this.DisplayVirtualScalar).V2
+    static member getView2dAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
+        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
         let translation = eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute the 2d relative view matrix.
-    member this.View2dRelative (eyeCenter : Vector2, eyeSize : Vector2) =
-        let virtualScalar = (v2iDup this.DisplayVirtualScalar).V2
+    static member getView2dRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
+        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
         let translation = -eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute a 2d view matrix.
-    member this.View2d (absolute, eyeCenter, eyeSize) =
+    static member getView2d absolute eyeCenter eyeSize viewport =
         if absolute
-        then this.View2dAbsolute (eyeCenter, eyeSize)
-        else this.View2dRelative (eyeCenter, eyeSize)
+        then Viewport.getView2dAbsolute eyeCenter eyeSize viewport
+        else Viewport.getView2dRelative eyeCenter eyeSize viewport
 
     /// Compute the 2d projection matrix.
     member this.Projection2d =
@@ -97,15 +97,15 @@ type [<StructuralEquality; NoComparison>] Viewport =
              1.0f)
 
     /// Compute the 2d view projection matrix.
-    member this.ViewProjection2d (absolute, eyeCenter, eyeSize) =
-        let view = this.View2d (absolute, eyeCenter, eyeSize)
-        let projection = this.Projection2d
+    static member getViewProjection2d absolute eyeCenter eyeSize viewport =
+        let view = Viewport.getView2d absolute eyeCenter eyeSize viewport
+        let projection = viewport.Projection2d
         view * projection
 
     /// Compute the absolute 2d position from the given relative 3d position.
-    member this.Position3dToPosition2d (position : Vector3, eyeCenter, eyeRotation : Quaternion, eyeFieldOfView, resolution : Vector2i) =
-        let view = this.View3d (eyeCenter, eyeRotation)
-        let projection = this.Projection3d eyeFieldOfView
+    static member position3dToPosition2d eyeCenter (eyeRotation : Quaternion) eyeFieldOfView (resolution : Vector2i) (position : Vector3) viewport =
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjection : Matrix4x4 = view * projection
         let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
         let positionNdc = positionViewProjection.V3 / positionViewProjection.W
@@ -114,9 +114,9 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Compute the relative 3d ray from the given absolute 2d position.
     /// TODO: also implement Position2dToPosition3d.
-    member this.Position2dToRay3d (position : Vector3, eyeCenter : Vector3, eyeRotation : Quaternion, eyeFieldOfView, resolution : Vector2i) =
-        let view = this.View3d (eyeCenter, eyeRotation)
-        let projection = this.Projection3d eyeFieldOfView
+    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (resolution : Vector2i) (position : Vector3) viewport =
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjectionInverse = (view * projection).Inverted
         let positionNdc = v3 (position.X / single (resolution.X * 2)) (position.Y / single (resolution.Y * 2)) 0.0f
         let positionViewProjection = positionNdc.Transform viewProjectionInverse
@@ -127,58 +127,58 @@ type [<StructuralEquality; NoComparison>] Viewport =
         ray
 
     /// Transform the given mouse position to 2d screen space.
-    member this.MouseTo2dScreen (mousePosition : Vector2, _ : Vector2, eyeSize : Vector2) =
+    static member mouseTo2dScreen (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
         v2
-            +(mousePosition.X / single this.DisplayVirtualScalar - eyeSize.X * 0.5f)
-            -(mousePosition.Y / single this.DisplayVirtualScalar - eyeSize.Y * 0.5f) // negation for right-handedness
+            +(mousePosition.X / single viewport.DisplayVirtualScalar - eyeSize.X * 0.5f)
+            -(mousePosition.Y / single viewport.DisplayVirtualScalar - eyeSize.Y * 0.5f) // negation for right-handedness
 
     /// Transform the given mouse position to 2d world space.
-    member this.MouseToWorld2d (absolute, mousePosition, eyeCenter : Vector2, eyeSize : Vector2) =
-        let mouseScreen = this.MouseTo2dScreen (mousePosition, eyeCenter, eyeSize)
+    static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
+        let mouseScreen = Viewport.mouseTo2dScreen eyeCenter eyeSize mousePosition viewport
         let view = if absolute then Matrix4x4.Identity else Matrix4x4.CreateTranslation eyeCenter.V3
         (mouseScreen.V3.Transform view).V2
 
     /// Transform the given mouse position to 2d entity space (eye 2d coordinates).
-    member this.MouseToEntity2d (absolute, mousePosition, entityPosition, entitySize) =
-        let mouseWorld = this.MouseToWorld2d (absolute, mousePosition, entityPosition, entitySize)
+    static member mouseToEntity2d absolute entityPosition entitySize mousePosition viewport =
+        let mouseWorld = Viewport.mouseToWorld2d absolute entityPosition entitySize mousePosition viewport
         entityPosition - mouseWorld
 
     /// Compute the 3d view matrix.
-    member this.View3d (eyeCenter : Vector3, eyeRotation : Quaternion) : Matrix4x4 =
+    static member getView3d (eyeCenter : Vector3) (eyeRotation : Quaternion) : Matrix4x4 =
         (Matrix4x4.CreateFromQuaternion eyeRotation * Matrix4x4.CreateTranslation eyeCenter).Inverted
 
     /// Compute the 3d projection matrix.
-    member this.Projection3d (fieldOfView : single) : Matrix4x4 =
+    static member getProjection3d (fieldOfView : single) (viewport : Viewport) : Matrix4x4 =
         Matrix4x4.CreatePerspectiveFieldOfView
             (fieldOfView,
-             this.AspectRatio,
-             this.DistanceNear,
-             this.DistanceFar)
+             viewport.AspectRatio,
+             viewport.DistanceNear,
+             viewport.DistanceFar)
 
     /// Compute a 3d view projection matrix.
-    member this.ViewProjection3d (eyeCenter, eyeRotation, eyeFieldOfView) =
-        let view = this.View3d (eyeCenter, eyeRotation)
-        let projection = this.Projection3d eyeFieldOfView
+    static member getViewProjection3d eyeCenter eyeRotation eyeFieldOfView viewport =
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let projection = Viewport.getProjection3d eyeFieldOfView viewport
         view * projection
 
     /// Compute a 3d view frustum.
-    member this.Frustum (eyeCenter, eyeRotation : Quaternion, eyeFieldOfView : single) =
-        let view = this.View3d (eyeCenter, eyeRotation)
-        let projection = this.Projection3d eyeFieldOfView
+    static member getFrustum eyeCenter (eyeRotation : Quaternion) (eyeFieldOfView : single) viewport =
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjection = view * projection
         Frustum viewProjection
 
     /// Transform the given mouse position to screen (normalized device coordinates).
-    member this.MouseToScreen3d (mousePosition : Vector2) =
+    static member mouseToScreen3d (mousePosition : Vector2) (viewport : Viewport) =
         v2
-            (mousePosition.X / single this.DisplayResolution.X)
-            (1.0f - (mousePosition.Y / single this.DisplayResolution.Y)) // inversion for right-handedness
+            (mousePosition.X / single viewport.DisplayResolution.X)
+            (1.0f - (mousePosition.Y / single viewport.DisplayResolution.Y)) // inversion for right-handedness
 
     /// Transform the given mouse position to 3d world space.
-    member this.MouseToWorld3d (mousePosition : Vector2, eyeCenter, eyeRotation, eyeFieldOfView) =
-        let viewProjection = this.ViewProjection3d (v3Zero, eyeRotation, eyeFieldOfView)
-        let near = this.Unproject (mousePosition.V3.WithZ 0.0f, viewProjection)
-        let far = this.Unproject (mousePosition.V3.WithZ 1.0f, viewProjection)
+    static member mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView (mousePosition : Vector2) viewport =
+        let viewProjection = Viewport.getViewProjection3d v3Zero eyeRotation eyeFieldOfView viewport
+        let near = Viewport.unproject (mousePosition.V3.WithZ 0.0f) viewProjection viewport
+        let far = Viewport.unproject (mousePosition.V3.WithZ 1.0f) viewProjection viewport
         ray3 (near + eyeCenter) (far - near).Normalized
 
     static member private withinEpsilon (a : single) (b : single) =

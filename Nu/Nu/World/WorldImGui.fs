@@ -72,8 +72,8 @@ module WorldImGui =
             let eyeFieldOfView = World.getEye3dFieldOfView world
             let eyeFrustum = World.getEye3dFrustumView world
             let viewport = world.Viewport
-            let view = viewport.View3d (eyeCenter, eyeRotation)
-            let projection = viewport.Projection3d eyeFieldOfView
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
             for position in positions do
                 if eyeFrustum.Contains position = ContainmentType.Contains then
@@ -101,8 +101,8 @@ module WorldImGui =
             let eyeFieldOfView = World.getEye3dFieldOfView world
             let eyeFrustum = World.getEye3dFrustumView world
             let viewport = world.Viewport
-            let view = viewport.View3d (eyeCenter, eyeRotation)
-            let projection = viewport.Projection3d eyeFieldOfView
+            let view = Viewport.getView3d eyeCenter eyeRotation
+            let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
             for segment in segments do
                 match Math.TryUnionSegmentAndFrustum segment.A segment.B eyeFrustum with

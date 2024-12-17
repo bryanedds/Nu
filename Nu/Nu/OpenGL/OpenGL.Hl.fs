@@ -149,7 +149,7 @@ module Hl =
         Assert ()
 
         // set viewport to offset bounds
-        let offsetBounds = viewport.OffsetBounds windowSize
+        let offsetBounds = Viewport.getOffsetBounds windowSize viewport
         Gl.Viewport (offsetBounds.Min.X, offsetBounds.Min.Y, offsetBounds.Size.X, offsetBounds.Size.Y)
         Assert ()
 

@@ -1134,8 +1134,7 @@ module WorldModule2 =
                     if evt.window.windowEvent = SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED then
                         let windowSize = World.getWindowSize world
                         let windowScalar =
-                            max
-                                (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                            max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
                                 (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
                         let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
                         let world = World.trySetWindowSize windowSize' world
@@ -1150,7 +1149,7 @@ module WorldModule2 =
                     let io = ImGui.GetIO ()
                     let viewport = world.Viewport
                     let windowSize = World.getWindowSize world
-                    let offsetBounds = viewport.OffsetBounds windowSize
+                    let offsetBounds = Viewport.getOffsetBounds windowSize viewport
                     io.AddMousePosEvent (single (evt.button.x - offsetBounds.Min.X), single (evt.button.y - offsetBounds.Min.Y))
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =

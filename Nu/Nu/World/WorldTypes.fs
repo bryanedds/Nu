@@ -985,9 +985,9 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           Eye3dCenter = eye3dCenter
           Eye3dRotation = eye3dRotation
           Eye3dFieldOfView = eye3dFieldOfView
-          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation, eye3dFieldOfView)
-          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation, eye3dFieldOfView)
-          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation, eye3dFieldOfView)
+          Eye3dFrustumInterior = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportInterior
+          Eye3dFrustumExterior = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportExterior
+          Eye3dFrustumImposter = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportImposter
           Order = Core.getTimeStampUnique ()
           Id = Gen.id64 }
 
@@ -1212,7 +1212,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     /// This is used when we want to retain an old version of an entity state in face of mutation.
     static member inline diverge (entityState : EntityState) =
         let entityState' = EntityState.copy entityState
-        entityState.Transform.InvalidateFast () // OPTIMIZATION: invalidate fast.
+        Transform.invalidateFastInternal &entityState.Transform // OPTIMIZATION: invalidate fast.
         entityState'
 
     /// Check that there exists an xtenstion property that is a runtime property.

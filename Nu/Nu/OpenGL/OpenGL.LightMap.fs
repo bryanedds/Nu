@@ -88,7 +88,7 @@ module LightMap =
             render
                 false (Some (ambientColor, ambientBrightness)) origin
                 view viewSkyBox
-                (geometryViewport.Frustum (origin, eyeRotation, MathF.PI_OVER_2))
+                (Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport)
                 (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
                 (box2i v2iZero (v2iDup resolution))
                 (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))

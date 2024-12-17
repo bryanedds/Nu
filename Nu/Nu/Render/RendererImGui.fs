@@ -205,7 +205,7 @@ type GlRendererImGui
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
             // set viewport to offset bounds
-            let offsetBounds = viewport.OffsetBounds windowSize
+            let offsetBounds = Viewport.getOffsetBounds windowSize viewport
             OpenGL.Gl.Viewport (offsetBounds.Min.X, offsetBounds.Min.Y, offsetBounds.Size.X, offsetBounds.Size.Y)
 
             // attempt to draw imgui draw data
