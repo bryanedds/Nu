@@ -209,7 +209,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | (true, fontSize) -> fontSize
                     | (false, _) -> Constants.Render.FontSizeDefault
                 else Constants.Render.FontSizeDefault
-            let fontSize = fontSizeDefault * renderer.Viewport.DisplayVirtualScalar
+            let fontSize = fontSizeDefault * renderer.Viewport.DisplayScalar
             let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
             if fontOpt <> IntPtr.Zero
             then Some (FontAsset (fontSizeDefault, fontOpt))
@@ -467,7 +467,7 @@ type [<ReferenceEquality>] GlRenderer2d =
          renderer) =
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup renderer.Viewport.DisplayVirtualScalar).V2
+        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
         let min = perimeter.Min.V2 * virtualScalar
         let size = perimeter.Size.V2 * virtualScalar
         let pivot = transform.PerimeterPivot.V2 * virtualScalar
@@ -492,7 +492,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let transform = &particle.Transform
                     let absolute = transform.Absolute
                     let perimeter = transform.Perimeter
-                    let virtualScalar = (v2iDup renderer.Viewport.DisplayVirtualScalar).V2
+                    let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
                     let min = perimeter.Min.V2 * virtualScalar
                     let size = perimeter.Size.V2 * virtualScalar
                     let pivot = transform.PerimeterPivot.V2 * virtualScalar
@@ -525,7 +525,7 @@ type [<ReferenceEquality>] GlRenderer2d =
         // gather context for rendering tiles
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup renderer.Viewport.DisplayVirtualScalar).V2
+        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
         let min = perimeter.Min.V2 * virtualScalar
         let size = perimeter.Size.V2 * virtualScalar
         let eyeCenter = eyeCenter * virtualScalar
@@ -645,7 +645,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let mutable transform = transform
                 let absolute = transform.Absolute
                 let perimeter = transform.Perimeter
-                let virtualScalar = (v2iDup renderer.Viewport.DisplayVirtualScalar).V2
+                let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewProjection = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
@@ -669,13 +669,13 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // attempt to configure sdl font size
                             let fontSize =
                                 match fontSizing with
-                                | Some fontSize -> fontSize * renderer.Viewport.DisplayVirtualScalar
-                                | None -> fontSizeDefault * renderer.Viewport.DisplayVirtualScalar
+                                | Some fontSize -> fontSize * renderer.Viewport.DisplayScalar
+                                | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
                             let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
                             if errorCode <> 0 then
                                 let error = SDL_ttf.TTF_GetError ()
                                 Log.infoOnce ("Failed to set font size for font '" + scstring font + "' due to: " + error)
-                                SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * renderer.Viewport.DisplayVirtualScalar) |> ignore<int>
+                                SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * renderer.Viewport.DisplayScalar) |> ignore<int>
 
                             // configure sdl font style
                             let styleSdl =
@@ -800,7 +800,7 @@ type [<ReferenceEquality>] GlRenderer2d =
     static member private render eyeCenter eyeSize windowSize viewport renderMessages renderer =
 
         // reload fonts when display virtual scalar changes
-        if renderer.Viewport.DisplayVirtualScalar <> viewport.DisplayVirtualScalar then
+        if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
             GlRenderer2d.invalidateCaches renderer
             for package in renderer.RenderPackages.Values do
                 for (assetName, (lastWriteTime, asset, renderAsset)) in package.Assets.Pairs do
@@ -809,7 +809,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         | Some renderAsset ->
                             GlRenderer2d.freeRenderAsset renderAsset renderer
                             package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
-                        | None -> Log.error ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayVirtualScalar change.")
+                        | None -> Log.error ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
         // update viewport
         renderer.Viewport <- viewport

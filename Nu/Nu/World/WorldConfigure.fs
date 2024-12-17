@@ -43,7 +43,7 @@ module Configure =
                 | nameof Constants.Render.ShadowTexturesMax -> Constants.Render.ShadowTexturesMax <- min (scvalue value) Constants.Render.ShadowTexturesMaxShader
                 | nameof Constants.Render.ShadowMapsMax -> Constants.Render.ShadowMapsMax <- min (scvalue value) Constants.Render.ShadowMapsMaxShader
                 | nameof Constants.Gui.SliceMarginDefault -> Constants.Gui.SliceMarginDefault <- scvalue value
-                | nameof Viewport.DisplayVirtualScalar -> Viewport.DisplayVirtualScalar <- scvalue value
+                | nameof Viewport.DisplayScalar -> Viewport.DisplayScalar <- scvalue value
                 | nameof Viewport.ShadowVirtualResolution -> Viewport.ShadowVirtualResolution <- scvalue value
                 | _ -> ()
             Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior

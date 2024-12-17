@@ -42,8 +42,8 @@ module WorldInputModule =
             match World.tryGetWindowSize world with
             | Some windowSize ->
                 let viewport = world.Viewport
-                let marginI = Viewport.getOffsetMargin windowSize viewport
-                let margin = v2 (single marginI.X) (single marginI.Y)
+                let bounds = Viewport.getOffsetBounds windowSize viewport
+                let margin = v2 (single bounds.Min.X) (single bounds.Min.Y)
                 MouseState.getPosition () - margin
             | None -> MouseState.getPosition ()
 

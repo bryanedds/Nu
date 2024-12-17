@@ -146,9 +146,9 @@ module Sprite =
         | ValueSome clip ->
             let offsetBounds = Viewport.getOffsetBounds windowSize viewport
             let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
-            let minNdc = minClip / minClip.W * single viewport.DisplayVirtualScalar
+            let minNdc = minClip / minClip.W * single viewport.DisplayScalar
             let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.DisplayResolution.V2
-            let sizeScissor = clip.Size * v2Dup (single viewport.DisplayVirtualScalar)
+            let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
             Gl.Enable EnableCap.ScissorTest
             Gl.Scissor
                 ((minScissor.X |> round |> int) + offsetBounds.Min.X,

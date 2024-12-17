@@ -10,7 +10,7 @@ open Prime
 [<RequireQualifiedAccess>]
 module Viewport =
 
-    let mutable DisplayVirtualScalar = match ConfigurationManager.AppSettings.["DisplayVirtualScalar"] with null -> 3 | scalar -> scvalue scalar
+    let mutable DisplayScalar = match ConfigurationManager.AppSettings.["DisplayScalar"] with null -> 3 | scalar -> scvalue scalar
     let mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings.["ShadowVirtualResolution"] with null -> 512 | scalar -> scvalue scalar
 
 /// Describes the bounds of a viewport.
@@ -19,13 +19,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
     { DistanceNear : single
       DistanceFar : single
       Bounds : Box2i
-      DisplayVirtualScalar : int
+      DisplayScalar : int
       SsaoResolutionDivisor : int }
 
     member this.Resolution = this.Bounds.Size
     member this.AspectRatio = single this.Resolution.X / single this.Resolution.Y
-    member this.DisplayResolution = Constants.Render.DisplayVirtualResolution * this.DisplayVirtualScalar
-    member this.ShadowResolution = v2iDup (Viewport.ShadowVirtualResolution * this.DisplayVirtualScalar)
+    member this.DisplayResolution = Constants.Render.DisplayVirtualResolution * this.DisplayScalar
+    member this.ShadowResolution = v2iDup (Viewport.ShadowVirtualResolution * this.DisplayScalar)
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
     member this.ReflectionMapResolution = Constants.Render.ReflectionMapResolution
 
@@ -70,13 +70,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Compute the 2d absolute view matrix.
     static member getView2dAbsolute (_ : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         let translation = eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
     /// Compute the 2d relative view matrix.
     static member getView2dRelative (eyeCenter : Vector2) (eyeSize : Vector2) viewport =
-        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         let translation = -eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
         Matrix4x4.CreateTranslation translation.V3
 
@@ -129,8 +129,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
     /// Transform the given mouse position to 2d screen space.
     static member mouseTo2dScreen (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
         v2
-            +(mousePosition.X / single viewport.DisplayVirtualScalar - eyeSize.X * 0.5f)
-            -(mousePosition.Y / single viewport.DisplayVirtualScalar - eyeSize.Y * 0.5f) // negation for right-handedness
+            +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
+            -(mousePosition.Y / single viewport.DisplayScalar - eyeSize.Y * 0.5f) // negation for right-handedness
 
     /// Transform the given mouse position to 2d world space.
     static member mouseToWorld2d absolute (eyeCenter : Vector2) (eyeSize : Vector2) mousePosition viewport =
@@ -189,7 +189,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
         { DistanceNear = distanceNear
           DistanceFar = distanceFar
           Bounds = bounds
-          DisplayVirtualScalar = Viewport.DisplayVirtualScalar
+          DisplayScalar = Viewport.DisplayScalar
           SsaoResolutionDivisor = Constants.Render.SsaoResolutionDivisor }
 
     static member makeDisplay () =

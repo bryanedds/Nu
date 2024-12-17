@@ -1117,7 +1117,7 @@ module WorldModule2 =
             let windowSize = World.getWindowSize world
             let xScalar = windowSize.X / Constants.Render.DisplayVirtualResolution.X
             let yScalar = windowSize.Y / Constants.Render.DisplayVirtualResolution.Y
-            Viewport.DisplayVirtualScalar <- min xScalar yScalar
+            Viewport.DisplayScalar <- min xScalar yScalar
 
             // update view port
             let viewport = Viewport.makeDisplay ()

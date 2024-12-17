@@ -159,13 +159,13 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         ImGui.IsCtrlDown () && ImGui.IsKeyPressed key
 
     static member Position2dToWindow (absolute, eyeSize : Vector2, eyeCenter, viewport, position) =
-        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         if absolute
         then position * virtualScalar * v2 1.0f -1.0f + eyeSize * 0.5f * virtualScalar
         else position * virtualScalar * v2 1.0f -1.0f - eyeCenter * virtualScalar + eyeSize * 0.5f * virtualScalar
 
     static member WindowToPosition2d (absolute, eyeSize : Vector2, eyeCenter, viewport, position) =
-        let virtualScalar = (v2iDup viewport.DisplayVirtualScalar).V2
+        let virtualScalar = (v2iDup viewport.DisplayScalar).V2
         if absolute
         then position / virtualScalar * v2 1.0f -1.0f - eyeSize * 0.5f * virtualScalar
         else position / virtualScalar * v2 1.0f -1.0f + eyeCenter * virtualScalar - eyeSize * 0.5f * virtualScalar
