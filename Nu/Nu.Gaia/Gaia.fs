@@ -2158,7 +2158,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let world =
             if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
-                let displaySize = ImGui.GetIO().DisplaySize.V2i
+                let io = ImGui.GetIO()
+                let displaySize = io.DisplaySize.V2i
                 let windowPosition = ImGui.GetWindowPos().V2i
                 let windowSize = ImGui.GetWindowSize().V2i
                 let viewportInner = Viewport.makeInner (box2i (windowPosition.MapY (fun y -> displaySize.Y - y - windowSize.Y)) windowSize)
