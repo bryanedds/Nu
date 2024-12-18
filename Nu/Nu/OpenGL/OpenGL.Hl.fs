@@ -132,7 +132,7 @@ module Hl =
             Log.warn "Anisotropic texture filtering required to properly run Nu."
 
     /// Begin an OpenGL frame.
-    let BeginFrame (windowSize : Vector2i, viewport : Viewport) =
+    let BeginFrame (windowSize : Vector2i, outerBounds : Box2i) =
 
         // set viewport to window
         Gl.Viewport (0, 0, windowSize.X, windowSize.Y)
@@ -149,13 +149,12 @@ module Hl =
         Assert ()
 
         // set viewport to offset bounds
-        let offsetBounds = Viewport.getOffsetBounds windowSize viewport
-        Gl.Viewport (offsetBounds.Min.X, offsetBounds.Min.Y, offsetBounds.Size.X, offsetBounds.Size.Y)
+        Gl.Viewport (outerBounds.Min.X, outerBounds.Min.Y, outerBounds.Size.X, outerBounds.Size.Y)
         Assert ()
 
-        // clear offset viewport to designated clear color
+        // clear outer viewport to designated clear color
         Gl.Enable EnableCap.ScissorTest
-        Gl.Scissor (offsetBounds.Min.X, offsetBounds.Min.Y, offsetBounds.Size.X, offsetBounds.Size.Y)
+        Gl.Scissor (outerBounds.Min.X, outerBounds.Min.Y, outerBounds.Size.X, outerBounds.Size.Y)
         Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         Gl.Clear (ClearBufferMask.ColorBufferBit ||| ClearBufferMask.DepthBufferBit ||| ClearBufferMask.StencilBufferBit)
         Gl.Disable EnableCap.ScissorTest

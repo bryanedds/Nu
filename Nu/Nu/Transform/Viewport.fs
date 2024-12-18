@@ -22,22 +22,13 @@ type [<StructuralEquality; NoComparison>] Viewport =
       DisplayScalar : int
       SsaoResolutionDivisor : int }
 
-    member this.Resolution = this.Bounds.Size
-    member this.AspectRatio = single this.Resolution.X / single this.Resolution.Y
-    member this.DisplayResolution = Constants.Render.DisplayVirtualResolution * this.DisplayScalar
+    member this.AspectRatio = single this.Bounds.Size.X / single this.Bounds.Size.Y
     member this.ShadowResolution = v2iDup (Viewport.ShadowVirtualResolution * this.DisplayScalar)
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
-    member this.ReflectionMapResolution = Constants.Render.ReflectionMapResolution
 
     static member getShadowTextureBufferResolution shadowBufferIndex (viewport : Viewport) =
         let scalar = if shadowBufferIndex = 0 then Constants.Render.ShadowDetailedResolutionScalar else 1
         viewport.ShadowResolution * scalar
-
-    static member getOffsetMargin (windowSize : Vector2i) (viewport : Viewport) =
-        Vector2i ((windowSize.X - viewport.DisplayResolution.X) / 2, (windowSize.Y - viewport.DisplayResolution.Y) / 2)
-
-    static member getOffsetBounds (windowSize : Vector2i) (viewport : Viewport) =
-        box2i (Viewport.getOffsetMargin windowSize viewport) viewport.DisplayResolution
 
     /// Project to the given frame.
     static member project (source : Vector3) (frame : Matrix4x4) viewport =
@@ -128,8 +119,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to 2d screen space.
     static member mouseTo2dScreen (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
-        v2
-            +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
+        v2  +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
             -(mousePosition.Y / single viewport.DisplayScalar - eyeSize.Y * 0.5f) // negation for right-handedness
 
     /// Transform the given mouse position to 2d world space.
@@ -170,9 +160,8 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to screen (normalized device coordinates).
     static member mouseToScreen3d (mousePosition : Vector2) (viewport : Viewport) =
-        v2
-            (mousePosition.X / single viewport.DisplayResolution.X)
-            (1.0f - (mousePosition.Y / single viewport.DisplayResolution.Y)) // inversion for right-handedness
+        v2  (mousePosition.X / single viewport.Bounds.Size.X)
+            (1.0f - (mousePosition.Y / single viewport.Bounds.Size.Y)) // inversion for right-handedness
 
     /// Transform the given mouse position to 3d world space.
     static member mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView (mousePosition : Vector2) viewport =
@@ -192,18 +181,29 @@ type [<StructuralEquality; NoComparison>] Viewport =
           DisplayScalar = Viewport.DisplayScalar
           SsaoResolutionDivisor = Constants.Render.SsaoResolutionDivisor }
 
-    static member makeDisplay () =
-        let viewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent box2iZero
-        { viewport with Bounds = box2i v2iZero viewport.DisplayResolution }
+    static member makeGeometry (resolution : Vector2i) =
+        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent (box2i v2iZero resolution)
+
+    static member makeInner (bounds : Box2i) =
+        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds
+
+    static member makeOuter (windowSize : Vector2i) =
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let offsetMargin = Vector2i ((windowSize.X - outerResolution.X) / 2, (windowSize.Y - outerResolution.Y) / 2)
+        let bounds = box2i offsetMargin outerResolution
+        Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds
 
     static member makeInterior () =
-        let viewport = Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior box2iZero
-        { viewport with Bounds = box2i v2iZero viewport.DisplayResolution }
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let bounds = box2i v2iZero outerResolution
+        Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior bounds
 
     static member makeExterior () =
-        let viewport = Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior box2iZero
-        { viewport with Bounds = box2i v2iZero viewport.DisplayResolution }
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let bounds = box2i v2iZero outerResolution
+        Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior bounds
 
     static member makeImposter () =
-        let viewport = Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter box2iZero
-        { viewport with Bounds = box2i v2iZero viewport.DisplayResolution }
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let bounds = box2i v2iZero outerResolution
+        Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter bounds

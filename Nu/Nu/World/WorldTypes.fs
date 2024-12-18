@@ -1829,9 +1829,11 @@ and [<ReferenceEquality>] internal WorldExtension =
       mutable RecentImNui : Address
       mutable SimulantImNuis : SUMap<Address, SimulantImNui>
       mutable SubscriptionImNuis : SUMap<string * Address * Address, SubscriptionImNui>
-      Viewport : Viewport
-      DestructionListRev : Simulant list
+      ViewportGeometry : Viewport
+      ViewportInner : Viewport
       // cache line 2
+      ViewportOuter : Viewport
+      DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
       PropagationTargets : UMap<Entity, Entity USet> }
@@ -2005,8 +2007,14 @@ and [<ReferenceEquality>] World =
     member internal this.SubscriptionImNuis =
         this.WorldExtension.SubscriptionImNuis
 
-    member this.Viewport =
-        this.WorldExtension.Viewport
+    member this.ViewportGeometry =
+        this.WorldExtension.ViewportGeometry
+
+    member this.ViewportInner =
+        this.WorldExtension.ViewportInner
+
+    member this.ViewportOuter =
+        this.WorldExtension.ViewportOuter
 
 #if DEBUG
     member internal this.Choose () =

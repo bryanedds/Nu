@@ -18,7 +18,7 @@ type RenderMessageImGui =
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port.
 type RendererImGui =
     abstract Initialize : ImFontAtlasPtr -> unit
-    abstract Render : Vector2i -> Viewport -> ImDrawDataPtr -> RenderMessageImGui List -> unit
+    abstract Render : Viewport -> ImDrawDataPtr -> RenderMessageImGui List -> unit
     abstract CleanUp : unit -> unit
 
 /// A stub imgui renderer.
@@ -31,7 +31,7 @@ type StubRendererImGui () =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
-        member this.Render _ _ _ _ = ()
+        member this.Render _ _ _ = ()
         member this.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
@@ -168,12 +168,12 @@ type GlRendererImGui
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 
-        member this.Render windowSize viewport_ (drawData : ImDrawDataPtr) renderMessages =
+        member this.Render viewport_ (drawData : ImDrawDataPtr) renderMessages =
 
-            // update viewport and imgui display size when needed
+            // update viewport, updating the imgui display size as needed
             if viewport <> viewport_ then
                 let io = ImGui.GetIO ()
-                io.DisplaySize <- viewport_.DisplayResolution.V2
+                io.DisplaySize <- viewport_.Bounds.Size.V2
                 viewport <- viewport_
 
             // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently
@@ -205,8 +205,8 @@ type GlRendererImGui
                 assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
 
             // set viewport to offset bounds
-            let offsetBounds = Viewport.getOffsetBounds windowSize viewport
-            OpenGL.Gl.Viewport (offsetBounds.Min.X, offsetBounds.Min.Y, offsetBounds.Size.X, offsetBounds.Size.Y)
+            let bounds = viewport.Bounds
+            OpenGL.Gl.Viewport (bounds.Min.X, bounds.Min.Y, bounds.Size.X, bounds.Size.Y)
 
             // attempt to draw imgui draw data
             let mutable vertexOffsetInVertices = 0
@@ -244,7 +244,7 @@ type GlRendererImGui
                     OpenGL.Hl.Assert ()
 
                 // compute orthographic projection
-                let projection = Matrix4x4.CreateOrthographicOffCenter (0.0f, single viewport.Resolution.X, single viewport.Resolution.Y, 0.0f, -1.0f, 1.0f)
+                let projection = Matrix4x4.CreateOrthographicOffCenter (0.0f, single viewport.Bounds.Size.X, single viewport.Bounds.Size.Y, 0.0f, -1.0f, 1.0f)
                 let projectionArray = projection.ToArray ()
 
                 // setup state
@@ -279,8 +279,8 @@ type GlRendererImGui
                                 OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
                                 OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
                                 OpenGL.Gl.Scissor
-                                    (int clip.X + offsetBounds.Min.X,
-                                     viewport.DisplayResolution.Y - int clip.W + offsetBounds.Min.Y,
+                                    (int clip.X + bounds.Min.X,
+                                     viewport.Bounds.Size.Y - int clip.W + bounds.Min.Y,
                                      int (clip.Z - clip.X),
                                      int (clip.W - clip.Y))
                                 OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)

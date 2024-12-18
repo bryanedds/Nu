@@ -30,7 +30,7 @@ module WorldImGui =
             let eyeCenter = World.getEye2dCenter world
             for position in positions do
                 let color = computeColor position
-                let positionWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.Viewport, position)
+                let positionWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.ViewportInner, position)
                 if filled
                 then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
                 else drawList.AddCircle (positionWindow, radius, color.Abgr)
@@ -50,8 +50,8 @@ module WorldImGui =
             let eyeCenter = World.getEye2dCenter world
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.Viewport, start)
-                let stopWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.Viewport, stop)
+                let startWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.ViewportInner, start)
+                let stopWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.ViewportInner, stop)
                 drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
@@ -71,7 +71,7 @@ module WorldImGui =
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
             let eyeFrustum = World.getEye3dFrustumView world
-            let viewport = world.Viewport
+            let viewport = world.ViewportInner
             let view = Viewport.getView3d eyeCenter eyeRotation
             let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection
@@ -100,7 +100,7 @@ module WorldImGui =
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
             let eyeFrustum = World.getEye3dFrustumView world
-            let viewport = world.Viewport
+            let viewport = world.ViewportInner
             let view = Viewport.getView3d eyeCenter eyeRotation
             let projection = Viewport.getProjection3d eyeFieldOfView viewport
             let viewProjection = view * projection

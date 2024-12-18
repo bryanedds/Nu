@@ -272,7 +272,7 @@ module WorldModule3 =
             world
 
         /// Make the world.
-        static member make plugin eventGraph jobGraph viewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
+        static member make plugin eventGraph jobGraph viewportGeometry viewportInner viewportOuter dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher =
             Nu.init () // ensure game engine is initialized
             let config = AmbientState.getConfig ambientState
             let entityStates = SUMap.makeEmpty HashIdentity.Structural config
@@ -287,7 +287,9 @@ module WorldModule3 =
                   SimulantImNuis = SUMap.makeEmpty HashIdentity.Structural config
                   SubscriptionImNuis = SUMap.makeEmpty HashIdentity.Structural config
                   DestructionListRev = []
-                  Viewport = viewport
+                  ViewportGeometry = viewportGeometry
+                  ViewportInner = viewportInner
+                  ViewportOuter = viewportOuter
                   Dispatchers = dispatchers
                   Plugin = plugin
                   PropagationTargets = UMap.makeEmpty HashIdentity.Structural config }
@@ -327,8 +329,10 @@ module WorldModule3 =
             // make the default job graph
             let jobGraph = JobGraphInline ()
 
-            // make the default viewport
-            let viewport = Viewport.makeDisplay ()
+            // make the default viewports
+            let viewportOuter = Viewport.makeOuter Constants.Render.DisplayVirtualResolution
+            let viewportInner = Viewport.makeInner viewportOuter.Bounds
+            let viewportGeometry = Viewport.makeGeometry viewportOuter.Bounds.Size
 
             // make the world's dispatchers
             let dispatchers =
@@ -339,11 +343,11 @@ module WorldModule3 =
                   GameDispatchers = Map.ofList [defaultGameDispatcher] }
 
             // make the world's subsystems
-            let imGui = ImGui (true, viewport.DisplayResolution)
+            let imGui = ImGui (true, viewportOuter.Bounds.Size)
             let physicsEngine2d = StubPhysicsEngine.make ()
             let physicsEngine3d = StubPhysicsEngine.make ()
             let rendererProcess = RendererInline () :> RendererProcess
-            rendererProcess.Start imGui.Fonts None viewport // params implicate stub renderers
+            rendererProcess.Start imGui.Fonts None viewportGeometry viewportInner viewportOuter // params implicate stub renderers
             let audioPlayer = StubAudioPlayer.make ()
 
             // make the world's ambient state
@@ -356,14 +360,14 @@ module WorldModule3 =
             let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
             // make the world
-            let world = World.make plugin eventGraph jobGraph viewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
+            let world = World.make plugin eventGraph jobGraph viewportGeometry viewportInner viewportOuter dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer (snd defaultGameDispatcher)
 
             // finally, register the game
             World.registerGame Game world
 
         /// Attempt to make the world, returning either a Right World on success, or a Left string
         /// (with an error message) on failure.
-        static member tryMake sdlDeps config (viewport : Viewport) (plugin : NuPlugin) =
+        static member tryMake sdlDeps config viewportGeometry viewportInner (viewportOuter : Viewport) (plugin : NuPlugin) =
 
             // attempt to create asset graph
             match AssetGraph.tryMakeFromFile Assets.Global.AssetGraphFilePath with
@@ -419,14 +423,14 @@ module WorldModule3 =
                     | None -> GameDispatcher ()
 
                 // make the world's subsystems, loading initial packages where applicable
-                let imGui = ImGui (false, viewport.DisplayResolution)
+                let imGui = ImGui (false, viewportOuter.Bounds.Size)
                 let physicsEngine2d = PhysicsEngine2d.make (Constants.Physics.GravityDefault * Constants.Engine.Meter2d)
                 let physicsEngine3d = PhysicsEngine3d.make Constants.Physics.GravityDefault
                 let rendererProcess =
                     if Constants.Engine.RunSynchronously
                     then RendererInline () :> RendererProcess
                     else RendererThread () :> RendererProcess
-                rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) viewport
+                rendererProcess.Start imGui.Fonts (SdlDeps.getWindowOpt sdlDeps) viewportGeometry viewportInner viewportOuter
                 for package in initialPackages do
                     rendererProcess.EnqueueMessage2d (LoadRenderPackage2d package)
                 for package in initialPackages do
@@ -453,7 +457,7 @@ module WorldModule3 =
                     let octree = Octree.make Constants.Engine.OctreeDepth Constants.Engine.OctreeSize
 
                     // make the world
-                    let world = World.make plugin eventGraph jobGraph viewport dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
+                    let world = World.make plugin eventGraph jobGraph viewportGeometry viewportInner viewportOuter dispatchers quadtree octree ambientState imGui physicsEngine2d physicsEngine3d rendererProcess audioPlayer activeGameDispatcher
 
                     // add the keyed values
                     let (kvps, world) = plugin.MakeKeyedValues world
@@ -469,11 +473,11 @@ module WorldModule3 =
 
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
-        static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize viewport plugin =
+        static member runPlus runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess worldConfig windowSize viewportGeometry viewportInner viewportOuter plugin =
             match SdlDeps.tryMake worldConfig.SdlConfig windowSize with
             | Right sdlDeps ->
                 use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-                match World.tryMake sdlDeps worldConfig viewport plugin with
+                match World.tryMake sdlDeps worldConfig viewportGeometry viewportInner viewportOuter plugin with
                 | Right world -> World.runWithCleanUp runWhile preProcess perProcess postProcess imGuiProcess imGuiPostProcess Live true world
                 | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
             | Left error -> Log.error error; Constants.Engine.ExitCodeFailure
@@ -481,5 +485,8 @@ module WorldModule3 =
         /// Run the game engine, initializing dependencies as indicated by WorldConfig, and returning exit code upon
         /// termination.
         static member run worldConfig plugin =
-            let viewport = Viewport.makeDisplay () 
-            World.runPlus tautology id id id id id worldConfig viewport.Resolution viewport plugin
+            let windowSize = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+            let viewportOuter = Viewport.makeOuter windowSize
+            let viewportInner = Viewport.makeInner viewportOuter.Bounds
+            let viewportGeometry = Viewport.makeGeometry viewportOuter.Bounds.Size
+            World.runPlus tautology id id id id id worldConfig viewportOuter.Bounds.Size viewportGeometry viewportInner viewportOuter plugin

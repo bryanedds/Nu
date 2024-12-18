@@ -1111,18 +1111,6 @@ module WorldModule2 =
                 elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> List.singleton
                 else []
 
-        static member private updateViewport world =
-
-            // update display virtual scalar
-            let windowSize = World.getWindowSize world
-            let xScalar = windowSize.X / Constants.Render.DisplayVirtualResolution.X
-            let yScalar = windowSize.Y / Constants.Render.DisplayVirtualResolution.Y
-            Viewport.DisplayScalar <- min xScalar yScalar
-
-            // update view port
-            let viewport = Viewport.makeDisplay ()
-            World.setViewport viewport world
-
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
                 match evt.``type`` with
@@ -1132,6 +1120,8 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_WINDOWEVENT ->
                     if evt.window.windowEvent = SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED then
+
+                        // ensure window size is a factor of display virtual resolution, going to full screen otherwise
                         let windowSize = World.getWindowSize world
                         let windowScalar =
                             max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
@@ -1143,14 +1133,24 @@ module WorldModule2 =
                             if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y
                             then World.trySetWindowFullScreen true world
                             else world
-                        World.updateViewport world
+
+                        // update display virtual scalar
+                        let windowSize'' = World.getWindowSize world
+                        let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+                        let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+                        Viewport.DisplayScalar <- min xScalar yScalar
+
+                        // update view ports
+                        let world = World.setViewportOuter (Viewport.makeOuter windowSize'') world
+                        let world = World.setViewportInner (Viewport.makeInner world.ViewportOuter.Bounds) world
+                        let world = World.setViewportGeometry (Viewport.makeGeometry windowSize'') world
+                        world
+
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let io = ImGui.GetIO ()
-                    let viewport = world.Viewport
-                    let windowSize = World.getWindowSize world
-                    let offsetBounds = Viewport.getOffsetBounds windowSize viewport
-                    io.AddMousePosEvent (single (evt.button.x - offsetBounds.Min.X), single (evt.button.y - offsetBounds.Min.Y))
+                    let outerOffset = world.ViewportOuter.Bounds.Min
+                    io.AddMousePosEvent (single (evt.button.x - outerOffset.X), single (evt.button.y - outerOffset.Y))
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
@@ -2131,7 +2131,9 @@ module WorldModule2 =
                                                                     (World.getEye2dCenter world)
                                                                     (World.getEye2dSize world)
                                                                     (World.getWindowSize world)
-                                                                    (World.getViewport world)
+                                                                    (World.getViewportGeometry world)
+                                                                    (World.getViewportInner world)
+                                                                    (World.getViewportOuter world)
                                                                     drawData
 
                                                                 // post-process imgui frame

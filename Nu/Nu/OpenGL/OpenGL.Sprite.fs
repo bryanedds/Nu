@@ -91,7 +91,6 @@ module Sprite =
          textureWidth,
          textureHeight,
          texture : Texture.Texture,
-         windowSize,
          viewport : Viewport,
          modelViewProjectionUniform,
          texCoords4Uniform,
@@ -144,15 +143,15 @@ module Sprite =
         Gl.Enable EnableCap.CullFace
         match clipOpt with
         | ValueSome clip ->
-            let offsetBounds = Viewport.getOffsetBounds windowSize viewport
             let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
             let minNdc = minClip / minClip.W * single viewport.DisplayScalar
-            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.DisplayResolution.V2
+            let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
             let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+            let offset = viewport.Bounds.Min
             Gl.Enable EnableCap.ScissorTest
             Gl.Scissor
-                ((minScissor.X |> round |> int) + offsetBounds.Min.X,
-                 (minScissor.Y |> round |> int) + offsetBounds.Min.Y,
+                ((minScissor.X |> round |> int) + offset.X,
+                 (minScissor.Y |> round |> int) + offset.Y,
                  int sizeScissor.X,
                  int sizeScissor.Y)
         | ValueNone -> ()

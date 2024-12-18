@@ -836,7 +836,7 @@ type Renderer3d =
     /// The current renderer configuration.
     abstract RendererConfig : Renderer3dConfig
     /// Render a frame of the game.
-    abstract Render : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> single -> Vector2i -> Viewport -> RenderMessage3d List -> unit
+    abstract Render : Frustum -> Frustum -> Frustum -> Box3 -> Vector3 -> Quaternion -> single -> Viewport -> Viewport -> RenderMessage3d List -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -857,7 +857,8 @@ type [<ReferenceEquality>] StubRenderer3d =
 type [<ReferenceEquality>] GlRenderer3d =
     private
         { Window : Window
-          mutable Viewport : Viewport
+          mutable GeometryViewport : Viewport
+          mutable RasterViewport : Viewport
           LazyTextureQueues : ConcurrentDictionary<OpenGL.Texture.LazyTexture ConcurrentQueue, OpenGL.Texture.LazyTexture ConcurrentQueue>
           TextureServer : OpenGL.Texture.TextureServer
           SkyBoxShader : OpenGL.SkyBox.SkyBoxShader
@@ -2545,13 +2546,13 @@ type [<ReferenceEquality>] GlRenderer3d =
         renderTasks.ForwardStatic.Clear ()
 
         // setup geometry buffer and viewport
-        let displayResolution = renderer.Viewport.DisplayResolution
+        let geometryResolution = renderer.GeometryViewport.Bounds.Size
         let (positionTexture, albedoTexture, materialTexture, normalPlusTexture, geometryRenderbuffer, geometryFramebuffer) = renderer.PhysicallyBasedBuffers.GeometryBuffers
         OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, geometryRenderbuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, geometryFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
         // render static surfaces deferred
@@ -2607,7 +2608,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, lightMappingFramebuffer)
                 OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
                 OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+                OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
                 OpenGL.Hl.Assert ()
 
                 // deferred render light mapping quad
@@ -2627,7 +2628,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ambientFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render ambient quad
@@ -2643,7 +2644,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, irradianceFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render irradiance quad
@@ -2659,7 +2660,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, environmentFilterFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render environment filter quad
@@ -2678,7 +2679,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             if renderer.RendererConfig.SsaoEnabled then
 
                 // setup unfiltered ssao buffer and viewport
-                let ssaoResolution = renderer.Viewport.SsaoResolution
+                let ssaoResolution = renderer.GeometryViewport.SsaoResolution
                 let (ssaoTextureUnfiltered, ssaoRenderbuffer, ssaoFramebuffer) = renderer.PhysicallyBasedBuffers.SsaoBuffersUnfiltered
                 OpenGL.Gl.BindRenderbuffer (OpenGL.RenderbufferTarget.Renderbuffer, ssaoRenderbuffer)
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, ssaoFramebuffer)
@@ -2719,7 +2720,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, lightingFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render lighting quad to lighting buffers
@@ -2750,7 +2751,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, fogAccumDownSampleFramebuffer)
                 OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
                 OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                OpenGL.Gl.Viewport (0, 0, displayResolution.X / 2, displayResolution.Y / 2)
+                OpenGL.Gl.Viewport (0, 0, geometryResolution.X / 2, geometryResolution.Y / 2)
                 OpenGL.Hl.Assert ()
 
                 // deferred render fog accum quad to down-sample buffers
@@ -2763,7 +2764,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                 OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, fogAccumUpSampleFramebuffer)
                 OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
                 OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-                OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+                OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
                 OpenGL.Hl.Assert ()
 
                 // deferred render fog accum quad to up-sample buffers
@@ -2779,7 +2780,7 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.Framebuffer, compositionFramebuffer)
         OpenGL.Gl.ClearColor (Constants.Render.ViewportClearColor.R, Constants.Render.ViewportClearColor.G, Constants.Render.ViewportClearColor.B, Constants.Render.ViewportClearColor.A)
         OpenGL.Gl.Clear (OpenGL.ClearBufferMask.ColorBufferBit ||| OpenGL.ClearBufferMask.DepthBufferBit ||| OpenGL.ClearBufferMask.StencilBufferBit)
-        OpenGL.Gl.Viewport (0, 0, displayResolution.X, displayResolution.Y)
+        OpenGL.Gl.Viewport (0, 0, geometryResolution.X, geometryResolution.Y)
         OpenGL.Hl.Assert ()
 
         // deferred render composition quad to composition buffers
@@ -2789,8 +2790,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.ReadFramebuffer, geometryFramebuffer)
         OpenGL.Gl.BindFramebuffer (OpenGL.FramebufferTarget.DrawFramebuffer, compositionFramebuffer)
         OpenGL.Gl.BlitFramebuffer
-            (0, 0, displayResolution.X, displayResolution.Y,
-             0, 0, displayResolution.X, displayResolution.Y,
+            (0, 0, geometryResolution.X, geometryResolution.Y,
+             0, 0, geometryResolution.X, geometryResolution.Y,
              OpenGL.ClearBufferMask.DepthBufferBit,
              OpenGL.BlitFramebufferFilter.Nearest)
         OpenGL.Hl.Assert ()
@@ -2842,14 +2843,15 @@ type [<ReferenceEquality>] GlRenderer3d =
                     renderer.PhysicallyBasedTerrainGeometries.Remove geometry.Key |> ignore<bool>
 
     /// Render 3d surfaces.
-    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView windowSize viewport renderbuffer framebuffer renderMessages renderer =
+    static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView geometryViewport (rasterViewport : Viewport) renderbuffer framebuffer renderMessages renderer =
 
-        // update viewport and recreate buffers when needed
-        if viewport <> renderer.Viewport then
+        // updates viewports, recreating buffers as needed
+        if geometryViewport <> renderer.GeometryViewport then
             GlRenderer3d.invalidateCaches renderer
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
-            renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers viewport
-            renderer.Viewport <- viewport
+            renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
+            renderer.GeometryViewport <- geometryViewport
+        renderer.RasterViewport <- rasterViewport
 
         // categorize messages
         let userDefinedStaticModelsToDestroy = SList.make ()
@@ -3092,7 +3094,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                             if shouldDraw then
 
                                 // draw shadow texture
-                                let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex renderer.Viewport
+                                let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex renderer.GeometryViewport
                                 let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowTextureBuffersArray.[shadowTextureBufferIndex]
                                 GlRenderer3d.renderShadowTexture renderTasks renderer shadowOrigin shadowView shadowProjection shadowLightType shadowResolution shadowRenderbuffer shadowFramebuffer
 
@@ -3150,7 +3152,7 @@ type [<ReferenceEquality>] GlRenderer3d =
                                     | (true, renderTasksCached) when renderTasksCached.ShadowBufferIndexOpt = Some (shadowMapBufferIndex + Constants.Render.ShadowTexturesMaxShader) -> not (RenderTasks.shadowUpToDate renderTasks renderTasksCached)
                                     | (_, _) -> true
                                 if shouldDraw then
-                                    let shadowResolution = renderer.Viewport.ShadowResolution
+                                    let shadowResolution = renderer.GeometryViewport.ShadowResolution
                                     let (shadowTexture, shadowRenderbuffer, shadowFramebuffer) = renderer.PhysicallyBasedBuffers.ShadowMapBuffersArray.[shadowMapBufferIndex]
                                     GlRenderer3d.renderShadowMap renderTasks renderer lightOrigin shadowResolution shadowTexture shadowRenderbuffer shadowFramebuffer
 
@@ -3172,10 +3174,10 @@ type [<ReferenceEquality>] GlRenderer3d =
             true None eyeCenter
             (Viewport.getView3d eyeCenter eyeRotation)
             (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)
-            (Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport)
-            (Viewport.getProjection3d eyeFieldOfView viewport)
-            (Viewport.getOffsetBounds windowSize viewport)
-            (Viewport.getProjection3d eyeFieldOfView viewport)
+            (Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView geometryViewport)
+            (Viewport.getProjection3d eyeFieldOfView geometryViewport)
+            rasterViewport.Bounds
+            (Viewport.getProjection3d eyeFieldOfView rasterViewport)
             renderbuffer
             framebuffer
 
@@ -3206,7 +3208,7 @@ type [<ReferenceEquality>] GlRenderer3d =
             renderer.ReloadAssetsRequested <- false
 
     /// Make a GlRenderer3d.
-    static member make glContext window viewport =
+    static member make glContext window geometryViewport rasterViewport =
 
         // start lazy texture server
         let sglWindow = match window with SglWindow sglWindow -> sglWindow.SglWindow
@@ -3413,7 +3415,7 @@ type [<ReferenceEquality>] GlRenderer3d =
               TwoSided = false }
 
         // create physically-based buffers using the display viewport
-        let physicallyBasedBuffers = OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers viewport
+        let physicallyBasedBuffers = OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport
         OpenGL.Hl.Assert ()
 
         // create forward surfaces comparer
@@ -3432,7 +3434,8 @@ type [<ReferenceEquality>] GlRenderer3d =
         // make renderer
         let renderer =
             { Window = window
-              Viewport = viewport
+              GeometryViewport = geometryViewport
+              RasterViewport = rasterViewport
               LazyTextureQueues = lazyTextureQueues
               TextureServer = textureServer
               SkyBoxShader = skyBoxShader
@@ -3502,10 +3505,10 @@ type [<ReferenceEquality>] GlRenderer3d =
         member renderer.RendererConfig =
             renderer.RendererConfig
 
-        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView windowSize viewport renderMessages =
+        member renderer.Render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport renderMessages =
             OpenGL.Hl.ResetDrawCalls ()
             if renderMessages.Count > 0 then
-                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView windowSize viewport 0u 0u renderMessages renderer
+                GlRenderer3d.render frustumInterior frustumExterior frustumImposter lightBox eyeCenter eyeRotation eyeFieldOfView geometryViewport rasterViewport 0u 0u renderMessages renderer
 
         member renderer.CleanUp () =
             OpenGL.Gl.DeleteProgram renderer.SkyBoxShader.SkyBoxShader

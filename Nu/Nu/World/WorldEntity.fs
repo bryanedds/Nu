@@ -648,7 +648,7 @@ module WorldEntityModule =
         /// Attempt to pick an entity at the given position.
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
-            let viewport = World.getViewport world
+            let viewport = world.ViewportInner
             let eyeCenter = World.getEye2dCenter world
             let eyeSize = World.getEye2dSize world
             Array.tryFind (fun (entity : Entity) ->
@@ -660,8 +660,8 @@ module WorldEntityModule =
                 entitiesSorted
 
         /// Attempt to pick a 3d entity with the given ray.
-        static member tryPickEntity3d position entities world =
-            let viewport = World.getViewport world
+        static member tryPickEntity3d position entities (world : World) =
+            let viewport = world.ViewportInner
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
@@ -789,7 +789,7 @@ module WorldEntityModule =
                 let (position, positionSnapOpt) =
                     let absolute = entity.GetAbsolute world
                     if entity.GetIs2d world then
-                        let viewport = World.getViewport world
+                        let viewport = world.ViewportInner
                         let eyeCenter = World.getEye2dCenter world
                         let eyeSize = World.getEye2dSize world
                         let position =
@@ -801,13 +801,13 @@ module WorldEntityModule =
                         | Left positionSnap -> (position, Some positionSnap)
                         | Right _ -> (position, None)
                     else
+                        let viewport = world.ViewportInner
                         let eyeCenter = World.getEye3dCenter world
                         let eyeRotation = World.getEye3dRotation world
                         let eyeFieldOfView = World.getEye3dFieldOfView world
                         let position =
                             match pasteType with
                             | PasteAtMouse ->
-                                let viewport = world.Viewport
                                 let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView rightClickPosition viewport
                                 let forward = eyeRotation.Forward
                                 let plane = plane3 (eyeCenter + forward * distance) -forward

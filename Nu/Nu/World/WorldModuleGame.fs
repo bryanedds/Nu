@@ -392,7 +392,7 @@ module WorldModuleGame =
             let eyeCenter = World.getGameEye3dCenter game world
             let eyeRotation = World.getGameEye3dRotation game world
             let eyeFieldOfView = World.getGameEye3dFieldOfView game world
-            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView world.Viewport
+            Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView world.ViewportInner
 
         /// Get the current interior 3d eye frustum.
         static member getEye3dFrustumInterior world =
@@ -417,8 +417,8 @@ module WorldModuleGame =
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
-            let viewport = world.Viewport
-            Viewport.position3dToPosition2d eyeCenter eyeRotation eyeFieldOfView viewport.DisplayResolution position viewport
+            let viewport = world.ViewportInner
+            Viewport.position3dToPosition2d eyeCenter eyeRotation eyeFieldOfView viewport.Bounds.Size position viewport
 
         /// Convert the given absolute 2d position to the relative 3d ray.
         /// TODO: also implement position2dToPosition3d.
@@ -426,8 +426,8 @@ module WorldModuleGame =
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
             let eyeFieldOfView = World.getEye3dFieldOfView world
-            let viewport = world.Viewport
-            Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView viewport.DisplayResolution position viewport
+            let viewport = world.ViewportInner
+            Viewport.position2dToRay3d eyeCenter eyeRotation eyeFieldOfView viewport.Bounds.Size position viewport
 
         /// Get the current 3d light box.
         static member getLight3dBox world =

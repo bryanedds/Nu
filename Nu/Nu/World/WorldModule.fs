@@ -458,20 +458,36 @@ module WorldModule =
         static member getWindowSize world =
             match World.tryGetWindowSize world with
             | Some windowsSize -> windowsSize
-            | None -> world.Viewport.DisplayResolution
+            | None -> world.ViewportOuter.Bounds.Size
 
         /// Attempt to set the window size.
         static member trySetWindowSize size world =
             World.getAmbientStateBy (AmbientState.trySetWindowSize size) world
             world
 
-        /// Get the viewport.
-        static member getViewport (world : World) =
-            world.Viewport
+        /// Get the geometry viewport.
+        static member getViewportGeometry (world : World) =
+            world.ViewportGeometry
 
-        /// Set the viewport.
-        static member internal setViewport viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with Viewport = viewport }}
+        /// Set the geometry viewport.
+        static member setViewportGeometry viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with ViewportGeometry = viewport }}
+
+        /// Get the inner viewport.
+        static member getViewportInner (world : World) =
+            world.ViewportInner
+
+        /// Set the inner viewport.
+        static member setViewportInner viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with ViewportInner = viewport }}
+
+        /// Get the outer viewport.
+        static member getViewportOuter (world : World) =
+            world.ViewportOuter
+
+        /// Set the outer viewport.
+        static member setViewportOuter viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with ViewportOuter = viewport }}
 
         static member internal getSymbolicsBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world
