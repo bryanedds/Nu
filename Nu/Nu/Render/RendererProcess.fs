@@ -60,7 +60,7 @@ type RendererInline () =
 
     interface RendererProcess with
 
-        member this.Start fonts windowOpt_ viewportGeometry viewportInner viewportOuter =
+        member this.Start fonts windowOpt_ geometryViewport rasterViewport outerViewport =
 
             // assign windowOpt
             windowOpt <- windowOpt_
@@ -83,15 +83,15 @@ type RendererInline () =
                     OpenGL.Hl.Assert ()
 
                     // create 3d renderer
-                    let renderer3d = GlRenderer3d.make glContext window viewportGeometry viewportInner :> Renderer3d
+                    let renderer3d = GlRenderer3d.make glContext window geometryViewport rasterViewport :> Renderer3d
                     OpenGL.Hl.Assert ()
 
                     // create 2d renderer
-                    let renderer2d = GlRenderer2d.make viewportInner :> Renderer2d
+                    let renderer2d = GlRenderer2d.make rasterViewport :> Renderer2d
                     OpenGL.Hl.Assert ()
 
                     // create imgui renderer
-                    let rendererImGui = GlRendererImGui.make assetTextureRequests assetTextureOpts fonts viewportOuter :> RendererImGui
+                    let rendererImGui = GlRendererImGui.make assetTextureRequests assetTextureOpts fonts outerViewport :> RendererImGui
                     OpenGL.Hl.Assert ()
 
                     // fin
@@ -157,26 +157,26 @@ type RendererInline () =
             messages2d.Clear ()
             messagesImGui.Clear ()
 
-        member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize viewportGeometry viewportInner viewportOuter drawData =
+        member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize windowSize geometryViewport rasterViewport outerViewport drawData =
             match renderersOpt with
             | Some (renderer3d, renderer2d, rendererImGui) ->
 
                 // begin frame
-                OpenGL.Hl.BeginFrame (windowSize, viewportOuter.Bounds)
+                OpenGL.Hl.BeginFrame (windowSize, outerViewport.Bounds)
                 OpenGL.Hl.Assert ()
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView viewportGeometry viewportInner messages3d
+                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3d
                 messages3d.Clear ()
                 OpenGL.Hl.Assert ()
 
                 // render 2d
-                renderer2d.Render eye2dCenter eye2dSize viewportInner messages2d
+                renderer2d.Render eye2dCenter eye2dSize rasterViewport messages2d
                 messages2d.Clear ()
                 OpenGL.Hl.Assert ()
 
                 // render imgui
-                rendererImGui.Render viewportOuter drawData messagesImGui
+                rendererImGui.Render outerViewport drawData messagesImGui
                 messagesImGui.Clear ()
                 OpenGL.Hl.Assert ()
 
@@ -333,7 +333,7 @@ type RendererThread () =
                     | _ -> ()
                 | _ -> ())
 
-    member private this.Run fonts window viewportGeometry viewportInner viewportOuter =
+    member private this.Run fonts window geometryViewport rasterViewport outerViewport =
 
         // create gl context
         let (glFinishRequired, glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
@@ -344,15 +344,15 @@ type RendererThread () =
         OpenGL.Hl.Assert ()
 
         // create 3d renderer
-        let renderer3d = GlRenderer3d.make glContext window viewportGeometry viewportInner :> Renderer3d
+        let renderer3d = GlRenderer3d.make glContext window geometryViewport rasterViewport :> Renderer3d
         OpenGL.Hl.Assert ()
 
         // create 2d renderer
-        let renderer2d = GlRenderer2d.make viewportInner :> Renderer2d
+        let renderer2d = GlRenderer2d.make rasterViewport :> Renderer2d
         OpenGL.Hl.Assert ()
 
         // create imgui renderer
-        let rendererImGui = GlRendererImGui.make assetTextureRequests assetTextureOpts fonts viewportOuter :> RendererImGui
+        let rendererImGui = GlRendererImGui.make assetTextureRequests assetTextureOpts fonts outerViewport :> RendererImGui
 
         // mark as started
         started <- true
@@ -362,18 +362,18 @@ type RendererThread () =
 
             // wait until submission is provided
             while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
-            let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, windowSize, viewportGeometry, viewportInner, viewportOuter, drawData) = Option.get submissionOpt
+            let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, windowSize, geometryViewport, rasterViewport, outerViewport, drawData) = Option.get submissionOpt
             submissionOpt <- None
 
             // guard against early termination
             if not terminated then
 
                 // begin frame
-                OpenGL.Hl.BeginFrame (windowSize, viewportOuter.Bounds)
+                OpenGL.Hl.BeginFrame (windowSize, outerViewport.Bounds)
                 OpenGL.Hl.Assert ()
 
                 // render 3d
-                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView viewportGeometry viewportInner messages3d
+                renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView geometryViewport rasterViewport messages3d
                 freeStaticModelMessages messages3d
                 freeStaticModelSurfaceMessages messages3d
                 freeAnimatedModelMessages messages3d
@@ -381,12 +381,12 @@ type RendererThread () =
                 OpenGL.Hl.Assert ()
 
                 // render 2d
-                renderer2d.Render eye2dCenter eye2dSize viewportInner messages2d
+                renderer2d.Render eye2dCenter eye2dSize rasterViewport messages2d
                 freeSpriteMessages messages2d
                 OpenGL.Hl.Assert ()
 
                 // render imgui
-                rendererImGui.Render viewportOuter drawData messagesImGui
+                rendererImGui.Render outerViewport drawData messagesImGui
                 OpenGL.Hl.Assert ()
 
                 // end frame
@@ -417,7 +417,7 @@ type RendererThread () =
 
     interface RendererProcess with
 
-        member this.Start fonts windowOpt viewportGeometry viewportInner viewportOuter =
+        member this.Start fonts windowOpt geometryViewport rasterViewport outerViewport =
 
             // validate state
             if Option.isSome threadOpt then raise (InvalidOperationException "Render process already started.")
@@ -427,7 +427,7 @@ type RendererThread () =
             | Some window ->
 
                 // start real thread
-                let thread = Thread (ThreadStart (fun () -> this.Run fonts window viewportGeometry viewportInner viewportOuter))
+                let thread = Thread (ThreadStart (fun () -> this.Run fonts window geometryViewport rasterViewport outerViewport))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
@@ -619,7 +619,7 @@ type RendererThread () =
             messageBuffers2d.[messageBufferIndex].Clear ()
             messageBuffersImGui.[messageBufferIndex].Clear ()
 
-        member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin viewportGeometry viewportInner viewportOuter drawData =
+        member this.SubmitMessages frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation eye3dFieldOfView eye2dCenter eye2dSize eyeMargin geometryViewport rasterViewport outerViewport drawData =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
             let messages3d = messageBuffers3d.[messageBufferIndex]
             let messages2d = messageBuffers2d.[messageBufferIndex]
@@ -628,7 +628,7 @@ type RendererThread () =
             messageBuffers3d.[messageBufferIndex].Clear ()
             messageBuffers2d.[messageBufferIndex].Clear ()
             messageBuffersImGui.[messageBufferIndex].Clear ()
-            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, viewportGeometry, viewportInner, viewportOuter, drawData)
+            submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye3dFieldOfView, eye2dCenter, eye2dSize, eyeMargin, geometryViewport, rasterViewport, outerViewport, drawData)
 
         member this.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")

@@ -38,6 +38,7 @@
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
 		<Compile Include="Core\Constants.fs" />
+		<Compile Include="Core\Globals.fs" />
 		<Compile Include="Transform\Viewport.fs" />
 		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Quadtree.fs" />

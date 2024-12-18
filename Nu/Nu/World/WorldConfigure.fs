@@ -39,12 +39,13 @@ module Configure =
                 | nameof Constants.Render.SsaoResolutionDivisor -> Constants.Render.SsaoResolutionDivisor <- scvalue value
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
+                | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
                 | nameof Constants.Render.ShadowDetailedResolutionScalar -> Constants.Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Constants.Render.ShadowTexturesMax -> Constants.Render.ShadowTexturesMax <- min (scvalue value) Constants.Render.ShadowTexturesMaxShader
                 | nameof Constants.Render.ShadowMapsMax -> Constants.Render.ShadowMapsMax <- min (scvalue value) Constants.Render.ShadowMapsMaxShader
                 | nameof Constants.Gui.SliceMarginDefault -> Constants.Gui.SliceMarginDefault <- scvalue value
-                | nameof Viewport.DisplayScalar -> Viewport.DisplayScalar <- scvalue value
-                | nameof Viewport.ShadowVirtualResolution -> Viewport.ShadowVirtualResolution <- scvalue value
+                | nameof Globals.Render.DisplayScalar -> Globals.Render.DisplayScalar <- scvalue value
+                | nameof Globals.Render.ShadowScalar -> Globals.Render.ShadowScalar <- scvalue value
                 | _ -> ()
             Constants.Render.NearPlaneDistanceOmnipresent <- Constants.Render.NearPlaneDistanceInterior
             Constants.Render.FarPlaneDistanceOmnipresent <- Constants.Render.FarPlaneDistanceImposter

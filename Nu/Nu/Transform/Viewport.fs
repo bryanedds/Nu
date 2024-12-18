@@ -3,18 +3,10 @@
 
 namespace Nu
 open System
-open System.Configuration
 open System.Numerics
 open Prime
 
-[<RequireQualifiedAccess>]
-module Viewport =
-
-    let mutable DisplayScalar = match ConfigurationManager.AppSettings.["DisplayScalar"] with null -> 3 | scalar -> scvalue scalar
-    let mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings.["ShadowVirtualResolution"] with null -> 512 | scalar -> scvalue scalar
-
 /// Describes the bounds of a viewport.
-/// TODO: P0: replace non-property members with static members.
 type [<StructuralEquality; NoComparison>] Viewport =
     { DistanceNear : single
       DistanceFar : single
@@ -23,7 +15,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
       SsaoResolutionDivisor : int }
 
     member this.AspectRatio = single this.Bounds.Size.X / single this.Bounds.Size.Y
-    member this.ShadowResolution = v2iDup (Viewport.ShadowVirtualResolution * this.DisplayScalar)
+    member this.ShadowResolution = v2iDup (Constants.Render.ShadowVirtualResolution * Globals.Render.ShadowScalar * this.DisplayScalar)
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
 
     static member getShadowTextureBufferResolution shadowBufferIndex (viewport : Viewport) =
@@ -94,22 +86,22 @@ type [<StructuralEquality; NoComparison>] Viewport =
         view * projection
 
     /// Compute the absolute 2d position from the given relative 3d position.
-    static member position3dToPosition2d eyeCenter (eyeRotation : Quaternion) eyeFieldOfView (resolution : Vector2i) (position : Vector3) viewport =
+    static member position3dToPosition2d eyeCenter (eyeRotation : Quaternion) eyeFieldOfView (position : Vector3) viewport =
         let view = Viewport.getView3d eyeCenter eyeRotation
         let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjection : Matrix4x4 = view * projection
         let positionViewProjection = (Vector4 (position, 1.0f)).Transform viewProjection
         let positionNdc = positionViewProjection.V3 / positionViewProjection.W
-        let position2d = v3 (positionNdc.X * single (resolution.X / 2)) (positionNdc.Y * single (resolution.Y / 2)) positionNdc.Z
+        let position2d = v3 (positionNdc.X * single (viewport.Bounds.Size.X / 2)) (positionNdc.Y * single (viewport.Bounds.Size.Y / 2)) positionNdc.Z
         position2d
 
     /// Compute the relative 3d ray from the given absolute 2d position.
     /// TODO: also implement Position2dToPosition3d.
-    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (resolution : Vector2i) (position : Vector3) viewport =
+    static member position2dToRay3d (eyeCenter : Vector3) (eyeRotation : Quaternion) eyeFieldOfView (position : Vector3) viewport =
         let view = Viewport.getView3d eyeCenter eyeRotation
         let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjectionInverse = (view * projection).Inverted
-        let positionNdc = v3 (position.X / single (resolution.X * 2)) (position.Y / single (resolution.Y * 2)) 0.0f
+        let positionNdc = v3 (position.X / single (viewport.Bounds.Size.X * 2)) (position.Y / single (viewport.Bounds.Size.Y * 2)) 0.0f
         let positionViewProjection = positionNdc.Transform viewProjectionInverse
         let positionView = Vector4 (positionViewProjection.X, positionViewProjection.Y, -1.0f, 0.0f)
         let position3d = (positionView.Transform (Matrix4x4.CreateFromQuaternion eyeRotation.Inverted)).V3
@@ -178,32 +170,32 @@ type [<StructuralEquality; NoComparison>] Viewport =
         { DistanceNear = distanceNear
           DistanceFar = distanceFar
           Bounds = bounds
-          DisplayScalar = Viewport.DisplayScalar
+          DisplayScalar = Globals.Render.DisplayScalar
           SsaoResolutionDivisor = Constants.Render.SsaoResolutionDivisor }
 
     static member makeGeometry (resolution : Vector2i) =
         Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent (box2i v2iZero resolution)
 
-    static member makeInner (bounds : Box2i) =
+    static member makeRaster (bounds : Box2i) =
         Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds
 
     static member makeOuter (windowSize : Vector2i) =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let offsetMargin = Vector2i ((windowSize.X - outerResolution.X) / 2, (windowSize.Y - outerResolution.Y) / 2)
         let bounds = box2i offsetMargin outerResolution
         Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent bounds
 
     static member makeInterior () =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let bounds = box2i v2iZero outerResolution
         Viewport.make Constants.Render.NearPlaneDistanceInterior Constants.Render.FarPlaneDistanceInterior bounds
 
     static member makeExterior () =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let bounds = box2i v2iZero outerResolution
         Viewport.make Constants.Render.NearPlaneDistanceExterior Constants.Render.FarPlaneDistanceExterior bounds
 
     static member makeImposter () =
-        let outerResolution = Constants.Render.DisplayVirtualResolution * Viewport.DisplayScalar
+        let outerResolution = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
         let bounds = box2i v2iZero outerResolution
         Viewport.make Constants.Render.NearPlaneDistanceImposter Constants.Render.FarPlaneDistanceImposter bounds

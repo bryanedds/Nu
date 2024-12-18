@@ -458,7 +458,7 @@ module WorldModule =
         static member getWindowSize world =
             match World.tryGetWindowSize world with
             | Some windowsSize -> windowsSize
-            | None -> world.ViewportOuter.Bounds.Size
+            | None -> world.OuterViewport.Bounds.Size
 
         /// Attempt to set the window size.
         static member trySetWindowSize size world =
@@ -466,28 +466,28 @@ module WorldModule =
             world
 
         /// Get the geometry viewport.
-        static member getViewportGeometry (world : World) =
-            world.ViewportGeometry
+        static member getGeometryViewport (world : World) =
+            world.GeometryViewport
 
         /// Set the geometry viewport.
-        static member setViewportGeometry viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with ViewportGeometry = viewport }}
+        static member setGeometryViewport viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with GeometryViewport = viewport }}
 
         /// Get the inner viewport.
-        static member getViewportInner (world : World) =
-            world.ViewportInner
+        static member getRasterViewport (world : World) =
+            world.RasterViewport
 
         /// Set the inner viewport.
-        static member setViewportInner viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with ViewportInner = viewport }}
+        static member setRasterViewport viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with RasterViewport = viewport }}
 
         /// Get the outer viewport.
-        static member getViewportOuter (world : World) =
-            world.ViewportOuter
+        static member getOuterViewport (world : World) =
+            world.OuterViewport
 
         /// Set the outer viewport.
-        static member setViewportOuter viewport (world : World) =
-            { world with WorldExtension = { world.WorldExtension with ViewportOuter = viewport }}
+        static member setOuterViewport viewport (world : World) =
+            { world with WorldExtension = { world.WorldExtension with OuterViewport = viewport }}
 
         static member internal getSymbolicsBy by world =
             World.getAmbientStateBy (AmbientState.getSymbolicsBy by) world

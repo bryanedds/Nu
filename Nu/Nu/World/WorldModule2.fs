@@ -1138,18 +1138,18 @@ module WorldModule2 =
                         let windowSize'' = World.getWindowSize world
                         let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
                         let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
-                        Viewport.DisplayScalar <- min xScalar yScalar
+                        Globals.Render.DisplayScalar <- min xScalar yScalar
 
                         // update view ports
-                        let world = World.setViewportOuter (Viewport.makeOuter windowSize'') world
-                        let world = World.setViewportInner (Viewport.makeInner world.ViewportOuter.Bounds) world
-                        let world = World.setViewportGeometry (Viewport.makeGeometry windowSize'') world
+                        let world = World.setOuterViewport (Viewport.makeOuter windowSize'') world
+                        let world = World.setRasterViewport (Viewport.makeRaster world.OuterViewport.Bounds) world
+                        let world = World.setGeometryViewport (Viewport.makeGeometry windowSize'') world
                         world
 
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
                     let io = ImGui.GetIO ()
-                    let outerOffset = world.ViewportOuter.Bounds.Min
+                    let outerOffset = world.OuterViewport.Bounds.Min
                     io.AddMousePosEvent (single (evt.button.x - outerOffset.X), single (evt.button.y - outerOffset.Y))
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
@@ -2131,9 +2131,9 @@ module WorldModule2 =
                                                                     (World.getEye2dCenter world)
                                                                     (World.getEye2dSize world)
                                                                     (World.getWindowSize world)
-                                                                    (World.getViewportGeometry world)
-                                                                    (World.getViewportInner world)
-                                                                    (World.getViewportOuter world)
+                                                                    (World.getGeometryViewport world)
+                                                                    (World.getRasterViewport world)
+                                                                    (World.getOuterViewport world)
                                                                     drawData
 
                                                                 // post-process imgui frame

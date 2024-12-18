@@ -185,6 +185,7 @@ module Render =
     let [<Literal>] LightMapsMaxForward = 2
     let [<Literal>] LightsMaxDeferred = 32
     let [<Literal>] LightsMaxForward = 8
+    let [<Uniform>] mutable ShadowVirtualResolution = match ConfigurationManager.AppSettings.["ShadowVirtualResolution"] with null -> 128 | scalar -> scvalue scalar
     let [<Literal>] ShadowTexturesMaxShader = 16 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Literal>] ShadowMapsMaxShader = 8 // NOTE: remember to update SHADOW_TEXTURES_MAX in shaders when changing this!
     let [<Uniform>] mutable ShadowTexturesMax = match ConfigurationManager.AppSettings.["ShadowTexturesMax"] with null -> 16 | shadowTexturesMax -> min (scvalue shadowTexturesMax) ShadowTexturesMaxShader
