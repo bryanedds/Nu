@@ -210,10 +210,9 @@ type RendererThread () =
     let [<VolatileField>] mutable started = false
     let [<VolatileField>] mutable terminated = false
     let [<VolatileField>] mutable submissionOpt = Option<Frustum * Frustum * Frustum * Box3 * RenderMessage3d List * RenderMessage2d List * RenderMessageImGui List * Vector3 * Quaternion * Vector2 * Vector2 * Vector2i * ImDrawDataPtr>.None
+    let [<VolatileField>] mutable swapRequested = false
+    let [<VolatileField>] mutable swapCompleted = false
     let [<VolatileField>] mutable renderer3dConfig = Renderer3dConfig.defaultConfig
-    let submissionProvided = new SemaphoreSlim (0, 1)
-    let swapRequested = new SemaphoreSlim (0, 1)
-    let swapCompleted = new SemaphoreSlim (0, 1)
     let [<VolatileField>] mutable messageBufferIndex = 0
     let messageBuffers3d = [|List (); List ()|]
     let messageBuffers2d = [|List (); List ()|]
@@ -362,14 +361,12 @@ type RendererThread () =
         while not terminated do
 
             // wait until submission is provided
-            submissionProvided.Wait ()
+            while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
+            let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
+            submissionOpt <- None
 
             // guard against early termination
             if not terminated then
-
-                // receive submission
-                let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
-                submissionOpt <- None
 
                 // begin frame
                 OpenGL.Hl.BeginFrame (Constants.Render.OffsetViewport windowSize, windowSize)
@@ -400,13 +397,14 @@ type RendererThread () =
                 if not terminated then
             
                     // wait until swap is requested
-                    while not (swapRequested.Wait 33) && not terminated do ()
+                    while not swapRequested && not terminated do Thread.Yield () |> ignore<bool>
+                    swapRequested <- false
 
                     // guard against early termination
                     if not terminated then
 
                         // notify swap is completed
-                        swapCompleted.Release () |> ignore<int>
+                        swapCompleted <- true
 
                         // swap, optionally finishing
                         if glFinishRequired then OpenGL.Gl.Finish ()
@@ -440,11 +438,13 @@ type RendererThread () =
                 let thread = Thread (ThreadStart (fun () ->
                     started <- true
                     while not terminated do
-                        submissionProvided.Wait ()
+                        while Option.isNone submissionOpt && not terminated do Thread.Yield () |> ignore<bool>
+                        submissionOpt <- None
                         if not terminated then
-                            while not (swapRequested.Wait 33) && not terminated do ()
+                            while not swapRequested && not terminated do ()
+                            swapRequested <- false
                             if not terminated then
-                                swapCompleted.Release () |> ignore<int>))
+                                swapCompleted <- true))
                 threadOpt <- Some thread
                 thread.IsBackground <- true
                 thread.Start ()
@@ -629,12 +629,12 @@ type RendererThread () =
             messageBuffers2d.[messageBufferIndex].Clear ()
             messageBuffersImGui.[messageBufferIndex].Clear ()
             submissionOpt <- Some (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, messagesImGui, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, eyeMargin, drawData)
-            submissionProvided.Release () |> ignore<int>
 
         member this.Swap () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
-            swapRequested.Release () |> ignore<int>
-            swapCompleted.Wait ()
+            swapRequested <- true
+            while not swapCompleted && not terminated do Thread.Yield () |> ignore<bool>
+            swapCompleted <- false
 
         member this.Terminate () =
             if Option.isNone threadOpt then raise (InvalidOperationException "Render process not yet started or already terminated.")
