@@ -2846,7 +2846,7 @@ type [<ReferenceEquality>] GlRenderer3d =
     static member render frustumInterior frustumExterior frustumImposter lightBox eyeCenter (eyeRotation : Quaternion) eyeFieldOfView geometryViewport (rasterViewport : Viewport) renderbuffer framebuffer renderMessages renderer =
 
         // updates viewports, recreating buffers as needed
-        if geometryViewport <> renderer.GeometryViewport then
+        if renderer.GeometryViewport <> geometryViewport then
             GlRenderer3d.invalidateCaches renderer
             OpenGL.PhysicallyBased.DestroyPhysicallyBasedBuffers renderer.PhysicallyBasedBuffers
             renderer.PhysicallyBasedBuffers <- OpenGL.PhysicallyBased.CreatePhysicallyBasedBuffers geometryViewport

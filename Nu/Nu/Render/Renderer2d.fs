@@ -801,11 +801,10 @@ type [<ReferenceEquality>] GlRenderer2d =
             for package in renderer.RenderPackages.Values do
                 for (assetName, (lastWriteTime, asset, renderAsset)) in package.Assets.Pairs do
                     if renderAsset.IsFontAsset then
+                        GlRenderer2d.freeRenderAsset renderAsset renderer
                         match GlRenderer2d.tryLoadRenderAsset package.PackageState asset renderer with
-                        | Some renderAsset ->
-                            GlRenderer2d.freeRenderAsset renderAsset renderer
-                            package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
-                        | None -> Log.error ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
+                        | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                        | None -> failwith ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
         // update viewport
         renderer.Viewport <- viewport

@@ -171,7 +171,8 @@ and ChangeData =
       Previous : obj
       Value : obj }
 
-/// A property lens interface.
+/// Provides access to the property of a simulant via an interface.
+/// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
 and Lens =
     interface
         /// The name of the property accessed by the lens.
