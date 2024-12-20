@@ -86,12 +86,12 @@ namespace Spine
         private readonly uint shader;
         private readonly int uMatrix;
         private readonly int uTexture;
-        private VertexPositionColorTextureColor[] vertexArray = { };
+        private Vertex[] vertexArray = { };
         private ushort[] triangles = { };
 
         public unsafe MeshBatcher(Func<string, string, uint> createShaderFromStrings)
         {
-            shader = createShaderFromStrings(VertexPositionColorTextureColorShader.vertexShader, VertexPositionColorTextureColorShader.fragmentShader);
+            shader = createShaderFromStrings(VertexShader.vertexShader, VertexShader.fragmentShader);
             uMatrix = Gl.GetUniformLocation(shader, "uMatrix");
             uTexture = Gl.GetUniformLocation(shader, "uTexture");
             uint[] vaoArr = new uint[0];
@@ -106,13 +106,13 @@ namespace Spine
             Gl.BindVertexArray(vao);
             Gl.BindBuffer(BufferTarget.ArrayBuffer, vbo);
             Gl.BindBuffer(BufferTarget.ElementArrayBuffer, ibo);
-            Gl.VertexAttribPointer(0u, 2, VertexAttribPointerType.Float, false, sizeof(VertexPositionColorTextureColor), (IntPtr)0);
+            Gl.VertexAttribPointer(0u, 2, VertexAttribPointerType.Float, false, sizeof(Vertex), (IntPtr)0);
             Gl.EnableVertexAttribArray(0u);
-            Gl.VertexAttribPointer(1u, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(VertexPositionColorTextureColor), (IntPtr)8);
+            Gl.VertexAttribPointer(1u, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(Vertex), (IntPtr)8);
             Gl.EnableVertexAttribArray(1u);
-            Gl.VertexAttribPointer(2u, 2, VertexAttribPointerType.Float, false, sizeof(VertexPositionColorTextureColor), (IntPtr)12);
+            Gl.VertexAttribPointer(2u, 2, VertexAttribPointerType.Float, false, sizeof(Vertex), (IntPtr)12);
             Gl.EnableVertexAttribArray(2u);
-            Gl.VertexAttribPointer(3u, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(VertexPositionColorTextureColor), (IntPtr)20);
+            Gl.VertexAttribPointer(3u, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(Vertex), (IntPtr)20);
             Gl.EnableVertexAttribArray(3u);
             Gl.BindVertexArray(0u);
             EnsureCapacity(256, 512);
@@ -129,7 +129,7 @@ namespace Spine
         public MeshItem NextItem(int vertexCount, int triangleCount)
         {
             MeshItem item = freeItems.Count > 0 ? freeItems.Dequeue() : new MeshItem();
-            if (item.vertices.Length < vertexCount) item.vertices = new VertexPositionColorTextureColor[vertexCount];
+            if (item.vertices.Length < vertexCount) item.vertices = new Vertex[vertexCount];
             if (item.triangles.Length < triangleCount) item.triangles = new int[triangleCount];
             item.vertexCount = vertexCount;
             item.triangleCount = triangleCount;
@@ -200,7 +200,7 @@ namespace Spine
 
         private void EnsureCapacity(int vertexCount, int triangleCount)
         {
-            if (vertexArray.Length < vertexCount) vertexArray = new VertexPositionColorTextureColor[vertexCount];
+            if (vertexArray.Length < vertexCount) vertexArray = new Vertex[vertexCount];
             if (triangles.Length < triangleCount) triangles = new ushort[triangleCount];
         }
 
@@ -230,7 +230,7 @@ namespace Spine
                 using (var vertexArrayHnd = vertexArray.AsMemory().Pin())
                 {
                     var vertexArrayPtr = (IntPtr)vertexArrayHnd.Pointer;
-                    Gl.BufferData(BufferTarget.ArrayBuffer, (uint)(num_vertices * sizeof(VertexPositionColorTextureColor)), vertexArrayPtr, BufferUsage.StaticDraw);
+                    Gl.BufferData(BufferTarget.ArrayBuffer, (uint)(num_vertices * sizeof(Vertex)), vertexArrayPtr, BufferUsage.StaticDraw);
                 }
                 Gl.BindBuffer(BufferTarget.ElementArrayBuffer, ibo);
                 using (var trianglesHnd = triangles.AsMemory().Pin())
@@ -268,7 +268,7 @@ namespace Spine
         public uint texture = 0;
         public uint[] textureLayers = null;
         public int vertexCount, triangleCount;
-        public VertexPositionColorTextureColor[] vertices = { };
+        public Vertex[] vertices = { };
         public int[] triangles = { };
     }
 }

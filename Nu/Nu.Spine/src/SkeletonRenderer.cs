@@ -72,42 +72,14 @@ namespace Spine
         public SkeletonRenderer(Func<string, string, uint> createShaderFromStrings)
         {
             batcher = new MeshBatcher(createShaderFromStrings);
-
-            var basicEffect = new BasicEffect(device);
-            basicEffect.World = Matrix.Identity;
-            basicEffect.View = Matrix.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, Vector3.Up);
-            basicEffect.TextureEnabled = true;
-            basicEffect.VertexColorEnabled = true;
-            effect = basicEffect;
-
-            rasterizerState = new RasterizerState();
-            rasterizerState.CullMode = CullMode.None;
-
-            Bone.yDown = true;
         }
 
         public void Begin()
         {
-            defaultBlendState = premultipliedAlpha ? BlendState.AlphaBlend : BlendState.NonPremultiplied;
-            if (blendStateMultiply == null)
-            {
-                blendStateMultiply = new BlendState();
-                blendStateMultiply.ColorBlendFunction = BlendFunction.Max;
-                blendStateMultiply.ColorSourceBlend = Blend.DestinationColor;
-                blendStateMultiply.ColorDestinationBlend = Blend.Zero;
-            }
-
-            device.RasterizerState = rasterizerState;
-            device.BlendState = defaultBlendState;
         }
 
         public void End()
         {
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                batcher.Draw(device);
-            }
             batcher.AfterLastDrawPass();
         }
 
@@ -166,30 +138,9 @@ namespace Spine
                     clipper.ClipStart(slot, clip);
                     continue;
                 }
-                else
-                {
-                    continue;
-                }
+                else continue;
 
-                // set blend state
-                BlendState blend;
-                switch (slot.Data.BlendMode)
-                {
-                    case BlendMode.Additive:
-                        blend = BlendState.Additive;
-                        break;
-                    case BlendMode.Multiply:
-                        blend = blendStateMultiply;
-                        break;
-                    default:
-                        blend = defaultBlendState;
-                        break;
-                }
-                if (device.BlendState != blend)
-                {
-                    End();
-                    device.BlendState = blend;
-                }
+                // TODO: BGE: reimplement blend batching, calling End() when blend change is detected.
 
                 // calculate color
                 float a = skeletonA * slot.A * attachmentColorA;
@@ -233,23 +184,24 @@ namespace Spine
                     uvs = clipper.ClippedUVs.Items;
                 }
 
-                if (verticesCount == 0 || indicesCount == 0)
-                    continue;
+                if (verticesCount == 0 || indicesCount == 0) continue;
 
                 // submit to batch
                 MeshItem item = batcher.NextItem(verticesCount, indicesCount);
-                if (textureObject is Texture2D)
-                    item.texture = (Texture2D)textureObject;
+                if (textureObject is uint)
+                {
+                    item.texture = (uint)textureObject;
+                }
                 else
                 {
-                    item.textureLayers = (Texture2D[])textureObject;
+                    item.textureLayers = (uint[])textureObject;
                     item.texture = item.textureLayers[0];
                 }
                 for (int ii = 0, nn = indicesCount; ii < nn; ii++)
                 {
                     item.triangles[ii] = indices[ii];
                 }
-                VertexPositionColorTextureColor[] itemVertices = item.vertices;
+                Vertex[] itemVertices = item.vertices;
                 for (int ii = 0, v = 0, nn = verticesCount << 1; v < nn; ii++, v += 2)
                 {
                     itemVertices[ii].Color = color.PackedValue;

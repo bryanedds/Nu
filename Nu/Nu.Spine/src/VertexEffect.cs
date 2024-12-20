@@ -37,7 +37,7 @@ namespace Spine
     public interface IVertexEffect
     {
         void Begin(Skeleton skeleton);
-        void Transform(ref VertexPositionColorTextureColor vertex);
+        void Transform(ref Vertex vertex);
         void End();
     }
 
@@ -60,7 +60,7 @@ namespace Spine
         {
         }
 
-        public void Transform(ref VertexPositionColorTextureColor vertex)
+        public void Transform(ref Vertex vertex)
         {
             vertex.Position.X += MathUtils.RandomTriangle(-JitterX, JitterY);
             vertex.Position.Y += MathUtils.RandomTriangle(-JitterX, JitterY);
@@ -93,7 +93,7 @@ namespace Spine
         {
         }
 
-        public void Transform(ref VertexPositionColorTextureColor vertex)
+        public void Transform(ref Vertex vertex)
         {
             float x = vertex.Position.X - worldX;
             float y = vertex.Position.Y - worldY;

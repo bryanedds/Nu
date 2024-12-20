@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Spine
 {
-    static class VertexPositionColorTextureColorShader
+    static class VertexShader
     {
         public static string vertexShader =
 @"
@@ -49,7 +49,7 @@ void main()
     }
 
     /// A vertex of a mesh generated from a Spine skeleton
-    public struct VertexPositionColorTextureColor
+    public struct Vertex
     {
         public Vector2 Position;
         public uint Color;
