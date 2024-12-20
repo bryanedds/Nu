@@ -216,6 +216,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
