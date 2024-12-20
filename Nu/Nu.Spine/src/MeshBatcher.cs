@@ -27,10 +27,12 @@
  * SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
+using OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using static Spine.SkeletonBinary;
 
 namespace Spine
 {
@@ -78,16 +80,49 @@ namespace Spine
     /// <summary>Draws batched meshes.</summary>
     public class MeshBatcher
     {
-        private readonly List<MeshItem> items;
-        private readonly Queue<MeshItem> freeItems;
+        private readonly List<MeshItem> items = new List<MeshItem>(256);
+        private readonly Queue<MeshItem> freeItems = new Queue<MeshItem>(256);
+        private readonly uint vao, vbo, ibo;
+        private readonly uint shader;
+        private readonly int uMatrix;
+        private readonly int uTexture;
         private VertexPositionColorTextureColor[] vertexArray = { };
-        private short[] triangles = { };
+        private ushort[] triangles = { };
 
-        public MeshBatcher()
+        public unsafe MeshBatcher(Func<string, string, uint> createShaderFromStrings)
         {
-            items = new List<MeshItem>(256);
-            freeItems = new Queue<MeshItem>(256);
+            shader = createShaderFromStrings(VertexPositionColorTextureColorShader.vertexShader, VertexPositionColorTextureColorShader.fragmentShader);
+            uMatrix = Gl.GetUniformLocation(shader, "uMatrix");
+            uTexture = Gl.GetUniformLocation(shader, "uTexture");
+            uint[] vaoArr = new uint[0];
+            uint[] vboArr = new uint[0];
+            uint[] iboArr = new uint[0];
+            Gl.GenVertexArrays(vaoArr);
+            Gl.GenBuffers(vboArr);
+            Gl.GenBuffers(iboArr);
+            vao = vaoArr[0];
+            vbo = vboArr[0];
+            ibo = iboArr[0];
+            Gl.BindVertexArray(vao);
+            Gl.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+            Gl.BindBuffer(BufferTarget.ElementArrayBuffer, ibo);
+            Gl.VertexAttribPointer(0u, 2, VertexAttribPointerType.Float, false, sizeof(VertexPositionColorTextureColor), (IntPtr)0);
+            Gl.EnableVertexAttribArray(0u);
+            Gl.VertexAttribPointer(1u, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(VertexPositionColorTextureColor), (IntPtr)8);
+            Gl.EnableVertexAttribArray(1u);
+            Gl.VertexAttribPointer(2u, 2, VertexAttribPointerType.Float, false, sizeof(VertexPositionColorTextureColor), (IntPtr)12);
+            Gl.EnableVertexAttribArray(2u);
+            Gl.VertexAttribPointer(3u, 4, VertexAttribPointerType.UnsignedByte, true, sizeof(VertexPositionColorTextureColor), (IntPtr)20);
+            Gl.EnableVertexAttribArray(3u);
+            Gl.BindVertexArray(0u);
             EnsureCapacity(256, 512);
+        }
+
+        public void Destroy()
+        {
+            Gl.DeleteBuffers(new uint[vbo]);
+            Gl.DeleteBuffers(new uint[ibo]);
+            Gl.DeleteVertexArrays(new uint[vao]);
         }
 
         /// <summary>Returns a pooled MeshItem.</summary>
@@ -102,13 +137,7 @@ namespace Spine
             return item;
         }
 
-        private void EnsureCapacity(int vertexCount, int triangleCount)
-        {
-            if (vertexArray.Length < vertexCount) vertexArray = new VertexPositionColorTextureColor[vertexCount];
-            if (triangles.Length < triangleCount) triangles = new short[triangleCount];
-        }
-
-        public void Draw(GraphicsDevice device)
+        public void Draw()
         {
             if (items.Count == 0) return;
 
@@ -124,7 +153,7 @@ namespace Spine
 
             vertexCount = 0;
             triangleCount = 0;
-            Texture2D lastTexture = null;
+            uint lastTexture = 0;
             for (int i = 0; i < itemCount; i++)
             {
                 MeshItem item = items[i];
@@ -132,28 +161,29 @@ namespace Spine
 
                 if (item.texture != lastTexture || vertexCount + itemVertexCount > short.MaxValue)
                 {
-                    FlushVertexArray(device, vertexCount, triangleCount);
+                    FlushVertexArray(vertexCount, triangleCount, lastTexture);
                     vertexCount = 0;
                     triangleCount = 0;
                     lastTexture = item.texture;
-                    device.Textures[0] = lastTexture;
-                    if (item.textureLayers != null)
-                    {
-                        for (int layer = 1; layer < item.textureLayers.Length; ++layer)
-                            device.Textures[layer] = item.textureLayers[layer];
-                    }
+
+                    // NOTE: BGE: dummied out since I don't know how to support this seeming behavior yet.
+                    //if (item.textureLayers != null)
+                    //{
+                    //    for (int layer = 1; layer < item.textureLayers.Length; ++layer)
+                    //        device.Textures[layer] = item.textureLayers[layer];
+                    //}
                 }
 
                 int[] itemTriangles = item.triangles;
                 int itemTriangleCount = item.triangleCount;
                 for (int ii = 0, t = triangleCount; ii < itemTriangleCount; ii++, t++)
-                    triangles[t] = (short)(itemTriangles[ii] + vertexCount);
+                    triangles[t] = (ushort)(itemTriangles[ii] + vertexCount);
                 triangleCount += itemTriangleCount;
 
                 Array.Copy(item.vertices, 0, vertexArray, vertexCount, itemVertexCount);
                 vertexCount += itemVertexCount;
             }
-            FlushVertexArray(device, vertexCount, triangleCount);
+            FlushVertexArray(vertexCount, triangleCount, lastTexture);
         }
 
         public void AfterLastDrawPass()
@@ -162,27 +192,81 @@ namespace Spine
             for (int i = 0; i < itemCount; i++)
             {
                 var item = items[i];
-                item.texture = null;
+                item.texture = 0;
                 freeItems.Enqueue(item);
             }
             items.Clear();
         }
 
-        private void FlushVertexArray(GraphicsDevice device, int vertexCount, int triangleCount)
+        private void EnsureCapacity(int vertexCount, int triangleCount)
         {
-            if (vertexCount == 0) return;
-            device.DrawUserIndexedPrimitives(
-                PrimitiveType.TriangleList,
-                vertexArray, 0, vertexCount,
-                triangles, 0, triangleCount / 3,
-                VertexPositionColorTextureColor.VertexDeclaration);
+            if (vertexArray.Length < vertexCount) vertexArray = new VertexPositionColorTextureColor[vertexCount];
+            if (triangles.Length < triangleCount) triangles = new ushort[triangleCount];
+        }
+
+        private void FlushVertexArray(int num_vertices, int num_indices, uint texture)
+        {
+            unsafe
+            {
+                // setup state. TODO: implement parameterized blending styles.
+                Gl.BlendEquation(BlendEquationMode.FuncAdd);
+                Gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                Gl.Enable(EnableCap.Blend);
+                Gl.Enable(EnableCap.CullFace);
+
+                // setup shader
+                Gl.UseProgram(shader);
+                var matrix = Matrix4x4.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, new Vector3(0, 1, 0));
+                Gl.UniformMatrix4(uMatrix, false, matrix.ToArray());
+                Gl.Uniform1(uTexture, 0);
+
+                // setup texture
+                Gl.ActiveTexture(TextureUnit.Texture0);
+                Gl.BindTexture(TextureTarget.Texture2d, texture);
+
+                // setup geometry
+                Gl.BindVertexArray(vao);
+                Gl.BindBuffer(BufferTarget.ArrayBuffer, vbo);
+                using (var vertexArrayHnd = vertexArray.AsMemory().Pin())
+                {
+                    var vertexArrayPtr = (IntPtr)vertexArrayHnd.Pointer;
+                    Gl.BufferData(BufferTarget.ArrayBuffer, (uint)(num_vertices * sizeof(VertexPositionColorTextureColor)), vertexArrayPtr, BufferUsage.StaticDraw);
+                }
+                Gl.BindBuffer(BufferTarget.ElementArrayBuffer, ibo);
+                using (var trianglesHnd = triangles.AsMemory().Pin())
+                {
+                    var trianglesPtr = (IntPtr)trianglesHnd.Pointer;
+                    Gl.BufferData(BufferTarget.ElementArrayBuffer, (uint)(num_indices * sizeof(ushort)), trianglesPtr, BufferUsage.StaticDraw);
+                }
+
+                // draw geometry
+                Gl.DrawElements(PrimitiveType.Triangles, num_indices, DrawElementsType.UnsignedShort, IntPtr.Zero);
+                Gl.BindVertexArray(0u);
+
+                // teardown geometry
+                Gl.BindVertexArray(0u);
+
+                // teardown texture
+                Gl.ActiveTexture(TextureUnit.Texture0);
+                Gl.BindTexture(TextureTarget.Texture2d, 0u);
+
+                // teardown shader
+                Gl.UseProgram(0u);
+
+                // teardown state
+                Gl.BlendEquation(BlendEquationMode.FuncAdd);
+                Gl.BlendFunc(BlendingFactor.One, BlendingFactor.Zero);
+                Gl.Disable(EnableCap.Blend);
+                Gl.Disable(EnableCap.CullFace);
+                Gl.Disable(EnableCap.ScissorTest);
+            }
         }
     }
 
     public class MeshItem
     {
-        public Texture2D texture = null;
-        public Texture2D[] textureLayers = null;
+        public uint texture = 0;
+        public uint[] textureLayers = null;
         public int vertexCount, triangleCount;
         public VertexPositionColorTextureColor[] vertices = { };
         public int[] triangles = { };

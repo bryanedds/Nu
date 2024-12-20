@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<RootNamespace>Nu.Spine</RootNamespace>
-		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<ApplicationIcon />
 		<OutputType>Library</OutputType>
 		<StartupObject />

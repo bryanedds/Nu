@@ -42,43 +42,36 @@ namespace Spine
         private const int BL = 2;
         private const int BR = 3;
 
-        SkeletonClipping clipper = new SkeletonClipping();
+        private SkeletonClipping clipper = new SkeletonClipping();
+        private MeshBatcher batcher;
+        private float[] vertices = new float[8];
+        private int[] quadTriangles = { 0, 1, 2, 2, 3, 0 };
+        private bool premultipliedAlpha;
+        private float zSpacing = 0.0f;
+        private float z = 0.0f;
+
         /// <summary>Returns the <see cref="SkeletonClipping"/> used by this renderer for use with e.g.
         /// <see cref="Skeleton.GetBounds(out float, out float, out float, out float, ref float[], SkeletonClipping)"/>
         /// </summary>
         public SkeletonClipping SkeletonClipping { get { return clipper; } }
-
-        GraphicsDevice device;
-        MeshBatcher batcher;
+        
         public MeshBatcher Batcher { get { return batcher; } }
-        RasterizerState rasterizerState;
-        float[] vertices = new float[8];
-        int[] quadTriangles = { 0, 1, 2, 2, 3, 0 };
-        BlendState defaultBlendState;
-        BlendState blendStateMultiply = null;
 
-        Effect effect;
-        public Effect Effect { get { return effect; } set { effect = value; } }
         public IVertexEffect VertexEffect { get; set; }
 
-        private bool premultipliedAlpha;
         public bool PremultipliedAlpha { get { return premultipliedAlpha; } set { premultipliedAlpha = value; } }
 
         /// <summary>Attachments are rendered back to front in the x/y plane by the SkeletonRenderer.
         /// Each attachment is offset by a customizable z-spacing value on the z-axis to avoid z-fighting
         /// in shaders with ZWrite enabled. Typical values lie in the range [-0.1, 0].</summary>
-        private float zSpacing = 0.0f;
         public float ZSpacing { get { return zSpacing; } set { zSpacing = value; } }
 
         /// <summary>A Z position offset added at each vertex.</summary>
-        private float z = 0.0f;
         public float Z { get { return z; } set { z = value; } }
 
-        public SkeletonRenderer(GraphicsDevice device)
+        public SkeletonRenderer(Func<string, string, uint> createShaderFromStrings)
         {
-            this.device = device;
-
-            batcher = new MeshBatcher();
+            batcher = new MeshBatcher(createShaderFromStrings);
 
             var basicEffect = new BasicEffect(device);
             basicEffect.World = Matrix.Identity;
@@ -131,7 +124,7 @@ namespace Spine
             {
                 Slot slot = drawOrderItems[i];
                 Attachment attachment = slot.Attachment;
-                float attachmentZOffset = z + zSpacing * i;
+                //float attachmentZOffset = z + zSpacing * i; NOTE: BGE: not utilized because the shader I found doesn't seem to support it.
 
                 float attachmentColorR, attachmentColorG, attachmentColorB, attachmentColorA;
                 object textureObject = null;
@@ -259,11 +252,11 @@ namespace Spine
                 VertexPositionColorTextureColor[] itemVertices = item.vertices;
                 for (int ii = 0, v = 0, nn = verticesCount << 1; v < nn; ii++, v += 2)
                 {
-                    itemVertices[ii].Color = color;
-                    itemVertices[ii].Color2 = darkColor;
+                    itemVertices[ii].Color = color.PackedValue;
+                    itemVertices[ii].Color2 = darkColor.PackedValue;
                     itemVertices[ii].Position.X = vertices[v];
                     itemVertices[ii].Position.Y = vertices[v + 1];
-                    itemVertices[ii].Position.Z = attachmentZOffset;
+                    //itemVertices[ii].Position.Z = attachmentZOffset; NOTE: BGE: not supported by the shader I found.
                     itemVertices[ii].TextureCoordinate.X = uvs[v];
                     itemVertices[ii].TextureCoordinate.Y = uvs[v + 1];
                     if (VertexEffect != null) VertexEffect.Transform(ref itemVertices[ii]);

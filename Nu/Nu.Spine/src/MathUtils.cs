@@ -30,6 +30,7 @@
 //#define USE_FAST_SIN_COS_ATAN2_APPROXIMATIONS
 
 using System;
+using System.Numerics;
 
 namespace Spine {
 	public static class MathUtils {
@@ -181,4 +182,17 @@ namespace Spine {
 			return (float)Math.Pow(a - 1, Power) * (Power % 2 == 0 ? -1 : 1) + 1;
 		}
 	}
+
+	public static class Matrix4x4Extension
+	{
+        public static float[] ToArray (this Matrix4x4 m)
+		{
+			var value = new float[16];
+            value[00] = m.M11; value[01] = m.M12; value[02] = m.M13; value[03] = m.M14;
+            value[04] = m.M21; value[05] = m.M22; value[06] = m.M23; value[07] = m.M24;
+            value[08] = m.M31; value[09] = m.M32; value[10] = m.M33; value[11] = m.M34;
+            value[12] = m.M41; value[13] = m.M42; value[14] = m.M43; value[15] = m.M44;
+			return value;
+		}
+    }
 }
