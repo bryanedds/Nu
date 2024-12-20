@@ -2,10 +2,10 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<RootNamespace>spine_csharp_standard</RootNamespace>
+		<RootNamespace>Nu.Spine</RootNamespace>
 		<Nullable>enable</Nullable>
 		<ApplicationIcon />
-		<OutputType>Exe</OutputType>
+		<OutputType>Library</OutputType>
 		<StartupObject />
 	</PropertyGroup>
 

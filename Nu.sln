@@ -18,7 +18,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nu.Math", "Nu\Nu.Math\Nu.Ma
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Pipe", "Nu\Nu.Pipe\Nu.Pipe.fsproj", "{85D631A5-821A-4755-A68E-C1FFC64E469A}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Spine", "Nu\Nu.Spine\Nu.Spine.csproj", "{0B4656BB-6912-4F65-BC87-564D43D492AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nu.Spine", "Nu\Nu.Spine\Nu.Spine.csproj", "{0B4656BB-6912-4F65-BC87-564D43D492AD}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Blaze Vector", "Projects\Blaze Vector\Blaze Vector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
 EndProject
