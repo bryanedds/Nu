@@ -137,7 +137,7 @@ namespace Spine
             return item;
         }
 
-        public void Draw()
+        public void Draw(in Matrix4x4 matrix)
         {
             if (items.Count == 0) return;
 
@@ -161,7 +161,7 @@ namespace Spine
 
                 if (item.texture != lastTexture || vertexCount + itemVertexCount > short.MaxValue)
                 {
-                    FlushVertexArray(vertexCount, triangleCount, lastTexture);
+                    FlushVertexArray(vertexCount, triangleCount, lastTexture, matrix);
                     vertexCount = 0;
                     triangleCount = 0;
                     lastTexture = item.texture;
@@ -183,7 +183,7 @@ namespace Spine
                 Array.Copy(item.vertices, 0, vertexArray, vertexCount, itemVertexCount);
                 vertexCount += itemVertexCount;
             }
-            FlushVertexArray(vertexCount, triangleCount, lastTexture);
+            FlushVertexArray(vertexCount, triangleCount, lastTexture, matrix);
         }
 
         public void AfterLastDrawPass()
@@ -204,7 +204,7 @@ namespace Spine
             if (triangles.Length < triangleCount) triangles = new ushort[triangleCount];
         }
 
-        private unsafe void FlushVertexArray(int num_vertices, int num_indices, uint texture)
+        private unsafe void FlushVertexArray(int num_vertices, int num_indices, uint texture, Matrix4x4 matrix)
         {
             if (num_vertices > 0 && num_indices > 0)
             {
@@ -216,7 +216,6 @@ namespace Spine
 
                 // setup shader
                 Gl.UseProgram(shader);
-                var matrix = Matrix4x4.CreateLookAt(new Vector3(0.0f, 0.0f, 1.0f), Vector3.Zero, new Vector3(0, 1, 0));
                 Gl.UniformMatrix4(uMatrix, false, matrix.ToArray());
                 Gl.Uniform1(uTexture, 0);
 

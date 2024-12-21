@@ -806,6 +806,8 @@ type [<ReferenceEquality>] GlRenderer2d =
                         | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
                         | _ -> 0u
                     | _ -> 0u
+                let viewProjection =
+                    Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
                 let ssRenderer =
                     match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
                     | (true, (used, ssRenderer)) ->
@@ -816,7 +818,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
                         ssRenderer
                 ssRenderer.Draw (getTextureId, descriptor.SpineSkeletonClone)
-                ssRenderer.Batcher.Draw ()
+                ssRenderer.Batcher.Draw &viewProjection
                 ssRenderer.Batcher.AfterLastDrawPass ()
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
