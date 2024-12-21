@@ -1847,10 +1847,9 @@ type SpineSkeletonFacet () =
     override this.Update (entity, world) =
         match entity.GetSpineSkeletonInstanceOpt world with
         | Some spineSkeletonInstance ->
-            // TODO: P0: figure out what to do about undo / redo operations here! Maybe recreate if
-            // spineSkeletonInstance.Time <> world.GameTime.Seconds?
-            let gameDelta = world.GameDelta
-            spineSkeletonInstance.Update gameDelta.Seconds
+            let startTime = entity.GetStartTime world
+            let localTime = world.GameTime - startTime
+            spineSkeletonInstance.Time <- localTime.Seconds
             world
         | None -> world
 
