@@ -153,7 +153,7 @@ namespace Spine {
 			shearY = bone.shearY;
 			inherit = bone.inherit;
 
-			// NOTE: BGE: additional data copying to try to make Skeleton copy ctor work as advertised.
+			// NOTE: BGE: additional data copying to try to make copy ctor work as advertised.
 			a = bone.a;
 			b = bone.b;
 			c = bone.c;
