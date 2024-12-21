@@ -798,16 +798,18 @@ type [<ReferenceEquality>] GlRenderer2d =
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
         | RenderSpineSkeleton descriptor ->
-            let ssRenderer =
-                match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
-                | (true, (used, ssRenderer)) ->
-                    used.Value <- true
-                    ssRenderer
-                | (false, _) ->
-                    let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
-                    renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
-                    ssRenderer
-            ssRenderer.Draw descriptor.SpineSkeletonClone
+            flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
+                let ssRenderer =
+                    match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
+                    | (true, (used, ssRenderer)) ->
+                        used.Value <- true
+                        ssRenderer
+                    | (false, _) ->
+                        let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
+                        renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
+                        ssRenderer
+                ssRenderer.Draw descriptor.SpineSkeletonClone
+                ssRenderer.Batcher.Draw ()
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
@@ -856,6 +858,8 @@ type [<ReferenceEquality>] GlRenderer2d =
         for entry in entriesUnused do
             let spineSkeletonId = entry.Key
             renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
+            let spineSkeleton = snd entry.Value
+            spineSkeleton.Batcher.Destroy ()
 
     /// Make a GlRenderer2d.
     static member make viewport =

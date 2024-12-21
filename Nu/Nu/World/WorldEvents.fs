@@ -99,6 +99,14 @@ type MountData =
     { Mount : Entity
       Mounter : Entity }
 
+/// The data for describing an animation track event.
+type SpineSkeletonAnimationTrackData =
+    | SpineSkeletonAnimationStartData of Spine.TrackEntry
+    | SpineSkeletonAnimationInterruptData of Spine.TrackEntry
+    | SpineSkeletonAnimationCompleteData of Spine.TrackEntry
+    | SpineSkeletonAnimationEndData of Spine.TrackEntry
+    | SpineSkeletonAnimationEventData of Spine.TrackEntry * Spine.Event
+
 [<RequireQualifiedAccess>]
 module Events =
 
@@ -126,6 +134,7 @@ module Events =
     let BodySeparationExplicitEvent = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"
     let BodySeparationImplicitEvent = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
     let BodyTransformEvent = stoa<BodyTransformData> "BodyTransform/Event"
+    let SpineSkeletonAnimationTrackEvent = stoa<SpineSkeletonAnimationTrackData> "SpineSkeletonAnimationTrack/Event"
     let ClickEvent = stoa<unit> "Click/Event"
     let DownEvent = stoa<unit> "Down/Event"
     let UpEvent = stoa<unit> "Up/Event"

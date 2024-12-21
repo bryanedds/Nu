@@ -103,19 +103,23 @@ module Metadata =
     /// Thread-safe.
     let private tryGenerateSpineSkeletonMetadata (asset : Asset) =
         try let directoryPath = PathF.GetDirectoryName asset.FilePath
-            let fileName = PathF.GetFileName asset.FilePath
-            let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas.txt")
+            let fileName = PathF.GetFileNameWithoutExtension asset.FilePath
             let getTexture filePath =
                 match tryGenerateTextureMetadataFromFilePath filePath with
                 | Some metadata -> (metadata.TextureWidth, metadata.TextureHeight, 0ul)
                 | None -> (0, 0, 0u)
+            let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas")
             let spineTextureRetriever = Spine.TextureRetriever getTexture
-            let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever) : Spine.Atlas
-            let spineSkeletonJson = Spine.SkeletonJson spineAtlas
-            let spineSkeletonData = spineSkeletonJson.ReadSkeletonData asset.FilePath
-            Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
+            try let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever)
+                let spineSkeletonJson = Spine.SkeletonJson spineAtlas
+                let spineSkeletonData = spineSkeletonJson.ReadSkeletonData asset.FilePath
+                Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
+            with exn ->
+                let errorMessage = "Failed to load Spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
+                Log.error errorMessage
+                None
         with exn ->
-            let errorMessage = "Failed to load spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
+            let errorMessage = "Failed to load Spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
             Log.error errorMessage
             None
 

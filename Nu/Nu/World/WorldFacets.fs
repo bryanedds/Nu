@@ -1823,41 +1823,38 @@ type TmxMapFacet () =
         let tmxMap = entity.GetTmxMap world
         TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
 
+type SpineSkeletonState =
+    { SpineSkeletonInstance : Spine.Skeleton
+      SpineAnimationState : Spine.AnimationState }
+
 [<AutoOpen>]
 module SpineSkeletonExtensions =
     type Entity with
         member this.GetSpineSkeleton world : SpineSkeleton AssetTag = this.Get (nameof this.SpineSkeleton) world
         member this.SetSpineSkeleton (value : SpineSkeleton AssetTag) world = this.Set (nameof this.SpineSkeleton) value world
         member this.SpineSkeleton = lens (nameof this.SpineSkeleton) this this.GetSpineSkeleton this.SetSpineSkeleton
-        member this.GetSpineSkeletonInstanceOpt world : Spine.Skeleton option = this.Get (nameof this.SpineSkeletonInstanceOpt) world
-        member this.SetSpineSkeletonInstanceOpt (value : Spine.Skeleton option) world = this.Set (nameof this.SpineSkeletonInstanceOpt) value world
-        member this.SpineSkeletonInstanceOpt = lens (nameof this.SpineSkeletonInstanceOpt) this this.GetSpineSkeletonInstanceOpt this.SetSpineSkeletonInstanceOpt
+        member this.GetSpineSkeletonStateOpt world : SpineSkeletonState option = this.Get (nameof this.SpineSkeletonStateOpt) world
+        member this.SetSpineSkeletonStateOpt (value : SpineSkeletonState option) world = this.Set (nameof this.SpineSkeletonStateOpt) value world
+        member this.SpineSkeletonStateOpt = lens (nameof this.SpineSkeletonStateOpt) this this.GetSpineSkeletonStateOpt this.SetSpineSkeletonStateOpt
+        member this.SpineSkeletonAnimationTrackEvent = Events.SpineSkeletonAnimationTrackEvent --> this
 
 type SpineSkeletonFacet () =
     inherit Facet (false, false, false)
 
     static member Properties =
-        [define Entity.StartTime GameTime.zero
+        [define Entity.AlwaysUpdate true
+         define Entity.StartTime GameTime.zero
          define Entity.SpineSkeleton Assets.Default.SpineSkeleton
-         nonPersistent Entity.SpineSkeletonInstanceOpt None]
+         nonPersistent Entity.SpineSkeletonStateOpt None]
 
     override this.Register (entity, world) =
         entity.SetStartTime world.GameTime world
 
     override this.Update (entity, world) =
-        match entity.GetSpineSkeletonInstanceOpt world with
-        | Some spineSkeletonInstance ->
-            let startTime = entity.GetStartTime world
-            let localTime = world.GameTime - startTime
-            spineSkeletonInstance.Time <- localTime.Seconds
-            world
-        | None -> world
-
-    override this.Render (_, entity, world) =
         let spineSkeleton = entity.GetSpineSkeleton world
-        let (spineSkeletonInstanceOpt, world) =
-            match entity.GetSpineSkeletonInstanceOpt world with
-            | Some spineSkeletonInstance -> (Some spineSkeletonInstance, world)
+        let (spineSkeletonStateOpt, world) =
+            match entity.GetSpineSkeletonStateOpt world with
+            | Some spineSkeletonState -> (Some spineSkeletonState, world)
             | None ->
                 match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
                 | ValueSome metadata ->
@@ -1865,14 +1862,58 @@ type SpineSkeletonFacet () =
                     let localTime = world.GameTime - startTime
                     let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
                     spineSkeletonInstance.Time <- localTime.Seconds
-                    let world = entity.SetSpineSkeletonInstanceOpt (Some spineSkeletonInstance) world
-                    (Some spineSkeletonInstance, world)
+                    let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
+                    spineAnimationStateData.DefaultMix <- 0.2f // TODO: P0: parameterize!
+                    let spineAnimationState = Spine.AnimationState spineAnimationStateData
+                    spineAnimationState.SetAnimation (0, "flying", true) |> ignore<Spine.TrackEntry> // TODO: P0: parameterize!
+                    let spineSkeletonState = { SpineSkeletonInstance = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
+                    let world = entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
+                    (Some spineSkeletonState, world)
                 | ValueNone -> (None, world)
-        match spineSkeletonInstanceOpt with
-        | Some spineSkeletonInstance ->
+        match spineSkeletonStateOpt with
+        | Some spineSkeletonState ->
+            // TODO: P0: figure out how to deal with undo / redo.
+            let startTime = entity.GetStartTime world
+            let localTime = world.GameTime - startTime
+            let startTrackArgs = List ()
+            let interruptTrackArgs = List ()
+            let completeTrackArgs = List ()
+            let endTrackArgs = List ()
+            let eventTrackArgs = List ()
+            let startDelegate = Spine.AnimationState.TrackEntryDelegate startTrackArgs.Add
+            let interruptDelegate = Spine.AnimationState.TrackEntryDelegate interruptTrackArgs.Add
+            let completeDelegate = Spine.AnimationState.TrackEntryDelegate completeTrackArgs.Add
+            let endDelegate = Spine.AnimationState.TrackEntryDelegate endTrackArgs.Add
+            let eventDelegate = Spine.AnimationState.TrackEntryEventDelegate (fun entry event -> eventTrackArgs.Add (entry, event))
+            spineSkeletonState.SpineAnimationState.add_Start startDelegate
+            spineSkeletonState.SpineAnimationState.add_Interrupt interruptDelegate
+            spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
+            spineSkeletonState.SpineAnimationState.add_End endDelegate
+            spineSkeletonState.SpineAnimationState.add_Event eventDelegate
+            spineSkeletonState.SpineAnimationState.Update world.GameDelta.Seconds
+            spineSkeletonState.SpineSkeletonInstance.Time <- localTime.Seconds
+            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance
+            spineSkeletonState.SpineSkeletonInstance.UpdateWorldTransform Spine.Skeleton.Physics.Update
+            spineSkeletonState.SpineAnimationState.remove_Start startDelegate
+            spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
+            spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
+            spineSkeletonState.SpineAnimationState.remove_End endDelegate
+            spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world startTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world interruptTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world completeTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world endTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world eventTrackArgs
+            world
+        | None -> world
+
+    override this.Render (_, entity, world) =
+        let spineSkeleton = entity.GetSpineSkeleton world
+        match entity.GetSpineSkeletonStateOpt world with
+        | Some spineSkeletonState ->
             let mutable transform = entity.GetTransform world
             let spineSkeletonId = entity.GetId world
-            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = Spine.Skeleton spineSkeletonInstance }
+            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeletonInstance }
             let renderOperation = LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = spineSkeleton; RenderOperation2d = renderSpineSkeleton }
             World.enqueueRenderMessage2d renderOperation world
         | None -> ()

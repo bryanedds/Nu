@@ -155,6 +155,7 @@ module WorldModule3 =
                  BodyJoint2dDispatcher ()
                  TileMapDispatcher ()
                  TmxMapDispatcher ()
+                 SpineSkeletonDispatcher ()
                  Lighting3dConfigDispatcher ()
                  LightProbe3dDispatcher ()
                  Light3dDispatcher ()

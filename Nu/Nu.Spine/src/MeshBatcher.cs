@@ -94,9 +94,9 @@ namespace Spine
             shader = createShaderFromStrings(VertexShader.vertexShader, VertexShader.fragmentShader);
             uMatrix = Gl.GetUniformLocation(shader, "uMatrix");
             uTexture = Gl.GetUniformLocation(shader, "uTexture");
-            uint[] vaoArr = new uint[0];
-            uint[] vboArr = new uint[0];
-            uint[] iboArr = new uint[0];
+            uint[] vaoArr = new uint[1];
+            uint[] vboArr = new uint[1];
+            uint[] iboArr = new uint[1];
             Gl.GenVertexArrays(vaoArr);
             Gl.GenBuffers(vboArr);
             Gl.GenBuffers(iboArr);
