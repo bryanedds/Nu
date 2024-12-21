@@ -69,16 +69,16 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       TileSize : Vector2
       TileAssets : struct (TmxTileset * Image AssetTag) array }
 
-/// Describes how to render a Spine skeleton.
-type SpineSkeleton =
+/// Information needed to render a Spine skeleton.
+type SpineSkeletonInfo =
     | SpineSkeletonClone of Spine.Skeleton
     | SpineSkeletonData of single * Spine.SkeletonData
 
-/// Describes how to render tile map tiles to the rendering system.
+/// Describes how to render a Spine skeletong to the rendering system.
 type [<NoEquality; NoComparison>] SpineSkeletonDescriptor =
     { mutable Transform : Transform
       SpineSkeletonId : uint64
-      SpineSkeletonDescriptor : SpineSkeleton }
+      SpineSkeletonInfo : SpineSkeletonInfo }
 
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
@@ -811,7 +811,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
                     renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
                     ssRenderer
-            match descriptor.SpineSkeletonDescriptor with
+            match descriptor.SpineSkeletonInfo with
             | SpineSkeletonClone skeleton -> ssRenderer.Draw skeleton
             | SpineSkeletonData (time, skeletonData) ->
                 let skeleton = Spine.Skeleton skeletonData

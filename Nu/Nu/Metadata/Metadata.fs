@@ -46,43 +46,49 @@ module Metadata =
         else None
 
     /// Thread-safe.
-    let private tryGenerateTextureMetadata (asset : Asset) =
-        if File.Exists asset.FilePath then
+    let private tryGenerateTextureMetadataFromFilePath (filePath : string) =
+        if File.Exists filePath then
             let platform = Environment.OSVersion.Platform
-            let fileExtension = PathF.GetExtensionLower asset.FilePath
+            let fileExtension = PathF.GetExtensionLower filePath
             if fileExtension = ".dds" then
                 let ddsHeader = Array.zeroCreate<byte> 20
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
-                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make (int width) (int height)))
+                Some (OpenGL.Texture.TextureMetadata.make (int width) (int height))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let width = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (12, 2))
                 let height = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (14, 2))
-                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make (int width) (int height)))
+                Some (OpenGL.Texture.TextureMetadata.make (int width) (int height))
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
-                use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
+                use fileStream = new FileStream (filePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make image.Width image.Height))
+                Some (OpenGL.Texture.TextureMetadata.make image.Width image.Height)
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match OpenGL.Texture.TryCreateTextureData (true, asset.FilePath) with
+                match OpenGL.Texture.TryCreateTextureData (true, filePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()
-                    Some (TextureMetadata metadata)
+                    Some metadata
                 | None ->
-                    let errorMessage = "Failed to load texture metadata for '" + asset.FilePath + "."
+                    let errorMessage = "Failed to load texture metadata for '" + filePath + "."
                     Log.error errorMessage
                     None
         else
-            let errorMessage = "Failed to load texture due to missing file '" + asset.FilePath + "'."
+            let errorMessage = "Failed to load texture due to missing file '" + filePath + "'."
             Log.error errorMessage
             None
+
+    /// Thread-safe.
+    let private tryGenerateTextureMetadata (asset : Asset) =
+        match tryGenerateTextureMetadataFromFilePath asset.FilePath with
+        | Some metadata -> Some (TextureMetadata metadata)
+        | None -> None
 
     /// Thread-safe.
     let private tryGenerateTileMapMetadata (asset : Asset) =
@@ -99,7 +105,12 @@ module Metadata =
         try let directoryPath = PathF.GetDirectoryName asset.FilePath
             let fileName = PathF.GetFileName asset.FilePath
             let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas.txt")
-            let spineAtlas = Spine.Atlas (spineAtlasFilePath, ()) : Spine.Atlas
+            let getTexture filePath =
+                match tryGenerateTextureMetadataFromFilePath filePath with
+                | Some metadata -> (metadata.TextureWidth, metadata.TextureHeight, 0ul)
+                | None -> (0, 0, 0u)
+            let spineTextureRetriever = Spine.TextureRetriever getTexture
+            let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever) : Spine.Atlas
             let spineSkeletonJson = Spine.SkeletonJson spineAtlas
             let spineSkeletonData = spineSkeletonJson.ReadSkeletonData asset.FilePath
             Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
