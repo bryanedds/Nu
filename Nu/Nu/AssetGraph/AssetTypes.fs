@@ -19,6 +19,9 @@ type Font = private { __ : unit }
 /// A tile map. Currently just used as a phantom type.
 type TileMap = private { __ : unit }
 
+/// A spine skeleton. Currently just used as a phantom type.
+type SpineSkeleton = private { __ : unit }
+
 /// A cube map. Currently just used as a phantom type.
 type CubeMap = private { __ : unit }
 

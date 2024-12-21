@@ -15,12 +15,18 @@ type TileMapMetadata =
     { TileMapImageAssets : struct (TmxTileset * Image AssetTag) array
       TileMap : TmxMap }
 
+/// Metadata of a Spine skeleton.
+type SpineSkeletonMetadata =
+    { SpineSkeletonData : Spine.SkeletonData
+      SpineAtlas : Spine.Atlas }
+
 /// Metadata for an asset. Useful to describe various attributes of an asset without having the full asset loaded into
 /// memory.
 type Metadata =
     | RawMetadata
     | TextureMetadata of OpenGL.Texture.TextureMetadata
     | TileMapMetadata of TileMapMetadata
+    | SpineSkeletonMetadata of SpineSkeletonMetadata
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | SoundMetadata
@@ -89,6 +95,20 @@ module Metadata =
             None
 
     /// Thread-safe.
+    let private tryGenerateSpineSkeletonMetadata (asset : Asset) =
+        try let directoryPath = PathF.GetDirectoryName asset.FilePath
+            let fileName = PathF.GetFileName asset.FilePath
+            let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas.txt")
+            let spineAtlas = Spine.Atlas (spineAtlasFilePath, ()) : Spine.Atlas
+            let spineSkeletonJson = Spine.SkeletonJson spineAtlas
+            let spineSkeletonData = spineSkeletonJson.ReadSkeletonData asset.FilePath
+            Some (SpineSkeletonMetadata { SpineSkeletonData = spineSkeletonData; SpineAtlas = spineAtlas })
+        with exn ->
+            let errorMessage = "Failed to load spine skeleton data '" + asset.FilePath + "' due to: " + scstring exn
+            Log.error errorMessage
+            None
+
+    /// Thread-safe.
     let private tryGenerateModelMetadata (asset : Asset) =
         if File.Exists asset.FilePath then
             let textureClient = OpenGL.Texture.TextureClient None // unused. TODO: consider making this opt.
@@ -114,6 +134,7 @@ module Metadata =
         | RawExtension _ -> tryGenerateRawMetadata asset
         | ImageExtension _ -> tryGenerateTextureMetadata asset
         | TileMapExtension _ -> tryGenerateTileMapMetadata asset
+        | SpineSkeletonExtension _ -> tryGenerateSpineSkeletonMetadata asset
         | ModelExtension _ -> tryGenerateModelMetadata asset
         | SoundExtension _ -> Some SoundMetadata
         | SongExtension _ -> Some SongMetadata
@@ -322,6 +343,18 @@ module Metadata =
     /// Thread-safe.
     let getTileMapMetadata tileMap =
         ValueOption.get (tryGetTileMapMetadata tileMap)
+
+    /// Attempt to get the metadata of the given Spine skeleton.
+    /// Thread-safe.
+    let tryGetSpineSkeletonMetadata (spineSkeleton : SpineSkeleton AssetTag) =
+        match tryGetMetadata spineSkeleton with
+        | ValueSome (SpineSkeletonMetadata spineSkeletonMetadata) -> ValueSome spineSkeletonMetadata
+        | ValueSome _ | ValueNone -> ValueNone
+
+    /// Forcibly get the metadata of the given Spine skeleton (throwing on failure).
+    /// Thread-safe.
+    let getSpineSkeletonMetadata spineSkeleton =
+        ValueOption.get (tryGetSpineSkeletonMetadata spineSkeleton)
 
     /// Thread-safe.
     let private tryGetModelMetadata model =
