@@ -466,6 +466,9 @@ module Content =
     /// Describe a tmx map with the given definitions.
     let tmxMap entityName definitions = entity<TmxMapDispatcher> entityName definitions
 
+    /// Describe a Spine skeleton with the given definitions.
+    let spineSkeleton entityName definitions = entity<SpineSkeletonDispatcher> entityName definitions
+
     /// Describe a 3d light probe with the given definitions.
     let lightProbe3d entityName definitions = entity<LightProbe3dDispatcher> entityName definitions
 

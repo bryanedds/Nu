@@ -449,6 +449,14 @@ module WorldImNui =
             let (results, world) = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.RecentEntity.GetBodyId world, results, world)
 
+        /// ImNui declare a user-defined tile map with the given arguments.
+        static member doTmxMap name args world =
+            let (results, world) = World.doEntityPlus<TmxMapDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
+
+        /// ImNui declare a tile map with the given arguments.
+        static member doSpineSkeleton name args world = World.doEntity<SpineSkeletonDispatcher> name args world
+
         /// ImNui declare a 3d light probe with the given arguments.
         static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world
 

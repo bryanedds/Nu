@@ -45,6 +45,7 @@ module Assets =
         let [<Literal>] PaddleName = "Paddle"
         let [<Literal>] StaticSpriteName = "StaticSprite"
         let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
+        let [<Literal>] SpineSkeletonName = "dragon" // TODO: P0: see if we can rename this files to SpineSkeleton.
         let [<Literal>] NuSlideName = "NuSlide"
         let [<Literal>] Character2dIdleName = "Character2dIdle"
         let [<Literal>] Character2dJumpName = "Character2dJump"

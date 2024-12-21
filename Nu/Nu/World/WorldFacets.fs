@@ -1824,6 +1824,61 @@ type TmxMapFacet () =
         TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
 
 [<AutoOpen>]
+module SpineSkeletonExtensions =
+    type Entity with
+        member this.GetSpineSkeleton world : SpineSkeleton AssetTag = this.Get (nameof this.SpineSkeleton) world
+        member this.SetSpineSkeleton (value : SpineSkeleton AssetTag) world = this.Set (nameof this.SpineSkeleton) value world
+        member this.SpineSkeleton = lens (nameof this.SpineSkeleton) this this.GetSpineSkeleton this.SetSpineSkeleton
+        member this.GetSpineSkeletonInstanceOpt world : Spine.Skeleton option = this.Get (nameof this.SpineSkeletonInstanceOpt) world
+        member this.SetSpineSkeletonInstanceOpt (value : Spine.Skeleton option) world = this.Set (nameof this.SpineSkeletonInstanceOpt) value world
+        member this.SpineSkeletonInstanceOpt = lens (nameof this.SpineSkeletonInstanceOpt) this this.GetSpineSkeletonInstanceOpt this.SetSpineSkeletonInstanceOpt
+
+type SpineSkeletonFacet () =
+    inherit Facet (false, false, false)
+
+    static member Properties =
+        [define Entity.StartTime GameTime.zero
+         define Entity.SpineSkeleton Assets.Default.SpineSkeleton
+         nonPersistent Entity.SpineSkeletonInstanceOpt None]
+
+    override this.Register (entity, world) =
+        entity.SetStartTime world.GameTime world
+
+    override this.Update (entity, world) =
+        match entity.GetSpineSkeletonInstanceOpt world with
+        | Some spineSkeletonInstance ->
+            // TODO: P0: figure out what to do about undo / redo operations here! Maybe recreate if
+            // spineSkeletonInstance.Time <> world.GameTime.Seconds?
+            let gameDelta = world.GameDelta
+            spineSkeletonInstance.Update gameDelta.Seconds
+            world
+        | None -> world
+
+    override this.Render (_, entity, world) =
+        let spineSkeleton = entity.GetSpineSkeleton world
+        let (spineSkeletonInstanceOpt, world) =
+            match entity.GetSpineSkeletonInstanceOpt world with
+            | Some spineSkeletonInstance -> (Some spineSkeletonInstance, world)
+            | None ->
+                match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
+                | ValueSome metadata ->
+                    let startTime = entity.GetStartTime world
+                    let localTime = world.GameTime - startTime
+                    let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
+                    spineSkeletonInstance.Time <- localTime.Seconds
+                    let world = entity.SetSpineSkeletonInstanceOpt (Some spineSkeletonInstance) world
+                    (Some spineSkeletonInstance, world)
+                | ValueNone -> (None, world)
+        match spineSkeletonInstanceOpt with
+        | Some spineSkeletonInstance ->
+            let mutable transform = entity.GetTransform world
+            let spineSkeletonId = entity.GetId world
+            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = Spine.Skeleton spineSkeletonInstance }
+            let renderOperation = LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = spineSkeleton; RenderOperation2d = renderSpineSkeleton }
+            World.enqueueRenderMessage2d renderOperation world
+        | None -> ()
+
+[<AutoOpen>]
 module LayoutFacetExtensions =
     type Entity with
         member this.GetLayout world : Layout = this.Get (nameof this.Layout) world

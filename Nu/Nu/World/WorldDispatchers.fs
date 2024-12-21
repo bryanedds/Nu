@@ -368,6 +368,13 @@ type TmxMapDispatcher () =
     static member Facets =
         [typeof<TmxMapFacet>]
 
+/// Gives an entity the base behavior of a Spine skeleton.
+type SpineSkeletonDispatcher () =
+    inherit Entity2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<SpineSkeletonFacet>]
+
 /// Gives an entity the base behavior of sky box.
 type SkyBoxDispatcher () =
     inherit Entity3dDispatcher (false, false, false)

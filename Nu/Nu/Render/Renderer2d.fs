@@ -69,16 +69,12 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       TileSize : Vector2
       TileAssets : struct (TmxTileset * Image AssetTag) array }
 
-/// Information needed to render a Spine skeleton.
-type SpineSkeletonInfo =
-    | SpineSkeletonClone of Spine.Skeleton
-    | SpineSkeletonData of single * Spine.SkeletonData
-
 /// Describes how to render a Spine skeletong to the rendering system.
+/// NOTE: do NOT send your own copy of Spine.Skeleton as the one taken here will be operated on from another thread!
 type [<NoEquality; NoComparison>] SpineSkeletonDescriptor =
     { mutable Transform : Transform
       SpineSkeletonId : uint64
-      SpineSkeletonInfo : SpineSkeletonInfo }
+      SpineSkeletonClone : Spine.Skeleton }
 
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
@@ -811,12 +807,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
                     renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
                     ssRenderer
-            match descriptor.SpineSkeletonInfo with
-            | SpineSkeletonClone skeleton -> ssRenderer.Draw skeleton
-            | SpineSkeletonData (time, skeletonData) ->
-                let skeleton = Spine.Skeleton skeletonData
-                skeleton.Time <- time
-                ssRenderer.Draw skeleton
+            ssRenderer.Draw descriptor.SpineSkeletonClone
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do

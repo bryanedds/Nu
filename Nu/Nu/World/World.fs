@@ -198,6 +198,7 @@ module WorldModule3 =
                  BodyJointFacet ()
                  TileMapFacet ()
                  TmxMapFacet ()
+                 SpineSkeletonFacet ()
                  LayoutFacet ()
                  LightProbe3dFacet ()
                  Light3dFacet ()
