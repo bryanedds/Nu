@@ -152,6 +152,23 @@ namespace Spine {
 			shearX = bone.shearX;
 			shearY = bone.shearY;
 			inherit = bone.inherit;
+
+			// NOTE: BGE: additional data copying to try to make Skeleton copy ctor work as advertised.
+			a = bone.a;
+			b = bone.b;
+			c = bone.c;
+			d = bone.d;
+			active = bone.active;
+			arotation = bone.arotation;
+			ax = bone.ax;
+			ay = bone.ay;
+			ascaleX = bone.ascaleX;
+			ascaleY = bone.ascaleY;
+			ashearX = bone.ashearX;
+			ashearY = bone.ashearY;
+			sorted = bone.sorted;
+			worldX = bone.worldX;
+			worldY = bone.worldY;
 		}
 
 		/// <summary>Computes the world transform using the parent bone and this bone's local applied transform.</summary>
