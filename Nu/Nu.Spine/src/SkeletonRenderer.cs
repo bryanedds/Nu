@@ -49,8 +49,6 @@ namespace Spine
         /// <see cref="Skeleton.GetBounds(out float, out float, out float, out float, ref float[], SkeletonClipping)"/>
         /// </summary>
         public SkeletonClipping SkeletonClipping { get { return clipper; } }
-        
-        public MeshBatcher Batcher { get { return batcher; } }
 
         public IVertexEffect VertexEffect { get; set; }
 
@@ -69,7 +67,12 @@ namespace Spine
             batcher = new MeshBatcher(createShaderFromStrings);
         }
 
-        public void Draw(Func<object, uint> getTextureId, Skeleton skeleton)
+        public void Destroy()
+        {
+            batcher.Destroy();
+        }
+
+        public void Draw(Func<object, uint> getTextureId, Skeleton skeleton, in Matrix4x4 matrix)
         {
             var drawOrder = skeleton.DrawOrder;
             var drawOrderItems = skeleton.DrawOrder.Items;
@@ -198,6 +201,7 @@ namespace Spine
             }
             clipper.ClipEnd();
             if (VertexEffect != null) VertexEffect.End();
+            batcher.Draw(matrix);
         }
     }
 }

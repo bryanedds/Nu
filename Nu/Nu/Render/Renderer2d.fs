@@ -817,9 +817,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
                         renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
                         ssRenderer
-                ssRenderer.Draw (getTextureId, descriptor.SpineSkeletonClone)
-                ssRenderer.Batcher.Draw &viewProjection
-                ssRenderer.Batcher.AfterLastDrawPass ()
+                ssRenderer.Draw (getTextureId, descriptor.SpineSkeletonClone, &viewProjection)
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
@@ -867,9 +865,9 @@ type [<ReferenceEquality>] GlRenderer2d =
         let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
         for entry in entriesUnused do
             let spineSkeletonId = entry.Key
-            renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
             let spineSkeleton = snd entry.Value
-            spineSkeleton.Batcher.Destroy ()
+            renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
+            spineSkeleton.Destroy ()
 
     /// Make a GlRenderer2d.
     static member make viewport =

@@ -183,13 +183,11 @@ namespace Spine
                 Array.Copy(item.vertices, 0, vertexArray, vertexCount, itemVertexCount);
                 vertexCount += itemVertexCount;
             }
-            FlushVertexArray(vertexCount, triangleCount, lastTexture, matrix);
-        }
 
-        public void AfterLastDrawPass()
-        {
-            int itemCount = items.Count;
-            for (int i = 0; i < itemCount; i++)
+            FlushVertexArray(vertexCount, triangleCount, lastTexture, matrix);
+
+            // clean up cache
+            for (int i = 0; i < items.Count; i++)
             {
                 var item = items[i];
                 item.texture = 0;
