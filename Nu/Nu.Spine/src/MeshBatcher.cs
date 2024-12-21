@@ -210,7 +210,10 @@ namespace Spine
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
                 Gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 Gl.Enable(EnableCap.Blend);
-                Gl.Enable(EnableCap.CullFace);
+                //Gl.Enable(EnableCap.CullFace);
+
+                // setup vao
+                Gl.BindVertexArray(vao);
 
                 // setup shader
                 Gl.UseProgram(shader);
@@ -222,7 +225,6 @@ namespace Spine
                 Gl.BindTexture(TextureTarget.Texture2d, texture);
 
                 // setup geometry
-                Gl.BindVertexArray(vao);
                 Gl.BindBuffer(BufferTarget.ArrayBuffer, vbo);
                 using (var vertexArrayHnd = vertexArray.AsMemory().Pin())
                 {
@@ -238,17 +240,13 @@ namespace Spine
 
                 // draw geometry
                 Gl.DrawElements(PrimitiveType.Triangles, num_indices, DrawElementsType.UnsignedShort, IntPtr.Zero);
-                Gl.BindVertexArray(0u);
-
-                // teardown geometry
-                Gl.BindVertexArray(0u);
-
-                // teardown texture
-                Gl.ActiveTexture(TextureUnit.Texture0);
-                Gl.BindTexture(TextureTarget.Texture2d, 0u);
 
                 // teardown shader
+                Gl.BindTexture(TextureTarget.Texture2d, 0u);
                 Gl.UseProgram(0u);
+
+                // teardown vao
+                Gl.BindVertexArray(0u);
 
                 // teardown state
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
