@@ -799,6 +799,13 @@ type [<ReferenceEquality>] GlRenderer2d =
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
         | RenderSpineSkeleton descriptor ->
             flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
+                let getTextureId (imageObj : obj) =
+                    match imageObj with
+                    | :? AssetTag<Image> as image ->
+                        match GlRenderer2d.tryGetRenderAsset image renderer with
+                        | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
+                        | _ -> 0u
+                    | _ -> 0u
                 let ssRenderer =
                     match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
                     | (true, (used, ssRenderer)) ->
@@ -808,8 +815,9 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
                         renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
                         ssRenderer
-                ssRenderer.Draw descriptor.SpineSkeletonClone
+                ssRenderer.Draw (getTextureId, descriptor.SpineSkeletonClone)
                 ssRenderer.Batcher.Draw ()
+                ssRenderer.Batcher.AfterLastDrawPass ()
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do

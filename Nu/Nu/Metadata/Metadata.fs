@@ -106,8 +106,12 @@ module Metadata =
             let fileName = PathF.GetFileNameWithoutExtension asset.FilePath
             let getTexture filePath =
                 match tryGenerateTextureMetadataFromFilePath filePath with
-                | Some metadata -> (metadata.TextureWidth, metadata.TextureHeight, 0ul)
-                | None -> (0, 0, 0u)
+                | Some metadata ->
+                    let assetTag = AssetTag.make<Image> asset.AssetTag.PackageName (PathF.GetFileNameWithoutExtension filePath)
+                    (metadata.TextureWidth, metadata.TextureHeight, assetTag :> obj)
+                | None ->
+                    let assetTag = AssetTag.make<Image> Assets.Default.PackageName Assets.Default.ImageName
+                    (32, 32, assetTag :> obj) // TODO: P1: turn the resolution into constants?
             let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas")
             let spineTextureRetriever = Spine.TextureRetriever getTexture
             try let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever)

@@ -69,7 +69,7 @@ namespace Spine
             batcher = new MeshBatcher(createShaderFromStrings);
         }
 
-        public void Draw(Skeleton skeleton)
+        public void Draw(Func<object, uint> getTextureId, Skeleton skeleton)
         {
             var drawOrder = skeleton.DrawOrder;
             var drawOrderItems = skeleton.DrawOrder.Items;
@@ -173,16 +173,10 @@ namespace Spine
                 if (verticesCount == 0 || indicesCount == 0) continue;
 
                 // submit to batch
+                // NOTE: BGE: restore texture layers functionality?
                 MeshItem item = batcher.NextItem(verticesCount, indicesCount);
-                if (textureObject is uint)
-                {
-                    item.texture = (uint)textureObject;
-                }
-                else
-                {
-                    item.textureLayers = (uint[])textureObject;
-                    item.texture = item.textureLayers[0];
-                }
+                item.texture = getTextureId(textureObject);
+
                 for (int ii = 0, nn = indicesCount; ii < nn; ii++)
                 {
                     item.triangles[ii] = indices[ii];
@@ -204,7 +198,6 @@ namespace Spine
             }
             clipper.ClipEnd();
             if (VertexEffect != null) VertexEffect.End();
-            batcher.AfterLastDrawPass();
         }
     }
 }

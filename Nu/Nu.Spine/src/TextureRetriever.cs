@@ -33,9 +33,9 @@ namespace Spine
 {
     public class TextureRetriever : TextureLoader
     {
-        Func<string, Tuple<int, int, uint>> getTexture = null;
+        Func<string, Tuple<int, int, object>> getTexture = null;
 
-        public TextureRetriever(Func<string, Tuple<int, int, uint>> getTexture)
+        public TextureRetriever(Func<string, Tuple<int, int, object>> getTexture)
         {
             this.getTexture = getTexture;
         }

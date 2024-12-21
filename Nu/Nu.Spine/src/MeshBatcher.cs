@@ -204,9 +204,9 @@ namespace Spine
             if (triangles.Length < triangleCount) triangles = new ushort[triangleCount];
         }
 
-        private void FlushVertexArray(int num_vertices, int num_indices, uint texture)
+        private unsafe void FlushVertexArray(int num_vertices, int num_indices, uint texture)
         {
-            unsafe
+            if (num_vertices > 0 && num_indices > 0)
             {
                 // setup state. TODO: implement parameterized blending styles.
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
