@@ -69,6 +69,17 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       TileSize : Vector2
       TileAssets : struct (TmxTileset * Image AssetTag) array }
 
+/// Describes how to render a Spine skeleton.
+type SpineSkeleton =
+    | SpineSkeletonClone of Spine.Skeleton
+    | SpineSkeletonData of single * Spine.SkeletonData
+
+/// Describes how to render tile map tiles to the rendering system.
+type [<NoEquality; NoComparison>] SpineSkeletonDescriptor =
+    { mutable Transform : Transform
+      SpineSkeletonId : uint64
+      SpineSkeletonDescriptor : SpineSkeleton }
+
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
     { Absolute : bool
@@ -100,6 +111,7 @@ type RenderOperation2d =
     | RenderCachedSprite of CachedSpriteDescriptor
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
+    | RenderSpineSkeleton of SpineSkeletonDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal caching.
@@ -168,6 +180,7 @@ type [<ReferenceEquality>] GlRenderer2d =
           TextQuad : uint * uint * uint // TODO: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
+          SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
@@ -788,6 +801,22 @@ type [<ReferenceEquality>] GlRenderer2d =
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
+        | RenderSpineSkeleton descriptor ->
+            let ssRenderer =
+                match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
+                | (true, (used, ssRenderer)) ->
+                    used.Value <- true
+                    ssRenderer
+                | (false, _) ->
+                    let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
+                    renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
+                    ssRenderer
+            match descriptor.SpineSkeletonDescriptor with
+            | SpineSkeletonClone skeleton -> ssRenderer.Draw skeleton
+            | SpineSkeletonData (time, skeletonData) ->
+                let skeleton = Spine.Skeleton skeletonData
+                skeleton.Time <- time
+                ssRenderer.Draw skeleton
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
@@ -831,6 +860,12 @@ type [<ReferenceEquality>] GlRenderer2d =
             OpenGL.Hl.Assert ()
             renderer.ReloadAssetsRequested <- false
 
+        // sweep up any skeleton renderers that went unused this frame
+        let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+        for entry in entriesUnused do
+            let spineSkeletonId = entry.Key
+            renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
+
     /// Make a GlRenderer2d.
     static member make viewport =
 
@@ -852,6 +887,7 @@ type [<ReferenceEquality>] GlRenderer2d =
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
+              SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false

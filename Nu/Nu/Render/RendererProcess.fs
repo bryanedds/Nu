@@ -219,9 +219,6 @@ type RendererThread () =
     let messageBuffersImGui = [|List (); List ()|]
     let assetTextureRequests = ConcurrentDictionary<AssetTag, unit> HashIdentity.Structural
     let assetTextureOpts = ConcurrentDictionary<AssetTag, uint32 voption> HashIdentity.Structural
-    let cachedSpriteMessagesLock = obj ()
-    let cachedSpriteMessages = System.Collections.Generic.Queue ()
-    let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
     let cachedStaticModelMessagesLock = obj ()
     let cachedStaticModelMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedStaticModelMessagesCapacity = Constants.Render.StaticModelMessagesPrealloc
@@ -231,6 +228,9 @@ type RendererThread () =
     let cachedAnimatedModelMessagesLock = obj ()
     let cachedAnimatedModelMessages = System.Collections.Generic.Queue ()
     let [<VolatileField>] mutable cachedAnimatedModelMessagesCapacity = Constants.Render.AnimatedModelMessagesPrealloc
+    let cachedSpriteMessagesLock = obj ()
+    let cachedSpriteMessages = System.Collections.Generic.Queue ()
+    let [<VolatileField>] mutable cachedSpriteMessagesCapacity = Constants.Render.SpriteMessagesPrealloc
 
     let allocStaticModelMessage () =
         lock cachedStaticModelMessagesLock (fun () ->

@@ -37,11 +37,6 @@ namespace Spine
     /// <summary>Draws region and mesh attachments.</summary>
     public class SkeletonRenderer
     {
-        private const int TL = 0;
-        private const int TR = 1;
-        private const int BL = 2;
-        private const int BR = 3;
-
         private SkeletonClipping clipper = new SkeletonClipping();
         private MeshBatcher batcher;
         private float[] vertices = new float[8];
@@ -72,15 +67,6 @@ namespace Spine
         public SkeletonRenderer(Func<string, string, uint> createShaderFromStrings)
         {
             batcher = new MeshBatcher(createShaderFromStrings);
-        }
-
-        public void Begin()
-        {
-        }
-
-        public void End()
-        {
-            batcher.AfterLastDrawPass();
         }
 
         public void Draw(Skeleton skeleton)
@@ -218,6 +204,7 @@ namespace Spine
             }
             clipper.ClipEnd();
             if (VertexEffect != null) VertexEffect.End();
+            batcher.AfterLastDrawPass();
         }
     }
 }
