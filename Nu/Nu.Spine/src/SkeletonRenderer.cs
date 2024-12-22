@@ -159,7 +159,7 @@ namespace Spine
                         break;
                 }
 
-                // new batch if blend state changed
+                // finish batch if blend state changed
                 if (blendSrcLocal != blendSrc || blendDstLocal != blendDst)
                 {
                     batcher.Draw(blendSrc, blendDst, matrix);
