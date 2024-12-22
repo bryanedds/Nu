@@ -806,9 +806,12 @@ type [<ReferenceEquality>] GlRenderer2d =
                         | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
                         | _ -> 0u
                     | _ -> 0u
-                let viewProjection = Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
-                let model = Matrix4x4.CreateTranslation (descriptor.Transform.Position * single renderer.Viewport.DisplayScalar)
-                let modelViewProjection = model * viewProjection
+                let model =
+                    Matrix4x4.CreateAffine
+                        (descriptor.Transform.Position * single renderer.Viewport.DisplayScalar,
+                         descriptor.Transform.Rotation,
+                         descriptor.Transform.Scale)
+                let modelViewProjection = model * Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
                 let ssRenderer =
                     match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
                     | (true, (used, ssRenderer)) ->
