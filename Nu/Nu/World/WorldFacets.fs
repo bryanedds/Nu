@@ -1957,7 +1957,8 @@ type SpineSkeletonFacet () =
         | Some spineSkeletonState ->
             let mutable transform = entity.GetTransform world
             let spineSkeletonId = entity.GetId world
-            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeletonInstance }
+            let spineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeletonInstance // NOTE: this is where the bulk of this entity's allocations are coming from.
+            let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = spineSkeletonClone }
             let renderOperation = LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = spineSkeleton; RenderOperation2d = renderSpineSkeleton }
             World.enqueueRenderMessage2d renderOperation world
         | None -> ()
