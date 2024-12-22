@@ -1845,6 +1845,7 @@ type SpineSkeletonFacet () =
         [define Entity.AlwaysUpdate true
          define Entity.StartTime GameTime.zero
          define Entity.SpineSkeleton Assets.Default.SpineSkeleton
+         define Entity.Flip FlipNone
          nonPersistent Entity.SpineSkeletonStateOpt None]
 
     override this.Register (entity, world) =
@@ -1890,6 +1891,14 @@ type SpineSkeletonFacet () =
             spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
             spineSkeletonState.SpineAnimationState.add_End endDelegate
             spineSkeletonState.SpineAnimationState.add_Event eventDelegate
+            let struct (scaleX, scaleY) =
+                match entity.GetFlip world with
+                | FlipNone -> struct (1.0f, 1.0f)
+                | FlipH -> struct (-1.0f, 1.0f)
+                | FlipV -> struct (1.0f, -1.0f)
+                | FlipHV -> struct (-1.0f, -1.0f)
+            spineSkeletonState.SpineSkeletonInstance.ScaleX <- scaleX
+            spineSkeletonState.SpineSkeletonInstance.ScaleY <- scaleY
             spineSkeletonState.SpineAnimationState.Update world.GameDelta.Seconds
             spineSkeletonState.SpineSkeletonInstance.Time <- localTime.Seconds
             spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance

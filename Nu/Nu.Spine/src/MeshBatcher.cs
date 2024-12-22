@@ -210,8 +210,6 @@ namespace Spine
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
                 Gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
                 Gl.Enable(EnableCap.Blend);
-                Gl.CullFace(TriangleFace.Front);
-                Gl.Enable(EnableCap.CullFace);
 
                 // setup vao
                 Gl.BindVertexArray(vao);
@@ -253,9 +251,6 @@ namespace Spine
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
                 Gl.BlendFunc(BlendingFactor.One, BlendingFactor.Zero);
                 Gl.Disable(EnableCap.Blend);
-                Gl.CullFace(TriangleFace.Back);
-                Gl.Disable(EnableCap.CullFace);
-                Gl.Disable(EnableCap.ScissorTest);
             }
         }
     }
