@@ -162,9 +162,9 @@ namespace Spine
                 // new batch if blend state changed
                 if (blendSrcLocal != blendSrc || blendDstLocal != blendDst)
                 {
+                    batcher.Draw(blendSrc, blendDst, matrix);
                     blendSrc = blendSrcLocal;
                     blendDst = blendDstLocal;
-                    batcher.Draw(blendSrc, blendDst, matrix);
                 }
 
                 // calculate color
