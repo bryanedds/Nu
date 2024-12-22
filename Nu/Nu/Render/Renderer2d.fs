@@ -614,6 +614,40 @@ type [<ReferenceEquality>] GlRenderer2d =
                 tileIndex <- inc tileIndex
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
 
+    /// Render Spine skeleton.
+    static member renderSpineSkeleton
+        (transform : Transform byref,
+         spineSkeletonId : uint64,
+         spineSkeleton : Spine.Skeleton,
+         eyeCenter : Vector2,
+         eyeSize : Vector2,
+         renderer) =
+        let mutable transform = transform
+        flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
+            let getTextureId (imageObj : obj) =
+                match imageObj with
+                | :? AssetTag<Image> as image ->
+                    match GlRenderer2d.tryGetRenderAsset image renderer with
+                    | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
+                    | _ -> 0u
+                | _ -> 0u
+            let model =
+                Matrix4x4.CreateAffine
+                    (transform.Position * single renderer.Viewport.DisplayScalar,
+                     transform.Rotation,
+                     transform.Scale)
+            let modelViewProjection = model * Viewport.getViewProjection2d transform.Absolute eyeCenter eyeSize renderer.Viewport
+            let ssRenderer =
+                match renderer.SpineSkeletonRenderers.TryGetValue spineSkeletonId with
+                | (true, (used, ssRenderer)) ->
+                    used.Value <- true
+                    ssRenderer
+                | (false, _) ->
+                    let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
+                    renderer.SpineSkeletonRenderers.Add (spineSkeletonId, (ref true, ssRenderer))
+                    ssRenderer
+            ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)
+
     /// Render text.
     static member renderText
         (transform : Transform byref,
@@ -798,30 +832,8 @@ type [<ReferenceEquality>] GlRenderer2d =
             GlRenderer2d.renderTiles
                 (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
         | RenderSpineSkeleton descriptor ->
-            flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
-                let getTextureId (imageObj : obj) =
-                    match imageObj with
-                    | :? AssetTag<Image> as image ->
-                        match GlRenderer2d.tryGetRenderAsset image renderer with
-                        | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
-                        | _ -> 0u
-                    | _ -> 0u
-                let model =
-                    Matrix4x4.CreateAffine
-                        (descriptor.Transform.Position * single renderer.Viewport.DisplayScalar,
-                         descriptor.Transform.Rotation,
-                         descriptor.Transform.Scale)
-                let modelViewProjection = model * Viewport.getViewProjection2d descriptor.Transform.Absolute eyeCenter eyeSize renderer.Viewport
-                let ssRenderer =
-                    match renderer.SpineSkeletonRenderers.TryGetValue descriptor.SpineSkeletonId with
-                    | (true, (used, ssRenderer)) ->
-                        used.Value <- true
-                        ssRenderer
-                    | (false, _) ->
-                        let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
-                        renderer.SpineSkeletonRenderers.Add (descriptor.SpineSkeletonId, (ref true, ssRenderer))
-                        ssRenderer
-                ssRenderer.Draw (getTextureId, descriptor.SpineSkeletonClone, &modelViewProjection)
+            GlRenderer2d.renderSpineSkeleton
+                (&descriptor.Transform, descriptor.SpineSkeletonId, descriptor.SpineSkeletonClone, eyeCenter, eyeSize, renderer)
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
