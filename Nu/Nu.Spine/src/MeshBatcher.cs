@@ -137,7 +137,7 @@ namespace Spine
             return item;
         }
 
-        public void Draw(in Matrix4x4 matrix)
+        public void Draw(BlendingFactor blendSrc, BlendingFactor blendDst, in Matrix4x4 matrix)
         {
             if (items.Count == 0) return;
 
@@ -161,12 +161,12 @@ namespace Spine
 
                 if (item.texture != lastTexture || vertexCount + itemVertexCount > short.MaxValue)
                 {
-                    FlushVertexArray(vertexCount, triangleCount, lastTexture, matrix);
+                    FlushVertexArray(vertexCount, triangleCount, lastTexture, blendSrc, blendDst, matrix);
                     vertexCount = 0;
                     triangleCount = 0;
                     lastTexture = item.texture;
 
-                    // NOTE: BGE: dummied out since I don't know how to support this seeming behavior yet.
+                    // TODO: P1: restore layers behavior.
                     //if (item.textureLayers != null)
                     //{
                     //    for (int layer = 1; layer < item.textureLayers.Length; ++layer)
@@ -184,7 +184,7 @@ namespace Spine
                 vertexCount += itemVertexCount;
             }
 
-            FlushVertexArray(vertexCount, triangleCount, lastTexture, matrix);
+            FlushVertexArray(vertexCount, triangleCount, lastTexture, blendSrc, blendDst, matrix);
 
             // clean up cache
             for (int i = 0; i < items.Count; i++)
@@ -202,13 +202,19 @@ namespace Spine
             if (triangles.Length < triangleCount) triangles = new ushort[triangleCount];
         }
 
-        private unsafe void FlushVertexArray(int num_vertices, int num_indices, uint texture, Matrix4x4 matrix)
+        private unsafe void FlushVertexArray(
+            int num_vertices,
+            int num_indices,
+            uint texture,
+            BlendingFactor blendSrc,
+            BlendingFactor blendDst,
+            Matrix4x4 matrix)
         {
             if (num_vertices > 0 && num_indices > 0 && texture != 0u)
             {
-                // setup state. TODO: implement parameterized blending styles.
+                // setup state
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
-                Gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+                Gl.BlendFunc(blendSrc, blendDst);
                 Gl.Enable(EnableCap.Blend);
 
                 // setup vao

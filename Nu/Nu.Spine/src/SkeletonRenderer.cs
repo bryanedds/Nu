@@ -27,6 +27,7 @@
  * SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
+using OpenGL;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -78,6 +79,8 @@ namespace Spine
             var drawOrderItems = skeleton.DrawOrder.Items;
             float skeletonR = skeleton.R, skeletonG = skeleton.G, skeletonB = skeleton.B, skeletonA = skeleton.A;
             ColorPacked color = new ColorPacked();
+            BlendingFactor blendSrc = BlendingFactor.SrcAlpha;
+            BlendingFactor blendDst = BlendingFactor.OneMinusSrcAlpha;
 
             if (VertexEffect != null) VertexEffect.Begin(skeleton);
 
@@ -85,7 +88,7 @@ namespace Spine
             {
                 Slot slot = drawOrderItems[i];
                 Attachment attachment = slot.Attachment;
-                //float attachmentZOffset = z + zSpacing * i; NOTE: BGE: not utilized because the shader I found doesn't seem to support it.
+                float attachmentZOffset = z + zSpacing * i; // NOTE: BGE: not utilized because the shader I found doesn't seem to support it.
 
                 float attachmentColorR, attachmentColorG, attachmentColorB, attachmentColorA;
                 object textureObject = null;
@@ -129,7 +132,40 @@ namespace Spine
                 }
                 else continue;
 
-                // TODO: BGE: reimplement blend batching, calling End() when blend change is detected.
+                // update blend state
+                BlendingFactor blendSrcLocal;
+                BlendingFactor blendDstLocal;
+                switch (slot.Data.BlendMode)
+                {
+                    case BlendMode.Normal:
+                        blendSrcLocal = BlendingFactor.SrcAlpha;
+                        blendDstLocal = BlendingFactor.OneMinusSrcAlpha;
+                        break;
+                    case BlendMode.Additive:
+                        blendSrcLocal = BlendingFactor.SrcAlpha;
+                        blendDstLocal = BlendingFactor.One;
+                        break;
+                    case BlendMode.Multiply:
+                        blendSrcLocal = BlendingFactor.DstColor;
+                        blendDstLocal = BlendingFactor.Zero;
+                        break;
+                    case BlendMode.Screen:
+                        blendSrcLocal = BlendingFactor.OneMinusDstColor;
+                        blendDstLocal = BlendingFactor.SrcColor;
+                        break;
+                    default:
+                        blendSrcLocal = BlendingFactor.SrcAlpha;
+                        blendDstLocal = BlendingFactor.OneMinusSrcAlpha;
+                        break;
+                }
+
+                // new batch if blend state changed
+                if (blendSrcLocal != blendSrc || blendDstLocal != blendDst)
+                {
+                    blendSrc = blendSrcLocal;
+                    blendDst = blendDstLocal;
+                    batcher.Draw(blendSrc, blendDst, matrix);
+                }
 
                 // calculate color
                 float a = skeletonA * slot.A * attachmentColorA;
@@ -176,7 +212,7 @@ namespace Spine
                 if (verticesCount == 0 || indicesCount == 0) continue;
 
                 // submit to batch
-                // NOTE: BGE: restore texture layers functionality?
+                // TODO: P1: restore texture layers functionality.
                 MeshItem item = batcher.NextItem(verticesCount, indicesCount);
                 item.texture = getTextureId(textureObject);
 
@@ -201,7 +237,7 @@ namespace Spine
             }
             clipper.ClipEnd();
             if (VertexEffect != null) VertexEffect.End();
-            batcher.Draw(matrix);
+            batcher.Draw(blendSrc, blendDst, matrix);
         }
     }
 }
