@@ -846,7 +846,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         GlRenderer2d.freeRenderAsset renderAsset renderer
                         match GlRenderer2d.tryLoadRenderAsset package.PackageState asset renderer with
                         | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
-                        | None -> failwith ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
+                        | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
 
         // update viewport
         renderer.Viewport <- viewport
