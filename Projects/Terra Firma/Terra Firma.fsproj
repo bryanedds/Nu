@@ -86,7 +86,6 @@
 		<ProjectReference Include="..\..\Nu\Nu\Nu.fsproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Math\Nu.Math.csproj" />
 		<ProjectReference Include="..\..\Nu\Nu.Pipe\Nu.Pipe.fsproj" />
-		<ProjectReference Include="..\..\Nu\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
