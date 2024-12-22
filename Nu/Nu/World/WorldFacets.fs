@@ -1841,6 +1841,26 @@ module SpineSkeletonExtensions =
 type SpineSkeletonFacet () =
     inherit Facet (false, false, false)
 
+    static let getOrTryCreateSpineSkeletonState (entity : Entity) world =
+        let spineSkeleton = entity.GetSpineSkeleton world
+        match entity.GetSpineSkeletonStateOpt world with
+        | None ->
+            match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
+            | ValueSome metadata ->
+                let startTime = entity.GetStartTime world
+                let localTime = world.GameTime - startTime
+                let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
+                spineSkeletonInstance.Time <- localTime.Seconds
+                let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
+                spineAnimationStateData.DefaultMix <- 0.2f // TODO: P0: parameterize!
+                let spineAnimationState = Spine.AnimationState spineAnimationStateData
+                spineAnimationState.SetAnimation (0, "flying", true) |> ignore<Spine.TrackEntry> // TODO: P0: parameterize!
+                let spineSkeletonState = { SpineSkeletonInstance = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
+                let world = entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
+                (Some spineSkeletonState, world)
+            | ValueNone -> (None, world)
+        | Some spineSkeletonState -> (Some spineSkeletonState, world)
+
     static member Properties =
         [define Entity.AlwaysUpdate true
          define Entity.StartTime GameTime.zero
@@ -1852,30 +1872,10 @@ type SpineSkeletonFacet () =
         entity.SetStartTime world.GameTime world
 
     override this.Update (entity, world) =
-        let spineSkeleton = entity.GetSpineSkeleton world
-        let (spineSkeletonStateOpt, world) =
-            match entity.GetSpineSkeletonStateOpt world with
-            | Some spineSkeletonState -> (Some spineSkeletonState, world)
-            | None ->
-                match Metadata.tryGetSpineSkeletonMetadata spineSkeleton with
-                | ValueSome metadata ->
-                    let startTime = entity.GetStartTime world
-                    let localTime = world.GameTime - startTime
-                    let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
-                    spineSkeletonInstance.Time <- localTime.Seconds
-                    let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
-                    spineAnimationStateData.DefaultMix <- 0.2f // TODO: P0: parameterize!
-                    let spineAnimationState = Spine.AnimationState spineAnimationStateData
-                    spineAnimationState.SetAnimation (0, "flying", true) |> ignore<Spine.TrackEntry> // TODO: P0: parameterize!
-                    let spineSkeletonState = { SpineSkeletonInstance = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
-                    let world = entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
-                    (Some spineSkeletonState, world)
-                | ValueNone -> (None, world)
+        let deltaTime = world.GameDelta
+        let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
         match spineSkeletonStateOpt with
         | Some spineSkeletonState ->
-            // TODO: P0: figure out how to deal with undo / redo.
-            let startTime = entity.GetStartTime world
-            let localTime = world.GameTime - startTime
             let startTrackArgs = List ()
             let interruptTrackArgs = List ()
             let completeTrackArgs = List ()
@@ -1899,9 +1899,9 @@ type SpineSkeletonFacet () =
                 | FlipHV -> struct (-1.0f, -1.0f)
             spineSkeletonState.SpineSkeletonInstance.ScaleX <- scaleX
             spineSkeletonState.SpineSkeletonInstance.ScaleY <- scaleY
-            spineSkeletonState.SpineAnimationState.Update world.GameDelta.Seconds
-            spineSkeletonState.SpineSkeletonInstance.Time <- localTime.Seconds
-            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance
+            spineSkeletonState.SpineSkeletonInstance.Update deltaTime.Seconds
+            spineSkeletonState.SpineAnimationState.Update deltaTime.Seconds
+            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance |> ignore<bool>
             spineSkeletonState.SpineSkeletonInstance.UpdateWorldTransform Spine.Skeleton.Physics.Update
             spineSkeletonState.SpineAnimationState.remove_Start startDelegate
             spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
