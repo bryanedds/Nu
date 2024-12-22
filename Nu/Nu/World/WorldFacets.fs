@@ -1838,6 +1838,9 @@ module SpineSkeletonExtensions =
         member this.GetSpineAnimationLoop world : bool = this.Get (nameof this.SpineAnimationLoop) world
         member this.SetSpineAnimationLoop (value : bool) world = this.Set (nameof this.SpineAnimationLoop) value world
         member this.SpineAnimationLoop = lens (nameof this.SpineAnimationLoop) this this.GetSpineAnimationLoop this.SetSpineAnimationLoop
+        member this.GetSpineAnimationSpeed world : single = this.Get (nameof this.SpineAnimationSpeed) world
+        member this.SetSpineAnimationSpeed (value : single) world = this.Set (nameof this.SpineAnimationSpeed) value world
+        member this.SpineAnimationSpeed = lens (nameof this.SpineAnimationSpeed) this this.GetSpineAnimationSpeed this.SetSpineAnimationSpeed
         member this.GetSpineAnimationMix world : single = this.Get (nameof this.SpineAnimationMix) world
         member this.SetSpineAnimationMix (value : single) world = this.Set (nameof this.SpineAnimationMix) value world
         member this.SpineAnimationMix = lens (nameof this.SpineAnimationMix) this this.GetSpineAnimationMix this.SetSpineAnimationMix
@@ -1888,12 +1891,14 @@ type SpineSkeletonFacet () =
          define Entity.Flip FlipNone
          define Entity.SpineSkeleton Assets.Default.SpineSkeleton
          nonPersistent Entity.SpineSkeletonStateOpt None
-         define Entity.SpineAnimationName "Idle"
+         define Entity.SpineAnimationName "idle"
+         define Entity.SpineAnimationSpeed 1.0f
          define Entity.SpineAnimationLoop true
          define Entity.SpineAnimationMix 0.2f]
 
     override this.Register (entity, world) =
         let world = World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        let world = World.sense handleAnimationChange entity.SpineSkeleton.ChangeEvent entity (nameof SpineSkeletonFacet) world
         let world = World.sense handleAnimationChange entity.SpineAnimationName.ChangeEvent entity (nameof SpineSkeletonFacet) world
         let world = World.sense handleAnimationChange entity.SpineAnimationLoop.ChangeEvent entity (nameof SpineSkeletonFacet) world
         let world = World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
@@ -1932,6 +1937,7 @@ type SpineSkeletonFacet () =
                 | FlipHV -> struct (-1.0f, -1.0f)
             spineSkeletonState.SpineSkeletonInstance.ScaleX <- scaleX
             spineSkeletonState.SpineSkeletonInstance.ScaleY <- scaleY
+            spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
             spineSkeletonState.SpineSkeletonInstance.Update deltaTime.Seconds
             spineSkeletonState.SpineAnimationState.Update deltaTime.Seconds
             spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance |> ignore<bool>
