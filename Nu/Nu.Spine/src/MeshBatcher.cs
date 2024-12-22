@@ -204,7 +204,7 @@ namespace Spine
 
         private unsafe void FlushVertexArray(int num_vertices, int num_indices, uint texture, Matrix4x4 matrix)
         {
-            if (num_vertices > 0 && num_indices > 0)
+            if (num_vertices > 0 && num_indices > 0 && texture != 0u)
             {
                 // setup state. TODO: implement parameterized blending styles.
                 Gl.BlendEquation(BlendEquationMode.FuncAdd);
