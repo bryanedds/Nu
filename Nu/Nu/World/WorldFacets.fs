@@ -1823,10 +1823,6 @@ type TmxMapFacet () =
         let tmxMap = entity.GetTmxMap world
         TmxMap.getAttributesInferred (entity.GetTileSizeDivisor world) tmxMap
 
-type SpineSkeletonState =
-    { SpineSkeletonInstance : Spine.Skeleton
-      SpineAnimationState : Spine.AnimationState }
-
 [<AutoOpen>]
 module SpineSkeletonExtensions =
     type Entity with
@@ -1847,6 +1843,8 @@ module SpineSkeletonExtensions =
         member this.SpineAnimationMix = lens (nameof this.SpineAnimationMix) this this.GetSpineAnimationMix this.SetSpineAnimationMix
         member this.SpineSkeletonAnimationTrackEvent = Events.SpineSkeletonAnimationTrackEvent --> this
 
+/// Augments an entity with Spine skeleton content.
+/// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
 type SpineSkeletonFacet () =
     inherit Facet (false, false, false)
 

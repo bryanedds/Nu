@@ -63,6 +63,12 @@ type TileMapDescriptor =
       TileMapSizeF : Vector2
       TileMapPosition : Vector2 }
 
+/// Represents the mutable backing state of a Spine skeleton.
+/// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
+type SpineSkeletonState =
+    { SpineSkeletonInstance : Spine.Skeleton
+      SpineAnimationState : Spine.AnimationState }
+
 /// The timing with which an effect should be evaluated in a frame.
 type RunMode =
     | RunEarly

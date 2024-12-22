@@ -369,6 +369,7 @@ type TmxMapDispatcher () =
         [typeof<TmxMapFacet>]
 
 /// Gives an entity the base behavior of a Spine skeleton.
+/// NOTE: Spine skeletons are inherently imperative and therefore currently unsupported by undo / redo.
 type SpineSkeletonDispatcher () =
     inherit Entity2dDispatcher (false, false, false)
 
