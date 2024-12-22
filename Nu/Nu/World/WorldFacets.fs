@@ -1836,6 +1836,15 @@ module SpineSkeletonExtensions =
         member this.GetSpineSkeletonStateOpt world : SpineSkeletonState option = this.Get (nameof this.SpineSkeletonStateOpt) world
         member this.SetSpineSkeletonStateOpt (value : SpineSkeletonState option) world = this.Set (nameof this.SpineSkeletonStateOpt) value world
         member this.SpineSkeletonStateOpt = lens (nameof this.SpineSkeletonStateOpt) this this.GetSpineSkeletonStateOpt this.SetSpineSkeletonStateOpt
+        member this.GetSpineAnimationName world : string = this.Get (nameof this.SpineAnimationName) world
+        member this.SetSpineAnimationName (value : string) world = this.Set (nameof this.SpineAnimationName) value world
+        member this.SpineAnimationName = lens (nameof this.SpineAnimationName) this this.GetSpineAnimationName this.SetSpineAnimationName
+        member this.GetSpineAnimationLoop world : bool = this.Get (nameof this.SpineAnimationLoop) world
+        member this.SetSpineAnimationLoop (value : bool) world = this.Set (nameof this.SpineAnimationLoop) value world
+        member this.SpineAnimationLoop = lens (nameof this.SpineAnimationLoop) this this.GetSpineAnimationLoop this.SetSpineAnimationLoop
+        member this.GetSpineAnimationMix world : single = this.Get (nameof this.SpineAnimationMix) world
+        member this.SetSpineAnimationMix (value : single) world = this.Set (nameof this.SpineAnimationMix) value world
+        member this.SpineAnimationMix = lens (nameof this.SpineAnimationMix) this this.GetSpineAnimationMix this.SetSpineAnimationMix
         member this.SpineSkeletonAnimationTrackEvent = Events.SpineSkeletonAnimationTrackEvent --> this
 
 type SpineSkeletonFacet () =
@@ -1852,23 +1861,44 @@ type SpineSkeletonFacet () =
                 let spineSkeletonInstance = Spine.Skeleton metadata.SpineSkeletonData
                 spineSkeletonInstance.Time <- localTime.Seconds
                 let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
-                spineAnimationStateData.DefaultMix <- 0.2f // TODO: P0: parameterize!
+                spineAnimationStateData.DefaultMix <- entity.GetSpineAnimationMix world
                 let spineAnimationState = Spine.AnimationState spineAnimationStateData
-                spineAnimationState.SetAnimation (0, "flying", true) |> ignore<Spine.TrackEntry> // TODO: P0: parameterize!
+                let spineAnimationName = entity.GetSpineAnimationName world
+                if notNull (spineAnimationState.Data.SkeletonData.FindAnimation spineAnimationName) then
+                    spineAnimationState.SetAnimation (0, spineAnimationName, entity.GetSpineAnimationLoop world) |> ignore<Spine.TrackEntry>
+                let color = entity.GetColor world
+                spineSkeletonInstance.R <- color.R
+                spineSkeletonInstance.G <- color.G
+                spineSkeletonInstance.B <- color.B
+                spineSkeletonInstance.A <- color.A
                 let spineSkeletonState = { SpineSkeletonInstance = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
                 let world = entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
                 (Some spineSkeletonState, world)
             | ValueNone -> (None, world)
         | Some spineSkeletonState -> (Some spineSkeletonState, world)
 
+    static let handleAnimationChange evt world =
+        let entity = evt.Subscriber : Entity
+        let world = entity.SetSpineSkeletonStateOpt None world
+        let world = getOrTryCreateSpineSkeletonState entity world |> snd
+        (Cascade, world)
+
     static member Properties =
         [define Entity.AlwaysUpdate true
          define Entity.StartTime GameTime.zero
-         define Entity.SpineSkeleton Assets.Default.SpineSkeleton
+         define Entity.Color Color.White
          define Entity.Flip FlipNone
-         nonPersistent Entity.SpineSkeletonStateOpt None]
+         define Entity.SpineSkeleton Assets.Default.SpineSkeleton
+         nonPersistent Entity.SpineSkeletonStateOpt None
+         define Entity.SpineAnimationName "Idle"
+         define Entity.SpineAnimationLoop true
+         define Entity.SpineAnimationMix 0.2f]
 
     override this.Register (entity, world) =
+        let world = World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        let world = World.sense handleAnimationChange entity.SpineAnimationName.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        let world = World.sense handleAnimationChange entity.SpineAnimationLoop.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        let world = World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
         entity.SetStartTime world.GameTime world
 
     override this.Update (entity, world) =
@@ -1891,6 +1921,11 @@ type SpineSkeletonFacet () =
             spineSkeletonState.SpineAnimationState.add_Complete completeDelegate
             spineSkeletonState.SpineAnimationState.add_End endDelegate
             spineSkeletonState.SpineAnimationState.add_Event eventDelegate
+            let color = entity.GetColor world
+            spineSkeletonState.SpineSkeletonInstance.R <- color.R
+            spineSkeletonState.SpineSkeletonInstance.G <- color.G
+            spineSkeletonState.SpineSkeletonInstance.B <- color.B
+            spineSkeletonState.SpineSkeletonInstance.A <- color.A
             let struct (scaleX, scaleY) =
                 match entity.GetFlip world with
                 | FlipNone -> struct (1.0f, 1.0f)
