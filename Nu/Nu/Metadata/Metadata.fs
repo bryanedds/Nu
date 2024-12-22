@@ -114,6 +114,10 @@ module Metadata =
                     let assetTag = AssetTag.make<Image> Assets.Default.PackageName Assets.Default.ImageName
                     (32, 32, assetTag :> obj) // TODO: P1: turn the resolution into constants?
             let spineAtlasFilePath = PathF.Combine (directoryPath, fileName + ".atlas")
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-ess", "")) else spineAtlasFilePath
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-pro", "")) else spineAtlasFilePath
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-ent", "")) else spineAtlasFilePath
+            let spineAtlasFilePath = if not (File.Exists spineAtlasFilePath) then spineAtlasFilePath.Replace (fileName, fileName.Replace ("-edu", "")) else spineAtlasFilePath
             let spineTextureRetriever = Spine.TextureRetriever getTexture
             try let spineAtlas = Spine.Atlas (spineAtlasFilePath, spineTextureRetriever)
                 if fileExtension = ".skel" then
