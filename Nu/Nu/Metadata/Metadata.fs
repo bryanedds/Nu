@@ -19,7 +19,7 @@ type TileMapMetadata =
 /// memory.
 type Metadata =
     | RawMetadata
-    | TextureMetadata of OpenGL.Texture.TextureMetadata
+    | TextureMetadata of Vortice.Vulkan.Texture.TextureMetadata
     | TileMapMetadata of TileMapMetadata
     | StaticModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
     | AnimatedModelMetadata of OpenGL.PhysicallyBased.PhysicallyBasedModel
@@ -50,21 +50,21 @@ module Metadata =
                 fileStream.ReadExactly ddsHeader
                 let height = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (12, 4))
                 let width = BinaryPrimitives.ReadUInt32LittleEndian (ddsHeader.AsSpan (16, 4))
-                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make (int width) (int height)))
+                Some (TextureMetadata (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height)))
             elif fileExtension = ".tga" then
                 let ddsHeader = Array.zeroCreate<byte> 16
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 fileStream.ReadExactly ddsHeader
                 let width = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (12, 2))
                 let height = BinaryPrimitives.ReadUInt16LittleEndian (ddsHeader.AsSpan (14, 2))
-                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make (int width) (int height)))
+                Some (TextureMetadata (Vortice.Vulkan.Texture.TextureMetadata.make (int width) (int height)))
             elif platform = PlatformID.Win32NT || platform = PlatformID.Win32Windows then
                 use fileStream = new FileStream (asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read)
                 use image = Drawing.Image.FromStream (fileStream, false, false)
-                Some (TextureMetadata (OpenGL.Texture.TextureMetadata.make image.Width image.Height))
+                Some (TextureMetadata (Vortice.Vulkan.Texture.TextureMetadata.make image.Width image.Height))
             else
                 Log.infoOnce "Slow path used to load texture metadata."
-                match OpenGL.Texture.TryCreateTextureData (true, asset.FilePath) with
+                match Vortice.Vulkan.Texture.TryCreateTextureData (true, asset.FilePath) with
                 | Some textureData ->
                     let metadata = textureData.Metadata
                     textureData.Dispose ()

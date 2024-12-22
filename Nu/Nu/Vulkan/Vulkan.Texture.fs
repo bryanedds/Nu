@@ -1,7 +1,8 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2023.
 
-namespace OpenGL
+namespace Vortice.Vulkan
+open OpenGL
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
@@ -149,7 +150,7 @@ module Texture =
             (minimalMipmapResolution, minimalMipmapBytes, remainingMipmapBytes)
         else (v2i dds.Width dds.Height, bytes, mipmapBytesArray)
 
-    /// An OpenGL texture's metadata.
+    /// A Vulkan texture's metadata.
     type TextureMetadata =
         { TextureWidth : int
           TextureHeight : int
@@ -208,7 +209,6 @@ module Texture =
                 Gl.BindTexture (TextureTarget.Texture2d, textureId)
                 let format = if blockCompress then Constants.OpenGL.BlockCompressedTextureFormat else Constants.OpenGL.UncompressedTextureFormat
                 Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
-                Hl.Assert ()
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                 Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -216,7 +216,6 @@ module Texture =
                 if anisoFilter then Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
                 if mipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
                 Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                Hl.Assert ()
                 (metadata, textureId)
             finally bytesPtr.Free ()
 
@@ -230,7 +229,6 @@ module Texture =
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
                     Gl.TexStorage2D (TextureTarget.Texture2d, inc mipmapBytesArray.Length, Branchless.reinterpret Constants.OpenGL.BlockCompressedTextureFormat, metadata.TextureWidth, metadata.TextureHeight)
                     Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, 0, 0, 0, metadata.TextureWidth, metadata.TextureHeight, Constants.OpenGL.BlockCompressedTextureFormat, bytes.Length, bytesPtr.AddrOfPinnedObject ())
-                    Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
@@ -238,7 +236,6 @@ module Texture =
                         try Gl.CompressedTexSubImage2D (TextureTarget.Texture2d, inc mipmapIndex, 0, 0, mipmapResolution.X, mipmapResolution.Y, Constants.OpenGL.BlockCompressedTextureFormat, mipmapBytes.Length, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
-                        Hl.Assert ()
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -248,7 +245,6 @@ module Texture =
                     if mipmaps && mipmapBytesArray.Length = 0 then
                         Gl.GenerateMipmap TextureTarget.Texture2d
                     Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                    Hl.Assert ()
                     (metadata, textureId)
                 finally bytesPtr.Free ()
 
@@ -259,7 +255,6 @@ module Texture =
                     Gl.BindTexture (TextureTarget.Texture2d, textureId)
                     let format = if blockCompress then Constants.OpenGL.BlockCompressedTextureFormat else Constants.OpenGL.UncompressedTextureFormat
                     Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr.AddrOfPinnedObject ())
-                    Hl.Assert ()
                     let mutable mipmapIndex = 0
                     while mipmapIndex < mipmapBytesArray.Length do
                         let (mipmapResolution, mipmapBytes) = mipmapBytesArray.[mipmapIndex]
@@ -267,7 +262,6 @@ module Texture =
                         try Gl.TexImage2D (TextureTarget.Texture2d, inc mipmapIndex, Constants.OpenGL.UncompressedTextureFormat, mipmapResolution.X, mipmapResolution.Y, 0, PixelFormat.Bgra, PixelType.UnsignedByte, mipmapBytesPtr.AddrOfPinnedObject ())
                         finally mipmapBytesPtr.Free ()
                         mipmapIndex <- inc mipmapIndex
-                        Hl.Assert ()
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
                     Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -277,7 +271,6 @@ module Texture =
                     if mipmaps && mipmapBytesArray.Length = 0 then
                         Gl.GenerateMipmap TextureTarget.Texture2d
                     Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                    Hl.Assert ()
                     (metadata, textureId)
                 finally bytesPtr.Free ()
 
@@ -289,7 +282,6 @@ module Texture =
             Gl.BindTexture (TextureTarget.Texture2d, textureId)
             let format = if blockCompress then Constants.OpenGL.BlockCompressedTextureFormat else Constants.OpenGL.UncompressedTextureFormat
             Gl.TexImage2D (TextureTarget.Texture2d, 0, format, metadata.TextureWidth, metadata.TextureHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, bytesPtr)
-            Hl.Assert ()
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, int minFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, int magFilter)
             Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapS, int TextureWrapMode.Repeat)
@@ -374,7 +366,6 @@ module Texture =
           TextureId : uint }
         member this.Destroy () =
             Gl.DeleteTextures [|this.TextureId|]
-            Hl.Assert ()
 
     /// A texture that can be loaded from another thread.
     type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalId : uint, fullMinFilter : TextureMinFilter, fullMagFilter : TextureMagFilter, fullAnisoFilter) =
@@ -412,7 +403,6 @@ module Texture =
                         Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureWrapT, int TextureWrapMode.Repeat)
                         if fullAnisoFilter then Gl.TexParameter (TextureTarget.Texture2d, TextureParameterName.TextureMaxAnisotropy, Constants.Render.TextureAnisotropyMax)
                         Gl.BindTexture (TextureTarget.Texture2d, 0u)
-                        Hl.Assert ()
                         fullServeParameterized <- true
                     textureId
                 | ValueNone -> minimalId
@@ -517,7 +507,6 @@ module Texture =
         let [<VolatileField>] mutable terminated = false
 
         member private this.Run () =
-            OpenGL.Hl.CreateSglContextSharedWithCurrentContext (window, sharedContext) |> ignore<nativeint>
             started <- true
             while not terminated do
                 let batchTime = Stopwatch.StartNew () // NOTE: we stop loading after 1/2 frame passed so far.
