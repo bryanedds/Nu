@@ -49,6 +49,7 @@
 		<Compile Include="JobGraph\JobGraph.fs" />
 		<Compile Include="Assimp\Assimp.fs" />
 		<Compile Include="Vulkan\Vulkan.Hl.fs" />
+		<Compile Include="Vulkan\Vulkan.Texture.fs" />
 		<Compile Include="OpenGL\OpenGL.Hl.fs" />
 		<Compile Include="OpenGL\OpenGL.Shader.fs" />
 		<Compile Include="OpenGL\OpenGL.Texture.fs" />
