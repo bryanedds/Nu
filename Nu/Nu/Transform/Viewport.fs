@@ -111,8 +111,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to 2d screen space.
     static member mouseTo2dScreen (_ : Vector2) (eyeSize : Vector2) (mousePosition : Vector2) viewport =
-        v2
-            +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
+        v2  +(mousePosition.X / single viewport.DisplayScalar - eyeSize.X * 0.5f)
             -(mousePosition.Y / single viewport.DisplayScalar - eyeSize.Y * 0.5f) // negation for right-handedness
 
     /// Transform the given mouse position to 2d world space.
@@ -153,8 +152,7 @@ type [<StructuralEquality; NoComparison>] Viewport =
 
     /// Transform the given mouse position to screen (normalized device coordinates).
     static member mouseToScreen3d (mousePosition : Vector2) (viewport : Viewport) =
-        v2
-            (mousePosition.X / single viewport.Bounds.Size.X)
+        v2  (mousePosition.X / single viewport.Bounds.Size.X)
             (1.0f - (mousePosition.Y / single viewport.Bounds.Size.Y)) // inversion for right-handedness
 
     /// Transform the given mouse position to 3d world space.
