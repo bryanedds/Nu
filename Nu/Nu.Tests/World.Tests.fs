@@ -18,11 +18,14 @@ module WorldTests =
     let [<Test; Category "Integration">] runIntegrationFrameThenCleanUp () =
         Nu.init ()
         let worldConfig = { WorldConfig.defaultConfig with Accompanied = true }
-        let viewport = Viewport.makeDisplay ()
-        match SdlDeps.tryMake worldConfig.SdlConfig viewport.Resolution with
+        let windowSize = Constants.Render.DisplayVirtualResolution * Globals.Render.DisplayScalar
+        match SdlDeps.tryMake worldConfig.SdlConfig windowSize with
         | Right sdlDeps ->
             use sdlDeps = sdlDeps // bind explicitly to dispose automatically
-            match World.tryMake sdlDeps worldConfig viewport (TestPlugin ()) with
+            let outerViewport = Viewport.makeOuter windowSize
+            let rasterViewport = Viewport.makeRaster outerViewport.Bounds
+            let geometryViewport = Viewport.makeGeometry outerViewport.Bounds.Size
+            match World.tryMake sdlDeps worldConfig geometryViewport rasterViewport outerViewport (TestPlugin ()) with
             | Right world ->
                 let result = World.runWithCleanUp (fun world -> world.UpdateTime < 1L) id id id id id Live true world
                 Assert.Equal (result, Constants.Engine.ExitCodeSuccess)
