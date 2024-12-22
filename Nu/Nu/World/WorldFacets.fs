@@ -1963,6 +1963,32 @@ type SpineSkeletonFacet () =
             World.enqueueRenderMessage2d renderOperation world
         | None -> ()
 
+    override this.GetAttributesInferred (entity, world) =
+        let (spineSkeletonStateOpt, world) = getOrTryCreateSpineSkeletonState entity world
+        match spineSkeletonStateOpt with
+        | Some spineSkeletonState ->
+
+            // update skeleton so we can take some actual metrics
+            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance |> ignore<bool>
+            spineSkeletonState.SpineSkeletonInstance.UpdateWorldTransform Spine.Skeleton.Physics.Update
+            let mutable (minX, minY, maxX, maxY) = (Single.MaxValue, Single.MaxValue, Single.MinValue, Single.MinValue)
+
+            // compute bounds
+            // NOTE: this uses a simplistic algorithm that merely makes a very loose approximation of the bounds since
+            // SkeletonBounds doesn't work in our test case.
+            // TODO: P1: improve the accuracy of this algorithm
+            for slot in spineSkeletonState.SpineSkeletonInstance.Slots do
+                if slot.Bone.Active then
+                    minX <- min minX slot.Bone.AX
+                    minY <- min minY slot.Bone.AY
+                    maxX <- max maxX slot.Bone.AX
+                    maxY <- max maxY slot.Bone.AY
+            let skeletonSize = v3 (maxX - minX) (maxY - minY) 0.0f
+            let skeletonOffset = v3 ((skeletonSize.X * 0.5f - maxX) / skeletonSize.X * 0.5f) ((skeletonSize.Y * 0.5f - maxY) / skeletonSize.Y * 0.5f) 0.0f
+            AttributesInferred.important skeletonSize skeletonOffset
+
+        | None -> base.GetAttributesInferred (entity, world)
+
 [<AutoOpen>]
 module LayoutFacetExtensions =
     type Entity with
