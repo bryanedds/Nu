@@ -641,6 +641,19 @@ module WorldImGui =
                           PartitionType = scvalue partitionTypeStr }
                     (true, nav3dConfig)
                 else (false, nav3dConfig)
+            | :? (SpineAnimation array) as animations ->
+                ImGui.Text name
+                ImGui.SameLine ()
+                ImGui.PushID name
+                let (changed, animations) =
+                    World.imGuiEditPropertyArray
+                        (fun name animation ->
+                            let (changed, animation) = World.imGuiEditProperty name (typeof<SpineAnimation>) animation context world
+                            (changed, animation :?> SpineAnimation))
+                        { SpineAnimationName = ""; SpineAnimationPlayback = Loop }
+                        name animations context
+                ImGui.PopID ()
+                (changed, animations)
             | :? (Animation array) as animations ->
                 ImGui.Text name
                 ImGui.SameLine ()

@@ -1832,8 +1832,8 @@ module SpineSkeletonExtensions =
         member this.GetSpineSkeletonStateOpt world : SpineSkeletonState option = this.Get (nameof this.SpineSkeletonStateOpt) world
         member this.SetSpineSkeletonStateOpt (value : SpineSkeletonState option) world = this.Set (nameof this.SpineSkeletonStateOpt) value world
         member this.SpineSkeletonStateOpt = lens (nameof this.SpineSkeletonStateOpt) this this.GetSpineSkeletonStateOpt this.SetSpineSkeletonStateOpt
-        member this.GetSpineAnimations world : SpineAnimation list = this.Get (nameof this.SpineAnimations) world
-        member this.SetSpineAnimations (value : SpineAnimation list) world = this.Set (nameof this.SpineAnimations) value world
+        member this.GetSpineAnimations world : SpineAnimation array = this.Get (nameof this.SpineAnimations) world
+        member this.SetSpineAnimations (value : SpineAnimation array) world = this.Set (nameof this.SpineAnimations) value world
         member this.SpineAnimations = lens (nameof this.SpineAnimations) this this.GetSpineAnimations this.SetSpineAnimations
         member this.GetSpineAnimationSpeed world : single = this.Get (nameof this.SpineAnimationSpeed) world
         member this.SetSpineAnimationSpeed (value : single) world = this.Set (nameof this.SpineAnimationSpeed) value world
@@ -1892,7 +1892,7 @@ type SpineSkeletonFacet () =
          define Entity.Flip FlipNone
          define Entity.SpineSkeleton Assets.Default.SpineSkeleton
          nonPersistent Entity.SpineSkeletonStateOpt None
-         define Entity.SpineAnimations [{ SpineAnimationName = "idle"; SpineAnimationPlayback = Loop }]
+         define Entity.SpineAnimations [|{ SpineAnimationName = "idle"; SpineAnimationPlayback = Loop }|]
          define Entity.SpineAnimationSpeed 1.0f
          define Entity.SpineAnimationMix 0.2f]
 
