@@ -64,8 +64,7 @@ type TileMapDescriptor =
       TileMapPosition : Vector2 }
 
 /// Describes a Spine animation for a given track.
-[<DefaultValue "[idle Loop]">]
-type SpineAnimation =
+type [<DefaultValue "[idle Loop]">] SpineAnimation =
     { SpineAnimationName : string
       SpineAnimationPlayback : Playback }
 
