@@ -597,11 +597,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
     /// Upload the font atlas to the image.
     static member uploadFont extent uploadSize pixels image graphicsQueue transferCommandPool allocator device =
         
-        // create upload buffer
-        let uploadBuffer = Hl.AllocatedBuffer.createStaging uploadSize allocator
-
         // upload font atlas
-        Hl.AllocatedBuffer.upload 0 uploadSize (NativePtr.nativeintToVoidPtr pixels) uploadBuffer allocator
+        let uploadBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels allocator
 
         // copy font atlas to image
         VulkanRendererImGui.copyFont extent uploadBuffer.Buffer image graphicsQueue transferCommandPool device
@@ -690,8 +687,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
                         
                         // TODO: try a persistently mapped buffer and compare performance
-                        Hl.AllocatedBuffer.upload vertexOffset vertexSize (NativePtr.nativeintToVoidPtr drawList.VtxBuffer.Data) vertexBuffer allocator
-                        Hl.AllocatedBuffer.upload indexOffset indexSize (NativePtr.nativeintToVoidPtr drawList.IdxBuffer.Data) indexBuffer allocator
+                        Hl.AllocatedBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer allocator
+                        Hl.AllocatedBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer allocator
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 

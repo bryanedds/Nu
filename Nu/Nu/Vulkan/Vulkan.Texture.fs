@@ -171,6 +171,29 @@ module Texture =
               TextureTexelWidth = 0.0f
               TextureTexelHeight = 0.0f }
 
+    /// An abstraction of a texture as managed by Vulkan.
+    type VulkanTexture =
+        { Image : Hl.AllocatedImage
+          ImageView : VkImageView
+          Sampler : VkSampler }
+
+        /// Create a VulkanTexture.
+        static member create format bytesPerPixel width height samplerInfo pixels allocator =
+
+            // general data
+            let uploadSize = width * height * bytesPerPixel
+            let extent = VkExtent3D (width, height, 1)
+
+            // upload pixels to staging buffer
+            let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels allocator
+
+
+            // destroy staging buffer
+            Hl.AllocatedBuffer.destroy stagingBuffer allocator
+
+
+            ()
+    
     /// Describes data loaded from a texture.
     type TextureData =
         | TextureDataDotNet of Metadata : TextureMetadata * Bytes : byte array

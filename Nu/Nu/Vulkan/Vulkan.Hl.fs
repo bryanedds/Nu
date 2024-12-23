@@ -144,7 +144,7 @@ module Hl =
         /// Upload data to buffer if upload is enabled.
         static member upload offset size ptr buffer allocator =
             if buffer.UploadEnabled
-            then Vma.vmaCopyMemoryToAllocation (allocator, ptr, buffer.Allocation, uint64 offset, uint64 size) |> check
+            then Vma.vmaCopyMemoryToAllocation (allocator, NativePtr.nativeintToVoidPtr ptr, buffer.Allocation, uint64 offset, uint64 size) |> check
             else failwith "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Create an allocated staging buffer.
@@ -173,6 +173,12 @@ module Hl =
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
             allocatedBuffer
+        
+        /// Create an allocated staging buffer and stage the data.
+        static member stageData size ptr allocator =
+            let buffer = AllocatedBuffer.createStaging size allocator
+            AllocatedBuffer.upload 0 size ptr buffer allocator
+            buffer
         
         /// Destroy buffer and allocation.
         static member destroy buffer allocator =
