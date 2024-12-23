@@ -278,7 +278,7 @@ type Layout =
 
 /// The type of a screen transition. Incoming means a new screen is being shown and Outgoing
 /// means an existing screen being hidden.
-type [<Struct>] TransitionType =
+type TransitionType =
     | Incoming
     | Outgoing
 
