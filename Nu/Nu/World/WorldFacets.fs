@@ -1980,7 +1980,7 @@ type SpineSkeletonFacet () =
             // compute bounds
             // NOTE: this uses a simplistic algorithm that merely makes a very loose approximation of the bounds since
             // SkeletonBounds doesn't work in our test case.
-            // TODO: P1: improve the accuracy of this algorithm
+            // TODO: P1: improve the accuracy of this algorithm.
             for slot in spineSkeletonState.SpineSkeletonInstance.Slots do
                 if slot.Bone.Active then
                     minX <- min minX slot.Bone.AX

@@ -378,7 +378,14 @@ module Metadata =
     let tryGetSpineSkeletonMetadata (spineSkeleton : SpineSkeleton AssetTag) =
         match tryGetMetadata spineSkeleton with
         | ValueSome (SpineSkeletonMetadata spineSkeletonMetadata) -> ValueSome spineSkeletonMetadata
-        | ValueSome _ | ValueNone -> ValueNone
+        | ValueSome _->
+            Log.warn
+                ("This failure to locate Spine skeleton metadata may mean that you used the same asset name (file " +
+                 "name without extension) for a Spine skeleton as you did for one of its image files. Make sure that " +
+                 "your Spine skeleton .json or .skel file has a name that is different than any of its image files, " +
+                 "such as suffixing its file name with -ess or -pro.")
+            ValueNone
+        | ValueNone -> ValueNone
 
     /// Forcibly get the metadata of the given Spine skeleton (throwing on failure).
     /// Thread-safe.
