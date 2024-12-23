@@ -1832,12 +1832,9 @@ module SpineSkeletonExtensions =
         member this.GetSpineSkeletonStateOpt world : SpineSkeletonState option = this.Get (nameof this.SpineSkeletonStateOpt) world
         member this.SetSpineSkeletonStateOpt (value : SpineSkeletonState option) world = this.Set (nameof this.SpineSkeletonStateOpt) value world
         member this.SpineSkeletonStateOpt = lens (nameof this.SpineSkeletonStateOpt) this this.GetSpineSkeletonStateOpt this.SetSpineSkeletonStateOpt
-        member this.GetSpineAnimationName world : string = this.Get (nameof this.SpineAnimationName) world
-        member this.SetSpineAnimationName (value : string) world = this.Set (nameof this.SpineAnimationName) value world
-        member this.SpineAnimationName = lens (nameof this.SpineAnimationName) this this.GetSpineAnimationName this.SetSpineAnimationName
-        member this.GetSpineAnimationLoop world : bool = this.Get (nameof this.SpineAnimationLoop) world
-        member this.SetSpineAnimationLoop (value : bool) world = this.Set (nameof this.SpineAnimationLoop) value world
-        member this.SpineAnimationLoop = lens (nameof this.SpineAnimationLoop) this this.GetSpineAnimationLoop this.SetSpineAnimationLoop
+        member this.GetSpineAnimations world : SpineAnimation list = this.Get (nameof this.SpineAnimations) world
+        member this.SetSpineAnimations (value : SpineAnimation list) world = this.Set (nameof this.SpineAnimations) value world
+        member this.SpineAnimations = lens (nameof this.SpineAnimations) this this.GetSpineAnimations this.SetSpineAnimations
         member this.GetSpineAnimationSpeed world : single = this.Get (nameof this.SpineAnimationSpeed) world
         member this.SetSpineAnimationSpeed (value : single) world = this.Set (nameof this.SpineAnimationSpeed) value world
         member this.SpineAnimationSpeed = lens (nameof this.SpineAnimationSpeed) this this.GetSpineAnimationSpeed this.SetSpineAnimationSpeed
@@ -1864,15 +1861,19 @@ type SpineSkeletonFacet () =
                 let spineAnimationStateData = Spine.AnimationStateData spineSkeletonInstance.Data
                 spineAnimationStateData.DefaultMix <- entity.GetSpineAnimationMix world
                 let spineAnimationState = Spine.AnimationState spineAnimationStateData
-                let spineAnimationName = entity.GetSpineAnimationName world
-                if notNull (spineAnimationState.Data.SkeletonData.FindAnimation spineAnimationName) then
-                    spineAnimationState.SetAnimation (0, spineAnimationName, entity.GetSpineAnimationLoop world) |> ignore<Spine.TrackEntry>
+                let spineAnimations = entity.GetSpineAnimations world
+                spineAnimationState.ClearTracks ()
+                let mutable i = 0
+                for spineAnimation in spineAnimations do
+                    if notNull (spineAnimationState.Data.SkeletonData.FindAnimation spineAnimation.SpineAnimationName) then
+                        spineAnimationState.SetAnimation (i, spineAnimation.SpineAnimationName, spineAnimation.SpineAnimationPlayback = Loop) |> ignore<Spine.TrackEntry>
+                        i <- inc i
                 let color = entity.GetColor world
                 spineSkeletonInstance.R <- color.R
                 spineSkeletonInstance.G <- color.G
                 spineSkeletonInstance.B <- color.B
                 spineSkeletonInstance.A <- color.A
-                let spineSkeletonState = { SpineSkeletonInstance = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
+                let spineSkeletonState = { SpineSkeleton = spineSkeletonInstance; SpineAnimationState = spineAnimationState }
                 let world = entity.SetSpineSkeletonStateOpt (Some spineSkeletonState) world
                 (Some spineSkeletonState, world)
             | ValueNone -> (None, world)
@@ -1891,16 +1892,14 @@ type SpineSkeletonFacet () =
          define Entity.Flip FlipNone
          define Entity.SpineSkeleton Assets.Default.SpineSkeleton
          nonPersistent Entity.SpineSkeletonStateOpt None
-         define Entity.SpineAnimationName "idle"
+         define Entity.SpineAnimations [{ SpineAnimationName = "idle"; SpineAnimationPlayback = Loop }]
          define Entity.SpineAnimationSpeed 1.0f
-         define Entity.SpineAnimationLoop true
          define Entity.SpineAnimationMix 0.2f]
 
     override this.Register (entity, world) =
         let world = World.sense handleAnimationChange entity.StartTime.ChangeEvent entity (nameof SpineSkeletonFacet) world
         let world = World.sense handleAnimationChange entity.SpineSkeleton.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        let world = World.sense handleAnimationChange entity.SpineAnimationName.ChangeEvent entity (nameof SpineSkeletonFacet) world
-        let world = World.sense handleAnimationChange entity.SpineAnimationLoop.ChangeEvent entity (nameof SpineSkeletonFacet) world
+        let world = World.sense handleAnimationChange entity.SpineAnimations.ChangeEvent entity (nameof SpineSkeletonFacet) world
         let world = World.sense handleAnimationChange entity.SpineAnimationMix.ChangeEvent entity (nameof SpineSkeletonFacet) world
         entity.SetStartTime world.GameTime world
 
@@ -1925,23 +1924,23 @@ type SpineSkeletonFacet () =
             spineSkeletonState.SpineAnimationState.add_End endDelegate
             spineSkeletonState.SpineAnimationState.add_Event eventDelegate
             let color = entity.GetColor world
-            spineSkeletonState.SpineSkeletonInstance.R <- color.R
-            spineSkeletonState.SpineSkeletonInstance.G <- color.G
-            spineSkeletonState.SpineSkeletonInstance.B <- color.B
-            spineSkeletonState.SpineSkeletonInstance.A <- color.A
+            spineSkeletonState.SpineSkeleton.R <- color.R
+            spineSkeletonState.SpineSkeleton.G <- color.G
+            spineSkeletonState.SpineSkeleton.B <- color.B
+            spineSkeletonState.SpineSkeleton.A <- color.A
             let struct (scaleX, scaleY) =
                 match entity.GetFlip world with
                 | FlipNone -> struct (1.0f, 1.0f)
                 | FlipH -> struct (-1.0f, 1.0f)
                 | FlipV -> struct (1.0f, -1.0f)
                 | FlipHV -> struct (-1.0f, -1.0f)
-            spineSkeletonState.SpineSkeletonInstance.ScaleX <- scaleX
-            spineSkeletonState.SpineSkeletonInstance.ScaleY <- scaleY
+            spineSkeletonState.SpineSkeleton.ScaleX <- scaleX
+            spineSkeletonState.SpineSkeleton.ScaleY <- scaleY
             spineSkeletonState.SpineAnimationState.TimeScale <- entity.GetSpineAnimationSpeed world
-            spineSkeletonState.SpineSkeletonInstance.Update deltaTime.Seconds
+            spineSkeletonState.SpineSkeleton.Update deltaTime.Seconds
             spineSkeletonState.SpineAnimationState.Update deltaTime.Seconds
-            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance |> ignore<bool>
-            spineSkeletonState.SpineSkeletonInstance.UpdateWorldTransform Spine.Skeleton.Physics.Update
+            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
+            spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
             spineSkeletonState.SpineAnimationState.remove_Start startDelegate
             spineSkeletonState.SpineAnimationState.remove_Interrupt interruptDelegate
             spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
@@ -1961,7 +1960,7 @@ type SpineSkeletonFacet () =
         | Some spineSkeletonState ->
             let mutable transform = entity.GetTransform world
             let spineSkeletonId = entity.GetId world
-            let spineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeletonInstance // NOTE: this is where the bulk of this entity's allocations are coming from.
+            let spineSkeletonClone = Spine.Skeleton spineSkeletonState.SpineSkeleton // NOTE: this is where the bulk of this entity's allocations are coming from.
             let renderSpineSkeleton = RenderSpineSkeleton { Transform = transform; SpineSkeletonId = spineSkeletonId; SpineSkeletonClone = spineSkeletonClone }
             let renderOperation = LayeredOperation2d { Elevation = transform.Elevation; Horizon = transform.Horizon; AssetTag = spineSkeleton; RenderOperation2d = renderSpineSkeleton }
             World.enqueueRenderMessage2d renderOperation world
@@ -1973,15 +1972,15 @@ type SpineSkeletonFacet () =
         | Some spineSkeletonState ->
 
             // update skeleton so we can take some actual metrics
-            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeletonInstance |> ignore<bool>
-            spineSkeletonState.SpineSkeletonInstance.UpdateWorldTransform Spine.Skeleton.Physics.Update
+            spineSkeletonState.SpineAnimationState.Apply spineSkeletonState.SpineSkeleton |> ignore<bool>
+            spineSkeletonState.SpineSkeleton.UpdateWorldTransform Spine.Skeleton.Physics.Update
             let mutable (minX, minY, maxX, maxY) = (Single.MaxValue, Single.MaxValue, Single.MinValue, Single.MinValue)
 
             // compute bounds
             // NOTE: this uses a simplistic algorithm that merely makes a very loose approximation of the bounds since
             // SkeletonBounds doesn't work in our test case.
             // TODO: P1: improve the accuracy of this algorithm.
-            for slot in spineSkeletonState.SpineSkeletonInstance.Slots do
+            for slot in spineSkeletonState.SpineSkeleton.Slots do
                 if slot.Bone.Active then
                     minX <- min minX slot.Bone.AX
                     minY <- min minY slot.Bone.AY
