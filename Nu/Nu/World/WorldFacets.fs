@@ -1841,7 +1841,7 @@ module SpineSkeletonExtensions =
         member this.GetSpineAnimationMix world : single = this.Get (nameof this.SpineAnimationMix) world
         member this.SetSpineAnimationMix (value : single) world = this.Set (nameof this.SpineAnimationMix) value world
         member this.SpineAnimationMix = lens (nameof this.SpineAnimationMix) this this.GetSpineAnimationMix this.SetSpineAnimationMix
-        member this.SpineSkeletonAnimationTrackEvent = Events.SpineSkeletonAnimationTrackEvent --> this
+        member this.SpineSkeletonAnimationTriggerEvent = Events.SpineSkeletonAnimationTriggerEvent --> this
 
 /// Augments an entity with Spine skeleton content.
 /// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
@@ -1946,11 +1946,11 @@ type SpineSkeletonFacet () =
             spineSkeletonState.SpineAnimationState.remove_Complete completeDelegate
             spineSkeletonState.SpineAnimationState.remove_End endDelegate
             spineSkeletonState.SpineAnimationState.remove_Event eventDelegate
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world startTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world interruptTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world completeTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world endTrackArgs
-            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTrackEvent entity world) world eventTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationStartData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world startTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationInterruptData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world interruptTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationCompleteData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world completeTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEndData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world endTrackArgs
+            let world = Seq.fold (fun world arg -> World.publishUnsorted (SpineSkeletonAnimationEventData arg) entity.SpineSkeletonAnimationTriggerEvent entity world) world eventTrackArgs
             world
         | None -> world
 

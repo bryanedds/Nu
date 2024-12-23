@@ -26,7 +26,7 @@ type BodyResult =
 
 /// Describe a Spine skeleton result.
 type SpineSkeletonResult =
-    | SpineSkeletonAnimationTrack of SpineSkeletonAnimationTrackData
+    | SpineSkeletonAnimationTrigger of SpineSkeletonAnimationTriggerData
 
 [<AutoOpen>]
 module WorldImNui =
@@ -113,7 +113,7 @@ module WorldImNui =
 
         /// TODO: document this!
         static member initSpineSkeletonAnimationResult mapResult (entity : Entity) world =
-            World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ SpineSkeletonAnimationTrack event.Data) world)) entity.SpineSkeletonAnimationTrackEvent entity world
+            World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ SpineSkeletonAnimationTrigger event.Data) world)) entity.SpineSkeletonAnimationTriggerEvent entity world
 
         /// Clear the current ImNui context.
         static member scopeWorld world =
