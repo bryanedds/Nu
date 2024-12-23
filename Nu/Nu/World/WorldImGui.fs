@@ -641,7 +641,7 @@ module WorldImGui =
                           PartitionType = scvalue partitionTypeStr }
                     (true, nav3dConfig)
                 else (false, nav3dConfig)
-            | :? (SpineAnimation array) as animations ->
+            | :? (SpineAnimation array) as animations -> // TODO: P1: implement bepoke individual SpineAnimation editing.
                 ImGui.Text name
                 ImGui.SameLine ()
                 ImGui.PushID name
