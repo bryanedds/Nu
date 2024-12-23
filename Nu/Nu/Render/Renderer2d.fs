@@ -171,9 +171,9 @@ type [<ReferenceEquality>] StubRenderer2d =
 type [<ReferenceEquality>] GlRenderer2d =
     private
         { mutable Viewport : Viewport
-          SpriteShader : int * int * int * int * uint // TODO: release these resources on clean-up.
-          SpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
-          TextQuad : uint * uint * uint // TODO: release these resources on clean-up.
+          SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
+          SpriteQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
+          TextQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
           SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
