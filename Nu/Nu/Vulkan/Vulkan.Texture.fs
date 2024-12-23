@@ -177,19 +177,38 @@ module Texture =
           ImageView : VkImageView
           Sampler : VkSampler }
 
+        /// Create the image.
+        static member private createImage format extent allocator =
+            let mutable info = VkImageCreateInfo ()
+            info.imageType <- Vulkan.VK_IMAGE_TYPE_2D
+            info.format <- format
+            info.extent <- extent
+            info.mipLevels <- 1u
+            info.arrayLayers <- 1u
+            info.samples <- Vulkan.VK_SAMPLE_COUNT_1_BIT
+            info.tiling <- Vulkan.VK_IMAGE_TILING_OPTIMAL
+            info.usage <- Vulkan.VK_IMAGE_USAGE_SAMPLED_BIT ||| Vulkan.VK_IMAGE_USAGE_TRANSFER_DST_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            info.initialLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
+            let allocatedImage = Hl.AllocatedImage.create info allocator
+            allocatedImage
+        
         /// Create a VulkanTexture.
-        static member create format bytesPerPixel width height samplerInfo pixels allocator =
+        static member create format bytesPerPixel width height samplerInfo pixels (vulkanGlobal : Hl.VulkanGlobal) =
 
             // general data
             let uploadSize = width * height * bytesPerPixel
             let extent = VkExtent3D (width, height, 1)
 
             // upload pixels to staging buffer
-            let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels allocator
+            let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vulkanGlobal.VmaAllocator
+
+            // create image
+            let image = VulkanTexture.createImage format extent vulkanGlobal.VmaAllocator
 
 
             // destroy staging buffer
-            Hl.AllocatedBuffer.destroy stagingBuffer allocator
+            Hl.AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
 
 
             ()
