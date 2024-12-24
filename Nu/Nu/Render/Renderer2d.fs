@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.IO
 open System.Numerics
 open System.Runtime.InteropServices
+open Vortice.Vulkan
 open SDL2
 open TiledSharp
 open Prime
@@ -832,3 +833,24 @@ type [<ReferenceEquality>] GlRenderer2d =
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
+
+/// The Vulkan implementation of Renderer2d.
+type [<ReferenceEquality>] VulkanRenderer2d =
+    private
+        { VulkanGlobal : Hl.VulkanGlobal
+          RenderPackages : Packages<RenderAsset, AssetClient> }
+
+    interface Renderer2d with
+        member renderer.Render _ _ _ _ = ()
+        member renderer.CleanUp () = ()
+
+    /// Make a VulkanRenderer2d.
+    static member make vulkanGlobal =
+        
+        // make renderer
+        let renderer =
+            { VulkanGlobal = vulkanGlobal
+              RenderPackages = dictPlus StringComparer.Ordinal [] }
+
+        // fin
+        renderer

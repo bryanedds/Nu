@@ -335,7 +335,7 @@ type RendererThread () =
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
 
                     // create 2d renderer
-                    let renderer2d = StubRenderer2d.make () :> Renderer2d
+                    let renderer2d = VulkanRenderer2d.make vulkanGlobal :> Renderer2d
 
                     // create imgui renderer
                     let rendererImGui = VulkanRendererImGui.make fonts vulkanGlobal :> RendererImGui
