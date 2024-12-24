@@ -840,8 +840,27 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanGlobal : Hl.VulkanGlobal
           RenderPackages : Packages<RenderAsset, AssetClient> }
 
+    static member private handleRenderMessage renderMessage renderer =
+        match renderMessage with
+        | LayeredOperation2d operation -> ()// renderer.LayeredOperations.Add operation
+        | LoadRenderPackage2d hintPackageUse -> ()// GlRenderer2d.handleLoadRenderPackage hintPackageUse renderer
+        | UnloadRenderPackage2d hintPackageDisuse -> ()// GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
+        | ReloadRenderAssets2d -> ()// renderer.ReloadAssetsRequested <- true
+
+    static member private handleRenderMessages renderMessages renderer =
+        for renderMessage in renderMessages do
+            VulkanRenderer2d.handleRenderMessage renderMessage renderer
+    
+    static member private render _ _ renderMessages renderer =
+        
+        VulkanRenderer2d.handleRenderMessages renderMessages renderer
+    
     interface Renderer2d with
-        member renderer.Render _ _ _ _ = ()
+        
+        member renderer.Render eyeCenter eyeSize _ renderMessages =
+            if renderMessages.Count > 0 then
+                VulkanRenderer2d.render eyeCenter eyeSize renderMessages renderer
+        
         member renderer.CleanUp () = ()
 
     /// Make a VulkanRenderer2d.
