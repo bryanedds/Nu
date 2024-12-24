@@ -193,6 +193,82 @@ module Texture =
             let allocatedImage = Hl.AllocatedImage.create info allocator
             allocatedImage
         
+        /// Copy the pixels from the staging buffer to the image.
+        static member private copyBufferToImage extent buffer image (vulkanGlobal : Hl.VulkanGlobal) =
+            
+            // create command buffer for transfer
+            let mutable commandBuffer = Hl.allocateCommandBuffer vulkanGlobal.TransferCommandPool vulkanGlobal.Device
+
+            // reset command buffer and begin recording
+            Vulkan.vkResetCommandPool (vulkanGlobal.Device, vulkanGlobal.TransferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
+            let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+            Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> Hl.check
+
+            // transition image layout for data transfer
+            let mutable copyBarrier = VkImageMemoryBarrier ()
+            copyBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            copyBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            copyBarrier.subresourceRange <- Hl.makeSubresourceRangeColor 1u
+            copyBarrier.dstAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+            copyBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_UNDEFINED
+            copyBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            copyBarrier.image <- image
+            Vulkan.vkCmdPipelineBarrier
+                (commandBuffer,
+                 Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
+                 Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &copyBarrier)
+
+            // copy data from buffer to image
+            let mutable region = VkBufferImageCopy ()
+            region.imageSubresource <- Hl.makeSubresourceLayersColor ()
+            region.imageExtent <- extent
+            Vulkan.vkCmdCopyBufferToImage
+                (commandBuffer,
+                 buffer, image,
+                 Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                 1u, asPointer &region)
+
+            // transition image layout for usage
+            let mutable useBarrier = VkImageMemoryBarrier ()
+            useBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            useBarrier.dstQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
+            useBarrier.subresourceRange <- Hl.makeSubresourceRangeColor 1u
+            useBarrier.srcAccessMask <- Vulkan.VK_ACCESS_TRANSFER_WRITE_BIT
+            useBarrier.dstAccessMask <- Vulkan.VK_ACCESS_SHADER_READ_BIT
+            useBarrier.oldLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+            useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            useBarrier.image <- image
+            Vulkan.vkCmdPipelineBarrier
+                (commandBuffer,
+                 Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                 Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                 VkDependencyFlags.None,
+                 0u, nullPtr, 0u, nullPtr,
+                 1u, asPointer &useBarrier)
+
+            // execute commands
+            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
+            let mutable sInfo = VkSubmitInfo ()
+            sInfo.commandBufferCount <- 1u
+            sInfo.pCommandBuffers <- asPointer &commandBuffer
+            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> Hl.check
+            Vulkan.vkQueueWaitIdle vulkanGlobal.GraphicsQueue |> Hl.check
+        
+        /// Create the sampler.
+        static member private createSampler samplerInfo device =
+            let mutable sampler = Unchecked.defaultof<VkSampler>
+            Vulkan.vkCreateSampler (device, &samplerInfo, nullPtr, &sampler) |> Hl.check
+            sampler
+        
+        /// Destroy VulkanTexture.
+        static member destroy vulkanTexture (vulkanGlobal : Hl.VulkanGlobal) =
+            Vulkan.vkDestroySampler (vulkanGlobal.Device, vulkanTexture.Sampler, nullPtr)
+            Vulkan.vkDestroyImageView (vulkanGlobal.Device, vulkanTexture.ImageView, nullPtr)
+            Hl.AllocatedImage.destroy vulkanTexture.Image vulkanGlobal.VmaAllocator
+        
         /// Create a VulkanTexture.
         static member create format bytesPerPixel width height samplerInfo pixels (vulkanGlobal : Hl.VulkanGlobal) =
 
@@ -203,15 +279,25 @@ module Texture =
             // upload pixels to staging buffer
             let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vulkanGlobal.VmaAllocator
 
-            // create image
+            // create image and copy pixels to it
             let image = VulkanTexture.createImage format extent vulkanGlobal.VmaAllocator
+            VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vulkanGlobal
 
+            // create image view and sampler
+            let imageView = Hl.createImageView format 1u image.Image vulkanGlobal.Device
+            let sampler = VulkanTexture.createSampler samplerInfo vulkanGlobal.Device
 
             // destroy staging buffer
             Hl.AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
 
+            // make VulkanTexture
+            let vulkanTexture =
+                { Image = image
+                  ImageView = imageView
+                  Sampler = sampler }
 
-            ()
+            // fin
+            vulkanTexture
     
     /// Describes data loaded from a texture.
     type TextureData =

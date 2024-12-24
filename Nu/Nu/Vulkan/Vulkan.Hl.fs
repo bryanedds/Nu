@@ -112,7 +112,7 @@ module Hl =
             // create vma buffer
             Vma.vmaCreateBuffer (allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullPtr) |> check
 
-            // make allocatedBuffer
+            // make AllocatedBuffer
             let allocatedBuffer =
                 { Buffer = buffer
                   Allocation = allocation
@@ -835,7 +835,7 @@ module Hl =
                 // create swapchain framebuffers
                 let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent renderPass swapchainImageViews device
                 
-                // make vulkanGlobal
+                // make VulkanGlobal
                 let vulkanGlobal =
                     { Instance = instance
                       Surface = surface
