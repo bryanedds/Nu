@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu.Template.ImNui.Empty": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

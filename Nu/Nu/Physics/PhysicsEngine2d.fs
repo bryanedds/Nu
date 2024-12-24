@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -520,12 +520,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine2d.applyBodyTorque applyBodyTorqueMessage physicsEngine
         | JumpBodyMessage jumpBodyMessage -> PhysicsEngine2d.jumpBody jumpBodyMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- PhysicsEngine2d.toPhysicsV2 gravity
-        | ClearPhysicsMessageInternal ->
-            physicsEngine.PhysicsContext.Clear ()
-            physicsEngine.Joints.Clear ()
-            physicsEngine.Bodies.Clear ()
-            physicsEngine.CreateBodyJointMessages.Clear ()
-            physicsEngine.IntegrationMessages.Clear ()
 
     static member private createIntegrationMessagesAndSleepAwakeStaticBodies physicsEngine =
         for bodyEntry in physicsEngine.Bodies do
@@ -655,6 +649,19 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 physicsEngine.IntegrationMessages.Clear ()
                 Some integrationMessages
             else None
+
+        member physicsEngine.ClearInternal () =
+            let affected =
+                physicsEngine.Joints.Count > 0 ||
+                physicsEngine.Bodies.Count > 0 ||
+                physicsEngine.CreateBodyJointMessages.Count > 0 ||
+                physicsEngine.IntegrationMessages.Count > 0
+            physicsEngine.Joints.Clear ()
+            physicsEngine.Bodies.Clear ()
+            physicsEngine.CreateBodyJointMessages.Clear ()
+            physicsEngine.IntegrationMessages.Clear ()
+            physicsEngine.PhysicsContext.Clear ()
+            affected
 
         member physicsEngine.CleanUp () =
             ()

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -14,6 +14,25 @@ open Nu
 
 [<RequireQualifiedAccess>]
 module PhysicallyBased =
+
+    /// A set of physically-based buffers that support a given viewport.
+    type PhysicallyBasedBuffers =
+        { ShadowTextureBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
+          ShadowTextureBuffers2Array : (OpenGL.Texture.Texture * uint * uint) array
+          ShadowMapBuffersArray : (OpenGL.Texture.Texture * uint * uint) array
+          GeometryBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          LightMappingBuffers : OpenGL.Texture.Texture * uint * uint
+          AmbientBuffers : OpenGL.Texture.Texture * uint * uint
+          IrradianceBuffers : OpenGL.Texture.Texture * uint * uint
+          EnvironmentFilterBuffers : OpenGL.Texture.Texture * uint * uint
+          SsaoBuffersUnfiltered : OpenGL.Texture.Texture * uint * uint
+          SsaoBuffersFiltered : OpenGL.Texture.Texture * uint * uint
+          LightingBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          SpecularScreenDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          SpecularScreenUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
+          FogAccumDownSampleBuffers : OpenGL.Texture.Texture * OpenGL.Texture.Texture * uint * uint
+          FogAccumUpSampleBuffers : OpenGL.Texture.Texture * uint * uint
+          CompositionBuffers : OpenGL.Texture.Texture * uint * uint }
 
     /// Describes the configurable properties of a physically-based material.
     type PhysicallyBasedMaterialProperties =
@@ -241,7 +260,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
-          LightTypeUniform : int
+          LightShadowSamplesUniform : int
+          LightShadowBiasUniform : int
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
@@ -289,7 +309,8 @@ module PhysicallyBased =
         { ViewUniform : int
           ProjectionUniform : int
           EyeCenterUniform : int
-          LightTypeUniform : int
+          LightShadowSamplesUniform : int
+          LightShadowBiasUniform : int
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
@@ -366,7 +387,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform : int
           LightAmbientColorUniform : int
           LightAmbientBrightnessUniform : int
-          LightTypeUniform : int
+          LightShadowSamplesUniform : int
+          LightShadowBiasUniform : int
           LightShadowSampleScalarUniform : int
           LightShadowExponentUniform : int
           LightShadowDensityUniform : int
@@ -422,6 +444,161 @@ module PhysicallyBased =
         { ColorTextureUniform : int
           FogAccumTextureUniform : int
           PhysicallyBasedDeferredCompositionShader : uint }
+
+    /// Create the buffers required for physically-based rendering.
+    let CreatePhysicallyBasedBuffers (geometryViewport : Viewport) =
+
+        // create shadow texture buffers array
+        let shadowTextureBuffersArray =
+            [|for shadowTextureBufferIndex in 0 .. dec Constants.Render.ShadowTexturesMax do
+                let shadowResolution = Viewport.getShadowTextureBufferResolution shadowTextureBufferIndex geometryViewport
+                match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
+                | Right shadowTextureBuffers -> shadowTextureBuffers
+                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+
+        // create second array of shadow texture buffers
+        let shadowTextureBuffers2Array =
+            [|for shadoTexturewBufferIndex in 0 .. dec Constants.Render.ShadowTexturesMax do
+                let shadowResolution = Viewport.getShadowTextureBufferResolution shadoTexturewBufferIndex geometryViewport
+                match OpenGL.Framebuffer.TryCreateShadowTextureBuffers (shadowResolution.X, shadowResolution.Y) with
+                | Right shadowTextureBuffers -> shadowTextureBuffers
+                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+
+        // create shadow map buffers array
+        let shadowMapBuffersArray =
+            [|for _ in 0 .. dec Constants.Render.ShadowMapsMax do
+                let shadowResolution = geometryViewport.ShadowResolution
+                match OpenGL.Framebuffer.TryCreateShadowMapBuffers (shadowResolution.X, shadowResolution.Y) with
+                | Right shadowMapBuffers -> shadowMapBuffers
+                | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")|]
+
+        // create geometry buffers
+        let geometryBuffers =
+            match OpenGL.Framebuffer.TryCreateGeometryBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right geometryBuffers -> geometryBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create light mapping buffers
+        let lightMappingBuffers =
+            match OpenGL.Framebuffer.TryCreateLightMappingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right lightMappingBuffers -> lightMappingBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create ambient buffers
+        let ambientBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right ambientBuffers -> ambientBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create irradiance buffers
+        let irradianceBuffers =
+            match OpenGL.Framebuffer.TryCreateIrradianceBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right irradianceBuffers -> irradianceBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create environment filter buffers
+        let environmentFilterBuffers =
+            match OpenGL.Framebuffer.TryCreateEnvironmentFilterBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right environmentFilterBuffers -> environmentFilterBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create unfiltered ssao buffers
+        let ssaoBuffersUnfiltered =
+            match OpenGL.Framebuffer.TryCreateSsaoBuffers (geometryViewport.SsaoResolution.X, geometryViewport.SsaoResolution.Y) with
+            | Right ssaoBuffers -> ssaoBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create filtered ssao buffers
+        let ssaoBuffersFiltered =
+            match OpenGL.Framebuffer.TryCreateSsaoBuffers (geometryViewport.SsaoResolution.X, geometryViewport.SsaoResolution.Y) with
+            | Right ssaoBuffers -> ssaoBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create lighting buffers
+        let lightingBuffers =
+            match OpenGL.Framebuffer.TryCreateLightingBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right lightingBuffers -> lightingBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create specular screen down-sample buffers
+        let specularScreenDownSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2) with
+            | Right specularScreenDownSampleBuffers -> specularScreenDownSampleBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create specular screen up-sample buffers
+        let specularScreenUpSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right specularScreenUpSampleBuffers -> specularScreenUpSampleBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create fog accum down-sample buffers
+        let fogAccumDownSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateFilterBilateralDownSampleBuffers (geometryViewport.Bounds.Size.X / 2, geometryViewport.Bounds.Size.Y / 2) with
+            | Right fogAccumDownSampleBuffers -> fogAccumDownSampleBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create fog accum up-sample buffers
+        let fogAccumUpSampleBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right fogAccumUpSampleBuffers -> fogAccumUpSampleBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // create composition buffers
+        let compositionBuffers =
+            match OpenGL.Framebuffer.TryCreateHdrBuffers (geometryViewport.Bounds.Size.X, geometryViewport.Bounds.Size.Y) with
+            | Right filterFogAccumBuffers -> filterFogAccumBuffers
+            | Left error -> failwith ("Could not create physically-based buffers due to: " + error + ".")
+        OpenGL.Hl.Assert ()
+
+        // make record
+        { ShadowTextureBuffersArray = shadowTextureBuffersArray
+          ShadowTextureBuffers2Array = shadowTextureBuffers2Array
+          ShadowMapBuffersArray = shadowMapBuffersArray
+          GeometryBuffers = geometryBuffers
+          LightMappingBuffers = lightMappingBuffers
+          IrradianceBuffers = irradianceBuffers
+          EnvironmentFilterBuffers = environmentFilterBuffers
+          AmbientBuffers = ambientBuffers
+          SsaoBuffersUnfiltered = ssaoBuffersUnfiltered
+          SsaoBuffersFiltered = ssaoBuffersFiltered
+          LightingBuffers = lightingBuffers
+          SpecularScreenDownSampleBuffers = specularScreenDownSampleBuffers
+          SpecularScreenUpSampleBuffers = specularScreenUpSampleBuffers
+          FogAccumDownSampleBuffers = fogAccumDownSampleBuffers
+          FogAccumUpSampleBuffers = fogAccumUpSampleBuffers
+          CompositionBuffers = compositionBuffers }
+
+    /// Destroy the physically-based buffers.
+    let DestroyPhysicallyBasedBuffers buffers =
+        OpenGL.Framebuffer.DestroyGeometryBuffers buffers.GeometryBuffers
+        OpenGL.Framebuffer.DestroyLightMappingBuffers buffers.LightMappingBuffers
+        OpenGL.Framebuffer.DestroyIrradianceBuffers buffers.IrradianceBuffers
+        OpenGL.Framebuffer.DestroyEnvironmentFilterBuffers buffers.EnvironmentFilterBuffers
+        OpenGL.Framebuffer.DestroyHdrBuffers buffers.AmbientBuffers
+        OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersUnfiltered
+        OpenGL.Framebuffer.DestroySsaoBuffers buffers.SsaoBuffersFiltered
+        OpenGL.Framebuffer.DestroyLightingBuffers buffers.LightingBuffers
+        OpenGL.Framebuffer.DestroyFilterBilateralBuffers buffers.SpecularScreenDownSampleBuffers
+        OpenGL.Framebuffer.DestroyHdrBuffers buffers.SpecularScreenUpSampleBuffers
+        OpenGL.Framebuffer.DestroyFilterBilateralBuffers buffers.FogAccumDownSampleBuffers
+        OpenGL.Framebuffer.DestroyHdrBuffers buffers.FogAccumUpSampleBuffers
+        OpenGL.Framebuffer.DestroyHdrBuffers buffers.CompositionBuffers
+        for shadowTextureBuffers in buffers.ShadowTextureBuffersArray do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers
+        for shadowTextureBuffers2 in buffers.ShadowTextureBuffers2Array do OpenGL.Framebuffer.DestroyShadowTextureBuffers shadowTextureBuffers2
+        for shadowMapBuffers in buffers.ShadowMapBuffersArray do OpenGL.Framebuffer.DestroyShadowMapBuffers shadowMapBuffers
 
     /// Create physically-based material from an assimp mesh, falling back on defaults in case of missing textures.
     /// Uses file name-based inferences to look for texture files in case the ones that were hard-coded in the model
@@ -1421,7 +1598,8 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
-        let lightTypeUniform = Gl.GetUniformLocation (shader, "lightType")
+        let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
+        let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
@@ -1481,7 +1659,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-          LightTypeUniform = lightTypeUniform
+          LightShadowSamplesUniform = lightShadowSamplesUniform
+          LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
@@ -1535,7 +1714,8 @@ module PhysicallyBased =
         let viewUniform = Gl.GetUniformLocation (shader, "view")
         let projectionUniform = Gl.GetUniformLocation (shader, "projection")
         let eyeCenterUniform = Gl.GetUniformLocation (shader, "eyeCenter")
-        let lightTypeUniform = Gl.GetUniformLocation (shader, "lightType")
+        let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
+        let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
@@ -1560,7 +1740,8 @@ module PhysicallyBased =
         { ViewUniform = viewUniform
           ProjectionUniform = projectionUniform
           EyeCenterUniform = eyeCenterUniform
-          LightTypeUniform = lightTypeUniform
+          LightShadowSamplesUniform = lightShadowSamplesUniform
+          LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
@@ -1724,7 +1905,8 @@ module PhysicallyBased =
         let lightCutoffMarginUniform = Gl.GetUniformLocation (shader, "lightCutoffMargin")
         let lightAmbientColorUniform = Gl.GetUniformLocation (shader, "lightAmbientColor")
         let lightAmbientBrightnessUniform = Gl.GetUniformLocation (shader, "lightAmbientBrightness")
-        let lightTypeUniform = Gl.GetUniformLocation (shader, "lightType")
+        let lightShadowSamplesUniform = Gl.GetUniformLocation (shader, "lightShadowSamples")
+        let lightShadowBiasUniform = Gl.GetUniformLocation (shader, "lightShadowBias")
         let lightShadowSampleScalarUniform = Gl.GetUniformLocation (shader, "lightShadowSampleScalar")
         let lightShadowExponentUniform = Gl.GetUniformLocation (shader, "lightShadowExponent")
         let lightShadowDensityUniform = Gl.GetUniformLocation (shader, "lightShadowDensity")
@@ -1787,7 +1969,8 @@ module PhysicallyBased =
           LightCutoffMarginUniform = lightCutoffMarginUniform
           LightAmbientColorUniform = lightAmbientColorUniform
           LightAmbientBrightnessUniform = lightAmbientBrightnessUniform
-          LightTypeUniform = lightTypeUniform
+          LightShadowSamplesUniform = lightShadowSamplesUniform
+          LightShadowBiasUniform = lightShadowBiasUniform
           LightShadowSampleScalarUniform = lightShadowSampleScalarUniform
           LightShadowExponentUniform = lightShadowExponentUniform
           LightShadowDensityUniform = lightShadowDensityUniform
@@ -1878,14 +2061,35 @@ module PhysicallyBased =
         let shaderComposition = CreatePhysicallyBasedDeferredCompositionShader shaderCompositionFilePath
         (shaderStatic, shaderAnimated, shaderTerrain, shaderLightMapping, shaderAmbient, shaderIrradiance, shaderEnvironmentFilter, shaderSsao, shaderLighting, shaderComposition)
 
-    /// Create the shaders for physically-based depth rendering (such as for occlusion or shadow rendering).
-    let CreatePhysicallyBasedDepthShaders (shaderStaticDepthFilePath, shaderAnimatedDepthFilePath, shaderTerrainDepthFilePath) =
-        let shaderStaticShadow = CreatePhysicallyBasedShader shaderStaticDepthFilePath
-        Hl.Assert ()
-        let shaderAnimatedShadow = CreatePhysicallyBasedShader shaderAnimatedDepthFilePath
-        Hl.Assert ()
-        let shaderTerrainShadow = CreatePhysicallyBasedTerrainShader shaderTerrainDepthFilePath
-        (shaderStaticShadow, shaderAnimatedShadow, shaderTerrainShadow)
+    /// Create the shaders for physically-based shadow rendering.
+    let CreatePhysicallyBasedShadowShaders
+        (shaderStaticShadowPointFilePath,
+         shaderStaticShadowSpotFilePath,
+         shaderStaticShadowDirectionalFilePath,
+         shaderAnimatedShadowPointFilePath,
+         shaderAnimatedShadowSpotFilePath,
+         shaderAnimatedShadowDirectionalFilePath,
+         shaderTerrainShadowPointFilePath,
+         shaderTerrainShadowSpotFilePath,
+         shaderTerrainShadowDirectionalFilePath) =
+        let shaderStaticShadowPoint = CreatePhysicallyBasedShader shaderStaticShadowPointFilePath in Hl.Assert ()
+        let shaderStaticShadowSpot = CreatePhysicallyBasedShader shaderStaticShadowSpotFilePath in Hl.Assert ()
+        let shaderStaticShadowDirectional = CreatePhysicallyBasedShader shaderStaticShadowDirectionalFilePath in Hl.Assert ()
+        let shaderAnimatedShadowPoint = CreatePhysicallyBasedShader shaderAnimatedShadowPointFilePath in Hl.Assert ()
+        let shaderAnimatedShadowSpot = CreatePhysicallyBasedShader shaderAnimatedShadowSpotFilePath in Hl.Assert ()
+        let shaderAnimatedShadowDirectional = CreatePhysicallyBasedShader shaderAnimatedShadowDirectionalFilePath in Hl.Assert ()
+        let shaderTerrainShadowPoint = CreatePhysicallyBasedTerrainShader shaderTerrainShadowPointFilePath in Hl.Assert ()
+        let shaderTerrainShadowSpot = CreatePhysicallyBasedTerrainShader shaderTerrainShadowSpotFilePath in Hl.Assert ()
+        let shaderTerrainShadowDirectional = CreatePhysicallyBasedTerrainShader shaderTerrainShadowDirectionalFilePath in Hl.Assert ()
+        (shaderStaticShadowPoint,
+         shaderStaticShadowSpot,
+         shaderStaticShadowDirectional,
+         shaderAnimatedShadowPoint,
+         shaderAnimatedShadowSpot,
+         shaderAnimatedShadowDirectional,
+         shaderTerrainShadowPoint,
+         shaderTerrainShadowSpot,
+         shaderTerrainShadowDirectional)
 
     /// Draw the filter box pass using a physically-based surface.
     let DrawFilterBoxSurface
@@ -2099,7 +2303,6 @@ module PhysicallyBased =
          bones : single array array,
          surfacesCount : int,
          instanceFields : single array,
-         lightType : int,
          lightShadowExponent : single,
          material : PhysicallyBasedMaterial,
          geometry : PhysicallyBasedGeometry,
@@ -2124,7 +2327,6 @@ module PhysicallyBased =
             Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
-            Gl.Uniform1 (shader.LightTypeUniform, lightType)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Hl.Assert ()
 
@@ -2178,7 +2380,8 @@ module PhysicallyBased =
          eyeCenter : Vector3,
          surfacesCount : int,
          instanceFields : single array,
-         lightType : int,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2205,7 +2408,8 @@ module PhysicallyBased =
             for i in 0 .. dec (min Constants.Render.BonesMax bones.Length) do
                 Gl.UniformMatrix4 (shader.BonesUniforms.[i], false, bones.[i])
             Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-            Gl.Uniform1 (shader.LightTypeUniform, lightType)
+            Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+            Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
             Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -2304,7 +2508,8 @@ module PhysicallyBased =
          lightCutoffMargin : single,
          lightAmbientColor : single array,
          lightAmbientBrightness : single,
-         lightType : int,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2366,7 +2571,8 @@ module PhysicallyBased =
             if lightAmbientColor.Length = 3 then
                 Gl.Uniform3 (shader.LightAmbientColorUniform, lightAmbientColor)
             Gl.Uniform1 (shader.LightAmbientBrightnessUniform, lightAmbientBrightness)
-            Gl.Uniform1 (shader.LightTypeUniform, lightType)
+            Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+            Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
             Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
             Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
             Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -2525,7 +2731,8 @@ module PhysicallyBased =
          projection : single array,
          eyeCenter : Vector3,
          instanceFields : single array,
-         lightType : int,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2548,7 +2755,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform3 (shader.EyeCenterUniform, eyeCenter.X, eyeCenter.Y, eyeCenter.Z)
-        Gl.Uniform1 (shader.LightTypeUniform, lightType)
+        Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+        Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
         Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -2941,6 +3149,8 @@ module PhysicallyBased =
          view : single array,
          projection : single array,
          lightCutoffMargin : single,
+         lightShadowSamples : int,
+         lightShadowBias : single,
          lightShadowSampleScalar : single,
          lightShadowExponent : single,
          lightShadowDensity : single,
@@ -2998,6 +3208,8 @@ module PhysicallyBased =
         Gl.UniformMatrix4 (shader.ViewUniform, false, view)
         Gl.UniformMatrix4 (shader.ProjectionUniform, false, projection)
         Gl.Uniform1 (shader.LightCutoffMarginUniform, lightCutoffMargin)
+        Gl.Uniform1 (shader.LightShadowSamplesUniform, lightShadowSamples)
+        Gl.Uniform1 (shader.LightShadowBiasUniform, lightShadowBias)
         Gl.Uniform1 (shader.LightShadowSampleScalarUniform, lightShadowSampleScalar)
         Gl.Uniform1 (shader.LightShadowExponentUniform, lightShadowExponent)
         Gl.Uniform1 (shader.LightShadowDensityUniform, lightShadowDensity)
@@ -3238,7 +3450,7 @@ module PhysicallyBased =
                                 yield (light, node)|]
 
                         // construct bounds and hierarchy
-                        // TODO: sanitize incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
+                        // TODO: P1: consider sanitizing incoming names. Corrupted or incompatible names cause subtle hierarchy bugs.
                         let lightProbes = SList.make ()
                         let lights = SList.make ()
                         let surfaces = SList.make ()

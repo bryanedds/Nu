@@ -1,5 +1,5 @@
 // Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -13,7 +13,7 @@ module ImGuizmo =
     let mutable private BoxCenterSelectedOpt = Option<int>.None
 
     /// Manipulate a Box3 value via ImGuizmo.
-    let ManipulateBox3 (eyeCenter, eyeRotation, eyeFrustum, snap, box : Box3 byref) =
+    let ManipulateBox3 (eyeCenter, eyeRotation, eyeFieldOfView, viewport : Viewport, snap, box : Box3 byref) =
 
         // render segments
         let mutable result = ImGuiEditInactive
@@ -21,9 +21,9 @@ module ImGuizmo =
         let drawList = ImGui.GetBackgroundDrawList ()
         let windowPosition = ImGui.GetWindowPos ()
         let windowSize = ImGui.GetWindowSize ()
-        let viewport = Constants.Render.Viewport
-        let view = viewport.View3d (eyeCenter, eyeRotation)
-        let projection = viewport.Projection3d
+        let eyeFrustum = Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView viewport
+        let view = Viewport.getView3d eyeCenter eyeRotation
+        let projection = Viewport.getProjection3d eyeFieldOfView viewport
         let viewProjection = view * projection
         let corners = box.Corners
         let segments =
@@ -41,13 +41,10 @@ module ImGuizmo =
               (corners.[3], corners.[7])|]
         for (a, b) in segments do
             match Math.TryUnionSegmentAndFrustum a b eyeFrustum with
-            | Some (a, b) ->
-                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a)
-                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b)
-                let xWindow = box2 v2Zero Constants.Render.Resolution.V2
-                if  xWindow.Contains aWindow <> ContainmentType.Disjoint &&
-                    xWindow.Contains bWindow <> ContainmentType.Disjoint then
-                    drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
+            | Some (a', b') ->
+                let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
+                let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
+                drawList.AddLine (aWindow, bWindow, uint 0xFF00CFCF)
             | None -> ()
 
         // manipulate centers
@@ -73,7 +70,7 @@ module ImGuizmo =
             if dragging then
                 drawList.AddCircleFilled (centerWindow, 5.0f, uint 0xFF0000CF)
                 let direction = (center - box.Center).Absolute.Normalized
-                let ray = viewport.MouseToWorld3d (mouseWindow, eyeCenter, eyeRotation)
+                let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView mouseWindow viewport
                 let forward = eyeRotation.Forward
                 let plane = plane3 center -forward
                 let mouse = (ray.Intersection plane).Value

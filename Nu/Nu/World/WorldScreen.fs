@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -96,8 +96,7 @@ module WorldScreenModule =
 
         /// Set an xtension property value.
         member this.Set<'a> propertyName (value : 'a) world =
-            let property = { PropertyType = typeof<'a>; PropertyValue = value }
-            World.setScreenXtensionProperty propertyName property this world |> snd'
+            World.setScreenXtensionValue<'a> propertyName value this world
 
         /// Check that a screen is in an idling state (not transitioning in nor out).
         member this.GetIdling world =

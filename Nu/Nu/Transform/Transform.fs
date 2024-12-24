@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -10,28 +10,29 @@ open Prime
 /// Masks for Transform flags.
 module TransformMasks =
 
-    let [<Literal>] ActiveMask =                    0b000000000000000000001u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] DirtyMask =                     0b000000000000000000010u // for use as a component in an ECS or other data-oriented context
-    let [<Literal>] InvalidatedMask =               0b000000000000000000100u
-    let [<Literal>] AbsoluteMask =                  0b000000000000000001000u
-    let [<Literal>] ImperativeMask =                0b000000000000000010000u
-    let [<Literal>] EnabledMask =                   0b000000000000000100000u
-    let [<Literal>] VisibleMask =                   0b000000000000001000000u
-    let [<Literal>] PickableMask =                  0b000000000000010000000u
-    let [<Literal>] AlwaysUpdateMask =              0b000000000000100000000u
-    let [<Literal>] AlwaysRenderMask =              0b000000000001000000000u
-    let [<Literal>] PublishChangeEventsMask =       0b000000000010000000000u
-    let [<Literal>] PublishUpdatesMask =            0b000000000100000000000u
-    let [<Literal>] ProtectedMask =                 0b000000001000000000000u
-    let [<Literal>] PersistentMask =                0b000000010000000000000u
-    let [<Literal>] MountedMask =                   0b000000100000000000000u
-    let [<Literal>] EnabledLocalMask =              0b000001000000000000000u
-    let [<Literal>] VisibleLocalMask =              0b000010000000000000000u
-    let [<Literal>] PerimeterCenteredMask =         0b000100000000000000000u // TODO: remove PerimeterCentered from the engine.
-    let [<Literal>] StaticMask =                    0b001000000000000000000u
-    let [<Literal>] AnglesDirtyMask =               0b010000000000000000000u
-    let [<Literal>] RotationMatrixDirtyMask =       0b100000000000000000000u
-    let [<Literal>] FlagsDefault =                  0b100111010000011110001u
+    let [<Literal>] ActiveMask =                    0b0000000000000000000001u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] DirtyMask =                     0b0000000000000000000010u // for use as a component in an ECS or other data-oriented context
+    let [<Literal>] InvalidatedMask =               0b0000000000000000000100u
+    let [<Literal>] AbsoluteMask =                  0b0000000000000000001000u
+    let [<Literal>] ImperativeMask =                0b0000000000000000010000u
+    let [<Literal>] EnabledMask =                   0b0000000000000000100000u
+    let [<Literal>] VisibleMask =                   0b0000000000000001000000u
+    let [<Literal>] CastShadowMask =                0b0000000000000010000000u
+    let [<Literal>] PickableMask =                  0b0000000000000100000000u
+    let [<Literal>] AlwaysUpdateMask =              0b0000000000001000000000u
+    let [<Literal>] AlwaysRenderMask =              0b0000000000010000000000u
+    let [<Literal>] PublishChangeEventsMask =       0b0000000000100000000000u
+    let [<Literal>] PublishUpdatesMask =            0b0000000001000000000000u
+    let [<Literal>] ProtectedMask =                 0b0000000010000000000000u
+    let [<Literal>] PersistentMask =                0b0000000100000000000000u
+    let [<Literal>] MountedMask =                   0b0000001000000000000000u
+    let [<Literal>] EnabledLocalMask =              0b0000010000000000000000u
+    let [<Literal>] VisibleLocalMask =              0b0000100000000000000000u
+    let [<Literal>] PerimeterCenteredMask =         0b0001000000000000000000u // TODO: remove PerimeterCentered from the engine.
+    let [<Literal>] StaticMask =                    0b0010000000000000000000u
+    let [<Literal>] AnglesDirtyMask =               0b0100000000000000000000u
+    let [<Literal>] RotationMatrixDirtyMask =       0b1000000000000000000000u
+    let [<Literal>] FlagsDefault =                  0b1001110100000111110001u
 
 // opening masks for succintness
 open TransformMasks
@@ -60,6 +61,7 @@ type [<NoEquality; NoComparison>] Transform =
     member this.PublishChangeEvents     with get () = this.Flags_ &&& PublishChangeEventsMask <> 0u     and set value = this.Flags_ <- if value then this.Flags_ ||| PublishChangeEventsMask else this.Flags_ &&& ~~~PublishChangeEventsMask
     member this.Enabled                 with get () = this.Flags_ &&& EnabledMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| EnabledMask else this.Flags_ &&& ~~~EnabledMask
     member this.Visible                 with get () = this.Flags_ &&& VisibleMask <> 0u                 and set value = this.Flags_ <- if value then this.Flags_ ||| VisibleMask else this.Flags_ &&& ~~~VisibleMask
+    member this.CastShadow              with get () = this.Flags_ &&& CastShadowMask <> 0u              and set value = this.Flags_ <- if value then this.Flags_ ||| CastShadowMask else this.Flags_ &&& ~~~CastShadowMask
     member this.Pickable                with get () = this.Flags_ &&& PickableMask <> 0u                and set value = this.Flags_ <- if value then this.Flags_ ||| PickableMask else this.Flags_ &&& ~~~PickableMask
     member this.AlwaysUpdate            with get () = this.Flags_ &&& AlwaysUpdateMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysUpdateMask else this.Flags_ &&& ~~~AlwaysUpdateMask
     member this.AlwaysRender            with get () = this.Flags_ &&& AlwaysRenderMask <> 0u            and set value = this.Flags_ <- if value then this.Flags_ ||| AlwaysRenderMask else this.Flags_ &&& ~~~AlwaysRenderMask
@@ -86,7 +88,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Optimized =
         this.Imperative &&
-        this.Presence_.OmnipresentType &&
+        this.Presence_.IsOmnipresent &&
         not this.PublishChangeEvents
 
     member this.Rotation
@@ -98,7 +100,7 @@ type [<NoEquality; NoComparison>] Transform =
 
     member this.Angles
         with get () =
-            this.CleanAngles ()
+            Transform.cleanAngles &this
             this.Angles_
         and set (value : Vector3) =
             this.Angles_ <- value
@@ -113,7 +115,7 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles <- Math.DegreesToRadians3d value
 
     member this.RotationMatrix =
-        this.CleanRotationMatrix ()
+        Transform.cleanRotationMatrixInternal &this
         this.RotationMatrixOpt_
 
     member this.AffineMatrix =
@@ -286,7 +288,7 @@ type [<NoEquality; NoComparison>] Transform =
         let perimeter = this.Perimeter
         -perimeter.Center + perimeter.Size * this.Offset_
 
-    member this.CleanAngles () =
+    static member private cleanAngles (this : Transform byref) =
         if this.AnglesDirty then
             let rollPitchYaw = this.Rotation_.RollPitchYaw
             this.Angles_.X <- rollPitchYaw.X
@@ -294,16 +296,16 @@ type [<NoEquality; NoComparison>] Transform =
             this.Angles_.Z <- rollPitchYaw.Z
             this.AnglesDirty <- false
 
-    member this.CleanRotationMatrix () =
+    static member cleanRotationMatrixInternal (this : Transform byref) =
         if this.RotationMatrixDirty || this.RotationMatrixOpt_.IsZero then
             this.RotationMatrixOpt_ <- Matrix4x4.CreateFromQuaternion this.Rotation_
             this.RotationMatrixDirty <- false
 
-    member this.SnapPosition positionSnap =
-        this.Position <- Math.SnapF3d positionSnap this.Position
-
-    member this.InvalidateFast () =
+    static member invalidateFastInternal (this : Transform byref) =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
+
+    static member snapPosition (positionSnap, transform : Transform byref) =
+        transform.Position <- Math.SnapF3d positionSnap transform.Position
 
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =

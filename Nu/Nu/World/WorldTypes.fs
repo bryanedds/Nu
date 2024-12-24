@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -171,7 +171,8 @@ and ChangeData =
       Previous : obj
       Value : obj }
 
-/// A property lens interface.
+/// Provides access to the property of a simulant via an interface.
+/// Initially inspired by Haskell lenses, but highly specialized for simulant properties.
 and Lens =
     interface
         /// The name of the property accessed by the lens.
@@ -634,6 +635,7 @@ and EntityDispatcher (is2d, perimeterCentered, physical, lightProbe, light) =
          Define? EnabledLocal true
          Define? Visible true
          Define? VisibleLocal true
+         Define? CastShadow true
          Define? Pickable true
          Define? PerimeterCentered true
          Define? Static false
@@ -930,6 +932,7 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Eye2dSize : Vector2
       Eye3dCenter : Vector3
       Eye3dRotation : Quaternion
+      Eye3dFieldOfView : single
       Eye3dFrustumInterior : Frustum // OPTIMIZATION: cached value.
       Eye3dFrustumExterior : Frustum // OPTIMIZATION: cached value.
       Eye3dFrustumImposter : Frustum // OPTIMIZATION: cached value.
@@ -971,9 +974,10 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     static member make (dispatcher : GameDispatcher) =
         let eye3dCenter = Constants.Engine.Eye3dCenterDefault
         let eye3dRotation = quatIdentity
-        let viewportInterior = Viewport (Constants.Render.NearPlaneDistanceInterior, Constants.Render.FarPlaneDistanceInterior, v2iZero, Constants.Render.Resolution)
-        let viewportExterior = Viewport (Constants.Render.NearPlaneDistanceExterior, Constants.Render.FarPlaneDistanceExterior, v2iZero, Constants.Render.Resolution)
-        let viewportImposter = Viewport (Constants.Render.NearPlaneDistanceImposter, Constants.Render.FarPlaneDistanceImposter, v2iZero, Constants.Render.Resolution)
+        let eye3dFieldOfView = Constants.Engine.Eye3dFieldOfViewDefault
+        let viewportInterior = Viewport.makeInterior ()
+        let viewportExterior = Viewport.makeExterior ()
+        let viewportImposter = Viewport.makeImposter ()
         { Dispatcher = dispatcher
           Xtension = Xtension.makeFunctional ()
           Model = { DesignerType = typeof<unit>; DesignerValue = () }
@@ -982,12 +986,13 @@ and [<ReferenceEquality; CLIMutable>] GameState =
           DesiredScreen = DesireIgnore
           ScreenTransitionDestinationOpt = None
           Eye2dCenter = v2Zero
-          Eye2dSize = Constants.Render.VirtualResolution.V2
+          Eye2dSize = Constants.Render.DisplayVirtualResolution.V2
           Eye3dCenter = eye3dCenter
           Eye3dRotation = eye3dRotation
-          Eye3dFrustumInterior = viewportInterior.Frustum (eye3dCenter, eye3dRotation)
-          Eye3dFrustumExterior = viewportExterior.Frustum (eye3dCenter, eye3dRotation)
-          Eye3dFrustumImposter = viewportImposter.Frustum (eye3dCenter, eye3dRotation)
+          Eye3dFieldOfView = eye3dFieldOfView
+          Eye3dFrustumInterior = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportInterior
+          Eye3dFrustumExterior = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportExterior
+          Eye3dFrustumImposter = Viewport.getFrustum eye3dCenter eye3dRotation eye3dFieldOfView viewportImposter
           Order = Core.getTimeStampUnique ()
           Id = Gen.id64 }
 
@@ -1184,6 +1189,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member this.EnabledLocal with get () = this.Transform.EnabledLocal and set value = this.Transform.EnabledLocal <- value
     member this.Visible with get () = this.Transform.Visible and set value = this.Transform.Visible <- value
     member this.VisibleLocal with get () = this.Transform.VisibleLocal and set value = this.Transform.VisibleLocal <- value
+    member this.CastShadow with get () = this.Transform.CastShadow and set value = this.Transform.CastShadow <- value
     member this.Pickable with get () = this.Transform.Pickable and internal set value = this.Transform.Pickable <- value
     member this.AlwaysUpdate with get () = this.Transform.AlwaysUpdate and set value = this.Transform.AlwaysUpdate <- value
     member this.AlwaysRender with get () = this.Transform.AlwaysRender and set value = this.Transform.AlwaysRender <- value
@@ -1212,7 +1218,7 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     /// This is used when we want to retain an old version of an entity state in face of mutation.
     static member inline diverge (entityState : EntityState) =
         let entityState' = EntityState.copy entityState
-        entityState.Transform.InvalidateFast () // OPTIMIZATION: invalidate fast.
+        Transform.invalidateFastInternal &entityState.Transform // OPTIMIZATION: invalidate fast.
         entityState'
 
     /// Check that there exists an xtenstion property that is a runtime property.
@@ -1824,10 +1830,15 @@ and [<ReferenceEquality>] internal Subsystems =
 
 /// Keeps the World from occupying more than two cache lines.
 and [<ReferenceEquality>] internal WorldExtension =
-    { mutable ContextImNui : Address
+    { // cache line 1 (assuming 16 byte header)
+      mutable ContextImNui : Address
       mutable RecentImNui : Address
       mutable SimulantImNuis : SUMap<Address, SimulantImNui>
       mutable SubscriptionImNuis : SUMap<string * Address * Address, SubscriptionImNui>
+      GeometryViewport : Viewport
+      RasterViewport : Viewport
+      // cache line 2
+      OuterViewport : Viewport
       DestructionListRev : Simulant list
       Dispatchers : Dispatchers
       Plugin : NuPlugin
@@ -2001,6 +2012,15 @@ and [<ReferenceEquality>] World =
 
     member internal this.SubscriptionImNuis =
         this.WorldExtension.SubscriptionImNuis
+
+    member this.GeometryViewport =
+        this.WorldExtension.GeometryViewport
+
+    member this.RasterViewport =
+        this.WorldExtension.RasterViewport
+
+    member this.OuterViewport =
+        this.WorldExtension.OuterViewport
 
 #if DEBUG
     member internal this.Choose () =

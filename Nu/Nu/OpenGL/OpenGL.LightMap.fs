@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -11,12 +11,12 @@ open Nu
 module LightMap =
 
     /// Create a reflection map.
-    let CreateReflectionMap (render, geometryResolution, ssaoResolution, rasterResolution, origin, ambientColor, ambientBrightness) =
+    let CreateReflectionMap (render, resolution, origin, ambientColor, ambientBrightness) =
 
         // create reflection renderbuffer
         let rasterRenderbuffer = Gl.GenRenderbuffer ()
         Gl.BindRenderbuffer (RenderbufferTarget.Renderbuffer, rasterRenderbuffer)
-        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, rasterResolution, rasterResolution)
+        Gl.RenderbufferStorage (RenderbufferTarget.Renderbuffer, InternalFormat.Depth24Stencil8, resolution, resolution)
         Hl.Assert ()
 
         // create reflection framebuffer
@@ -34,7 +34,7 @@ module LightMap =
         // setup reflection cube map textures
         for i in 0 .. dec 6 do
             let target = LanguagePrimitives.EnumOfValue (int TextureTarget.TextureCubeMapPositiveX + i)
-            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, rasterResolution, rasterResolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
+            Gl.TexImage2D (target, 0, InternalFormat.Rgba32f, resolution, resolution, 0, PixelFormat.Rgba, PixelType.Float, nativeint 0)
             Gl.FramebufferTexture2D (FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, target, rasterCubeMapId, 0)
             Hl.Assert ()
         Gl.TexParameter (TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, int TextureMinFilter.Linear)
@@ -49,10 +49,8 @@ module LightMap =
         if Gl.CheckFramebufferStatus FramebufferTarget.Framebuffer <> FramebufferStatus.FramebufferComplete then Log.error "Reflection framebuffer is incomplete!"
         Hl.Assert ()
 
-        // construct viewports
-        let geometryViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero geometryResolution)
-        let ssaoViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero ssaoResolution)
-        let rasterViewport = Viewport (Constants.Render.NearPlaneDistanceOmnipresent, Constants.Render.FarPlaneDistanceOmnipresent, box2i v2iZero (v2iDup rasterResolution))
+        // construct geometry viewport
+        let geometryViewport = Viewport.make Constants.Render.NearPlaneDistanceOmnipresent Constants.Render.FarPlaneDistanceOmnipresent (box2i v2iZero (v2iDup resolution))
 
         // construct eye rotations
         let eyeRotations =
@@ -62,10 +60,6 @@ module LightMap =
               (v3Down, v3Forward)   // (-y) bottom
               (v3Back, v3Down)      // (+z) back
               (v3Forward, v3Down)|] // (-z) front
-
-        // construct projections
-        let geometryProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.NearDistance, geometryViewport.FarDistance)
-        let rasterProjection = Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, rasterViewport.AspectRatio, rasterViewport.NearDistance, rasterViewport.FarDistance)
 
         // render reflection cube map faces
         for i in 0 .. dec 6 do
@@ -92,11 +86,12 @@ module LightMap =
                     Matrix4x4.Transpose eyeRotationMatrix
                 | _ -> Matrix4x4.Transpose eyeRotationMatrix
             render
-                false (Some (ambientColor, ambientBrightness)) origin eyeRotation
+                false (Some (ambientColor, ambientBrightness)) origin
                 view viewSkyBox
-                geometryViewport geometryProjection
-                ssaoViewport
-                rasterViewport rasterProjection
+                (Viewport.getFrustum origin eyeRotation MathF.PI_OVER_2 geometryViewport)
+                (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
+                (box2i v2iZero (v2iDup resolution))
+                (Matrix4x4.CreatePerspectiveFieldOfView (MathF.PI_OVER_2, 1.0f, geometryViewport.DistanceNear, geometryViewport.DistanceFar))
                 rasterRenderbuffer rasterFramebuffer
             Hl.Assert ()
 

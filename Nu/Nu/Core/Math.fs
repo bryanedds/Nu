@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -601,12 +601,6 @@ module Quaternion =
         Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
     let inline quatNeqApprox v v2 epsilon = not (quatEqApprox v v2 epsilon)
 
-    /// Create a look-at rotation quaternion.
-    /// NOTE: this might be less efficient since it uses Matrix4x4's look-at function then converts to quaternion.
-    let CreateLookAt (position, direction, up) =
-        Quaternion.CreateFromRotationMatrix
-            (Matrix4x4.CreateLookAt (position, direction, up))
-
 /// Converts Quaternion types.
 type QuaternionConverter () =
     inherit TypeConverter ()
@@ -1069,6 +1063,10 @@ module Matrix4x4 =
             if not (Matrix4x4.Invert (this, &result)) then failwith "Failed to invert matrix."
             result
 
+        /// The transposed value of a matrix.
+        member inline this.Transposed =
+            Matrix4x4.Transpose this
+
         member inline this.IsZero =
             this.M11 = 0.0f && this.M12 = 0.0f && this.M13 = 0.0f && this.M13 = 0.0f &&
             this.M21 = 0.0f && this.M22 = 0.0f && this.M23 = 0.0f && this.M23 = 0.0f &&
@@ -1111,14 +1109,6 @@ module Matrix4x4 =
     let m4Identity = Matrix4x4.Identity
     let m4Zero = Unchecked.defaultof<Matrix4x4>
 
-    /// Create a matrix from translation, rotation, and scale.
-    let CreateFromTrs (translation, rotation, scale : Vector3) =
-        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
-        let scaleMatrix = Matrix4x4.CreateScale scale
-        let mutable trs = scaleMatrix * rotationMatrix
-        trs.Translation <- translation
-        trs
-
     /// Create a rotation matrix from three orthogonal vectors.
     let CreateRotation (right : Vector3, up : Vector3, forward : Vector3) =
         Matrix4x4
@@ -1126,6 +1116,14 @@ module Matrix4x4 =
              right.Y, up.Y, forward.Y, 0.0f,
              right.Z, up.Z, forward.Z, 0.0f,
              0.0f, 0.0f, 0.0f, 1.0f)
+
+    /// Create an affine matrix from translation, rotation, and scale.
+    let CreateAffine (translation, rotation, scale : Vector3) =
+        let rotationMatrix = Matrix4x4.CreateFromQuaternion rotation
+        let scaleMatrix = Matrix4x4.CreateScale scale
+        let mutable affineMatrix = scaleMatrix * rotationMatrix
+        affineMatrix.Translation <- translation
+        affineMatrix
 
 [<AutoOpen>]
 module Color =
@@ -1280,7 +1278,7 @@ type [<Struct>] Affine =
 
     /// Create an affine matrix (lossy).
     member this.Matrix =
-        Matrix4x4.CreateFromTrs (this.Translation, this.Rotation, this.Scale)
+        Matrix4x4.CreateAffine (this.Translation, this.Rotation, this.Scale)
 
     /// Create from components (lossless).
     static member make translation rotation scale =
@@ -1434,21 +1432,21 @@ module Math =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then
-            let start =
+            let start' =
                 if not startContained then
                     let ray = Ray3 (start, (stop - start).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (start, stop, tOpt.Value)
+                    then Vector3.Lerp (start, stop, tOpt.Value / (stop - start).Magnitude)
                     else start // TODO: figure out why intersection could fail here.
                 else start
-            let stop =
+            let stop' =
                 if not stopContained then
-                    let ray = Ray3 (stop, (start - stop).Normalized)
+                    let ray = Ray3 (stop, (start' - stop).Normalized)
                     let tOpt = frustum.Intersects ray
                     if tOpt.HasValue
-                    then Vector3.Lerp (stop, start, tOpt.Value)
+                    then Vector3.Lerp (stop, start', tOpt.Value / (start' - stop).Magnitude)
                     else stop // TODO: figure out why intersection could fail here.
                 else stop
-            Some (start, stop)
+            Some (start', stop')
         else None

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace OpenGL
 open System
@@ -85,7 +85,7 @@ module SpriteBatch =
     let private BeginSpriteBatch state env =
         env.State <- state
 
-    let private EndSpriteBatch windowSize env =
+    let private EndSpriteBatch (viewport : Viewport) env =
 
         // ensure something to draw
         match env.State.TextureOpt with
@@ -99,16 +99,16 @@ module SpriteBatch =
             match env.State.ClipOpt with
             | ValueSome clip ->
                 // HACK: disabling sprite clipping on Omni Blade since it previously triggered a bug in Proton.
-                //let offsetViewport = Constants.Render.OffsetViewport windowSize
                 //let viewProjection = if env.State.Absolute then env.ViewProjectionAbsolute else env.ViewProjectionRelative
                 //let minClip = Vector4.Transform (Vector4 (clip.Min, 0.0f, 1.0f), viewProjection)
-                //let minNdc = minClip / minClip.W * single Constants.Render.VirtualScalar
-                //let minScissor = (minNdc.V2 + v2One) * 0.5f * Constants.Render.Resolution.V2
-                //let sizeScissor = clip.Size * v2Dup (single Constants.Render.VirtualScalar)
+                //let minNdc = minClip / minClip.W * single viewport.DisplayScalar
+                //let minScissor = (minNdc.V2 + v2One) * 0.5f * viewport.Bounds.Size.V2
+                //let sizeScissor = clip.Size * v2Dup (single viewport.DisplayScalar)
+                //let offset = viewport.Bounds.Min
                 //Gl.Enable EnableCap.ScissorTest
                 //Gl.Scissor
-                //    ((minScissor.X |> round |> int) + offsetViewport.Bounds.Min.X,
-                //     (minScissor.Y |> round |> int) + offsetViewport.Bounds.Min.Y,
+                //    ((minScissor.X |> round |> int) + offset.X,
+                //     (minScissor.Y |> round |> int) + offset.Y,
                 //     int sizeScissor.X,
                 //     int sizeScissor.Y)
                 ()
@@ -159,8 +159,8 @@ module SpriteBatch =
         // not ready
         | ValueSome _ | ValueNone -> ()
 
-    let private RestartSpriteBatch state windowSize env =
-        Hl.Assert (EndSpriteBatch windowSize env)
+    let private RestartSpriteBatch state viewport env =
+        Hl.Assert (EndSpriteBatch viewport env)
         BeginSpriteBatch state env
 
     /// Beging a new sprite batch frame3.
@@ -174,9 +174,9 @@ module SpriteBatch =
         EndSpriteBatch env
 
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
-    let InterruptSpriteBatchFrame fn windowSize env =
+    let InterruptSpriteBatchFrame fn viewport env =
         let state = env.State
-        Hl.Assert (EndSpriteBatch windowSize env)
+        Hl.Assert (EndSpriteBatch viewport env)
         Hl.Assert (fn ())
         BeginSpriteBatch state env
 
@@ -207,12 +207,12 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, windowSize, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, clipOpt : Box2 voption inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, viewport, env) =
 
         // adjust to potential sprite batch state changes
         let state = SpriteBatchState.make absolute clipOpt bfs bfd beq texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
-            RestartSpriteBatch state windowSize env
+            RestartSpriteBatch state viewport env
             Hl.Assert ()
 
         // populate vertices

@@ -38,6 +38,7 @@
 		<Compile Include="Core\EventFilter.fs" />
 		<Compile Include="Core\GameTime.fs" />
 		<Compile Include="Core\Constants.fs" />
+		<Compile Include="Core\Globals.fs" />
 		<Compile Include="Transform\Viewport.fs" />
 		<Compile Include="Transform\Presence.fs" />
 		<Compile Include="Transform\Quadtree.fs" />
@@ -62,8 +63,8 @@
 		<Compile Include="Sdl\SdlInput.fs" />
 		<Compile Include="Sdl\Sdl.fs" />
 		<Compile Include="ImGui\ImGuiIOPtr.fs" />
-		<Compile Include="ImGui\ImGuiFileDialog.fs" />
 		<Compile Include="ImGui\ImGui.fs" />
+		<Compile Include="ImGui\ImGuiFileDialog.fs" />
 		<Compile Include="ImGui\ImGuizmo.fs" />
 		<Compile Include="Reflection\Reflection.fs" />
 		<Compile Include="Reflection\Overlayer.fs" />
@@ -86,13 +87,15 @@
 		<Compile Include="Render\RendererProcess.fs" />
 		<Compile Include="Audio\AudioPlayer.fs" />
 		<Compile Include="Symbolics\Symbolics.fs" />
-		<Compile Include="DataToken\DataToken.fs" />
 		<Compile Include="Particles\Particles.fs" />
-		<Compile Include="Effects\Effects.fs" />
+		<Compile Include="Effects\EffectDescriptor.fs" />
+		<Compile Include="Effects\DataToken.fs" />
+		<Compile Include="Effects\EffectSystem.fs" />
 		<Compile Include="World\WorldPrelude.fs" />
 		<Compile Include="World\WorldTypes.fs" />
 		<Compile Include="World\WorldAssets.fs" />
 		<Compile Include="World\WorldConstants.fs" />
+		<Compile Include="World\WorldConfigure.fs" />
 		<Compile Include="World\WorldEvents.fs" />
 		<Compile Include="World\WorldModule.fs" />
 		<Compile Include="World\WorldModuleGame.fs" />
@@ -208,12 +211,12 @@
 		<PackageReference Include="Prime" Version="10.0.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.0" />
 		<PackageReference Include="System.Drawing.Common" Version="9.0.0" />
-		<PackageReference Include="Twizzle.ImGuizmo.NET" Version="1.89.4.1" />
-		<PackageReference Include="Twizzle.ImPlot.NET" Version="1.89.4" />
+		<PackageReference Include="Twizzle.ImGui-Bundle.NET" Version="1.91.5.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Nu.Math\Nu.Math.csproj" />
+		<ProjectReference Include="..\Nu.Spine\Nu.Spine.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,18 +1,24 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
+open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Numerics
 open System.Runtime.CompilerServices
 open ImGuiNET
 open Prime
 
+/// A message to the ImGui rendering subsystem.
+type RenderMessageImGui =
+    | ReloadRenderAssets
+
 /// Renders an imgui view.
 /// NOTE: API is object-oriented / mutation-based because it's ported from a port.
 type RendererImGui =
     abstract Initialize : ImFontAtlasPtr -> unit
-    abstract Render : ImDrawDataPtr -> unit
+    abstract Render : Viewport -> ImDrawDataPtr -> RenderMessageImGui List -> unit
     abstract CleanUp : unit -> unit
 
 /// A stub imgui renderer.
@@ -25,7 +31,7 @@ type StubRendererImGui () =
             let mutable bytesPerPixel = Unchecked.defaultof<_>
             fonts.GetTexDataAsRGBA32 (&pixels, &fontTextureWidth, &fontTextureHeight, &bytesPerPixel)
             fonts.ClearTexData ()
-        member this.Render _ = ()
+        member this.Render _ _ _ = ()
         member this.CleanUp () = ()
 
 [<RequireQualifiedAccess>]
@@ -38,8 +44,12 @@ module StubRendererImGui =
         rendererImGui
 
 /// Renders an imgui view via OpenGL.
-type GlRendererImGui (windowWidth : int, windowHeight : int) =
+type GlRendererImGui
+    (assetTextureRequests : ConcurrentDictionary<AssetTag, unit>,
+     assetTextureOpts : ConcurrentDictionary<AssetTag, uint32 voption>,
+     viewport : Viewport) =
 
+    let mutable viewport = viewport
     let mutable vertexArrayObject = 0u
     let mutable vertexBufferSize = 8192u
     let mutable vertexBuffer = 0u
@@ -51,7 +61,18 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
     let mutable fontTextureWidth = 0
     let mutable fontTextureHeight = 0
     let mutable fontTexture = Unchecked.defaultof<OpenGL.Texture.Texture>
-    do ignore windowWidth
+
+    member private this.DestroyAssetTextures (destroyedTextureIdsOpt : uint HashSet option) =
+        for assetTextureOpt in assetTextureOpts.Values do
+            match assetTextureOpt with
+            | ValueSome textureId ->
+                OpenGL.Gl.DeleteTextures [|textureId|]
+                match destroyedTextureIdsOpt with
+                | Some destroyedTextureIds -> destroyedTextureIds.Add textureId |> ignore<bool>
+                | None -> ()
+            | ValueNone -> ()
+        OpenGL.Hl.Assert ()
+        assetTextureOpts.Clear ()
 
     interface RendererImGui with
 
@@ -147,7 +168,45 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
             fonts.SetTexID (nativeint fontTexture.TextureId)
             fonts.ClearTexData ()
 
-        member this.Render (drawData : ImDrawDataPtr) =
+        member this.Render viewport_ (drawData : ImDrawDataPtr) renderMessages =
+
+            // update viewport, updating the imgui display size as needed
+            if viewport <> viewport_ then
+                let io = ImGui.GetIO ()
+                io.DisplaySize <- viewport_.Bounds.Size.V2
+                viewport <- viewport_
+
+            // in the event of clearing asset textures, we keep a blacklist of texture ids that have been recently
+            // destroyed. In the following code, we make an attempt to clear all artifacts that might have a
+            // potentially invalidated texture id laying around, but one might already be on the stack on another
+            // thread, so we use this extra caution. This blacklist only lasts for the current render frame, so if any
+            // texture id lasts beyond one frame, it indicates a bug.
+            let textureIdBlacklist = hashSetPlus HashIdentity.Structural []
+
+            // handle render messages
+            for renderMessage in renderMessages do
+                match renderMessage with
+                | ReloadRenderAssets -> this.DestroyAssetTextures (Some textureIdBlacklist)
+
+            // prepare asset textures for a finite period of time
+            let now = DateTimeOffset.Now
+            let assetTags = Array.ofSeq assetTextureRequests.Keys // eager copy to allow modification during enumeration
+            let mutable assetTagsEnr = (seq assetTags).GetEnumerator ()
+            while assetTagsEnr.MoveNext () && DateTimeOffset.Now - now <= TimeSpan.FromMilliseconds 4 do
+                let assetTag = assetTagsEnr.Current
+                if not (assetTextureOpts.ContainsKey assetTag) then
+                    match Metadata.tryGetFilePath assetTag with
+                    | Some filePath ->
+                        match OpenGL.Texture.TryCreateTextureGl (true, OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, OpenGL.Texture.BlockCompressable filePath, filePath) with
+                        | Right (_, textureId) -> assetTextureOpts.[assetTag] <- ValueSome textureId
+                        | Left _ -> assetTextureOpts.[assetTag] <- ValueNone
+                    | None -> ()
+                let mutable removed = ()
+                assetTextureRequests.TryRemove (assetTag, &removed) |> ignore<bool>
+
+            // set viewport to offset bounds
+            let bounds = viewport.Bounds
+            OpenGL.Gl.Viewport (bounds.Min.X, bounds.Min.Y, bounds.Size.X, bounds.Size.Y)
 
             // attempt to draw imgui draw data
             let mutable vertexOffsetInVertices = 0
@@ -173,19 +232,19 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                     OpenGL.Hl.Assert ()
 
                 // compute offsets
-                let cmdsRange = drawData.CmdListsRange
+                let cmdLists = drawData.CmdLists
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let cmds = cmdsRange.[i]
+                    let cmdList = cmdLists.[i]
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ArrayBuffer, vertexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * sizeof<ImDrawVert>), uint (cmds.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmds.VtxBuffer.Data)
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ArrayBuffer, nativeint (vertexOffsetInVertices * sizeof<ImDrawVert>), uint (cmdList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert> ()), cmdList.VtxBuffer.Data)
                     OpenGL.Gl.BindBuffer (OpenGL.BufferTarget.ElementArrayBuffer, indexBuffer)
-                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ElementArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmds.IdxBuffer.Size * sizeof<uint16>), cmds.IdxBuffer.Data)
-                    vertexOffsetInVertices <- vertexOffsetInVertices + cmds.VtxBuffer.Size
-                    indexOffsetInElements <- indexOffsetInElements + cmds.IdxBuffer.Size
+                    OpenGL.Gl.BufferSubData (OpenGL.BufferTarget.ElementArrayBuffer, nativeint (indexOffsetInElements * sizeof<uint16>), uint (cmdList.IdxBuffer.Size * sizeof<uint16>), cmdList.IdxBuffer.Data)
+                    vertexOffsetInVertices <- vertexOffsetInVertices + cmdList.VtxBuffer.Size
+                    indexOffsetInElements <- indexOffsetInElements + cmdList.IdxBuffer.Size
                     OpenGL.Hl.Assert ()
 
                 // compute orthographic projection
-                let projection = Matrix4x4.CreateOrthographicOffCenter (0.0f, single windowWidth, single windowHeight, 0.0f, -1.0f, 1.0f)
+                let projection = Matrix4x4.CreateOrthographicOffCenter (0.0f, single viewport.Bounds.Size.X, single viewport.Bounds.Size.Y, 0.0f, -1.0f, 1.0f)
                 let projectionArray = projection.ToArray ()
 
                 // setup state
@@ -205,26 +264,31 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 OpenGL.Gl.Uniform1 (shaderFontTextureUniform, 0) // TODO: use bindless textures for imgui?
                 OpenGL.Hl.Assert ()
 
-                // draw command lists
+                // draw command lists, ignoring any commands that use blacklisted textures
                 let mutable vertexOffset = 0
                 let mutable indexOffset = 0
                 for i in 0 .. dec drawData.CmdListsCount do
-                    let cmdsRange = drawData.CmdListsRange
-                    let cmds = cmdsRange.[i]
-                    for cmd in 0 .. dec cmds.CmdBuffer.Size do
-                        let pcmds = cmds.CmdBuffer
+                    let cmdLists = drawData.CmdLists
+                    let cmdList = cmdLists.[i]
+                    for cmd in 0 .. dec cmdList.CmdBuffer.Size do
+                        let pcmds = cmdList.CmdBuffer
                         let pcmd = pcmds.[cmd]
-                        if pcmd.UserCallback = nativeint 0 then
-                            let clip = pcmd.ClipRect
-                            OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
-                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
-                            OpenGL.Gl.Scissor (int clip.X, windowHeight - int clip.W, int (clip.Z - clip.X), int (clip.W - clip.Y))
-                            OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)
-                            OpenGL.Hl.ReportDrawCall 1
-                            OpenGL.Hl.Assert ()
-                        else raise (NotImplementedException ())
+                        if not (textureIdBlacklist.Contains (uint32 pcmd.TextureId)) then
+                            if pcmd.UserCallback = nativeint 0 then
+                                let clip = pcmd.ClipRect
+                                OpenGL.Gl.ActiveTexture OpenGL.TextureUnit.Texture0
+                                OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, uint pcmd.TextureId)
+                                OpenGL.Gl.Scissor
+                                    (int clip.X + bounds.Min.X,
+                                     viewport.Bounds.Size.Y - int clip.W + bounds.Min.Y,
+                                     int (clip.Z - clip.X),
+                                     int (clip.W - clip.Y))
+                                OpenGL.Gl.DrawElementsBaseVertex (OpenGL.PrimitiveType.Triangles, int pcmd.ElemCount, OpenGL.DrawElementsType.UnsignedShort, nativeint (indexOffset * sizeof<uint16>), int pcmd.VtxOffset + vertexOffset)
+                                OpenGL.Hl.ReportDrawCall 1
+                                OpenGL.Hl.Assert ()
+                            else raise (NotImplementedException ())
                         indexOffset <- indexOffset + int pcmd.ElemCount
-                    vertexOffset <- vertexOffset + cmds.VtxBuffer.Size
+                    vertexOffset <- vertexOffset + cmdList.VtxBuffer.Size
 
                 // teardown shader
                 OpenGL.Gl.UseProgram 0u
@@ -241,6 +305,9 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
                 OpenGL.Gl.Disable OpenGL.EnableCap.ScissorTest
 
         member this.CleanUp () =
+
+            // destroy asset textures
+            this.DestroyAssetTextures None
 
             // destroy vao
             OpenGL.Gl.BindVertexArray vertexArrayObject
@@ -261,7 +328,7 @@ type GlRendererImGui (windowWidth : int, windowHeight : int) =
 module GlRendererImGui =
 
     /// Make a gl-based imgui renderer.
-    let make fonts =
-        let rendererImGui = GlRendererImGui (Constants.Render.Resolution.X, Constants.Render.Resolution.Y)
+    let make assetTextureRequests assetTextures fonts viewport =
+        let rendererImGui = GlRendererImGui (assetTextureRequests, assetTextures, viewport)
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui

@@ -146,7 +146,7 @@ type GameplayDispatcher () =
             shadowViewInverse.Translation <- sun.GetPosition world
             let shadowView = shadowViewInverse.Inverted
             let shadowWidth = sun.GetLightCutoff world * 2.0f
-            let shadowResolution = Constants.Render.ShadowResolution * Constants.Render.ShadowDetailedResolutionScalar
+            let shadowResolution = Viewport.getShadowTextureBufferResolution 0 world.GeometryViewport
             let shadowTexelSize = shadowWidth / single shadowResolution.X // assuming square, of course
             let positionShadow = positionInterp.Transform shadowView + v3Up * 12.0f // position of player + offset in shadow space
             let positionSnapped =

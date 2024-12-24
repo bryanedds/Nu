@@ -1,12 +1,12 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
 open Prime
 
 /// Describes the form of an element's presence.
-type Presence =
+type [<StructuralEquality; StructuralComparison; Struct>] Presence =
     /// An interior element so you have to be closer to see them.
     | Interior
     /// An exterior element so you can see them from a distance.
@@ -15,11 +15,6 @@ type Presence =
     | Imposter
     /// Always visible.
     | Omnipresent
-
-    member this.InteriorType = match this with Interior -> true | _ -> false
-    member this.ExteriorType = match this with Exterior -> true | _ -> false
-    member this.ImposterType = match this with Imposter -> true | _ -> false
-    member this.OmnipresentType = match this with Omnipresent -> true | _ -> false
 
     member this.DepthCutoff =
         match this with
@@ -55,5 +50,5 @@ module PresenceOperators =
         | struct (_, _) -> false
 
     /// Test two presence values for inequality.
-    let presenceNeq left right =
+    let inline presenceNeq left right =
         not (presenceEq left right)

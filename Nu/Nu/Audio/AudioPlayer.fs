@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -166,20 +166,20 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                 let assetsToKeep = Dictionary ()
                 for assetEntry in assetsExisting do
                     let assetName = assetEntry.Key
-                    let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
+                    let (lastWriteTime, asset, audioAsset) = assetEntry.Value
                     let lastWriteTime' =
-                        try DateTimeOffset (File.GetLastWriteTime filePath)
+                        try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                     if lastWriteTime < lastWriteTime'
-                    then assetsToFree.Add (filePath, audioAsset)
-                    else assetsToKeep.Add (assetName, (lastWriteTime, filePath, audioAsset))
+                    then assetsToFree.Add (asset, audioAsset)
+                    else assetsToKeep.Add (assetName, (lastWriteTime, asset, audioAsset))
 
                 // attempt to free assets
                 for assetEntry in assetsToFree do
-                    let filePath = assetEntry.Key
+                    let asset = assetEntry.Key
                     let audioAsset = assetEntry.Value
                     if not (SdlAudioPlayer.tryFreeAudioAsset audioAsset audioPlayer) then
-                        assetsToKeep.Add (filePath, (DateTimeOffset.MinValue.DateTime, filePath, audioAsset))
+                        assetsToKeep.Add (asset.FilePath, (DateTimeOffset.MinValue.DateTime, asset, audioAsset))
 
                 // categorize assets to load
                 let assetsToLoad = HashSet ()
@@ -195,14 +195,14 @@ type [<ReferenceEquality>] SdlAudioPlayer =
                         let lastWriteTime =
                             try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                             with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, audioAsset)
+                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, audioAsset)
                     | None -> ()
 
                 // insert assets into package
                 for assetEntry in assetsLoaded do
                     let assetName = assetEntry.Key
-                    let (lastWriteTime, filePath, audioAsset) = assetEntry.Value
-                    audioPackage.Assets.[assetName] <- (lastWriteTime, filePath, audioAsset)
+                    let (lastWriteTime, asset, audioAsset) = assetEntry.Value
+                    audioPackage.Assets.[assetName] <- (lastWriteTime, asset, audioAsset)
 
             // handle error cases
             | Left failedAssetNames ->

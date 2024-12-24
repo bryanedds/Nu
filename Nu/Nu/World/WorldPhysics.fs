@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -281,6 +281,11 @@ module WorldPhysics =
             let world = World.handlePhysicsMessage3d jumpBodyMessage world
             let world = World.handlePhysicsMessage2d jumpBodyMessage world
             world
+
+        /// Clear all the physics objects in the built-in physics subsystems. For internal use only.
+        static member internal clearPhysics world =
+            world.Subsystems.PhysicsEngine3d.ClearInternal () ||
+            world.Subsystems.PhysicsEngine2d.ClearInternal ()
 
         /// Reregister all currently selected 3d physics.
         /// HACK: parameter for only reregistering 3d physics as required by Bullet physics performance hack.

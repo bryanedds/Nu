@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Nu.Tests": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -69,6 +69,13 @@ type [<NoEquality; NoComparison>] TilesDescriptor =
       TileSize : Vector2
       TileAssets : struct (TmxTileset * Image AssetTag) array }
 
+/// Describes how to render a Spine skeletong to the rendering system.
+/// NOTE: do NOT send your own copy of Spine.Skeleton as the one taken here will be operated on from another thread!
+type [<NoEquality; NoComparison>] SpineSkeletonDescriptor =
+    { mutable Transform : Transform
+      SpineSkeletonId : uint64
+      SpineSkeletonClone : Spine.Skeleton }
+
 /// Describes sprite-based particles.
 type [<NoEquality; NoComparison>] SpriteParticlesDescriptor =
     { Absolute : bool
@@ -100,6 +107,7 @@ type RenderOperation2d =
     | RenderCachedSprite of CachedSpriteDescriptor
     | RenderText of TextDescriptor
     | RenderTiles of TilesDescriptor
+    | RenderSpineSkeleton of SpineSkeletonDescriptor
 
 /// Describes a layered rendering operation to a 2d rendering subsystem.
 /// NOTE: mutation is used only for internal caching.
@@ -132,7 +140,7 @@ type private LayeredOperation2dComparer () =
 /// The internally used cached asset package.
 type [<NoEquality; NoComparison>] private RenderPackageCached =
     { CachedPackageName : string
-      CachedPackageAssets : Dictionary<string, DateTimeOffset * string * RenderAsset> }
+      CachedPackageAssets : Dictionary<string, DateTimeOffset * Asset * RenderAsset> }
 
 /// The internally used cached asset descriptor.
 /// OPTIMIZATION: allowing optional asset tag to reduce allocation of RenderAssetCached instances.
@@ -143,7 +151,7 @@ type [<NoEquality; NoComparison>] private RenderAssetCached =
 /// The 2d renderer. Represents a 2d rendering subsystem in Nu generally.
 type Renderer2d =
     /// Render a frame of the game.
-    abstract Render : Vector2 -> Vector2 -> Vector2i -> RenderMessage2d List -> unit
+    abstract Render : Vector2 -> Vector2 -> Viewport -> RenderMessage2d List -> unit
     /// Handle render clean up by freeing all loaded render assets.
     abstract CleanUp : unit -> unit
 
@@ -162,12 +170,13 @@ type [<ReferenceEquality>] StubRenderer2d =
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =
     private
-        { Window : Window
-          SpriteShader : int * int * int * int * uint // TODO: release these resources on clean-up.
-          SpriteQuad : uint * uint * uint // TODO: release these resources on clean-up.
-          TextQuad : uint * uint * uint // TODO: release these resources on clean-up.
+        { mutable Viewport : Viewport
+          SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
+          SpriteQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
+          TextQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
+          SpineSkeletonRenderers : Dictionary<uint64, bool ref * Spine.SkeletonRenderer>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
@@ -209,7 +218,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                     | (true, fontSize) -> fontSize
                     | (false, _) -> Constants.Render.FontSizeDefault
                 else Constants.Render.FontSizeDefault
-            let fontSize = fontSizeDefault * Constants.Render.VirtualScalar
+            let fontSize = fontSizeDefault * renderer.Viewport.DisplayScalar
             let fontOpt = SDL_ttf.TTF_OpenFont (asset.FilePath, fontSize)
             if fontOpt <> IntPtr.Zero
             then Some (FontAsset (fontSizeDefault, fontOpt))
@@ -244,13 +253,13 @@ type [<ReferenceEquality>] GlRenderer2d =
                 let assetsToKeep = Dictionary ()
                 for assetEntry in assetsExisting do
                     let assetName = assetEntry.Key
-                    let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
+                    let (lastWriteTime, asset, renderAsset) = assetEntry.Value
                     let lastWriteTime' =
-                        try DateTimeOffset (File.GetLastWriteTime filePath)
+                        try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                         with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
                     if lastWriteTime < lastWriteTime'
-                    then assetsToFree.Add (filePath, renderAsset)
-                    else assetsToKeep.Add (assetName, (lastWriteTime, filePath, renderAsset))
+                    then assetsToFree.Add (asset.FilePath, renderAsset)
+                    else assetsToKeep.Add (assetName, (lastWriteTime, asset, renderAsset))
 
                 // free assets, including memo entries
                 for assetEntry in assetsToFree do
@@ -281,14 +290,14 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let lastWriteTime =
                             try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
                             with exn -> Log.info ("Asset file write time read error due to: " + scstring exn); DateTimeOffset.MinValue.DateTime
-                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset.FilePath, renderAsset)
+                        assetsLoaded.[asset.AssetTag.AssetName] <- (lastWriteTime, asset, renderAsset)
                     | None -> ()
 
                 // insert assets into package
                 for assetEntry in assetsLoaded do
                     let assetName = assetEntry.Key
-                    let (lastWriteTime, filePath, renderAsset) = assetEntry.Value
-                    renderPackage.Assets.[assetName] <- (lastWriteTime, filePath, renderAsset)
+                    let (lastWriteTime, asset, renderAsset) = assetEntry.Value
+                    renderPackage.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
 
             // handle error cases
             | Left failedAssetNames ->
@@ -297,7 +306,7 @@ type [<ReferenceEquality>] GlRenderer2d =
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
 
     static member private tryGetRenderAsset (assetTag : AssetTag) renderer =
-        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * string * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
+        let mutable assetInfo = Unchecked.defaultof<DateTimeOffset * Asset * RenderAsset> // OPTIMIZATION: seems like TryGetValue allocates here if we use the tupling idiom (this may only be the case in Debug builds tho).
         if  renderer.RenderAssetCached.CachedAssetTagOpt :> obj |> notNull &&
             assetEq assetTag renderer.RenderAssetCached.CachedAssetTagOpt then
             renderer.RenderAssetCached.CachedAssetTagOpt <- assetTag // NOTE: this isn't redundant because we want to trigger refEq early-out.
@@ -384,19 +393,18 @@ type [<ReferenceEquality>] GlRenderer2d =
         inline
 #endif
         private batchSprite
-        absolute
-        min
-        size
-        pivot
-        rotation
+        (absolute : bool)
+        (min : Vector2)
+        (size : Vector2)
+        (pivot : Vector2)
+        (rotation : single)
         (insetOpt : Box2 voption)
         (clipOpt : Box2 voption)
         (texture : OpenGL.Texture.Texture)
         (color : Color)
-        blend
+        (blend : Blend)
         (emission : Color)
-        flip
-        windowSize
+        (flip : Flip)
         renderer =
 
         // compute unflipped tex coords
@@ -445,13 +453,13 @@ type [<ReferenceEquality>] GlRenderer2d =
             | Additive -> struct (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
             | Overwrite -> struct (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero, OpenGL.BlendEquationMode.FuncAdd)
 
-        // attempt to draw normal sprite
+        // attempt to draw regular sprite
         if color.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, bfs, bfd, beq, texture, windowSize, renderer.SpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &color, bfs, bfd, beq, texture, renderer.Viewport, renderer.SpriteBatchEnv)
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then
-            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, windowSize, renderer.SpriteBatchEnv)
+            OpenGL.SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &clipOpt, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.Viewport, renderer.SpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite
@@ -463,12 +471,11 @@ type [<ReferenceEquality>] GlRenderer2d =
          blend : Blend,
          emission : Color inref,
          flip : Flip,
-         windowSize,
          renderer) =
         if not (image.PackageName = Assets.Default.PackageName && image.AssetName = Assets.Default.EmptyImageName) then // HACK: for AMD rendering on Proton, we can't assume that a black texture with alpha = 0.0 won't render as if alpha = 1.0.
             let absolute = transform.Absolute
             let perimeter = transform.Perimeter
-            let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+            let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
             let min = perimeter.Min.V2 * virtualScalar
             let size = perimeter.Size.V2 * virtualScalar
             let pivot = transform.PerimeterPivot.V2 * virtualScalar
@@ -477,12 +484,12 @@ type [<ReferenceEquality>] GlRenderer2d =
             | ValueSome renderAsset ->
                 match renderAsset with
                 | TextureAsset texture ->
-                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip windowSize renderer
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
                 | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
             | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
 
     /// Render sprite particles.
-    static member renderSpriteParticles (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, particles : Particle SArray, windowSize, renderer) =
+    static member renderSpriteParticles (clipOpt : Box2 voption inref, blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
         if not (image.PackageName = Assets.Default.PackageName && image.AssetName = Assets.Default.EmptyImageName) then // HACK: for AMD rendering on Proton, we can't assume that a black texture with alpha = 0.0 won't render as if alpha = 1.0.
             match GlRenderer2d.tryGetRenderAsset image renderer with
             | ValueSome renderAsset ->
@@ -494,7 +501,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let transform = &particle.Transform
                         let absolute = transform.Absolute
                         let perimeter = transform.Perimeter
-                        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+                        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
                         let min = perimeter.Min.V2 * virtualScalar
                         let size = perimeter.Size.V2 * virtualScalar
                         let pivot = transform.PerimeterPivot.V2 * virtualScalar
@@ -503,7 +510,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                         let emission = &particle.Emission
                         let flip = particle.Flip
                         let insetOpt = &particle.InsetOpt
-                        GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip windowSize renderer
+                        GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt clipOpt texture color blend emission flip renderer
                         index <- inc index
                 | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
             | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -521,13 +528,12 @@ type [<ReferenceEquality>] GlRenderer2d =
          tileAssets : struct (TmxTileset * Image AssetTag) array,
          eyeCenter : Vector2,
          eyeSize : Vector2,
-         windowSize,
          renderer) =
 
         // gather context for rendering tiles
         let absolute = transform.Absolute
         let perimeter = transform.Perimeter
-        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+        let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
         let min = perimeter.Min.V2 * virtualScalar
         let size = perimeter.Size.V2 * virtualScalar
         let eyeCenter = eyeCenter * virtualScalar
@@ -603,12 +609,42 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture color Transparent emission flip windowSize renderer
+                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) clipOpt texture color Transparent emission flip renderer
                         | ValueNone -> ()
 
                 // fin
                 tileIndex <- inc tileIndex
         else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+
+    /// Render Spine skeleton.
+    static member renderSpineSkeleton
+        (transform : Transform byref,
+         spineSkeletonId : uint64,
+         spineSkeleton : Spine.Skeleton,
+         eyeCenter : Vector2,
+         eyeSize : Vector2,
+         renderer) =
+        let mutable transform = transform
+        flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
+            let getTextureId (imageObj : obj) =
+                match imageObj with
+                | :? AssetTag<Image> as image ->
+                    match GlRenderer2d.tryGetRenderAsset image renderer with
+                    | ValueSome (TextureAsset textureAsset) -> textureAsset.TextureId
+                    | _ -> 0u
+                | _ -> 0u
+            let model = Matrix4x4.CreateAffine (transform.Position * single renderer.Viewport.DisplayScalar, transform.Rotation, transform.Scale)
+            let modelViewProjection = model * Viewport.getViewProjection2d transform.Absolute eyeCenter eyeSize renderer.Viewport
+            let ssRenderer =
+                match renderer.SpineSkeletonRenderers.TryGetValue spineSkeletonId with
+                | (true, (used, ssRenderer)) ->
+                    used.Value <- true
+                    ssRenderer
+                | (false, _) ->
+                    let ssRenderer = Spine.SkeletonRenderer (fun vss fss -> OpenGL.Shader.CreateShaderFromStrs (vss, fss))
+                    renderer.SpineSkeletonRenderers.Add (spineSkeletonId, (ref true, ssRenderer))
+                    ssRenderer
+            ssRenderer.Draw (getTextureId, spineSkeleton, &modelViewProjection)
 
     /// Render text.
     static member renderText
@@ -623,7 +659,6 @@ type [<ReferenceEquality>] GlRenderer2d =
          cursorOpt : int option,
          eyeCenter : Vector2,
          eyeSize : Vector2,
-         windowSize,
          renderer : GlRenderer2d) =
 
         // modify text to utilize cursor
@@ -641,17 +676,16 @@ type [<ReferenceEquality>] GlRenderer2d =
             color.A8 <> 0uy then // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
             let transform = transform // copy to local to make visible from lambda
             let clipOpt = clipOpt // same
-            flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame windowSize renderer.SpriteBatchEnv $ fun () ->
+            flip3 OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
                 let mutable transform = transform
                 let absolute = transform.Absolute
                 let perimeter = transform.Perimeter
-                let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+                let virtualScalar = (v2iDup renderer.Viewport.DisplayScalar).V2
                 let position = perimeter.Min.V2 * virtualScalar
                 let size = perimeter.Size.V2 * virtualScalar
-                let viewport = Constants.Render.Viewport
-                let viewProjection = viewport.ViewProjection2d (absolute, eyeCenter, eyeSize)
+                let viewProjection = Viewport.getViewProjection2d absolute eyeCenter eyeSize renderer.Viewport
                 match GlRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
@@ -672,13 +706,13 @@ type [<ReferenceEquality>] GlRenderer2d =
                             // attempt to configure sdl font size
                             let fontSize =
                                 match fontSizing with
-                                | Some fontSize -> fontSize * Constants.Render.VirtualScalar
-                                | None -> fontSizeDefault * Constants.Render.VirtualScalar
+                                | Some fontSize -> fontSize * renderer.Viewport.DisplayScalar
+                                | None -> fontSizeDefault * renderer.Viewport.DisplayScalar
                             let errorCode = SDL_ttf.TTF_SetFontSize (font, fontSize)
                             if errorCode <> 0 then
                                 let error = SDL_ttf.TTF_GetError ()
                                 Log.infoOnce ("Failed to set font size for font '" + scstring font + "' due to: " + error)
-                                SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * Constants.Render.VirtualScalar) |> ignore<int>
+                                SDL_ttf.TTF_SetFontSize (font, fontSizeDefault * renderer.Viewport.DisplayScalar) |> ignore<int>
 
                             // configure sdl font style
                             let styleSdl =
@@ -753,7 +787,7 @@ type [<ReferenceEquality>] GlRenderer2d =
                             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
                             let insetOpt : Box2 voption = ValueNone
                             let color = Color.White
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, &viewProjection, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, windowSize, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
+                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, &viewProjection, modelViewProjection.ToArray (), &insetOpt, &clipOpt, &color, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, renderer.Viewport, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
                             OpenGL.Hl.Assert ()
 
                             // destroy texture
@@ -766,57 +800,73 @@ type [<ReferenceEquality>] GlRenderer2d =
                 | ValueNone -> Log.infoOnce ("TextDescriptor failed due to unloadable asset for '" + scstring font + "'.")
             OpenGL.Hl.Assert ()
 
-    static member private renderDescriptor descriptor eyeCenter eyeSize windowSize renderer =
+    static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
         | RenderSprite descriptor ->
             GlRenderer2d.renderSprite
-                (&descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, windowSize, renderer)
+                (&descriptor.Transform, &descriptor.InsetOpt, &descriptor.ClipOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
         | RenderSprites descriptor ->
             let sprites = descriptor.Sprites
             for index in 0 .. sprites.Length - 1 do
                 let sprite = &sprites.[index]
                 GlRenderer2d.renderSprite
-                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, windowSize, renderer)
+                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteDescriptors descriptor ->
             let sprites = descriptor.SpriteDescriptors
             for index in 0 .. sprites.Length - 1 do
                 let sprite = sprites.[index]
                 GlRenderer2d.renderSprite
-                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, windowSize, renderer)
+                    (&sprite.Transform, &sprite.InsetOpt, &sprite.ClipOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor ->
             GlRenderer2d.renderSpriteParticles
-                (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.Particles, windowSize, renderer)
+                (&descriptor.ClipOpt, descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCachedSprite descriptor ->
             GlRenderer2d.renderSprite
-                (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, windowSize, renderer)
+                (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, &descriptor.CachedSprite.ClipOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             GlRenderer2d.renderText
-                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CursorOpt, eyeCenter, eyeSize, windowSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, descriptor.CursorOpt, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor ->
             GlRenderer2d.renderTiles
-                (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, windowSize, renderer)
+                (&descriptor.Transform, &descriptor.ClipOpt, &descriptor.Color, &descriptor.Emission, descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets, eyeCenter, eyeSize, renderer)
+        | RenderSpineSkeleton descriptor ->
+            GlRenderer2d.renderSpineSkeleton
+                (&descriptor.Transform, descriptor.SpineSkeletonId, descriptor.SpineSkeletonClone, eyeCenter, eyeSize, renderer)
 
-    static member private renderLayeredOperations eyeCenter eyeSize windowSize renderer =
+    static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do
-            GlRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize windowSize renderer
+            GlRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize renderer
 
-    static member private render eyeCenter eyeSize windowSize renderMessages renderer =
+    static member private render eyeCenter eyeSize viewport renderMessages renderer =
+
+        // reload fonts when display virtual scalar changes
+        if renderer.Viewport.DisplayScalar <> viewport.DisplayScalar then
+            GlRenderer2d.invalidateCaches renderer
+            for package in renderer.RenderPackages.Values do
+                for (assetName, (lastWriteTime, asset, renderAsset)) in package.Assets.Pairs do
+                    if renderAsset.IsFontAsset then
+                        GlRenderer2d.freeRenderAsset renderAsset renderer
+                        match GlRenderer2d.tryLoadRenderAsset package.PackageState asset renderer with
+                        | Some renderAsset -> package.Assets.[assetName] <- (lastWriteTime, asset, renderAsset)
+                        | None -> Log.fail ("Failed to reload font '" + scstring asset.AssetTag + "' on DisplayScalar change.")
+
+        // update viewport
+        renderer.Viewport <- viewport
 
         // begin sprite batch frame
-        let viewport = Constants.Render.Viewport
-        let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyeCenter, eyeSize)
-        let viewProjectionRelative = viewport.ViewProjection2d (false, eyeCenter, eyeSize)
+        let viewProjectionAbsolute = Viewport.getViewProjection2d true eyeCenter eyeSize renderer.Viewport
+        let viewProjectionRelative = Viewport.getViewProjection2d false eyeCenter eyeSize renderer.Viewport
         OpenGL.SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.SpriteBatchEnv)
         OpenGL.Hl.Assert ()
 
         // render frame
         GlRenderer2d.handleRenderMessages renderMessages renderer
         GlRenderer2d.sortLayeredOperations renderer
-        GlRenderer2d.renderLayeredOperations eyeCenter eyeSize windowSize renderer
+        GlRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
         renderer.LayeredOperations.Clear ()
 
         // end sprite batch frame
-        OpenGL.SpriteBatch.EndSpriteBatchFrame windowSize renderer.SpriteBatchEnv
+        OpenGL.SpriteBatch.EndSpriteBatchFrame renderer.Viewport renderer.SpriteBatchEnv
         OpenGL.Hl.Assert ()
 
         // reload render assets upon request
@@ -825,8 +875,16 @@ type [<ReferenceEquality>] GlRenderer2d =
             OpenGL.Hl.Assert ()
             renderer.ReloadAssetsRequested <- false
 
+        // sweep up any skeleton renderers that went unused this frame
+        let entriesUnused = renderer.SpineSkeletonRenderers |> Seq.filter (fun entry -> not (fst entry.Value).Value)
+        for entry in entriesUnused do
+            let spineSkeletonId = entry.Key
+            let spineSkeleton = snd entry.Value
+            renderer.SpineSkeletonRenderers.Remove spineSkeletonId |> ignore<bool>
+            spineSkeleton.Destroy ()
+
     /// Make a GlRenderer2d.
-    static member make window =
+    static member make viewport =
 
         // create one-off sprite and text resources
         let spriteShader = OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
@@ -840,12 +898,13 @@ type [<ReferenceEquality>] GlRenderer2d =
 
         // make renderer
         let renderer =
-            { Window = window
+            { Viewport = viewport
               SpriteShader = spriteShader
               SpriteQuad = spriteQuad
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
+              SpineSkeletonRenderers = dictPlus HashIdentity.Structural []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
@@ -856,9 +915,9 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     interface Renderer2d with
 
-        member renderer.Render eyeCenter eyeSize windowSize renderMessages =
+        member renderer.Render eyeCenter eyeSize viewport renderMessages =
             if renderMessages.Count > 0 then
-                GlRenderer2d.render eyeCenter eyeSize windowSize renderMessages renderer
+                GlRenderer2d.render eyeCenter eyeSize viewport renderMessages renderer
 
         member renderer.CleanUp () =
             OpenGL.SpriteBatch.DestroySpriteBatchEnv renderer.SpriteBatchEnv

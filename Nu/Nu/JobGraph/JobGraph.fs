@@ -1,4 +1,7 @@
-﻿namespace Nu
+﻿// Nu Game Engine.
+// Copyright (C) Bryan Edds.
+
+namespace Nu
 open System
 open System.Collections.Concurrent
 open System.Threading
@@ -90,7 +93,7 @@ type JobGraphParallel (resultExpirationTime : TimeSpan) =
                         if now > entry.Value.ResultTime + resultExpirationTime then
                             match jobResults.TryRemove entry.Key with // we add it back if not the one we intended to remove
                             | (true, jobResult) when now <= jobResult.ResultTime + resultExpirationTime ->
-                                jobResults.AddOrUpdate (job.JobId, jobResult, fun _ existing -> if jobResult.IssueTime >= existing.IssueTime then jobResult else existing) |> ignore<JobResult>
+                                jobResults.AddOrUpdate (entry.Key, jobResult, fun _ existing -> if jobResult.IssueTime >= existing.IssueTime then jobResult else existing) |> ignore<JobResult>
                             | (_, _) -> ()
                     1 |> Async.Sleep |> Async.RunSynchronously } |>
             Async.StartAsTask

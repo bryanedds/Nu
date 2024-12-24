@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -961,6 +961,7 @@ module WorldModule2 =
             let world = World.reloadPhysicsAssets world
             let world = World.reloadRenderAssets2d world
             let world = World.reloadRenderAssets3d world
+            let world = World.reloadRenderAssetsImGui world
             let world = World.reloadAudioAssets world
             let world = World.reloadSymbols world
             world
@@ -1002,8 +1003,8 @@ module WorldModule2 =
             | (Left _, world) -> (false, world)
 
         /// Switch simulation to this world, resynchronizing the imperative subsystems with its current state.
-        /// Needed when abandoning execution of the current world in favor of an old world, such as in the case of an
-        /// exception where the try expression resulted in a transformed world that is to be discarded.
+        /// Needed when abandoning execution of the current world in favor of a previous world, such as in the case of
+        /// an exception where the try expression resulted in a transformed world that is to be discarded.
         static member switch (world : World) =
 
             // manually choose world to override choose count check
@@ -1019,25 +1020,23 @@ module WorldModule2 =
             let world = World.rebuildOctree world
             let world = World.rebuildQuadtree world
 
-            // clear existing physics
-            let world = World.handlePhysicsMessage3d ClearPhysicsMessageInternal world
-            let world = World.handlePhysicsMessage2d ClearPhysicsMessageInternal world
-
-            // register the physics of entities in the current screen
-            match World.getSelectedScreenOpt world with
-            | Some screen ->
-                let groups = World.getGroups screen world
-                Seq.fold (fun world (group : Group) ->
-                    if group.GetExists world then
-                        let entities = World.getEntities group world
-                        Seq.fold (fun world (entity : Entity) ->
-                            if entity.GetExists world
-                            then World.registerEntityPhysics entity world
+            // clear existing physics, then register them again if any physics objects were present
+            if World.clearPhysics world then
+                match World.getSelectedScreenOpt world with
+                | Some screen ->
+                    let groups = World.getGroups screen world
+                    Seq.fold (fun world (group : Group) ->
+                        if group.GetExists world then
+                            let entities = World.getEntities group world
+                            Seq.fold (fun world (entity : Entity) ->
+                                if entity.GetExists world
+                                then World.registerEntityPhysics entity world
+                                else world)
+                                world entities
                             else world)
-                            world entities
-                        else world)
-                    world groups
-            | None -> world
+                        world groups
+                | None -> world
+            else world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
@@ -1080,7 +1079,42 @@ module WorldModule2 =
             let world = List.foldBack (fun simulant world -> World.destroyImmediate simulant world) destructionListRev world
             if List.notEmpty (World.getDestructionListRev world) then World.destroySimulants world else world
 
-        /// Process an input event from SDL and ultimately publish any related game events.
+        static member private toImGuiMouseButton mouseButton =
+            match mouseButton with
+            | MouseLeft -> 0
+            | MouseRight -> 1
+            | MouseMiddle -> 2
+            | MouseX1 -> 3
+            | MouseX2 -> 4
+
+        static member private toImGuiKeys keyboardKey =
+            match keyboardKey with
+            | KeyboardKey.Space -> [ImGuiKey.Space]
+            | KeyboardKey.Tab -> [ImGuiKey.Tab]
+            | KeyboardKey.Left -> [ImGuiKey.LeftArrow]
+            | KeyboardKey.Right -> [ImGuiKey.RightArrow]
+            | KeyboardKey.Up -> [ImGuiKey.UpArrow]
+            | KeyboardKey.Down -> [ImGuiKey.DownArrow]
+            | KeyboardKey.PageUp -> [ImGuiKey.PageUp]
+            | KeyboardKey.PageDown -> [ImGuiKey.PageDown]
+            | KeyboardKey.Home -> [ImGuiKey.Home]
+            | KeyboardKey.End -> [ImGuiKey.End]
+            | KeyboardKey.Delete -> [ImGuiKey.Delete]
+            | KeyboardKey.Backspace -> [ImGuiKey.Backspace]
+            | KeyboardKey.Enter -> [ImGuiKey.Enter]
+            | KeyboardKey.Escape -> [ImGuiKey.Escape]
+            | KeyboardKey.LCtrl -> [ImGuiKey.LeftCtrl; ImGuiKey.ModCtrl]
+            | KeyboardKey.RCtrl -> [ImGuiKey.RightCtrl; ImGuiKey.ModCtrl]
+            | KeyboardKey.LAlt -> [ImGuiKey.LeftAlt; ImGuiKey.ModAlt]
+            | KeyboardKey.RAlt -> [ImGuiKey.RightAlt; ImGuiKey.ModAlt]
+            | KeyboardKey.LShift -> [ImGuiKey.LeftShift; ImGuiKey.ModShift]
+            | KeyboardKey.RShift -> [ImGuiKey.RightShift; ImGuiKey.ModShift]
+            | _ ->
+                if int keyboardKey >= int KeyboardKey.Num1 && int keyboardKey <= int KeyboardKey.Num9 then int ImGuiKey._1 + (int keyboardKey - int KeyboardKey.Num1) |> enum<ImGuiKey> |> List.singleton
+                elif int keyboardKey >= int KeyboardKey.A && int keyboardKey <= int KeyboardKey.Z then int ImGuiKey.A + (int keyboardKey - int KeyboardKey.A) |> enum<ImGuiKey> |> List.singleton
+                elif int keyboardKey >= int KeyboardKey.F1 && int keyboardKey <= int KeyboardKey.F12 then int ImGuiKey.F1 + (int keyboardKey - int KeyboardKey.F1) |> enum<ImGuiKey> |> List.singleton
+                else []
+
         static member private processInput2 (evt : SDL.SDL_Event) (world : World) =
             let world =
                 match evt.``type`` with
@@ -1088,7 +1122,39 @@ module WorldModule2 =
                     if world.Unaccompanied
                     then World.exit world
                     else world
+                | SDL.SDL_EventType.SDL_WINDOWEVENT ->
+                    if evt.window.windowEvent = SDL.SDL_WindowEventID.SDL_WINDOWEVENT_SIZE_CHANGED then
+
+                        // ensure window size is a factor of display virtual resolution, going to full screen otherwise
+                        let windowSize = World.getWindowSize world
+                        let windowScalar =
+                            max (single windowSize.X / single Constants.Render.DisplayVirtualResolution.X |> ceil |> int |> max 1)
+                                (single windowSize.Y / single Constants.Render.DisplayVirtualResolution.Y |> ceil |> int |> max 1)
+                        let windowSize' = windowScalar * Constants.Render.DisplayVirtualResolution
+                        let world = World.trySetWindowSize windowSize' world
+                        let world =
+                            let windowSize'' = World.getWindowSize world
+                            if windowSize''.X < windowSize'.X || windowSize''.Y < windowSize'.Y
+                            then World.trySetWindowFullScreen true world
+                            else world
+
+                        // update display virtual scalar
+                        let windowSize'' = World.getWindowSize world
+                        let xScalar = windowSize''.X / Constants.Render.DisplayVirtualResolution.X
+                        let yScalar = windowSize''.Y / Constants.Render.DisplayVirtualResolution.Y
+                        Globals.Render.DisplayScalar <- min xScalar yScalar
+
+                        // update view ports
+                        let world = World.setOuterViewport (Viewport.makeOuter windowSize'') world
+                        let world = World.setRasterViewport (Viewport.makeRaster world.OuterViewport.Bounds) world
+                        let world = World.setGeometryViewport (Viewport.makeGeometry windowSize'') world
+                        world
+
+                    else world
                 | SDL.SDL_EventType.SDL_MOUSEMOTION ->
+                    let io = ImGui.GetIO ()
+                    let outerOffset = world.OuterViewport.Bounds.Min
+                    io.AddMousePosEvent (single (evt.button.x - outerOffset.X), single (evt.button.y - outerOffset.Y))
                     let mousePosition = v2 (single evt.button.x) (single evt.button.y)
                     let world =
                         if World.isMouseButtonDown MouseLeft world then
@@ -1099,9 +1165,10 @@ module WorldModule2 =
                     World.publishPlus { MouseMoveData.Position = mousePosition } Nu.Game.Handle.MouseMoveEvent eventTrace Nu.Game.Handle true true world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONDOWN ->
                     let io = ImGui.GetIO ()
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                    io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, true)
                     if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
-                        let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
                         let mouseButtonDownEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Down/Event/" + Constants.Engine.GameName)
                         let mouseButtonChangeEvent = stoa<MouseButtonData> ("Mouse/" + MouseButton.toEventName mouseButton + "/Change/Event/" + Constants.Engine.GameName)
                         let eventData = { Position = mousePosition; Button = mouseButton; Down = true }
@@ -1112,6 +1179,8 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_MOUSEBUTTONUP ->
                     let io = ImGui.GetIO ()
+                    let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
+                    io.AddMouseButtonEvent (World.toImGuiMouseButton mouseButton, false)
                     if not (io.WantCaptureMouseGlobal) then
                         let mousePosition = World.getMousePosition world
                         let mouseButton = World.toNuMouseButton (uint32 evt.button.button)
@@ -1145,10 +1214,13 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYDOWN ->
                     let io = ImGui.GetIO ()
+                    let keyboard = evt.key
+                    let key = keyboard.keysym
+                    let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                    for imGuiKey in World.toImGuiKeys keyboardKey do
+                        io.AddKeyEvent (imGuiKey, true)
                     if not (io.WantCaptureKeyboardGlobal) then
-                        let keyboard = evt.key
-                        let key = keyboard.keysym
-                        let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = true }
+                        let eventData = { KeyboardKey = keyboardKey; Repeated = keyboard.repeat <> byte 0; Down = true }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyDown" EventTrace.empty
                         let world = World.publishPlus eventData Nu.Game.Handle.KeyboardKeyDownEvent eventTrace Nu.Game.Handle true true world
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyChange" EventTrace.empty
@@ -1156,9 +1228,12 @@ module WorldModule2 =
                     else world
                 | SDL.SDL_EventType.SDL_KEYUP ->
                     let io = ImGui.GetIO ()
+                    let keyboard = evt.key
+                    let key = keyboard.keysym
+                    let keyboardKey = key.scancode |> int |> enum<KeyboardKey>
+                    for imGuiKey in World.toImGuiKeys keyboardKey do
+                        io.AddKeyEvent (imGuiKey, false)
                     if not (io.WantCaptureKeyboardGlobal) then
-                        let keyboard = evt.key
-                        let key = keyboard.keysym
                         let eventData = { KeyboardKey = key.scancode |> int |> enum<KeyboardKey>; Repeated = keyboard.repeat <> byte 0; Down = false }
                         let eventTrace = EventTrace.debug "World" "processInput" "KeyboardKeyUp" EventTrace.empty
                         let world = World.publishPlus eventData Nu.Game.Handle.KeyboardKeyUpEvent eventTrace Nu.Game.Handle true true world
@@ -1310,10 +1385,6 @@ module WorldModule2 =
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
             Octree.getElementsInView interior exterior imposter lightBox set octree
-
-        static member private getElements3d set world =
-            let octree = World.getOctree world
-            Octree.getElements set octree
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =
@@ -2029,7 +2100,7 @@ module WorldModule2 =
                                                                                 if timeToSleep > 0.008 then Thread.Sleep 7
                                                                                 elif timeToSleep > 0.004 then Thread.Sleep 3
                                                                                 elif timeToSleep > 0.002 then Thread.Sleep 1
-                                                                                else Thread.Yield () |> ignore<bool> // NOTE: this seems to cause 100% core utilizaiton on linux. Perhaps we should special case for linux to use Sleep (0|1) instead?
+                                                                                else Thread.Yield () |> ignore<bool>
 
                                                                         // fin
                                                                         world
@@ -2047,7 +2118,7 @@ module WorldModule2 =
                                                                 world.Timers.ImGuiTimer.Restart ()
                                                                 let imGui = World.getImGui world
                                                                 if not firstFrame then imGui.EndFrame ()
-                                                                imGui.BeginFrame ()
+                                                                imGui.BeginFrame (single world.DateDelta.TotalSeconds)
                                                                 let world = World.imGuiProcess world
                                                                 let (world : World) = imGuiProcess world
                                                                 imGui.InputFrame ()
@@ -2062,9 +2133,13 @@ module WorldModule2 =
                                                                     (World.getLight3dBox world)
                                                                     (World.getEye3dCenter world)
                                                                     (World.getEye3dRotation world)
+                                                                    (World.getEye3dFieldOfView world)
                                                                     (World.getEye2dCenter world)
                                                                     (World.getEye2dSize world)
                                                                     (World.getWindowSize world)
+                                                                    (World.getGeometryViewport world)
+                                                                    (World.getRasterViewport world)
+                                                                    (World.getOuterViewport world)
                                                                     drawData
 
                                                                 // post-process imgui frame
@@ -2133,6 +2208,13 @@ module EntityDispatcherModule2 =
             let context = world.ContextImNui
             let world = World.scopeEntity entity [] world
             let world = this.Process (entity, world)
+#if DEBUG
+            if world.ContextImNui <> entity.EntityAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring entity.EntityAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+#endif
             World.advanceContext entity.EntityAddress context world
 
         /// ImNui process an entity.
@@ -2522,6 +2604,13 @@ module GroupDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeGroup group [] world
             let world = this.Process (group, world)
+#if DEBUG
+            if world.ContextImNui <> group.GroupAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring group.GroupAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call the appropriate World.end function?")
+#endif
             World.advanceContext group.GroupAddress context world
 
         /// ImNui process a group.
@@ -2719,6 +2808,13 @@ module ScreenDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
             let world = this.Process (screen, world)
+#if DEBUG
+            if world.ContextImNui <> screen.ScreenAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring screen.ScreenAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call World.endGroup?")
+#endif
             World.advanceContext screen.ScreenAddress context world
 
         /// ImNui process a screen.
@@ -2916,6 +3012,13 @@ module GameDispatcherModule =
             let context = world.ContextImNui
             let world = World.scopeGame [] world
             let world = this.Process (game, world)
+#if DEBUG
+            if world.ContextImNui <> game.GameAddress then
+                Log.warnOnce
+                    ("ImNui context expected to be " +
+                     scstring game.GameAddress + " but was " +
+                     scstring world.ContextImNui + ". Did you forget to call World.endScreen?")
+#endif
             World.advanceContext game.GameAddress context world
 
         /// ImNui process a game.
@@ -3074,7 +3177,7 @@ module GamePropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "DesiredScreen" || propertyName = "ScreenTransitionDestinationOpt" || propertyName = "SelectedScreenOpt" ||
-             propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" then
+             propertyName = "Eye2dCenter" || propertyName = "Eye2dSize" || propertyName = "Eye3dCenter" || propertyName = "Eye3dRotation" || propertyName = "Eye3dFieldOfView" then
              "Built-In Properties"
         else "Xtension Properties"
 

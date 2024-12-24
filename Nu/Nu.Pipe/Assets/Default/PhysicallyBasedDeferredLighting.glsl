@@ -21,8 +21,6 @@ const float ATTENUATION_CONSTANT = 1.0;
 const int LIGHTS_MAX = 32;
 const int SHADOW_TEXTURES_MAX = 16;
 const int SHADOW_MAPS_MAX = 8;
-const int SHADOW_SAMPLES = 3;
-const float SHADOW_BIAS = 0.005;
 const float SHADOW_FOV_MAX = 2.1;
 const float SHADOW_SEAM_INSET = 0.001;
 
@@ -37,6 +35,8 @@ uniform vec3 eyeCenter;
 uniform mat4 view;
 uniform mat4 projection;
 uniform float lightCutoffMargin;
+uniform int lightShadowSamples;
+uniform float lightShadowBias;
 uniform float lightShadowSampleScalar;
 uniform float lightShadowExponent;
 uniform float lightShadowDensity;
@@ -189,18 +189,18 @@ float computeShadowMapScalar(vec4 position, vec3 lightOrigin, samplerCube shadow
     vec3 positionShadow = position.xyz - lightOrigin;
     float shadowZ = length(positionShadow);
     float shadowHits = 0.0;
-    for (int i = 0; i < SHADOW_SAMPLES; ++i)
+    for (int i = 0; i < lightShadowSamples; ++i)
     {
-        for (int j = 0; j < SHADOW_SAMPLES; ++j)
+        for (int j = 0; j < lightShadowSamples; ++j)
         {
-            for (int k = 0; k < SHADOW_SAMPLES; ++k)
+            for (int k = 0; k < lightShadowSamples; ++k)
             {
-                vec3 offset = (vec3(i, j, k) - vec3(SHADOW_SAMPLES / 2.0)) * (lightShadowSampleScalar / SHADOW_SAMPLES);
-                shadowHits += shadowZ - SHADOW_BIAS > texture(shadowMap, positionShadow + offset).x ? 1.0 : 0.0;
+                vec3 offset = (vec3(i, j, k) - vec3(lightShadowSamples / 2.0)) * (lightShadowSampleScalar / lightShadowSamples);
+                shadowHits += shadowZ - lightShadowBias > texture(shadowMap, positionShadow + offset).x ? 1.0 : 0.0;
             }
         }
     }
-    return 1.0 - shadowHits / (SHADOW_SAMPLES * SHADOW_SAMPLES * SHADOW_SAMPLES);
+    return 1.0 - shadowHits / (lightShadowSamples * lightShadowSamples * lightShadowSamples);
 }
 
 vec3 computeFogAccumDirectional(vec4 position, int lightIndex)

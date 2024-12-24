@@ -500,7 +500,7 @@ module EffectDescriptors =
           Content =
             StaticSprite
                 (Resource Assets.Default.White.Pair,
-                 [|Size (v3 (single Constants.Render.Resolution.X) (single Constants.Render.Resolution.Y) 0.0f)
+                 [|Size (v3 (single Constants.Render.DisplayVirtualResolution.X) (single Constants.Render.DisplayVirtualResolution.Y) 0.0f)
                    Colors
                     (Set, Linear, Once,
                         [|{ TweenValue = color.WithA 0.0f; TweenLength = incoming }

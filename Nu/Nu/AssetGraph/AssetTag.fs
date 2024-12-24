@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -47,23 +47,37 @@ type AssetTagConverter (pointType : Type) =
         | _ -> failconv "Invalid AssetTagConverter conversion from source." None
 
 /// Describes a strongly-typed means for looking up an asset.
-and [<TypeConverter (typeof<AssetTagConverter>)>] 'a AssetTag =
+and [<CustomEquality; CustomComparison; TypeConverter (typeof<AssetTagConverter>)>] 'a AssetTag =
     { PackageName : string
       AssetName : string }
+
     member this.Pair =
         (this.PackageName, this.AssetName)
+
+    override this.GetHashCode() =
+        this.PackageName.GetHashCode () ^^^ this.AssetName.GetHashCode ()
+
+    override this.Equals that =
+        refEq (this :> obj) that ||
+        match that with
+        | :? AssetTag as thatTag -> this.PackageName = thatTag.PackageName && this.AssetName = thatTag.AssetName
+        | _ -> false
+
+    interface IComparable with
+        member this.CompareTo that =
+            match that with
+            | :? AssetTag as thatTag ->
+                let packageComparison = String.CompareOrdinal (this.PackageName, thatTag.PackageName)
+                if packageComparison <> 0 then packageComparison
+                else String.CompareOrdinal (this.AssetName, thatTag.AssetName)
+            | _ -> failwith "Cannot compare Address (comparee not of type AssetTag)."
+
     interface AssetTag with
         member this.PackageName = this.PackageName
         member this.AssetName = this.AssetName
 
 [<RequireQualifiedAccess>]
 module AssetTag =
-
-    /// Check two asset tags for equality.
-    let inline equals (left : AssetTag) (right : AssetTag) =
-        refEq left right ||
-        left.PackageName = right.PackageName &&
-        left.AssetName = right.AssetName
 
     /// Make an asset tag.
     let make<'a> packageName assetName : 'a AssetTag =
@@ -89,12 +103,12 @@ module AssetTag =
 module AssetTagOperators =
 
     /// Check two asset tags for equality.
-    let inline assetEq left right =
-        AssetTag.equals left right
+    let inline assetEq (left : AssetTag) (right : AssetTag) =
+        left = right
 
     /// Check two asset tags for inequality.
     let inline assetNeq left right =
-        not (AssetTag.equals left right)
+        not (assetEq left right)
 
     /// Make an asset tag.
     let asset<'a> packageName assetName : 'a AssetTag =

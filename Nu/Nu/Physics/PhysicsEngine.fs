@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -14,11 +14,11 @@ type [<Struct>] Endianness =
     | BigEndian
 
 /// The format of a raw asset.
-type RawFormat =
+type [<Struct>] RawFormat =
     | RawUInt8
-    | RawUInt16 of Endianness
-    | RawUInt32 of Endianness
-    | RawSingle of Endianness
+    | RawUInt16 of Endianness : Endianness
+    | RawUInt32 of Endianness : Endianness
+    | RawSingle of Endianness : Endianness
 
 /// A height map for 3d terrain constructed from a raw asset.
 type [<Struct>] RawHeightMap =
@@ -32,7 +32,7 @@ type HeightMapMetadata =
       PositionsAndTexCoordses : struct (Vector3 * Vector2) array }
 
 /// A height map for terrain.
-type HeightMap =
+type [<StructuralEquality; NoComparison>] HeightMap =
     | ImageHeightMap of Image AssetTag // only supports 8-bit depth on Red channel
     | RawHeightMap of RawHeightMap
 
@@ -724,7 +724,6 @@ type PhysicsMessage =
     | ApplyBodyTorqueMessage of ApplyBodyTorqueMessage
     | JumpBodyMessage of JumpBodyMessage
     | SetGravityMessage of Vector3
-    | ClearPhysicsMessageInternal
 
 /// Represents a physics engine in Nu.
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
@@ -752,6 +751,8 @@ type PhysicsEngine =
     abstract HandleMessage : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : GameTime -> IntegrationMessage SArray option
+    /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
+    abstract ClearInternal : unit -> bool
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
@@ -771,6 +772,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.RayCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
+        member physicsEngine.ClearInternal () = false
         member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]

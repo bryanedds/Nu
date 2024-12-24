@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -69,7 +69,7 @@ module Asset =
 
 /// Tracks assets as well as their originating file paths.
 type [<ReferenceEquality>] Package<'a, 's> =
-    { Assets : Dictionary<string, DateTimeOffset * string * 'a>
+    { Assets : Dictionary<string, DateTimeOffset * Asset * 'a>
       PackageState : 's }
 
 /// A dictionary of asset packages.

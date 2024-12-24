@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -376,6 +376,14 @@ type TmxMapDispatcher () =
 
     static member Facets =
         [typeof<TmxMapFacet>]
+
+/// Gives an entity the base behavior of a Spine skeleton.
+/// NOTE: Spine skeletons are inherently imperative and therefore currently unsupported by undo / redo.
+type SpineSkeletonDispatcher () =
+    inherit Entity2dDispatcher (false, false, false)
+
+    static member Facets =
+        [typeof<SpineSkeletonFacet>]
 
 /// Gives an entity the base behavior of sky box.
 type SkyBoxDispatcher () =

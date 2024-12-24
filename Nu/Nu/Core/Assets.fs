@@ -1,7 +1,21 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
+
+[<AutoOpen>]
+module AssetPatterns =
+
+    let (|RawExtension|_|) extension = match extension with ".raw" -> Some extension | _ -> None
+    let (|ImageExtension|_|) extension = match extension with ".bmp" | ".png" | ".jpg" | ".jpeg" | ".tga" | ".tif" | ".tiff" | ".dds" -> Some extension | _ -> None
+    let (|FontExtension|_|) extension = match extension with ".ttf" -> Some extension | _ -> None
+    let (|TileMapExtension|_|) extension = match extension with ".tmx" -> Some extension | _ -> None
+    let (|SpineSkeletonExtension|_|) extension = match extension with ".skel" | ".json" -> Some extension | _ -> None
+    let (|CubeMapExtension|_|) extension = match extension with ".cbm" -> Some extension | _ -> None
+    let (|SoundExtension|_|) extension = match extension with ".wav" -> Some extension | _ -> None
+    let (|SongExtension|_|) extension = match extension with ".ogg" | ".mp3" -> Some extension | _ -> None
+    let (|ModelExtension|_|) extension = match extension with ".fbx" | ".gltf" | ".glb" | ".dae" | ".obj" -> Some extension | _ -> None
+    let (|CsvExtension|_|) extension = match extension with ".csv" -> Some extension | _ -> None
 
 [<RequireQualifiedAccess>]
 module Assets =
@@ -31,6 +45,7 @@ module Assets =
         let [<Literal>] PaddleName = "Paddle"
         let [<Literal>] StaticSpriteName = "StaticSprite"
         let [<Literal>] AnimatedSpriteName = "AnimatedSprite"
+        let [<Literal>] SpineSkeletonName = "SpineSkeleton-pro"
         let [<Literal>] NuSlideName = "NuSlide"
         let [<Literal>] Character2dIdleName = "Character2dIdle"
         let [<Literal>] Character2dJumpName = "Character2dJump"

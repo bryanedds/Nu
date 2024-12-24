@@ -30,10 +30,10 @@ type TitleDispatcher () =
     inherit ScreenDispatcher<Title, TitleMessage, Command> (Title.empty)
 
     let scroll speed which title =
-        let offsetX = single Constants.Render.VirtualResolution.X * 0.5f * if which then -1.0f else 1.0f
-        let offsetY = single Constants.Render.VirtualResolution.Y * -0.5f
-        let progress = single title.TitleTime * speed % single Constants.Render.VirtualResolution.X / single Constants.Render.VirtualResolution.X
-        let scroll = progress * single Constants.Render.VirtualResolution.X
+        let offsetX = single Constants.Render.DisplayVirtualResolution.X * 0.5f * if which then -1.0f else 1.0f
+        let offsetY = single Constants.Render.DisplayVirtualResolution.Y * -0.5f
+        let progress = single title.TitleTime * speed % single Constants.Render.DisplayVirtualResolution.X / single Constants.Render.DisplayVirtualResolution.X
+        let scroll = progress * single Constants.Render.DisplayVirtualResolution.X
         v3 (offsetX - scroll) offsetY 0.0f
 
     override this.GetFallbackModel (_, screen, world) =
@@ -52,16 +52,16 @@ type TitleDispatcher () =
 
     override this.Content (title, _) =
         [Content.group Simulants.TitleScene.Name []
-            [let foregroundScrollSpeed = if Constants.Render.VirtualScalar = 1 then 1.5f else 1.2f // HACK: get rid of aliasing when VirtualScalar = 1.
-             Content.staticSprite "TitleForeground" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll foregroundScrollSpeed false title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleForeground2" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll foregroundScrollSpeed true title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleGround" [Entity.StaticImage == asset "Gui" "TitleGround"; Entity.Position := scroll 1.0f false title; Entity.Elevation == -2.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleGround2" [Entity.StaticImage == asset "Gui" "TitleGround"; Entity.Position := scroll 1.0f true title; Entity.Elevation == -2.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleForest" [Entity.StaticImage == asset "Gui" "TitleForest"; Entity.Position := scroll 0.4f false title; Entity.Elevation == -3.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleForest2" [Entity.StaticImage == asset "Gui" "TitleForest"; Entity.Position := scroll 0.4f true title; Entity.Elevation == -3.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleMountains" [Entity.StaticImage == asset "Gui" "TitleMountains"; Entity.Position := scroll 0.25f false title; Entity.Elevation == -4.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleMountains2" [Entity.StaticImage == asset "Gui" "TitleMountains"; Entity.Position := scroll 0.25f true title; Entity.Elevation == -4.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleClouds" [Entity.StaticImage == asset "Gui" "TitleClouds"; Entity.Position := scroll 0.2f false title; Entity.Elevation == -5.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleClouds2" [Entity.StaticImage == asset "Gui" "TitleClouds"; Entity.Position := scroll 0.2f true title; Entity.Elevation == -5.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleSky" [Entity.StaticImage == asset "Gui" "TitleSky"; Entity.Position := scroll 0.2f false title; Entity.Elevation == -6.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]
-             Content.staticSprite "TitleSky2" [Entity.StaticImage == asset "Gui" "TitleSky"; Entity.Position := scroll 0.2f true title; Entity.Elevation == -6.0f; Entity.Size == Constants.Render.VirtualResolution.V3; Entity.Absolute == true]]]
+            [let foregroundScrollSpeed = if Globals.Render.DisplayScalar = 1 then 1.5f else 1.2f // HACK: get rid of aliasing when VirtualScalar = 1.
+             Content.staticSprite "TitleForeground" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll foregroundScrollSpeed false title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleForeground2" [Entity.StaticImage == asset "Gui" "TitleForeground"; Entity.Position := scroll foregroundScrollSpeed true title; Entity.Elevation == -1.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleGround" [Entity.StaticImage == asset "Gui" "TitleGround"; Entity.Position := scroll 1.0f false title; Entity.Elevation == -2.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleGround2" [Entity.StaticImage == asset "Gui" "TitleGround"; Entity.Position := scroll 1.0f true title; Entity.Elevation == -2.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleForest" [Entity.StaticImage == asset "Gui" "TitleForest"; Entity.Position := scroll 0.4f false title; Entity.Elevation == -3.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleForest2" [Entity.StaticImage == asset "Gui" "TitleForest"; Entity.Position := scroll 0.4f true title; Entity.Elevation == -3.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleMountains" [Entity.StaticImage == asset "Gui" "TitleMountains"; Entity.Position := scroll 0.25f false title; Entity.Elevation == -4.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleMountains2" [Entity.StaticImage == asset "Gui" "TitleMountains"; Entity.Position := scroll 0.25f true title; Entity.Elevation == -4.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleClouds" [Entity.StaticImage == asset "Gui" "TitleClouds"; Entity.Position := scroll 0.2f false title; Entity.Elevation == -5.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleClouds2" [Entity.StaticImage == asset "Gui" "TitleClouds"; Entity.Position := scroll 0.2f true title; Entity.Elevation == -5.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleSky" [Entity.StaticImage == asset "Gui" "TitleSky"; Entity.Position := scroll 0.2f false title; Entity.Elevation == -6.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]
+             Content.staticSprite "TitleSky2" [Entity.StaticImage == asset "Gui" "TitleSky"; Entity.Position := scroll 0.2f true title; Entity.Elevation == -6.0f; Entity.Size == Constants.Render.DisplayVirtualResolution.V3; Entity.Absolute == true]]]

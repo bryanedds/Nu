@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace ImGuiNET
 open System
@@ -124,8 +124,8 @@ module ImGui =
             let mutable complete = false
 
             ImGui.PushID (dialogState.GetHashCode ())
-            ImGui.SetNextWindowSize (v2 740.0f 410.0f, ImGuiCond.FirstUseEver)
-
+            ImGui.SetNextWindowSize (v2 740.0f 410.0f, ImGuiCond.Appearing)
+            ImGui.SetNextWindowPos (ImGui.MainViewportCenter, ImGuiCond.Appearing, v2Dup 0.5f)
             if not (ImGui.IsPopupOpen dialogState.Title) then ImGui.OpenPopup dialogState.Title
             if ImGui.BeginPopupModal (dialogState.Title, &opened, ImGuiWindowFlags.NoDocking) then
 
@@ -135,9 +135,9 @@ module ImGui =
                 // Draw path
                 ImGui.Text ("Path: " + PathF.Normalize dialogState.DirectoryPath.FullName)
 
-                let contentRegionWidth = ImGui.GetWindowContentRegionMax().X - ImGui.GetWindowContentRegionMin().X
+                let contentRegionWidth = ImGui.GetContentRegionAvail().X
 
-                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, true, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
+                ImGui.BeginChild ("##browser", v2 contentRegionWidth 300.0f, ImGuiChildFlags.None, ImGuiWindowFlags.HorizontalScrollbar) |> ignore<bool>
                 ImGui.Columns 4
 
                 // Columns size
@@ -280,7 +280,7 @@ module ImGui =
 
                 fileNameBuffer <- fileNameStr.Substring(0, fileNameSize)
 
-                ImGui.PushItemWidth contentRegionWidth
+                ImGui.PushItemWidth (ImGui.GetContentRegionAvail().X - 65.0f)
                 if ImGui.InputText ("File Name", &fileNameBuffer, uint fileNameBufferSize, ImGuiInputTextFlags.AutoSelectAll) then
                     dialogState.FileName <- fileNameBuffer
                     dialogState.CurrentIndex <- 0UL
@@ -341,7 +341,8 @@ module ImGui =
 
                     opened <- false
 
-            ImGui.EndPopup ()
+                ImGui.EndPopup ()
+
             ImGui.PopID ()
 
             complete

@@ -738,10 +738,10 @@ type FieldDispatcher () =
                 World.isKeyboardKeyUp KeyboardKey.Up world && World.isKeyboardKeyUp KeyboardKey.W world &&
                 World.isKeyboardKeyUp KeyboardKey.Down world && World.isKeyboardKeyUp KeyboardKey.S world then
                 let lowerCenter = field.Avatar.Perimeter.LowerCenter
-                let viewport = World.getViewport world
+                let viewport = World.getRasterViewport world
                 let eyeCenter = World.getEye2dCenter world
                 let eyeSize = World.getEye2dSize world
-                let position = viewport.MouseToWorld2d (false, position, eyeCenter, eyeSize)
+                let position = Viewport.mouseToWorld2d false position eyeCenter eyeSize viewport
                 let heading = position.V3 - lowerCenter
                 if heading.Magnitude >= 6.0f then // TODO: make constant DeadZoneRadius.
                     let goalNormalized = heading.Normalized
@@ -791,7 +791,7 @@ type FieldDispatcher () =
                 match (fieldData.FieldSongOpt, World.getSongOpt world) with
                 | (Some fieldSong, Some currentSong) ->
                     let fieldSong = overrideSong field.FieldType field.Advents fieldSong
-                    if not (AssetTag.equals fieldSong currentSong.Song) then
+                    if fieldSong <> currentSong.Song then
                         let (playTime, startTime) =
                             let time = field.FieldTime
                             match field.FieldSongTimeOpt with
@@ -975,7 +975,7 @@ type FieldDispatcher () =
 
              // feeler
              Content.feeler Simulants.FieldFeeler.Name
-                [Entity.Position == -Constants.Render.Resolution.V2.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.Resolution.V2.V3
+                [Entity.Position == -Constants.Render.DisplayVirtualResolution.V2.V3 * 0.5f; Entity.Elevation == Constants.Field.FeelerElevation; Entity.Size == Constants.Render.DisplayVirtualResolution.V2.V3
                  Entity.TouchingEvent =|> fun evt -> ProcessTouchInput evt.Data |> signal]
 
              // menu button

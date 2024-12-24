@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Blaze Vector": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

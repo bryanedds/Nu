@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -369,6 +369,7 @@ module WorldModuleEntity =
         static member internal getEntityEnabledLocal entity world = (World.getEntityState entity world).EnabledLocal
         static member internal getEntityVisible entity world = (World.getEntityState entity world).Visible
         static member internal getEntityVisibleLocal entity world = (World.getEntityState entity world).VisibleLocal
+        static member internal getEntityCastShadow entity world = (World.getEntityState entity world).CastShadow
         static member internal getEntityPickable entity world = (World.getEntityState entity world).Pickable
         static member internal getEntityAlwaysUpdate entity world = (World.getEntityState entity world).AlwaysUpdate
         static member internal getEntityAlwaysRender entity world = (World.getEntityState entity world).AlwaysRender
@@ -511,7 +512,7 @@ module WorldModuleEntity =
 
         static member internal getEntityAffineMatrixLocal entity world =
             let entityState = World.getEntityState entity world
-            Matrix4x4.CreateFromTrs (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
+            Matrix4x4.CreateAffine (entityState.PositionLocal, entityState.RotationLocal, entityState.ScaleLocal)
 
         static member
 #if !DEBUG
@@ -519,9 +520,8 @@ module WorldModuleEntity =
 #endif
             internal getEntityTransform entity world =
             let entityState = World.getEntityState entity world
-            let transform = &entityState.Transform
-            transform.CleanRotationMatrix () // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
-            transform
+            Transform.cleanRotationMatrixInternal &entityState.Transform // OPTIMIZATION: ensure rotation matrix is clean so that redundant cleans don't happen when transform is handed out.
+            entityState.Transform
 
         /// Check that an entity has any children.
         static member getEntityHasChildren (entity : Entity) world =
@@ -860,7 +860,7 @@ module WorldModuleEntity =
         static member internal setEntityPresence (value : Presence) entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Presence
-            if presenceNeq value previous && (value.OmnipresentType || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
+            if presenceNeq value previous && (value.IsOmnipresent || not entityState.Absolute) then // a transform that is Absolute must remain Omnipresent then
                 let visibleOld = entityState.VisibleSpatial
                 let staticOld = entityState.StaticSpatial
                 let lightProbeOld = entityState.LightProbe
@@ -1486,6 +1486,19 @@ module WorldModuleEntity =
                 struct (true, world)
             else struct (false, world)
 
+        static member internal setEntityCastShadow value entity world =
+            let entityState = World.getEntityState entity world
+            let previous = entityState.CastShadow
+            if value <> previous then
+                if entityState.Imperative then
+                    entityState.CastShadow <- value
+                    struct (true, world)
+                else
+                    let entityState = EntityState.diverge entityState
+                    entityState.CastShadow <- value
+                    struct (true, World.setEntityState entityState entity world)
+            else struct (false, world)
+
         static member internal setEntityPickable value entity world =
             let entityState = World.getEntityState entity world
             let previous = entityState.Pickable
@@ -2031,13 +2044,13 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView2dAbsolute transform.Bounds2d.Box2 world
+            presence.IsOmnipresent || World.boundsInView2dAbsolute transform.Bounds2d.Box2 world
 
         static member internal getEntityInView2dRelative entity world =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView2dRelative transform.Bounds2d.Box2 world
+            presence.IsOmnipresent || World.boundsInView2dRelative transform.Bounds2d.Box2 world
 
         static member internal getEntityInPlay2dAbsolute entity world =
             World.getEntityInView2dAbsolute entity world
@@ -2049,7 +2062,7 @@ module WorldModuleEntity =
             let entityState = World.getEntityState entity world
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInPlay3d transform.Bounds3d world
+            presence.IsOmnipresent || World.boundsInPlay3d transform.Bounds3d world
 
         static member internal getEntityInView3d entity world =
             let entityState = World.getEntityState entity world
@@ -2057,7 +2070,7 @@ module WorldModuleEntity =
             let light = entityState.Dispatcher.Light
             let mutable transform = &entityState.Transform
             let presence = transform.Presence
-            presence.OmnipresentType || World.boundsInView3d lightProbe light presence transform.Bounds3d world
+            presence.IsOmnipresent || World.boundsInView3d lightProbe light presence transform.Bounds3d world
 
         static member internal getEntityAttributesInferred (entity : Entity) world =
             let dispatcher = World.getEntityDispatcher entity world
@@ -2769,6 +2782,7 @@ module WorldModuleEntity =
                  ("EnabledLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityEnabledLocal entity world })
                  ("Visible", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisible entity world })
                  ("VisibleLocal", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityVisibleLocal entity world })
+                 ("CastShadow", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityCastShadow entity world })
                  ("Pickable", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityPickable entity world })
                  ("AlwaysUpdate", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysUpdate entity world })
                  ("AlwaysRender", fun entity world -> { PropertyType = typeof<bool>; PropertyValue = World.getEntityAlwaysRender entity world })
@@ -2836,6 +2850,7 @@ module WorldModuleEntity =
                  ("EnabledLocal", fun property entity world -> World.setEntityEnabledLocal (property.PropertyValue :?> bool) entity world)
                  ("Visible", fun property entity world -> World.setEntityVisible (property.PropertyValue :?> bool) entity world)
                  ("VisibleLocal", fun property entity world -> World.setEntityVisibleLocal (property.PropertyValue :?> bool) entity world)
+                 ("CastShadow", fun property entity world -> World.setEntityCastShadow (property.PropertyValue :?> bool) entity world)
                  ("Pickable", fun property entity world -> World.setEntityPickable (property.PropertyValue :?> bool) entity world)
                  ("PerimeterCentered", fun property entity world -> World.setEntityPerimeterCentered (property.PropertyValue :?> bool) entity world)
                  ("Static", fun property entity world -> World.setEntityStatic (property.PropertyValue :?> bool) entity world)

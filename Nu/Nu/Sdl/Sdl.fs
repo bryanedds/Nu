@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -26,20 +26,16 @@ type SdlWindowConfig =
         { WindowTitle = "Nu Game"
           WindowX = SDL.SDL_WINDOWPOS_UNDEFINED
           WindowY = SDL.SDL_WINDOWPOS_UNDEFINED
-          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
+          WindowFlags = SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN ||| SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE ||| SDL.SDL_WindowFlags.SDL_WINDOW_OPENGL }
 
 /// Describes the general configuration of SDL.
 type [<ReferenceEquality>] SdlConfig =
     { WindowConfig : SdlWindowConfig
-      ViewW : int
-      ViewH : int
       AudioChunkSize : int }
 
     /// A default SdlConfig.
     static member defaultConfig =
         { WindowConfig = SdlWindowConfig.defaultConfig
-          ViewW = Constants.Render.Resolution.X
-          ViewH = Constants.Render.Resolution.Y
           AudioChunkSize = Constants.Audio.BufferSizeDefault }
 
 [<RequireQualifiedAccess>]
@@ -74,11 +70,21 @@ module SdlDeps =
     let trySetWindowFullScreen fullScreen sdlDeps =
         match sdlDeps.WindowOpt with
         | Some (SglWindow window) ->
-            let flags =
-                if fullScreen
-                then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP
-                else 0u
+
+            // get a snapshot of whether screen was full
+            let wasFullScreen = SDL.SDL_GetWindowFlags window.SglWindow &&& uint32 SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP <> 0u
+
+            // change full screen status via flags
+            let flags = if fullScreen then uint SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP else 0u
             SDL.SDL_SetWindowFullscreen (window.SglWindow, flags) |> ignore
+
+            // when changing from full screen, set window to windowed size and make sure its title bar is visible
+            if wasFullScreen && not fullScreen then
+                let windowSizeWindowed = Constants.Render.DisplayVirtualResolution * 2
+                SDL.SDL_RestoreWindow window.SglWindow
+                SDL.SDL_SetWindowSize (window.SglWindow, windowSizeWindowed.X, windowSizeWindowed.Y)
+                SDL.SDL_SetWindowPosition (window.SglWindow, 100, 100)
+
         | _ -> ()
         sdlDeps
 
@@ -105,7 +111,7 @@ module SdlDeps =
         else Left ("SDL2# global resource creation failed due to '" + SDL.SDL_GetError () + "'.")
 
     /// Attempt to make an SdlDeps instance.
-    let tryMake sdlConfig =
+    let tryMake sdlConfig (windowSize : Vector2i) =
         match attemptPerformSdlInit
             (fun () ->
                 SDL.SDL_SetHint (SDL.SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1") |> ignore<SDL.SDL_bool>
@@ -139,7 +145,7 @@ module SdlDeps =
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DOUBLEBUFFER, 1) |> ignore<int>
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_DEPTH_SIZE, 24) |> ignore<int>
                     SDL.SDL_GL_SetAttribute (SDL.SDL_GLattr.SDL_GL_STENCIL_SIZE, 8) |> ignore<int>
-                    SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, sdlConfig.ViewW, sdlConfig.ViewH, windowConfig.WindowFlags))
+                    SDL.SDL_CreateWindow (windowConfig.WindowTitle, windowConfig.WindowX, windowConfig.WindowY, windowSize.X, windowSize.Y, windowConfig.WindowFlags))
                 (fun window -> SDL.SDL_DestroyWindow window; destroy ()) with
             | Left error -> Left error
             | Right (window, destroy) ->

@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -23,6 +23,10 @@ type BodyResult =
     | BodySeparationExplicit of BodySeparationExplicitData
     | BodySeparationImplicit of BodySeparationImplicitData
     | BodyTransform of BodyTransformData
+
+/// Describe a Spine skeleton result.
+type SpineSkeletonResult =
+    | SpineSkeletonAnimationTrigger of SpineSkeletonAnimationTriggerData
 
 [<AutoOpen>]
 module WorldImNui =
@@ -106,6 +110,10 @@ module WorldImNui =
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodySeparationImplicit event.Data) world)) entity.BodySeparationImplicitEvent entity world
             let world = World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ BodyTransform event.Data) world)) entity.BodyTransformEvent entity world
             world
+
+        /// TODO: document this!
+        static member initSpineSkeletonAnimationResult mapResult (entity : Entity) world =
+            World.monitor (fun event world -> (Cascade, mapResult (FQueue.conj $ SpineSkeletonAnimationTrigger event.Data) world)) entity.SpineSkeletonAnimationTriggerEvent entity world
 
         /// Clear the current ImNui context.
         static member scopeWorld world =
@@ -448,6 +456,16 @@ module WorldImNui =
         static member doTileMap name args world =
             let (results, world) = World.doEntityPlus<TileMapDispatcher, _> FQueue.empty World.initBodyResult name args world
             (world.RecentEntity.GetBodyId world, results, world)
+
+        /// ImNui declare a user-defined tile map with the given arguments.
+        static member doTmxMap name args world =
+            let (results, world) = World.doEntityPlus<TmxMapDispatcher, _> FQueue.empty World.initBodyResult name args world
+            (world.RecentEntity.GetBodyId world, results, world)
+
+        /// ImNui declare a tile map with the given arguments.
+        static member doSpineSkeleton name args world =
+            let (results, world) = World.doEntityPlus<SpineSkeletonDispatcher, _> FQueue.empty World.initSpineSkeletonAnimationResult name args world
+            (results, world)
 
         /// ImNui declare a 3d light probe with the given arguments.
         static member doLightProbe3d name args world = World.doEntity<LightProbe3dDispatcher> name args world

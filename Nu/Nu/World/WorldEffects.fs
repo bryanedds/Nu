@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -118,7 +118,7 @@ module Effect =
                   Volume = Constants.Audio.SoundVolumeDefault
                   Enabled = true
                   PerimeterCentered = effect.PerimeterCentered_ }
-            let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
+            let effectSystem = EffectSystem.make localTime delta transform.Absolute transform.CastShadow transform.Presence effect.ShadowOffset_ effect.RenderType_ effect.Definitions_
 
             // evaluate effect with effect system
             let (dataToken, _) = EffectSystem.eval effect.Descriptor_ effectSlice effect.History_ effectSystem
@@ -136,7 +136,7 @@ module Effect =
             let particleSystem =
                 dataTokens |>
                 Seq.choose (function EmitterToken (name, descriptorObj) -> Some (name, descriptorObj) | _ -> None) |>
-                Seq.choose (fun (name : string, descriptorObj : obj) ->
+                Seq.choose (fun (name : string, descriptorObj : Particles.EmitterDescriptor) ->
                     match descriptorObj with
                     | :? BasicSpriteEmitterDescriptor as descriptor ->
                         match World.tryMakeEmitter time descriptor.LifeTimeOpt descriptor.ParticleLifeTimeMaxOpt descriptor.ParticleRate descriptor.ParticleMax descriptor.Style world with

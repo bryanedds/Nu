@@ -1,5 +1,5 @@
 ﻿// Nu Game Engine.
-// Copyright (C) Bryan Edds, 2013-2023.
+// Copyright (C) Bryan Edds.
 
 namespace Nu
 open System
@@ -56,6 +56,7 @@ module WorldEntityModule =
         let mutable EnabledLocal = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Visible = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable VisibleLocal = Unchecked.defaultof<Lens<bool, Entity>>
+        let mutable CastShadow = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable Pickable = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysUpdate = Unchecked.defaultof<Lens<bool, Entity>>
         let mutable AlwaysRender = Unchecked.defaultof<Lens<bool, Entity>>
@@ -201,6 +202,9 @@ module WorldEntityModule =
         member this.GetVisibleLocal world = World.getEntityVisibleLocal this world
         member this.SetVisibleLocal value world = World.setEntityVisibleLocal value this world |> snd'
         member this.VisibleLocal = if notNull (this :> obj) then lens (nameof this.VisibleLocal) this this.GetVisibleLocal this.SetVisibleLocal else Cached.VisibleLocal
+        member this.GetCastShadow world = World.getEntityCastShadow this world
+        member this.SetCastShadow value world = World.setEntityCastShadow value this world |> snd'
+        member this.CastShadow = if notNull (this :> obj) then lens (nameof this.CastShadow) this this.GetCastShadow this.SetCastShadow else Cached.CastShadow
         member this.GetPickable world = World.getEntityPickable this world
         member this.SetPickable value world = World.setEntityPickable value this world |> snd'
         member this.Pickable = if notNull (this :> obj) then lens (nameof this.Pickable) this this.GetPickable this.SetPickable else Cached.Pickable
@@ -288,6 +292,7 @@ module WorldEntityModule =
             Cached.EnabledLocal <- lens (nameof Cached.EnabledLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Visible <- lens (nameof Cached.Visible) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.VisibleLocal <- lens (nameof Cached.VisibleLocal) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
+            Cached.CastShadow <- lens (nameof Cached.CastShadow) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.Pickable <- lens (nameof Cached.Pickable) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysUpdate <- lens (nameof Cached.AlwaysUpdate) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
             Cached.AlwaysRender <- lens (nameof Cached.AlwaysRender) Unchecked.defaultof<_> Unchecked.defaultof<_> Unchecked.defaultof<_>
@@ -332,7 +337,7 @@ module WorldEntityModule =
         /// Set the transform of an entity snapped to the give position and rotation snaps.
         member this.SetTransformPositionSnapped positionSnap (value : Transform) world =
             let mutable transform = value
-            transform.SnapPosition positionSnap
+            Transform.snapPosition (positionSnap, &transform)
             this.SetTransform transform world
 
         /// Try to get a property value and type.
@@ -648,26 +653,27 @@ module WorldEntityModule =
         /// Attempt to pick an entity at the given position.
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
-            let viewport = World.getViewport world
+            let viewport = world.RasterViewport
             let eyeCenter = World.getEye2dCenter world
             let eyeSize = World.getEye2dSize world
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
-                    let positionWorld = viewport.MouseToWorld2d (entity.GetAbsolute world, position, eyeCenter, eyeSize)
+                    let positionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize position viewport
                     let bounds = (entity.GetBounds world).Box2
                     bounds.Intersects positionWorld
                 else false)
                 entitiesSorted
 
         /// Attempt to pick a 3d entity with the given ray.
-        static member tryPickEntity3d position entities world =
-            let viewport = World.getViewport world
+        static member tryPickEntity3d position entities (world : World) =
+            let viewport = world.RasterViewport
             let eyeCenter = World.getEye3dCenter world
             let eyeRotation = World.getEye3dRotation world
+            let eyeFieldOfView = World.getEye3dFieldOfView world
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
-                        let rayWorld = viewport.MouseToWorld3d (position, eyeCenter, eyeRotation)
+                        let rayWorld = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView position viewport
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
@@ -788,12 +794,11 @@ module WorldEntityModule =
                 let (position, positionSnapOpt) =
                     let absolute = entity.GetAbsolute world
                     if entity.GetIs2d world then
-                        let viewport = World.getViewport world
                         let eyeCenter = World.getEye2dCenter world
                         let eyeSize = World.getEye2dSize world
                         let position =
                             match pasteType with
-                            | PasteAtMouse -> (viewport.MouseToWorld2d (absolute, rightClickPosition, eyeCenter, eyeSize)).V3
+                            | PasteAtMouse -> (Viewport.mouseToWorld2d absolute eyeCenter eyeSize rightClickPosition world.RasterViewport).V3
                             | PasteAtLook -> eyeCenter.V3
                             | PasteAt position -> position
                         match positionSnapEir with
@@ -802,11 +807,11 @@ module WorldEntityModule =
                     else
                         let eyeCenter = World.getEye3dCenter world
                         let eyeRotation = World.getEye3dRotation world
+                        let eyeFieldOfView = World.getEye3dFieldOfView world
                         let position =
                             match pasteType with
                             | PasteAtMouse ->
-                                let viewport = Constants.Render.Viewport
-                                let ray = viewport.MouseToWorld3d (rightClickPosition, eyeCenter, eyeRotation)
+                                let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView rightClickPosition world.RasterViewport
                                 let forward = eyeRotation.Forward
                                 let plane = plane3 (eyeCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
@@ -818,9 +823,7 @@ module WorldEntityModule =
                         | Left _ -> (position, None)
                 let mutable transform = entity.GetTransform world
                 transform.Position <- position
-                match positionSnapOpt with
-                | Some positionSnap -> transform.SnapPosition positionSnap
-                | None -> ()
+                match positionSnapOpt with Some positionSnap -> Transform.snapPosition (positionSnap, &transform) | None -> ()
                 let world = entity.SetTransform transform world
                 let world =
                     if tryForwardPropagationSource && not cut then
