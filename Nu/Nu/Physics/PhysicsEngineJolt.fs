@@ -17,19 +17,19 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
     static member make () =
 
         let objectLayerNonMoving = 0us
-        let broadPhaseLayerNonMoving = (byte 0)
+        let broadPhaseLayerNonMoving = byte 0
         let objectLayerMoving = 1us
-        let broadPhaseLayerMoving = (byte 1)
+        let broadPhaseLayerMoving = byte 1
 
         // We use only 2 layers: one for non-moving objects and one for moving objects
         let objectLayerPairFilter = new ObjectLayerPairFilterTable (2u)
-        objectLayerPairFilter.EnableCollision(objectLayerNonMoving, objectLayerMoving)
-        objectLayerPairFilter.EnableCollision(objectLayerMoving, objectLayerMoving)
+        objectLayerPairFilter.EnableCollision (objectLayerNonMoving, objectLayerMoving)
+        objectLayerPairFilter.EnableCollision (objectLayerMoving, objectLayerMoving)
 
         // We use a 1-to-1 mapping between object layers and broadphase layers
         let broadPhaseLayerInterface = new BroadPhaseLayerInterfaceTable (2u, 2u)
-        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer(objectLayerNonMoving, broadPhaseLayerNonMoving)
-        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer(objectLayerMoving, broadPhaseLayerMoving)
+        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (objectLayerNonMoving, broadPhaseLayerNonMoving)
+        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (objectLayerMoving, broadPhaseLayerMoving)
 
         let objectVsBroadPhaseLayerFilter = new ObjectVsBroadPhaseLayerFilterTable (broadPhaseLayerInterface, 2u, objectLayerPairFilter, 2u)
 
