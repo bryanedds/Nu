@@ -96,7 +96,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
             | _ -> Log.info ("Could not load cube map '" + cubeMap.FilePath + "' due to requiring exactly 6 file paths with each file path on its own line.")
 
 /// Provides clients for direct usage.
-type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
+type AssetClientVulkan (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapClient : OpenGL.CubeMap.CubeMapClient, sceneClient : OpenGL.PhysicallyBased.PhysicallyBasedSceneClient) =
 
     /// The texture client.
     member this.TextureClient = textureClient
@@ -108,7 +108,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
     member this.SceneClient = sceneClient
 
     /// Preload assets.
-    member this.PreloadAssets (is2d, assets : Asset seq) =
+    member this.PreloadAssets (is2d, assets : Asset seq, vulkanGlobal) =
 
         // collect loadable assets
         let textureAssets = List ()
@@ -125,7 +125,7 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
         let textureDataLoadOps =
             [for textureAsset in textureAssets do
                 vsync {
-                    match OpenGL.Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
+                    match Vortice.Vulkan.Texture.TryCreateTextureData (not is2d, textureAsset.FilePath) with
                     | Some textureData -> return Right (textureAsset.FilePath, textureData)
                     | None -> return Left ("Error creating texture data from '" + textureAsset.FilePath + "'") }]
 
@@ -148,14 +148,21 @@ type AssetClient (textureClient : OpenGL.Texture.TextureClient, cubeMapClient : 
             match textureData with
             | Right (filePath, textureData) ->
                 let texture =
-                    if is2d then
-                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.Nearest, OpenGL.TextureMagFilter.Nearest, false, false, false, textureData)
-                        OpenGL.Texture.EagerTexture { TextureMetadata = metadata; TextureId = textureId }
-                    else
-                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.BlockCompressable filePath, textureData)
-                        let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
-                        textureClient.LazyTextureQueue.Enqueue lazyTexture
-                        OpenGL.Texture.LazyTexture lazyTexture
+//                    if is2d then
+
+                    let (metadata, vulkanTexture) =
+                        Vortice.Vulkan.Texture.CreateTextureVulkanFromData
+                            (Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
+                             Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
+                             false, false, false, textureData, vulkanGlobal)
+                    
+                    Vortice.Vulkan.Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
+
+//                    else
+//                        let (metadata, textureId) = OpenGL.Texture.CreateTextureGlFromData (OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true, true, OpenGL.Texture.BlockCompressable filePath, textureData)
+//                        let lazyTexture = new OpenGL.Texture.LazyTexture (filePath, metadata, textureId, OpenGL.TextureMinFilter.LinearMipmapLinear, OpenGL.TextureMagFilter.Linear, true)
+//                        textureClient.LazyTextureQueue.Enqueue lazyTexture
+//                        OpenGL.Texture.LazyTexture lazyTexture
                 textureClient.Textures.[filePath] <- texture
             | Left error -> Log.info error
 
