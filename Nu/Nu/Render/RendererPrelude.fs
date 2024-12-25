@@ -86,7 +86,7 @@ type [<CustomEquality; NoComparison>] RenderPass =
 /// An asset that is used for rendering.
 type RenderAsset =
     | RawAsset
-    | TextureAsset of Texture : OpenGL.Texture.Texture
+    | TextureAsset of Texture : Vortice.Vulkan.Texture.Texture
     | FontAsset of FontSizeDefault : int * Font : nativeint
     | CubeMapAsset of FilePaths : OpenGL.CubeMap.CubeMapKey * CubeMap : OpenGL.Texture.Texture * IrradianceAndEnvironmentMapOptRef : (OpenGL.Texture.Texture * OpenGL.Texture.Texture) option ref
     | StaticModelAsset of UserDefined : bool * StaticModel : OpenGL.PhysicallyBased.PhysicallyBasedModel

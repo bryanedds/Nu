@@ -801,6 +801,8 @@ type [<ReferenceEquality>] StubRenderer3d =
     static member make () =
         { StubRenderer3d = () }
 
+(*
+
 /// The OpenGL implementation of Renderer3d.
 type [<ReferenceEquality>] GlRenderer3d =
     private
@@ -3484,3 +3486,5 @@ type [<ReferenceEquality>] GlRenderer3d =
             OpenGL.Framebuffer.DestroyFilterBuffers renderer.FilterBuffers
             for shadowBuffers in renderer.ShadowBuffersArray do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers
             for shadowBuffers2 in renderer.ShadowBuffers2Array do OpenGL.Framebuffer.DestroyShadowBuffers shadowBuffers2
+
+*)

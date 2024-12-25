@@ -152,6 +152,8 @@ type [<ReferenceEquality>] StubRenderer2d =
     static member make () =
         { StubRenderer2d = () }
 
+(*
+
 /// The OpenGL implementation of Renderer2d.
 type [<ReferenceEquality>] GlRenderer2d =
     private
@@ -834,6 +836,8 @@ type [<ReferenceEquality>] GlRenderer2d =
             for (_, _, renderAsset) in renderAssets do GlRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
 
+*)
+
 /// The Vulkan implementation of Renderer2d.
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
@@ -852,7 +856,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset -> ()
-        | TextureAsset texture -> texture.Destroy ()
+        | TextureAsset texture -> texture.Destroy renderer.VulkanGlobal
         | FontAsset (_, font) -> SDL_ttf.TTF_CloseFont font
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
@@ -862,7 +866,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
-            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath) with
+            match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath, renderer.VulkanGlobal) with
             | Right texture ->
                 Some (TextureAsset texture)
             | Left error ->
@@ -900,7 +904,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     | None ->
                         let assetClient =
                             AssetClient
-                                (OpenGL.Texture.TextureClient None,
+                                (Texture.TextureClient None,
                                  OpenGL.CubeMap.CubeMapClient (),
                                  OpenGL.PhysicallyBased.PhysicallyBasedSceneClient ())
                         let renderPackage = { Assets = dictPlus StringComparer.Ordinal []; PackageState = assetClient }
@@ -940,7 +944,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                         assetsToLoad.Add asset |> ignore<bool>
 
                 // preload assets in parallel
-                renderPackage.PackageState.PreloadAssets (true, assetsToLoad)
+                renderPackage.PackageState.PreloadAssets (true, assetsToLoad, renderer.VulkanGlobal)
 
                 // load assets
                 let assetsLoaded = Dictionary ()

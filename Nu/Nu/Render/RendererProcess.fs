@@ -76,15 +76,15 @@ type RendererInline () =
                     OpenGL.Hl.Assert ()
 
                     // create 3d renderer
-                    let renderer3d = GlRenderer3d.make glContext window :> Renderer3d
+                    let renderer3d = StubRenderer3d.make () :> Renderer3d
                     OpenGL.Hl.Assert ()
 
                     // create 2d renderer
-                    let renderer2d = GlRenderer2d.make window :> Renderer2d
+                    let renderer2d = StubRenderer2d.make () :> Renderer2d
                     OpenGL.Hl.Assert ()
 
                     // create imgui renderer
-                    let rendererImGui = GlRendererImGui.make fonts :> RendererImGui
+                    let rendererImGui = StubRendererImGui.make fonts :> RendererImGui
                     OpenGL.Hl.Assert ()
 
                     // fin
@@ -320,8 +320,6 @@ type RendererThread () =
         let (vulkanGlobalOpt, renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
             | Some window ->
-                
-                // NOTE: opengl rendering should retain functionality in RendererInline, at least up to a point.
                 
                 // TODO: review window semantics.
                 // extract window
