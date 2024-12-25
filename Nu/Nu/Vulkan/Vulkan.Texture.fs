@@ -269,8 +269,8 @@ module Texture =
             Vulkan.vkDestroyImageView (vulkanGlobal.Device, vulkanTexture.ImageView, nullPtr)
             Hl.AllocatedImage.destroy vulkanTexture.Image vulkanGlobal.VmaAllocator
         
-        /// Create a VulkanTexture.
-        static member create format bytesPerPixel width height samplerInfo pixels (vulkanGlobal : Hl.VulkanGlobal) =
+        /// Create a VulkanTexture for general use.
+        static member createGeneral format bytesPerPixel width height samplerInfo pixels (vulkanGlobal : Hl.VulkanGlobal) =
 
             // general data
             let uploadSize = width * height * bytesPerPixel
@@ -298,6 +298,24 @@ module Texture =
 
             // fin
             vulkanTexture
+
+        /// Create a VulkanTexture catered to the asset pipeline.
+        static member create minFilter magFilter metadata pixels vulkanGlobal =
+            let format = Vulkan.VK_FORMAT_B8G8R8A8_UNORM
+            let mutable info = VkSamplerCreateInfo ()
+            info.magFilter <- magFilter
+            info.minFilter <- minFilter
+            info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
+            info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            VulkanTexture.createGeneral format 4 metadata.TextureWidth metadata.TextureHeight info pixels vulkanGlobal
+
+        /// Unpopulated VulkanTexture.
+        static member empty =
+            { Image = Unchecked.defaultof<Hl.AllocatedImage>
+              ImageView = Unchecked.defaultof<VkImageView>
+              Sampler = Unchecked.defaultof<VkSampler> }
     
     /// Describes data loaded from a texture.
     type TextureData =

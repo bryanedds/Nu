@@ -528,7 +528,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             // create the font atlas texture
             let format = Vulkan.VK_FORMAT_R8G8B8A8_UNORM
             let samplerInfo = VulkanRendererImGui.makeFontSamplerInfo ()
-            fontTexture <- Texture.VulkanTexture.create format bytesPerPixel fontWidth fontHeight samplerInfo pixels vulkanGlobal
+            fontTexture <- Texture.VulkanTexture.createGeneral format bytesPerPixel fontWidth fontHeight samplerInfo pixels vulkanGlobal
             
             // create and write descriptor set for font atlas
             fontDescriptorSet <- VulkanRendererImGui.createFontDescriptorSet fontDescriptorSetLayout descriptorPool device
