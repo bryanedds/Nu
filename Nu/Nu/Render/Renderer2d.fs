@@ -838,7 +838,10 @@ type [<ReferenceEquality>] GlRenderer2d =
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
-          RenderPackages : Packages<RenderAsset, AssetClient> }
+          RenderPackages : Packages<RenderAsset, AssetClient>
+          mutable RenderPackageCachedOpt : RenderPackageCached
+          mutable RenderAssetCached : RenderAssetCached
+          mutable ReloadAssetsRequested : bool }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -846,7 +849,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         renderer.RenderAssetCached.CachedRenderAsset <- RawAsset
 
     static member private freeRenderAsset renderAsset renderer =
-        GlRenderer2d.invalidateCaches renderer
+        VulkanRenderer2d.invalidateCaches renderer
         match renderAsset with
         | RawAsset -> ()
         | TextureAsset texture -> texture.Destroy ()
@@ -854,10 +857,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         | CubeMapAsset _ -> ()
         | StaticModelAsset _ -> ()
         | AnimatedModelAsset _ -> ()
-        OpenGL.Hl.Assert ()
 
     static member private tryLoadRenderAsset (assetClient : AssetClient) (asset : Asset) renderer =
-        GlRenderer2d.invalidateCaches renderer
+        VulkanRenderer2d.invalidateCaches renderer
         match PathF.GetExtensionLower asset.FilePath with
         | ImageExtension _ ->
             match assetClient.TextureClient.TryCreateTextureUnfiltered (false, asset.FilePath) with
@@ -929,7 +931,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     | FontAsset _ -> ()
                     | CubeMapAsset (cubeMapKey, _, _) -> renderPackage.PackageState.CubeMapClient.CubeMaps.Remove cubeMapKey |> ignore<bool>
                     | StaticModelAsset _ | AnimatedModelAsset _ -> renderPackage.PackageState.SceneClient.Scenes.Remove filePath |> ignore<bool>
-                    GlRenderer2d.freeRenderAsset renderAsset renderer
+                    VulkanRenderer2d.freeRenderAsset renderAsset renderer
 
                 // categorize assets to load
                 let assetsToLoad = HashSet ()
@@ -943,7 +945,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 // load assets
                 let assetsLoaded = Dictionary ()
                 for asset in assetsToLoad do
-                    match GlRenderer2d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
+                    match VulkanRenderer2d.tryLoadRenderAsset renderPackage.PackageState asset renderer with
                     | Some renderAsset ->
                         let lastWriteTime =
                             try DateTimeOffset (File.GetLastWriteTime asset.FilePath)
@@ -964,28 +966,28 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             Log.info ("Render package load failed due to unloadable asset graph due to: '" + error)
     
     static member private handleLoadRenderPackage hintPackageName renderer =
-        GlRenderer2d.tryLoadRenderPackage hintPackageName renderer
+        VulkanRenderer2d.tryLoadRenderPackage hintPackageName renderer
 
     static member private handleUnloadRenderPackage hintPackageName renderer =
-        GlRenderer2d.invalidateCaches renderer
+        VulkanRenderer2d.invalidateCaches renderer
         match Dictionary.tryFind hintPackageName renderer.RenderPackages with
         | Some package ->
-            for asset in package.Assets do GlRenderer2d.freeRenderAsset (__c asset.Value) renderer
+            for asset in package.Assets do VulkanRenderer2d.freeRenderAsset (__c asset.Value) renderer
             renderer.RenderPackages.Remove hintPackageName |> ignore
         | None -> ()
 
     static member private handleReloadRenderAssets renderer =
-        GlRenderer2d.invalidateCaches renderer
+        VulkanRenderer2d.invalidateCaches renderer
         let packageNames = renderer.RenderPackages |> Seq.map (fun entry -> entry.Key) |> Array.ofSeq
         for packageName in packageNames do
-            GlRenderer2d.tryLoadRenderPackage packageName renderer
+            VulkanRenderer2d.tryLoadRenderPackage packageName renderer
     
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
         | LayeredOperation2d operation -> ()// renderer.LayeredOperations.Add operation
-        | LoadRenderPackage2d hintPackageUse -> ()// GlRenderer2d.handleLoadRenderPackage hintPackageUse renderer
-        | UnloadRenderPackage2d hintPackageDisuse -> ()// GlRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
-        | ReloadRenderAssets2d -> ()// renderer.ReloadAssetsRequested <- true
+        | LoadRenderPackage2d hintPackageUse -> VulkanRenderer2d.handleLoadRenderPackage hintPackageUse renderer
+        | UnloadRenderPackage2d hintPackageDisuse -> VulkanRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
+        | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
 
     static member private handleRenderMessages renderMessages renderer =
         for renderMessage in renderMessages do
@@ -994,6 +996,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private render _ _ renderMessages renderer =
         
         VulkanRenderer2d.handleRenderMessages renderMessages renderer
+
+        // reload render assets upon request
+        if renderer.ReloadAssetsRequested then
+            VulkanRenderer2d.handleReloadRenderAssets renderer
+            renderer.ReloadAssetsRequested <- false
     
     interface Renderer2d with
         
@@ -1001,7 +1008,11 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             if renderMessages.Count > 0 then
                 VulkanRenderer2d.render eyeCenter eyeSize renderMessages renderer
         
-        member renderer.CleanUp () = ()
+        member renderer.CleanUp () =
+            let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
+            let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
+            for (_, _, renderAsset) in renderAssets do VulkanRenderer2d.freeRenderAsset renderAsset renderer
+            renderer.RenderPackages.Clear ()
 
     /// Make a VulkanRenderer2d.
     static member make vulkanGlobal =
@@ -1009,7 +1020,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // make renderer
         let renderer =
             { VulkanGlobal = vulkanGlobal
-              RenderPackages = dictPlus StringComparer.Ordinal [] }
+              RenderPackages = dictPlus StringComparer.Ordinal []
+              RenderPackageCachedOpt = Unchecked.defaultof<_>
+              RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
+              ReloadAssetsRequested = false }
 
         // fin
         renderer
