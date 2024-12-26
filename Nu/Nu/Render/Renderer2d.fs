@@ -172,7 +172,6 @@ type [<ReferenceEquality>] GlRenderer2d =
     private
         { mutable Viewport : Viewport
           SpriteShader : int * int * int * int * uint // TODO: P1: release these resources on clean-up.
-          SpriteQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
           TextQuad : uint * uint * uint // TODO: P1: release these resources on clean-up.
           SpriteBatchEnv : OpenGL.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -375,18 +374,6 @@ type [<ReferenceEquality>] GlRenderer2d =
 
     static member private sortLayeredOperations renderer =
         renderer.LayeredOperations.Sort (LayeredOperation2dComparer ())
-
-    /// Get the sprite shader created by OpenGL.Hl.CreateSpriteShader.
-    static member getSpriteShader renderer =
-        renderer.SpriteShader
-
-    /// Get the sprite quad created by OpenGL.Hl.CreateSpriteQuad.
-    static member getSpriteQuad renderer =
-        renderer.SpriteQuad
-
-    /// Get the text quad created by OpenGL.Hl.CreateSpriteQuad.
-    static member getTextQuad renderer =
-        renderer.TextQuad
 
     static member
 #if !DEBUG
@@ -886,7 +873,6 @@ type [<ReferenceEquality>] GlRenderer2d =
 
         // create one-off sprite and text resources
         let spriteShader = OpenGL.Sprite.CreateSpriteShader Constants.Paths.SpriteShaderFilePath
-        let spriteQuad = OpenGL.Sprite.CreateSpriteQuad false
         let textQuad = OpenGL.Sprite.CreateSpriteQuad true
         OpenGL.Hl.Assert ()
 
@@ -898,7 +884,6 @@ type [<ReferenceEquality>] GlRenderer2d =
         let renderer =
             { Viewport = viewport
               SpriteShader = spriteShader
-              SpriteQuad = spriteQuad
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
