@@ -81,12 +81,33 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 new ScaledShapeSettings (boxShapeSettings, &shapeScale) : ShapeSettings
             | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (boxShapeSettings, &bodyProperties.Scale)
             | None -> boxShapeSettings
-        // TODO: P0: account for individual shape mass.
         scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
                 let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
+                volume * density
+            | Mass mass -> mass
+        mass :: masses
+
+    static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        let center =
+            match sphereShape.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let sphereShapeSettings = new SphereShapeSettings (sphereShape.Radius)
+        let shapeSettings =
+            match sphereShape.TransformOpt with
+            | Some transform ->
+                let shapeScale = bodyProperties.Scale * transform.Scale
+                new ScaledShapeSettings (sphereShapeSettings, &shapeScale) : ShapeSettings
+            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (sphereShapeSettings, &bodyProperties.Scale)
+            | None -> sphereShapeSettings
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = 4.0f / 3.0f * MathF.PI * pown sphereShape.Radius 3
                 volume * density
             | Mass mass -> mass
         mass :: masses
@@ -102,7 +123,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         match bodyShape with
         | EmptyShape -> masses
         | BoxShape boxShape -> PhysicsEngineJolt.attachBoxShape bodySource bodyProperties boxShape scShapeSettings masses
-        //| SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodySource bodyProperties sphereShape compoundShape centerMassInertiaDisposes
+        | SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodySource bodyProperties sphereShape scShapeSettings masses
         //| CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape compoundShape centerMassInertiaDisposes
         //| BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape compoundShape centerMassInertiaDisposes
         //| PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
