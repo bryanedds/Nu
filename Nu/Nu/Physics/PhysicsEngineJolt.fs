@@ -67,34 +67,64 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         physicsEngine.IntegrationMessages.Add integrationMessage
 
-    static member private attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine =
+    static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        let halfExtent = boxShape.Size * 0.5f
+        let center =
+            match boxShape.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let boxShapeSettings = new BoxShapeSettings (&halfExtent)
+        let shapeSettings =
+            match boxShape.TransformOpt with
+            | Some transform ->
+                let shapeScale = bodyProperties.Scale * transform.Scale
+                new ScaledShapeSettings (boxShapeSettings, &shapeScale) : ShapeSettings
+            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (boxShapeSettings, &bodyProperties.Scale)
+            | None -> boxShapeSettings
+        // TODO: P0: account for individual shape mass.
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = boxShape.Size.X * boxShape.Size.Y * boxShape.Size.Z
+                volume * density
+            | Mass mass -> mass
+        mass :: masses
+
+    static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses physicsEngine =
         List.fold (fun centerMassInertiaDisposes bodyShape ->
-            let centerMassInertiaDisposes' = PhysicsEngine3d.attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
-            centerMassInertiaDisposes' @ centerMassInertiaDisposes)
-            centerMassInertiaDisposes
+            let masses' = PhysicsEngineJolt.attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
+            masses' @ masses)
+            masses
             bodyShapes
 
-    static member private attachBodyShape tryGetAssetFilePath bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine =
+    static member private attachBodyShape bodySource bodyProperties bodyShape scShapeSettings masses physicsEngine =
         match bodyShape with
-        | EmptyShape -> centerMassInertiaDisposes
-        | BoxShape boxShape -> PhysicsEngine3d.attachBoxShape bodySource bodyProperties boxShape compoundShape centerMassInertiaDisposes
-        | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodySource bodyProperties sphereShape compoundShape centerMassInertiaDisposes
-        | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodySource bodyProperties capsuleShape compoundShape centerMassInertiaDisposes
-        | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape compoundShape centerMassInertiaDisposes
-        | PointsShape pointsShape -> PhysicsEngine3d.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
-        | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
-        | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodySource bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
-        | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngine3d.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine
-        | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape tryGetAssetFilePath bodySource bodyProperties terrainShape compoundShape centerMassInertiaDisposes
-        | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes tryGetAssetFilePath bodySource bodyProperties bodyShapes compoundShape centerMassInertiaDisposes physicsEngine
+        | EmptyShape -> masses
+        | BoxShape boxShape -> PhysicsEngineJolt.attachBoxShape bodySource bodyProperties boxShape scShapeSettings masses
+        //| SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodySource bodyProperties sphereShape compoundShape centerMassInertiaDisposes
+        //| CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape compoundShape centerMassInertiaDisposes
+        //| BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape compoundShape centerMassInertiaDisposes
+        //| PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
+        //| GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
+        //| StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodySource bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
+        //| StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine
+        //| TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodySource bodyProperties terrainShape compoundShape centerMassInertiaDisposes
+        | BodyShapes bodyShapes -> PhysicsEngineJolt.attachBodyShapes bodySource bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBody (bodyId : BodyId) (bodyProperties : BodyProperties) physicsEngine =
-        let shape = StaticCompoundShape 
-
-        let mutable bodyCreationSettings = new BodyCreationSettings ()
+        use scShapeSettings = new StaticCompoundShapeSettings ()
+        let masses = PhysicsEngineJolt.attachBodyShape bodyId.BodySource bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
+        let mass = List.sum masses
+        let motionType =
+            match bodyProperties.BodyType with
+            | Static -> MotionType.Static
+            | Kinematic -> MotionType.Kinematic
+            | KinematicCharacter -> MotionType.Kinematic // TODO: P0: implement character physics.
+            | Dynamic -> MotionType.Dynamic
+            | DynamicCharacter -> MotionType.Dynamic // TODO: P0: implement character physics.
+        let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, uint16 bodyProperties.CollisionCategories)
         bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
-        bodyCreationSettings.Position <- bodyProperties.Center
-        bodyCreationSettings.Rotation <- bodyProperties.Rotation
         bodyCreationSettings.Friction <- bodyProperties.Friction
         bodyCreationSettings.Restitution <- bodyProperties.Restitution
         bodyCreationSettings.LinearVelocity <- bodyProperties.LinearVelocity
@@ -105,15 +135,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             (if bodyProperties.AngularFactor.X <> 0.0f then AllowedDOFs.RotationX else enum<_> 0) |||
             (if bodyProperties.AngularFactor.Y <> 0.0f then AllowedDOFs.RotationY else enum<_> 0) |||
             (if bodyProperties.AngularFactor.Z <> 0.0f then AllowedDOFs.RotationZ else enum<_> 0)
-        match bodyProperties.Substance with
-        | Mass mass ->
-            let massProperties = MassProperties ()
-            massProperties.ScaleToMass mass
-            bodyCreationSettings.MassPropertiesOverride <- massProperties
-        | Density density ->
-            let massProperties = MassProperties ()
-            massProperties.SetMassAndInertiaOfSolidBox ((), density)
-            bodyCreationSettings.MassPropertiesOverride <- massProperties
+        let massProperties = MassProperties ()
+        massProperties.ScaleToMass mass
+        bodyCreationSettings.MassPropertiesOverride <- massProperties
         bodyCreationSettings.GravityFactor <- // TODO: P0: implement individual gravity direction?
             match bodyProperties.GravityOverride with
             | Some gravity -> gravity.Magnitude
@@ -123,7 +147,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             match bodyProperties.CollisionDetection with
             | Discontinuous -> MotionQuality.Discrete
             | Continuous (_, _) -> MotionQuality.LinearCast
-        bodyCreationSettings.ObjectLayer <- uint16 bodyProperties.CollisionCategories
         // TODO: P0: implement CollisionMask.
         bodyCreationSettings.IsSensor <- bodyProperties.Sensor
         let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
