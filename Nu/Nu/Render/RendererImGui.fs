@@ -301,20 +301,6 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
         Vulkan.vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> Hl.check
         descriptorPool
 
-    /// Make the info for the font atlas sampler.
-    static member makeFontSamplerInfo () =
-        let mutable info = VkSamplerCreateInfo ()
-        info.magFilter <- Vulkan.VK_FILTER_LINEAR
-        info.minFilter <- Vulkan.VK_FILTER_LINEAR
-        info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
-        info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-        info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-        info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-        info.maxAnisotropy <- 1.0f
-        info.minLod <- -1000f
-        info.maxLod <- 1000f
-        info
-    
     /// Create the descriptor set layout for the font atlas.
     static member createFontDescriptorSetLayout device =
         
@@ -526,9 +512,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             fonts.GetTexDataAsRGBA32 (&pixels, &fontWidth, &fontHeight, &bytesPerPixel)
 
             // create the font atlas texture
-            let format = Vulkan.VK_FORMAT_R8G8B8A8_UNORM
-            let samplerInfo = VulkanRendererImGui.makeFontSamplerInfo ()
-            fontTexture <- Texture.VulkanTexture.createGeneral format bytesPerPixel fontWidth fontHeight samplerInfo pixels vulkanGlobal
+            let metadata = Texture.TextureMetadata.make fontWidth fontHeight
+            fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR metadata pixels vulkanGlobal
             
             // create and write descriptor set for font atlas
             fontDescriptorSet <- VulkanRendererImGui.createFontDescriptorSet fontDescriptorSetLayout descriptorPool device

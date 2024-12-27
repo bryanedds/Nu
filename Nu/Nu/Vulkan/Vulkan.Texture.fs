@@ -258,9 +258,16 @@ module Texture =
             Vulkan.vkQueueWaitIdle vulkanGlobal.GraphicsQueue |> Hl.check
         
         /// Create the sampler.
-        static member private createSampler samplerInfo device =
+        static member private createSampler minFilter magFilter device =
             let mutable sampler = Unchecked.defaultof<VkSampler>
-            Vulkan.vkCreateSampler (device, &samplerInfo, nullPtr, &sampler) |> Hl.check
+            let mutable info = VkSamplerCreateInfo ()
+            info.magFilter <- magFilter
+            info.minFilter <- minFilter
+            info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
+            info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
         /// Destroy VulkanTexture.
@@ -269,12 +276,12 @@ module Texture =
             Vulkan.vkDestroyImageView (vulkanGlobal.Device, vulkanTexture.ImageView, nullPtr)
             Hl.AllocatedImage.destroy vulkanTexture.Image vulkanGlobal.VmaAllocator
         
-        /// Create a VulkanTexture for general use.
-        static member createGeneral format bytesPerPixel width height samplerInfo pixels (vulkanGlobal : Hl.VulkanGlobal) =
+        /// Create a VulkanTexture.
+        static member private createInternal format bytesPerPixel minFilter magFilter metadata pixels (vulkanGlobal : Hl.VulkanGlobal) =
 
             // general data
-            let uploadSize = width * height * bytesPerPixel
-            let extent = VkExtent3D (width, height, 1)
+            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
+            let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
 
             // upload pixels to staging buffer
             let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vulkanGlobal.VmaAllocator
@@ -285,7 +292,7 @@ module Texture =
 
             // create image view and sampler
             let imageView = Hl.createImageView format 1u image.Image vulkanGlobal.Device
-            let sampler = VulkanTexture.createSampler samplerInfo vulkanGlobal.Device
+            let sampler = VulkanTexture.createSampler minFilter magFilter vulkanGlobal.Device
 
             // destroy staging buffer
             Hl.AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
@@ -299,17 +306,13 @@ module Texture =
             // fin
             vulkanTexture
 
-        /// Create a VulkanTexture catered to the asset pipeline.
-        static member create minFilter magFilter metadata pixels vulkanGlobal =
-            let format = Vulkan.VK_FORMAT_B8G8R8A8_UNORM
-            let mutable info = VkSamplerCreateInfo ()
-            info.magFilter <- magFilter
-            info.minFilter <- minFilter
-            info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
-            info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            VulkanTexture.createGeneral format 4 metadata.TextureWidth metadata.TextureHeight info pixels vulkanGlobal
+        /// Create a VulkanTexture with Bgra format.
+        static member createBgra minFilter magFilter metadata pixels vulkanGlobal =
+            VulkanTexture.createInternal Vulkan.VK_FORMAT_B8G8R8A8_UNORM 4 minFilter magFilter metadata pixels vulkanGlobal
+
+        /// Create a VulkanTexture with Rgba format.
+        static member createRgba minFilter magFilter metadata pixels vulkanGlobal =
+            VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vulkanGlobal
 
         /// Unpopulated VulkanTexture.
         static member empty =
@@ -365,7 +368,7 @@ module Texture =
 //                if mipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
 //                Gl.BindTexture (TextureTarget.Texture2d, 0u)
                 
-                let vulkanTexture = VulkanTexture.create minFilter magFilter metadata (bytesPtr.AddrOfPinnedObject ()) vulkanGlobal
+                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata (bytesPtr.AddrOfPinnedObject ()) vulkanGlobal
                 (metadata, vulkanTexture)
             finally bytesPtr.Free ()
 
@@ -444,7 +447,7 @@ module Texture =
 //                Gl.GenerateMipmap TextureTarget.Texture2d
 //            Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
-            let vulkanTexture = VulkanTexture.create minFilter magFilter metadata bytesPtr vulkanGlobal
+            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata bytesPtr vulkanGlobal
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.
