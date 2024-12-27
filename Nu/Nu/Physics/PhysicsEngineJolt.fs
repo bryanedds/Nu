@@ -69,11 +69,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let halfExtent = boxShape.Size * 0.5f
+        let boxShapeSettings = new BoxShapeSettings (&halfExtent)
         let center =
             match boxShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
-        let boxShapeSettings = new BoxShapeSettings (&halfExtent)
         let shapeSettings =
             match boxShape.TransformOpt with
             | Some transform ->
@@ -91,11 +91,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         mass :: masses
 
     static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        let sphereShapeSettings = new SphereShapeSettings (sphereShape.Radius)
         let center =
             match sphereShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
-        let sphereShapeSettings = new SphereShapeSettings (sphereShape.Radius)
         let shapeSettings =
             match sphereShape.TransformOpt with
             | Some transform ->
@@ -112,6 +112,28 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | Mass mass -> mass
         mass :: masses
 
+    static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        let capsuleShapeSettings = new CapsuleShapeSettings (capsuleShape.Height * 0.5f, capsuleShape.Radius)
+        let center =
+            match capsuleShape.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let capsuleSettings =
+            match capsuleShape.TransformOpt with
+            | Some transform ->
+                let shapeScale = bodyProperties.Scale * transform.Scale
+                new ScaledShapeSettings (capsuleShapeSettings, &shapeScale) : ShapeSettings
+            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (capsuleShapeSettings, &bodyProperties.Scale)
+            | None -> capsuleShapeSettings
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, capsuleSettings, uint bodyProperties.BodyIndex)
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = MathF.PI * pown capsuleShape.Radius 2 * (4.0f / 3.0f * capsuleShape.Radius * capsuleShape.Height)
+                volume * density
+            | Mass mass -> mass
+        mass :: masses
+
     static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses physicsEngine =
         List.fold (fun centerMassInertiaDisposes bodyShape ->
             let masses' = PhysicsEngineJolt.attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
@@ -124,7 +146,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | EmptyShape -> masses
         | BoxShape boxShape -> PhysicsEngineJolt.attachBoxShape bodySource bodyProperties boxShape scShapeSettings masses
         | SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodySource bodyProperties sphereShape scShapeSettings masses
-        //| CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape compoundShape centerMassInertiaDisposes
+        | CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape scShapeSettings masses
         //| BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape compoundShape centerMassInertiaDisposes
         //| PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
         //| GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
