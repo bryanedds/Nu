@@ -134,6 +134,54 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | Mass mass -> mass
         mass :: masses
 
+    static member private attachBoxRoundedShape bodySource (bodyProperties : BodyProperties) (boxRoundedShape : Nu.BoxRoundedShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
+        let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
+        PhysicsEngineJolt.attachBoxShape bodySource bodyProperties boxShape scShapeSettings masses
+
+    static member private attachBodyConvexHullShape bodySource (bodyProperties : BodyProperties) (pointsShape : Nu.PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
+        let unscaledPointsKey = UnscaledPointsKey.make pointsShape.Points
+        let (optimized, unscaledPoints) =
+            match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
+            | (true, unscaledVertices) -> (true, unscaledVertices)
+            | (false, _) -> (false, pointsShape.Points)
+        let unscaledPoints =
+            if not optimized then
+                let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: find a way 
+                hull.OptimizeConvexHull ()
+                let unscaledPoints =
+                    match hull.UnscaledPoints with
+                    | null -> [|v3Zero|] // guarding against null
+                    | unscaledPoints -> unscaledPoints |> Seq.map (fun p -> v3 p.X p.Y p.Z) |> Array.ofSeq
+                physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
+                unscaledPoints
+            else unscaledPoints
+        let convexHullShapeSettings = new ConvexHullShapeSettings (unscaledPoints)
+        let center =
+            match pointsShape.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        let (scale, convexHullShapeSettings) =
+            match pointsShape.TransformOpt with
+            | Some transform ->
+                let shapeScale = bodyProperties.Scale * transform.Scale
+                (shapeScale, (new ScaledShapeSettings (convexHullShapeSettings, &shapeScale) : ShapeSettings))
+            | None when bodyProperties.Scale <> v3One ->
+                let shapeScale = bodyProperties.Scale
+                (shapeScale, new ScaledShapeSettings (convexHullShapeSettings, &shapeScale))
+            | None -> (v3One, convexHullShapeSettings)
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, convexHullShapeSettings, uint bodyProperties.BodyIndex)
+        // NOTE: we approximate volume with the volume of a bounding box.
+        // TODO: use a more accurate volume calculation.
+        let box = box3 v3Zero ((Box3.Enclose pointsShape.Points).Size * scale)
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
+        mass :: masses
+
     static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses physicsEngine =
         List.fold (fun centerMassInertiaDisposes bodyShape ->
             let masses' = PhysicsEngineJolt.attachBodyShape bodySource bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
@@ -147,8 +195,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | BoxShape boxShape -> PhysicsEngineJolt.attachBoxShape bodySource bodyProperties boxShape scShapeSettings masses
         | SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodySource bodyProperties sphereShape scShapeSettings masses
         | CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape scShapeSettings masses
-        //| BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape compoundShape centerMassInertiaDisposes
-        //| PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
+        | BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape scShapeSettings masses
+        | PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
         //| GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
         //| StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodySource bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
         //| StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine
