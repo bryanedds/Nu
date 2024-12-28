@@ -664,23 +664,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, body) -> body.LinearVelocity
-            | (false, _) ->
-                if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
-                else
-                    match physicsEngine.KinematicCharacters.TryGetValue bodyId with
-                    | (true, character) -> character.LinearVelocity
-                    | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
+            | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetLinearVelocity &bodyID
+            | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, body) -> body.AngularVelocity
-            | (false, _) ->
-                if physicsEngine.Ghosts.ContainsKey bodyId then v3Zero
-                else
-                    match physicsEngine.KinematicCharacters.TryGetValue bodyId with
-                    | (true, character) -> character.AngularVelocity
-                    | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
+            | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
+            | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             match physicsEngine.CollisionsGround.TryGetValue bodyId with
@@ -704,34 +694,35 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CollisionsGround.ContainsKey bodyId
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
-            let mutable start = start
-            let mutable stop = stop
-            use rrc =
-                if closestOnly
-                then new ClosestRayResultCallback (&start, &stop) :> RayResultCallback
-                else new AllHitsRayResultCallback (start, stop)
-            rrc.CollisionFilterGroup <- collisionCategories
-            rrc.CollisionFilterMask <- collisionMask
-            physicsEngine.PhysicsContext.RayTest (start, stop, rrc)
-            if rrc.HasHit then
-                match rrc with
-                | :? ClosestRayResultCallback as crrc ->
-                    [|  match crrc.CollisionObject.CollisionShape.UserObject with
-                        | :? BodyShapeIndex as shapeIndex ->
-                            BodyIntersection.make shapeIndex crrc.ClosestHitFraction crrc.HitPointWorld crrc.HitNormalWorld
-                        | _ -> failwithumf ()|]
-                | :? AllHitsRayResultCallback as ahrrc ->
-                    [|for i in 0 .. dec ahrrc.CollisionObjects.Count do
-                        let collisionObject = ahrrc.CollisionObjects.[i]
-                        let hitPointWorld = ahrrc.HitPointWorld.[i]
-                        let hitNormalWorld = ahrrc.HitNormalWorld.[i]
-                        let hitFraction = ahrrc.HitFractions.[i]
-                        match collisionObject.CollisionShape.UserObject with
-                        | :? BodyShapeIndex as shapeIndex ->
-                            BodyIntersection.make shapeIndex hitFraction hitPointWorld hitNormalWorld
-                        | _ -> failwithumf ()|]
-                | _ -> failwithumf ()
-            else [||]
+            //let mutable start = start
+            //let mutable stop = stop
+            //use rrc =
+            //    if closestOnly
+            //    then new ClosestRayResultCallback (&start, &stop) :> RayResultCallback
+            //    else new AllHitsRayResultCallback (start, stop)
+            //rrc.CollisionFilterGroup <- collisionCategories
+            //rrc.CollisionFilterMask <- collisionMask
+            //physicsEngine.PhysicsContext.RayTest (start, stop, rrc)
+            //if rrc.HasHit then
+            //    match rrc with
+            //    | :? ClosestRayResultCallback as crrc ->
+            //        [|  match crrc.CollisionObject.CollisionShape.UserObject with
+            //            | :? BodyShapeIndex as shapeIndex ->
+            //                BodyIntersection.make shapeIndex crrc.ClosestHitFraction crrc.HitPointWorld crrc.HitNormalWorld
+            //            | _ -> failwithumf ()|]
+            //    | :? AllHitsRayResultCallback as ahrrc ->
+            //        [|for i in 0 .. dec ahrrc.CollisionObjects.Count do
+            //            let collisionObject = ahrrc.CollisionObjects.[i]
+            //            let hitPointWorld = ahrrc.HitPointWorld.[i]
+            //            let hitNormalWorld = ahrrc.HitNormalWorld.[i]
+            //            let hitFraction = ahrrc.HitFractions.[i]
+            //            match collisionObject.CollisionShape.UserObject with
+            //            | :? BodyShapeIndex as shapeIndex ->
+            //                BodyIntersection.make shapeIndex hitFraction hitPointWorld hitNormalWorld
+            //            | _ -> failwithumf ()|]
+            //    | _ -> failwithumf ()
+            //else [||]
+            [||]
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngineJolt.handlePhysicsMessage physicsEngine physicsMessage
