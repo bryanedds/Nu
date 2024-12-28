@@ -15,6 +15,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
+          CollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           ShapeSources : Dictionary<int, Simulant>
           BodySources : Dictionary<int, Simulant>
           IntegrationMessages : IntegrationMessage List }
@@ -51,9 +52,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         jobSystemConfig.numThreads <- Constants.Physics.Collision3dNumThreads
         let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
 
-        let integrationMessages = List ()
+        let collisionsGround = dictPlus HashIdentity.Structural []
         let shapeSources = dictPlus HashIdentity.Structural []
         let bodySources = dictPlus<int, Simulant> HashIdentity.Structural []
+        let integrationMessages = List ()
 
         physicsSystem.add_OnContactValidate (fun _ _ _ _ _ ->
             ValidateResult.AcceptContact) // TODO: collision mask used here?
@@ -65,8 +67,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let body2Source = bodySources.[body2Index]
             let bodyId = { BodySource = bodySource; BodyIndex = bodyIndex }
             let body2Id = { BodySource = body2Source; BodyIndex = body2Index }
-            PhysicsEngineJolt.handlePenetration bodyId body2Id manifold.WorldSpaceNormal integrationMessages
-            PhysicsEngineJolt.handlePenetration body2Id bodyId -manifold.WorldSpaceNormal integrationMessages)
+            PhysicsEngineJolt.handlePenetration bodyId body2Id manifold.WorldSpaceNormal collisionsGround integrationMessages
+            PhysicsEngineJolt.handlePenetration body2Id bodyId -manifold.WorldSpaceNormal collisionsGround integrationMessages)
 
         physicsSystem.add_OnContactRemoved (fun _ subShapeIDPair ->
             let bodyIndex = let b1Id = subShapeIDPair.Body1ID in int (physicsSystem.BodyInterface.GetUserData &b1Id)
@@ -75,8 +77,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let body2Source = bodySources.[body2Index]
             let bodyId = { BodySource = bodySource; BodyIndex = bodyIndex }
             let body2Id = { BodySource = body2Source; BodyIndex = body2Index }
-            PhysicsEngineJolt.handleSeparation bodyId body2Id integrationMessages
-            PhysicsEngineJolt.handleSeparation body2Id bodyId integrationMessages)
+            PhysicsEngineJolt.handleSeparation bodyId body2Id collisionsGround integrationMessages
+            PhysicsEngineJolt.handleSeparation body2Id bodyId collisionsGround integrationMessages)
 
         // TODO: P0: see if we need this to send awakeness to the engine.
         //physicsSystem.add_OnBodyActivated ???
@@ -85,24 +87,58 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
           UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
+          CollisionsGround = collisionsGround
           ShapeSources = shapeSources
           BodySources = bodySources
           IntegrationMessages = integrationMessages }
 
-    static member private handlePenetration (bodyId : BodyId) (bodyId2 : BodyId) normal (integrationMessages : _ List) =
+    static member private handlePenetration (bodyId : BodyId) (body2Id : BodyId) (normal : Vector3) (collisionsGround : Dictionary<_, Dictionary<_, _>>) (integrationMessages : _ List) =
+
+        //
         let bodyPenetrationMessage =
             { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
-              BodyShapeSource2 = { BodyId = bodyId2; BodyShapeIndex = 0 }
+              BodyShapeSource2 = { BodyId = body2Id; BodyShapeIndex = 0 }
               Normal = normal }
         let integrationMessage = BodyPenetrationMessage bodyPenetrationMessage
         integrationMessages.Add integrationMessage
 
-    static member private handleSeparation (bodyId : BodyId) (bodyId2 : BodyId) (integrationMessages : _ List) =
+        //
+        let theta = normal.Dot Vector3.UnitY |> acos |> abs
+        if theta < Constants.Physics.GroundAngleMax then
+            match collisionsGround.TryGetValue bodyId with
+            | (true, collisions) -> collisions.Add (body2Id, normal)
+            | (false, _) -> collisionsGround.Add (bodyId, dictPlus HashIdentity.Structural [(body2Id, normal)])
+            
+        //
+        let normal = -normal
+        let theta = normal.Dot Vector3.UnitY |> acos |> abs
+        if theta < Constants.Physics.GroundAngleMax then
+            match collisionsGround.TryGetValue body2Id with
+            | (true, collisions) -> collisions.Add (bodyId, normal)
+            | (false, _) -> collisionsGround.Add (bodyId, dictPlus HashIdentity.Structural [bodyId, normal])
+
+    static member private handleSeparation (bodyId : BodyId) (body2Id : BodyId) (collisionsGround : Dictionary<_, Dictionary<_, _>>) (integrationMessages : _ List) =
+
+        //
         let bodySeparationMessage =
             { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
-              BodyShapeSource2 = { BodyId = bodyId2; BodyShapeIndex = 0 }}
+              BodyShapeSource2 = { BodyId = body2Id; BodyShapeIndex = 0 }}
         let integrationMessage = BodySeparationMessage bodySeparationMessage
         integrationMessages.Add integrationMessage
+
+        //
+        match collisionsGround.TryGetValue bodyId with
+        | (true, collisions) ->
+            collisions.Remove body2Id |> ignore<bool>
+            if collisions.Count = 0 then collisionsGround.Remove bodyId |> ignore<bool>
+        | (false, _) -> ()
+
+        //
+        match collisionsGround.TryGetValue body2Id with
+        | (true, collisions) ->
+            collisions.Remove bodyId |> ignore<bool>
+            if collisions.Count = 0 then collisionsGround.Remove body2Id |> ignore<bool>
+        | (false, _) -> ()
 
     static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let halfExtent = boxShape.Size * 0.5f
@@ -346,22 +382,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 if  body0.UserIndex = 1 ||
                     body1.UserIndex = 1 then
                     physicsEngine.CollisionsFiltered.[collisionKey] <- normal // NOTE: incoming collision keys are not necessarily unique.
-
-                // create ground collision entry for body0 if needed
-                normal <- -normal
-                let theta = normal.Dot Vector3.UnitY |> acos |> abs
-                if theta < Constants.Physics.GroundAngleMax then
-                    match physicsEngine.CollisionsGround.TryGetValue body0Source with
-                    | (true, collisions) -> collisions.Add normal
-                    | (false, _) -> physicsEngine.CollisionsGround.Add (body0Source, List [normal])
-
-                // create ground collision entry for body1 if needed
-                normal <- -normal
-                let theta = -theta
-                if theta < Constants.Physics.GroundAngleMax then
-                    match physicsEngine.CollisionsGround.TryGetValue body1Source with
-                    | (true, collisions) -> collisions.Add normal
-                    | (false, _) -> physicsEngine.CollisionsGround.Add (body1Source, List [normal])
 
         // create gravitating body transform messages
         for bodyEntry in physicsEngine.BodiesGravitating do
