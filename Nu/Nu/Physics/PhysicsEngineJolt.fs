@@ -69,7 +69,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private attachBoxShape bodySource (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let halfExtent = boxShape.Size * 0.5f
-        let boxShapeSettings = new BoxShapeSettings (&halfExtent)
+        let shapeSettings = new BoxShapeSettings (&halfExtent)
         let center =
             match boxShape.TransformOpt with
             | Some transform -> transform.Translation
@@ -78,9 +78,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             match boxShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
-                new ScaledShapeSettings (boxShapeSettings, &shapeScale) : ShapeSettings
-            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (boxShapeSettings, &bodyProperties.Scale)
-            | None -> boxShapeSettings
+                new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
+            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
+            | None -> shapeSettings
         scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
         let mass =
             match bodyProperties.Substance with
@@ -91,7 +91,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         mass :: masses
 
     static member private attachSphereShape bodySource (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let sphereShapeSettings = new SphereShapeSettings (sphereShape.Radius)
+        let shapeSettings = new SphereShapeSettings (sphereShape.Radius)
         let center =
             match sphereShape.TransformOpt with
             | Some transform -> transform.Translation
@@ -100,9 +100,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             match sphereShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
-                new ScaledShapeSettings (sphereShapeSettings, &shapeScale) : ShapeSettings
-            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (sphereShapeSettings, &bodyProperties.Scale)
-            | None -> sphereShapeSettings
+                new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
+            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
+            | None -> shapeSettings
         scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
         let mass =
             match bodyProperties.Substance with
@@ -113,19 +113,19 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         mass :: masses
 
     static member private attachCapsuleShape bodySource (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        let capsuleShapeSettings = new CapsuleShapeSettings (capsuleShape.Height * 0.5f, capsuleShape.Radius)
+        let shapeSettings = new CapsuleShapeSettings (capsuleShape.Height * 0.5f, capsuleShape.Radius)
         let center =
             match capsuleShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
-        let capsuleSettings =
+        let shapeSettings =
             match capsuleShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
-                new ScaledShapeSettings (capsuleShapeSettings, &shapeScale) : ShapeSettings
-            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (capsuleShapeSettings, &bodyProperties.Scale)
-            | None -> capsuleShapeSettings
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, capsuleSettings, uint bodyProperties.BodyIndex)
+                new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
+            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
+            | None -> shapeSettings
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -156,21 +156,21 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
                 unscaledPoints
             else unscaledPoints
-        let convexHullShapeSettings = new ConvexHullShapeSettings (unscaledPoints)
+        let shapeSettings = new ConvexHullShapeSettings (unscaledPoints)
         let center =
             match pointsShape.TransformOpt with
             | Some transform -> transform.Translation
             | None -> v3Zero
-        let (scale, convexHullShapeSettings) =
+        let (scale, shapeSettings) =
             match pointsShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
-                (shapeScale, (new ScaledShapeSettings (convexHullShapeSettings, &shapeScale) : ShapeSettings))
+                (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
             | None when bodyProperties.Scale <> v3One ->
                 let shapeScale = bodyProperties.Scale
-                (shapeScale, new ScaledShapeSettings (convexHullShapeSettings, &shapeScale))
-            | None -> (v3One, convexHullShapeSettings)
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, convexHullShapeSettings, uint bodyProperties.BodyIndex)
+                (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
+            | None -> (v3One, shapeSettings)
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
         let box = box3 v3Zero ((Box3.Enclose pointsShape.Points).Size * scale)
@@ -181,6 +181,45 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 volume * density
             | Mass mass -> mass
         mass :: masses
+
+    static member private attachBodyBvhTriangles bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        let triangles =
+            geometryShape.Vertices |>
+            Seq.chunkBySize 3 |>
+            Seq.map (fun t -> Triangle (&t.[0], &t.[1], &t.[2])) |>
+            Array.ofSeq
+        let shapeSettings = new MeshShapeSettings (triangles)
+        shapeSettings.Sanitize ()
+        let (scale, shapeSettings) =
+            match geometryShape.TransformOpt with
+            | Some transform ->
+                let shapeScale = bodyProperties.Scale * transform.Scale
+                (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
+            | None when bodyProperties.Scale <> v3One ->
+                let shapeScale = bodyProperties.Scale
+                (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
+            | None -> (v3One, shapeSettings)
+        let center =
+            match geometryShape.TransformOpt with
+            | Some transform -> transform.Translation
+            | None -> v3Zero
+        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyProperties.BodyIndex)
+        // NOTE: we approximate volume with the volume of a bounding box.
+        // TODO: use a more accurate volume calculation.
+        let box = box3 v3Zero ((Box3.Enclose geometryShape.Vertices).Size * scale)
+        let mass =
+            match bodyProperties.Substance with
+            | Density density ->
+                let volume = box.Width * box.Height * box.Depth
+                volume * density
+            | Mass mass -> mass
+        mass :: masses
+
+    static member private attachGeometryShape bodySource (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
+        if geometryShape.Convex then
+            let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
+            PhysicsEngineJolt.attachBodyConvexHullShape bodySource bodyProperties pointsShape scShapeSettings masses physicsEngine
+        else PhysicsEngineJolt.attachBodyBvhTriangles bodySource bodyProperties geometryShape scShapeSettings masses
 
     static member private attachBodyShapes bodySource bodyProperties bodyShapes compoundShape masses physicsEngine =
         List.fold (fun centerMassInertiaDisposes bodyShape ->
@@ -197,7 +236,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape scShapeSettings masses
         | BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape scShapeSettings masses
         | PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHullShape bodySource bodyProperties pointsShape scShapeSettings masses physicsEngine
-        //| GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
+        | GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodySource bodyProperties geometryShape scShapeSettings masses physicsEngine
         //| StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodySource bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
         //| StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine
         //| TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodySource bodyProperties terrainShape compoundShape centerMassInertiaDisposes
