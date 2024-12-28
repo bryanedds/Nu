@@ -518,6 +518,7 @@ type [<SymbolicExpansion>] WheelJoint =
     { Anchor : Vector3
       Anchor2 : Vector3 }
 
+/// Allows users to create their own two-body 2D joints.
 type UserDefinedAetherJoint =
     { CreateBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
@@ -563,8 +564,9 @@ type [<SymbolicExpansion>] SliderJoint =
       OrthoAngularRestitution : single
       OrthoAngularDamping : single }
 
-type UserDefinedBulletJoint =
-    { CreateBodyJoint : BulletSharp.RigidBody -> BulletSharp.RigidBody -> BulletSharp.TypedConstraint }
+/// Allows users to create their own two-body 3D joints.
+type UserDefinedJoltJoint =
+    { CreateBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
 [<Syntax
@@ -586,7 +588,7 @@ type BodyJoint =
     | UserDefinedAetherJoint of UserDefinedAetherJoint
     | HingeJoint of HingeJoint
     | SliderJoint of SliderJoint
-    | UserDefinedBulletJoint of UserDefinedBulletJoint
+    | UserDefinedJoltJoint of UserDefinedJoltJoint
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =

@@ -625,8 +625,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         slider.RestitutionOrthoAngular <- sliderJoint.OrthoAngularRestitution
                         slider.DampingOrthoAngular <- sliderJoint.OrthoAngularDamping
                         Some slider
-                    | UserDefinedBulletJoint bulletJoint ->
-                        Some (bulletJoint.CreateBodyJoint body body2)
                     | _ ->
                         Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
                         None
