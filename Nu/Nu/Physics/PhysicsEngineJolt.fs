@@ -459,6 +459,87 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         // attempt to destroy body joint
         PhysicsEngineJolt.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
+    static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
+        | (true, bodyID) ->
+            if setBodyEnabledMessage.Enabled
+            then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID
+            else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &bodyID
+        | (false, _) -> ()
+
+    static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
+        | (true, bodyID) ->
+            physicsEngine.PhysicsContext.BodyInterface.SetPosition (&bodyID, &setBodyCenterMessage.Center, Activation.Activate) // force activation so that a transform message will be produced
+        | (false, _) -> ()
+
+    static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
+        | (true, bodyID) ->
+            physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &setBodyRotationMessage.Rotation, Activation.Activate) // force activation so that a transform message will be produced
+        | (false, _) -> ()
+
+    static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
+        | (true, bodyID) ->
+            physicsEngine.PhysicsContext.BodyInterface.SetLinearVelocity (&bodyID, &setBodyLinearVelocityMessage.LinearVelocity)
+        | (false, _) -> ()
+
+    static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue setBodyAngularVelocityMessage.BodyId with
+        | (true, bodyID) ->
+            physicsEngine.PhysicsContext.BodyInterface.SetAngularVelocity (&bodyID, &setBodyAngularVelocityMessage.AngularVelocity)
+        | (false, _) -> ()
+
+    static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
+        | (true, bodyID) ->
+            if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
+                let offset =
+                    match applyBodyLinearImpulseMessage.OriginWorldOpt with
+                    | Some originWorld -> physicsEngine.PhysicsContext.BodyInterface.GetPosition &bodyID - originWorld
+                    | None -> v3Zero
+                physicsEngine.PhysicsContext.BodyInterface.AddImpulse (&bodyID, &applyBodyLinearImpulseMessage.LinearImpulse, &offset)
+            else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Jolt Physics.")
+        | (false, _) -> ()
+
+    static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.BodyId with
+        | (true, bodyID) ->
+            if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X)
+            then physicsEngine.PhysicsContext.BodyInterface.AddAngularImpulse (&bodyID, &applyBodyAngularImpulseMessage.AngularImpulse)
+            else Log.info ("Applying invalid angular impulse '" + scstring applyBodyAngularImpulseMessage.AngularImpulse + "'; this may destabilize Jolt Physics.")
+        | (false, _) -> ()
+
+    static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.BodyId with
+        | (true, bodyID) ->
+            if not (Single.IsNaN applyBodyForceMessage.Force.X) then
+                let offset =
+                    match applyBodyForceMessage.OriginWorldOpt with
+                    | Some originWorld -> physicsEngine.PhysicsContext.BodyInterface.GetPosition &bodyID - originWorld
+                    | None -> v3Zero
+                physicsEngine.PhysicsContext.BodyInterface.AddForce (&bodyID, &applyBodyForceMessage.Force, &offset)
+            else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Jolt Physics.")
+        | (false, _) -> ()
+
+    static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
+        match physicsEngine.Bodies.TryGetValue applyBodyTorqueMessage.BodyId with
+        | (true, bodyID) ->
+            if not (Single.IsNaN applyBodyTorqueMessage.Torque.X)
+            then physicsEngine.PhysicsContext.BodyInterface.AddTorque (&bodyID, &applyBodyTorqueMessage.Torque)
+            else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Jolt Physics.")
+        | (false, _) -> ()
+
+    static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
+        //match physicsEngine.KinematicCharacters.TryGetValue jumpBodyMessage.BodyId with
+        //| (true, character) ->
+        //    if jumpBodyMessage.CanJumpInAir || character.CharacterController.OnGround then
+        //        character.CharacterController.JumpSpeed <- jumpBodyMessage.JumpSpeed
+        //        character.CharacterController.Jump ()
+        //| (false, _) -> ()
+        ()
+
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
         | CreateBodyMessage createBodyMessage -> PhysicsEngineJolt.createBody createBodyMessage physicsEngine
@@ -467,16 +548,16 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngineJolt.destroyBodies destroyBodiesMessage physicsEngine
         | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngineJolt.createBodyJoint createBodyJointMessage physicsEngine
         | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngineJolt.destroyBodyJoint destroyBodyJointMessage physicsEngine
-        //| SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngineJolt.setBodyEnabled setBodyEnabledMessage physicsEngine
-        //| SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngineJolt.setBodyCenter setBodyCenterMessage physicsEngine
-        //| SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngineJolt.setBodyRotation setBodyRotationMessage physicsEngine
-        //| SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngineJolt.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        //| SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngineJolt.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        //| ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngineJolt.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        //| ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngineJolt.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        //| ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngineJolt.applyBodyForce applyBodyForceMessage physicsEngine
-        //| ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngineJolt.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        //| JumpBodyMessage jumpBodyMessage -> PhysicsEngineJolt.jumpBody jumpBodyMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngineJolt.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngineJolt.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngineJolt.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngineJolt.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngineJolt.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngineJolt.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngineJolt.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngineJolt.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngineJolt.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | JumpBodyMessage jumpBodyMessage -> PhysicsEngineJolt.jumpBody jumpBodyMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
     static member private createIntegrationMessages (physicsEngine : PhysicsEngineJolt) =
