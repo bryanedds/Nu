@@ -995,10 +995,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.Objects.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            [for collision in physicsEngine.CollisionsFiltered do
+            [|for collision in physicsEngine.CollisionsFiltered do
                 let (body0, body1) = collision.Key
                 if body0 = bodyId then -collision.Value
-                elif body1 = bodyId then collision.Value]
+                elif body1 = bodyId then collision.Value|]
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             match physicsEngine.Bodies.TryGetValue bodyId with
@@ -1022,15 +1022,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             match physicsEngine.CollisionsGround.TryGetValue bodyId with
-            | (true, collisions) -> List.ofSeq collisions
-            | (false, _) -> []
+            | (true, collisions) -> Array.ofSeq collisions
+            | (false, _) -> [||]
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             match groundNormals with
-            | [] -> None
+            | [||] -> None
             | _ ->
-                let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
+                let averageNormal = Array.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                 Some averageNormal
 
         member physicsEngine.GetBodyToGroundContactTangentOpt bodyId =
@@ -1043,7 +1043,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, character) -> character.CharacterController.OnGround
             | (false, _) ->
                 let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-                List.notEmpty groundNormals
+                Array.notEmpty groundNormals
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
             let mutable start = start

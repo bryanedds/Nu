@@ -734,13 +734,13 @@ type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract GetBodyExists : BodyId -> bool
     /// Get the contact normals of the body with the given physics id.
-    abstract GetBodyContactNormals : BodyId -> Vector3 list
+    abstract GetBodyContactNormals : BodyId -> Vector3 array
     /// Get the linear velocity of the body with the given physics id.
     abstract GetBodyLinearVelocity : BodyId -> Vector3
     /// Get the angular velocity of the body with the given physics id.
     abstract GetBodyAngularVelocity : BodyId -> Vector3
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 list
+    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 array
     /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
     abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).

@@ -571,8 +571,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.GetBodyContactNormals bodyId =
             PhysicsEngine2d.getBodyContacts bodyId physicsEngine |>
-            Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f)) |>
-            Array.toList
+            Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             let (_, body) = physicsEngine.Bodies.[bodyId]
@@ -583,7 +582,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             v3 body.AngularVelocity 0.0f 0.0f
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            List.filter (fun normal ->
+            Array.filter (fun normal ->
                 let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
                 theta < Constants.Physics.GroundAngleMax)
                 ((physicsEngine :> PhysicsEngine).GetBodyContactNormals bodyId)
@@ -591,9 +590,9 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             match groundNormals with
-            | [] -> None
+            | [||] -> None
             | _ ->
-                let averageNormal = List.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
+                let averageNormal = Array.reduce (fun normal normal2 -> (normal + normal2) * 0.5f) groundNormals
                 Some averageNormal
 
         member physicsEngine.GetBodyToGroundContactTangentOpt bodyId =
@@ -603,7 +602,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
 
         member physicsEngine.GetBodyGrounded bodyId =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
-            List.notEmpty groundNormals
+            Array.notEmpty groundNormals
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
             ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
