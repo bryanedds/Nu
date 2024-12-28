@@ -147,7 +147,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> (false, pointsShape.Points)
         let unscaledPoints =
             if not optimized then
-                let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: find a way 
+                let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: P0: attempt to find a way to remove dependency on Bullet here.
                 hull.OptimizeConvexHull ()
                 let unscaledPoints =
                     match hull.UnscaledPoints with
@@ -196,7 +196,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodySource bodyProperties sphereShape scShapeSettings masses
         | CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodySource bodyProperties capsuleShape scShapeSettings masses
         | BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodySource bodyProperties boxRoundedShape scShapeSettings masses
-        | PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHull bodySource bodyProperties pointsShape compoundShape centerMassInertiaDisposes physicsEngine
+        | PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHullShape bodySource bodyProperties pointsShape scShapeSettings masses physicsEngine
         //| GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodySource bodyProperties geometryShape compoundShape centerMassInertiaDisposes physicsEngine
         //| StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodySource bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
         //| StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodySource bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine

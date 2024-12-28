@@ -1844,7 +1844,7 @@ module SpineSkeletonExtensions =
         member this.SpineSkeletonAnimationTriggerEvent = Events.SpineSkeletonAnimationTriggerEvent --> this
 
 /// Augments an entity with Spine skeleton content.
-/// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
+/// NOTE: SpineSkeleteState fields are inherently imperative and therefore currently unsupported by undo / redo.
 type SpineSkeletonFacet () =
     inherit Facet (false, false, false)
 
