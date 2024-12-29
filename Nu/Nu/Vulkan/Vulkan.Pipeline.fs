@@ -76,7 +76,7 @@ module Pipeline =
             descriptorSet
         
         /// Create a Pipeline.
-        static member create shaderPath pushConstantRanges (layoutBindings : VkDescriptorSetLayoutBinding array) (vulkanGlobal : Hl.VulkanGlobal) =
+        static member create shaderPath pushConstantRanges layoutBindings (vulkanGlobal : Hl.VulkanGlobal) =
             
             
             let device = vulkanGlobal.Device
