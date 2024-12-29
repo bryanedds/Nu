@@ -243,9 +243,50 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             PhysicsEngineJolt.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
         else PhysicsEngineJolt.attachBodyBvhTriangles bodyProperties geometryShape scShapeSettings masses
 
-    static member private attachBodyShapes bodyProperties bodyShapes compoundShape masses physicsEngine =
-        List.fold (fun centerMassInertiaDisposes bodyShape ->
-            let masses' = PhysicsEngineJolt.attachBodyShape bodyProperties bodyShape compoundShape centerMassInertiaDisposes physicsEngine
+    // TODO: add some error logging.
+    static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
+        match Metadata.tryGetStaticModelMetadata staticModelShape.StaticModel with
+        | ValueSome staticModel ->
+            Seq.fold (fun centerMassInertiaDisposes i ->
+                let surface = staticModel.Surfaces.[i]
+                let transform =
+                    match staticModelShape.TransformOpt with
+                    | Some transform ->
+                        Affine.make
+                            (transform.Translation.Transform surface.SurfaceMatrix)
+                            (transform.Rotation * surface.SurfaceMatrix.Rotation)
+                            (transform.Scale.Transform surface.SurfaceMatrix)
+                    | None -> Affine.makeFromMatrix surface.SurfaceMatrix
+                let staticModelSurfaceShape = { StaticModel = staticModelShape.StaticModel; SurfaceIndex = i; Convex = staticModelShape.Convex; TransformOpt = Some transform; PropertiesOpt = staticModelShape.PropertiesOpt }
+                match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
+                | ValueSome staticModel ->
+                    if  staticModelSurfaceShape.SurfaceIndex > -1 &&
+                        staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
+                        let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
+                        let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                        PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                    else centerMassInertiaDisposes
+                | ValueNone -> centerMassInertiaDisposes)
+                masses
+                [0 .. dec staticModel.Surfaces.Length]
+        | ValueNone -> masses
+
+    // TODO: add some error logging.
+    static member private attachStaticModelShapeSurface (bodyProperties : BodyProperties) (staticModelSurfaceShape : StaticModelSurfaceShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
+        match Metadata.tryGetStaticModelMetadata staticModelSurfaceShape.StaticModel with
+        | ValueSome staticModel ->
+            if  staticModelSurfaceShape.SurfaceIndex > -1 &&
+                staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
+                let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
+                let geometry = surface.PhysicallyBasedGeometry
+                let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
+                PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+            else masses
+        | ValueNone -> masses
+
+    static member private attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine =
+        List.fold (fun masses bodyShape ->
+            let masses' = PhysicsEngineJolt.attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine
             masses' @ masses)
             masses
             bodyShapes
@@ -259,9 +300,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
         | PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
         | GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
-        //| StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodyProperties staticModelShape compoundShape centerMassInertiaDisposes physicsEngine
-        //| StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape compoundShape centerMassInertiaDisposes physicsEngine
-        //| TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodyProperties terrainShape compoundShape centerMassInertiaDisposes
+        | StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
+        | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine
+        //| TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
         | BodyShapes bodyShapes -> PhysicsEngineJolt.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngineJolt) =
