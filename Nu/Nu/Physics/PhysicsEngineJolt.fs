@@ -288,16 +288,16 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         match HeightMap.tryGetMetadata Metadata.tryGetFilePath terrainShape.Bounds v2One terrainShape.HeightMap with
         | ValueSome heightMapMetadata ->
             if heightMapMetadata.Resolution = terrainShape.Resolution then
-                let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
-                for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
-                    heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * terrainShape.Bounds.Height
-                let center = match terrainShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
-                //let scale = v3 (terrainShape.Bounds.Width / single (dec terrainShape.Resolution.X)) 1.0f (terrainShape.Bounds.Depth / single (dec terrainShape.Resolution.Y))
-                let scale = v3 terrainShape.Bounds.Width 1.0f terrainShape.Bounds.Depth
-                let scale = bodyProperties.Scale * match terrainShape.TransformOpt with Some transform -> transform.Scale * scale | None -> scale
                 if terrainShape.Resolution.X = terrainShape.Resolution.Y then
-                    let offset = v3 (scale.X * -0.5f) 0.0f (scale.Z * -0.5f)
-                    let shapeSettings = new HeightFieldShapeSettings (heights.AsSpan (), &offset, &scale, terrainShape.Resolution.X)
+                    let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
+                    for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
+                        heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * terrainShape.Bounds.Height
+                    let center = match terrainShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+                    let size = v3 terrainShape.Bounds.Width terrainShape.Bounds.Height terrainShape.Bounds.Depth
+                    let size = match terrainShape.TransformOpt with Some transform -> transform.Scale * size | None -> size
+                    let offset = size * -0.5f
+                    let tileSize = v3 (size.X / single (dec terrainShape.Resolution.X)) (size.Y / terrainShape.Bounds.Height) (size.Z / single (dec terrainShape.Resolution.Y))
+                    let shapeSettings = new HeightFieldShapeSettings (heights.AsSpan (), &offset, &tileSize, terrainShape.Resolution.X)
                     let bodyShapeId = match terrainShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
                     scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
                     0.0f :: masses // infinite mass
