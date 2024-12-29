@@ -23,7 +23,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           ShapeSources : Dictionary<int, Simulant>
           BodySources : Dictionary<BodyID, Simulant>
           Bodies : Dictionary<BodyId, BodyID>
-          Joints : Dictionary<BodyJointId, TwoBodyConstraint>
+          Constraints : Dictionary<BodyJointId, TwoBodyConstraint>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
 
@@ -415,7 +415,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 match constrainOpt with
                 | Some constrain ->
                     physicsEngine.PhysicsContext.AddConstraint constrain
-                    if physicsEngine.Joints.TryAdd (bodyJointId, constrain)
+                    if physicsEngine.Constraints.TryAdd (bodyJointId, constrain)
                     then () // nothing to do
                     else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
                 | None -> ()
@@ -434,9 +434,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         PhysicsEngineJolt.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
-        match physicsEngine.Joints.TryGetValue bodyJointId with
+        match physicsEngine.Constraints.TryGetValue bodyJointId with
         | (true, joint) ->
-            physicsEngine.Joints.Remove bodyJointId |> ignore
+            physicsEngine.Constraints.Remove bodyJointId |> ignore
             physicsEngine.PhysicsContext.RemoveConstraint joint
         | (false, _) -> ()
 
@@ -668,7 +668,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
         *)
 
-    static member make gravity =
+    static member make (gravity : Vector3) =
 
         let objectLayerNonMoving = 0us
         let broadPhaseLayerNonMoving = byte 0
@@ -698,12 +698,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         let physicsSystem = new PhysicsSystem (physicsSystemSettings)
         physicsSystem.Gravity <- gravity
 
-        let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
-        jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dMaxJobs
-        jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dMaxBarriers
-        jobSystemConfig.numThreads <- Constants.Physics.Collision3dNumThreads
-        let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
-
         let contactLock = obj ()
         let contactAddeds = List ()
         let contactRemoveds = List ()
@@ -723,15 +717,15 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let body2ID = subShapeIDPair.Body2ID
             lock contactLock $ fun () -> contactRemoveds.Add struct (bodyID, body2ID))
 
+        let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
+        jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dMaxJobs
+        jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dMaxBarriers
+        jobSystemConfig.numThreads <- Constants.Physics.Collision3dNumThreads
+        let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
+
         // TODO: P0: see if we need this to send awakeness to the engine.
         //physicsSystem.add_OnBodyActivated ???
         //physicsSystem.add_OnBodyDeactivated ???
-
-        let collisionsGround = dictPlus HashIdentity.Structural []
-        let collisionsAll = dictPlus HashIdentity.Structural []
-        let shapeSources = dictPlus HashIdentity.Structural []
-        let bodySources = dictPlus HashIdentity.Structural []
-        let integrationMessages = List ()
 
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
@@ -739,14 +733,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           ContactAddeds = contactAddeds
           ContactRemoveds = contactRemoveds
           UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
-          CollisionsGround = collisionsGround
-          CollisionsAll = collisionsAll
-          ShapeSources = shapeSources
-          BodySources = bodySources
+          CollisionsGround = dictPlus HashIdentity.Structural []
+          CollisionsAll = dictPlus HashIdentity.Structural []
+          ShapeSources = dictPlus HashIdentity.Structural []
+          BodySources = dictPlus HashIdentity.Structural []
           Bodies = dictPlus HashIdentity.Structural []
-          Joints = dictPlus HashIdentity.Structural []
+          Constraints = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
-          IntegrationMessages = integrationMessages }
+          IntegrationMessages = List () }
 
     static member cleanUp physicsEngine =
         physicsEngine.JobSystem.Dispose ()
@@ -844,16 +838,27 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // compute whether the physics engine will be affected by this clear request
             let affected =
+                physicsEngine.CollisionsGround.Count > 0 ||
+                physicsEngine.CollisionsAll.Count > 0 ||
+                physicsEngine.ShapeSources.Count > 0 ||
+                physicsEngine.BodySources.Count > 0 ||
                 physicsEngine.Bodies.Count > 0 ||
-                physicsEngine.Joints.Count > 0 ||
-                physicsEngine.Bodies.Count > 0 ||
+                physicsEngine.Constraints.Count > 0 ||
                 physicsEngine.CreateBodyJointMessages.Count > 0 ||
                 physicsEngine.IntegrationMessages.Count > 0
 
+            // clear collisions
+            physicsEngine.CollisionsGround.Clear ()
+            physicsEngine.CollisionsAll.Clear ()
+
+            // clear intermediate maps
+            physicsEngine.ShapeSources.Clear ()
+            physicsEngine.BodySources.Clear ()
+
             // destroy constraints
-            for constrain in physicsEngine.Joints.Values do
+            for constrain in physicsEngine.Constraints.Values do
                 physicsEngine.PhysicsContext.RemoveConstraint constrain
-            physicsEngine.Joints.Clear ()
+            physicsEngine.Constraints.Clear ()
 
             // destroy bodies
             for bodyID in physicsEngine.Bodies.Values do
@@ -865,6 +870,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
+
+            // clear any in-flight contact messages
+            lock physicsEngine.ContactLock $ fun () ->
+                physicsEngine.ContactAddeds.Clear ()
+                physicsEngine.ContactRemoveds.Clear ()
 
             // fin
             affected
