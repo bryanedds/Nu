@@ -889,7 +889,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // destroy bodies
             for bodyID in physicsEngine.Bodies.Values do
-                physicsEngine.PhysicsContext.BodyInterface.DestroyBody &bodyID
+                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
             physicsEngine.Bodies.Clear ()
 
             // clear joint creation messages
