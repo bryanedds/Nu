@@ -100,7 +100,7 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine2d.GetBodyContactNormals bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
-                []
+                [||]
 
         /// Get the linear velocity of the body with the given physics id.
         static member getBodyLinearVelocity bodyId world =
@@ -130,7 +130,7 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
-                []
+                [||]
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         static member getBodyToGroundContactNormalOpt bodyId world =
