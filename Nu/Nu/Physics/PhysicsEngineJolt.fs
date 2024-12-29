@@ -284,6 +284,31 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             else masses
         | ValueNone -> masses
 
+    static member private attachTerrainShape (bodyProperties : BodyProperties) (terrainShape : TerrainShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
+        match HeightMap.tryGetMetadata Metadata.tryGetFilePath terrainShape.Bounds v2One terrainShape.HeightMap with
+        | ValueSome heightMapMetadata ->
+            if heightMapMetadata.Resolution = terrainShape.Resolution then
+                let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
+                for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
+                    heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * terrainShape.Bounds.Height
+                let center = match terrainShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+                //let scale = v3 (terrainShape.Bounds.Width / single (dec terrainShape.Resolution.X)) 1.0f (terrainShape.Bounds.Depth / single (dec terrainShape.Resolution.Y))
+                let scale = v3 terrainShape.Bounds.Width 1.0f terrainShape.Bounds.Depth
+                let scale = bodyProperties.Scale * match terrainShape.TransformOpt with Some transform -> transform.Scale * scale | None -> scale
+                if terrainShape.Resolution.X = terrainShape.Resolution.Y then
+                    let offset = v3 (scale.X * -0.5f) 0.0f (scale.Z * -0.5f)
+                    let shapeSettings = new HeightFieldShapeSettings (heights.AsSpan (), &offset, &scale, terrainShape.Resolution.X)
+                    let bodyShapeId = match terrainShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
+                    scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+                    0.0f :: masses // infinite mass
+                else
+                    Log.error ("Jolt Physics does not support non-square terrain resolution " + scstring terrainShape.Resolution + ".")
+                    masses
+            else
+                Log.error ("Terrain shape resolution mismatch.")
+                masses
+        | ValueNone -> masses
+
     static member private attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine =
         List.fold (fun masses bodyShape ->
             let masses' = PhysicsEngineJolt.attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine
@@ -302,7 +327,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
         | StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
         | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine
-        //| TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
+        | TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
         | BodyShapes bodyShapes -> PhysicsEngineJolt.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngineJolt) =
