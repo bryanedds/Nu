@@ -4,19 +4,20 @@
 namespace Nu
 open System
 open System.Collections.Generic
-open System.Linq
 open System.Numerics
-open System.Runtime.InteropServices
 open JoltPhysicsSharp
 open Prime
+
+type [<Struct>] private ContactEvent =
+    | ContactAdded of BodyID : BodyID * Body2ID : BodyID * Normal : Vector3
+    | ContactRemoved of BodyID : BodyID * Body2ID : BodyID
 
 type [<ReferenceEquality>] PhysicsEngineJolt =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
           ContactLock : obj
-          ContactAddeds : struct (BodyID * BodyID * Vector3) List
-          ContactRemoveds : struct (BodyID * BodyID) List
+          ContactEvents : ContactEvent List
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
           CollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           CollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
@@ -376,7 +377,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         let mutable bodyLockWrite = Unchecked.defaultof<_>
                         let mutable body2LockWrite = Unchecked.defaultof<_>
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
-                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite)
+                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: send support request to JoltPhysicsSharp maintainer to expose BodyLockMultiWrite so that we don't get a deadlock here if accessing from another thread!
                             let body = bodyLockWrite.Body
                             let body2 = body2LockWrite.Body
                             let constrain = constraintSettings.CreateConstraint (&body, &body2)
@@ -391,7 +392,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         let mutable bodyLockWrite = Unchecked.defaultof<_>
                         let mutable body2LockWrite = Unchecked.defaultof<_>
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
-                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite)
+                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: send support request to JoltPhysicsSharp maintainer to expose BodyLockMultiWrite so that we don't get a deadlock here if accessing from another thread!
                             let body = bodyLockWrite.Body
                             let body2 = body2LockWrite.Body
                             let constrain = constraintSettings.CreateConstraint (&body, &body2)
@@ -402,7 +403,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         let mutable bodyLockWrite = Unchecked.defaultof<_>
                         let mutable body2LockWrite = Unchecked.defaultof<_>
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
-                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite)
+                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: send support request to JoltPhysicsSharp maintainer to expose BodyLockMultiWrite so that we don't get a deadlock here if accessing from another thread!
                             let body = bodyLockWrite.Body
                             let body2 = body2LockWrite.Body
                             let constrain = joltJoint.CreateBodyJoint body body2
@@ -561,28 +562,31 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         let bodyInterface = physicsEngine.PhysicsContext.BodyInterface // OPTIMIZATION: cache property for efficiency.
 
         lock physicsEngine.ContactLock $ fun () ->
-
-            for struct (bodyID, body2ID, normal) in physicsEngine.ContactAddeds do
-                let bodyIndex = int (bodyInterface.GetUserData &bodyID)
-                let body2Index = int (bodyInterface.GetUserData &body2ID)
-                let bodySource = physicsEngine.BodySources.[bodyID]
-                let body2Source = physicsEngine.BodySources.[body2ID]
-                let bodyId = { BodySource = bodySource; BodyIndex = bodyIndex }
-                let body2Id = { BodySource = body2Source; BodyIndex = body2Index }
-                PhysicsEngineJolt.handlePenetration bodyId body2Id normal physicsEngine
-                PhysicsEngineJolt.handlePenetration body2Id bodyId -normal physicsEngine
-            physicsEngine.ContactAddeds.Clear ()
-
-            for struct (bodyID, body2ID) in physicsEngine.ContactRemoveds do
-                let bodyIndex = int (bodyInterface.GetUserData &bodyID)
-                let body2Index = int (bodyInterface.GetUserData &body2ID)
-                let bodySource = physicsEngine.BodySources.[bodyID]
-                let body2Source = physicsEngine.BodySources.[body2ID]
-                let bodyId = { BodySource = bodySource; BodyIndex = bodyIndex }
-                let body2Id = { BodySource = body2Source; BodyIndex = body2Index }
-                PhysicsEngineJolt.handleSeparation bodyId body2Id physicsEngine
-                PhysicsEngineJolt.handleSeparation body2Id bodyId physicsEngine
-            physicsEngine.ContactRemoveds.Clear ()
+            for contactEvent in physicsEngine.ContactEvents do
+                match contactEvent with
+                | ContactAdded (bodyID, body2ID, normal) ->
+                    let bodyIndex = int (bodyInterface.GetUserData &bodyID)
+                    let body2Index = int (bodyInterface.GetUserData &body2ID)
+                    let bodySource = physicsEngine.BodySources.[bodyID]
+                    let body2Source = physicsEngine.BodySources.[body2ID]
+                    let bodyId = { BodySource = bodySource; BodyIndex = bodyIndex }
+                    let body2Id = { BodySource = body2Source; BodyIndex = body2Index }
+                    PhysicsEngineJolt.handlePenetration bodyId body2Id normal physicsEngine
+                    PhysicsEngineJolt.handlePenetration body2Id bodyId -normal physicsEngine
+                | ContactRemoved (bodyID, body2ID) ->
+                    let bodyIndex = int (bodyInterface.GetUserData &bodyID)
+                    let body2Index = int (bodyInterface.GetUserData &body2ID)
+                    match physicsEngine.BodySources.TryGetValue bodyID with
+                    | (true, bodySource) ->
+                        match physicsEngine.BodySources.TryGetValue body2ID with
+                        | (true, body2Source) ->
+                            let bodyId = { BodySource = bodySource; BodyIndex = bodyIndex }
+                            let body2Id = { BodySource = body2Source; BodyIndex = body2Index }
+                            PhysicsEngineJolt.handleSeparation bodyId body2Id physicsEngine
+                            PhysicsEngineJolt.handleSeparation body2Id bodyId physicsEngine
+                        | (false, _) -> ()
+                    | (false, _) -> ()
+            physicsEngine.ContactEvents.Clear ()
 
         for entry in physicsEngine.Bodies do
             let bodyId = entry.Key
@@ -699,8 +703,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         physicsSystem.Gravity <- gravity
 
         let contactLock = obj ()
-        let contactAddeds = List ()
-        let contactRemoveds = List ()
+        let contactEvents = List ()
 
         physicsSystem.add_OnContactValidate (fun _ _ _ _ _ ->
             lock contactLock $ fun () ->
@@ -710,12 +713,16 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let bodyID = body.ID
             let body2ID = body2.ID
             let normal = manifold.WorldSpaceNormal
-            lock contactLock $ fun () -> contactAddeds.Add struct (bodyID, body2ID, normal))
+            lock contactLock $ fun () -> contactEvents.Add (ContactAdded (bodyID, body2ID, normal)))
 
         physicsSystem.add_OnContactRemoved (fun _ subShapeIDPair ->
             let bodyID = subShapeIDPair.Body1ID
             let body2ID = subShapeIDPair.Body2ID
-            lock contactLock $ fun () -> contactRemoveds.Add struct (bodyID, body2ID))
+            lock contactLock $ fun () -> contactEvents.Add (ContactRemoved (bodyID, body2ID)))
+
+        // TODO: P0: see if we need this to send awakeness to the engine.
+        //physicsSystem.add_OnBodyActivated ???
+        //physicsSystem.add_OnBodyDeactivated ???
 
         let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
         jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dMaxJobs
@@ -723,15 +730,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         jobSystemConfig.numThreads <- Constants.Physics.Collision3dNumThreads
         let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
 
-        // TODO: P0: see if we need this to send awakeness to the engine.
-        //physicsSystem.add_OnBodyActivated ???
-        //physicsSystem.add_OnBodyDeactivated ???
-
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
           ContactLock = contactLock
-          ContactAddeds = contactAddeds
-          ContactRemoveds = contactRemoveds
+          ContactEvents = contactEvents
           UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
           CollisionsGround = dictPlus HashIdentity.Structural []
           CollisionsAll = dictPlus HashIdentity.Structural []
@@ -833,15 +835,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | error -> Log.error ("Jolt Physics internal error: " + scstring error); None
             else None
 
-        // TODO: P0: see if we can get rid of this entire code path.
         member physicsEngine.ClearInternal () =
 
             // compute whether the physics engine will be affected by this clear request
             let affected =
                 physicsEngine.CollisionsGround.Count > 0 ||
-                physicsEngine.CollisionsAll.Count > 0 ||
-                physicsEngine.ShapeSources.Count > 0 ||
-                physicsEngine.BodySources.Count > 0 ||
                 physicsEngine.Bodies.Count > 0 ||
                 physicsEngine.Constraints.Count > 0 ||
                 physicsEngine.CreateBodyJointMessages.Count > 0 ||
@@ -871,10 +869,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
 
-            // clear any in-flight contact messages
-            lock physicsEngine.ContactLock $ fun () ->
-                physicsEngine.ContactAddeds.Clear ()
-                physicsEngine.ContactRemoveds.Clear ()
+            // clear any in-flight contacts
+            lock physicsEngine.ContactLock $ fun () -> physicsEngine.ContactEvents.Clear ()
 
             // fin
             affected
