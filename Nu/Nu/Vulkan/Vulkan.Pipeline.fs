@@ -15,9 +15,7 @@ module Pipeline =
           DescriptorPool : VkDescriptorPool
           DescriptorSet : VkDescriptorSet
           PipelineLayout : VkPipelineLayout
-          DescriptorSetLayout : VkDescriptorSetLayout
-          mutable VertexBuffer : Hl.AllocatedBuffer
-          mutable IndexBuffer : Hl.AllocatedBuffer }
+          DescriptorSetLayout : VkDescriptorSetLayout }
 
         /// Create the descriptor set layout.
         static member private createDescriptorSetLayout resourceBindings device =
@@ -193,44 +191,22 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Resize the vertex buffer.
-        member this.ResizeVertexBuffer size allocator =
-            Hl.AllocatedBuffer.destroy this.VertexBuffer allocator
-            this.VertexBuffer <- Hl.AllocatedBuffer.createVertex true size allocator
-
-        /// Resize the index buffer.
-        member this.ResizeIndexBuffer size allocator =
-            Hl.AllocatedBuffer.destroy this.IndexBuffer allocator
-            this.IndexBuffer <- Hl.AllocatedBuffer.createIndex true size allocator
-
-        /// Upload to the vertex buffer.
-        static member uploadVertexData offset size data pipeline allocator =
-            Hl.AllocatedBuffer.upload offset size data pipeline.VertexBuffer allocator
-
-        /// Upload to the index buffer.
-        static member uploadIndexData offset size data pipeline allocator =
-            Hl.AllocatedBuffer.upload offset size data pipeline.IndexBuffer allocator
-        
-        /// Destroy Pipeline.
-        static member destroy pipeline (vulkanGlobal : Hl.VulkanGlobal) =
-            Hl.AllocatedBuffer.destroy pipeline.VertexBuffer vulkanGlobal.VmaAllocator
-            Hl.AllocatedBuffer.destroy pipeline.IndexBuffer vulkanGlobal.VmaAllocator
-            Vulkan.vkDestroyPipeline (vulkanGlobal.Device, pipeline.Pipeline, nullPtr)
-            Vulkan.vkDestroyDescriptorPool (vulkanGlobal.Device, pipeline.DescriptorPool, nullPtr)
-            Vulkan.vkDestroyPipelineLayout (vulkanGlobal.Device, pipeline.PipelineLayout, nullPtr)
-            Vulkan.vkDestroyDescriptorSetLayout (vulkanGlobal.Device, pipeline.DescriptorSetLayout, nullPtr)
+        /// Destroy a Pipeline.
+        static member destroy pipeline device =
+            Vulkan.vkDestroyPipeline (device, pipeline.Pipeline, nullPtr)
+            Vulkan.vkDestroyDescriptorPool (device, pipeline.DescriptorPool, nullPtr)
+            Vulkan.vkDestroyPipelineLayout (device, pipeline.PipelineLayout, nullPtr)
+            Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
         
         /// Create a Pipeline.
-        static member create shaderPath vertexBindings vertexAttributes resourceBindings pushConstantRanges (vulkanGlobal : Hl.VulkanGlobal) =
+        static member create shaderPath vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
             
             // create everything
-            let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings vulkanGlobal.Device
-            let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vulkanGlobal.Device
-            let descriptorPool = Pipeline.createDescriptorPool resourceBindings vulkanGlobal.Device
-            let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool vulkanGlobal.Device
-            let vulkanPipeline = Pipeline.createPipeline shaderPath vertexBindings vertexAttributes pipelineLayout vulkanGlobal.RenderPass vulkanGlobal.Device
-            let vertexBuffer = Hl.AllocatedBuffer.createVertex true 0 vulkanGlobal.VmaAllocator
-            let indexBuffer = Hl.AllocatedBuffer.createIndex true 0 vulkanGlobal.VmaAllocator
+            let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings device
+            let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
+            let descriptorPool = Pipeline.createDescriptorPool resourceBindings device
+            let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool device
+            let vulkanPipeline = Pipeline.createPipeline shaderPath vertexBindings vertexAttributes pipelineLayout renderPass device
 
             // make Pipeline
             let pipeline =
@@ -238,9 +214,7 @@ module Pipeline =
                   DescriptorPool = descriptorPool
                   DescriptorSet = descriptorSet
                   PipelineLayout = pipelineLayout
-                  DescriptorSetLayout = descriptorSetLayout
-                  VertexBuffer = vertexBuffer
-                  IndexBuffer = indexBuffer }
+                  DescriptorSetLayout = descriptorSetLayout }
 
             // fin
             pipeline
