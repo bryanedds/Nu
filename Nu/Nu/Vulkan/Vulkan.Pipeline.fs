@@ -174,6 +174,43 @@ module Pipeline =
             // fin
             pipeline
         
+        /// Write a texture to the descriptor set.
+        static member writeDescriptorTexture binding index (texture : Texture.VulkanTexture) pipeline device =
+            
+            // image info
+            let mutable info = VkDescriptorImageInfo ()
+            info.sampler <- texture.Sampler
+            info.imageView <- texture.ImageView
+            info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- pipeline.DescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint index
+            write.descriptorCount <- 1u
+            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+            write.pImageInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Resize the vertex buffer.
+        member this.ResizeVertexBuffer size allocator =
+            Hl.AllocatedBuffer.destroy this.VertexBuffer allocator
+            this.VertexBuffer <- Hl.AllocatedBuffer.createVertex true size allocator
+
+        /// Resize the index buffer.
+        member this.ResizeIndexBuffer size allocator =
+            Hl.AllocatedBuffer.destroy this.IndexBuffer allocator
+            this.IndexBuffer <- Hl.AllocatedBuffer.createIndex true size allocator
+
+        /// Upload to the vertex buffer.
+        static member uploadVertexData offset size data pipeline allocator =
+            Hl.AllocatedBuffer.upload offset size data pipeline.VertexBuffer allocator
+
+        /// Upload to the index buffer.
+        static member uploadIndexData offset size data pipeline allocator =
+            Hl.AllocatedBuffer.upload offset size data pipeline.IndexBuffer allocator
+        
         /// Destroy Pipeline.
         static member destroy pipeline (vulkanGlobal : Hl.VulkanGlobal) =
             Hl.AllocatedBuffer.destroy pipeline.VertexBuffer vulkanGlobal.VmaAllocator

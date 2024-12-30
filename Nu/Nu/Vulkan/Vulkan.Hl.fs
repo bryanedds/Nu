@@ -756,7 +756,7 @@ module Hl =
         static member waitIdle vulkanGlobal =
             Vulkan.vkDeviceWaitIdle vulkanGlobal.Device |> check
         
-        /// Destroy Vulkan handles.
+        /// Destroy the Vulkan handles.
         static member cleanup vulkanGlobal =
             
             // commonly used handles
