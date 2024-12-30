@@ -887,7 +887,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                     physicsEngine.IntegrationMessages.Clear ()
                     Some integrationMessages
-                | error -> Log.error ("Jolt Physics internal error: " + scstring error); None
+                | error -> Log.warn ("Jolt Physics internal error: " + scstring error); None
             else None
 
         member physicsEngine.ClearInternal () =
