@@ -451,44 +451,47 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     | EmptyJoint ->
                         failwithumf () // already checked
                     | AngleJoint hingeJoint ->
-                        let mutable constraintSettings = Unchecked.defaultof<HingeConstraintSettings>
+                        let constraintSettings = new HingeConstraintSettings ()
                         constraintSettings.Point1 <- hingeJoint.Anchor
                         constraintSettings.Point2 <- hingeJoint.Anchor2
                         let mutable bodyLockWrite = Unchecked.defaultof<_>
                         let mutable body2LockWrite = Unchecked.defaultof<_>
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
-                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: send support request to JoltPhysicsSharp maintainer to expose BodyLockMultiWrite so that we don't get a deadlock here if accessing from another thread!
-                            let body = bodyLockWrite.Body
-                            let body2 = body2LockWrite.Body
-                            let constrain = constraintSettings.CreateConstraint (&body, &body2)
-                            constrain.Enabled <- bodyJointProperties.BodyJointEnabled
-                            Some constrain
+                            try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: use BodyLockMultiWrite so that we don't get a deadlock here!
+                                let body = bodyLockWrite.Body
+                                let body2 = body2LockWrite.Body
+                                let constrain = constraintSettings.CreateConstraint (&body, &body2)
+                                constrain.Enabled <- bodyJointProperties.BodyJointEnabled
+                                Some constrain
+                            finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &body2LockWrite
                         finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &bodyLockWrite
                     | DistanceJoint distanceJoint ->
-                        let mutable constraintSettings = Unchecked.defaultof<DistanceConstraintSettings>
+                        let constraintSettings = new DistanceConstraintSettings ()
                         constraintSettings.Point1 <- distanceJoint.Anchor
                         constraintSettings.Point2 <- distanceJoint.Anchor2
                         constraintSettings.Space <- ConstraintSpace.LocalToBodyCOM
                         let mutable bodyLockWrite = Unchecked.defaultof<_>
                         let mutable body2LockWrite = Unchecked.defaultof<_>
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
-                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: send support request to JoltPhysicsSharp maintainer to expose BodyLockMultiWrite so that we don't get a deadlock here if accessing from another thread!
-                            let body = bodyLockWrite.Body
-                            let body2 = body2LockWrite.Body
-                            let constrain = constraintSettings.CreateConstraint (&body, &body2)
-                            constrain.Enabled <- bodyJointProperties.BodyJointEnabled
-                            Some constrain
+                            try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: use BodyLockMultiWrite so that we don't get a deadlock here!
+                                let body = bodyLockWrite.Body
+                                let body2 = body2LockWrite.Body
+                                let constrain = constraintSettings.CreateConstraint (&body, &body2)
+                                constrain.Enabled <- bodyJointProperties.BodyJointEnabled
+                                Some constrain
+                            finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &body2LockWrite
                         finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &bodyLockWrite
                     | UserDefinedJoltJoint joltJoint ->
                         let mutable bodyLockWrite = Unchecked.defaultof<_>
                         let mutable body2LockWrite = Unchecked.defaultof<_>
                         try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
-                            physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: send support request to JoltPhysicsSharp maintainer to expose BodyLockMultiWrite so that we don't get a deadlock here if accessing from another thread!
-                            let body = bodyLockWrite.Body
-                            let body2 = body2LockWrite.Body
-                            let constrain = joltJoint.CreateBodyJoint body body2
-                            constrain.Enabled <- bodyJointProperties.BodyJointEnabled
-                            Some constrain
+                            try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&body2ID, &body2LockWrite) // TODO: P0: use BodyLockMultiWrite so that we don't get a deadlock here!
+                                let body = bodyLockWrite.Body
+                                let body2 = body2LockWrite.Body
+                                let constrain = joltJoint.CreateBodyJoint body body2
+                                constrain.Enabled <- bodyJointProperties.BodyJointEnabled
+                                Some constrain
+                            finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &body2LockWrite
                         finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &bodyLockWrite
                     | _ ->
                         Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
