@@ -349,8 +349,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
         let mutable pipeline = Unchecked.defaultof<VkPipeline>
 
         // create shader modules
-        let vertModule = Hl.createShaderModuleFromGlsl "./Assets/Default/ImGuiVert.glsl" ShaderKind.VertexShader device
-        let fragModule = Hl.createShaderModuleFromGlsl "./Assets/Default/ImGuiFrag.glsl" ShaderKind.FragmentShader device
+        let vertModule = Hl.createShaderModuleFromGlsl "./Assets/Default/ImGui.vert" ShaderKind.VertexShader device
+        let fragModule = Hl.createShaderModuleFromGlsl "./Assets/Default/ImGui.frag" ShaderKind.FragmentShader device
 
         // shader stage infos
         use entryPoint = new StringWrap ("main")
