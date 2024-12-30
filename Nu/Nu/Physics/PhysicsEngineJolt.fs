@@ -21,9 +21,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
           CollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           CollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
+          Constraints : Dictionary<BodyJointId, TwoBodyConstraint>
           Bodies : Dictionary<BodyId, BodyID>
           BodyUserData : Dictionary<BodyID, BodyId>
-          Constraints : Dictionary<BodyJointId, TwoBodyConstraint>
+          Characters : Dictionary<BodyId, CharacterVirtual>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
 
@@ -49,19 +50,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | (true, collisions) -> collisions.[body2Id] <- normal
         | (false, _) -> physicsEngine.CollisionsAll.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, normal)]
 
-        //
-        let normal = -normal
-        let theta = normal.Dot Vector3.UnitY |> acos |> abs
-        if theta < Constants.Physics.GroundAngleMax then
-            match physicsEngine.CollisionsGround.TryGetValue body2Id with
-            | (true, collisions) -> collisions.[bodyId] <- normal
-            | (false, _) -> physicsEngine.CollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [bodyId, normal]
-
-        //
-        match physicsEngine.CollisionsAll.TryGetValue body2Id with
-        | (true, collisions) -> collisions.[bodyId] <- normal
-        | (false, _) -> physicsEngine.CollisionsAll.[bodyId] <- dictPlus HashIdentity.Structural [bodyId, normal]
-
     static member private handleSeparation (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
 
         //
@@ -83,20 +71,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | (true, collisions) ->
             collisions.Remove body2Id |> ignore<bool>
             if collisions.Count = 0 then physicsEngine.CollisionsGround.Remove bodyId |> ignore<bool>
-        | (false, _) -> ()
-
-        //
-        match physicsEngine.CollisionsGround.TryGetValue body2Id with
-        | (true, collisions) ->
-            collisions.Remove bodyId |> ignore<bool>
-            if collisions.Count = 0 then physicsEngine.CollisionsGround.Remove body2Id |> ignore<bool>
-        | (false, _) -> ()
-
-        //
-        match physicsEngine.CollisionsAll.TryGetValue body2Id with
-        | (true, collisions) ->
-            collisions.Remove bodyId |> ignore<bool>
-            if collisions.Count = 0 then physicsEngine.CollisionsGround.Remove body2Id |> ignore<bool>
         | (false, _) -> ()
 
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
@@ -331,48 +305,82 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | BodyShapes bodyShapes -> PhysicsEngineJolt.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
     static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngineJolt) =
+
+        //
         use scShapeSettings = new StaticCompoundShapeSettings ()
         let masses = PhysicsEngineJolt.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
         let mass = List.sum masses
-        let motionType =
+        let (motionType, isCharacter) =
             match bodyProperties.BodyType with
-            | Static -> MotionType.Static
-            | Kinematic -> MotionType.Kinematic
-            | KinematicCharacter -> MotionType.Kinematic // TODO: P0: implement character physics.
-            | Dynamic -> MotionType.Dynamic
-            | DynamicCharacter -> MotionType.Dynamic // TODO: P0: implement character physics.
-        let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, uint16 bodyProperties.CollisionCategories)
-        bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
-        bodyCreationSettings.Friction <- bodyProperties.Friction
-        bodyCreationSettings.Restitution <- bodyProperties.Restitution
-        bodyCreationSettings.LinearVelocity <- bodyProperties.LinearVelocity
-        bodyCreationSettings.LinearDamping <- bodyProperties.LinearDamping
-        bodyCreationSettings.AngularVelocity <- bodyProperties.AngularVelocity
-        bodyCreationSettings.AngularDamping <- bodyProperties.AngularDamping
-        bodyCreationSettings.AllowedDOFs <-
-            (if bodyProperties.AngularFactor.X <> 0.0f then AllowedDOFs.RotationX else enum<_> 0) |||
-            (if bodyProperties.AngularFactor.Y <> 0.0f then AllowedDOFs.RotationY else enum<_> 0) |||
-            (if bodyProperties.AngularFactor.Z <> 0.0f then AllowedDOFs.RotationZ else enum<_> 0) |||
-            AllowedDOFs.TranslationX ||| AllowedDOFs.TranslationY ||| AllowedDOFs.TranslationZ // TODO: P1: consider exposing linear factors if Aether physics also supports it.
-        let massProperties = MassProperties ()
-        massProperties.ScaleToMass mass
-        bodyCreationSettings.MassPropertiesOverride <- massProperties
-        bodyCreationSettings.GravityFactor <- // TODO: P0: implement individual gravity direction?
-            match bodyProperties.GravityOverride with
-            | Some gravity -> gravity.Magnitude
-            | None -> 1.0f
-        // TODO: P0: implement CharacterProperties.
-        bodyCreationSettings.MotionQuality <-
-            match bodyProperties.CollisionDetection with
-            | Discontinuous -> MotionQuality.Discrete
-            | Continuous (_, _) -> MotionQuality.LinearCast
-        // TODO: P0: implement CollisionMask.
-        bodyCreationSettings.IsSensor <- bodyProperties.Sensor
-        let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
-        body.SetUserData (uint64 bodyId.BodyIndex)
-        physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
-        physicsEngine.BodyUserData.Add (body.ID, bodyId)
-        physicsEngine.Bodies.Add (bodyId, body.ID)
+            | Static -> (MotionType.Static, false)
+            | Kinematic -> (MotionType.Kinematic, false)
+            | KinematicCharacter -> (MotionType.Kinematic, true)
+            | Dynamic -> (MotionType.Dynamic, false)
+            | DynamicCharacter -> (MotionType.Dynamic, true)
+        if isCharacter then
+
+            // basic config
+            let characterSettings = CharacterVirtualSettings ()
+            characterSettings.BackFaceMode <- BackFaceMode.IgnoreBackFaces
+            characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
+            characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.PenetrationDepthMax
+            characterSettings.EnhancedInternalEdgeRemoval <- true
+            characterSettings.HitReductionCosMaxAngle <- 0.999f
+            characterSettings.innerBodyLayer <- uint16 bodyProperties.CollisionCategories
+            characterSettings.Mass <- mass
+            characterSettings.MaxCollisionIterations <- 5u
+            characterSettings.MaxNumHits <- 256u
+            characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
+            characterSettings.MaxStrength <- 100.0f
+            characterSettings.MaxConstraintIterations <- 15u
+            characterSettings.MinTimeRemaining <- 1.0e-4f
+            characterSettings.PenetrationRecoverySpeed <- 1.0f
+            characterSettings.PredictiveContactDistance <- 0.1f
+            characterSettings.ShapeOffset <- v3Zero
+
+            // shape config (inner shape must come after shape)
+            characterSettings.Shape <- scShapeSettings.Create ()
+            characterSettings.InnerBodyShape <- null
+
+            // create actual character
+            let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
+            character.add_OnContactValidate
+            character.add_OnContactAdded
+            // TODO: P0: resolve https://github.com/jrouwe/JoltPhysics/issues/1427
+
+            physicsEngine.Characters.Add (bodyId, character)
+
+        else
+
+            let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, uint16 bodyProperties.CollisionCategories)
+            bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
+            bodyCreationSettings.Friction <- bodyProperties.Friction
+            bodyCreationSettings.Restitution <- bodyProperties.Restitution
+            bodyCreationSettings.LinearVelocity <- bodyProperties.LinearVelocity
+            bodyCreationSettings.LinearDamping <- bodyProperties.LinearDamping
+            bodyCreationSettings.AngularVelocity <- bodyProperties.AngularVelocity
+            bodyCreationSettings.AngularDamping <- bodyProperties.AngularDamping
+            bodyCreationSettings.AllowedDOFs <-
+                (if bodyProperties.AngularFactor.X <> 0.0f then AllowedDOFs.RotationX else enum<_> 0) |||
+                (if bodyProperties.AngularFactor.Y <> 0.0f then AllowedDOFs.RotationY else enum<_> 0) |||
+                (if bodyProperties.AngularFactor.Z <> 0.0f then AllowedDOFs.RotationZ else enum<_> 0) |||
+                AllowedDOFs.TranslationX ||| AllowedDOFs.TranslationY ||| AllowedDOFs.TranslationZ // TODO: P1: consider exposing linear factors if Aether physics also supports it.
+            let massProperties = MassProperties ()
+            massProperties.ScaleToMass mass
+            bodyCreationSettings.MassPropertiesOverride <- massProperties
+            bodyCreationSettings.GravityFactor <- // TODO: P0: implement individual gravity direction?
+                match bodyProperties.GravityOverride with
+                | Some gravity -> gravity.Magnitude
+                | None -> 1.0f
+            bodyCreationSettings.MotionQuality <-
+                match bodyProperties.CollisionDetection with
+                | Discontinuous -> MotionQuality.Discrete
+                | Continuous (_, _) -> MotionQuality.LinearCast
+            bodyCreationSettings.IsSensor <- bodyProperties.Sensor
+            let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
+            physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
+            physicsEngine.BodyUserData.Add (body.ID, bodyId)
+            physicsEngine.Bodies.Add (bodyId, body.ID)
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
 
@@ -415,6 +423,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
             physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
+        | (false, _) -> ()
+
+        // attempt to destroy character
+        match physicsEngine.Characters.TryGetValue bodyId with
+        | (true, character) ->
+            character.Dispose ()
+            physicsEngine.Characters.Remove bodyId |> ignore<bool>
         | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
@@ -763,7 +778,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         let contactEvents = HashSet ()
 
         physicsSystem.add_OnContactValidate (fun _ _ _ _ _ ->
-            lock contactLock $ fun () -> ValidateResult.AcceptContact) // TODO: P0: collision mask used here?
+            lock contactLock $ fun () -> ValidateResult.AcceptContact) // TODO: P0: use collision mask used here?
 
         physicsSystem.add_OnContactAdded (fun _ body body2 manifold _ ->
             let bodyID = body.ID
@@ -793,9 +808,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
           CollisionsGround = dictPlus HashIdentity.Structural []
           CollisionsAll = dictPlus HashIdentity.Structural []
+          Constraints = dictPlus HashIdentity.Structural []
           BodyUserData = dictPlus HashIdentity.Structural []
           Bodies = dictPlus HashIdentity.Structural []
-          Constraints = dictPlus HashIdentity.Structural []
+          Characters = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
@@ -895,8 +911,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             // compute whether the physics engine will be affected by this clear request
             let affected =
                 physicsEngine.CollisionsGround.Count > 0 ||
-                physicsEngine.Bodies.Count > 0 ||
                 physicsEngine.Constraints.Count > 0 ||
+                physicsEngine.Bodies.Count > 0 ||
+                physicsEngine.Characters.Count > 0 ||
                 physicsEngine.CreateBodyJointMessages.Count > 0 ||
                 physicsEngine.IntegrationMessages.Count > 0
 
@@ -916,6 +933,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             for bodyID in physicsEngine.Bodies.Values do
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
             physicsEngine.Bodies.Clear ()
+
+            // destroy characters
+            for character in physicsEngine.Characters.Values do
+                character.Dispose ()
+            physicsEngine.Characters.Clear ()
 
             // clear joint creation messages
             physicsEngine.CreateBodyJointMessages.Clear ()

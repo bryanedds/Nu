@@ -413,13 +413,15 @@ type PhysicsMotion =
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
     { StepHeight : single
-      SlopeMax : single // NOTE: setting much lower than 0.7f tends to cause a lot of terrain fall-throughs.
-      PenetrationDepthMax : single } // NOTE: setting much lower or higher seems to cause a lot of terrain fall-throughs.
+      SlopeMax : single
+      CollisionPadding : single
+      PenetrationDepthMax : single }
 
     /// The default character properties.
     static member defaultProperties =
         { StepHeight = 0.3f
           SlopeMax = Math.DegreesToRadians 45.0f
+          CollisionPadding = 0.02f
           PenetrationDepthMax = 0.05f }
 
 /// The properties needed to describe the physical part of a body.
