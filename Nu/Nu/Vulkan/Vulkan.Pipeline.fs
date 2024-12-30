@@ -174,22 +174,36 @@ module Pipeline =
             // fin
             pipeline
         
+        /// Destroy Pipeline.
+        static member destroy pipeline (vulkanGlobal : Hl.VulkanGlobal) =
+            Hl.AllocatedBuffer.destroy pipeline.VertexBuffer vulkanGlobal.VmaAllocator
+            Hl.AllocatedBuffer.destroy pipeline.IndexBuffer vulkanGlobal.VmaAllocator
+            Vulkan.vkDestroyPipeline (vulkanGlobal.Device, pipeline.Pipeline, nullPtr)
+            Vulkan.vkDestroyDescriptorPool (vulkanGlobal.Device, pipeline.DescriptorPool, nullPtr)
+            Vulkan.vkDestroyPipelineLayout (vulkanGlobal.Device, pipeline.PipelineLayout, nullPtr)
+            Vulkan.vkDestroyDescriptorSetLayout (vulkanGlobal.Device, pipeline.DescriptorSetLayout, nullPtr)
+        
         /// Create a Pipeline.
         static member create shaderPath vertexBindings vertexAttributes resourceBindings pushConstantRanges (vulkanGlobal : Hl.VulkanGlobal) =
             
-            
-            let device = vulkanGlobal.Device
-            
-            
-            let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings device
-            let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
+            // create everything
+            let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings vulkanGlobal.Device
+            let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges vulkanGlobal.Device
+            let descriptorPool = Pipeline.createDescriptorPool resourceBindings vulkanGlobal.Device
+            let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool vulkanGlobal.Device
+            let vulkanPipeline = Pipeline.createPipeline shaderPath vertexBindings vertexAttributes pipelineLayout vulkanGlobal.RenderPass vulkanGlobal.Device
+            let vertexBuffer = Hl.AllocatedBuffer.createVertex true 0 vulkanGlobal.VmaAllocator
+            let indexBuffer = Hl.AllocatedBuffer.createIndex true 0 vulkanGlobal.VmaAllocator
 
+            // make Pipeline
+            let pipeline =
+                { Pipeline = vulkanPipeline
+                  DescriptorPool = descriptorPool
+                  DescriptorSet = descriptorSet
+                  PipelineLayout = pipelineLayout
+                  DescriptorSetLayout = descriptorSetLayout
+                  VertexBuffer = vertexBuffer
+                  IndexBuffer = indexBuffer }
 
-            let vulkanPipeline = Pipeline.createPipeline shaderPath vertexBindings vertexAttributes pipelineLayout vulkanGlobal.RenderPass device
-
-
-            let descriptorPool = Pipeline.createDescriptorPool resourceBindings device
-            let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool device
-
-
-            ()
+            // fin
+            pipeline
