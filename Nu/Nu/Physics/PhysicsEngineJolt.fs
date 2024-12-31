@@ -34,7 +34,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           CharacterCollisionsGround : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterCollisionsAll : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           Characters : Dictionary<BodyId, CharacterVirtual>
-          CharacterUserData : Dictionary<CharacterVirtual, Dictionary<SubShapeID, bool>>
+          CharacterUserData : Dictionary<CharacterVirtual, Dictionary<SubShapeID, struct (BodyID * bool ref)>>
           IntegrationMessages : IntegrationMessage List }
 
     static member private handlePenetration (bodyId : BodyId) (body2Id : BodyId) (normal : Vector3) physicsEngine =
@@ -377,7 +377,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             | (false, _) -> physicsEngine.CharacterCollisionsAll.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
 
                             //
-                            characterContacts.Add (subShape2ID, true)
+                            characterContacts.Add (subShape2ID, struct (body2ID, ref true))
                             
                             //
                             let contactPosition = v3 (single contactPosition.X) (single contactPosition.Y) (single contactPosition.Z)
@@ -709,9 +709,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | CharacterContactRemoved () -> ()
             physicsEngine.CharacterContactEvents.Clear ()
 
-        for entry in physicsEngine.Bodies do
-            let bodyId = entry.Key
-            let bodyID = entry.Value
+        for bodiesEntry in physicsEngine.Bodies do
+            let bodyId = bodiesEntry.Key
+            let bodyID = bodiesEntry.Value
             if bodyInterface.IsActive &bodyID then
                 let bodyTransformMessage =
                     BodyTransformMessage
@@ -884,8 +884,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 // zero out character contacts
                 lock physicsEngine.CharacterContactLock $ fun () ->
                     for characterUserData in physicsEngine.CharacterUserData.Values do
-                        for contactKey in characterUserData.Keys do
-                            characterUserData.[contactKey] <- false
+                        for entry in characterUserData do
+                            (snd' characterUserData.[entry.Key]).Value <- false
 
                 // attempt to update
                 match physicsEngine.PhysicsContext.Update (stepTime.Seconds, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
@@ -897,8 +897,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         for entry in physicsEngine.CharacterUserData do
                             let character = entry.Key
                             let characterUserData = entry.Value
-                            for contactKey in characterUserData.Keys do
-                                if not characterUserData.[contactKey] then
+                            for entry in characterUserData do
+                                let contactKey = entry.Key
+                                let struct (body2ID, freshRef) = entry.Value
+                                if not freshRef.Value then
 
                                     //
                                     match physicsEngine.CharacterCollisionsGround.TryGetValue character with
@@ -914,7 +916,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                                         if collisions.Count = 0 then physicsEngine.CharacterCollisionsGround.Remove character |> ignore<bool>
                                     | (false, _) -> ()
 
-                                    physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, (), contactKey)) |> ignore<bool>
+                                    physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, body2ID, contactKey)) |> ignore<bool>
 
                                     contactKeysRemoved.Add struct (character, contactKey)
 
