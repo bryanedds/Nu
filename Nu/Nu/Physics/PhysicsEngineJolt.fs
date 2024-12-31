@@ -8,24 +8,33 @@ open System.Numerics
 open JoltPhysicsSharp
 open Prime
 
-type [<Struct>] private ContactEvent =
-    | ContactAdded of BodyID : BodyID * Body2ID : BodyID * Normal : Vector3
-    | ContactRemoved of BodyID : BodyID * Body2ID : BodyID
+type [<Struct>] private BodyContactEvent =
+    | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * Normal : Vector3
+    | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
+
+type [<Struct>] private CharacterContactEvent =
+    | CharacterContactAdded of Character : CharacterVirtual * Body2ID : BodyID * SubShapeID2 : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
+    | CharacterContactRemoved of Character : CharacterVirtual * Body2ID : BodyID * SubShapeID2 : SubShapeID
 
 type [<ReferenceEquality>] PhysicsEngineJolt =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
-          ContactLock : obj
-          ContactEvents : ContactEvent HashSet
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
-          CollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
-          CollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
-          Constraints : Dictionary<BodyJointId, TwoBodyConstraint>
+          BodyContactLock : obj
+          BodyContactEvents : BodyContactEvent HashSet
+          BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
+          BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
+          BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
           Bodies : Dictionary<BodyId, BodyID>
           BodyUserData : Dictionary<BodyID, BodyId>
-          Characters : Dictionary<BodyId, CharacterVirtual>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
+          CharacterContactLock : obj
+          CharacterContactEvents : CharacterContactEvent HashSet
+          CharacterCollisionsGround : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
+          CharacterCollisionsAll : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
+          Characters : Dictionary<BodyId, CharacterVirtual>
+          CharacterUserData : Dictionary<CharacterVirtual, Dictionary<SubShapeID, bool>>
           IntegrationMessages : IntegrationMessage List }
 
     static member private handlePenetration (bodyId : BodyId) (body2Id : BodyId) (normal : Vector3) physicsEngine =
@@ -41,14 +50,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         //
         let theta = normal.Dot Vector3.UnitY |> acos |> abs
         if theta < Constants.Physics.GroundAngleMax then
-            match physicsEngine.CollisionsGround.TryGetValue bodyId with
+            match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
             | (true, collisions) -> collisions.[body2Id] <- normal
-            | (false, _) -> physicsEngine.CollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, normal)]
+            | (false, _) -> physicsEngine.BodyCollisionsGround.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, normal)]
             
         //
-        match physicsEngine.CollisionsAll.TryGetValue bodyId with
+        match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
         | (true, collisions) -> collisions.[body2Id] <- normal
-        | (false, _) -> physicsEngine.CollisionsAll.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, normal)]
+        | (false, _) -> physicsEngine.BodyCollisionsAll.[bodyId] <- dictPlus HashIdentity.Structural [(body2Id, normal)]
 
     static member private handleSeparation (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
 
@@ -60,17 +69,17 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
         //
-        match physicsEngine.CollisionsGround.TryGetValue bodyId with
+        match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
         | (true, collisions) ->
             collisions.Remove body2Id |> ignore<bool>
-            if collisions.Count = 0 then physicsEngine.CollisionsGround.Remove bodyId |> ignore<bool>
+            if collisions.Count = 0 then physicsEngine.BodyCollisionsGround.Remove bodyId |> ignore<bool>
         | (false, _) -> ()
 
         //
-        match physicsEngine.CollisionsAll.TryGetValue bodyId with
+        match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
         | (true, collisions) ->
             collisions.Remove body2Id |> ignore<bool>
-            if collisions.Count = 0 then physicsEngine.CollisionsGround.Remove bodyId |> ignore<bool>
+            if collisions.Count = 0 then physicsEngine.BodyCollisionsGround.Remove bodyId |> ignore<bool>
         | (false, _) -> ()
 
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
@@ -344,10 +353,39 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
-            character.add_OnContactValidate
-            character.add_OnContactAdded
-            // TODO: P0: resolve https://github.com/jrouwe/JoltPhysics/issues/1427
 
+            character.add_OnContactValidate (fun _ _ _ ->
+                lock physicsEngine.CharacterContactLock $ fun () ->
+                    Bool8.True)
+
+            character.add_OnContactAdded (fun character body2ID subShape2ID contactPosition contactNormal _ ->
+                lock physicsEngine.CharacterContactLock $ fun () ->
+                    match physicsEngine.CharacterUserData.TryGetValue character with
+                    | (true, characterContacts) ->
+                        if not (characterContacts.ContainsKey subShape2ID) then
+
+                            //
+                            let theta = contactNormal.Dot Vector3.UnitY |> acos |> abs
+                            if theta < Constants.Physics.GroundAngleMax then
+                                match physicsEngine.CharacterCollisionsGround.TryGetValue character with
+                                | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
+                                | (false, _) -> physicsEngine.CharacterCollisionsGround.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
+            
+                            //
+                            match physicsEngine.CharacterCollisionsAll.TryGetValue character with
+                            | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
+                            | (false, _) -> physicsEngine.CharacterCollisionsAll.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
+
+                            //
+                            characterContacts.Add (subShape2ID, true)
+                            
+                            //
+                            let contactPosition = v3 (single contactPosition.X) (single contactPosition.Y) (single contactPosition.Z)
+                            physicsEngine.CharacterContactEvents.Add (CharacterContactAdded (character, body2ID, subShape2ID, contactPosition, contactNormal)) |> ignore<bool>
+
+                    | (false, _) -> Log.warn "Potential logic error.")
+            
+            physicsEngine.CharacterUserData.Add (character, dictPlus HashIdentity.Structural [])
             physicsEngine.Characters.Add (bodyId, character)
 
         else
@@ -429,6 +467,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
             character.Dispose ()
+            physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
         | (false, _) -> ()
 
@@ -499,7 +538,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 match constrainOpt with
                 | Some constrain ->
                     physicsEngine.PhysicsContext.AddConstraint constrain
-                    if physicsEngine.Constraints.TryAdd (bodyJointId, constrain)
+                    if physicsEngine.BodyConstraints.TryAdd (bodyJointId, constrain)
                     then () // nothing to do
                     else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
                 | None -> ()
@@ -518,9 +557,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         PhysicsEngineJolt.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
-        match physicsEngine.Constraints.TryGetValue bodyJointId with
+        match physicsEngine.BodyConstraints.TryGetValue bodyJointId with
         | (true, joint) ->
-            physicsEngine.Constraints.Remove bodyJointId |> ignore
+            physicsEngine.BodyConstraints.Remove bodyJointId |> ignore
             physicsEngine.PhysicsContext.RemoveConstraint joint
         | (false, _) -> ()
 
@@ -644,15 +683,15 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
         let bodyInterface = physicsEngine.PhysicsContext.BodyInterface // OPTIMIZATION: cache property for efficiency.
 
-        lock physicsEngine.ContactLock $ fun () ->
-            for contactEvent in physicsEngine.ContactEvents do
+        lock physicsEngine.BodyContactLock $ fun () ->
+            for contactEvent in physicsEngine.BodyContactEvents do
                 match contactEvent with
-                | ContactAdded (bodyID, body2ID, normal) ->
+                | BodyContactAdded (bodyID, body2ID, normal) ->
                     let bodyId = physicsEngine.BodyUserData.[bodyID]
                     let body2Id = physicsEngine.BodyUserData.[body2ID]
                     PhysicsEngineJolt.handlePenetration bodyId body2Id normal physicsEngine
                     PhysicsEngineJolt.handlePenetration body2Id bodyId -normal physicsEngine
-                | ContactRemoved (bodyID, body2ID) ->
+                | BodyContactRemoved (bodyID, body2ID) ->
                     match physicsEngine.BodyUserData.TryGetValue bodyID with
                     | (true, bodyId) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
@@ -661,7 +700,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             PhysicsEngineJolt.handleSeparation body2Id bodyId physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
-            physicsEngine.ContactEvents.Clear ()
+            physicsEngine.BodyContactEvents.Clear ()
+
+        lock physicsEngine.CharacterContactLock $ fun () ->
+            for contactEvent in physicsEngine.CharacterContactEvents do
+                match contactEvent with
+                | CharacterContactAdded () -> ()
+                | CharacterContactRemoved () -> ()
+            physicsEngine.CharacterContactEvents.Clear ()
 
         for entry in physicsEngine.Bodies do
             let bodyId = entry.Key
@@ -675,77 +721,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                           LinearVelocity = bodyInterface.GetLinearVelocity &bodyID
                           AngularVelocity = bodyInterface.GetAngularVelocity &bodyID }
                 physicsEngine.IntegrationMessages.Add bodyTransformMessage
-
-        (*
-        // create collision entries
-        let collisionsOld = physicsEngine.CollisionsFiltered
-        physicsEngine.CollisionsFiltered <- SDictionary.make HashIdentity.Structural
-        let numManifolds = physicsEngine.PhysicsContext.Dispatcher.NumManifolds
-        for i in 0 .. dec numManifolds do
-
-            // ensure at least ONE contact point is either intersecting or touching by checking distance.
-            // this will filter out manifolds contacting only on the broadphase level according to -
-            // https://github.com/timbeaudet/knowledge_base/blob/main/issues/bullet_contact_report_issue.md
-            let manifold = physicsEngine.PhysicsContext.Dispatcher.GetManifoldByIndexInternal i
-            let mutable intersecting = false
-            let mutable j = 0
-            while not intersecting && j < manifold.NumContacts do
-                let pt = manifold.GetContactPoint j
-                if pt.Distance <= 0.0f
-                then intersecting <- true
-                else j <- inc j
-            if intersecting then
-
-                // create non-ground collision entry if unfiltered
-                let body0 = manifold.Body0
-                let body1 = manifold.Body1
-                let body0Source = (body0.UserObject :?> BodyUserObject).BodyId
-                let body1Source = (body1.UserObject :?> BodyUserObject).BodyId
-                let collisionKey = (body0Source, body1Source)
-                let mutable normal = v3Zero
-                let numContacts = manifold.NumContacts
-                for j in 0 .. dec numContacts do
-                    let contact = manifold.GetContactPoint j
-                    normal <- normal - contact.NormalWorldOnB
-                normal <- normal / single numContacts
-                if  body0.UserIndex = 1 ||
-                    body1.UserIndex = 1 then
-                    physicsEngine.CollisionsFiltered.[collisionKey] <- normal // NOTE: incoming collision keys are not necessarily unique.
-
-        // create gravitating body transform messages
-        for bodyEntry in physicsEngine.BodiesGravitating do
-            let (_, body) = bodyEntry.Value
-            if body.IsActive then
-                let bodyTransformMessage =
-                    BodyTransformMessage
-                        { BodyId = (body.UserObject :?> BodyUserObject).BodyId
-                          Center = body.WorldTransform.Translation
-                          Rotation = body.WorldTransform.Rotation
-                          LinearVelocity = body.LinearVelocity
-                          AngularVelocity = body.AngularVelocity }
-                physicsEngine.IntegrationMessages.Add bodyTransformMessage
-
-        // create kinematic character transform messages
-        for characterEntry in physicsEngine.KinematicCharacters do
-            let character = characterEntry.Value
-            if character.Ghost.IsActive then
-                let center = character.Ghost.WorldTransform.Translation
-                let forward = character.Ghost.WorldTransform.Rotation.Forward
-                let sign = if v3Up.Dot (forward.Cross character.Rotation.Forward) < 0.0f then 1.0f else -1.0f
-                let angleBetweenOpt = forward.AngleBetween character.Rotation.Forward
-                character.LinearVelocity <- center - character.Center
-                character.AngularVelocity <- if Single.IsNaN angleBetweenOpt then v3Zero else v3 0.0f (angleBetweenOpt * sign) 0.0f
-                character.Center <- center
-                character.Rotation <- character.Ghost.WorldTransform.Rotation
-                let bodyTransformMessage =
-                    BodyTransformMessage
-                        { BodyId = (character.Ghost.UserObject :?> BodyUserObject).BodyId
-                          Center = character.Center - character.CenterOffset
-                          Rotation = character.Rotation
-                          LinearVelocity = character.LinearVelocity
-                          AngularVelocity = character.AngularVelocity }
-                physicsEngine.IntegrationMessages.Add bodyTransformMessage
-        *)
 
     static member make (gravity : Vector3) =
 
@@ -787,12 +762,12 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let bodyID = body.ID
             let body2ID = body2.ID
             let normal = manifold.WorldSpaceNormal
-            lock contactLock $ fun () -> contactEvents.Add (ContactAdded (bodyID, body2ID, normal)) |> ignore<bool>)
+            lock contactLock $ fun () -> contactEvents.Add (BodyContactAdded (bodyID, body2ID, normal)) |> ignore<bool>)
 
         physicsSystem.add_OnContactRemoved (fun _ subShapeIDPair ->
             let bodyID = subShapeIDPair.Body1ID
             let body2ID = subShapeIDPair.Body2ID
-            lock contactLock $ fun () -> contactEvents.Add (ContactRemoved (bodyID, body2ID)) |> ignore<bool>)
+            lock contactLock $ fun () -> contactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
         // TODO: P0: see if we need this to send awakeness to the engine.
         //physicsSystem.add_OnBodyActivated ???
@@ -806,16 +781,21 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
-          ContactLock = contactLock
-          ContactEvents = contactEvents
           UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
-          CollisionsGround = dictPlus HashIdentity.Structural []
-          CollisionsAll = dictPlus HashIdentity.Structural []
-          Constraints = dictPlus HashIdentity.Structural []
+          BodyContactLock = contactLock
+          BodyContactEvents = contactEvents
+          BodyCollisionsGround = dictPlus HashIdentity.Structural []
+          BodyCollisionsAll = dictPlus HashIdentity.Structural []
+          BodyConstraints = dictPlus HashIdentity.Structural []
           BodyUserData = dictPlus HashIdentity.Structural []
           Bodies = dictPlus HashIdentity.Structural []
-          Characters = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
+          CharacterContactLock = obj ()
+          CharacterContactEvents = hashSetPlus HashIdentity.Structural []
+          CharacterCollisionsGround = dictPlus HashIdentity.Structural []
+          CharacterCollisionsAll = dictPlus HashIdentity.Structural []
+          Characters = dictPlus HashIdentity.Structural []
+          CharacterUserData = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
     static member cleanUp physicsEngine =
@@ -829,7 +809,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.Bodies.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            [|match physicsEngine.CollisionsAll.TryGetValue bodyId with
+            [|match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
               | (true, collisions) -> for collision in collisions.Values do collision
               | (false, _) -> ()|]
 
@@ -844,7 +824,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            match physicsEngine.CollisionsGround.TryGetValue bodyId with
+            match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
             | (true, collisions) -> Array.ofSeq collisions.Values
             | (false, _) -> [||]
 
@@ -862,7 +842,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | None -> None
 
         member physicsEngine.GetBodyGrounded bodyId =
-            physicsEngine.CollisionsGround.ContainsKey bodyId
+            physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
             //let mutable start = start
@@ -900,56 +880,107 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
         member physicsEngine.TryIntegrate stepTime =
             if not stepTime.IsZero then
+
+                // zero out character contacts
+                lock physicsEngine.CharacterContactLock $ fun () ->
+                    for characterUserData in physicsEngine.CharacterUserData.Values do
+                        for contactKey in characterUserData.Keys do
+                            characterUserData.[contactKey] <- false
+
+                // attempt to update
                 match physicsEngine.PhysicsContext.Update (stepTime.Seconds, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
                 | PhysicsUpdateError.None ->
+
+                    // produce contact removed messages
+                    lock physicsEngine.CharacterContactLock $ fun () ->
+                        let contactKeysRemoved = List () // TODO: P0: cache this list.
+                        for entry in physicsEngine.CharacterUserData do
+                            let character = entry.Key
+                            let characterUserData = entry.Value
+                            for contactKey in characterUserData.Keys do
+                                if not characterUserData.[contactKey] then
+
+                                    //
+                                    match physicsEngine.CharacterCollisionsGround.TryGetValue character with
+                                    | (true, collisions) ->
+                                        collisions.Remove contactKey |> ignore<bool>
+                                        if collisions.Count = 0 then physicsEngine.CharacterCollisionsGround.Remove character |> ignore<bool>
+                                    | (false, _) -> ()
+
+                                    //
+                                    match physicsEngine.CharacterCollisionsAll.TryGetValue character with
+                                    | (true, collisions) ->
+                                        collisions.Remove contactKey |> ignore<bool>
+                                        if collisions.Count = 0 then physicsEngine.CharacterCollisionsGround.Remove character |> ignore<bool>
+                                    | (false, _) -> ()
+
+                                    physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, (), contactKey)) |> ignore<bool>
+
+                                    contactKeysRemoved.Add struct (character, contactKey)
+
+                        for struct (character, contactKey) in contactKeysRemoved do
+                            match physicsEngine.CharacterUserData.TryGetValue character with
+                            | (true, characterUserData) -> characterUserData.Remove contactKey |> ignore<bool>
+                            | (false, _) -> Log.warn "Potential logic error."
+
+                    // create integration messages
                     PhysicsEngineJolt.createIntegrationMessages physicsEngine
                     let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                     physicsEngine.IntegrationMessages.Clear ()
                     Some integrationMessages
+
                 | error -> Log.warn ("Jolt Physics internal error: " + scstring error); None
+
             else None
 
         member physicsEngine.ClearInternal () =
 
             // compute whether the physics engine will be affected by this clear request
             let affected =
-                physicsEngine.CollisionsGround.Count > 0 ||
-                physicsEngine.Constraints.Count > 0 ||
+                physicsEngine.BodyConstraints.Count > 0 ||
                 physicsEngine.Bodies.Count > 0 ||
-                physicsEngine.Characters.Count > 0 ||
                 physicsEngine.CreateBodyJointMessages.Count > 0 ||
+                physicsEngine.Characters.Count > 0 ||
                 physicsEngine.IntegrationMessages.Count > 0
 
-            // clear collisions
-            physicsEngine.CollisionsGround.Clear ()
-            physicsEngine.CollisionsAll.Clear ()
-
-            // clear intermediate maps
-            physicsEngine.BodyUserData.Clear ()
+            // clear body collision tracking
+            physicsEngine.BodyCollisionsGround.Clear ()
+            physicsEngine.BodyCollisionsAll.Clear ()
 
             // destroy constraints
-            for constrain in physicsEngine.Constraints.Values do
+            for constrain in physicsEngine.BodyConstraints.Values do
                 physicsEngine.PhysicsContext.RemoveConstraint constrain
-            physicsEngine.Constraints.Clear ()
+            physicsEngine.BodyConstraints.Clear ()
 
             // destroy bodies
+            physicsEngine.BodyUserData.Clear ()
             for bodyID in physicsEngine.Bodies.Values do
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
             physicsEngine.Bodies.Clear ()
 
+            // clear any in-flight body contacts
+            lock physicsEngine.BodyContactLock $ fun () ->
+                physicsEngine.BodyContactEvents.Clear ()
+
+            // clear body joint creation messages
+            physicsEngine.CreateBodyJointMessages.Clear ()
+
+            // clear character collision tracking
+            physicsEngine.CharacterCollisionsGround.Clear ()
+            physicsEngine.CharacterCollisionsAll.Clear ()
+
             // destroy characters
+            physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
                 character.Dispose ()
             physicsEngine.Characters.Clear ()
 
-            // clear joint creation messages
-            physicsEngine.CreateBodyJointMessages.Clear ()
+            // clear any in-flight character contacts
+            lock physicsEngine.CharacterContactLock $ fun () ->
+                physicsEngine.CharacterContactEvents.Clear ()
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
-
-            // clear any in-flight contacts
-            lock physicsEngine.ContactLock $ fun () -> physicsEngine.ContactEvents.Clear ()
 
             // fin
             affected
