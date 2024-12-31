@@ -271,12 +271,13 @@ module GlRendererImGui =
 /// Renders an imgui view via Vulkan.
 type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
     
-    let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
-    let mutable fontDescriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
-    let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
-    let mutable pipeline = Unchecked.defaultof<VkPipeline>
+    let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
+//    let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
+//    let mutable fontDescriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
+//    let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
+//    let mutable vulkanPipeline = Unchecked.defaultof<VkPipeline>
     let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
-    let mutable fontDescriptorSet = Unchecked.defaultof<VkDescriptorSet>
+//    let mutable fontDescriptorSet = Unchecked.defaultof<VkDescriptorSet>
     let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
     let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
     let mutable vertexBufferSize = 8192
@@ -376,17 +377,17 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
         attributes[0].location <- 0u
         attributes[0].binding <- 0u
         attributes[0].format <- Vulkan.VK_FORMAT_R32G32_SFLOAT
-        attributes[0].offset <- NativePtr.offsetOf<ImDrawVert> "pos"
+        attributes[0].offset <- uint (NativePtr.offsetOf<ImDrawVert> "pos")
         attributes[1] <- VkVertexInputAttributeDescription ()
         attributes[1].location <- 1u
         attributes[1].binding <- 0u
         attributes[1].format <- Vulkan.VK_FORMAT_R32G32_SFLOAT
-        attributes[1].offset <- NativePtr.offsetOf<ImDrawVert> "uv"
+        attributes[1].offset <- uint (NativePtr.offsetOf<ImDrawVert> "uv")
         attributes[2] <- VkVertexInputAttributeDescription ()
         attributes[2].location <- 2u
         attributes[2].binding <- 0u
         attributes[2].format <- Vulkan.VK_FORMAT_R8G8B8A8_UNORM
-        attributes[2].offset <- NativePtr.offsetOf<ImDrawVert> "col"
+        attributes[2].offset <- uint (NativePtr.offsetOf<ImDrawVert> "col")
         use attributesPin = new ArrayPin<_> (attributes)
 
         // vertex input info
@@ -498,12 +499,6 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             let device = vulkanGlobal.Device
             let allocator = vulkanGlobal.VmaAllocator
             
-            // create general resources
-            descriptorPool <- VulkanRendererImGui.createDescriptorPool device
-            fontDescriptorSetLayout <- VulkanRendererImGui.createFontDescriptorSetLayout device
-            pipelineLayout <- VulkanRendererImGui.createPipelineLayout fontDescriptorSetLayout device
-            pipeline <- VulkanRendererImGui.createPipeline pipelineLayout vulkanGlobal.RenderPass device
-            
             // get font atlas data
             let mutable pixels = Unchecked.defaultof<nativeint>
             let mutable fontWidth = 0
@@ -515,12 +510,46 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
             fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR metadata pixels vulkanGlobal
             
+            // create general resources
+//            descriptorPool <- VulkanRendererImGui.createDescriptorPool device
+//            fontDescriptorSetLayout <- VulkanRendererImGui.createFontDescriptorSetLayout device
+//            pipelineLayout <- VulkanRendererImGui.createPipelineLayout fontDescriptorSetLayout device
+//            vulkanPipeline <- VulkanRendererImGui.createPipeline pipelineLayout vulkanGlobal.RenderPass device
+            
             // create and write descriptor set for font atlas
-            fontDescriptorSet <- VulkanRendererImGui.createFontDescriptorSet fontDescriptorSetLayout descriptorPool device
-            VulkanRendererImGui.writeFontDescriptorSet fontTexture.Sampler fontTexture.ImageView fontDescriptorSet device
+//            fontDescriptorSet <- VulkanRendererImGui.createFontDescriptorSet fontDescriptorSetLayout descriptorPool device
+//            VulkanRendererImGui.writeFontDescriptorSet fontTexture.Sampler fontTexture.ImageView fontDescriptorSet device
+
+
+            let vertexBinding =
+                [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
+
+            let vertexAttributes =
+                [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "pos")
+                  Hl.makeVertexAttribute 1 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "uv")
+                  Hl.makeVertexAttribute 2 0 Vulkan.VK_FORMAT_R8G8B8A8_UNORM (NativePtr.offsetOf<ImDrawVert> "col")|]
+
+            let descriptorBinding =
+                [|Hl.makeDescriptorBindingFragment 0 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
+
+            let pushConstant =
+                [|Hl.makePushConstantRange Vulkan.VK_SHADER_STAGE_VERTEX_BIT 0 (sizeof<Single> * 4)|]
+            
+            pipeline <-
+                Pipeline.Pipeline.create
+                    "./Assets/Default/ImGui"
+                    vertexBinding
+                    vertexAttributes
+                    descriptorBinding
+                    pushConstant
+                    vulkanGlobal.RenderPass
+                    device
+
+            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline device
+
 
             // store identifier
-            fonts.SetTexID (nativeint fontDescriptorSet.Handle)
+            fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
             
             // NOTE: this is not used in the dear imgui vulkan backend.
             fonts.ClearTexData ()
@@ -576,7 +605,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline)
+                Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
 
                 // bind vertex and index buffer
                 if drawData.TotalVtxCount > 0 then
@@ -604,8 +633,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                 translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
                 translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
                 use translatePin = new ArrayPin<_> (translate)
-                Vulkan.vkCmdPushConstants (commandBuffer, pipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
-                Vulkan.vkCmdPushConstants (commandBuffer, pipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (commandBuffer, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (commandBuffer, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists
                 let mutable globalVtxOffset = 0
@@ -647,7 +676,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                                 Vulkan.vkCmdBindDescriptorSets
                                     (commandBuffer,
                                      Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                     pipelineLayout, 0u,
+                                     pipeline.PipelineLayout, 0u,
                                      1u, asPointer &descriptorSet,
                                      0u, nullPtr)
 
@@ -677,10 +706,11 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             Hl.AllocatedBuffer.destroy indexBuffer allocator
             Hl.AllocatedBuffer.destroy vertexBuffer allocator
             Texture.VulkanTexture.destroy fontTexture vulkanGlobal
-            Vulkan.vkDestroyPipeline (device, pipeline, nullPtr)
-            Vulkan.vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
-            Vulkan.vkDestroyDescriptorSetLayout (device, fontDescriptorSetLayout, nullPtr)
-            Vulkan.vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
+            Pipeline.Pipeline.destroy pipeline device
+//            Vulkan.vkDestroyPipeline (device, vulkanPipeline, nullPtr)
+//            Vulkan.vkDestroyPipelineLayout (device, pipelineLayout, nullPtr)
+//            Vulkan.vkDestroyDescriptorSetLayout (device, fontDescriptorSetLayout, nullPtr)
+//            Vulkan.vkDestroyDescriptorPool (device, descriptorPool, nullPtr)
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =

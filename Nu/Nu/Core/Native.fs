@@ -20,7 +20,7 @@ module NativePtr =
     /// Get the byte offset of a field within the unmanaged form of a managed type.
     /// This is valid for any struct that does not contain non-blittable types like bool.
     let offsetOf<'a> fieldName =
-        Marshal.OffsetOf (typeof<'a>, fieldName) |> uint
+        Marshal.OffsetOf (typeof<'a>, fieldName) |> int
 
     /// Reinterprets the type of a managed pointer from 'a to 'b in an unsafe manner.
     /// NOTE: Because of automatic dereferencing, the result must be *re*referenced after calling.

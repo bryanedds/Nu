@@ -71,6 +71,40 @@ module Hl =
         subresourceLayers.layerCount <- 1u
         subresourceLayers
     
+    /// Make a VkVertexInputBindingDescription with vertex input rate.
+    let makeVertexBindingVertex (bindingIndex : int) (stride : int) =
+        let mutable binding = VkVertexInputBindingDescription ()
+        binding.binding <- uint bindingIndex
+        binding.stride <- uint stride
+        binding.inputRate <- Vulkan.VK_VERTEX_INPUT_RATE_VERTEX
+        binding
+
+    /// Make a VkVertexInputAttributeDescription.
+    let makeVertexAttribute (location : int) (binding : int) format (offset : int) =
+        let mutable attribute = VkVertexInputAttributeDescription ()
+        attribute.location <- uint location
+        attribute.binding <- uint binding
+        attribute.format <- format
+        attribute.offset <- uint offset
+        attribute
+
+    /// Make a VkDescriptorSetLayoutBinding for the fragment stage.
+    let makeDescriptorBindingFragment (bindingIndex : int) descriptorType (descriptorCount : int) =
+        let mutable binding = VkDescriptorSetLayoutBinding ()
+        binding.binding <- uint bindingIndex
+        binding.descriptorType <- descriptorType
+        binding.descriptorCount <- uint descriptorCount
+        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+        binding
+
+    /// Make a push constant range.
+    let makePushConstantRange stages (offset : int) (size : int) =
+        let mutable range = VkPushConstantRange ()
+        range.stageFlags <- stages
+        range.offset <- uint offset
+        range.size <- uint size
+        range
+    
     /// Create an image view.
     let createImageView format mips image device =
         let mutable imageView = Unchecked.defaultof<VkImageView>

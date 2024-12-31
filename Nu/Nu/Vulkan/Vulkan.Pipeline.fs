@@ -173,7 +173,7 @@ module Pipeline =
             pipeline
         
         /// Write a texture to the descriptor set.
-        static member writeDescriptorTexture binding index (texture : Texture.VulkanTexture) pipeline device =
+        static member writeDescriptorTexture (binding : int) (arrayIndex : int) (texture : Texture.VulkanTexture) pipeline device =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
@@ -185,7 +185,7 @@ module Pipeline =
             let mutable write = VkWriteDescriptorSet ()
             write.dstSet <- pipeline.DescriptorSet
             write.dstBinding <- uint binding
-            write.dstArrayElement <- uint index
+            write.dstArrayElement <- uint arrayIndex
             write.descriptorCount <- 1u
             write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
             write.pImageInfo <- asPointer &info
