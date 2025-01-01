@@ -501,8 +501,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
             character.Dispose ()
-            physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            physicsEngine.CharacterUserData.Remove character |> ignore<bool>
         | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
