@@ -34,14 +34,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
-          Bodies : Dictionary<BodyId, BodyID>
           BodyUserData : Dictionary<BodyID, BodyId>
+          Bodies : Dictionary<BodyId, BodyID>
           CharacterContactLock : obj
           CharacterContactEvents : CharacterContactEvent HashSet
           CharacterCollisionsGround : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterCollisionsAll : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
-          Characters : Dictionary<BodyId, CharacterVirtual>
           CharacterUserData : Dictionary<CharacterVirtual, CharacterUserData>
+          Characters : Dictionary<BodyId, CharacterVirtual>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
 
@@ -711,8 +711,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private createIntegrationMessages (physicsEngine : PhysicsEngineJolt) =
 
-        let bodyInterface = physicsEngine.PhysicsContext.BodyInterface // OPTIMIZATION: cache property for efficiency.
-
         lock physicsEngine.BodyContactLock $ fun () ->
             for contactEvent in physicsEngine.BodyContactEvents do
                 match contactEvent with
@@ -724,24 +722,29 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         PhysicsEngineJolt.handleBodyPenetration body2Id bodyId -contactNormal physicsEngine
                     | (false, _) -> () // TODO: P0: see if this might be from a character, and if so, figure out how to correlate it.
                 | BodyContactRemoved (bodyID, body2ID) ->
-                    let bodyId = physicsEngine.BodyUserData.[bodyID]
-                    match physicsEngine.BodyUserData.TryGetValue body2ID with
-                    | (true, body2Id) ->
-                        PhysicsEngineJolt.handleBodySeparation bodyId body2Id physicsEngine
-                        PhysicsEngineJolt.handleBodySeparation body2Id bodyId physicsEngine
-                    | (false, _) -> () // TODO: P0: see if this might be from a character, and if so, figure out how to correlate it.
+                    match physicsEngine.BodyUserData.TryGetValue bodyID with
+                    | (true, bodyId) ->
+                        match physicsEngine.BodyUserData.TryGetValue body2ID with
+                        | (true, body2Id) ->
+                            PhysicsEngineJolt.handleBodySeparation bodyId body2Id physicsEngine
+                            PhysicsEngineJolt.handleBodySeparation body2Id bodyId physicsEngine
+                        | (false, _) -> () // TODO: P0: see if this might be from a character, and if so, figure out how to correlate it.
+                    | (false, _) -> ()
             physicsEngine.BodyContactEvents.Clear ()
 
         lock physicsEngine.CharacterContactLock $ fun () ->
             for contactEvent in physicsEngine.CharacterContactEvents do
                 match contactEvent with
                 | CharacterContactAdded (character, body2ID, _, _, contactNormal) ->
-                    let bodyId = physicsEngine.CharacterUserData.[character].CharacterBodyId
-                    match physicsEngine.BodyUserData.TryGetValue body2ID with
-                    | (true, body2Id) ->
-                        PhysicsEngineJolt.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
-                        PhysicsEngineJolt.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
-                    | (false, _) -> () // TODO: P0: see if this might be from a character, and if so, figure out how to correlate it.
+                    match physicsEngine.CharacterUserData.TryGetValue character with
+                    | (true, characterUserData) ->
+                        let bodyId = characterUserData.CharacterBodyId
+                        match physicsEngine.BodyUserData.TryGetValue body2ID with
+                        | (true, body2Id) ->
+                            PhysicsEngineJolt.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
+                            PhysicsEngineJolt.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
+                        | (false, _) -> () // TODO: P0: see if this might be from a character, and if so, figure out how to correlate it.
+                    | (false, _) -> ()
                 | CharacterContactRemoved (character, body2ID, _) ->
                     let bodyId = physicsEngine.CharacterUserData.[character].CharacterBodyId
                     match physicsEngine.BodyUserData.TryGetValue body2ID with
@@ -751,6 +754,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     | (false, _) -> () // TODO: P0: see if this might be from a character, and if so, figure out how to correlate it.
             physicsEngine.CharacterContactEvents.Clear ()
 
+        let bodyInterface = physicsEngine.PhysicsContext.BodyInterface // OPTIMIZATION: cache property for efficiency.
         for bodiesEntry in physicsEngine.Bodies do
             let bodyId = bodiesEntry.Key
             let bodyID = bodiesEntry.Value
@@ -835,8 +839,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           CharacterContactEvents = hashSetPlus HashIdentity.Structural []
           CharacterCollisionsGround = dictPlus HashIdentity.Structural []
           CharacterCollisionsAll = dictPlus HashIdentity.Structural []
-          Characters = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
+          Characters = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
@@ -1005,8 +1009,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             // destroy bodies
             for bodyID in physicsEngine.Bodies.Values do
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
-            physicsEngine.Bodies.Clear ()
             physicsEngine.BodyUserData.Clear ()
+            physicsEngine.Bodies.Clear ()
 
             // clear any in-flight character contacts
             lock physicsEngine.CharacterContactLock $ fun () ->
@@ -1017,10 +1021,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CharacterCollisionsAll.Clear ()
 
             // destroy characters
+            physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
                 character.Dispose ()
             physicsEngine.Characters.Clear ()
-            physicsEngine.CharacterUserData.Clear ()
 
             // clear body joint creation messages
             physicsEngine.CreateBodyJointMessages.Clear ()
