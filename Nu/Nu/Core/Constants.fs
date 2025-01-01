@@ -273,13 +273,12 @@ module Physics =
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionWildcard = "*"
     let [<Uniform>] Collision3dSteps = match ConfigurationManager.AppSettings.["Collision3dSteps"] with null -> 1 | distance -> scvalue distance
-    let [<Uniform>] Collision3dNumThreads = match ConfigurationManager.AppSettings.["Collision3dNumThreads"] with null -> 6 | distance -> scvalue distance
-    let [<Uniform>] Collision3dMaxBarriers = match ConfigurationManager.AppSettings.["Collision3dMaxBarriers"] with null -> 6 | distance -> scvalue distance
+    let [<Uniform>] Collision3dNumThreads = match ConfigurationManager.AppSettings.["Collision3dNumThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | distance -> scvalue distance
+    let [<Uniform>] Collision3dMaxBarriers = match ConfigurationManager.AppSettings.["Collision3dMaxBarriers"] with null -> max 1 (Environment.ProcessorCount - 2) | distance -> scvalue distance
     let [<Uniform>] Collision3dMaxJobs = match ConfigurationManager.AppSettings.["Collision3dMaxJobs"] with null -> 128 | distance -> scvalue distance
     let [<Literal>] Collision3dMargin = 0.01f
     let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: seems to also change the smoothness at which character slide.
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
-    let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
 
 [<RequireQualifiedAccess>]
