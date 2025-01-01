@@ -183,7 +183,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> (false, pointsShape.Points)
         let unscaledPoints =
             if not optimized then
-                let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: P0: attempt to find a way to remove dependency on Bullet here.
+                let hull = new BulletSharp.ConvexHullShape (unscaledPoints) // TODO: P1: attempt to find a way to remove dependency on Bullet here.
                 hull.OptimizeConvexHull ()
                 let unscaledPoints =
                     match hull.UnscaledPoints with
@@ -381,10 +381,12 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
 
+            //
             character.add_OnContactValidate (fun _ _ _ ->
                 lock physicsEngine.CharacterContactLock $ fun () ->
                     Bool8.True)
 
+            //
             character.add_OnContactAdded (fun character body2ID subShape2ID contactPosition contactNormal _ ->
                 let body2ID = body2ID
                 let contactPosition = contactPosition
@@ -415,11 +417,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
                     | (false, _) -> Log.warn "Potential logic error.")
             
+            //
             physicsEngine.CharacterUserData.Add (character, { CharacterBodyId = bodyId; CharacterContacts = dictPlus HashIdentity.Structural [] })
             physicsEngine.Characters.Add (bodyId, character)
 
         else
 
+            //
             let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, uint16 bodyProperties.CollisionCategories)
             bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
             bodyCreationSettings.Friction <- bodyProperties.Friction
