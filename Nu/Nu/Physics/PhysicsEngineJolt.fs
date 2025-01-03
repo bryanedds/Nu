@@ -36,6 +36,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
           BodyUserData : Dictionary<BodyID, BodyId>
           Bodies : Dictionary<BodyId, BodyID>
+          CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
           CharacterContactLock : obj
           CharacterContactEvents : CharacterContactEvent HashSet
           CharacterCollisionsGround : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
@@ -380,6 +381,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
+            physicsEngine.CharacterVsCharacterCollision.Add character
+            character.SetCharacterVsCharacterCollision (physicsEngine.CharacterVsCharacterCollision)
 
             //
             character.add_OnContactValidate (fun _ _ _ ->
@@ -537,9 +540,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         // attempt to destroy character
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
-            character.Dispose ()
-            physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            physicsEngine.CharacterVsCharacterCollision.Remove character
             physicsEngine.CharacterUserData.Remove character |> ignore<bool>
+            physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            character.Dispose ()
         | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
@@ -888,6 +892,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           BodyConstraints = dictPlus HashIdentity.Structural []
           BodyUserData = dictPlus HashIdentity.Structural []
           Bodies = dictPlus HashIdentity.Structural []
+          CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
           CharacterContactLock = obj ()
           CharacterContactEvents = hashSetPlus HashIdentity.Structural []
           CharacterCollisionsGround = dictPlus HashIdentity.Structural []
@@ -1012,6 +1017,12 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 match physicsEngine.PhysicsContext.Update (stepTime.Seconds, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
                 | PhysicsUpdateError.None ->
 
+                    // update characters
+                    let characterUpdateSettings = ExtendedUpdateSettings () // TODO: P0: populate fields with arguments.
+                    let characterLayer = 1us : ObjectLayer // TODO: P0: commit to a character layer???
+                    for character in physicsEngine.Characters.Values do
+                        character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+
                     // produce contact removed messages
                     lock physicsEngine.CharacterContactLock $ fun () ->
                         let contactKeysRemoved = List () // TODO: P0: cache this list.
@@ -1043,6 +1054,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                                     //
                                     contactKeysRemoved.Add struct (character, subShape2ID)
 
+                        //
                         for struct (character, contactKey) in contactKeysRemoved do
                             match physicsEngine.CharacterUserData.TryGetValue character with
                             | (true, characterUserData) -> characterUserData.CharacterContacts.Remove contactKey |> ignore<bool>
