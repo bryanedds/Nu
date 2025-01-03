@@ -33,7 +33,7 @@ module TransformMasks =
     let [<Literal>] RotationMatrixDirtyMask =       0b100000000000000000000u
     let [<Literal>] FlagsDefault =                  0b100110100000111110001u
 
-// opening masks for succintness
+// opening masks for succinctness
 open TransformMasks
 
 /// Carries transformation data specific to an Entity.
