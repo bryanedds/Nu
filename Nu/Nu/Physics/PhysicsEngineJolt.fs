@@ -1144,6 +1144,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             // destroy characters
             physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
+                let innerBodyId = character.InnerBodyID
+                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
                 character.Dispose ()
             physicsEngine.Characters.Clear ()
 
