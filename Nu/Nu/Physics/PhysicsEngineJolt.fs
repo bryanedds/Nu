@@ -544,6 +544,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         // attempt to destroy character
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
+            let innerBodyId = character.InnerBodyID
+            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyUserData.Remove character.InnerBodyID |> ignore<bool>
             physicsEngine.CharacterVsCharacterCollision.Remove character
@@ -552,7 +554,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             character.Dispose ()
         | (false, _) ->
 
-            // otherwise, attempt to destroy body
+            // otherwise, attempt to destroy non-character body
             match physicsEngine.Bodies.TryGetValue bodyId with
             | (true, bodyID) ->
                 physicsEngine.Bodies.Remove bodyId |> ignore<bool>
