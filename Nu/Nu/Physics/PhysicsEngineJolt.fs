@@ -375,9 +375,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             characterSettings.PredictiveContactDistance <- 0.1f
             characterSettings.ShapeOffset <- v3Zero
 
-            // shape config (inner shape must come after shape)
+            // shape config
             characterSettings.Shape <- scShapeSettings.Create ()
-            characterSettings.InnerBodyShape <- characterSettings.Shape // NOTE: the following alternative seems to cause a crash: scShapeSettings.Create ()
+
+            // inner shape (must be set after Shape)
+            use scShapeSettingsInner = new StaticCompoundShapeSettings ()
+            PhysicsEngineJolt.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
+            characterSettings.InnerBodyShape <- scShapeSettingsInner.Create ()
 
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
