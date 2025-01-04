@@ -557,7 +557,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
             let innerBodyId = character.InnerBodyID
-            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
+            physicsEngine.PhysicsContext.BodyInterface.RemoveBody &innerBodyId
             character.Dispose ()
         | (false, _) ->
 
@@ -1158,7 +1158,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
                 let innerBodyId = character.InnerBodyID
-                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
+                physicsEngine.PhysicsContext.BodyInterface.RemoveBody &innerBodyId
                 character.Dispose ()
             physicsEngine.Characters.Clear ()
 
