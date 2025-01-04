@@ -465,7 +465,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 physicsEngine.PhysicsContext.AddCollisionObject (ghost, bodyProperties.CollisionCategories, bodyProperties.CollisionMask)
                 let mutable up = v3Up
                 let characterProperties = bodyProperties.CharacterProperties
-                let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
+                let characterController = new KinematicCharacterController (ghost, convexShape, 0.3f, &up)
                 characterController.MaxPenetrationDepth <- characterProperties.CollisionTolerance
                 characterController.MaxSlope <- characterProperties.SlopeMax
                 characterController.Gravity <- Option.defaultValue physicsEngine.PhysicsContext.Gravity bodyProperties.GravityOverride

@@ -22,7 +22,8 @@ type [<Struct>] private CharacterContact =
 
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
-      CharacterContacts : Dictionary<SubShapeID, CharacterContact> }
+      CharacterContacts : Dictionary<SubShapeID, CharacterContact>
+      CharacterProperties : CharacterProperties }
 
 type [<ReferenceEquality>] PhysicsEngineJolt =
     private
@@ -374,7 +375,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | DynamicCharacter -> (MotionType.Dynamic, true)
         if isCharacter then
 
-            // basic config
+            // character config
             let characterSettings = CharacterVirtualSettings ()
             characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
             characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
@@ -382,11 +383,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             characterSettings.innerBodyLayer <- uint16 bodyProperties.CollisionCategories
             characterSettings.Mass <- mass
             characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
-
-            // shape config
             characterSettings.Shape <- scShapeSettings.Create ()
 
-            // inner shape (must be set after Shape)
+            // inner shape config (must be set after Shape property)
             use scShapeSettingsInner = new StaticCompoundShapeSettings ()
             PhysicsEngineJolt.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
             characterSettings.InnerBodyShape <- scShapeSettingsInner.Create ()
@@ -472,7 +471,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     | (false, _) -> Log.warn "Potential logic error.")
             
             //
-            physicsEngine.CharacterUserData.Add (character, { CharacterBodyId = bodyId; CharacterContacts = dictPlus HashIdentity.Structural [] })
+            let characterUserData =
+                { CharacterBodyId = bodyId
+                  CharacterContacts = dictPlus HashIdentity.Structural []
+                  CharacterProperties = bodyProperties.CharacterProperties }
+
+            //
+            physicsEngine.CharacterUserData.Add (character, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
         else
@@ -546,13 +551,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         // attempt to destroy character
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
-            let innerBodyId = character.InnerBodyID
-            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyUserData.Remove character.InnerBodyID |> ignore<bool>
             physicsEngine.CharacterVsCharacterCollision.Remove character
             physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            let innerBodyId = character.InnerBodyID
+            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
             character.Dispose ()
         | (false, _) ->
 
@@ -1049,9 +1054,17 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | PhysicsUpdateError.None ->
 
                     // update characters
-                    let characterUpdateSettings = ExtendedUpdateSettings () // TODO: P0: populate fields with arguments.
                     let characterLayer = 1us : ObjectLayer // TODO: P0: commit to a character layer???
                     for character in physicsEngine.Characters.Values do
+                        let characterProperties = physicsEngine.CharacterUserData.[character].CharacterProperties
+                        let mutable characterUpdateSettings =
+                            ExtendedUpdateSettings
+                                (WalkStairsStepUp = characterProperties.StairStepUp,
+                                 StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
+                                 WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
+                                 WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
+                                 WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
+                                 WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
                         if character.GroundState <> GroundState.OnGround then
                             let gravityForce = physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
                             character.LinearVelocity <- character.LinearVelocity + gravityForce

@@ -412,17 +412,27 @@ type PhysicsMotion =
 
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
-    { StepHeight : single
-      SlopeMax : single
+    { SlopeMax : single
       CollisionPadding : single
-      CollisionTolerance : single }
+      CollisionTolerance : single
+      StairStepUp : Vector3
+      StairStepDownStickToFloor : Vector3
+      StairStepDownExtra : Vector3
+      StairStepForwardTest : single
+      StairStepForwardMin : single
+      StairCosAngleForwardContact : single }
 
     /// The default character properties.
     static member defaultProperties =
-        { StepHeight = 0.3f
-          SlopeMax = Math.DegreesToRadians 45.0f
+        { SlopeMax = Math.DegreesToRadians 45.0f
           CollisionPadding = 0.02f
-          CollisionTolerance = 0.001f }
+          CollisionTolerance = 0.001f
+          StairStepUp = v3 0.0f 0.4f 0.0f
+          StairStepDownStickToFloor = v3 0.0f -0.5f 0.0f
+          StairStepDownExtra = v3Zero
+          StairStepForwardTest = 0.15f
+          StairStepForwardMin = 0.02f
+          StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
