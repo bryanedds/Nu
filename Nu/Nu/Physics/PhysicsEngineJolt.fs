@@ -1048,6 +1048,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     let characterUpdateSettings = ExtendedUpdateSettings () // TODO: P0: populate fields with arguments.
                     let characterLayer = 1us : ObjectLayer // TODO: P0: commit to a character layer???
                     for character in physicsEngine.Characters.Values do
+                        if character.GroundState <> GroundState.OnGround then
+                            let gravityForce = physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
+                            character.LinearVelocity <- character.LinearVelocity + gravityForce
                         character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
                     // produce contact removed messages
