@@ -113,7 +113,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
     static member private attachBoxShape (bodyProperties : BodyProperties) (boxShape : Nu.BoxShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let halfExtent = boxShape.Size * 0.5f
         let shapeSettings = new BoxShapeSettings (&halfExtent)
-        let center = match boxShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+        let struct (center, rotation) =
+            match boxShape.TransformOpt with
+            | Some transform -> struct (transform.Translation, transform.Rotation)
+            | None -> (v3Zero, quatIdentity)
         let shapeSettings =
             match boxShape.TransformOpt with
             | Some transform ->
@@ -122,7 +125,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
             | None -> shapeSettings
         let bodyShapeId = match boxShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+        scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -133,7 +136,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private attachSphereShape (bodyProperties : BodyProperties) (sphereShape : Nu.SphereShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let shapeSettings = new SphereShapeSettings (sphereShape.Radius)
-        let center = match sphereShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+        let struct (center, rotation) =
+            match sphereShape.TransformOpt with
+            | Some transform -> struct (transform.Translation, transform.Rotation)
+            | None -> (v3Zero, quatIdentity)
         let shapeSettings =
             match sphereShape.TransformOpt with
             | Some transform ->
@@ -142,7 +148,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
             | None -> shapeSettings
         let bodyShapeId = match sphereShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+        scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -153,7 +159,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private attachCapsuleShape (bodyProperties : BodyProperties) (capsuleShape : Nu.CapsuleShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
         let shapeSettings = new CapsuleShapeSettings (capsuleShape.Height * 0.5f, capsuleShape.Radius)
-        let center = match capsuleShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+        let struct (center, rotation) =
+            match capsuleShape.TransformOpt with
+            | Some transform -> struct (transform.Translation, transform.Rotation)
+            | None -> (v3Zero, quatIdentity)
         let shapeSettings =
             match capsuleShape.TransformOpt with
             | Some transform ->
@@ -162,7 +171,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
             | None -> shapeSettings
         let bodyShapeId = match capsuleShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+        scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         let mass =
             match bodyProperties.Substance with
             | Density density ->
@@ -194,7 +203,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 unscaledPoints
             else unscaledPoints
         let shapeSettings = new ConvexHullShapeSettings (unscaledPoints)
-        let center = match pointsShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+        let struct (center, rotation) =
+            match pointsShape.TransformOpt with
+            | Some transform -> struct (transform.Translation, transform.Rotation)
+            | None -> (v3Zero, quatIdentity)
         let (scale, shapeSettings) =
             match pointsShape.TransformOpt with
             | Some transform ->
@@ -205,7 +217,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match pointsShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+        scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
         let box = box3 v3Zero ((Box3.Enclose pointsShape.Points).Size * scale)
@@ -225,7 +237,10 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             Array.ofSeq
         let shapeSettings = new MeshShapeSettings (triangles)
         shapeSettings.Sanitize ()
-        let center = match geometryShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+        let struct (center, rotation) =
+            match geometryShape.TransformOpt with
+            | Some transform -> struct (transform.Translation, transform.Rotation)
+            | None -> (v3Zero, quatIdentity)
         let (scale, shapeSettings) =
             match geometryShape.TransformOpt with
             | Some transform ->
@@ -236,7 +251,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match geometryShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-        scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+        scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
         // NOTE: we approximate volume with the volume of a bounding box.
         // TODO: use a more accurate volume calculation.
         let box = box3 v3Zero ((Box3.Enclose geometryShape.Vertices).Size * scale)
@@ -303,14 +318,17 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     let heights = Array.zeroCreate heightMapMetadata.HeightsNormalized.Length
                     for i in 0 .. dec heightMapMetadata.HeightsNormalized.Length do
                         heights.[i] <- heightMapMetadata.HeightsNormalized.[i] * terrainShape.Bounds.Height
-                    let center = match terrainShape.TransformOpt with Some transform -> transform.Translation | None -> v3Zero
+                    let struct (center, rotation) =
+                        match terrainShape.TransformOpt with
+                        | Some transform -> struct (transform.Translation, transform.Rotation)
+                        | None -> (v3Zero, quatIdentity)
                     let size = v3 terrainShape.Bounds.Width terrainShape.Bounds.Height terrainShape.Bounds.Depth
                     let size = match terrainShape.TransformOpt with Some transform -> transform.Scale * size | None -> size
                     let offset = size * -0.5f
                     let tileSize = v3 (size.X / single (dec terrainShape.Resolution.X)) (size.Y / terrainShape.Bounds.Height) (size.Z / single (dec terrainShape.Resolution.Y))
                     let shapeSettings = new HeightFieldShapeSettings (heights.AsSpan (), &offset, &tileSize, terrainShape.Resolution.X)
                     let bodyShapeId = match terrainShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
-                    scShapeSettings.AddShape (&center, &bodyProperties.Rotation, shapeSettings, uint bodyShapeId)
+                    scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
                     0.0f :: masses // infinite mass
                 else
                     Log.error ("Jolt Physics does not support non-square terrain resolution " + scstring terrainShape.Resolution + ".")
