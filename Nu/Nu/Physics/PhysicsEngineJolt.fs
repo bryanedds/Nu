@@ -377,12 +377,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // shape config (inner shape must come after shape)
             characterSettings.Shape <- scShapeSettings.Create ()
-            characterSettings.InnerBodyShape <- null
+            characterSettings.InnerBodyShape <- characterSettings.Shape // NOTE: the following alternative seems to cause a crash: scShapeSettings.Create ()
 
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision (physicsEngine.CharacterVsCharacterCollision)
+            physicsEngine.BodyUserData.Add (character.InnerBodyID, bodyId)
+            physicsEngine.Bodies.Add (bodyId, character.InnerBodyID)
 
             //
             character.add_OnContactValidate (fun _ _ _ ->
@@ -529,22 +531,24 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 PhysicsEngineJolt.destroyBodyJointInternal bodyJointId physicsEngine
         | (false, _) -> ()
 
-        // attempt to destroy body
-        match physicsEngine.Bodies.TryGetValue bodyId with
-        | (true, bodyID) ->
-            physicsEngine.Bodies.Remove bodyId |> ignore<bool>
-            physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
-            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
-        | (false, _) -> ()
-
         // attempt to destroy character
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
+            physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+            physicsEngine.BodyUserData.Remove character.InnerBodyID |> ignore<bool>
             physicsEngine.CharacterVsCharacterCollision.Remove character
             physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
             character.Dispose ()
-        | (false, _) -> ()
+        | (false, _) ->
+
+            // otherwise, attempt to destroy body
+            match physicsEngine.Bodies.TryGetValue bodyId with
+            | (true, bodyID) ->
+                physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+                physicsEngine.BodyUserData.Remove bodyID |> ignore<bool>
+                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
+            | (false, _) -> ()
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
@@ -639,32 +643,32 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         PhysicsEngineJolt.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
-        | (true, bodyID) ->
-            if setBodyEnabledMessage.Enabled
-            then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID
-            else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &bodyID
+        match physicsEngine.Characters.TryGetValue setBodyEnabledMessage.BodyId with
+        | (true, _) -> () // NOTE: nothing to do since character doesn't appear to be deactivatable.
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue setBodyEnabledMessage.BodyId with
-            | (true, _) -> () // NOTE: nothing to do since character doesn't appear to be deactivatable.
+            match physicsEngine.Bodies.TryGetValue setBodyEnabledMessage.BodyId with
+            | (true, bodyID) ->
+                if setBodyEnabledMessage.Enabled
+                then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID
+                else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &bodyID
             | (false, _) -> ()
 
     static member private setBodyCenter (setBodyCenterMessage : SetBodyCenterMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
-        | (true, bodyID) ->
-            physicsEngine.PhysicsContext.BodyInterface.SetPosition (&bodyID, &setBodyCenterMessage.Center, Activation.Activate) // force activation so that a transform message will be produced
+        match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
+        | (true, character) -> character.Position <- setBodyCenterMessage.Center
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue setBodyCenterMessage.BodyId with
-            | (true, character) -> character.Position <- setBodyCenterMessage.Center
+            match physicsEngine.Bodies.TryGetValue setBodyCenterMessage.BodyId with
+            | (true, bodyID) ->
+                physicsEngine.PhysicsContext.BodyInterface.SetPosition (&bodyID, &setBodyCenterMessage.Center, Activation.Activate) // force activation so that a transform message will be produced
             | (false, _) -> ()
 
     static member private setBodyRotation (setBodyRotationMessage : SetBodyRotationMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
-        | (true, bodyID) ->
-            physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &setBodyRotationMessage.Rotation, Activation.Activate) // force activation so that a transform message will be produced
+        match physicsEngine.Characters.TryGetValue setBodyRotationMessage.BodyId with
+        | (true, character) -> character.Rotation <- setBodyRotationMessage.Rotation
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue setBodyRotationMessage.BodyId with
-            | (true, character) -> character.Rotation <- setBodyRotationMessage.Rotation
+            match physicsEngine.Bodies.TryGetValue setBodyRotationMessage.BodyId with
+            | (true, bodyID) ->
+                physicsEngine.PhysicsContext.BodyInterface.SetRotation (&bodyID, &setBodyRotationMessage.Rotation, Activation.Activate) // force activation so that a transform message will be produced
             | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
@@ -680,55 +684,55 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | (false, _) -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
-        | (true, bodyID) ->
-            if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
-                let offset =
-                    match applyBodyLinearImpulseMessage.OriginWorldOpt with
-                    | Some originWorld -> physicsEngine.PhysicsContext.BodyInterface.GetPosition &bodyID - originWorld
-                    | None -> v3Zero
-                physicsEngine.PhysicsContext.BodyInterface.AddImpulse (&bodyID, &applyBodyLinearImpulseMessage.LinearImpulse, &offset)
-            else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Jolt Physics.")
+        match physicsEngine.Characters.TryGetValue applyBodyLinearImpulseMessage.BodyId with
+        | (true, _) -> () // NOTE: doesn't appear that characters can receive impulses.
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue applyBodyLinearImpulseMessage.BodyId with
-            | (true, _) -> () // NOTE: doesn't appear that characters can receive impulses.
+            match physicsEngine.Bodies.TryGetValue applyBodyLinearImpulseMessage.BodyId with
+            | (true, bodyID) ->
+                if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
+                    let offset =
+                        match applyBodyLinearImpulseMessage.OriginWorldOpt with
+                        | Some originWorld -> physicsEngine.PhysicsContext.BodyInterface.GetPosition &bodyID - originWorld
+                        | None -> v3Zero
+                    physicsEngine.PhysicsContext.BodyInterface.AddImpulse (&bodyID, &applyBodyLinearImpulseMessage.LinearImpulse, &offset)
+                else Log.info ("Applying invalid linear impulse '" + scstring applyBodyLinearImpulseMessage.LinearImpulse + "'; this may destabilize Jolt Physics.")
             | (false, _) -> ()
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.BodyId with
-        | (true, bodyID) ->
-            if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X)
-            then physicsEngine.PhysicsContext.BodyInterface.AddAngularImpulse (&bodyID, &applyBodyAngularImpulseMessage.AngularImpulse)
-            else Log.info ("Applying invalid angular impulse '" + scstring applyBodyAngularImpulseMessage.AngularImpulse + "'; this may destabilize Jolt Physics.")
+        match physicsEngine.Characters.TryGetValue applyBodyAngularImpulseMessage.BodyId with
+        | (true, _) -> () // NOTE: doesn't appear that characters can receive impulses.
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue applyBodyAngularImpulseMessage.BodyId with
-            | (true, _) -> () // NOTE: doesn't appear that characters can receive impulses.
+            match physicsEngine.Bodies.TryGetValue applyBodyAngularImpulseMessage.BodyId with
+            | (true, bodyID) ->
+                if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X)
+                then physicsEngine.PhysicsContext.BodyInterface.AddAngularImpulse (&bodyID, &applyBodyAngularImpulseMessage.AngularImpulse)
+                else Log.info ("Applying invalid angular impulse '" + scstring applyBodyAngularImpulseMessage.AngularImpulse + "'; this may destabilize Jolt Physics.")
             | (false, _) -> ()
 
     static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.BodyId with
-        | (true, bodyID) ->
-            if not (Single.IsNaN applyBodyForceMessage.Force.X) then
-                let offset =
-                    match applyBodyForceMessage.OriginWorldOpt with
-                    | Some originWorld -> physicsEngine.PhysicsContext.BodyInterface.GetPosition &bodyID - originWorld
-                    | None -> v3Zero
-                physicsEngine.PhysicsContext.BodyInterface.AddForce (&bodyID, &applyBodyForceMessage.Force, &offset)
-            else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Jolt Physics.")
+        match physicsEngine.Characters.TryGetValue applyBodyForceMessage.BodyId with
+        | (true, _) -> () // NOTE: doesn't appear that characters can receive forces.
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue applyBodyForceMessage.BodyId with
-            | (true, _) -> () // NOTE: doesn't appear that characters can receive forces.
+            match physicsEngine.Bodies.TryGetValue applyBodyForceMessage.BodyId with
+            | (true, bodyID) ->
+                if not (Single.IsNaN applyBodyForceMessage.Force.X) then
+                    let offset =
+                        match applyBodyForceMessage.OriginWorldOpt with
+                        | Some originWorld -> physicsEngine.PhysicsContext.BodyInterface.GetPosition &bodyID - originWorld
+                        | None -> v3Zero
+                    physicsEngine.PhysicsContext.BodyInterface.AddForce (&bodyID, &applyBodyForceMessage.Force, &offset)
+                else Log.info ("Applying invalid force '" + scstring applyBodyForceMessage.Force + "'; this may destabilize Jolt Physics.")
             | (false, _) -> ()
 
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
-        match physicsEngine.Bodies.TryGetValue applyBodyTorqueMessage.BodyId with
-        | (true, bodyID) ->
-            if not (Single.IsNaN applyBodyTorqueMessage.Torque.X)
-            then physicsEngine.PhysicsContext.BodyInterface.AddTorque (&bodyID, &applyBodyTorqueMessage.Torque)
-            else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Jolt Physics.")
+        match physicsEngine.Characters.TryGetValue applyBodyTorqueMessage.BodyId with
+        | (true, _) -> () // NOTE: doesn't appear that characters can receive forces.
         | (false, _) ->
-            match physicsEngine.Characters.TryGetValue applyBodyTorqueMessage.BodyId with
-            | (true, _) -> () // NOTE: doesn't appear that characters can receive forces.
+            match physicsEngine.Bodies.TryGetValue applyBodyTorqueMessage.BodyId with
+            | (true, bodyID) ->
+                if not (Single.IsNaN applyBodyTorqueMessage.Torque.X)
+                then physicsEngine.PhysicsContext.BodyInterface.AddTorque (&bodyID, &applyBodyTorqueMessage.Torque)
+                else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Jolt Physics.")
             | (false, _) -> ()
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
@@ -766,10 +770,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             for contactEvent in physicsEngine.BodyContactEvents do
                 match contactEvent with
                 | BodyContactAdded (bodyID, body2ID, contactNormal) ->
-                    let bodyId = physicsEngine.BodyUserData.[bodyID]
-                    let body2Id = physicsEngine.BodyUserData.[body2ID]
-                    PhysicsEngineJolt.handleBodyPenetration bodyId body2Id contactNormal physicsEngine
-                    PhysicsEngineJolt.handleBodyPenetration body2Id bodyId -contactNormal physicsEngine
+                    match physicsEngine.BodyUserData.TryGetValue bodyID with
+                    | (true, bodyId) ->
+                        match physicsEngine.BodyUserData.TryGetValue body2ID with
+                        | (true, body2Id) ->
+                            PhysicsEngineJolt.handleBodyPenetration bodyId body2Id contactNormal physicsEngine
+                            PhysicsEngineJolt.handleBodyPenetration body2Id bodyId -contactNormal physicsEngine
+                        | (false, _) -> ()
+                    | (false, _) -> ()
                 | BodyContactRemoved (bodyID, body2ID) ->
                     match physicsEngine.BodyUserData.TryGetValue bodyID with
                     | (true, bodyId) ->
@@ -786,12 +794,21 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 match contactEvent with
                 | CharacterContactAdded (character, character2Identifier, _, _, contactNormal) ->
                     let bodyId = (physicsEngine.CharacterUserData.[character]).CharacterBodyId
-                    let body2Id =
+                    let body2IdOpt =
                         match character2Identifier with
-                        | ValueLeft character -> physicsEngine.CharacterUserData.[character].CharacterBodyId
-                        | ValueRight body2ID -> physicsEngine.BodyUserData.[body2ID]
-                    PhysicsEngineJolt.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
-                    PhysicsEngineJolt.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
+                        | ValueLeft character ->
+                            match physicsEngine.CharacterUserData.TryGetValue character with
+                            | (true, characterUserData) -> ValueSome characterUserData.CharacterBodyId
+                            | (false, _) -> ValueNone
+                        | ValueRight body2ID ->
+                            match physicsEngine.BodyUserData.TryGetValue body2ID with
+                            | (true, bodyId) -> ValueSome bodyId
+                            | (false, _) -> ValueNone
+                    match body2IdOpt with
+                    | ValueSome body2Id ->
+                        PhysicsEngineJolt.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
+                        PhysicsEngineJolt.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
+                    | ValueNone -> ()
                 | CharacterContactRemoved (character, character2Identifier, _) ->
                     let bodyId = physicsEngine.CharacterUserData.[character].CharacterBodyId
                     let body2IdOpt =
@@ -925,30 +942,30 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | (false, _) -> ()|]
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
-            match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetLinearVelocity &bodyID
+            match physicsEngine.Characters.TryGetValue bodyId with
+            | (true, character) -> character.LinearVelocity
             | (false, _) ->
-                match physicsEngine.Characters.TryGetValue bodyId with
-                | (true, character) -> character.LinearVelocity
+                match physicsEngine.Bodies.TryGetValue bodyId with
+                | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetLinearVelocity &bodyID
                 | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
-            match physicsEngine.Bodies.TryGetValue bodyId with
-            | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
+            match physicsEngine.Characters.TryGetValue bodyId with
+            | (true, _) -> v3Zero // NOTE: assuming characters don't rotate.
             | (false, _) ->
-                match physicsEngine.Characters.TryGetValue bodyId with
-                | (true, _) -> v3Zero // NOTE: assuming characters don't rotate.
+                match physicsEngine.Bodies.TryGetValue bodyId with
+                | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
                 | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
-            match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
-            | (true, collisions) -> Array.ofSeq collisions.Values
+            match physicsEngine.Characters.TryGetValue bodyId with
+            | (true, character) ->
+                match physicsEngine.CharacterCollisionsGround.TryGetValue character with
+                | (true, collisions) -> Array.ofSeq collisions.Values
+                | (false, _) -> [||]
             | (false, _) ->
-                match physicsEngine.Characters.TryGetValue bodyId with
-                | (true, character) ->
-                    match physicsEngine.CharacterCollisionsGround.TryGetValue character with
-                    | (true, collisions) -> Array.ofSeq collisions.Values
-                    | (false, _) -> [||]
+                match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
+                | (true, collisions) -> Array.ofSeq collisions.Values
                 | (false, _) -> [||]
 
         member physicsEngine.GetBodyToGroundContactNormalOpt bodyId =
