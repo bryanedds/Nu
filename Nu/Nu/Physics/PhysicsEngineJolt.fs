@@ -374,30 +374,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | DynamicCharacter -> (MotionType.Dynamic, true)
         if isCharacter then
 
-            // supporting volume
-            let mutable supportingVolume = Plane ()
-            supportingVolume.Normal <- v3Up
-            supportingVolume.D <- 0.0f // TODO: P0: make sure this makes sense.
-
             // basic config
             let characterSettings = CharacterVirtualSettings ()
-            characterSettings.BackFaceMode <- BackFaceMode.IgnoreBackFaces
             characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
-            characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.PenetrationDepthMax
+            characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
-            characterSettings.HitReductionCosMaxAngle <- 0.999f
             characterSettings.innerBodyLayer <- uint16 bodyProperties.CollisionCategories
             characterSettings.Mass <- mass
-            characterSettings.MaxCollisionIterations <- 5u
-            characterSettings.MaxNumHits <- 256u
             characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
-            characterSettings.MaxStrength <- 100.0f
-            characterSettings.MaxConstraintIterations <- 15u
-            characterSettings.MinTimeRemaining <- 1.0e-4f
-            characterSettings.PenetrationRecoverySpeed <- 1.0f
-            characterSettings.PredictiveContactDistance <- 0.1f
-            characterSettings.ShapeOffset <- v3Zero
-            characterSettings.SupportingVolume <- supportingVolume
 
             // shape config
             characterSettings.Shape <- scShapeSettings.Create ()

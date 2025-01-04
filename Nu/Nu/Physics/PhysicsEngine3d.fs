@@ -466,7 +466,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let mutable up = v3Up
                 let characterProperties = bodyProperties.CharacterProperties
                 let characterController = new KinematicCharacterController (ghost, convexShape, characterProperties.StepHeight, &up)
-                characterController.MaxPenetrationDepth <- characterProperties.PenetrationDepthMax
+                characterController.MaxPenetrationDepth <- characterProperties.CollisionTolerance
                 characterController.MaxSlope <- characterProperties.SlopeMax
                 characterController.Gravity <- Option.defaultValue physicsEngine.PhysicsContext.Gravity bodyProperties.GravityOverride
                 physicsEngine.PhysicsContext.AddAction characterController

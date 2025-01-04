@@ -415,14 +415,14 @@ type [<SymbolicExpansion>] CharacterProperties =
     { StepHeight : single
       SlopeMax : single
       CollisionPadding : single
-      PenetrationDepthMax : single }
+      CollisionTolerance : single }
 
     /// The default character properties.
     static member defaultProperties =
         { StepHeight = 0.3f
           SlopeMax = Math.DegreesToRadians 45.0f
           CollisionPadding = 0.02f
-          PenetrationDepthMax = 0.05f }
+          CollisionTolerance = 0.001f }
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
