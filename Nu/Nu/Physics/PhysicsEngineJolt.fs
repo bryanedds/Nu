@@ -356,6 +356,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | DynamicCharacter -> (MotionType.Dynamic, true)
         if isCharacter then
 
+            // supporting volume
+            let mutable supportingVolume = Plane ()
+            supportingVolume.Normal <- v3Up
+            supportingVolume.D <- 0.0f // TODO: P0: make sure this makes sense.
+
             // basic config
             let characterSettings = CharacterVirtualSettings ()
             characterSettings.BackFaceMode <- BackFaceMode.IgnoreBackFaces
@@ -374,6 +379,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             characterSettings.PenetrationRecoverySpeed <- 1.0f
             characterSettings.PredictiveContactDistance <- 0.1f
             characterSettings.ShapeOffset <- v3Zero
+            characterSettings.SupportingVolume <- supportingVolume
 
             // shape config
             characterSettings.Shape <- scShapeSettings.Create ()
