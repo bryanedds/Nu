@@ -268,14 +268,15 @@ module Physics =
 
     // TODO: P0: get rid of dead constants at end of jolt integration.
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
+    let [<Uniform>] AlwaysObserve = match ConfigurationManager.AppSettings.["AlwaysObserve"] with null -> true | alwaysObserve -> scvalue alwaysObserve
     let [<Literal>] BreakImpulseThresholdDefault = 100000.0f
     let [<Literal>] SleepingThresholdLinear = 1.0f // NOTE: in the example or bullet source code (can't remember), this defaulted to 0.8f...
     let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
     let [<Literal>] CollisionWildcard = "*"
-    let [<Uniform>] Collision3dSteps = match ConfigurationManager.AppSettings.["Collision3dSteps"] with null -> 1 | distance -> scvalue distance
-    let [<Uniform>] Collision3dNumThreads = match ConfigurationManager.AppSettings.["Collision3dNumThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | distance -> scvalue distance
-    let [<Uniform>] Collision3dMaxBarriers = match ConfigurationManager.AppSettings.["Collision3dMaxBarriers"] with null -> max 1 (Environment.ProcessorCount - 2) | distance -> scvalue distance
-    let [<Uniform>] Collision3dMaxJobs = match ConfigurationManager.AppSettings.["Collision3dMaxJobs"] with null -> 128 | distance -> scvalue distance
+    let [<Uniform>] Collision3dSteps = match ConfigurationManager.AppSettings.["Collision3dSteps"] with null -> 1 | step -> scvalue step
+    let [<Uniform>] Collision3dNumThreads = match ConfigurationManager.AppSettings.["Collision3dNumThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | threads -> scvalue threads
+    let [<Uniform>] Collision3dMaxBarriers = match ConfigurationManager.AppSettings.["Collision3dMaxBarriers"] with null -> max 1 (Environment.ProcessorCount - 2) | barriers -> scvalue barriers
+    let [<Uniform>] Collision3dMaxJobs = match ConfigurationManager.AppSettings.["Collision3dMaxJobs"] with null -> 128 | jobs -> scvalue jobs
     let [<Literal>] Collision3dMargin = 0.01f
     let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: seems to also change the smoothness at which character slide.
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)

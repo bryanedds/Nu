@@ -467,7 +467,7 @@ type BodyProperties =
         this.Sensor || this.BodyShape.HasSensors
 
     member this.ShouldObserve =
-        this.HasSensors || this.Observable
+        Constants.Physics.AlwaysObserve || this.HasSensors || this.Observable
 
 /// Identifies a joint in a physics engine.
 type BodyJointId =

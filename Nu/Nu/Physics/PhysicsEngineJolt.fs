@@ -8,10 +8,6 @@ open System.Numerics
 open JoltPhysicsSharp
 open Prime
 
-type [<Struct>] private BodyContactEvent =
-    | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
-    | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
-
 type [<Struct>] private CharacterContactEvent =
     | CharacterContactAdded of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
     | CharacterContactRemoved of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID
@@ -24,6 +20,14 @@ type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
       CharacterContacts : Dictionary<SubShapeID, CharacterContact>
       CharacterProperties : CharacterProperties }
+
+type [<Struct>] private BodyContactEvent =
+    | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
+    | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
+
+type [<Struct>] private BodyUserData =
+    { BodyId : BodyId
+      BodyShouldObserve : bool }
 
 type [<ReferenceEquality>] PhysicsEngineJolt =
     private
@@ -42,7 +46,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
-          BodyUserData : Dictionary<BodyID, BodyId>
+          BodyUserData : Dictionary<BodyID, BodyUserData>
           Bodies : Dictionary<BodyId, BodyID>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
@@ -395,7 +399,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let innerBodyID = character.InnerBodyID
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
-            physicsEngine.BodyUserData.Add (innerBodyID, bodyId)
+            physicsEngine.BodyUserData.Add (innerBodyID, { BodyId = bodyId; BodyShouldObserve = bodyProperties.ShouldObserve })
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
             // set inner body physics properties
@@ -517,7 +521,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             bodyCreationSettings.IsSensor <- bodyProperties.Sensor
             let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
             physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
-            physicsEngine.BodyUserData.Add (body.ID, bodyId)
+            physicsEngine.BodyUserData.Add (body.ID, { BodyId = bodyId; BodyShouldObserve = bodyProperties.ShouldObserve })
             physicsEngine.Bodies.Add (bodyId, body.ID)
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -793,20 +797,20 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 match contactEvent with
                 | BodyContactAdded (bodyID, body2ID, contactNormal) ->
                     match physicsEngine.BodyUserData.TryGetValue bodyID with
-                    | (true, bodyId) ->
+                    | (true, bodyUserData) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
-                        | (true, body2Id) ->
-                            PhysicsEngineJolt.handleBodyPenetration bodyId body2Id contactNormal physicsEngine
-                            PhysicsEngineJolt.handleBodyPenetration body2Id bodyId -contactNormal physicsEngine
+                        | (true, body2UserData) ->
+                            PhysicsEngineJolt.handleBodyPenetration bodyUserData.BodyId body2UserData.BodyId contactNormal physicsEngine
+                            PhysicsEngineJolt.handleBodyPenetration body2UserData.BodyId bodyUserData.BodyId -contactNormal physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
                 | BodyContactRemoved (bodyID, body2ID) ->
                     match physicsEngine.BodyUserData.TryGetValue bodyID with
-                    | (true, bodyId) ->
+                    | (true, bodyUserData) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
-                        | (true, body2Id) ->
-                            PhysicsEngineJolt.handleBodySeparation bodyId body2Id physicsEngine
-                            PhysicsEngineJolt.handleBodySeparation body2Id bodyId physicsEngine
+                        | (true, body2UserData) ->
+                            PhysicsEngineJolt.handleBodySeparation bodyUserData.BodyId body2UserData.BodyId physicsEngine
+                            PhysicsEngineJolt.handleBodySeparation body2UserData.BodyId bodyUserData.BodyId physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
             physicsEngine.BodyContactEvents.Clear ()
@@ -824,7 +828,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             | (false, _) -> ValueNone
                         | ValueRight body2ID ->
                             match physicsEngine.BodyUserData.TryGetValue body2ID with
-                            | (true, bodyId) -> ValueSome bodyId
+                            | (true, bodyUserData) -> ValueSome bodyUserData.BodyId
                             | (false, _) -> ValueNone
                     match body2IdOpt with
                     | ValueSome body2Id ->
@@ -841,7 +845,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             | (false, _) -> ValueNone
                         | ValueRight body2ID ->
                             match physicsEngine.BodyUserData.TryGetValue body2ID with
-                            | (true, bodyId) -> ValueSome bodyId
+                            | (true, bodyUserData) -> ValueSome bodyUserData.BodyId
                             | (false, _) -> ValueNone
                     match body2IdOpt with
                     | ValueSome body2Id ->
@@ -1147,7 +1151,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
                 let innerBodyID = character.InnerBodyID
-                let innerBodyId = physicsEngine.BodyUserData.[innerBodyID]
+                let innerBodyId = physicsEngine.BodyUserData.[innerBodyID].BodyId
                 physicsEngine.CharacterVsCharacterCollision.Remove character
                 physicsEngine.BodyUserData.Remove innerBodyID |> ignore<bool>
                 physicsEngine.Bodies.Remove innerBodyId |> ignore<bool>
