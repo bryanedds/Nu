@@ -941,19 +941,19 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
     interface PhysicsEngine with
 
         member physicsEngine.GetBodyExists bodyId =
-            physicsEngine.Bodies.ContainsKey bodyId ||
-            physicsEngine.Characters.ContainsKey bodyId
+            physicsEngine.Characters.ContainsKey bodyId ||
+            physicsEngine.Bodies.ContainsKey bodyId
 
         member physicsEngine.GetBodyContactNormals bodyId =
-            [|match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
-              | (true, collisions) -> for collision in collisions.Values do collision
+            [|match physicsEngine.Characters.TryGetValue bodyId with
+              | (true, character) ->
+                  match physicsEngine.CharacterCollisionsAll.TryGetValue character with
+                  | (true, collisions) -> yield! collisions.Values
+                  | (false, _) -> ()
               | (false, _) ->
-                match physicsEngine.Characters.TryGetValue bodyId with
-                | (true, character) ->
-                    match physicsEngine.CharacterCollisionsAll.TryGetValue character with
-                    | (true, collisions) -> yield! collisions.Values
-                    | (false, _) -> ()
-                | (false, _) -> ()|]
+                  match physicsEngine.BodyCollisionsAll.TryGetValue bodyId with
+                  | (true, collisions) -> for collision in collisions.Values do collision
+                  | (false, _) -> ()|]
 
         member physicsEngine.GetBodyLinearVelocity bodyId =
             match physicsEngine.Characters.TryGetValue bodyId with
@@ -964,12 +964,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
-            match physicsEngine.Characters.TryGetValue bodyId with
-            | (true, _) -> v3Zero // NOTE: assuming characters don't rotate.
-            | (false, _) ->
-                match physicsEngine.Bodies.TryGetValue bodyId with
-                | (true, bodyID) -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
-                | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
+            match PhysicsEngineJolt.tryGetBodyID bodyId physicsEngine with
+            | ValueSome bodyID -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
+            | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             match physicsEngine.Characters.TryGetValue bodyId with
@@ -996,10 +993,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | None -> None
 
         member physicsEngine.GetBodyGrounded bodyId =
-            physicsEngine.BodyCollisionsGround.ContainsKey bodyId ||
             match physicsEngine.Characters.TryGetValue bodyId with
             | (true, character) -> physicsEngine.CharacterCollisionsGround.ContainsKey character
-            | (false, _) -> false
+            | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
             //let mutable start = start
