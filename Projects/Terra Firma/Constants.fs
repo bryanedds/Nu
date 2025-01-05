@@ -13,6 +13,3 @@ module Constants =
         let [<Literal>] CharacterAnimatedModelName = "AnimatedModel"
         let [<Literal>] CharacterWeaponName = "Weapon"
         let [<Literal>] CharacterWeaponHandBoneName = "mixamorig:RightHand"
-        let [<Literal>] PlayerWalkSpeed = 0.1f
-        let [<Literal>] PlayerTurnSpeed = 0.05f
-        let [<Literal>] PlayerJumpSpeed = 10.0f

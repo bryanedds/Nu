@@ -30,13 +30,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
           UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
-          BodyContactLock : obj
-          BodyContactEvents : BodyContactEvent HashSet
-          BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
-          BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
-          BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
-          BodyUserData : Dictionary<BodyID, BodyId>
-          Bodies : Dictionary<BodyId, BodyID>
           CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
           CharacterContactLock : obj
           CharacterContactEvents : CharacterContactEvent HashSet
@@ -44,6 +37,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           CharacterCollisionsAll : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterVirtual, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
+          BodyContactLock : obj
+          BodyContactEvents : BodyContactEvent HashSet
+          BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
+          BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
+          BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
+          BodyUserData : Dictionary<BodyID, BodyId>
+          Bodies : Dictionary<BodyId, BodyID>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List }
 
@@ -557,7 +557,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
             let innerBodyId = character.InnerBodyID
-            physicsEngine.PhysicsContext.BodyInterface.RemoveBody &innerBodyId
+            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
             character.Dispose ()
         | (false, _) ->
 
@@ -921,13 +921,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
           UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
-          BodyContactLock = contactLock
-          BodyContactEvents = contactEvents
-          BodyCollisionsGround = dictPlus HashIdentity.Structural []
-          BodyCollisionsAll = dictPlus HashIdentity.Structural []
-          BodyConstraints = dictPlus HashIdentity.Structural []
-          BodyUserData = dictPlus HashIdentity.Structural []
-          Bodies = dictPlus HashIdentity.Structural []
           CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
           CharacterContactLock = obj ()
           CharacterContactEvents = hashSetPlus HashIdentity.Structural []
@@ -935,6 +928,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           CharacterCollisionsAll = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
+          BodyContactLock = contactLock
+          BodyContactEvents = contactEvents
+          BodyCollisionsGround = dictPlus HashIdentity.Structural []
+          BodyCollisionsAll = dictPlus HashIdentity.Structural []
+          BodyConstraints = dictPlus HashIdentity.Structural []
+          BodyUserData = dictPlus HashIdentity.Structural []
+          Bodies = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
@@ -1127,6 +1127,25 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 physicsEngine.Characters.Count > 0 ||
                 physicsEngine.IntegrationMessages.Count > 0
 
+            // clear any in-flight character contacts
+            lock physicsEngine.CharacterContactLock $ fun () ->
+                physicsEngine.CharacterContactEvents.Clear ()
+
+            // clear character collision tracking
+            physicsEngine.CharacterCollisionsGround.Clear ()
+            physicsEngine.CharacterCollisionsAll.Clear ()
+
+            // destroy characters
+            physicsEngine.CharacterUserData.Clear ()
+            for character in physicsEngine.Characters.Values do
+                let innerBodyId = character.InnerBodyID
+                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
+                let bodyId = physicsEngine.BodyUserData.[innerBodyId]
+                physicsEngine.BodyUserData.Remove innerBodyId |> ignore<bool>
+                physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+                character.Dispose ()
+            physicsEngine.Characters.Clear ()
+
             // clear any in-flight body contacts
             lock physicsEngine.BodyContactLock $ fun () ->
                 physicsEngine.BodyContactEvents.Clear ()
@@ -1145,22 +1164,6 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &bodyID
             physicsEngine.BodyUserData.Clear ()
             physicsEngine.Bodies.Clear ()
-
-            // clear any in-flight character contacts
-            lock physicsEngine.CharacterContactLock $ fun () ->
-                physicsEngine.CharacterContactEvents.Clear ()
-
-            // clear character collision tracking
-            physicsEngine.CharacterCollisionsGround.Clear ()
-            physicsEngine.CharacterCollisionsAll.Clear ()
-
-            // destroy characters
-            physicsEngine.CharacterUserData.Clear ()
-            for character in physicsEngine.Characters.Values do
-                let innerBodyId = character.InnerBodyID
-                physicsEngine.PhysicsContext.BodyInterface.RemoveBody &innerBodyId
-                character.Dispose ()
-            physicsEngine.Characters.Clear ()
 
             // clear body joint creation messages
             physicsEngine.CreateBodyJointMessages.Clear ()
