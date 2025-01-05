@@ -380,7 +380,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
             characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
-            characterSettings.innerBodyLayer <- uint16 bodyProperties.CollisionCategories
+            characterSettings.innerBodyLayer <- 1us // TODO: P0: use moving layer constant.
             characterSettings.Mass <- mass
             characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
             characterSettings.Shape <- scShapeSettings.Create ()
@@ -489,7 +489,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         else
 
             //
-            let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, uint16 bodyProperties.CollisionCategories)
+            let layer = if bodyProperties.BodyType.IsStatic then 0us else 1us // TODO: P0: use layer constants.
+            let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
             bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
             bodyCreationSettings.Friction <- bodyProperties.Friction
             bodyCreationSettings.Restitution <- bodyProperties.Restitution
@@ -1051,7 +1052,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | PhysicsUpdateError.None ->
 
                     // update characters
-                    let characterLayer = 1us : ObjectLayer // TODO: P0: commit to a character layer???
+                    let characterLayer = 1us : ObjectLayer // TODO: P0: use layer constant.
                     for character in physicsEngine.Characters.Values do
                         let characterProperties = physicsEngine.CharacterUserData.[character].CharacterProperties
                         let mutable characterUpdateSettings =
