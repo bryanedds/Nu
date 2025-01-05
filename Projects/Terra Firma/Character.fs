@@ -349,11 +349,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponCollisions = Set.empty
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
-          JumpSpeed = 5.0f
+          JumpSpeed = 10.0f
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial Player with WalkSpeed = 1.5f }
+        { Character.initial Player with WalkSpeed = 1.0f }
 
     static member initialEnemy =
         { Character.initial Enemy with HitPoints = 3 }
