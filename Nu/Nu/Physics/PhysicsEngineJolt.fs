@@ -27,7 +27,7 @@ type [<Struct>] private BodyContactEvent =
 
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
-      BodyShouldObserve : bool }
+      Observing : bool }
 
 type [<ReferenceEquality>] PhysicsEngineJolt =
     private
@@ -37,8 +37,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
           CharacterContactLock : obj
           CharacterContactEvents : CharacterContactEvent HashSet
-          CharacterCollisionsGround : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
-          CharacterCollisionsAll : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
+          CharacterCollisions : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterVirtual, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
           BodyContactLock : obj
@@ -399,7 +398,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let innerBodyID = character.InnerBodyID
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
-            physicsEngine.BodyUserData.Add (innerBodyID, { BodyId = bodyId; BodyShouldObserve = bodyProperties.ShouldObserve })
+            physicsEngine.BodyUserData.Add (innerBodyID, { BodyId = bodyId; Observing = bodyProperties.ShouldObserve })
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
             // set inner body physics properties
@@ -428,16 +427,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         if not (characterUserData.CharacterContacts.ContainsKey subShape2ID) then
 
                             //
-                            let theta = contactNormal.Dot Vector3.UnitY |> acos |> abs
-                            if theta < Constants.Physics.GroundAngleMax then
-                                match physicsEngine.CharacterCollisionsGround.TryGetValue character with
-                                | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
-                                | (false, _) -> physicsEngine.CharacterCollisionsGround.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
-
-                            //
-                            match physicsEngine.CharacterCollisionsAll.TryGetValue character with
+                            match physicsEngine.CharacterCollisions.TryGetValue character with
                             | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
-                            | (false, _) -> physicsEngine.CharacterCollisionsAll.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
+                            | (false, _) -> physicsEngine.CharacterCollisions.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
 
                             //
                             let character2Identifier = ValueRight body2ID
@@ -464,16 +456,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         if not (characterUserData.CharacterContacts.ContainsKey subShape2ID) then
 
                             //
-                            let theta = contactNormal.Dot Vector3.UnitY |> acos |> abs
-                            if theta < Constants.Physics.GroundAngleMax then
-                                match physicsEngine.CharacterCollisionsGround.TryGetValue character with
-                                | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
-                                | (false, _) -> physicsEngine.CharacterCollisionsGround.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
-
-                            //
-                            match physicsEngine.CharacterCollisionsAll.TryGetValue character with
+                            match physicsEngine.CharacterCollisions.TryGetValue character with
                             | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
-                            | (false, _) -> physicsEngine.CharacterCollisionsAll.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
+                            | (false, _) -> physicsEngine.CharacterCollisions.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
 
                             //
                             let character2Identifier = ValueLeft character2
@@ -521,7 +506,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             bodyCreationSettings.IsSensor <- bodyProperties.Sensor
             let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
             physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
-            physicsEngine.BodyUserData.Add (body.ID, { BodyId = bodyId; BodyShouldObserve = bodyProperties.ShouldObserve })
+            physicsEngine.BodyUserData.Add (body.ID, { BodyId = bodyId; Observing = bodyProperties.ShouldObserve })
             physicsEngine.Bodies.Add (bodyId, body.ID)
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -762,13 +747,17 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | ValueNone -> ()
 
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
-        //match physicsEngine.KinematicCharacters.TryGetValue jumpBodyMessage.BodyId with
-        //| (true, character) ->
-        //    if jumpBodyMessage.CanJumpInAir || character.CharacterController.OnGround then
-        //        character.CharacterController.JumpSpeed <- jumpBodyMessage.JumpSpeed
-        //        character.CharacterController.Jump ()
-        //| (false, _) -> ()
-        ()
+        match physicsEngine.Characters.TryGetValue jumpBodyMessage.BodyId with
+        | (true, character) ->
+            if character.GroundState = GroundState.OnGround then
+                character.LinearVelocity <- character.LinearVelocity + v3Up * jumpBodyMessage.JumpSpeed
+        | (false, _) ->
+            match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
+            | (true, bodyID) ->
+                if physicsEngine.BodyCollisionsGround.ContainsKey jumpBodyMessage.BodyId then
+                    let linearVelocity = physicsEngine.PhysicsContext.BodyInterface.GetLinearVelocity &bodyID + v3Up * jumpBodyMessage.JumpSpeed
+                    physicsEngine.PhysicsContext.BodyInterface.SetLinearVelocity (&bodyID, &linearVelocity)
+            | (false, _) -> ()
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
@@ -931,8 +920,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
           CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
           CharacterContactLock = obj ()
           CharacterContactEvents = hashSetPlus HashIdentity.Structural []
-          CharacterCollisionsGround = dictPlus HashIdentity.Structural []
-          CharacterCollisionsAll = dictPlus HashIdentity.Structural []
+          CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
           BodyContactLock = contactLock
@@ -959,7 +947,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         member physicsEngine.GetBodyContactNormals bodyId =
             [|match physicsEngine.Characters.TryGetValue bodyId with
               | (true, character) ->
-                  match physicsEngine.CharacterCollisionsAll.TryGetValue character with
+                  match physicsEngine.CharacterCollisions.TryGetValue character with
                   | (true, collisions) -> yield! collisions.Values
                   | (false, _) -> ()
               | (false, _) ->
@@ -983,9 +971,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         member physicsEngine.GetBodyToGroundContactNormals bodyId =
             match physicsEngine.Characters.TryGetValue bodyId with
             | (true, character) ->
-                match physicsEngine.CharacterCollisionsGround.TryGetValue character with
-                | (true, collisions) -> Array.ofSeq collisions.Values
-                | (false, _) -> [||]
+                if character.GroundState = GroundState.OnGround
+                then [|character.GroundNormal|]
+                else [||]
             | (false, _) ->
                 match physicsEngine.BodyCollisionsGround.TryGetValue bodyId with
                 | (true, collisions) -> Array.ofSeq collisions.Values
@@ -1006,7 +994,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
         member physicsEngine.GetBodyGrounded bodyId =
             match physicsEngine.Characters.TryGetValue bodyId with
-            | (true, character) -> physicsEngine.CharacterCollisionsGround.ContainsKey character
+            | (true, character) -> character.GroundState = GroundState.OnGround
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
@@ -1089,25 +1077,12 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                                 let subShape2ID = characterContactEntry.Key
                                 let characterContact = characterContactEntry.Value
                                 if not characterContact.ContactFresh.Value then
-
-                                    //
-                                    match physicsEngine.CharacterCollisionsGround.TryGetValue character with
+                                    match physicsEngine.CharacterCollisions.TryGetValue character with
                                     | (true, collisions) ->
                                         collisions.Remove subShape2ID |> ignore<bool>
-                                        if collisions.Count = 0 then physicsEngine.CharacterCollisionsGround.Remove character |> ignore<bool>
+                                        if collisions.Count = 0 then physicsEngine.CharacterCollisions.Remove character |> ignore<bool>
                                     | (false, _) -> ()
-
-                                    //
-                                    match physicsEngine.CharacterCollisionsAll.TryGetValue character with
-                                    | (true, collisions) ->
-                                        collisions.Remove subShape2ID |> ignore<bool>
-                                        if collisions.Count = 0 then physicsEngine.CharacterCollisionsGround.Remove character |> ignore<bool>
-                                    | (false, _) -> ()
-
-                                    //
                                     physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, characterContact.CharacterIdentifier, subShape2ID)) |> ignore<bool>
-
-                                    //
                                     contactKeysRemoved.Add struct (character, subShape2ID)
 
                         //
@@ -1144,8 +1119,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 physicsEngine.CharacterContactEvents.Clear ()
 
             // clear character collision tracking
-            physicsEngine.CharacterCollisionsGround.Clear ()
-            physicsEngine.CharacterCollisionsAll.Clear ()
+            physicsEngine.CharacterCollisions.Clear ()
 
             // destroy characters
             physicsEngine.CharacterUserData.Clear ()
