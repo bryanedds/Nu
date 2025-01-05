@@ -556,9 +556,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let innerBodyID = character.InnerBodyID
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyUserData.Remove character.InnerBodyID |> ignore<bool>
-            physicsEngine.CharacterVsCharacterCollision.Remove character
-            physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            physicsEngine.CharacterUserData.Remove character |> ignore<bool>
+            physicsEngine.CharacterVsCharacterCollision.Remove character
             physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyID
             character.Dispose ()
         | (false, _) ->
@@ -1032,6 +1032,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             PhysicsEngineJolt.handlePhysicsMessage physicsEngine physicsMessage
 
         member physicsEngine.TryIntegrate stepTime =
+
+            // integrate only when time has passed
             if not stepTime.IsZero then
 
                 // zero out character contacts
@@ -1104,8 +1106,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     physicsEngine.IntegrationMessages.Clear ()
                     Some integrationMessages
 
+                // some manner of jolt error
+                // TODO: P0: attempt to increase jolt pool sizes automatically when encountering a related error?
                 | error -> Log.warn ("Jolt Physics internal error: " + scstring error); None
 
+            // no time passed
             else None
 
         member physicsEngine.ClearInternal () =
@@ -1131,6 +1136,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             for character in physicsEngine.Characters.Values do
                 let innerBodyID = character.InnerBodyID
                 let innerBodyId = physicsEngine.BodyUserData.[innerBodyID]
+                physicsEngine.CharacterVsCharacterCollision.Remove character
                 physicsEngine.BodyUserData.Remove innerBodyID |> ignore<bool>
                 physicsEngine.Bodies.Remove innerBodyId |> ignore<bool>
                 physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyID
