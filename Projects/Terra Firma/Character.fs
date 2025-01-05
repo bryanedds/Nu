@@ -208,7 +208,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 // compute new position
                 let forward = rotation.Forward
                 let right = rotation.Right
-                let walkSpeed = character.WalkSpeed * 60.0f * if grounded then 1.0f else 0.75f
+                let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
                 let walkVelocity =
                     (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
@@ -353,7 +353,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial Player with WalkSpeed = 0.075f }
+        { Character.initial Player with WalkSpeed = 1.5f }
 
     static member initialEnemy =
         { Character.initial Enemy with HitPoints = 3 }

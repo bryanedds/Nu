@@ -844,10 +844,22 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.CharacterContactEvents.Clear ()
 
         let bodyInterface = physicsEngine.PhysicsContext.BodyInterface // OPTIMIZATION: cache property for efficiency.
+        for characterEntry in physicsEngine.Characters do
+            let bodyId = characterEntry.Key
+            let character = characterEntry.Value
+            let innerBodyId = character.InnerBodyID
+            let bodyTransformMessage =
+                BodyTransformMessage
+                    { BodyId = bodyId
+                      Center = character.Position
+                      Rotation = character.Rotation
+                      LinearVelocity = character.LinearVelocity
+                      AngularVelocity = bodyInterface.GetAngularVelocity &innerBodyId }
+            physicsEngine.IntegrationMessages.Add bodyTransformMessage
         for bodiesEntry in physicsEngine.Bodies do
             let bodyId = bodiesEntry.Key
             let bodyID = bodiesEntry.Value
-            if bodyInterface.IsActive &bodyID then
+            if bodyInterface.IsActive &bodyID && not (physicsEngine.Characters.ContainsKey bodyId) then
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = bodyId
