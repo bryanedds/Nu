@@ -392,13 +392,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
+            let innerBodyID = character.InnerBodyID
             physicsEngine.CharacterVsCharacterCollision.Add character
-            character.SetCharacterVsCharacterCollision (physicsEngine.CharacterVsCharacterCollision)
-            physicsEngine.BodyUserData.Add (character.InnerBodyID, bodyId)
-            physicsEngine.Bodies.Add (bodyId, character.InnerBodyID)
+            character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
+            physicsEngine.BodyUserData.Add (innerBodyID, bodyId)
+            physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
             //
-            let innerBodyID = character.InnerBodyID
             if bodyProperties.Enabled
             then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &innerBodyID
             else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &innerBodyID
@@ -475,14 +475,9 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             physicsEngine.CharacterContactEvents.Add (CharacterContactAdded (character, character2Identifier, subShape2ID, contactPosition, contactNormal)) |> ignore<bool>
 
                     | (false, _) -> Log.warn "Potential logic error.")
-            
-            //
-            let characterUserData =
-                { CharacterBodyId = bodyId
-                  CharacterContacts = dictPlus HashIdentity.Structural []
-                  CharacterProperties = bodyProperties.CharacterProperties }
 
             //
+            let characterUserData = { CharacterBodyId = bodyId; CharacterContacts = dictPlus HashIdentity.Structural []; CharacterProperties = bodyProperties.CharacterProperties }
             physicsEngine.CharacterUserData.Add (character, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
@@ -558,11 +553,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         // attempt to destroy character
         match physicsEngine.Characters.TryGetValue bodyId with
         | (true, character) ->
+            let innerBodyID = character.InnerBodyID
             physicsEngine.Bodies.Remove bodyId |> ignore<bool>
             physicsEngine.BodyUserData.Remove character.InnerBodyID |> ignore<bool>
             physicsEngine.CharacterVsCharacterCollision.Remove character
             physicsEngine.CharacterUserData.Remove character |> ignore<bool>
             physicsEngine.Characters.Remove bodyId |> ignore<bool>
+            physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyID
             character.Dispose ()
         | (false, _) ->
 
@@ -1136,11 +1133,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             // destroy characters
             physicsEngine.CharacterUserData.Clear ()
             for character in physicsEngine.Characters.Values do
-                let innerBodyId = character.InnerBodyID
-                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyId
-                let bodyId = physicsEngine.BodyUserData.[innerBodyId]
-                physicsEngine.BodyUserData.Remove innerBodyId |> ignore<bool>
-                physicsEngine.Bodies.Remove bodyId |> ignore<bool>
+                let innerBodyID = character.InnerBodyID
+                let innerBodyId = physicsEngine.BodyUserData.[innerBodyID]
+                physicsEngine.BodyUserData.Remove innerBodyID |> ignore<bool>
+                physicsEngine.Bodies.Remove innerBodyId |> ignore<bool>
+                physicsEngine.PhysicsContext.BodyInterface.RemoveAndDestroyBody &innerBodyID
                 character.Dispose ()
             physicsEngine.Characters.Clear ()
 
