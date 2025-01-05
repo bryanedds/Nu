@@ -398,10 +398,15 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             physicsEngine.BodyUserData.Add (innerBodyID, bodyId)
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
-            //
-            if bodyProperties.Enabled
-            then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &innerBodyID
-            else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &innerBodyID
+            // set inner body physics properties
+            // NOTE: dummied out since I don't think any of this does anything.
+            //if bodyProperties.Enabled
+            //then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &innerBodyID
+            //else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &innerBodyID
+            //physicsEngine.PhysicsContext.BodyInterface.SetFriction (&innerBodyID, bodyProperties.Friction)
+            //physicsEngine.PhysicsContext.BodyInterface.SetRestitution (&innerBodyID, bodyProperties.Restitution)
+            //let motionQuality = match bodyProperties.CollisionDetection with Discontinuous -> MotionQuality.Discrete | Continuous (_, _) -> MotionQuality.LinearCast
+            //physicsEngine.PhysicsContext.BodyInterface.SetMotionQuality (&innerBodyID, motionQuality)
 
             //
             character.add_OnContactValidate (fun _ _ _ ->
@@ -698,10 +703,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> ()
 
     static member private setBodyLinearVelocity (setBodyLinearVelocityMessage : SetBodyLinearVelocityMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID setBodyLinearVelocityMessage.BodyId physicsEngine with
-        | ValueSome bodyID ->
-            physicsEngine.PhysicsContext.BodyInterface.SetLinearVelocity (&bodyID, &setBodyLinearVelocityMessage.LinearVelocity)
-        | ValueNone -> ()
+        match physicsEngine.Characters.TryGetValue setBodyLinearVelocityMessage.BodyId with
+        | (true, character) -> character.LinearVelocity <- setBodyLinearVelocityMessage.LinearVelocity
+        | (false, _) ->
+            match physicsEngine.Bodies.TryGetValue setBodyLinearVelocityMessage.BodyId with
+            | (true, bodyID) ->
+                physicsEngine.PhysicsContext.BodyInterface.SetLinearVelocity (&bodyID, &setBodyLinearVelocityMessage.LinearVelocity)
+            | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
         match PhysicsEngineJolt.tryGetBodyID setBodyAngularVelocityMessage.BodyId physicsEngine with
@@ -1058,10 +1066,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                                  WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
                                  WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
                                  WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
+                        character.LinearVelocity <-
+                            character.LinearVelocity -
+                            (character.LinearVelocity * (v3Dup characterProperties.TraversalDamping).WithY 0.0f * stepTime.Seconds)
                         if character.GroundState <> GroundState.OnGround then
                             let gravityForce = physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
                             character.LinearVelocity <- character.LinearVelocity + gravityForce
                         character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+                        //character.Update (stepTime.Seconds, &characterLayer, physicsEngine.PhysicsContext)
 
                     // produce contact removed messages
                     lock physicsEngine.CharacterContactLock $ fun () ->

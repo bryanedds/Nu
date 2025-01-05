@@ -171,7 +171,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let lastTimeOnGround = if grounded then time else character.JumpState.LastTimeOnGround
         { character with Character.JumpState.LastTimeOnGround = lastTimeOnGround }
 
-    static member private updateInput time position (rotation : Quaternion) grounded (playerPosition : Vector3) character world =
+    static member private updateInput time (position : Vector3) (rotation : Quaternion) grounded (playerPosition : Vector3) character world =
         match character.CharacterType with
         | Player ->
 
@@ -208,13 +208,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                 // compute new position
                 let forward = rotation.Forward
                 let right = rotation.Right
-                let walkSpeed = character.WalkSpeed * if grounded then 1.0f else 0.75f
+                let walkSpeed = character.WalkSpeed * 60.0f * if grounded then 1.0f else 0.75f
                 let walkVelocity =
                     (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
                     (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
-                let position = if walkVelocity <> v3Zero then position + walkVelocity else position
 
                 // compute new rotation
                 let turnSpeed = character.TurnSpeed * if grounded then 1.0f else 0.75f
@@ -222,9 +221,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                     (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
                 let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
-                (jump, position, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
+                (jump, None, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
 
-            else (jump, position, rotation, v3Zero, v3Zero, character)
+            else (jump, None, rotation, v3Zero, v3Zero, character)
 
         | Enemy ->
             
@@ -280,8 +279,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
-                (false, followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
-            | None -> (false, position, rotation, v3Zero, v3Zero, character)
+                (false, Some followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
+            | None -> (false, Some position, rotation, v3Zero, v3Zero, character)
 
     static member private updateActionState time character =
         match character.ActionState with
@@ -304,8 +303,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
             { character with ActionState = actionState }
         | WoundState _ -> character
 
-    static member private updateAnimations time position rotation linearVelocity angularVelocity character world =
-        ignore<Vector3> position
+    static member private updateAnimations time rotation linearVelocity angularVelocity character world =
         let traversalAnimations = Character.computeTraversalAnimations rotation linearVelocity angularVelocity character
         let (animations, invisible) =
             match Character.tryUpdateActionAnimation time character world with
@@ -331,11 +329,12 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member update time position rotation linearVelocity angularVelocity grounded playerPosition character world =
         let character = Character.updateInterps position rotation linearVelocity angularVelocity character
         let character = Character.updateJumpState time grounded character
-        let (jump, position, rotation, linearVelocity, angularVelocity, character) = Character.updateInput time position rotation grounded playerPosition character world
+        let (jump, positionOpt, rotation, linearVelocity, angularVelocity, character) = Character.updateInput time position rotation grounded playerPosition character world
         let character = Character.updateActionState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
-        let (animations, invisible) = Character.updateAnimations time position rotation linearVelocity angularVelocity character world
-        (animations, invisible, attackedCharacters, jump, position, rotation, character)
+        let (animations, invisible) = Character.updateAnimations time rotation linearVelocity angularVelocity character world
+        let navigation = match positionOpt with Some position -> Left position | None -> Right linearVelocity
+        (animations, invisible, attackedCharacters, jump, navigation, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType
@@ -354,7 +353,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial Player with WalkSpeed = 0.06f }
+        { Character.initial Player with WalkSpeed = 0.075f }
 
     static member initialEnemy =
         { Character.initial Enemy with HitPoints = 3 }
