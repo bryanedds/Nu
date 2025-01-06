@@ -716,11 +716,18 @@ type BodyTransformMessage =
       LinearVelocity : Vector3
       AngularVelocity : Vector3 }
 
+/// A message from the physics system describing a body joint break.
+type BodyJointBreakMessage =
+    { BodyJointId : BodyJointId
+      BreakingPoint : single
+      BreakingOverflow : single }
+
 /// A message from the physics system.
 type IntegrationMessage =
     | BodyPenetrationMessage of BodyPenetrationMessage
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
+    | BodyJointBreakMessage of BodyJointBreakMessage
 
 /// A message to the physics system.
 type PhysicsMessage =

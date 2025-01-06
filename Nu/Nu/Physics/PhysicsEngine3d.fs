@@ -65,6 +65,9 @@ type [<Struct>] private BodyUserData =
     { BodyId : BodyId
       Observing : bool }
 
+type [<Struct>] private BodyConstraintEvent =
+    | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
+
 type [<Struct>] private BodyConstraintUserData =
     { BreakingPoint : single }
 
@@ -87,6 +90,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyUserData : Dictionary<BodyID, BodyUserData>
           Bodies : Dictionary<BodyId, BodyID>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
+          BodyConstraintEvents : BodyConstraintEvent List
           BodyConstraintUserData : Dictionary<BodyJointId, BodyConstraintUserData>
           BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
           IntegrationMessages : IntegrationMessage List }
@@ -821,6 +825,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member private createIntegrationMessages (physicsEngine : PhysicsEngine3d) =
 
+        //
         lock physicsEngine.BodyContactLock $ fun () ->
             for contactEvent in physicsEngine.BodyContactEvents do
                 match contactEvent with
@@ -844,6 +849,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | (false, _) -> ()
             physicsEngine.BodyContactEvents.Clear ()
 
+        //
         lock physicsEngine.CharacterContactLock $ fun () ->
             for contactEvent in physicsEngine.CharacterContactEvents do
                 match contactEvent with
@@ -883,6 +889,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | ValueNone -> ()
             physicsEngine.CharacterContactEvents.Clear ()
 
+        //
+        for bodyConstraintEvent in physicsEngine.BodyConstraintEvents do
+            match bodyConstraintEvent with
+            | BodyConstraintBreak (bodyJointId, breakingPoint, breakingOverflow) ->
+                let bodyJointBreakMessage = BodyJointBreakMessage { BodyJointId = bodyJointId; BreakingPoint = breakingPoint; BreakingOverflow = breakingOverflow }
+                physicsEngine.IntegrationMessages.Add bodyJointBreakMessage
+        physicsEngine.BodyConstraintEvents.Clear ()
+
+        //
         let bodyInterface = physicsEngine.PhysicsContext.BodyInterface // OPTIMIZATION: cache property for efficiency.
         for characterEntry in physicsEngine.Characters do
             let bodyId = characterEntry.Key
@@ -896,6 +911,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                       LinearVelocity = character.LinearVelocity
                       AngularVelocity = bodyInterface.GetAngularVelocity &innerBodyId }
             physicsEngine.IntegrationMessages.Add bodyTransformMessage
+
+        //
         for bodiesEntry in physicsEngine.Bodies do
             let bodyId = bodiesEntry.Key
             let bodyID = bodiesEntry.Value
@@ -978,6 +995,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyUserData = dictPlus HashIdentity.Structural []
           Bodies = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
+          BodyConstraintEvents = List ()
           BodyConstraintUserData = dictPlus HashIdentity.Structural []
           BodyConstraints = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
@@ -1096,15 +1114,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | PhysicsUpdateError.ManifoldCacheFull as error ->
                     Log.warnOnce
                         ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
-                            nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
+                         nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
                 | PhysicsUpdateError.BodyPairCacheFull as error ->
                     Log.warnOnce
                         ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
-                            nameof Constants.Physics.Collision3dBodyPairsMax + ".")
+                         nameof Constants.Physics.Collision3dBodyPairsMax + ".")
                 | PhysicsUpdateError.ContactConstraintsFull as error ->
                     Log.warnOnce
                         ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
-                            nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
+                         nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
                 | _ -> ()
 
                 // update characters
@@ -1139,8 +1157,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         | _ -> ValueNone
                     match lambdaPositionOpt with
                     | ValueSome lambdaPosition ->
-                        if lambdaPosition >= physicsEngine.BodyConstraintUserData.[bodyJointId].BreakingPoint then
-                            // TODO: P0: surface body joiny break event so it can be reflected on the user side.
+                        let breakingPoint = physicsEngine.BodyConstraintUserData.[bodyJointId].BreakingPoint
+                        let breakingDelta = lambdaPosition - breakingPoint
+                        if breakingDelta >= 0.0f && constrain.Enabled then
+                            physicsEngine.BodyConstraintEvents.Add (BodyConstraintBreak (bodyJointId, breakingPoint, breakingDelta))
                             constrain.Enabled <- false
                     | ValueNone -> ()
 
@@ -1228,8 +1248,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyUserData.Clear ()
             physicsEngine.Bodies.Clear ()
 
-            // clear body joint bookkeeping
+            // clear body joints
             physicsEngine.CreateBodyJointMessages.Clear ()
+            physicsEngine.BodyConstraintEvents.Clear ()
             physicsEngine.BodyConstraintUserData.Clear ()
             physicsEngine.BodyConstraints.Clear ()
 

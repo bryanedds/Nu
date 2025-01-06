@@ -1544,6 +1544,7 @@ module BodyJointFacetExtensions =
         member this.CollideConnected = lens (nameof this.CollideConnected) this this.GetCollideConnected this.SetCollideConnected
         member this.GetBodyJointId world : BodyJointId = this.Get (nameof this.BodyJointId) world
         member this.BodyJointId = lensReadOnly (nameof this.BodyJointId) this this.GetBodyJointId
+        member this.BodyJointBreakEvent = Events.BodyJointBreakEvent --> this
 
 /// Augments an entity with a physics-driven joint.
 type BodyJointFacet () =
