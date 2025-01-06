@@ -846,6 +846,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
+          LayeredOperations : LayeredOperation2d List
           TransientTextures : Vortice.Vulkan.Texture.Texture List }
 
     static member private invalidateCaches renderer =
@@ -989,7 +990,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     static member private handleRenderMessage renderMessage renderer =
         match renderMessage with
-        | LayeredOperation2d operation -> ()// renderer.LayeredOperations.Add operation
+        | LayeredOperation2d operation -> renderer.LayeredOperations.Add operation
         | LoadRenderPackage2d hintPackageUse -> VulkanRenderer2d.handleLoadRenderPackage hintPackageUse renderer
         | UnloadRenderPackage2d hintPackageDisuse -> VulkanRenderer2d.handleUnloadRenderPackage hintPackageDisuse renderer
         | ReloadRenderAssets2d -> renderer.ReloadAssetsRequested <- true
@@ -998,17 +999,55 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for renderMessage in renderMessages do
             VulkanRenderer2d.handleRenderMessage renderMessage renderer
     
+    static member private sortLayeredOperations renderer =
+        renderer.LayeredOperations.Sort (LayeredOperation2dComparer ())
+    
+    static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
+        match descriptor with
+        | RenderSprite descriptor -> ()
+//            GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
+        | RenderSprites descriptor -> ()
+//            let sprites = descriptor.Sprites
+//            for index in 0 .. sprites.Length - 1 do
+//                let sprite = &sprites.[index]
+//                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+        | RenderSpriteDescriptors descriptor -> ()
+//            let sprites = descriptor.SpriteDescriptors
+//            for index in 0 .. sprites.Length - 1 do
+//                let sprite = sprites.[index]
+//                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+        | RenderSpriteParticles descriptor -> ()
+//            GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
+        | RenderCachedSprite descriptor -> ()
+//            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
+        | RenderText descriptor -> ()
+//            GlRenderer2d.renderText
+//                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
+        | RenderTiles descriptor -> ()
+//            GlRenderer2d.renderTiles
+//                (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
+//                 descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
+//                 eyeCenter, eyeSize, renderer)
+
+    static member private renderLayeredOperations eyeCenter eyeSize renderer =
+        for operation in renderer.LayeredOperations do
+            VulkanRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize renderer
+    
     static member private destroyTransientTextures renderer =
         for texture in renderer.TransientTextures do
             texture.Destroy renderer.VulkanGlobal
     
-    static member private render _ _ renderMessages renderer =
+    static member private render eyeCenter eyeSize renderMessages renderer =
         
         // destroy textures created and used (*after* renderer2d.render at command execution) in the previous frame
         VulkanRenderer2d.destroyTransientTextures renderer
         renderer.TransientTextures.Clear ()
         
+        // render frame
         VulkanRenderer2d.handleRenderMessages renderMessages renderer
+        VulkanRenderer2d.sortLayeredOperations renderer
+        VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
+        renderer.LayeredOperations.Clear ()
 
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
@@ -1037,6 +1076,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
+              LayeredOperations = List ()
               TransientTextures = List () }
 
         // fin
