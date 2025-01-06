@@ -893,7 +893,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         for bodiesEntry in physicsEngine.Bodies do
             let bodyId = bodiesEntry.Key
             let bodyID = bodiesEntry.Value
-            if bodyInterface.IsActive &bodyID && not (physicsEngine.Characters.ContainsKey bodyId) then
+            if  bodyInterface.IsActive &bodyID &&
+                not (physicsEngine.Characters.ContainsKey bodyId) then
                 let bodyTransformMessage =
                     BodyTransformMessage
                         { BodyId = bodyId
@@ -944,10 +945,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyID = subShapeIDPair.Body1ID
             let body2ID = subShapeIDPair.Body2ID
             lock contactLock $ fun () -> contactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
-
-        // TODO: P0: see if we need this to send awakeness to the engine.
-        //physicsSystem.add_OnBodyActivated ???
-        //physicsSystem.add_OnBodyDeactivated ???
 
         let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
         jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dMaxJobs

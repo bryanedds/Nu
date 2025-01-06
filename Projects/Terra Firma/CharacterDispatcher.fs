@@ -46,7 +46,7 @@ type CharacterDispatcher (character : Character) =
          Entity.Static == false
          Entity.BodyType == KinematicCharacter
          Entity.BodyShape == CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None }
-         Entity.SleepingAllowed == true // TODO: P0: ensure this is a meaningful value for Jolt characters.
+         Entity.Substance == Mass 50.0f
          Entity.CharacterProperties == character.CharacterProperties
          Entity.Observable == true
          Entity.FollowTargetOpt := match character.CharacterType with Enemy -> Some Simulants.GameplayPlayer | Player -> None
