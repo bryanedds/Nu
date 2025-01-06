@@ -132,8 +132,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         | (false, _) -> ()
 
     static member private handleCharacterPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
-
-        //
         let bodyPenetrationMessage =
             { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
               BodyShapeSource2 = { BodyId = body2Id; BodyShapeIndex = 0 }
@@ -142,8 +140,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsEngine.IntegrationMessages.Add integrationMessage
 
     static member private handleCharacterSeparation (bodyId : BodyId) (body2Id : BodyId) physicsEngine =
-
-        //
         let bodySeparationMessage =
             { BodyShapeSource = { BodyId = bodyId; BodyShapeIndex = 0 }
               BodyShapeSource2 = { BodyId = body2Id; BodyShapeIndex = 0 }}
@@ -419,7 +415,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             characterSettings.CharacterPadding <- bodyProperties.CharacterProperties.CollisionPadding
             characterSettings.CollisionTolerance <- bodyProperties.CharacterProperties.CollisionTolerance
             characterSettings.EnhancedInternalEdgeRemoval <- true
-            characterSettings.innerBodyLayer <- 1us // TODO: P0: use moving layer constant.
+            characterSettings.innerBodyLayer <- Constants.Physics.ObjectLayerMoving
             characterSettings.Mass <- mass
             characterSettings.MaxSlopeAngle <- bodyProperties.CharacterProperties.SlopeMax
             characterSettings.Shape <- scShapeSettings.Create ()
@@ -514,7 +510,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         else
 
             //
-            let layer = if bodyProperties.BodyType.IsStatic then 0us else 1us // TODO: P0: use layer constants.
+            let layer = if bodyProperties.BodyType.IsStatic then Constants.Physics.ObjectLayerNonMoving else Constants.Physics.ObjectLayerMoving
             let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
             bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
             bodyCreationSettings.Friction <- bodyProperties.Friction
@@ -912,20 +908,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         if not (Foundation.Init false) then
             Log.fail "Could not initialize Jolt Physics."
 
-        let objectLayerNonMoving = 0us
-        let broadPhaseLayerNonMoving = byte 0
-        let objectLayerMoving = 1us
-        let broadPhaseLayerMoving = byte 1
-
         // We use only 2 layers: one for non-moving objects and one for moving objects
         let objectLayerPairFilter = new ObjectLayerPairFilterTable (2u)
-        objectLayerPairFilter.EnableCollision (objectLayerNonMoving, objectLayerMoving)
-        objectLayerPairFilter.EnableCollision (objectLayerMoving, objectLayerMoving)
+        objectLayerPairFilter.EnableCollision (Constants.Physics.ObjectLayerNonMoving, Constants.Physics.ObjectLayerMoving)
+        objectLayerPairFilter.EnableCollision (Constants.Physics.ObjectLayerMoving, Constants.Physics.ObjectLayerMoving)
 
         // We use a 1-to-1 mapping between object layers and broadphase layers
         let broadPhaseLayerInterface = new BroadPhaseLayerInterfaceTable (2u, 2u)
-        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (objectLayerNonMoving, broadPhaseLayerNonMoving)
-        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (objectLayerMoving, broadPhaseLayerMoving)
+        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (Constants.Physics.ObjectLayerNonMoving, Constants.Physics.BroadPhaseLayerNonMoving)
+        broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (Constants.Physics.ObjectLayerMoving, Constants.Physics.BroadPhaseLayerMoving)
 
         let objectVsBroadPhaseLayerFilter = new ObjectVsBroadPhaseLayerFilterTable (broadPhaseLayerInterface, 2u, objectLayerPairFilter, 2u)
 
@@ -1097,7 +1088,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | PhysicsUpdateError.None ->
 
                     // update characters
-                    let characterLayer = 1us : ObjectLayer // TODO: P0: use layer constant.
+                    let characterLayer = Constants.Physics.ObjectLayerMoving
                     for character in physicsEngine.Characters.Values do
                         let characterProperties = physicsEngine.CharacterUserData.[character].CharacterProperties
                         let mutable characterUpdateSettings =

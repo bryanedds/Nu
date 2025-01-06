@@ -275,6 +275,10 @@ module Physics =
     let [<Uniform>] Collision3dMaxBarriers = match ConfigurationManager.AppSettings.["Collision3dMaxBarriers"] with null -> max 1 (Environment.ProcessorCount - 2) | barriers -> scvalue barriers
     let [<Uniform>] Collision3dMaxJobs = match ConfigurationManager.AppSettings.["Collision3dMaxJobs"] with null -> 128 | jobs -> scvalue jobs
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
+    let [<Uniform>] BroadPhaseLayerNonMoving = byte 0 // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] BroadPhaseLayerMoving = byte 1 // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0us // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us // NOTE: do not use this outside of the engine code.
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
 
 [<RequireQualifiedAccess>]
