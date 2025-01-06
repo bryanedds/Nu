@@ -65,6 +65,9 @@ type [<Struct>] private BodyUserData =
     { BodyId : BodyId
       Observing : bool }
 
+type [<Struct>] private BodyConstraintUserData =
+    { BreakingPoint : single }
+
 type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem
@@ -81,10 +84,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyContactEvents : BodyContactEvent HashSet
           BodyCollisionsGround : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
           BodyCollisionsAll : Dictionary<BodyId, Dictionary<BodyId, Vector3>>
-          BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
           BodyUserData : Dictionary<BodyID, BodyUserData>
           Bodies : Dictionary<BodyId, BodyID>
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
+          BodyConstraintUserData : Dictionary<BodyJointId, BodyConstraintUserData>
+          BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
           IntegrationMessages : IntegrationMessage List }
 
     static member private handleBodyPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
@@ -650,8 +654,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 match constrainOpt with
                 | Some constrain ->
                     physicsEngine.PhysicsContext.AddConstraint constrain
-                    if physicsEngine.BodyConstraints.TryAdd (bodyJointId, constrain)
-                    then () // nothing to do
+                    if physicsEngine.BodyConstraintUserData.TryAdd (bodyJointId, { BreakingPoint = bodyJointProperties.BreakingPoint })
+                    then physicsEngine.BodyConstraints.Add (bodyJointId, constrain)
                     else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
                 | None -> ()
             | (_, _) -> ()
@@ -672,6 +676,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         match physicsEngine.BodyConstraints.TryGetValue bodyJointId with
         | (true, joint) ->
             physicsEngine.BodyConstraints.Remove bodyJointId |> ignore
+            physicsEngine.BodyConstraintUserData.Remove bodyJointId |> ignore
             physicsEngine.PhysicsContext.RemoveConstraint joint
         | (false, _) -> ()
 
@@ -970,10 +975,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyContactEvents = contactEvents
           BodyCollisionsGround = dictPlus HashIdentity.Structural []
           BodyCollisionsAll = dictPlus HashIdentity.Structural []
-          BodyConstraints = dictPlus HashIdentity.Structural []
           BodyUserData = dictPlus HashIdentity.Structural []
           Bodies = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
+          BodyConstraintUserData = dictPlus HashIdentity.Structural []
+          BodyConstraints = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
     static member cleanUp physicsEngine =
@@ -1085,82 +1091,90 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         for characterContactEntry in characterUserData.CharacterContacts do
                             characterContactEntry.Value.ContactFresh.Value <- false
 
-                // attempt to update
+                // update non-character physics, logging on error (integration should still advance sim regardless of error)
                 match physicsEngine.PhysicsContext.Update (stepTime.Seconds, Constants.Physics.Collision3dSteps, physicsEngine.JobSystem) with
-                | PhysicsUpdateError.None ->
+                | PhysicsUpdateError.ManifoldCacheFull as error ->
+                    Log.warnOnce
+                        ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
+                            nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
+                | PhysicsUpdateError.BodyPairCacheFull as error ->
+                    Log.warnOnce
+                        ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
+                            nameof Constants.Physics.Collision3dBodyPairsMax + ".")
+                | PhysicsUpdateError.ContactConstraintsFull as error ->
+                    Log.warnOnce
+                        ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
+                            nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
+                | _ -> ()
 
-                    // update characters
-                    let characterLayer = Constants.Physics.ObjectLayerMoving
-                    for character in physicsEngine.Characters.Values do
-                        let characterProperties = physicsEngine.CharacterUserData.[character].CharacterProperties
-                        let mutable characterUpdateSettings =
-                            ExtendedUpdateSettings
-                                (WalkStairsStepUp = characterProperties.StairStepUp,
-                                 StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
-                                 WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
-                                 WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
-                                 WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
-                                 WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
-                        character.LinearVelocity <-
-                            character.LinearVelocity -
-                            (character.LinearVelocity * (v3Dup characterProperties.TraversalDamping).WithY 0.0f * stepTime.Seconds)
-                        character.LinearVelocity <-
-                            if character.GroundState = GroundState.OnGround
-                            then character.LinearVelocity.MapY (max 0.0f)
-                            else character.LinearVelocity + physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
-                        character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
+                // update characters
+                let characterLayer = Constants.Physics.ObjectLayerMoving
+                for character in physicsEngine.Characters.Values do
+                    let characterProperties = physicsEngine.CharacterUserData.[character].CharacterProperties
+                    let mutable characterUpdateSettings =
+                        ExtendedUpdateSettings
+                            (WalkStairsStepUp = characterProperties.StairStepUp,
+                                StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
+                                WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
+                                WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
+                                WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
+                                WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
+                    character.LinearVelocity <-
+                        character.LinearVelocity -
+                        (character.LinearVelocity * (v3Dup characterProperties.TraversalDamping).WithY 0.0f * stepTime.Seconds)
+                    character.LinearVelocity <-
+                        if character.GroundState = GroundState.OnGround
+                        then character.LinearVelocity.MapY (max 0.0f)
+                        else character.LinearVelocity + physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
+                    character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
-                    // produce contact removed messages
-                    lock physicsEngine.CharacterContactLock $ fun () ->
-                        for characterUserDataEntry in physicsEngine.CharacterUserData do
-                            let character = characterUserDataEntry.Key
-                            let characterUserData = characterUserDataEntry.Value
-                            for characterContactEntry in characterUserData.CharacterContacts do
-                                let subShape2ID = characterContactEntry.Key
-                                let characterContact = characterContactEntry.Value
-                                if not characterContact.ContactFresh.Value then
-                                    match physicsEngine.CharacterCollisions.TryGetValue character with
-                                    | (true, collisions) ->
-                                        collisions.Remove subShape2ID |> ignore<bool>
-                                        if collisions.Count = 0 then physicsEngine.CharacterCollisions.Remove character |> ignore<bool>
-                                    | (false, _) -> ()
-                                    physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, characterContact.CharacterIdentifier, subShape2ID)) |> ignore<bool>
-                                    physicsEngine.CharacterContactRemovalCache.Add struct (character, subShape2ID)
+                // update constraints
+                for bodyConstraintEntry in physicsEngine.BodyConstraints do
+                    let bodyJointId = bodyConstraintEntry.Key
+                    let constrain = bodyConstraintEntry.Value
+                    let lambdaPositionOpt =
+                        match constrain with
+                        | :? HingeConstraint as constrain -> ValueSome constrain.TotalLambdaPosition.Magnitude
+                        | :? DistanceConstraint as constrain -> ValueSome constrain.TotalLambdaPosition
+                        | _ -> ValueNone
+                    match lambdaPositionOpt with
+                    | ValueSome lambdaPosition ->
+                        if lambdaPosition >= physicsEngine.BodyConstraintUserData.[bodyJointId].BreakingPoint then
+                            // TODO: P0: surface body joiny break event so it can be reflected on the user side.
+                            constrain.Enabled <- false
+                    | ValueNone -> ()
 
-                        //
-                        for struct (character, contactKey) in physicsEngine.CharacterContactRemovalCache do
-                            match physicsEngine.CharacterUserData.TryGetValue character with
-                            | (true, characterUserData) -> characterUserData.CharacterContacts.Remove contactKey |> ignore<bool>
-                            | (false, _) -> Log.warn "Potential logic error."
+                // produce contact removed messages
+                lock physicsEngine.CharacterContactLock $ fun () ->
+                    for characterUserDataEntry in physicsEngine.CharacterUserData do
+                        let character = characterUserDataEntry.Key
+                        let characterUserData = characterUserDataEntry.Value
+                        for characterContactEntry in characterUserData.CharacterContacts do
+                            let subShape2ID = characterContactEntry.Key
+                            let characterContact = characterContactEntry.Value
+                            if not characterContact.ContactFresh.Value then
+                                match physicsEngine.CharacterCollisions.TryGetValue character with
+                                | (true, collisions) ->
+                                    collisions.Remove subShape2ID |> ignore<bool>
+                                    if collisions.Count = 0 then physicsEngine.CharacterCollisions.Remove character |> ignore<bool>
+                                | (false, _) -> ()
+                                physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, characterContact.CharacterIdentifier, subShape2ID)) |> ignore<bool>
+                                physicsEngine.CharacterContactRemovalCache.Add struct (character, subShape2ID)
 
-                        // clear cache
-                        physicsEngine.CharacterContactRemovalCache.Clear ()
+                    //
+                    for struct (character, contactKey) in physicsEngine.CharacterContactRemovalCache do
+                        match physicsEngine.CharacterUserData.TryGetValue character with
+                        | (true, characterUserData) -> characterUserData.CharacterContacts.Remove contactKey |> ignore<bool>
+                        | (false, _) -> Log.warn "Potential logic error."
 
-                    // create integration messages
-                    PhysicsEngine3d.createIntegrationMessages physicsEngine
-                    let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
-                    physicsEngine.IntegrationMessages.Clear ()
-                    Some integrationMessages
+                    // clear cache
+                    physicsEngine.CharacterContactRemovalCache.Clear ()
 
-                // some manner of jolt error
-                | error ->
-                    match error with
-                    | PhysicsUpdateError.ManifoldCacheFull ->
-                        Log.warnOnce
-                            ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
-                             nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
-                    | PhysicsUpdateError.BodyPairCacheFull ->
-                        Log.warnOnce
-                            ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
-                             nameof Constants.Physics.Collision3dBodyPairsMax + ".")
-                    | PhysicsUpdateError.ContactConstraintsFull ->
-                        Log.warnOnce
-                            ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
-                             nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
-                    | _ ->
-                        Log.warnOnce
-                            ("Jolt Physics internal error: " + scstring error + ". Unknown error.")
-                    None
+                // create integration messages
+                PhysicsEngine3d.createIntegrationMessages physicsEngine
+                let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
+                physicsEngine.IntegrationMessages.Clear ()
+                Some integrationMessages
 
             // no time passed
             else None
@@ -1169,10 +1183,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
             // compute whether the physics engine will be affected by this clear request
             let affected =
+                physicsEngine.Characters.Count > 0 ||
                 physicsEngine.BodyConstraints.Count > 0 ||
                 physicsEngine.Bodies.Count > 0 ||
                 physicsEngine.CreateBodyJointMessages.Count > 0 ||
-                physicsEngine.Characters.Count > 0 ||
+                physicsEngine.BodyConstraints.Count > 0 ||
                 physicsEngine.IntegrationMessages.Count > 0
 
             // clear any in-flight character contacts
@@ -1213,8 +1228,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             physicsEngine.BodyUserData.Clear ()
             physicsEngine.Bodies.Clear ()
 
-            // clear body joint creation messages
+            // clear body joint bookkeeping
             physicsEngine.CreateBodyJointMessages.Clear ()
+            physicsEngine.BodyConstraintUserData.Clear ()
+            physicsEngine.BodyConstraints.Clear ()
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()

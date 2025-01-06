@@ -268,7 +268,7 @@ module Physics =
 
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
     let [<Uniform>] AlwaysObserve = match ConfigurationManager.AppSettings.["AlwaysObserve"] with null -> true | alwaysObserve -> scvalue alwaysObserve
-    let [<Literal>] BreakImpulseThresholdDefault = 100000.0f // TODO: P0: see if joint breaking should be implemented via jolt.
+    let [<Literal>] BreakingPointDefault = 100000.0f
     let [<Literal>] CollisionWildcard = "*"
     let [<Uniform>] Collision3dBodiesMax = match ConfigurationManager.AppSettings.["Collision3dBodiesMax"] with null -> 10240 | step -> scvalue step
     let [<Uniform>] Collision3dBodyPairsMax = match ConfigurationManager.AppSettings.["Collision3dBodyPairsMax"] with null -> 65536 | step -> scvalue step

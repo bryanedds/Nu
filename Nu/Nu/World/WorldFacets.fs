@@ -1533,9 +1533,9 @@ module BodyJointFacetExtensions =
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
         member this.BodyJointEnabled = lens (nameof this.BodyJointEnabled) this this.GetBodyJointEnabled this.SetBodyJointEnabled
-        member this.GetBreakImpulseThreshold world : single = this.Get (nameof this.BreakImpulseThreshold) world
-        member this.SetBreakImpulseThreshold (value : single) world = this.Set (nameof this.BreakImpulseThreshold) value world
-        member this.BreakImpulseThreshold = lens (nameof this.BreakImpulseThreshold) this this.GetBreakImpulseThreshold this.SetBreakImpulseThreshold
+        member this.GetBreakingPoint world : single = this.Get (nameof this.BreakingPoint) world
+        member this.SetBreakingPoint (value : single) world = this.Set (nameof this.BreakingPoint) value world
+        member this.BreakingPoint = lens (nameof this.BreakingPoint) this this.GetBreakingPoint this.SetBreakingPoint
         member this.GetCollideConnected world : bool = this.Get (nameof this.CollideConnected) world
         member this.SetCollideConnected (value : bool) world = this.Set (nameof this.CollideConnected) value world
         member this.CollideConnected = lens (nameof this.CollideConnected) this this.GetCollideConnected this.SetCollideConnected
@@ -1562,7 +1562,7 @@ type BodyJointFacet () =
          define Entity.BodyJointTarget (Relation.makeParent ())
          define Entity.BodyJointTarget2 (Relation.makeParent ())
          define Entity.BodyJointEnabled true
-         define Entity.BreakImpulseThreshold Constants.Physics.BreakImpulseThresholdDefault
+         define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
          define Entity.CollideConnected true
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
@@ -1571,7 +1571,7 @@ type BodyJointFacet () =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakImpulseThreshold)) entity (nameof BodyJointFacet) world
+        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
         world
 
@@ -1583,7 +1583,7 @@ type BodyJointFacet () =
                   BodyJointTarget = targetId
                   BodyJointTarget2 = target2Id
                   BodyJointEnabled = entity.GetBodyJointEnabled world
-                  BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
+                  BreakingPoint = entity.GetBreakingPoint world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
             World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world

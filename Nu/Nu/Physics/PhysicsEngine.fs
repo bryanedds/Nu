@@ -610,7 +610,7 @@ type BodyJointProperties =
       BodyJointTarget : BodyId
       BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
-      BreakImpulseThreshold : single
+      BreakingPoint : single
       CollideConnected : bool
       BodyJointIndex : int }
 
