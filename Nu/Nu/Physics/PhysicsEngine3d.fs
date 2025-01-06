@@ -925,6 +925,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsSystemSettings.ObjectLayerPairFilter <- objectLayerPairFilter
         physicsSystemSettings.BroadPhaseLayerInterface <- broadPhaseLayerInterface
         physicsSystemSettings.ObjectVsBroadPhaseLayerFilter <- objectVsBroadPhaseLayerFilter
+        physicsSystemSettings.MaxBodies <- Constants.Physics.Collision3dBodiesMax
+        physicsSystemSettings.MaxBodyPairs <- Constants.Physics.Collision3dBodyPairsMax
+        physicsSystemSettings.MaxContactConstraints <- Constants.Physics.Collision3dContactConstraintsMax
 
         let physicsSystem = new PhysicsSystem (physicsSystemSettings)
         physicsSystem.Gravity <- gravity
@@ -947,9 +950,9 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             lock contactLock $ fun () -> contactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
         let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
-        jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dMaxJobs
-        jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dMaxBarriers
-        jobSystemConfig.numThreads <- Constants.Physics.Collision3dNumThreads
+        jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
+        jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dBarriersMax
+        jobSystemConfig.numThreads <- Constants.Physics.Collision3dThreads
         let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
 
         { PhysicsContext = physicsSystem
@@ -1136,8 +1139,24 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     Some integrationMessages
 
                 // some manner of jolt error
-                // TODO: P0: attempt to increase jolt pool sizes automatically when encountering a related error?
-                | error -> Log.warn ("Jolt Physics internal error: " + scstring error); None
+                | error ->
+                    match error with
+                    | PhysicsUpdateError.ManifoldCacheFull ->
+                        Log.warnOnce
+                            ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
+                             nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
+                    | PhysicsUpdateError.BodyPairCacheFull ->
+                        Log.warnOnce
+                            ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
+                             nameof Constants.Physics.Collision3dBodyPairsMax + ".")
+                    | PhysicsUpdateError.ContactConstraintsFull ->
+                        Log.warnOnce
+                            ("Jolt Physics internal error: " + scstring error + ". Consider increasing Constants.Physics." +
+                             nameof Constants.Physics.Collision3dContactConstraintsMax + ".")
+                    | _ ->
+                        Log.warnOnce
+                            ("Jolt Physics internal error: " + scstring error + ". Unknown error.")
+                    None
 
             // no time passed
             else None
