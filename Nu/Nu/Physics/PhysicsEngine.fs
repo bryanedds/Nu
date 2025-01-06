@@ -611,6 +611,7 @@ type BodyJointProperties =
       BodyJointTarget2 : BodyId
       BodyJointEnabled : bool
       BreakingPoint : single
+      Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }
 

@@ -1536,6 +1536,9 @@ module BodyJointFacetExtensions =
         member this.GetBreakingPoint world : single = this.Get (nameof this.BreakingPoint) world
         member this.SetBreakingPoint (value : single) world = this.Set (nameof this.BreakingPoint) value world
         member this.BreakingPoint = lens (nameof this.BreakingPoint) this this.GetBreakingPoint this.SetBreakingPoint
+        member this.GetBroken world : bool = this.Get (nameof this.Broken) world
+        member this.SetBroken (value : bool) world = this.Set (nameof this.Broken) value world
+        member this.Broken = lens (nameof this.Broken) this this.GetBroken this.SetBroken
         member this.GetCollideConnected world : bool = this.Get (nameof this.CollideConnected) world
         member this.SetCollideConnected (value : bool) world = this.Set (nameof this.CollideConnected) value world
         member this.CollideConnected = lens (nameof this.CollideConnected) this this.GetCollideConnected this.SetCollideConnected
@@ -1563,6 +1566,7 @@ type BodyJointFacet () =
          define Entity.BodyJointTarget2 (Relation.makeParent ())
          define Entity.BodyJointEnabled true
          define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
+         define Entity.Broken false
          define Entity.CollideConnected true
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
@@ -1572,6 +1576,7 @@ type BodyJointFacet () =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
+        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
         world
 
@@ -1584,6 +1589,7 @@ type BodyJointFacet () =
                   BodyJointTarget2 = target2Id
                   BodyJointEnabled = entity.GetBodyJointEnabled world
                   BreakingPoint = entity.GetBreakingPoint world
+                  Broken = entity.GetBroken world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
             World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world

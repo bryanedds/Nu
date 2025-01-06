@@ -628,7 +628,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         let body = lockMultiWrite.GetBody 0u
                         let body2 = lockMultiWrite.GetBody 1u
                         let constrain = constraintSettings.CreateConstraint (&body, &body2)
-                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled
+                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
                         Some constrain
                     | DistanceJoint distanceJoint ->
                         let constraintSettings = new DistanceConstraintSettings ()
@@ -639,14 +639,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         let body = lockMultiWrite.GetBody 0u
                         let body2 = lockMultiWrite.GetBody 1u
                         let constrain = constraintSettings.CreateConstraint (&body, &body2)
-                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled
+                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
                         Some constrain
                     | UserDefinedJoltJoint joltJoint ->
                         use lockMultiWrite = physicsEngine.PhysicsContext.BodyLockInterface.LockMultiWrite ([|bodyID; body2ID|].AsSpan ()) // NOTE: assuming that jolt needs write capabilities for these.
                         let body = lockMultiWrite.GetBody 0u
                         let body2 = lockMultiWrite.GetBody 1u
                         let constrain = joltJoint.CreateBodyJoint body body2
-                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled
+                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
                         Some constrain
                     | _ ->
                         Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")

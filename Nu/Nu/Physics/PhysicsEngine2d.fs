@@ -359,7 +359,6 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.TargetAngle <- angleJoint.Angle
                         joint.Softness <- angleJoint.Softness
                         joint.BiasFactor <- angleJoint.BiasFactor
-                        joint.Breakpoint <- bodyJointProperties.BreakingPoint
                         Some (joint :> Joint)
                     | DistanceJoint distanceJoint ->
                         let joint = JointFactory.CreateDistanceJoint (physicsEngine.PhysicsContext, body, body2)
@@ -376,7 +375,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 | Some joint ->
                     joint.Breakpoint <- bodyJointProperties.BreakingPoint
                     joint.CollideConnected <- bodyJointProperties.CollideConnected
-                    joint.Enabled <- bodyJointProperties.BodyJointEnabled
+                    joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
+                    joint.add_Broke // TODO: P0: added joint broken integration message.
                     body.Awake <- true
                     body2.Awake <- true
                     if physicsEngine.Joints.TryAdd (bodyJointId, joint)
