@@ -65,7 +65,7 @@ type [<Struct>] private BodyUserData =
     { BodyId : BodyId
       Observing : bool }
 
-type [<ReferenceEquality>] PhysicsEngineJolt =
+type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
@@ -221,11 +221,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         mass :: masses
 
     static member private attachBoxRoundedShape (bodyProperties : BodyProperties) (boxRoundedShape : Nu.BoxRoundedShape) (scShapeSettings : StaticCompoundShapeSettings) masses =
-        Log.info "Rounded box not yet implemented via PhysicsEngineJolt; creating a normal box instead."
+        Log.info "Rounded box not yet implemented via PhysicsEngine3d; creating a normal box instead."
         let boxShape = { Size = boxRoundedShape.Size; TransformOpt = boxRoundedShape.TransformOpt; PropertiesOpt = boxRoundedShape.PropertiesOpt }
-        PhysicsEngineJolt.attachBoxShape bodyProperties boxShape scShapeSettings masses
+        PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
 
-    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (pointsShape : Nu.PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngineJolt) =
+    static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (pointsShape : Nu.PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make pointsShape.Points
         let (optimized, unscaledPoints) =
             match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
@@ -306,8 +306,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
     static member private attachGeometryShape (bodyProperties : BodyProperties) (geometryShape : GeometryShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
         if geometryShape.Convex then
             let pointsShape = { Points = geometryShape.Vertices; TransformOpt = geometryShape.TransformOpt; PropertiesOpt = geometryShape.PropertiesOpt }
-            PhysicsEngineJolt.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
-        else PhysicsEngineJolt.attachBodyBvhTriangles bodyProperties geometryShape scShapeSettings masses
+            PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        else PhysicsEngine3d.attachBodyBvhTriangles bodyProperties geometryShape scShapeSettings masses
 
     // TODO: add some error logging.
     static member private attachStaticModelShape (bodyProperties : BodyProperties) (staticModelShape : StaticModelShape) (scShapeSettings : StaticCompoundShapeSettings) masses physicsEngine =
@@ -330,7 +330,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         staticModelSurfaceShape.SurfaceIndex < staticModel.Surfaces.Length then
                         let geometry = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex].PhysicallyBasedGeometry
                         let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                        PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                        PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
                     else centerMassInertiaDisposes
                 | ValueNone -> centerMassInertiaDisposes)
                 masses
@@ -346,7 +346,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 let surface = staticModel.Surfaces.[staticModelSurfaceShape.SurfaceIndex]
                 let geometry = surface.PhysicallyBasedGeometry
                 let geometryShape = { Vertices = geometry.Vertices; Convex = staticModelSurfaceShape.Convex; TransformOpt = staticModelSurfaceShape.TransformOpt; PropertiesOpt = staticModelSurfaceShape.PropertiesOpt }
-                PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+                PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
             else masses
         | ValueNone -> masses
 
@@ -380,7 +380,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine =
         List.fold (fun masses bodyShape ->
-            let masses' = PhysicsEngineJolt.attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine
+            let masses' = PhysicsEngine3d.attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine
             masses' @ masses)
             masses
             bodyShapes
@@ -388,22 +388,22 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
     static member private attachBodyShape bodyProperties bodyShape scShapeSettings masses physicsEngine =
         match bodyShape with
         | EmptyShape -> masses
-        | BoxShape boxShape -> PhysicsEngineJolt.attachBoxShape bodyProperties boxShape scShapeSettings masses
-        | SphereShape sphereShape -> PhysicsEngineJolt.attachSphereShape bodyProperties sphereShape scShapeSettings masses
-        | CapsuleShape capsuleShape -> PhysicsEngineJolt.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
-        | BoxRoundedShape boxRoundedShape -> PhysicsEngineJolt.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
-        | PointsShape pointsShape -> PhysicsEngineJolt.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
-        | GeometryShape geometryShape -> PhysicsEngineJolt.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
-        | StaticModelShape staticModelShape -> PhysicsEngineJolt.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
-        | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngineJolt.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine
-        | TerrainShape terrainShape -> PhysicsEngineJolt.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
-        | BodyShapes bodyShapes -> PhysicsEngineJolt.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
+        | BoxShape boxShape -> PhysicsEngine3d.attachBoxShape bodyProperties boxShape scShapeSettings masses
+        | SphereShape sphereShape -> PhysicsEngine3d.attachSphereShape bodyProperties sphereShape scShapeSettings masses
+        | CapsuleShape capsuleShape -> PhysicsEngine3d.attachCapsuleShape bodyProperties capsuleShape scShapeSettings masses
+        | BoxRoundedShape boxRoundedShape -> PhysicsEngine3d.attachBoxRoundedShape bodyProperties boxRoundedShape scShapeSettings masses
+        | PointsShape pointsShape -> PhysicsEngine3d.attachBodyConvexHullShape bodyProperties pointsShape scShapeSettings masses physicsEngine
+        | GeometryShape geometryShape -> PhysicsEngine3d.attachGeometryShape bodyProperties geometryShape scShapeSettings masses physicsEngine
+        | StaticModelShape staticModelShape -> PhysicsEngine3d.attachStaticModelShape bodyProperties staticModelShape scShapeSettings masses physicsEngine
+        | StaticModelSurfaceShape staticModelSurfaceShape -> PhysicsEngine3d.attachStaticModelShapeSurface bodyProperties staticModelSurfaceShape scShapeSettings masses physicsEngine
+        | TerrainShape terrainShape -> PhysicsEngine3d.attachTerrainShape bodyProperties terrainShape scShapeSettings masses
+        | BodyShapes bodyShapes -> PhysicsEngine3d.attachBodyShapes bodyProperties bodyShapes scShapeSettings masses physicsEngine
 
-    static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngineJolt) =
+    static member private createBody3 (bodyId : BodyId) (bodyProperties : BodyProperties) (physicsEngine : PhysicsEngine3d) =
 
         //
         use scShapeSettings = new StaticCompoundShapeSettings ()
-        let masses = PhysicsEngineJolt.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
+        let masses = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
         let mass = List.sum masses
         let (motionType, isCharacter) =
             match bodyProperties.BodyType with
@@ -426,7 +426,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
             // inner shape config (must be set after Shape property)
             use scShapeSettingsInner = new StaticCompoundShapeSettings ()
-            PhysicsEngineJolt.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
+            PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettingsInner [] physicsEngine |> ignore<single list>
             characterSettings.InnerBodyShape <- scShapeSettingsInner.Create ()
 
             // create actual character
@@ -550,15 +550,15 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         // attempt to create body
         let bodyId = createBodyMessage.BodyId
         let bodyProperties = createBodyMessage.BodyProperties
-        PhysicsEngineJolt.createBody3 bodyId bodyProperties physicsEngine
+        PhysicsEngine3d.createBody3 bodyId bodyProperties physicsEngine
 
         // attempt to run any related body joint creation functions
         match physicsEngine.CreateBodyJointMessages.TryGetValue bodyId with
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngineJolt.destroyBodyJointInternal bodyJointId physicsEngine
-                PhysicsEngineJolt.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+                PhysicsEngine3d.destroyBodyJointInternal bodyJointId physicsEngine
+                PhysicsEngine3d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
         | (false, _) -> ()
 
     static member private createBodies (createBodiesMessage : CreateBodiesMessage) physicsEngine =
@@ -566,7 +566,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             let createBodyMessage =
                 { BodyId = { BodySource = createBodiesMessage.BodySource; BodyIndex = bodyProperties.BodyIndex }
                   BodyProperties = bodyProperties }
-            PhysicsEngineJolt.createBody createBodyMessage physicsEngine)
+            PhysicsEngine3d.createBody createBodyMessage physicsEngine)
             createBodiesMessage.BodiesProperties
 
     static member private destroyBody (destroyBodyMessage : DestroyBodyMessage) physicsEngine =
@@ -577,7 +577,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | (true, createBodyJointMessages) ->
             for createBodyJointMessage in createBodyJointMessages do
                 let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-                PhysicsEngineJolt.destroyBodyJointInternal bodyJointId physicsEngine
+                PhysicsEngine3d.destroyBodyJointInternal bodyJointId physicsEngine
         | (false, _) -> ()
 
         // attempt to destroy character
@@ -603,7 +603,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private destroyBodies (destroyBodiesMessage : DestroyBodiesMessage) physicsEngine =
         List.iter (fun bodyId ->
-            PhysicsEngineJolt.destroyBody { BodyId = bodyId } physicsEngine)
+            PhysicsEngine3d.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
     // TODO: P0: test if we need to manually wake bodies when adding joints to them.
@@ -669,7 +669,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
-        PhysicsEngineJolt.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
+        PhysicsEngine3d.createBodyJointInternal createBodyJointMessage.BodyJointProperties bodyJointId physicsEngine
 
     static member private destroyBodyJointInternal (bodyJointId : BodyJointId) physicsEngine =
         match physicsEngine.BodyConstraints.TryGetValue bodyJointId with
@@ -691,7 +691,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> ()
 
         // attempt to destroy body joint
-        PhysicsEngineJolt.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
+        PhysicsEngine3d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
 
     static member private tryGetBodyID bodyId physicsEngine =
         match physicsEngine.Characters.TryGetValue bodyId with
@@ -702,7 +702,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> ValueNone
 
     static member private setBodyEnabled (setBodyEnabledMessage : SetBodyEnabledMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID setBodyEnabledMessage.BodyId physicsEngine with
+        match PhysicsEngine3d.tryGetBodyID setBodyEnabledMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if setBodyEnabledMessage.Enabled
             then physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID
@@ -737,13 +737,13 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             | (false, _) -> ()
 
     static member private setBodyAngularVelocity (setBodyAngularVelocityMessage : SetBodyAngularVelocityMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID setBodyAngularVelocityMessage.BodyId physicsEngine with
+        match PhysicsEngine3d.tryGetBodyID setBodyAngularVelocityMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             physicsEngine.PhysicsContext.BodyInterface.SetAngularVelocity (&bodyID, &setBodyAngularVelocityMessage.AngularVelocity)
         | ValueNone -> ()
 
     static member private applyBodyLinearImpulse (applyBodyLinearImpulseMessage : ApplyBodyLinearImpulseMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID applyBodyLinearImpulseMessage.BodyId physicsEngine with
+        match PhysicsEngine3d.tryGetBodyID applyBodyLinearImpulseMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyLinearImpulseMessage.LinearImpulse.X) then
                 let offset =
@@ -755,7 +755,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | ValueNone -> ()
 
     static member private applyBodyAngularImpulse (applyBodyAngularImpulseMessage : ApplyBodyAngularImpulseMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID applyBodyAngularImpulseMessage.BodyId physicsEngine with
+        match PhysicsEngine3d.tryGetBodyID applyBodyAngularImpulseMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyAngularImpulseMessage.AngularImpulse.X)
             then physicsEngine.PhysicsContext.BodyInterface.AddAngularImpulse (&bodyID, &applyBodyAngularImpulseMessage.AngularImpulse)
@@ -763,7 +763,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | ValueNone -> ()
 
     static member private applyBodyForce (applyBodyForceMessage : ApplyBodyForceMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID applyBodyForceMessage.BodyId physicsEngine with
+        match PhysicsEngine3d.tryGetBodyID applyBodyForceMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyForceMessage.Force.X) then
                 let offset =
@@ -775,7 +775,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
         | ValueNone -> ()
 
     static member private applyBodyTorque (applyBodyTorqueMessage : ApplyBodyTorqueMessage) physicsEngine =
-        match PhysicsEngineJolt.tryGetBodyID applyBodyTorqueMessage.BodyId physicsEngine with
+        match PhysicsEngine3d.tryGetBodyID applyBodyTorqueMessage.BodyId physicsEngine with
         | ValueSome bodyID ->
             if not (Single.IsNaN applyBodyTorqueMessage.Torque.X)
             then physicsEngine.PhysicsContext.BodyInterface.AddTorque (&bodyID, &applyBodyTorqueMessage.Torque)
@@ -799,25 +799,25 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
 
     static member private handlePhysicsMessage physicsEngine physicsMessage =
         match physicsMessage with
-        | CreateBodyMessage createBodyMessage -> PhysicsEngineJolt.createBody createBodyMessage physicsEngine
-        | CreateBodiesMessage createBodiesMessage -> PhysicsEngineJolt.createBodies createBodiesMessage physicsEngine
-        | DestroyBodyMessage destroyBodyMessage -> PhysicsEngineJolt.destroyBody destroyBodyMessage physicsEngine
-        | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngineJolt.destroyBodies destroyBodiesMessage physicsEngine
-        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngineJolt.createBodyJoint createBodyJointMessage physicsEngine
-        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngineJolt.destroyBodyJoint destroyBodyJointMessage physicsEngine
-        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngineJolt.setBodyEnabled setBodyEnabledMessage physicsEngine
-        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngineJolt.setBodyCenter setBodyCenterMessage physicsEngine
-        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngineJolt.setBodyRotation setBodyRotationMessage physicsEngine
-        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngineJolt.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
-        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngineJolt.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
-        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngineJolt.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
-        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngineJolt.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
-        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngineJolt.applyBodyForce applyBodyForceMessage physicsEngine
-        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngineJolt.applyBodyTorque applyBodyTorqueMessage physicsEngine
-        | JumpBodyMessage jumpBodyMessage -> PhysicsEngineJolt.jumpBody jumpBodyMessage physicsEngine
+        | CreateBodyMessage createBodyMessage -> PhysicsEngine3d.createBody createBodyMessage physicsEngine
+        | CreateBodiesMessage createBodiesMessage -> PhysicsEngine3d.createBodies createBodiesMessage physicsEngine
+        | DestroyBodyMessage destroyBodyMessage -> PhysicsEngine3d.destroyBody destroyBodyMessage physicsEngine
+        | DestroyBodiesMessage destroyBodiesMessage -> PhysicsEngine3d.destroyBodies destroyBodiesMessage physicsEngine
+        | CreateBodyJointMessage createBodyJointMessage -> PhysicsEngine3d.createBodyJoint createBodyJointMessage physicsEngine
+        | DestroyBodyJointMessage destroyBodyJointMessage -> PhysicsEngine3d.destroyBodyJoint destroyBodyJointMessage physicsEngine
+        | SetBodyEnabledMessage setBodyEnabledMessage -> PhysicsEngine3d.setBodyEnabled setBodyEnabledMessage physicsEngine
+        | SetBodyCenterMessage setBodyCenterMessage -> PhysicsEngine3d.setBodyCenter setBodyCenterMessage physicsEngine
+        | SetBodyRotationMessage setBodyRotationMessage -> PhysicsEngine3d.setBodyRotation setBodyRotationMessage physicsEngine
+        | SetBodyLinearVelocityMessage setBodyLinearVelocityMessage -> PhysicsEngine3d.setBodyLinearVelocity setBodyLinearVelocityMessage physicsEngine
+        | SetBodyAngularVelocityMessage setBodyAngularVelocityMessage -> PhysicsEngine3d.setBodyAngularVelocity setBodyAngularVelocityMessage physicsEngine
+        | ApplyBodyLinearImpulseMessage applyBodyLinearImpulseMessage -> PhysicsEngine3d.applyBodyLinearImpulse applyBodyLinearImpulseMessage physicsEngine
+        | ApplyBodyAngularImpulseMessage applyBodyAngularImpulseMessage -> PhysicsEngine3d.applyBodyAngularImpulse applyBodyAngularImpulseMessage physicsEngine
+        | ApplyBodyForceMessage applyBodyForceMessage -> PhysicsEngine3d.applyBodyForce applyBodyForceMessage physicsEngine
+        | ApplyBodyTorqueMessage applyBodyTorqueMessage -> PhysicsEngine3d.applyBodyTorque applyBodyTorqueMessage physicsEngine
+        | JumpBodyMessage jumpBodyMessage -> PhysicsEngine3d.jumpBody jumpBodyMessage physicsEngine
         | SetGravityMessage gravity -> physicsEngine.PhysicsContext.Gravity <- gravity
 
-    static member private createIntegrationMessages (physicsEngine : PhysicsEngineJolt) =
+    static member private createIntegrationMessages (physicsEngine : PhysicsEngine3d) =
 
         lock physicsEngine.BodyContactLock $ fun () ->
             for contactEvent in physicsEngine.BodyContactEvents do
@@ -827,8 +827,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     | (true, bodyUserData) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
                         | (true, body2UserData) ->
-                            PhysicsEngineJolt.handleBodyPenetration bodyUserData.BodyId body2UserData.BodyId contactNormal physicsEngine
-                            PhysicsEngineJolt.handleBodyPenetration body2UserData.BodyId bodyUserData.BodyId -contactNormal physicsEngine
+                            PhysicsEngine3d.handleBodyPenetration bodyUserData.BodyId body2UserData.BodyId contactNormal physicsEngine
+                            PhysicsEngine3d.handleBodyPenetration body2UserData.BodyId bodyUserData.BodyId -contactNormal physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
                 | BodyContactRemoved (bodyID, body2ID) ->
@@ -836,8 +836,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                     | (true, bodyUserData) ->
                         match physicsEngine.BodyUserData.TryGetValue body2ID with
                         | (true, body2UserData) ->
-                            PhysicsEngineJolt.handleBodySeparation bodyUserData.BodyId body2UserData.BodyId physicsEngine
-                            PhysicsEngineJolt.handleBodySeparation body2UserData.BodyId bodyUserData.BodyId physicsEngine
+                            PhysicsEngine3d.handleBodySeparation bodyUserData.BodyId body2UserData.BodyId physicsEngine
+                            PhysicsEngine3d.handleBodySeparation body2UserData.BodyId bodyUserData.BodyId physicsEngine
                         | (false, _) -> ()
                     | (false, _) -> ()
             physicsEngine.BodyContactEvents.Clear ()
@@ -859,8 +859,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             | (false, _) -> ValueNone
                     match body2IdOpt with
                     | ValueSome body2Id ->
-                        PhysicsEngineJolt.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
-                        PhysicsEngineJolt.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
+                        PhysicsEngine3d.handleCharacterPenetration bodyId body2Id contactNormal physicsEngine
+                        PhysicsEngine3d.handleCharacterPenetration body2Id bodyId -contactNormal physicsEngine
                     | ValueNone -> ()
                 | CharacterContactRemoved (character, character2Identifier, _) ->
                     let bodyId = physicsEngine.CharacterUserData.[character].CharacterBodyId
@@ -876,8 +876,8 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             | (false, _) -> ValueNone
                     match body2IdOpt with
                     | ValueSome body2Id ->
-                        PhysicsEngineJolt.handleCharacterSeparation bodyId body2Id physicsEngine
-                        PhysicsEngineJolt.handleCharacterSeparation body2Id bodyId physicsEngine
+                        PhysicsEngine3d.handleCharacterSeparation bodyId body2Id physicsEngine
+                        PhysicsEngine3d.handleCharacterSeparation body2Id bodyId physicsEngine
                     | ValueNone -> ()
             physicsEngine.CharacterContactEvents.Clear ()
 
@@ -1014,7 +1014,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                 | (false, _) -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
         member physicsEngine.GetBodyAngularVelocity bodyId =
-            match PhysicsEngineJolt.tryGetBodyID bodyId physicsEngine with
+            match PhysicsEngine3d.tryGetBodyID bodyId physicsEngine with
             | ValueSome bodyID -> physicsEngine.PhysicsContext.BodyInterface.GetAngularVelocity &bodyID
             | ValueNone -> failwith ("No body with BodyId = " + scstring bodyId + ".")
 
@@ -1079,7 +1079,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             [||]
 
         member physicsEngine.HandleMessage physicsMessage =
-            PhysicsEngineJolt.handlePhysicsMessage physicsEngine physicsMessage
+            PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
 
         member physicsEngine.TryIntegrate stepTime =
 
@@ -1142,7 +1142,7 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                             | (false, _) -> Log.warn "Potential logic error."
 
                     // create integration messages
-                    PhysicsEngineJolt.createIntegrationMessages physicsEngine
+                    PhysicsEngine3d.createIntegrationMessages physicsEngine
                     let integrationMessages = SArray.ofSeq physicsEngine.IntegrationMessages
                     physicsEngine.IntegrationMessages.Clear ()
                     Some integrationMessages
@@ -1212,4 +1212,4 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
             affected
 
         member physicsEngine.CleanUp () =
-            PhysicsEngineJolt.cleanUp physicsEngine
+            PhysicsEngine3d.cleanUp physicsEngine
