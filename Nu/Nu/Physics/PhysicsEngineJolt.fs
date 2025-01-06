@@ -749,12 +749,14 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
     static member private jumpBody (jumpBodyMessage : JumpBodyMessage) physicsEngine =
         match physicsEngine.Characters.TryGetValue jumpBodyMessage.BodyId with
         | (true, character) ->
-            if character.GroundState = GroundState.OnGround then
+            if  jumpBodyMessage.CanJumpInAir ||
+                character.GroundState = GroundState.OnGround then
                 character.LinearVelocity <- character.LinearVelocity + v3Up * jumpBodyMessage.JumpSpeed
         | (false, _) ->
             match physicsEngine.Bodies.TryGetValue jumpBodyMessage.BodyId with
             | (true, bodyID) ->
-                if physicsEngine.BodyCollisionsGround.ContainsKey jumpBodyMessage.BodyId then
+                if  jumpBodyMessage.CanJumpInAir ||
+                    physicsEngine.BodyCollisionsGround.ContainsKey jumpBodyMessage.BodyId then
                     let linearVelocity = physicsEngine.PhysicsContext.BodyInterface.GetLinearVelocity &bodyID + v3Up * jumpBodyMessage.JumpSpeed
                     physicsEngine.PhysicsContext.BodyInterface.SetLinearVelocity (&bodyID, &linearVelocity)
             | (false, _) -> ()

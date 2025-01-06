@@ -268,7 +268,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                         if canUnobstruct then { character with ActionState = NormalState }
                         elif character.ActionState = NormalState then { character with ActionState = ObstructedState { ObstructedTime = time }}
                         else character
-                    let navSpeed = if character.ActionState = NormalState then (0.04f, 0.1f) else (0.0f, 0.3f)
+                    let navSpeed = if character.ActionState = NormalState then (character.WalkSpeed, character.TurnSpeed) else (0.0f, character.TurnSpeed * 3.0f)
                     (Some navSpeed, character)
                 | _ -> (None, character)
             match navSpeedsOpt with
@@ -279,8 +279,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
-                (false, Some followOutput.NavPosition, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
-            | None -> (false, Some position, rotation, v3Zero, v3Zero, character)
+                (false, None, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
+            | None -> (false, None, rotation, v3Zero, v3Zero, character)
 
     static member private updateActionState time character =
         match character.ActionState with
@@ -347,13 +347,13 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           JumpState = JumpState.initial
           CharacterCollisions = Set.empty
           WeaponCollisions = Set.empty
-          WalkSpeed = 0.05f
-          TurnSpeed = 0.05f
+          WalkSpeed = 0.75f
+          TurnSpeed = 0.1f
           JumpSpeed = 5.0f
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =
-        { Character.initial Player with WalkSpeed = 1.0f }
+        { Character.initial Player with WalkSpeed = 1.0f; TurnSpeed = 0.05f }
 
     static member initialEnemy =
         { Character.initial Enemy with HitPoints = 3 }
