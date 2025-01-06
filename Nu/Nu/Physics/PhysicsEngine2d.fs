@@ -21,7 +21,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           IntegrationMessages : IntegrationMessage List
           PenetrationHandler : OnCollisionEventHandler
-          SeparationHandler : OnSeparationEventHandler }
+          SeparationHandler : OnSeparationEventHandler
+          BreakHandler : Action<Joint, single> }
 
     static member private toPixel value =
         value * Constants.Engine.Meter2d
@@ -73,6 +74,17 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             { BodyShapeSource = bodyShape.Tag :?> BodyShapeIndex
               BodyShapeSource2 = bodyShape2.Tag :?> BodyShapeIndex }
         let integrationMessage = BodySeparationMessage bodySeparationMessage
+        integrationMessages.Add integrationMessage
+
+    static member private handleBreak
+        (joint : Joint)
+        (jointError : single)
+        (integrationMessages : IntegrationMessage List) =
+        let bodyJointBreakMessage =
+            { BodyJointId = joint.Tag :?> BodyJointId
+              BreakingPoint = joint.Breakpoint
+              BreakingOverflow = jointError - joint.Breakpoint }
+        let integrationMessage = BodyJointBreakMessage bodyJointBreakMessage
         integrationMessages.Add integrationMessage
 
     static member private getBodyContacts (bodyId : BodyId) physicsEngine =
@@ -367,16 +379,18 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                         joint.DampingRatio <- distanceJoint.DampingRatio
                         Some joint
                     | UserDefinedAetherJoint aetherJoint ->
-                        Some (aetherJoint.CreateBodyJoint body body2)
+                        let joint = aetherJoint.CreateBodyJoint body body2
+                        Some joint
                     | _ ->
                         Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
                         None
                 match jointOpt with
                 | Some joint ->
+                    joint.Tag <- bodyJointId
                     joint.Breakpoint <- bodyJointProperties.BreakingPoint
                     joint.CollideConnected <- bodyJointProperties.CollideConnected
                     joint.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
-                    joint.add_Broke // TODO: P0: added joint broken integration message.
+                    joint.add_Broke physicsEngine.BreakHandler
                     body.Awake <- true
                     body2.Awake <- true
                     if physicsEngine.Joints.TryAdd (bodyJointId, joint)
@@ -554,6 +568,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
         let integrationMessages = List ()
         let penetrationHandler = fun fixture fixture2 collision -> PhysicsEngine2d.handlePenetration fixture fixture2 collision integrationMessages
         let separationHandler = fun fixture fixture2 _ -> PhysicsEngine2d.handleSeparation fixture fixture2 integrationMessages
+        let breakHandler = fun joint jointError -> PhysicsEngine2d.handleBreak joint jointError integrationMessages
         let physicsEngine =
             { PhysicsContext = World (PhysicsEngine2d.toPhysicsV2 gravity)
               Bodies = Dictionary<BodyId, Vector3 option * Dynamics.Body> HashIdentity.Structural
@@ -561,7 +576,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
               CreateBodyJointMessages = Dictionary<BodyId, CreateBodyJointMessage List> HashIdentity.Structural
               IntegrationMessages = integrationMessages
               PenetrationHandler = penetrationHandler
-              SeparationHandler = separationHandler }
+              SeparationHandler = separationHandler
+              BreakHandler = breakHandler }
         physicsEngine :> PhysicsEngine
 
     interface PhysicsEngine with
