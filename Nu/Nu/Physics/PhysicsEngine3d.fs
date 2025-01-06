@@ -69,10 +69,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     private
         { PhysicsContext : PhysicsSystem
           JobSystem : JobSystemThreadPool
-          UnscaledPointsCached : Dictionary<UnscaledPointsKey, Vector3 array>
+          UnscaledPointsCache : Dictionary<UnscaledPointsKey, Vector3 array>
           CharacterVsCharacterCollision : CharacterVsCharacterCollisionSimple
           CharacterContactLock : obj
           CharacterContactEvents : CharacterContactEvent HashSet
+          CharacterContactRemovalCache : struct (CharacterVirtual * SubShapeID) List
           CharacterCollisions : Dictionary<CharacterVirtual, Dictionary<SubShapeID, Vector3>>
           CharacterUserData : Dictionary<CharacterVirtual, CharacterUserData>
           Characters : Dictionary<BodyId, CharacterVirtual>
@@ -224,7 +225,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private attachBodyConvexHullShape (bodyProperties : BodyProperties) (pointsShape : Nu.PointsShape) (scShapeSettings : StaticCompoundShapeSettings) masses (physicsEngine : PhysicsEngine3d) =
         let unscaledPointsKey = UnscaledPointsKey.make pointsShape.Points
         let (optimized, unscaledPoints) =
-            match physicsEngine.UnscaledPointsCached.TryGetValue unscaledPointsKey with
+            match physicsEngine.UnscaledPointsCache.TryGetValue unscaledPointsKey with
             | (true, unscaledVertices) -> (true, unscaledVertices)
             | (false, _) -> (false, pointsShape.Points)
         let unscaledPoints =
@@ -235,7 +236,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     match hull.UnscaledPoints with
                     | null -> [|v3Zero|] // guarding against null
                     | unscaledPoints -> unscaledPoints |> Seq.map (fun p -> v3 p.X p.Y p.Z) |> Array.ofSeq
-                physicsEngine.UnscaledPointsCached.Add (unscaledPointsKey, unscaledPoints)
+                physicsEngine.UnscaledPointsCache.Add (unscaledPointsKey, unscaledPoints)
                 unscaledPoints
             else unscaledPoints
         let shapeSettings = new ConvexHullShapeSettings (unscaledPoints)
@@ -957,9 +958,10 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
-          UnscaledPointsCached = dictPlus UnscaledPointsKey.comparer []
+          UnscaledPointsCache = dictPlus UnscaledPointsKey.comparer []
           CharacterVsCharacterCollision = new CharacterVsCharacterCollisionSimple ()
           CharacterContactLock = obj ()
+          CharacterContactRemovalCache = List ()
           CharacterContactEvents = hashSetPlus HashIdentity.Structural []
           CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
@@ -1110,7 +1112,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
                     // produce contact removed messages
                     lock physicsEngine.CharacterContactLock $ fun () ->
-                        let contactKeysRemoved = List () // TODO: P0: cache this list.
                         for characterUserDataEntry in physicsEngine.CharacterUserData do
                             let character = characterUserDataEntry.Key
                             let characterUserData = characterUserDataEntry.Value
@@ -1124,13 +1125,16 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                                         if collisions.Count = 0 then physicsEngine.CharacterCollisions.Remove character |> ignore<bool>
                                     | (false, _) -> ()
                                     physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, characterContact.CharacterIdentifier, subShape2ID)) |> ignore<bool>
-                                    contactKeysRemoved.Add struct (character, subShape2ID)
+                                    physicsEngine.CharacterContactRemovalCache.Add struct (character, subShape2ID)
 
                         //
-                        for struct (character, contactKey) in contactKeysRemoved do
+                        for struct (character, contactKey) in physicsEngine.CharacterContactRemovalCache do
                             match physicsEngine.CharacterUserData.TryGetValue character with
                             | (true, characterUserData) -> characterUserData.CharacterContacts.Remove contactKey |> ignore<bool>
                             | (false, _) -> Log.warn "Potential logic error."
+
+                        // clear cache
+                        physicsEngine.CharacterContactRemovalCache.Clear ()
 
                     // create integration messages
                     PhysicsEngine3d.createIntegrationMessages physicsEngine
