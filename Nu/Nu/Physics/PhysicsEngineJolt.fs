@@ -4,9 +4,45 @@
 namespace Nu
 open System
 open System.Collections.Generic
+open System.Linq
 open System.Numerics
 open JoltPhysicsSharp
 open Prime
+
+type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
+    { HashCode : int
+      Vertices : Vector3 array }
+
+    static member hash chs =
+        chs.HashCode
+
+    static member equals left right =
+        left.HashCode = right.HashCode && // TODO: ensure this isn't just a minor pessimization.
+        Enumerable.SequenceEqual (left.Vertices, right.Vertices)
+
+    static member comparer =
+        HashIdentity.FromFunctions UnscaledPointsKey.hash UnscaledPointsKey.equals
+
+    static member make (vertices : Vector3 array) =
+        let hashCode =
+            hash vertices.Length ^^^
+            (if vertices.Length > 0 then vertices.[0].GetHashCode () else 0) ^^^
+            (if vertices.Length > 0 then vertices.[vertices.Length / 2].GetHashCode () else 0) ^^^
+            (if vertices.Length > 0 then vertices.[vertices.Length - 1].GetHashCode () else 0)
+        { HashCode = hashCode
+          Vertices = vertices }
+
+    interface UnscaledPointsKey IEquatable with
+        member this.Equals that =
+            UnscaledPointsKey.equals this that
+
+    override this.Equals that =
+        match that with
+        | :? UnscaledPointsKey as that -> UnscaledPointsKey.equals this that
+        | _ -> false
+
+    override this.GetHashCode () =
+        this.HashCode
 
 type [<Struct>] private CharacterContactEvent =
     | CharacterContactAdded of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
