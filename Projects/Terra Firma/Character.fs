@@ -349,7 +349,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
           WeaponCollisions = Set.empty
           WalkSpeed = 0.05f
           TurnSpeed = 0.05f
-          JumpSpeed = 10.0f
+          JumpSpeed = 5.0f
           WeaponModel = Assets.Gameplay.GreatSwordModel }
 
     static member initialPlayer =

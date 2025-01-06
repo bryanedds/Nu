@@ -1073,11 +1073,11 @@ type [<ReferenceEquality>] PhysicsEngineJolt =
                         character.LinearVelocity <-
                             character.LinearVelocity -
                             (character.LinearVelocity * (v3Dup characterProperties.TraversalDamping).WithY 0.0f * stepTime.Seconds)
-                        if character.GroundState <> GroundState.OnGround then
-                            let gravityForce = physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
-                            character.LinearVelocity <- character.LinearVelocity + gravityForce
+                        character.LinearVelocity <-
+                            if character.GroundState = GroundState.OnGround
+                            then character.LinearVelocity.MapY (max 0.0f)
+                            else character.LinearVelocity + physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
                         character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
-                        //character.Update (stepTime.Seconds, &characterLayer, physicsEngine.PhysicsContext)
 
                     // produce contact removed messages
                     lock physicsEngine.CharacterContactLock $ fun () ->
