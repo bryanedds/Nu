@@ -845,7 +845,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
-          mutable ReloadAssetsRequested : bool }
+          mutable ReloadAssetsRequested : bool
+          TransientTextures : Vortice.Vulkan.Texture.Texture List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -997,7 +998,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for renderMessage in renderMessages do
             VulkanRenderer2d.handleRenderMessage renderMessage renderer
     
+    static member private destroyTransientTextures renderer =
+        for texture in renderer.TransientTextures do
+            texture.Destroy renderer.VulkanGlobal
+    
     static member private render _ _ renderMessages renderer =
+        
+        // destroy textures created and used (*after* renderer2d.render at command execution) in the previous frame
+        VulkanRenderer2d.destroyTransientTextures renderer
+        renderer.TransientTextures.Clear ()
         
         VulkanRenderer2d.handleRenderMessages renderMessages renderer
 
@@ -1027,7 +1036,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
-              ReloadAssetsRequested = false }
+              ReloadAssetsRequested = false
+              TransientTextures = List () }
 
         // fin
         renderer
