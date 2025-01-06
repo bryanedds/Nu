@@ -9,6 +9,34 @@ open System.Numerics
 open JoltPhysicsSharp
 open Prime
 
+type [<Struct>] private CharacterContactEvent =
+    | CharacterContactAdded of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
+    | CharacterContactRemoved of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID
+
+type [<Struct>] private CharacterContact =
+    { CharacterIdentifier : ValueEither<CharacterVirtual, BodyID>
+      ContactFresh : bool ref }
+
+type [<Struct>] private CharacterUserData =
+    { CharacterBodyId : BodyId
+      CharacterContacts : Dictionary<SubShapeID, CharacterContact>
+      CharacterGravityOverride : Vector3 option
+      CharacterProperties : CharacterProperties }
+
+type [<Struct>] private BodyContactEvent =
+    | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
+    | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
+
+type [<Struct>] private BodyUserData =
+    { BodyId : BodyId
+      Observing : bool }
+
+type [<Struct>] private BodyConstraintEvent =
+    | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
+
+type [<Struct>] private BodyConstraintUserData =
+    { BreakingPoint : single }
+
 type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     { HashCode : int
       Vertices : Vector3 array }
@@ -43,33 +71,6 @@ type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
 
     override this.GetHashCode () =
         this.HashCode
-
-type [<Struct>] private CharacterContactEvent =
-    | CharacterContactAdded of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
-    | CharacterContactRemoved of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterVirtual, BodyID> * SubShape2ID : SubShapeID
-
-type [<Struct>] private CharacterContact =
-    { CharacterIdentifier : ValueEither<CharacterVirtual, BodyID>
-      ContactFresh : bool ref }
-
-type [<Struct>] private CharacterUserData =
-    { CharacterBodyId : BodyId
-      CharacterContacts : Dictionary<SubShapeID, CharacterContact>
-      CharacterProperties : CharacterProperties }
-
-type [<Struct>] private BodyContactEvent =
-    | BodyContactAdded of BodyID : BodyID * Body2ID : BodyID * ContactNormal : Vector3
-    | BodyContactRemoved of BodyID : BodyID * Body2ID : BodyID
-
-type [<Struct>] private BodyUserData =
-    { BodyId : BodyId
-      Observing : bool }
-
-type [<Struct>] private BodyConstraintEvent =
-    | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
-
-type [<Struct>] private BodyConstraintUserData =
-    { BreakingPoint : single }
 
 type [<ReferenceEquality>] PhysicsEngine3d =
     private
@@ -512,7 +513,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | (false, _) -> Log.warn "Potential logic error.")
 
             //
-            let characterUserData = { CharacterBodyId = bodyId; CharacterContacts = dictPlus HashIdentity.Structural []; CharacterProperties = bodyProperties.CharacterProperties }
+            let characterUserData =
+                { CharacterBodyId = bodyId
+                  CharacterContacts = dictPlus HashIdentity.Structural []
+                  CharacterGravityOverride = bodyProperties.GravityOverride
+                  CharacterProperties = bodyProperties.CharacterProperties }
             physicsEngine.CharacterUserData.Add (character, characterUserData)
             physicsEngine.Characters.Add (bodyId, character)
 
@@ -536,7 +541,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let massProperties = MassProperties ()
             massProperties.ScaleToMass mass
             bodyCreationSettings.MassPropertiesOverride <- massProperties
-            bodyCreationSettings.GravityFactor <- // TODO: P0: implement individual gravity direction?
+            bodyCreationSettings.GravityFactor <-
                 match bodyProperties.GravityOverride with
                 | Some gravity -> gravity.Magnitude
                 | None -> 1.0f
@@ -1064,6 +1069,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, character) -> character.GroundState = GroundState.OnGround
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
+        // TODO: P0: implement.
         member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
             //let mutable start = start
             //let mutable stop = stop
@@ -1128,22 +1134,24 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 // update characters
                 let characterLayer = Constants.Physics.ObjectLayerMoving
                 for character in physicsEngine.Characters.Values do
-                    let characterProperties = physicsEngine.CharacterUserData.[character].CharacterProperties
+                    let characterUserData = physicsEngine.CharacterUserData.[character]
+                    let characterGravity = Option.defaultValue physicsEngine.PhysicsContext.Gravity characterUserData.CharacterGravityOverride
+                    let characterProperties = characterUserData.CharacterProperties
                     let mutable characterUpdateSettings =
                         ExtendedUpdateSettings
                             (WalkStairsStepUp = characterProperties.StairStepUp,
-                                StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
-                                WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
-                                WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
-                                WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
-                                WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
+                             StickToFloorStepDown = characterProperties.StairStepDownStickToFloor,
+                             WalkStairsStepDownExtra = characterProperties.StairStepDownExtra,
+                             WalkStairsStepForwardTest = characterProperties.StairStepForwardTest,
+                             WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
+                             WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
                     character.LinearVelocity <-
                         character.LinearVelocity -
                         (character.LinearVelocity * (v3Dup characterProperties.TraversalDamping).WithY 0.0f * stepTime.Seconds)
                     character.LinearVelocity <-
                         if character.GroundState = GroundState.OnGround
                         then character.LinearVelocity.MapY (max 0.0f)
-                        else character.LinearVelocity + physicsEngine.PhysicsContext.Gravity * stepTime.Seconds
+                        else character.LinearVelocity + characterGravity * stepTime.Seconds
                     character.ExtendedUpdate (stepTime.Seconds, characterUpdateSettings, &characterLayer, physicsEngine.PhysicsContext)
 
                 // update constraints
