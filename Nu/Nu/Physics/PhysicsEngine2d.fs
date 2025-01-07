@@ -620,8 +620,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             Array.notEmpty groundNormals
 
-        member physicsEngine.RayCast (segment, collisionCategories, collisionMask, closestOnly) =
-            ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
+        member physicsEngine.RayCast (segment, collisionMask, closestOnly) =
             let results = List ()
             let mutable fractionMin = Single.MaxValue
             let mutable closestOpt = None
@@ -629,7 +628,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
                     match fixture.Tag with
                     | :? BodyShapeIndex as bodyShapeIndex ->
-                        if (int fixture.CollidesWith &&& collisionCategories) <> 0 then
+                        if (int fixture.CollidesWith ||| collisionMask) <> 0 then
                             let report = BodyIntersection.make bodyShapeIndex fraction (v3 point.X point.Y 0.0f) (v3 normal.X normal.Y 0.0f)
                             if fraction < fractionMin then
                                 fractionMin <- fraction

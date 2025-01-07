@@ -31,6 +31,7 @@ type [<Struct>] private BodyContactEvent =
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
       BodyCollisionCategories : int
+      BodyCollisionMask : int
       BodyObserving : bool }
 
 type [<Struct>] private BodyConstraintEvent =
@@ -445,9 +446,14 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             // create actual character
             let character = new CharacterVirtual (characterSettings, &bodyProperties.Center, &bodyProperties.Rotation, 0UL, physicsEngine.PhysicsContext)
             let innerBodyID = character.InnerBodyID
+            let bodyUserData =
+                { BodyId = bodyId
+                  BodyCollisionCategories = bodyProperties.CollisionCategories
+                  BodyCollisionMask = bodyProperties.CollisionMask
+                  BodyObserving = bodyProperties.ShouldObserve }
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
-            physicsEngine.BodyUserData.Add (innerBodyID, { BodyId = bodyId; BodyCollisionCategories = bodyProperties.CollisionCategories; BodyObserving = bodyProperties.ShouldObserve })
+            physicsEngine.BodyUserData.Add (innerBodyID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
             // set inner body physics properties
@@ -559,8 +565,13 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | Continuous (_, _) -> MotionQuality.LinearCast
             bodyCreationSettings.IsSensor <- bodyProperties.Sensor
             let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
+            let bodyUserData =
+                { BodyId = bodyId
+                  BodyCollisionCategories = bodyProperties.CollisionCategories
+                  BodyCollisionMask = bodyProperties.CollisionMask
+                  BodyObserving = bodyProperties.ShouldObserve }
             physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
-            physicsEngine.BodyUserData.Add (body.ID, { BodyId = bodyId; BodyCollisionCategories = bodyProperties.CollisionCategories; BodyObserving = bodyProperties.ShouldObserve })
+            physicsEngine.BodyUserData.Add (body.ID, bodyUserData)
             physicsEngine.Bodies.Add (bodyId, body.ID)
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -968,22 +979,35 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         let physicsSystem = new PhysicsSystem (physicsSystemSettings)
         physicsSystem.Gravity <- gravity
 
-        let contactLock = obj ()
-        let contactEvents = HashSet ()
+        let bodyContactLock = obj ()
+        let bodyContactEvents = HashSet ()
+        let bodyUserData = dictPlus HashIdentity.Structural []
 
-        physicsSystem.add_OnContactValidate (fun _ _ _ _ _ ->
-            lock contactLock $ fun () -> ValidateResult.AcceptContact) // TODO: P0: use collision mask used here?
+        physicsSystem.add_OnContactValidate (fun _ body body2 _ _ ->
+            let bodyID = body.ID
+            let body2ID = body2.ID
+            lock bodyContactLock $ fun () ->
+                // TODO: P0: at least optimize collision mask and categories check with in-place body user data.
+                match bodyUserData.TryGetValue bodyID with
+                | (true, bodyUserData_) ->
+                    match bodyUserData.TryGetValue body2ID with
+                    | (true, body2UserData) ->
+                        if bodyUserData_.BodyCollisionMask &&& body2UserData.BodyCollisionCategories <> 0
+                        then ValidateResult.AcceptContact
+                        else ValidateResult.RejectContact
+                    | (false, _) -> ValidateResult.AcceptContact
+                | (false, _) -> ValidateResult.AcceptContact)
 
         physicsSystem.add_OnContactAdded (fun _ body body2 manifold _ ->
             let bodyID = body.ID
             let body2ID = body2.ID
             let contactNormal = manifold.WorldSpaceNormal
-            lock contactLock $ fun () -> contactEvents.Add (BodyContactAdded (bodyID, body2ID, contactNormal)) |> ignore<bool>)
+            lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactAdded (bodyID, body2ID, contactNormal)) |> ignore<bool>)
 
         physicsSystem.add_OnContactRemoved (fun _ subShapeIDPair ->
             let bodyID = subShapeIDPair.Body1ID
             let body2ID = subShapeIDPair.Body2ID
-            lock contactLock $ fun () -> contactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
+            lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
         let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
         jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
@@ -1001,11 +1025,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CharacterCollisions = dictPlus HashIdentity.Structural []
           CharacterUserData = dictPlus HashIdentity.Structural []
           Characters = dictPlus HashIdentity.Structural []
-          BodyContactLock = contactLock
-          BodyContactEvents = contactEvents
+          BodyContactLock = bodyContactLock
+          BodyContactEvents = bodyContactEvents
           BodyCollisionsGround = dictPlus HashIdentity.Structural []
           BodyCollisionsAll = dictPlus HashIdentity.Structural []
-          BodyUserData = dictPlus HashIdentity.Structural []
+          BodyUserData = bodyUserData
           Bodies = dictPlus HashIdentity.Structural []
           CreateBodyJointMessages = dictPlus HashIdentity.Structural []
           BodyConstraintEvents = List ()
@@ -1077,8 +1101,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, character) -> character.GroundState = GroundState.OnGround
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
-        member physicsEngine.RayCast (segment, collisionCategories, collisionMask, closestOnly) =
-            ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
+        member physicsEngine.RayCast (segment, collisionMask, closestOnly) =
             let mutable ray = Ray ()
             ray.Position <- segment.A
             ray.Direction <- segment.Vector
@@ -1086,7 +1109,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyFilterID bodyID =
                 // TODO: P0: see if we need to ray cast characters explicitly.
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
-                | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories ||| collisionCategories <> 0
+                | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories ||| collisionMask <> 0
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
             use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
