@@ -2385,7 +2385,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     | Some _ | None -> world
 
                 // view manipulation
-                if not CaptureMode && not ManipulationActive then
+                if not CaptureMode && not ManipulationActive && DragEntityState = DragEntityInactive then
                     let eyeRotationOld = World.getEye3dRotation world
                     let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                     ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)

@@ -166,7 +166,7 @@ namespace Spine
                     triangleCount = 0;
                     lastTexture = item.texture;
 
-                    // TODO: restore layers behavior.
+                    // TODO: restore Spine layers behavior.
                     //if (item.textureLayers != null)
                     //{
                     //    for (int layer = 1; layer < item.textureLayers.Length; ++layer)
