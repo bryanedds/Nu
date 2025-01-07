@@ -992,7 +992,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | (true, bodyUserData_) ->
                     match bodyUserData.TryGetValue body2ID with
                     | (true, body2UserData) ->
-                        if bodyUserData_.BodyCollisionMask &&& body2UserData.BodyCollisionCategories <> 0
+                        if bodyUserData_.BodyCollisionCategories &&& body2UserData.BodyCollisionMask <> 0
                         then ValidateResult.AcceptContact
                         else ValidateResult.RejectContact
                     | (false, _) -> ValidateResult.AcceptContact
@@ -1109,7 +1109,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyFilterID bodyID =
                 // TODO: P0: see if we need to ray cast characters explicitly.
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
-                | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories ||| collisionMask <> 0
+                | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
             use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)

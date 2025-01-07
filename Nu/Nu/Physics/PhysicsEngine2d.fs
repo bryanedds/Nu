@@ -628,7 +628,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                 RayCastReportFixtureDelegate (fun fixture point normal fraction ->
                     match fixture.Tag with
                     | :? BodyShapeIndex as bodyShapeIndex ->
-                        if (int fixture.CollidesWith ||| collisionMask) <> 0 then
+                        if (int fixture.CollidesWith &&& collisionMask) <> 0 then
                             let report = BodyIntersection.make bodyShapeIndex fraction (v3 point.X point.Y 0.0f) (v3 normal.X normal.Y 0.0f)
                             if fraction < fractionMin then
                                 fractionMin <- fraction
