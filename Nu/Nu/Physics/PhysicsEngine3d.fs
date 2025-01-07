@@ -1111,22 +1111,22 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
             use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
-            if closestOnly then
-                if physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) then
-                    let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
-                    let subShapeID = SubShapeID rayCastResult.subShapeID2
-                    let position = ray.Position + ray.Direction * rayCastResult.Fraction
-                    let mutable bodyLockRead = BodyLockRead ()
-                    let normal =
-                        try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&rayCastResult.BodyID, &bodyLockRead)
-                            if bodyLockRead.Succeeded
-                            then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
-                            else Log.warnOnce "Failed to find expected body."; v3Up
-                        finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
-                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P0: see if we can get the user-defined shape index.
-                    [|BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
-                else [||]
-            else [||] // TODO: P0: implement for multi-hit.
+            //if closestOnly then // TODO: P0: implement for multi-hit.
+            if physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) then
+                let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
+                let subShapeID = SubShapeID rayCastResult.subShapeID2
+                let position = ray.Position + ray.Direction * rayCastResult.Fraction
+                let mutable bodyLockRead = BodyLockRead ()
+                let normal =
+                    try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&rayCastResult.BodyID, &bodyLockRead)
+                        if bodyLockRead.Succeeded
+                        then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
+                        else Log.warnOnce "Failed to find expected body."; v3Up
+                    finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
+                let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P0: see if we can get the user-defined shape index.
+                [|BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
+            else [||]
+            //else [||]
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
