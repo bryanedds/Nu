@@ -952,21 +952,22 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
     static member make (gravity : Vector3) =
 
+        //
         if not (Foundation.Init false) then
             Log.fail "Could not initialize Jolt Physics."
 
-        // We use only 2 layers: one for non-moving objects and one for moving objects
+        // setup multiphase physics pipeline.
+        // we use only 2 layers: one for non-moving objects and one for moving objects.
+        // we use a 1-to-1 mapping between object layers and broadphase layers.
         let objectLayerPairFilter = new ObjectLayerPairFilterTable (2u)
         objectLayerPairFilter.EnableCollision (Constants.Physics.ObjectLayerNonMoving, Constants.Physics.ObjectLayerMoving)
         objectLayerPairFilter.EnableCollision (Constants.Physics.ObjectLayerMoving, Constants.Physics.ObjectLayerMoving)
-
-        // We use a 1-to-1 mapping between object layers and broadphase layers
         let broadPhaseLayerInterface = new BroadPhaseLayerInterfaceTable (2u, 2u)
         broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (Constants.Physics.ObjectLayerNonMoving, Constants.Physics.BroadPhaseLayerNonMoving)
         broadPhaseLayerInterface.MapObjectToBroadPhaseLayer (Constants.Physics.ObjectLayerMoving, Constants.Physics.BroadPhaseLayerMoving)
-
         let objectVsBroadPhaseLayerFilter = new ObjectVsBroadPhaseLayerFilterTable (broadPhaseLayerInterface, 2u, objectLayerPairFilter, 2u)
 
+        //
         let mutable physicsSystemSettings = PhysicsSystemSettings ()
         physicsSystemSettings.ObjectLayerPairFilter <- objectLayerPairFilter
         physicsSystemSettings.BroadPhaseLayerInterface <- broadPhaseLayerInterface
@@ -974,14 +975,15 @@ type [<ReferenceEquality>] PhysicsEngine3d =
         physicsSystemSettings.MaxBodies <- Constants.Physics.Collision3dBodiesMax
         physicsSystemSettings.MaxBodyPairs <- Constants.Physics.Collision3dBodyPairsMax
         physicsSystemSettings.MaxContactConstraints <- Constants.Physics.Collision3dContactConstraintsMax
-
         let physicsSystem = new PhysicsSystem (physicsSystemSettings)
         physicsSystem.Gravity <- gravity
 
+        //
         let bodyContactLock = obj ()
         let bodyContactEvents = HashSet ()
         let bodyUserData = dictPlus HashIdentity.Structural []
 
+        //
         physicsSystem.add_OnContactValidate (fun _ body body2 _ _ ->
             let bodyID = body.ID
             let body2ID = body2.ID
@@ -997,23 +999,27 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     | (false, _) -> ValidateResult.AcceptContact
                 | (false, _) -> ValidateResult.AcceptContact)
 
+        //
         physicsSystem.add_OnContactAdded (fun _ body body2 manifold _ ->
             let bodyID = body.ID
             let body2ID = body2.ID
             let contactNormal = manifold.WorldSpaceNormal
             lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactAdded (bodyID, body2ID, contactNormal)) |> ignore<bool>)
 
+        //
         physicsSystem.add_OnContactRemoved (fun _ subShapeIDPair ->
             let bodyID = subShapeIDPair.Body1ID
             let body2ID = subShapeIDPair.Body2ID
             lock bodyContactLock $ fun () -> bodyContactEvents.Add (BodyContactRemoved (bodyID, body2ID)) |> ignore<bool>)
 
+        //
         let mutable jobSystemConfig = JobSystemThreadPoolConfig ()
         jobSystemConfig.maxJobs <- uint Constants.Physics.Collision3dJobsMax
         jobSystemConfig.maxBarriers <- uint Constants.Physics.Collision3dBarriersMax
         jobSystemConfig.numThreads <- Constants.Physics.Collision3dThreads
         let jobSystem = new JobSystemThreadPool (&jobSystemConfig)
 
+        //
         { PhysicsContext = physicsSystem
           JobSystem = jobSystem
           UnscaledPointsCache = dictPlus UnscaledPointsKey.comparer []
