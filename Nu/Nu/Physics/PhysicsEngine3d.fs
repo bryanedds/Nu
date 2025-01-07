@@ -635,7 +635,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             PhysicsEngine3d.destroyBody { BodyId = bodyId } physicsEngine)
             destroyBodiesMessage.BodyIds
 
-    // TODO: P0: test if we need to manually wake bodies when adding joints to them.
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
         match bodyJointProperties.BodyJoint with
         | EmptyJoint -> ()
@@ -681,6 +680,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         None
                 match constrainOpt with
                 | Some constrain ->
+                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID // TODO: P1: make sure we manually need to wake bodies acquiring constraints.
+                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: P1: make sure we manually need to wake bodies acquiring constraints.
                     physicsEngine.PhysicsContext.AddConstraint constrain
                     if physicsEngine.BodyConstraintUserData.TryAdd (bodyJointId, { BreakingPoint = bodyJointProperties.BreakingPoint })
                     then physicsEngine.BodyConstraints.Add (bodyJointId, constrain)
