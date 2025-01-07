@@ -999,7 +999,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 else ValueNone
             | None ->
                 Log.info ("Loading Render2d package '" + assetTag.PackageName + "' for asset '" + assetTag.AssetName + "' on the fly.")
-                GlRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
+                VulkanRenderer2d.tryLoadRenderPackage assetTag.PackageName renderer
                 match renderer.RenderPackages.TryGetValue assetTag.PackageName with
                 | (true, package) ->
                     renderer.RenderPackageCachedOpt <- { CachedPackageName = assetTag.PackageName; CachedPackageAssets = package.Assets }
@@ -1053,13 +1053,15 @@ type [<ReferenceEquality>] VulkanRenderer2d =
          justification : Justification,
          eyeCenter : Vector2,
          eyeSize : Vector2,
-         renderer : GlRenderer2d) =
+         renderer : VulkanRenderer2d) =
 
         // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
         let color = color // copy to local for proprety access
         if color.A8 <> 0uy then
             let transform = transform // copy to local to make visible from lambda
-            flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
+            
+            // TODO: DJL: don't forget to restore this once sprite batch environment is setup.
+            do //flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
                 let mutable transform = transform
@@ -1070,7 +1072,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 let size = perimeter.Size.V2 * virtualScalar
                 let viewport = Constants.Render.Viewport
                 let viewProjection = viewport.ViewProjection2d (absolute, eyeCenter, eyeSize)
-                match GlRenderer2d.tryGetRenderAsset font renderer with
+                match VulkanRenderer2d.tryGetRenderAsset font renderer with
                 | ValueSome renderAsset ->
                     match renderAsset with
                     | FontAsset (fontSizeDefault, font) ->
@@ -1151,31 +1153,30 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // upload texture data
-                            let textTextureId = OpenGL.Gl.GenTexture ()
-                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, textTextureId)
-                            OpenGL.Gl.TexImage2D (OpenGL.TextureTarget.Texture2d, 0, Constants.OpenGL.UncompressedTextureFormat, textSurfaceWidth, textSurfaceHeight, 0, OpenGL.PixelFormat.Bgra, OpenGL.PixelType.UnsignedByte, textSurface.pixels)
-                            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMinFilter, int OpenGL.TextureMinFilter.Nearest)
-                            OpenGL.Gl.TexParameter (OpenGL.TextureTarget.Texture2d, OpenGL.TextureParameterName.TextureMagFilter, int OpenGL.TextureMagFilter.Nearest)
-                            OpenGL.Gl.BindTexture (OpenGL.TextureTarget.Texture2d, 0u)
-                            OpenGL.Hl.Assert ()
-
-                            // make texture drawable
-                            let textTextureMetadata = OpenGL.Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                            let textTexture = OpenGL.Texture.EagerTexture { TextureMetadata = textTextureMetadata; TextureId = textTextureId }
-                            OpenGL.Hl.Assert ()
+                            // create texture
+                            // TODO: DJL: try a non-staged texture upload and compare performance.
+                            let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
+                            let textVulkanTexture =
+                                Texture.VulkanTexture.createBgra
+                                    Vulkan.VK_FILTER_NEAREST
+                                    Vulkan.VK_FILTER_NEAREST
+                                    textTextureMetadata
+                                    textSurface.pixels
+                                    renderer.VulkanGlobal
+                            let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
-                            let (vertices, indices, vao) = renderer.TextQuad
-                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
-                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
-                            OpenGL.Hl.Assert ()
+//                            let (vertices, indices, vao) = renderer.TextQuad
+//                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
+//                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
+//                            OpenGL.Hl.Assert ()
 
-                            // destroy texture
+                            // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
-                            textTexture.Destroy ()
-                            OpenGL.Hl.Assert ()
+
+                            // mark texture for destruction later because draw command hasn't been executed yet!
+                            renderer.TransientTextures.Add textTexture
 
                     // fin
                     | _ -> Log.infoOnce ("Cannot render text with a non-font asset for '" + scstring font + "'.")
@@ -1200,9 +1201,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 //            GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCachedSprite descriptor -> ()
 //            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
-        | RenderText descriptor -> ()
-//            GlRenderer2d.renderText
-//                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
+        | RenderText descriptor ->
+            VulkanRenderer2d.renderText
+                (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
         | RenderTiles descriptor -> ()
 //            GlRenderer2d.renderTiles
 //                (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
