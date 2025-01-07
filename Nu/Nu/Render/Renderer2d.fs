@@ -1242,6 +1242,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 VulkanRenderer2d.render eyeCenter eyeSize renderMessages renderer
         
         member renderer.CleanUp () =
+            
+            // destroy transient textures left by the last frame
+            VulkanRenderer2d.destroyTransientTextures renderer
+            renderer.TransientTextures.Clear ()
+            
+            // clean up packages
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do VulkanRenderer2d.freeRenderAsset renderAsset renderer
