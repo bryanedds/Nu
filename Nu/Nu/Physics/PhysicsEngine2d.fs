@@ -620,7 +620,7 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             let groundNormals = (physicsEngine :> PhysicsEngine).GetBodyToGroundContactNormals bodyId
             Array.notEmpty groundNormals
 
-        member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
+        member physicsEngine.RayCast (segment, collisionCategories, collisionMask, closestOnly) =
             ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
             let results = List ()
             let mutable fractionMin = Single.MaxValue
@@ -639,8 +639,8 @@ type [<ReferenceEquality>] PhysicsEngine2d =
                     if closestOnly then fraction else 1.0f)
             physicsEngine.PhysicsContext.RayCast
                 (callback,
-                 Common.Vector2 (start.X, start.Y),
-                 Common.Vector2 (stop.X, stop.Y))
+                 Common.Vector2 (segment.A.X, segment.A.Y),
+                 Common.Vector2 (segment.B.X, segment.B.Y))
             if closestOnly then
                 match closestOpt with
                 | Some closest -> [|closest|]

@@ -20,6 +20,7 @@ type [<Struct>] private CharacterContact =
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
       CharacterContacts : Dictionary<SubShapeID, CharacterContact>
+      CharacterCollisionCategories : int
       CharacterGravityOverride : Vector3 option
       CharacterProperties : CharacterProperties }
 
@@ -29,13 +30,19 @@ type [<Struct>] private BodyContactEvent =
 
 type [<Struct>] private BodyUserData =
     { BodyId : BodyId
-      Observing : bool }
+      BodyCollisionCategories : int
+      BodyObserving : bool }
 
 type [<Struct>] private BodyConstraintEvent =
     | BodyConstraintBreak of BodyJointId : BodyJointId * BreakingPoint : single * BreakingOverflow : single
 
 type [<Struct>] private BodyConstraintUserData =
     { BreakingPoint : single }
+
+type private BodyFilterLambda (predicateBodyID, predicateBody) =
+    inherit BodyFilter ()
+    override this.ShouldCollide bodyID = predicateBodyID bodyID
+    override this.ShouldCollideLocked body = predicateBody body
 
 type [<CustomEquality; NoComparison>] private UnscaledPointsKey =
     { HashCode : int
@@ -440,7 +447,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let innerBodyID = character.InnerBodyID
             physicsEngine.CharacterVsCharacterCollision.Add character
             character.SetCharacterVsCharacterCollision physicsEngine.CharacterVsCharacterCollision
-            physicsEngine.BodyUserData.Add (innerBodyID, { BodyId = bodyId; Observing = bodyProperties.ShouldObserve })
+            physicsEngine.BodyUserData.Add (innerBodyID, { BodyId = bodyId; BodyCollisionCategories = bodyProperties.CollisionCategories; BodyObserving = bodyProperties.ShouldObserve })
             physicsEngine.Bodies.Add (bodyId, innerBodyID)
 
             // set inner body physics properties
@@ -516,6 +523,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let characterUserData =
                 { CharacterBodyId = bodyId
                   CharacterContacts = dictPlus HashIdentity.Structural []
+                  CharacterCollisionCategories = bodyProperties.CollisionCategories
                   CharacterGravityOverride = bodyProperties.GravityOverride
                   CharacterProperties = bodyProperties.CharacterProperties }
             physicsEngine.CharacterUserData.Add (character, characterUserData)
@@ -552,7 +560,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             bodyCreationSettings.IsSensor <- bodyProperties.Sensor
             let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
             physicsEngine.PhysicsContext.BodyInterface.AddBody (&body, if bodyProperties.Enabled then Activation.Activate else Activation.DontActivate)
-            physicsEngine.BodyUserData.Add (body.ID, { BodyId = bodyId; Observing = bodyProperties.ShouldObserve })
+            physicsEngine.BodyUserData.Add (body.ID, { BodyId = bodyId; BodyCollisionCategories = bodyProperties.CollisionCategories; BodyObserving = bodyProperties.ShouldObserve })
             physicsEngine.Bodies.Add (bodyId, body.ID)
 
     static member private createBody (createBodyMessage : CreateBodyMessage) physicsEngine =
@@ -1069,37 +1077,35 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             | (true, character) -> character.GroundState = GroundState.OnGround
             | (false, _) -> physicsEngine.BodyCollisionsGround.ContainsKey bodyId
 
-        // TODO: P0: implement.
-        member physicsEngine.RayCast (start, stop, collisionCategories, collisionMask, closestOnly) =
-            //let mutable start = start
-            //let mutable stop = stop
-            //use rrc =
-            //    if closestOnly
-            //    then new ClosestRayResultCallback (&start, &stop) :> RayResultCallback
-            //    else new AllHitsRayResultCallback (start, stop)
-            //rrc.CollisionFilterGroup <- collisionCategories
-            //rrc.CollisionFilterMask <- collisionMask
-            //physicsEngine.PhysicsContext.RayTest (start, stop, rrc)
-            //if rrc.HasHit then
-            //    match rrc with
-            //    | :? ClosestRayResultCallback as crrc ->
-            //        [|  match crrc.CollisionObject.CollisionShape.UserObject with
-            //            | :? BodyShapeIndex as shapeIndex ->
-            //                BodyIntersection.make shapeIndex crrc.ClosestHitFraction crrc.HitPointWorld crrc.HitNormalWorld
-            //            | _ -> failwithumf ()|]
-            //    | :? AllHitsRayResultCallback as ahrrc ->
-            //        [|for i in 0 .. dec ahrrc.CollisionObjects.Count do
-            //            let collisionObject = ahrrc.CollisionObjects.[i]
-            //            let hitPointWorld = ahrrc.HitPointWorld.[i]
-            //            let hitNormalWorld = ahrrc.HitNormalWorld.[i]
-            //            let hitFraction = ahrrc.HitFractions.[i]
-            //            match collisionObject.CollisionShape.UserObject with
-            //            | :? BodyShapeIndex as shapeIndex ->
-            //                BodyIntersection.make shapeIndex hitFraction hitPointWorld hitNormalWorld
-            //            | _ -> failwithumf ()|]
-            //    | _ -> failwithumf ()
-            //else [||]
-            [||]
+        member physicsEngine.RayCast (segment, collisionCategories, collisionMask, closestOnly) =
+            ignore collisionMask // TODO: P1: try to figure out how this variable can / should be used here!
+            let mutable ray = Ray ()
+            ray.Position <- segment.A
+            ray.Direction <- segment.Vector
+            let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
+            let bodyFilterID bodyID =
+                // TODO: P0: see if we need to ray cast characters explicitly.
+                match physicsEngine.BodyUserData.TryGetValue bodyID with
+                | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories ||| collisionCategories <> 0
+                | (false, _) -> false
+            let bodyFilterInstance (body : Body) = bodyFilterID body.ID
+            use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
+            if closestOnly then
+                if physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) then
+                    let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
+                    let subShapeID = SubShapeID rayCastResult.subShapeID2
+                    let position = ray.Position + ray.Direction * rayCastResult.Fraction
+                    let mutable bodyLockRead = BodyLockRead ()
+                    let normal =
+                        try physicsEngine.PhysicsContext.BodyLockInterface.LockRead (&rayCastResult.BodyID, &bodyLockRead)
+                            if bodyLockRead.Succeeded
+                            then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
+                            else Log.warnOnce "Failed to find expected body."; v3Up
+                        finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
+                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P0: see if we can get the user-defined shape index.
+                    [|BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
+                else [||]
+            else [||] // TODO: P0: implement for multi-hit.
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage

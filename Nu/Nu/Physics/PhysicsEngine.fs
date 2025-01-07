@@ -770,7 +770,7 @@ type PhysicsEngine =
     /// Check that the body with the given physics id is on the ground.
     abstract GetBodyGrounded : BodyId -> bool
     /// Cast a ray into the physics bodies.
-    abstract RayCast : Vector3 * Vector3 * int * int * bool -> BodyIntersection array
+    abstract RayCast : Segment3 * int * int * bool -> BodyIntersection array
     /// Handle a physics message from an external source.
     abstract HandleMessage : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
@@ -793,7 +793,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.RayCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.RayCast (_, _, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.ClearInternal () = false
