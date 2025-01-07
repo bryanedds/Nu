@@ -212,7 +212,7 @@ namespace Spine
                 if (verticesCount == 0 || indicesCount == 0) continue;
 
                 // submit to batch
-                // TODO: P1: restore texture layers functionality.
+                // TODO: restore texture layers functionality.
                 MeshItem item = batcher.NextItem(verticesCount, indicesCount);
                 item.texture = getTextureId(textureObject);
 

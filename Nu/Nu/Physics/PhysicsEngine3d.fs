@@ -680,8 +680,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         None
                 match constrainOpt with
                 | Some constrain ->
-                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID // TODO: P1: make sure we manually need to wake bodies acquiring constraints.
-                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: P1: make sure we manually need to wake bodies acquiring constraints.
+                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID // TODO: make sure we manually need to wake bodies acquiring constraints.
+                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
                     physicsEngine.PhysicsContext.AddConstraint constrain
                     if physicsEngine.BodyConstraintUserData.TryAdd (bodyJointId, { BreakingPoint = bodyJointProperties.BreakingPoint })
                     then physicsEngine.BodyConstraints.Add (bodyJointId, constrain)
@@ -1126,7 +1126,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                             then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
                             else Log.warnOnce "Failed to find expected body."; v3Up
                         finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
-                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
+                    let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P0: see if we can get the user-defined shape index.
                     [|BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
                 else [||]
             else [||] // TODO: P0: implement for multi-hit.
