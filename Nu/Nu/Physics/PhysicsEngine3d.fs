@@ -636,66 +636,61 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
-        match bodyJointProperties.BodyJoint with
-        | EmptyJoint -> ()
-        | _ ->
-            let bodyId = bodyJointProperties.BodyJointTarget
-            let body2Id = bodyJointProperties.BodyJointTarget2
-            match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
-            | ((true, bodyID), (true, body2ID)) ->
-                let constrainOpt =
-                    match bodyJointProperties.BodyJoint with
-                    | EmptyJoint ->
-                        failwithumf () // already checked
-                    | AngleJoint hingeJoint ->
-                        let constraintSettings = new HingeConstraintSettings ()
-                        constraintSettings.Point1 <- hingeJoint.Anchor
-                        constraintSettings.Point2 <- hingeJoint.Anchor2
+        let resultOpt =
+            match bodyJointProperties.BodyJoint with
+            | EmptyJoint ->
+                None
+            | AetherOneBodyJoint _ | AetherTwoBodyJoint _ ->
+                Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
+                None
+            | JoltOneBodyJoint joltJoint ->
+                let bodyId = bodyJointProperties.BodyJointTarget
+                match physicsEngine.Bodies.TryGetValue bodyId with
+                | (true, bodyID) ->
+                    let mutable bodyLockWrite = BodyLockWrite ()
+                    try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
+                        let body = bodyLockWrite.Body
+                        let joint = joltJoint.CreateOneBodyJoint body
+                        Some (joint, bodyID, None)
+                    finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &bodyLockWrite
+                | (false, _) -> None
+            | JoltTwoBodyJoint joltJoint ->
+                let bodyId = bodyJointProperties.BodyJointTarget
+                let body2IdOpt = bodyJointProperties.BodyJointTarget2Opt
+                match body2IdOpt with
+                | Some body2Id ->
+                    match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
+                    | ((true, bodyID), (true, body2ID)) ->
                         use lockMultiWrite = physicsEngine.PhysicsContext.BodyLockInterface.LockMultiWrite ([|bodyID; body2ID|].AsSpan ()) // NOTE: assuming that jolt needs write capabilities for these.
                         let body = lockMultiWrite.GetBody 0u
                         let body2 = lockMultiWrite.GetBody 1u
-                        let constrain = constraintSettings.CreateConstraint (&body, &body2)
-                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
-                        Some constrain
-                    | DistanceJoint distanceJoint ->
-                        let constraintSettings = new DistanceConstraintSettings ()
-                        constraintSettings.Point1 <- distanceJoint.Anchor
-                        constraintSettings.Point2 <- distanceJoint.Anchor2
-                        constraintSettings.Space <- ConstraintSpace.LocalToBodyCOM
-                        use lockMultiWrite = physicsEngine.PhysicsContext.BodyLockInterface.LockMultiWrite ([|bodyID; body2ID|].AsSpan ()) // NOTE: assuming that jolt needs write capabilities for these.
-                        let body = lockMultiWrite.GetBody 0u
-                        let body2 = lockMultiWrite.GetBody 1u
-                        let constrain = constraintSettings.CreateConstraint (&body, &body2)
-                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
-                        Some constrain
-                    | UserDefinedJoltJoint joltJoint ->
-                        use lockMultiWrite = physicsEngine.PhysicsContext.BodyLockInterface.LockMultiWrite ([|bodyID; body2ID|].AsSpan ()) // NOTE: assuming that jolt needs write capabilities for these.
-                        let body = lockMultiWrite.GetBody 0u
-                        let body2 = lockMultiWrite.GetBody 1u
-                        let constrain = joltJoint.CreateBodyJoint body body2
-                        constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
-                        Some constrain
-                    | _ ->
-                        Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
-                        None
-                match constrainOpt with
-                | Some constrain ->
-                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID // TODO: make sure we manually need to wake bodies acquiring constraints.
-                    physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
-                    physicsEngine.PhysicsContext.AddConstraint constrain
-                    if physicsEngine.BodyConstraintUserData.TryAdd (bodyJointId, { BreakingPoint = bodyJointProperties.BreakingPoint })
-                    then physicsEngine.BodyConstraints.Add (bodyJointId, constrain)
-                    else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
-                | None -> ()
-            | (_, _) -> ()
+                        let joint = joltJoint.CreateTwoBodyJoint body body2
+                        Some (joint, bodyID, Some body2ID)
+                    | _ -> None
+                | None -> None
+        match resultOpt with
+        | Some (constrain, bodyID, body2IDOpt) ->
+            constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
+            physicsEngine.PhysicsContext.BodyInterface.ActivateBody &bodyID // TODO: make sure we manually need to wake bodies acquiring constraints.
+            match body2IDOpt with
+            | Some body2ID -> physicsEngine.PhysicsContext.BodyInterface.ActivateBody &body2ID // TODO: make sure we manually need to wake bodies acquiring constraints.
+            | None -> ()
+            physicsEngine.PhysicsContext.AddConstraint constrain
+            if physicsEngine.BodyConstraintUserData.TryAdd (bodyJointId, { BreakingPoint = bodyJointProperties.BreakingPoint })
+            then physicsEngine.BodyConstraints.Add (bodyJointId, constrain)
+            else Log.warn ("Could not add body joint for '" + scstring bodyJointId + "'.")
+        | None -> ()
 
     static member private createBodyJoint (createBodyJointMessage : CreateBodyJointMessage) physicsEngine =
 
         // log creation message
-        for bodyTarget in [createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2] do
-            match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
-            | (true, messages) -> messages.Add createBodyJointMessage
-            | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
+        for bodyTargetOpt in [Some createBodyJointMessage.BodyJointProperties.BodyJointTarget; createBodyJointMessage.BodyJointProperties.BodyJointTarget2Opt] do
+            match bodyTargetOpt with
+            | Some bodyTarget ->
+                match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
+                | (true, messages) -> messages.Add createBodyJointMessage
+                | (false, _) -> physicsEngine.CreateBodyJointMessages.Add (bodyTarget, List [createBodyJointMessage])
+            | None -> ()
 
         // attempt to add body joint
         let bodyJointId = { BodyJointSource = createBodyJointMessage.BodyJointSource; BodyJointIndex = createBodyJointMessage.BodyJointProperties.BodyJointIndex }
@@ -712,14 +707,17 @@ type [<ReferenceEquality>] PhysicsEngine3d =
     static member private destroyBodyJoint (destroyBodyJointMessage : DestroyBodyJointMessage) physicsEngine =
 
         // unlog creation message
-        for bodyTarget in [destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2] do
-            match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
-            | (true, messages) ->
-                messages.RemoveAll (fun message ->
-                    message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
-                    message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
-                ignore<int>
-            | (false, _) -> ()
+        for bodyTargetOpt in [Some destroyBodyJointMessage.BodyJointTarget; destroyBodyJointMessage.BodyJointTarget2Opt] do
+            match bodyTargetOpt with
+            | Some bodyTarget ->
+                match physicsEngine.CreateBodyJointMessages.TryGetValue bodyTarget with
+                | (true, messages) ->
+                    messages.RemoveAll (fun message ->
+                        message.BodyJointSource = destroyBodyJointMessage.BodyJointId.BodyJointSource &&
+                        message.BodyJointProperties.BodyJointIndex = destroyBodyJointMessage.BodyJointId.BodyJointIndex) |>
+                    ignore<int>
+                | (false, _) -> ()
+            | None -> ()
 
         // attempt to destroy body joint
         PhysicsEngine3d.destroyBodyJointInternal destroyBodyJointMessage.BodyJointId physicsEngine
@@ -988,7 +986,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let bodyID = body.ID
             let body2ID = body2.ID
             lock bodyContactLock $ fun () ->
-                // TODO: P0: at least optimize collision mask and categories check with in-place body user data.
+                // TODO: P1: optimize collision mask and categories check with in-place body user data.
                 match bodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData_) ->
                     match bodyUserData.TryGetValue body2ID with
@@ -1108,7 +1106,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             ray.Direction <- segment.Vector
             let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
             let bodyFilterID bodyID =
-                // TODO: P0: see if we need to ray cast characters explicitly.
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
                 | (false, _) -> false

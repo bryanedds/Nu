@@ -474,141 +474,41 @@ type BodyJointId =
     { BodyJointSource : Simulant
       BodyJointIndex : int }
 
-/// Angle joint.
-type [<SymbolicExpansion>] AngleJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Axis : Vector3
-      Axis2 : Vector3
-      Angle : single
-      Softness : single
-      BiasFactor : single }
-
-/// Distance joint.
-type [<SymbolicExpansion>] DistanceJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Length : single
-      Frequency : single
-      DampingRatio : single }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] FrictionJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] GearJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] MotorJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] PrismaticJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] PulleyJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] RevoluteJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] RopeJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] WheelJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
+/// Allows users to create their own one-body 2D joints.
+type AetherOneBodyJoint =
+    { CreateOneBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own two-body 2D joints.
-type UserDefinedAetherJoint =
-    { CreateBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
+type AetherTwoBodyJoint =
+    { CreateTwoBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
-/// Hinge joint.
-type [<SymbolicExpansion>] HingeJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Axis : Vector3
-      Axis2 : Vector3
-      AngleMin : single
-      AngleMax : single
-      Softness : single
-      BiasFactor : single
-      RelaxationFactor : single
-      AngularOnly : bool }
-
-/// Slider joint.
-type [<SymbolicExpansion>] SliderJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Axis : Vector3
-      Axis2 : Vector3
-      LinearLimitLower : single
-      LinearLimitUpper : single
-      AngularLimitLower : single
-      AngularLimitUpper : single
-      DirectionLinearSoftness : single
-      DirectionLinearRestitution : single
-      DirectionLinearDamping : single
-      DirectionAngularSoftness : single
-      DirectionAngularRestitution : single
-      DirectionAngularDamping : single
-      LimitLinearSoftness : single
-      LimitLinearRestitution : single
-      LimitLinearDamping : single
-      LimitAngularSoftness : single
-      LimitAngularRestitution : single
-      LimitAngularDamping : single
-      OrthoLinearSoftness : single
-      OrthoLinearRestitution : single
-      OrthoLinearDamping : single
-      OrthoAngularSoftness : single
-      OrthoAngularRestitution : single
-      OrthoAngularDamping : single }
+/// Allows users to create their own one-body 3D joints.
+type JoltOneBodyJoint =
+    { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// Allows users to create their own two-body 3D joints.
-type UserDefinedJoltJoint =
-    { CreateBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
+type JoltTwoBodyJoint =
+    { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
+/// Because physics joints don't generalize well across 2D and 3D - or even across different 3D physics engines, we're
+/// currently only providing joint creation via the user-defined cases of AetherJoint and JoltJoint.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
     | EmptyJoint
-    | AngleJoint of AngleJoint
-    | DistanceJoint of DistanceJoint
-    | FrictionJoint of FrictionJoint
-    | GearJoint of GearJoint
-    | MotorJoint of MotorJoint
-    | PrismaticJoint of PrismaticJoint
-    | PulleyJoint of PulleyJoint
-    | RevoluteJoint of RevoluteJoint
-    | RopeJoint of RopeJoint
-    | WheelJoint of WheelJoint
-    | UserDefinedAetherJoint of UserDefinedAetherJoint
-    | HingeJoint of HingeJoint
-    | SliderJoint of SliderJoint
-    | UserDefinedJoltJoint of UserDefinedJoltJoint
+    | AetherOneBodyJoint of AetherOneBodyJoint
+    | AetherTwoBodyJoint of AetherTwoBodyJoint
+    | JoltOneBodyJoint of JoltOneBodyJoint
+    | JoltTwoBodyJoint of JoltTwoBodyJoint
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
     { BodyJoint : BodyJoint
       BodyJointTarget : BodyId
-      BodyJointTarget2 : BodyId
+      BodyJointTarget2Opt : BodyId option
       BodyJointEnabled : bool
       BreakingPoint : single
       Broken : bool
@@ -642,7 +542,7 @@ type CreateBodyJointMessage =
 type DestroyBodyJointMessage =
     { BodyJointId : BodyJointId
       BodyJointTarget : BodyId
-      BodyJointTarget2 : BodyId }
+      BodyJointTarget2Opt : BodyId option }
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
