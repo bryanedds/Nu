@@ -1110,15 +1110,24 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let mutable ray = Ray ()
             ray.Position <- segment.A
             ray.Direction <- segment.Vector
-            let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
             let bodyFilterID bodyID =
                 match physicsEngine.BodyUserData.TryGetValue bodyID with
                 | (true, bodyUserData) -> bodyUserData.BodyCollisionCategories &&& collisionMask <> 0
                 | (false, _) -> false
             let bodyFilterInstance (body : Body) = bodyFilterID body.ID
             use bodyFilter = new BodyFilterLambda (bodyFilterID, bodyFilterInstance)
-            //if closestOnly then // TODO: P0: implement for multi-hit.
-            if physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) then
+            let rayCastResults =
+                if closestOnly then
+                    let mutable rayCastResult = Unchecked.defaultof<RayCastResult>
+                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, &rayCastResult, null, null, bodyFilter) |> ignore<bool>
+                    List [rayCastResult]
+                else
+                    let rayCastSettings = RayCastSettings ()
+                    let collectorType = CollisionCollectorType.AllHitSorted // TODO: consider allowing for unsorted hits.
+                    let rayCastResults = List ()
+                    physicsEngine.PhysicsContext.NarrowPhaseQuery.CastRay (&ray, rayCastSettings, collectorType, rayCastResults, null, null, bodyFilter) |> ignore<bool>
+                    rayCastResults
+            [|for rayCastResult in rayCastResults do
                 let bodyId = physicsEngine.BodyUserData.[rayCastResult.BodyID].BodyId
                 let subShapeID = SubShapeID rayCastResult.subShapeID2
                 let position = ray.Position + ray.Direction * rayCastResult.Fraction
@@ -1130,9 +1139,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         else Log.warnOnce "Failed to find expected body."; v3Up
                     finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
                 let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
-                [|BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
-            else [||]
-            //else [||]
+                BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
 
         member physicsEngine.HandleMessage physicsMessage =
             PhysicsEngine3d.handlePhysicsMessage physicsEngine physicsMessage
