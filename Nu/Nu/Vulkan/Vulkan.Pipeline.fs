@@ -75,7 +75,7 @@ module Pipeline =
             descriptorSet
 
         /// Create the Vulkan pipeline itself.
-        static member private createPipeline shaderPath vertexBindings vertexAttributes pipelineLayout renderPass device =
+        static member private createPipeline shaderPath blend vertexBindings vertexAttributes pipelineLayout renderPass device =
             
             // handle
             let mutable pipeline = Unchecked.defaultof<VkPipeline>
@@ -124,22 +124,12 @@ module Pipeline =
             // multisample info
             let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = Vulkan.VK_SAMPLE_COUNT_1_BIT)
 
-            // color attachment
-            let mutable color = VkPipelineColorBlendAttachmentState ()
-            color.blendEnable <- true
-            color.srcColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_SRC_ALPHA
-            color.dstColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-            color.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
-            color.srcAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE
-            color.dstAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-            color.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
-            color.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
-
             // depth and blend info
             let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
+            let mutable blend = blend
             let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
             bInfo.attachmentCount <- 1u
-            bInfo.pAttachments <- asPointer &color
+            bInfo.pAttachments <- asPointer &blend
 
             // dynamic state info
             let dynamicStates = [|Vulkan.VK_DYNAMIC_STATE_VIEWPORT; Vulkan.VK_DYNAMIC_STATE_SCISSOR|]
@@ -199,14 +189,14 @@ module Pipeline =
             Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
         
         /// Create a Pipeline.
-        static member create shaderPath vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
+        static member create shaderPath blend vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
             
             // create everything
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
             let descriptorPool = Pipeline.createDescriptorPool resourceBindings device
             let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool device
-            let vulkanPipeline = Pipeline.createPipeline shaderPath vertexBindings vertexAttributes pipelineLayout renderPass device
+            let vulkanPipeline = Pipeline.createPipeline shaderPath blend vertexBindings vertexAttributes pipelineLayout renderPass device
 
             // make Pipeline
             let pipeline =
