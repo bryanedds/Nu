@@ -309,7 +309,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             pipeline <-
                 Pipeline.Pipeline.create
                     Constants.Paths.ImGuiShaderFilePath
-                    blend
+                    false blend
                     [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
                     [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "pos")
                       Hl.makeVertexAttribute 1 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "uv")

@@ -75,7 +75,7 @@ module Pipeline =
             descriptorSet
 
         /// Create the Vulkan pipeline itself.
-        static member private createPipeline shaderPath blend vertexBindings vertexAttributes pipelineLayout renderPass device =
+        static member private createPipeline shaderPath cullFace blend vertexBindings vertexAttributes pipelineLayout renderPass device =
             
             // handle
             let mutable pipeline = Unchecked.defaultof<VkPipeline>
@@ -117,7 +117,7 @@ module Pipeline =
             // rasterization info
             let mutable rInfo = VkPipelineRasterizationStateCreateInfo ()
             rInfo.polygonMode <- Vulkan.VK_POLYGON_MODE_FILL
-            rInfo.cullMode <- Vulkan.VK_CULL_MODE_NONE
+            rInfo.cullMode <- if cullFace then Vulkan.VK_CULL_MODE_BACK_BIT else Vulkan.VK_CULL_MODE_NONE
             rInfo.frontFace <- Vulkan.VK_FRONT_FACE_COUNTER_CLOCKWISE
             rInfo.lineWidth <- 1.0f
 
@@ -189,14 +189,14 @@ module Pipeline =
             Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
         
         /// Create a Pipeline.
-        static member create shaderPath blend vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
+        static member create shaderPath cullFace blend vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
             
             // create everything
             let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings device
             let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
             let descriptorPool = Pipeline.createDescriptorPool resourceBindings device
             let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool device
-            let vulkanPipeline = Pipeline.createPipeline shaderPath blend vertexBindings vertexAttributes pipelineLayout renderPass device
+            let vulkanPipeline = Pipeline.createPipeline shaderPath cullFace blend vertexBindings vertexAttributes pipelineLayout renderPass device
 
             // make Pipeline
             let pipeline =
