@@ -1129,7 +1129,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         then bodyLockRead.Body.GetWorldSpaceSurfaceNormal (&subShapeID, &position)
                         else Log.warnOnce "Failed to find expected body."; v3Up
                     finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockRead &bodyLockRead
-                let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P0: see if we can get the user-defined shape index.
+                let bodyShapeIndex = { BodyId = bodyId; BodyShapeIndex = Constants.Physics.InternalIndex } // TODO: P1: see if we can get the user-defined shape index.
                 [|BodyIntersection.make bodyShapeIndex rayCastResult.Fraction position normal|]
             else [||]
             //else [||]
