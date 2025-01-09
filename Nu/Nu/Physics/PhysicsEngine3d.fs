@@ -13,10 +13,6 @@ type [<Struct>] private CharacterContactEvent =
     | CharacterContactAdded of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterID, BodyID> * SubShape2ID : SubShapeID * ContactPosition : Vector3 * ContactNormal : Vector3
     | CharacterContactRemoved of Character : CharacterVirtual * Character2Identifier : ValueEither<CharacterID, BodyID> * SubShape2ID : SubShapeID
 
-type [<Struct>] private CharacterContact =
-    { CharacterIdentifier : ValueEither<CharacterVirtual, BodyID>
-      ContactFresh : bool ref }
-
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
       CharacterCollisionCategories : int
