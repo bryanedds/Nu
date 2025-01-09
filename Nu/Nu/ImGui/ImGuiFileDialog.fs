@@ -207,11 +207,13 @@ module ImGui =
                     let mutable lastWriteTime = parentPath.LastWriteTime
                     let mutable size = "-"
 
-                    if ImGui.Selectable (parentName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.None, v2 contentRegionWidth 0.0f) then
+                    if ImGui.Selectable (parentName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.AllowDoubleClick, v2 contentRegionWidth 0.0f) then
                         dialogState.CurrentIndex <- index
-                        dialogState.DirectoryPath <- parentPath
-                        dialogState.RefreshInfo <- true
-                        sort (dialogState, true)
+
+                        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left then
+                            dialogState.DirectoryPath <- parentPath
+                            dialogState.RefreshInfo <- true
+                            sort (dialogState, true)
                     ImGui.NextColumn ()
                     ImGui.TextUnformatted size
                     ImGui.NextColumn ()
@@ -229,11 +231,13 @@ module ImGui =
                     let mutable lastWriteTime = directoryEntry.LastWriteTime
                     let mutable size = "-"
 
-                    if ImGui.Selectable (directoryName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.None, v2 contentRegionWidth 0.0f) then
+                    if ImGui.Selectable (directoryName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.AllowDoubleClick, v2 contentRegionWidth 0.0f) then
                         dialogState.CurrentIndex <- index
-                        dialogState.DirectoryPath <- directoryPath
-                        dialogState.RefreshInfo <- true
-                        sort (dialogState, true)
+
+                        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left then
+                            dialogState.DirectoryPath <- directoryPath
+                            dialogState.RefreshInfo <- true
+                            sort (dialogState, true)
                     ImGui.NextColumn ()
                     ImGui.TextUnformatted size
                     ImGui.NextColumn ()
@@ -252,10 +256,12 @@ module ImGui =
                     let mutable lastWriteTime = fileEntry.LastWriteTime
                     let mutable size = string fileEntry.Length
 
-                    if ImGui.Selectable (fileName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.None, v2 contentRegionWidth 0.0f) then
+                    if ImGui.Selectable (fileName, dialogState.CurrentIndex = index, ImGuiSelectableFlags.AllowDoubleClick, v2 contentRegionWidth 0.0f) then
                         dialogState.CurrentIndex <- index
                         dialogState.FileName <- fileName
-                        filePicked <- true
+
+                        if ImGui.IsMouseDoubleClicked ImGuiMouseButton.Left then
+                            filePicked <- true
 
                     ImGui.NextColumn ()
                     ImGui.TextUnformatted size

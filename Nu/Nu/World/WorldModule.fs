@@ -62,11 +62,11 @@ module WorldModule =
         Unchecked.defaultof<_>
 
     /// F# reach-around for registering physics entities of an entire screen.
-    let mutable internal registerScreenPhysics : bool -> Screen -> World -> World =
+    let mutable internal registerScreenPhysics : Screen -> World -> World =
         Unchecked.defaultof<_>
 
     /// F# reach-around for unregistering physics entities of an entire screen.
-    let mutable internal unregisterScreenPhysics : bool -> Screen -> World -> World =
+    let mutable internal unregisterScreenPhysics : Screen -> World -> World =
         Unchecked.defaultof<_>
 
     let mutable internal register : Simulant -> World -> World =

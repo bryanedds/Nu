@@ -69,8 +69,8 @@ type Nu () =
             WorldModule.sortSubscriptionsByElevation <- fun subscriptions worldObj -> World.sortSubscriptionsByElevation subscriptions (worldObj :?> World)
             WorldModule.admitScreenElements <- fun screen world -> World.admitScreenElements screen world
             WorldModule.evictScreenElements <- fun screen world -> World.evictScreenElements screen world
-            WorldModule.registerScreenPhysics <- fun only3dHack screen world -> World.registerScreenPhysics only3dHack screen world
-            WorldModule.unregisterScreenPhysics <- fun only3dHack screen world -> World.unregisterScreenPhysics only3dHack screen world
+            WorldModule.registerScreenPhysics <- fun screen world -> World.registerScreenPhysics screen world
+            WorldModule.unregisterScreenPhysics <- fun screen world -> World.unregisterScreenPhysics screen world
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.tryProcessGame <- fun game world -> World.tryProcessGame game world

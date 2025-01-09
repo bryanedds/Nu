@@ -100,7 +100,7 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine2d.GetBodyContactNormals bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
-                []
+                [||]
 
         /// Get the linear velocity of the body with the given physics id.
         static member getBodyLinearVelocity bodyId world =
@@ -130,7 +130,7 @@ module WorldPhysics =
                 world.Subsystems.PhysicsEngine2d.GetBodyToGroundContactNormals bodyId
             else
                 Log.info ("Body for '" + scstring bodyId + "' not found.")
-                []
+                [||]
 
         /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
         static member getBodyToGroundContactNormalOpt bodyId world =
@@ -163,12 +163,12 @@ module WorldPhysics =
                 false
 
         /// Ray cast against 3d physics bodies.
-        static member rayCast3dBodies start stop collisionCategories collisionMask closestOnly world =
-            world.Subsystems.PhysicsEngine3d.RayCast (start, stop, collisionCategories, collisionMask, closestOnly)
+        static member rayCast3dBodies segment collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine3d.RayCast (segment, collisionMask, closestOnly)
 
         /// Ray cast against 2d physics bodies.
-        static member rayCast2dBodies start stop collisionCategories collisionMask closestOnly world =
-            world.Subsystems.PhysicsEngine2d.RayCast (start, stop, collisionCategories, collisionMask, closestOnly)
+        static member rayCast2dBodies segment collisionMask closestOnly world =
+            world.Subsystems.PhysicsEngine2d.RayCast (segment, collisionMask, closestOnly)
 
         /// Send a physics message to create a physics body.
         static member createBody is2d bodyId (bodyProperties : BodyProperties) world =
@@ -206,8 +206,8 @@ module WorldPhysics =
             else World.handlePhysicsMessage2d createBodyJointMessage world
 
         /// Send a physics message to destroy a physics joint.
-        static member destroyBodyJoint is2d bodyJointTarget bodyJointTarget2 bodyJointId world =
-            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2 = bodyJointTarget2 }
+        static member destroyBodyJoint is2d bodyJointTarget bodyJointTarget2Opt bodyJointId world =
+            let destroyBodyJointMessage = DestroyBodyJointMessage { BodyJointId = bodyJointId; BodyJointTarget = bodyJointTarget; BodyJointTarget2Opt = bodyJointTarget2Opt }
             if not is2d
             then World.handlePhysicsMessage3d destroyBodyJointMessage world
             else World.handlePhysicsMessage2d destroyBodyJointMessage world
@@ -288,15 +288,14 @@ module WorldPhysics =
             world.Subsystems.PhysicsEngine2d.ClearInternal ()
 
         /// Reregister all currently selected 3d physics.
-        /// HACK: parameter for only reregistering 3d physics as required by Bullet physics performance hack.
-        static member reregisterPhysics only3dHack world =
+        static member reregisterPhysics world =
             match World.getSelectedScreenOpt world with
             | Some selectedScreen ->
-                let world = WorldModule.unregisterScreenPhysics only3dHack selectedScreen world
-                let world = WorldModule.registerScreenPhysics only3dHack selectedScreen world
+                let world = WorldModule.unregisterScreenPhysics selectedScreen world
+                let world = WorldModule.registerScreenPhysics selectedScreen world
                 world
             | None -> world
 
         /// Reload all currently selected physics assets.
         static member reloadPhysicsAssets world =
-            World.reregisterPhysics false world
+            World.reregisterPhysics world

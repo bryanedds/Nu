@@ -1563,20 +1563,24 @@ module BodyJointFacetExtensions =
         member this.GetBodyJointTarget world : Entity Relation = this.Get (nameof this.BodyJointTarget) world
         member this.SetBodyJointTarget (value : Entity Relation) world = this.Set (nameof this.BodyJointTarget) value world
         member this.BodyJointTarget = lens (nameof this.BodyJointTarget) this this.GetBodyJointTarget this.SetBodyJointTarget
-        member this.GetBodyJointTarget2 world : Entity Relation = this.Get (nameof this.BodyJointTarget2) world
-        member this.SetBodyJointTarget2 (value : Entity Relation) world = this.Set (nameof this.BodyJointTarget2) value world
-        member this.BodyJointTarget2 = lens (nameof this.BodyJointTarget2) this this.GetBodyJointTarget2 this.SetBodyJointTarget2
+        member this.GetBodyJointTarget2Opt world : Entity Relation option = this.Get (nameof this.BodyJointTarget2Opt) world
+        member this.SetBodyJointTarget2Opt (value : Entity Relation option) world = this.Set (nameof this.BodyJointTarget2Opt) value world
+        member this.BodyJointTarget2Opt = lens (nameof this.BodyJointTarget2Opt) this this.GetBodyJointTarget2Opt this.SetBodyJointTarget2Opt
         member this.GetBodyJointEnabled world : bool = this.Get (nameof this.BodyJointEnabled) world
         member this.SetBodyJointEnabled (value : bool) world = this.Set (nameof this.BodyJointEnabled) value world
         member this.BodyJointEnabled = lens (nameof this.BodyJointEnabled) this this.GetBodyJointEnabled this.SetBodyJointEnabled
-        member this.GetBreakImpulseThreshold world : single = this.Get (nameof this.BreakImpulseThreshold) world
-        member this.SetBreakImpulseThreshold (value : single) world = this.Set (nameof this.BreakImpulseThreshold) value world
-        member this.BreakImpulseThreshold = lens (nameof this.BreakImpulseThreshold) this this.GetBreakImpulseThreshold this.SetBreakImpulseThreshold
+        member this.GetBreakingPoint world : single = this.Get (nameof this.BreakingPoint) world
+        member this.SetBreakingPoint (value : single) world = this.Set (nameof this.BreakingPoint) value world
+        member this.BreakingPoint = lens (nameof this.BreakingPoint) this this.GetBreakingPoint this.SetBreakingPoint
+        member this.GetBroken world : bool = this.Get (nameof this.Broken) world
+        member this.SetBroken (value : bool) world = this.Set (nameof this.Broken) value world
+        member this.Broken = lens (nameof this.Broken) this this.GetBroken this.SetBroken
         member this.GetCollideConnected world : bool = this.Get (nameof this.CollideConnected) world
         member this.SetCollideConnected (value : bool) world = this.Set (nameof this.CollideConnected) value world
         member this.CollideConnected = lens (nameof this.CollideConnected) this this.GetCollideConnected this.SetCollideConnected
         member this.GetBodyJointId world : BodyJointId = this.Get (nameof this.BodyJointId) world
         member this.BodyJointId = lensReadOnly (nameof this.BodyJointId) this this.GetBodyJointId
+        member this.BodyJointBreakEvent = Events.BodyJointBreakEvent --> this
 
 /// Augments an entity with a physics-driven joint.
 type BodyJointFacet () =
@@ -1585,41 +1589,47 @@ type BodyJointFacet () =
     static let tryGetBodyTargetIds (entity : Entity) world =
         match tryResolve entity (entity.GetBodyJointTarget world) with
         | Some targetEntity ->
-            match tryResolve entity (entity.GetBodyJointTarget2 world) with
-            | Some target2Entity ->
-                let targetId = { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
-                let target2Id = { BodySource = target2Entity; BodyIndex = Constants.Physics.InternalIndex }
-                Some (targetId, target2Id)
-            | None -> None
+            let targetId = { BodySource = targetEntity; BodyIndex = Constants.Physics.InternalIndex }
+            match entity.GetBodyJointTarget2Opt world with
+            | Some target2 ->
+                match tryResolve entity target2 with
+                | Some target2Entity ->
+                    let target2Id = { BodySource = target2Entity; BodyIndex = Constants.Physics.InternalIndex }
+                    Some (targetId, Some target2Id)
+                | None -> None
+            | None -> Some (targetId, None)
         | None -> None
 
     static member Properties =
         [define Entity.BodyJoint EmptyJoint
          define Entity.BodyJointTarget (Relation.makeParent ())
-         define Entity.BodyJointTarget2 (Relation.makeParent ())
+         define Entity.BodyJointTarget2Opt None
          define Entity.BodyJointEnabled true
-         define Entity.BreakImpulseThreshold Constants.Physics.BreakImpulseThresholdDefault
+         define Entity.BreakingPoint Constants.Physics.BreakingPointDefault
+         define Entity.Broken false
          define Entity.CollideConnected true
          computed Entity.BodyJointId (fun (entity : Entity) _ -> { BodyJointSource = entity; BodyJointIndex = Constants.Physics.InternalIndex }) None]
 
     override this.Register (entity, world) =
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJoint)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget2)) entity (nameof BodyJointFacet) world
+        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointTarget2Opt)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BodyJointEnabled)) entity (nameof BodyJointFacet) world
-        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakImpulseThreshold)) entity (nameof BodyJointFacet) world
+        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.BreakingPoint)) entity (nameof BodyJointFacet) world
+        let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.Broken)) entity (nameof BodyJointFacet) world
         let world = World.sense (fun _ world -> (Cascade, entity.PropagatePhysics world)) (entity.ChangeEvent (nameof entity.CollideConnected)) entity (nameof BodyJointFacet) world
         world
 
     override this.RegisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
-        | Some (targetId, target2Id) ->
+        | Some (targetId, target2IdOpt) ->
             let bodyJointProperties =
                 { BodyJoint = entity.GetBodyJoint world
                   BodyJointTarget = targetId
-                  BodyJointTarget2 = target2Id
+                  BodyJointTarget2Opt = target2IdOpt
                   BodyJointEnabled = entity.GetBodyJointEnabled world
-                  BreakImpulseThreshold = entity.GetBreakImpulseThreshold world
+                  BreakingPoint = entity.GetBreakingPoint world
+                  Broken = entity.GetBroken world
                   CollideConnected = entity.GetCollideConnected world
                   BodyJointIndex = (entity.GetBodyJointId world).BodyJointIndex }
             World.createBodyJoint (entity.GetIs2d world) entity bodyJointProperties world
@@ -1627,8 +1637,8 @@ type BodyJointFacet () =
 
     override this.UnregisterPhysics (entity, world) =
         match tryGetBodyTargetIds entity world with
-        | Some (targetId, target2Id) ->
-            World.destroyBodyJoint (entity.GetIs2d world) targetId target2Id (entity.GetBodyJointId world) world
+        | Some (targetId, target2IdOpt) ->
+            World.destroyBodyJoint (entity.GetIs2d world) targetId target2IdOpt (entity.GetBodyJointId world) world
         | None -> world
 
     override this.GetAttributesInferred (_, _) =
@@ -1880,7 +1890,7 @@ module SpineSkeletonExtensions =
         member this.SpineSkeletonAnimationTriggerEvent = Events.SpineSkeletonAnimationTriggerEvent --> this
 
 /// Augments an entity with Spine skeleton content.
-/// NOTE: this is inherently imperative and therefore currently unsupported by undo / redo.
+/// NOTE: SpineSkeleteState fields are inherently imperative and therefore currently unsupported by undo / redo.
 type SpineSkeletonFacet () =
     inherit Facet (false, false, false)
 

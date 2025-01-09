@@ -906,28 +906,24 @@ module WorldModule2 =
                     Octree.removeElement entityState.PresenceSpatial entityState.Bounds element octree
             world
 
-        static member internal registerScreenPhysics only3dHack screen world =
+        static member internal registerScreenPhysics screen world =
             let entities =
                 World.getGroups screen world |>
                 Seq.map (flip World.getEntities world) |>
                 Seq.concat |>
                 SList.ofSeq
             SList.fold (fun world (entity : Entity) ->
-                if not only3dHack || entity.GetIs3d world
-                then World.registerEntityPhysics entity world
-                else world)
+                World.registerEntityPhysics entity world)
                 world entities
 
-        static member internal unregisterScreenPhysics only3dHack screen world =
+        static member internal unregisterScreenPhysics screen world =
             let entities =
                 World.getGroups screen world |>
                 Seq.map (flip World.getEntities world) |>
                 Seq.concat |>
                 SList.ofSeq
             SList.fold (fun world (entity : Entity) ->
-                if not only3dHack || entity.GetIs3d world
-                then World.unregisterEntityPhysics entity world
-                else world)
+                World.unregisterEntityPhysics entity world)
                 world entities
 
         /// Try to reload the overlayer currently in use by the world.
@@ -1281,21 +1277,19 @@ module WorldModule2 =
                                 { BodyShapePenetrator = bodyPenetrationMessage.BodyShapeSource
                                   BodyShapePenetratee = bodyPenetrationMessage.BodyShapeSource2
                                   Normal = bodyPenetrationMessage.Normal }
-                            let penetrationAddress = entity.BodyPenetrationEvent
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus penetrationData penetrationAddress eventTrace Nu.Game.Handle false false world
+                            World.publishPlus penetrationData entity.BodyPenetrationEvent eventTrace entity false false world
                         else world
                     | _ -> world
                 | BodySeparationMessage bodySeparationMessage ->
                     match bodySeparationMessage.BodyShapeSource.BodyId.BodySource with
                     | :? Entity as entity ->
                         if entity.GetExists world && entity.GetSelected world then
-                            let explicit =
+                            let separationData =
                                 { BodyShapeSeparator = bodySeparationMessage.BodyShapeSource
                                   BodyShapeSeparatee = bodySeparationMessage.BodyShapeSource2 }
-                            let separationAddress = entity.BodySeparationExplicitEvent
                             let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                            World.publishPlus explicit separationAddress eventTrace Nu.Game.Handle false false world
+                            World.publishPlus separationData entity.BodySeparationExplicitEvent eventTrace entity false false world
                         else world
                     | _ -> world
                 | BodyTransformMessage bodyTransformMessage ->
@@ -1314,9 +1308,23 @@ module WorldModule2 =
                                           BodyLinearVelocity = bodyTransformMessage.LinearVelocity
                                           BodyAngularVelocity = bodyTransformMessage.AngularVelocity }
                                     let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
-                                    World.publishPlus transformData entity.BodyTransformEvent eventTrace Nu.Game.Handle false false world
+                                    World.publishPlus transformData entity.BodyTransformEvent eventTrace entity false false world
                                 else entity.ApplyPhysics center bodyTransformMessage.Rotation bodyTransformMessage.LinearVelocity bodyTransformMessage.AngularVelocity world
                             else world
+                        else world
+                    | _ -> world
+                | BodyJointBreakMessage bodyJointBreakMessage ->
+                    let bodyJointId = bodyJointBreakMessage.BodyJointId
+                    match bodyJointId.BodyJointSource with
+                    | :? Entity as entity ->
+                        if entity.GetExists world && entity.GetSelected world then
+                            let world = entity.SetXtensionPropertyWithoutEvent "Broken" true world
+                            let breakData =
+                                { BodyJointId = bodyJointId
+                                  BreakingPoint = bodyJointBreakMessage.BreakingPoint
+                                  BreakingOverflow = bodyJointBreakMessage.BreakingOverflow }
+                            let eventTrace = EventTrace.debug "World" "processIntegrationMessage" "" EventTrace.empty
+                            World.publishPlus breakData entity.BodyJointBreakEvent eventTrace entity false false world
                         else world
                     | _ -> world
             | Dead -> world

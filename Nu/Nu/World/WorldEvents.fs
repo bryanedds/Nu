@@ -88,6 +88,12 @@ type BodyTransformData =
       BodyLinearVelocity : Vector3
       BodyAngularVelocity : Vector3 }
 
+/// The data of a body joint break event.
+type BodyJointBreakData =
+    { BodyJointId : BodyJointId
+      BreakingPoint : single
+      BreakingOverflow : single }
+
 /// The data for a life cycle event.
 type LifeCycleData =
     | RegisterData of Simulant
@@ -134,6 +140,7 @@ module Events =
     let BodySeparationExplicitEvent = stoa<BodySeparationExplicitData> "BodySeparationExplicit/Event"
     let BodySeparationImplicitEvent = stoa<BodySeparationImplicitData> "BodySeparationImplicit/Event"
     let BodyTransformEvent = stoa<BodyTransformData> "BodyTransform/Event"
+    let BodyJointBreakEvent = stoa<BodyJointBreakData> "BodyJointBreak/Event"
     let SpineSkeletonAnimationTriggerEvent = stoa<SpineSkeletonAnimationTriggerData> "SpineSkeletonAnimationTrigger/Event"
     let ClickEvent = stoa<unit> "Click/Event"
     let DownEvent = stoa<unit> "Down/Event"

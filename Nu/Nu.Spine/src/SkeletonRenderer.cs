@@ -212,7 +212,7 @@ namespace Spine
                 if (verticesCount == 0 || indicesCount == 0) continue;
 
                 // submit to batch
-                // TODO: BGE: restore Spine layers behavior.
+                // TODO: restore Spine layers functionality.
                 MeshItem item = batcher.NextItem(verticesCount, indicesCount);
                 item.texture = getTextureId(textureObject);
 

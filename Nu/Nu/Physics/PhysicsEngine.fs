@@ -402,25 +402,40 @@ type BodyType =
 /// The way in which an entity's motion is driven by a corresponding body.
 type PhysicsMotion =
 
-    /// When body transform message comes in, entity's transform will be set by the game engine.
+    /// When body transform message comes in from physics subsystem, entity's transform will be set by the game engine.
     /// When entity's transform is set by the user, body transform message will be sent to physics engine.
     | SynchronizedMotion
 
-    /// When body transform message comes in, entity's transform will not be set by the game engine; instead an event will be published.
-    /// When entity's transform is set by the user, nothing will be sent to the physics engine.
+    /// When body transform message comes in from physics subsystem, entity's transform will not be set by the game
+    /// engine; instead an event will be published. When entity's transform is set by the user, nothing will be sent to
+    /// the physics engine.
     | ManualMotion
 
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
-    { StepHeight : single
-      SlopeMax : single // NOTE: setting much lower than 0.7f tends to cause a lot of terrain fall-throughs.
-      PenetrationDepthMax : single } // NOTE: setting much lower or higher seems to cause a lot of terrain fall-throughs.
+    { TraversalDamping : single
+      CollisionPadding : single
+      CollisionTolerance : single
+      SlopeMax : single
+      StairStepUp : Vector3
+      StairStepDownStickToFloor : Vector3
+      StairStepDownExtra : Vector3
+      StairStepForwardTest : single
+      StairStepForwardMin : single
+      StairCosAngleForwardContact : single }
 
     /// The default character properties.
     static member defaultProperties =
-        { StepHeight = 0.3f
+        { TraversalDamping = 15.0f
+          CollisionPadding = 0.02f
+          CollisionTolerance = 0.001f
           SlopeMax = Math.DegreesToRadians 45.0f
-          PenetrationDepthMax = 0.05f }
+          StairStepUp = v3 0.0f 0.2f 0.0f
+          StairStepDownStickToFloor = v3 0.0f -0.5f 0.0f
+          StairStepDownExtra = v3Zero
+          StairStepForwardTest = 0.15f
+          StairStepForwardMin = 0.02f
+          StairCosAngleForwardContact = cos (Math.DegreesToRadians 75.0f) }
 
 /// The properties needed to describe the physical part of a body.
 type BodyProperties =
@@ -453,148 +468,51 @@ type BodyProperties =
         this.Sensor || this.BodyShape.HasSensors
 
     member this.ShouldObserve =
-        this.HasSensors || this.Observable
+        Constants.Physics.AlwaysObserve || this.HasSensors || this.Observable
 
 /// Identifies a joint in a physics engine.
 type BodyJointId =
     { BodyJointSource : Simulant
       BodyJointIndex : int }
 
-/// Angle joint.
-type [<SymbolicExpansion>] AngleJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Axis : Vector3
-      Axis2 : Vector3
-      Angle : single
-      Softness : single
-      BiasFactor : single }
+/// Allows users to create their own one-body 2D joints.
+type OneBodyJoint2d =
+    { CreateOneBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
-/// Distance joint.
-type [<SymbolicExpansion>] DistanceJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Length : single
-      Frequency : single
-      DampingRatio : single }
+/// Allows users to create their own two-body 2D joints.
+type TwoBodyJoint2d =
+    { CreateTwoBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
-/// TODO: implement.
-type [<SymbolicExpansion>] FrictionJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
+/// Allows users to create their own one-body 3D joints.
+type OneBodyJoint3d =
+    { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
-/// TODO: implement.
-type [<SymbolicExpansion>] GearJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] MotorJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] PrismaticJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] PulleyJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] RevoluteJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] RopeJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-/// TODO: implement.
-type [<SymbolicExpansion>] WheelJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3 }
-
-type UserDefinedAetherJoint =
-    { CreateBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
-
-/// Hinge joint.
-type [<SymbolicExpansion>] HingeJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Axis : Vector3
-      Axis2 : Vector3
-      AngleMin : single
-      AngleMax : single
-      Softness : single
-      BiasFactor : single
-      RelaxationFactor : single
-      AngularOnly : bool }
-
-/// Slider joint.
-type [<SymbolicExpansion>] SliderJoint =
-    { Anchor : Vector3
-      Anchor2 : Vector3
-      Axis : Vector3
-      Axis2 : Vector3
-      LinearLimitLower : single
-      LinearLimitUpper : single
-      AngularLimitLower : single
-      AngularLimitUpper : single
-      DirectionLinearSoftness : single
-      DirectionLinearRestitution : single
-      DirectionLinearDamping : single
-      DirectionAngularSoftness : single
-      DirectionAngularRestitution : single
-      DirectionAngularDamping : single
-      LimitLinearSoftness : single
-      LimitLinearRestitution : single
-      LimitLinearDamping : single
-      LimitAngularSoftness : single
-      LimitAngularRestitution : single
-      LimitAngularDamping : single
-      OrthoLinearSoftness : single
-      OrthoLinearRestitution : single
-      OrthoLinearDamping : single
-      OrthoAngularSoftness : single
-      OrthoAngularRestitution : single
-      OrthoAngularDamping : single }
-
-type UserDefinedBulletJoint =
-    { CreateBodyJoint : BulletSharp.RigidBody -> BulletSharp.RigidBody -> BulletSharp.TypedConstraint }
+/// Allows users to create their own two-body 3D joints.
+type TwoBodyJoint3d =
+    { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
+/// Because physics joints don't generalize well across 2D and 3D - or even across different 3D physics engines, we're
+/// currently only providing joint creation via the user-defined cases.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
     | EmptyJoint
-    | AngleJoint of AngleJoint
-    | DistanceJoint of DistanceJoint
-    | FrictionJoint of FrictionJoint
-    | GearJoint of GearJoint
-    | MotorJoint of MotorJoint
-    | PrismaticJoint of PrismaticJoint
-    | PulleyJoint of PulleyJoint
-    | RevoluteJoint of RevoluteJoint
-    | RopeJoint of RopeJoint
-    | WheelJoint of WheelJoint
-    | UserDefinedAetherJoint of UserDefinedAetherJoint
-    | HingeJoint of HingeJoint
-    | SliderJoint of SliderJoint
-    | UserDefinedBulletJoint of UserDefinedBulletJoint
+    | OneBodyJoint2d of OneBodyJoint2d
+    | TwoBodyJoint2d of TwoBodyJoint2d
+    | OneBodyJoint3d of OneBodyJoint3d
+    | TwoBodyJoint3d of TwoBodyJoint3d
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =
     { BodyJoint : BodyJoint
       BodyJointTarget : BodyId
-      BodyJointTarget2 : BodyId
+      BodyJointTarget2Opt : BodyId option
       BodyJointEnabled : bool
-      BreakImpulseThreshold : single
+      BreakingPoint : single
+      Broken : bool
       CollideConnected : bool
       BodyJointIndex : int }
 
@@ -625,7 +543,7 @@ type CreateBodyJointMessage =
 type DestroyBodyJointMessage =
     { BodyJointId : BodyJointId
       BodyJointTarget : BodyId
-      BodyJointTarget2 : BodyId }
+      BodyJointTarget2Opt : BodyId option }
 
 /// A message to the physics system to destroy a body.
 type SetBodyEnabledMessage =
@@ -699,11 +617,18 @@ type BodyTransformMessage =
       LinearVelocity : Vector3
       AngularVelocity : Vector3 }
 
+/// A message from the physics system describing a body joint break.
+type BodyJointBreakMessage =
+    { BodyJointId : BodyJointId
+      BreakingPoint : single
+      BreakingOverflow : single }
+
 /// A message from the physics system.
 type IntegrationMessage =
     | BodyPenetrationMessage of BodyPenetrationMessage
     | BodySeparationMessage of BodySeparationMessage
     | BodyTransformMessage of BodyTransformMessage
+    | BodyJointBreakMessage of BodyJointBreakMessage
 
 /// A message to the physics system.
 type PhysicsMessage =
@@ -732,13 +657,13 @@ type PhysicsEngine =
     /// Check that the physics engine contain the body with the given physics id.
     abstract GetBodyExists : BodyId -> bool
     /// Get the contact normals of the body with the given physics id.
-    abstract GetBodyContactNormals : BodyId -> Vector3 list
+    abstract GetBodyContactNormals : BodyId -> Vector3 array
     /// Get the linear velocity of the body with the given physics id.
     abstract GetBodyLinearVelocity : BodyId -> Vector3
     /// Get the angular velocity of the body with the given physics id.
     abstract GetBodyAngularVelocity : BodyId -> Vector3
     /// Get the contact normals where the body with the given physics id is touching the ground.
-    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 list
+    abstract GetBodyToGroundContactNormals : BodyId -> Vector3 array
     /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
     abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
     /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
@@ -746,7 +671,7 @@ type PhysicsEngine =
     /// Check that the body with the given physics id is on the ground.
     abstract GetBodyGrounded : BodyId -> bool
     /// Cast a ray into the physics bodies.
-    abstract RayCast : Vector3 * Vector3 * int * int * bool -> BodyIntersection array
+    abstract RayCast : Segment3 * int * bool -> BodyIntersection array
     /// Handle a physics message from an external source.
     abstract HandleMessage : PhysicsMessage -> unit
     /// Attempt to integrate the physics system one step.
@@ -769,7 +694,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.GetBodyToGroundContactNormalOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyToGroundContactTangentOpt _ = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.GetBodyGrounded _ = failwith "No bodies in StubPhysicsEngine"
-        member physicsEngine.RayCast (_, _, _, _, _) = failwith "No bodies in StubPhysicsEngine"
+        member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
         member physicsEngine.ClearInternal () = false

@@ -28,15 +28,11 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Process (gameplay, world) =
 
-        // declare scene group while screen is selected
-        let world =
-            if gameplay.GetSelected world then
-                let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
-                let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
-                let world = World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
-                let world = World.endGroup world
-                world
-            else world
+        // declare scene group
+        let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
+        let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
+        let world = World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
+        let world = World.endGroup world
 
         // declare gui group
         let world = World.beginGroup "Gui" [] world

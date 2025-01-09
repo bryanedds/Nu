@@ -269,14 +269,21 @@ module Audio =
 module Physics =
 
     let [<Uniform>] GravityDefault = Vector3 (0.0f, -9.80665f, 0.0f)
-    let [<Literal>] BreakImpulseThresholdDefault = 100000.0f
-    let [<Literal>] SleepingThresholdLinear = 1.0f // NOTE: in the example or bullet source code (can't remember), this defaulted to 0.8f...
-    let [<Literal>] SleepingThresholdAngular = 1.0f // NOTE: ...and this defaulted to 1.0f.
+    let [<Uniform>] AlwaysObserve = match ConfigurationManager.AppSettings.["AlwaysObserve"] with null -> true | alwaysObserve -> scvalue alwaysObserve
+    let [<Literal>] BreakingPointDefault = 100000.0f
     let [<Literal>] CollisionWildcard = "*"
-    let [<Literal>] Collision3dMargin = 0.01f
-    let [<Literal>] AllowedCcdPenetration3d = 0.01f // NOTE: seems to also change the smoothness at which character slide.
+    let [<Uniform>] Collision3dBodiesMax = match ConfigurationManager.AppSettings.["Collision3dBodiesMax"] with null -> 10240 | step -> scvalue step
+    let [<Uniform>] Collision3dBodyPairsMax = match ConfigurationManager.AppSettings.["Collision3dBodyPairsMax"] with null -> 65536 | step -> scvalue step
+    let [<Uniform>] Collision3dContactConstraintsMax = match ConfigurationManager.AppSettings.["Collision3dContactConstraintsMax"] with null -> 10240 | step -> scvalue step
+    let [<Uniform>] Collision3dSteps = match ConfigurationManager.AppSettings.["Collision3dSteps"] with null -> 1 | step -> scvalue step
+    let [<Uniform>] Collision3dThreads = match ConfigurationManager.AppSettings.["Collision3dThreads"] with null -> max 1 (Environment.ProcessorCount - 2) | threads -> scvalue threads
+    let [<Uniform>] Collision3dBarriersMax = match ConfigurationManager.AppSettings.["Collision3dBarriersMax"] with null -> max 1 (Environment.ProcessorCount - 2) | barriers -> scvalue barriers
+    let [<Uniform>] Collision3dJobsMax = match ConfigurationManager.AppSettings.["Collision3dJobsMax"] with null -> 128 | jobs -> scvalue jobs
     let [<Uniform>] GroundAngleMax = single (Math.PI * 0.25)
-    let [<Uniform>] ThreadCount = max 1 (Environment.ProcessorCount - 2)
+    let [<Uniform>] BroadPhaseLayerNonMoving = byte 0 // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] BroadPhaseLayerMoving = byte 1 // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] ObjectLayerNonMoving = JoltPhysicsSharp.ObjectLayer 0us // NOTE: do not use this outside of the engine code.
+    let [<Uniform>] ObjectLayerMoving = JoltPhysicsSharp.ObjectLayer 1us // NOTE: do not use this outside of the engine code.
     let [<Literal>] InternalIndex = -1 // NOTE: do not use this outside of the engine code.
 
 [<RequireQualifiedAccess>]

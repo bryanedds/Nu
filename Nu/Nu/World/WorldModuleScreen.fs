@@ -89,9 +89,14 @@ module WorldModuleScreen =
             let screenState = World.getScreenState screen world
             screenState.Xtension |> Xtension.toSeq |> Seq.toList
 
-        /// Check that a screen exists in the world.
         static member internal getScreenExists screen world =
             Option.isSome (World.getScreenStateOpt screen world)
+
+        static member internal getScreenSelected (screen : Screen) world =
+            let gameState = World.getGameState Game.Handle world
+            match gameState.SelectedScreenOpt with
+            | Some selectedScreen when screen.Name = selectedScreen.Name -> true
+            | _ -> false
 
         static member internal getScreenDispatcher screen world = (World.getScreenState screen world).Dispatcher
         static member internal getScreenModelProperty screen world = (World.getScreenState screen world).Model
