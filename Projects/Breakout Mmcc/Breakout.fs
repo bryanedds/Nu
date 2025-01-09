@@ -12,19 +12,19 @@ type Breakout =
     | Title
     | Credits
     | Gameplay
-    
+
 // this is our top-level MMCC message type.
 type BreakoutMessage =
     | ShowTitle
     | ShowCredits
     | ShowGameplay
     interface Message
-    
+ 
 // this is our top-level MMCC command type. Commands are used instead of messages when the world is to be transformed.
 type BreakoutCommand =
     | Exit
     interface Command
-    
+
 // this extends the Game API to expose the above MMCC model as a property.
 [<AutoOpen>]
 module Breakout =

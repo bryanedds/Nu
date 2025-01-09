@@ -240,6 +240,12 @@ module WorldModuleEntity =
         static member internal getEntityExists entity world =
             notNull (World.getEntityStateOpt entity world :> obj)
 
+        static member internal getEntitySelected (entity : Entity) world =
+            let gameState = World.getGameState Game.Handle world
+            match gameState.SelectedScreenOpt with
+            | Some selectedScreen when entity.Screen.Name = selectedScreen.Name -> true
+            | _ -> false
+
         static member internal getEntityImperative entity world =
             (World.getEntityState entity world).Imperative
 
@@ -2326,7 +2332,10 @@ module WorldModuleEntity =
             let world = World.updateEntityPublishUpdateFlag entity world |> snd'
 
             // process entity first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessEntity entity world else world
+            let world =
+                if WorldModule.UpdatingSimulants && World.getEntitySelected entity world
+                then WorldModule.tryProcessEntity entity world
+                else world
 
             // propagate properties
             let world =
@@ -2386,7 +2395,10 @@ module WorldModuleEntity =
                         let destination = destination / child.Name
                         World.renameEntityImmediate child destination world)
                         world children
-                let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessEntity destination world else world
+                let world =
+                    if WorldModule.UpdatingSimulants && World.getEntitySelected destination world
+                    then WorldModule.tryProcessEntity destination world
+                    else world
                 let world =
                     Seq.fold (fun world target ->
                         if World.getEntityExists target world
@@ -2581,7 +2593,10 @@ module WorldModuleEntity =
             let world = World.readEntities entityDescriptor.EntityDescriptors entity world |> snd
 
             // process entity first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessEntity entity world else world
+            let world =
+                if WorldModule.UpdatingSimulants && World.getEntitySelected entity world
+                then WorldModule.tryProcessEntity entity world
+                else world
 
             // insert a propagated descriptor if needed
             let world =

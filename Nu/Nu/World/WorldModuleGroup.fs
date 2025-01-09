@@ -92,9 +92,14 @@ module WorldModuleGroup =
             let groupState = World.getGroupState group world
             groupState.Xtension |> Xtension.toSeq |> Seq.toList
 
-        /// Check that a group exists in the world.
         static member internal getGroupExists group world =
             Option.isSome (World.getGroupStateOpt group world)
+
+        static member internal getGroupSelected (group : Group) world =
+            let gameState = World.getGameState Game.Handle world
+            match gameState.SelectedScreenOpt with
+            | Some selectedScreen when group.Screen.Name = selectedScreen.Name -> true
+            | _ -> false
 
         static member internal getGroupModelProperty group world = (World.getGroupState group world).Model
         static member internal getGroupContent group world = (World.getGroupState group world).Content

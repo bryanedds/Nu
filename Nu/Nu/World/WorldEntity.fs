@@ -393,15 +393,11 @@ module WorldEntityModule =
         /// Check that an entity is in the eye's view.
         member this.GetInView3d world = World.getEntityInView3d this world
 
-        /// Check that an entity is selected.
-        member this.GetSelected world =
-            let gameState = World.getGameState Game.Handle world
-            match gameState.SelectedScreenOpt with
-            | Some screen when this.Screen.Name = screen.Name -> true
-            | _ -> false
-
         /// Check that an entity exists in the world.
         member this.GetExists world = World.getEntityExists this world
+
+        /// Check that an entity is selected.
+        member this.GetSelected world = World.getEntitySelected this world
 
         /// Check if an entity is intersected by a ray.
         member this.RayCast ray world = World.rayCastEntity ray this world

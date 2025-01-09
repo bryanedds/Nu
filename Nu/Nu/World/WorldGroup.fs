@@ -71,11 +71,7 @@ module WorldGroupModule =
             World.setGroupXtensionValue<'a> propertyName value this world
 
         /// Check that a group is selected.
-        member this.GetSelected world =
-            let gameState = World.getGameState Game.Handle world
-            match gameState.SelectedScreenOpt with
-            | Some screen when this.Screen.Name = screen.Name -> true
-            | _ -> false
+        member this.GetSelected world = World.getGroupSelected this world
 
         /// Check that a group exists in the world.
         member this.GetExists world = World.getGroupExists this world
@@ -171,7 +167,10 @@ module WorldGroupModule =
                     else failwith ("Group '" + scstring group + "' already exists and cannot be created."); world
                 else world
             let world = World.addGroup false groupState group world
-            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessGroup group world else world
+            let world =
+                if WorldModule.UpdatingSimulants && group.GetSelected world
+                then WorldModule.tryProcessGroup group world
+                else world
             (group, world)
 
         /// Create a group from a simulant descriptor.
@@ -245,7 +244,10 @@ module WorldGroupModule =
                         World.renameEntityImmediate child destination world)
                         world children
                 let world = World.destroyGroupImmediate source world
-                let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessGroup destination world else world
+                let world =
+                    if WorldModule.UpdatingSimulants && source.GetSelected world
+                    then WorldModule.tryProcessGroup destination world
+                    else world
                 world
             | None -> world
 
@@ -313,7 +315,10 @@ module WorldGroupModule =
             let world = World.readEntities groupDescriptor.EntityDescriptors group world |> snd
 
             // try to process ImNui group first time if in the middle of simulant update phase
-            let world = if WorldModule.UpdatingSimulants then WorldModule.tryProcessGroup group world else world
+            let world =
+                if WorldModule.UpdatingSimulants && group.GetSelected world
+                then WorldModule.tryProcessGroup group world
+                else world
             (group, world)
 
         /// Read multiple groups from a screen descriptor.
