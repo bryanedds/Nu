@@ -513,12 +513,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                 let contactNormal = contactNormal
                 lock physicsEngine.CharacterContactLock $ fun () ->
 
-                    //
+                    // track character collision normals
                     match physicsEngine.CharacterCollisions.TryGetValue character with
                     | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
                     | (false, _) -> physicsEngine.CharacterCollisions.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
                             
-                    //
+                    // create character contact add event
                     let character2Identifier = ValueLeft character2.ID
                     let contactPosition = v3 (single contactPosition.X) (single contactPosition.Y) (single contactPosition.Z)
                     physicsEngine.CharacterContactEvents.Add (CharacterContactAdded (character, character2Identifier, subShape2ID, contactPosition, contactNormal)) |> ignore<bool>)
@@ -527,18 +527,18 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             character.add_OnCharacterContactRemoved (fun character character2ID subShape2ID ->
                 lock physicsEngine.CharacterContactLock $ fun () ->
 
-                    //
+                    // track character collision normals
                     match physicsEngine.CharacterCollisions.TryGetValue character with
                     | (true, collisions) ->
                         collisions.Remove subShape2ID |> ignore<bool>
                         if collisions.Count = 0 then physicsEngine.CharacterCollisions.Remove character |> ignore<bool>
                     | (false, _) -> ()
 
-                    //
+                    // create character contact remove event
                     let character2Identifier = ValueLeft character2ID
                     physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, character2Identifier, subShape2ID)) |> ignore<bool>)
 
-            //
+            // bookkeep character
             let characterUserData =
                 { CharacterBodyId = bodyId
                   CharacterCollisionCategories = bodyProperties.CollisionCategories
@@ -549,7 +549,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         else
 
-            //
+            // configure and create non-character body
             let layer = if bodyProperties.BodyType.IsStatic then Constants.Physics.ObjectLayerNonMoving else Constants.Physics.ObjectLayerMoving
             let mutable bodyCreationSettings = new BodyCreationSettings (scShapeSettings, &bodyProperties.Center, &bodyProperties.Rotation, motionType, layer)
             bodyCreationSettings.AllowSleeping <- bodyProperties.SleepingAllowed
@@ -648,6 +648,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             destroyBodiesMessage.BodyIds
 
     static member private createBodyJointInternal bodyJointProperties bodyJointId physicsEngine =
+
+        // attempt to create joint
         let resultOpt =
             match bodyJointProperties.BodyJoint with
             | EmptyJoint ->
@@ -680,6 +682,8 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         Some (joint, bodyID, Some body2ID)
                     | _ -> None
                 | None -> None
+
+        // finalize joint creation and bookkeep it
         match resultOpt with
         | Some (constrain, bodyID, body2IDOpt) ->
             constrain.Enabled <- bodyJointProperties.BodyJointEnabled && not bodyJointProperties.Broken
