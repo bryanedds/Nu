@@ -1,5 +1,4 @@
-#shader vertex
-#version 410
+#version 450 core
 
 const int VERTS = 4;
 

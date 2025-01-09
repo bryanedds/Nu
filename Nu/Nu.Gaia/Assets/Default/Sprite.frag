@@ -1,5 +1,4 @@
-#shader fragment
-#version 410
+#version 450 core
 layout (binding = 2) uniform sampler2D tex;
 
 layout (binding = 3) uniform C {

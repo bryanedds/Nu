@@ -40,7 +40,11 @@ module Hl =
         let shaderStr = shaderStream.ReadToEnd ()
         use compiler = new Compiler ()
         use result = compiler.Compile (shaderStr, shaderPath, shaderKind)
-        if result.Status <> CompilationStatus.Success then failwith ("Vulkan shader compilation failed due to: " + result.ErrorMessage)
+        if result.Status <> CompilationStatus.Success then
+            
+            // TODO: DJL: review multiple reporting.
+            Log.error result.ErrorMessage
+            failwith ("Vulkan shader compilation failed due to: " + result.ErrorMessage)
         let shaderCode = result.GetBytecode().ToArray()
         shaderCode
     
@@ -101,6 +105,15 @@ module Hl =
         attribute.offset <- uint offset
         attribute
 
+    /// Make a VkDescriptorSetLayoutBinding for the vertex stage.
+    let makeDescriptorBindingVertex (bindingIndex : int) descriptorType (descriptorCount : int) =
+        let mutable binding = VkDescriptorSetLayoutBinding ()
+        binding.binding <- uint bindingIndex
+        binding.descriptorType <- descriptorType
+        binding.descriptorCount <- uint descriptorCount
+        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT
+        binding
+    
     /// Make a VkDescriptorSetLayoutBinding for the fragment stage.
     let makeDescriptorBindingFragment (bindingIndex : int) descriptorType (descriptorCount : int) =
         let mutable binding = VkDescriptorSetLayoutBinding ()
@@ -108,6 +121,15 @@ module Hl =
         binding.descriptorType <- descriptorType
         binding.descriptorCount <- uint descriptorCount
         binding.stageFlags <- Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
+        binding
+
+    /// Make a VkDescriptorSetLayoutBinding for the vertex and fragment stages.
+    let makeDescriptorBindingVertexFragment (bindingIndex : int) descriptorType (descriptorCount : int) =
+        let mutable binding = VkDescriptorSetLayoutBinding ()
+        binding.binding <- uint bindingIndex
+        binding.descriptorType <- descriptorType
+        binding.descriptorCount <- uint descriptorCount
+        binding.stageFlags <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT ||| Vulkan.VK_SHADER_STAGE_FRAGMENT_BIT
         binding
 
     /// Make a push constant range.

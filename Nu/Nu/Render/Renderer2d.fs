@@ -842,6 +842,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
+          SpritePipeline : Pipeline.SpritePipeline
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
@@ -1235,6 +1236,36 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             VulkanRenderer2d.handleReloadRenderAssets renderer
             renderer.ReloadAssetsRequested <- false
     
+    /// Make a VulkanRenderer2d.
+    static member make (vulkanGlobal : Hl.VulkanGlobal) =
+        
+        // create sprite pipeline
+        let spritePipeline =
+            Pipeline.SpritePipeline.create
+                Constants.Paths.SpriteShaderFilePath
+                true (Hl.makeBlendAttachmentAlpha ())
+                [|Hl.makeVertexBindingVertex 0 (sizeof<single> * 2)|]
+                [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT 0|]
+                [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
+                  Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
+                  Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
+                  Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
+                [||] vulkanGlobal.RenderPass vulkanGlobal.Device
+        
+        // make renderer
+        let renderer =
+            { VulkanGlobal = vulkanGlobal
+              SpritePipeline = spritePipeline
+              RenderPackages = dictPlus StringComparer.Ordinal []
+              RenderPackageCachedOpt = Unchecked.defaultof<_>
+              RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
+              ReloadAssetsRequested = false
+              LayeredOperations = List ()
+              TransientTextures = List () }
+
+        // fin
+        renderer
+    
     interface Renderer2d with
         
         member renderer.Render eyeCenter eyeSize _ renderMessages =
@@ -1246,25 +1277,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // destroy transient textures left by the last frame
             VulkanRenderer2d.destroyTransientTextures renderer
             renderer.TransientTextures.Clear ()
+
+            // destroy sprite pipeline
+            Pipeline.SpritePipeline.destroy renderer.SpritePipeline renderer.VulkanGlobal.Device
             
             // clean up packages
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
             let renderAssets = renderPackages |> Seq.map (fun package -> package.Assets.Values) |> Seq.concat
             for (_, _, renderAsset) in renderAssets do VulkanRenderer2d.freeRenderAsset renderAsset renderer
             renderer.RenderPackages.Clear ()
-
-    /// Make a VulkanRenderer2d.
-    static member make vulkanGlobal =
-        
-        // make renderer
-        let renderer =
-            { VulkanGlobal = vulkanGlobal
-              RenderPackages = dictPlus StringComparer.Ordinal []
-              RenderPackageCachedOpt = Unchecked.defaultof<_>
-              RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
-              ReloadAssetsRequested = false
-              LayeredOperations = List ()
-              TransientTextures = List () }
-
-        // fin
-        renderer
