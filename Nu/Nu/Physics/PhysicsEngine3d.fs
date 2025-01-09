@@ -16,6 +16,7 @@ type [<Struct>] private CharacterContactEvent =
 type [<Struct>] private CharacterUserData =
     { CharacterBodyId : BodyId
       CharacterCollisionCategories : int
+      CharacterCollisionMask : int
       CharacterGravityOverride : Vector3 option
       CharacterProperties : CharacterProperties }
 
@@ -461,9 +462,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             //physicsEngine.PhysicsContext.BodyInterface.SetMotionQuality (&innerBodyID, motionQuality)
 
             // validate contact with category and mask
-            character.add_OnContactValidate (fun _ _ _ ->
+            character.add_OnContactValidate (fun character body2 _ ->
+                let characterID = character.ID
+                let body2ID = body2.ID
                 lock physicsEngine.CharacterContactLock $ fun () ->
-                    Bool8.True)
+                    // TODO: P1: optimize collision mask and categories check with in-place body user data.
+                    match physicsEngine.CharacterUserData.TryGetValue characterID with
+                    | (true, characterUserData) ->
+                        match physicsEngine.CharacterUserData.TryGetValue body2ID with
+                        | (true, character2UserData) ->
+                            if characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0
+                            then Bool8.True
+                            else Bool8.False
+                        | (false, _) -> Bool8.True
+                    | (false, _) -> Bool8.True)
 
             // create character body contact add events
             character.add_OnContactAdded (fun character body2ID subShape2ID contactPosition contactNormal _ ->
@@ -499,9 +511,20 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                     physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, character2Identifier, subShape2ID)) |> ignore<bool>)
 
             // validate contact with category and mask
-            character.add_OnCharacterContactValidate (fun _ _ _ ->
+            character.add_OnCharacterContactValidate (fun character character2 _ ->
+                let characterID = character.ID
+                let character2ID = character2.ID
                 lock physicsEngine.CharacterContactLock $ fun () ->
-                    Bool8.True)
+                    // TODO: P1: optimize collision mask and categories check with in-place body user data.
+                    match physicsEngine.CharacterUserData.TryGetValue characterID with
+                    | (true, characterUserData) ->
+                        match physicsEngine.CharacterUserData.TryGetValue character2ID with
+                        | (true, character2UserData) ->
+                            if characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0
+                            then Bool8.True
+                            else Bool8.False
+                        | (false, _) -> Bool8.True
+                    | (false, _) -> Bool8.True)
 
             // create character contact add events
             character.add_OnCharacterContactAdded (fun character character2 subShape2ID contactPosition contactNormal _ ->
@@ -538,6 +561,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             let characterUserData =
                 { CharacterBodyId = bodyId
                   CharacterCollisionCategories = bodyProperties.CollisionCategories
+                  CharacterCollisionMask = bodyProperties.CollisionMask
                   CharacterGravityOverride = bodyProperties.GravityOverride
                   CharacterProperties = bodyProperties.CharacterProperties }
             physicsEngine.CharacterUserData.Add (character.ID, characterUserData)
