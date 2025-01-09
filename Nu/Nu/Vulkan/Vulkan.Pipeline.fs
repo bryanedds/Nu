@@ -9,8 +9,8 @@ open Nu
 [<RequireQualifiedAccess>]
 module Pipeline =
 
-    /// An abstraction of a rendering pipeline.
-    type Pipeline =
+    /// An abstraction of a rendering pipeline for ImGui.
+    type ImGuiPipeline =
         { Pipeline : VkPipeline
           DescriptorPool : VkDescriptorPool
           DescriptorSet : VkDescriptorSet
@@ -181,25 +181,25 @@ module Pipeline =
             write.pImageInfo <- asPointer &info
             Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Destroy a Pipeline.
+        /// Destroy an ImGuiPipeline.
         static member destroy pipeline device =
             Vulkan.vkDestroyPipeline (device, pipeline.Pipeline, nullPtr)
             Vulkan.vkDestroyDescriptorPool (device, pipeline.DescriptorPool, nullPtr)
             Vulkan.vkDestroyPipelineLayout (device, pipeline.PipelineLayout, nullPtr)
             Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
         
-        /// Create a Pipeline.
+        /// Create an ImGuiPipeline.
         static member create shaderPath cullFace blend vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
             
             // create everything
-            let descriptorSetLayout = Pipeline.createDescriptorSetLayout resourceBindings device
-            let pipelineLayout = Pipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
-            let descriptorPool = Pipeline.createDescriptorPool resourceBindings device
-            let descriptorSet = Pipeline.createDescriptorSet descriptorSetLayout descriptorPool device
-            let vulkanPipeline = Pipeline.createPipeline shaderPath cullFace blend vertexBindings vertexAttributes pipelineLayout renderPass device
+            let descriptorSetLayout = ImGuiPipeline.createDescriptorSetLayout resourceBindings device
+            let pipelineLayout = ImGuiPipeline.createPipelineLayout descriptorSetLayout pushConstantRanges device
+            let descriptorPool = ImGuiPipeline.createDescriptorPool resourceBindings device
+            let descriptorSet = ImGuiPipeline.createDescriptorSet descriptorSetLayout descriptorPool device
+            let vulkanPipeline = ImGuiPipeline.createPipeline shaderPath cullFace blend vertexBindings vertexAttributes pipelineLayout renderPass device
 
-            // make Pipeline
-            let pipeline =
+            // make ImGuiPipeline
+            let imGuiPipeline =
                 { Pipeline = vulkanPipeline
                   DescriptorPool = descriptorPool
                   DescriptorSet = descriptorSet
@@ -207,4 +207,4 @@ module Pipeline =
                   DescriptorSetLayout = descriptorSetLayout }
 
             // fin
-            pipeline
+            imGuiPipeline

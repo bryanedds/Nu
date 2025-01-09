@@ -271,7 +271,7 @@ module GlRendererImGui =
 /// Renders an imgui view via Vulkan.
 type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
     
-    let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
+    let mutable pipeline = Unchecked.defaultof<Pipeline.ImGuiPipeline>
     let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
     let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
     let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
@@ -307,7 +307,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             
             // create pipeline
             pipeline <-
-                Pipeline.Pipeline.create
+                Pipeline.ImGuiPipeline.create
                     Constants.Paths.ImGuiShaderFilePath
                     false blend
                     [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
@@ -320,7 +320,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                     vulkanGlobal.Device
 
             // load font atlas texture to descriptor set
-            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vulkanGlobal.Device
+            Pipeline.ImGuiPipeline.writeDescriptorTexture 0 0 fontTexture pipeline vulkanGlobal.Device
 
             // store identifier
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
@@ -474,7 +474,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             Hl.AllocatedBuffer.destroy indexBuffer vulkanGlobal.VmaAllocator
             Hl.AllocatedBuffer.destroy vertexBuffer vulkanGlobal.VmaAllocator
             Texture.VulkanTexture.destroy fontTexture vulkanGlobal
-            Pipeline.Pipeline.destroy pipeline vulkanGlobal.Device
+            Pipeline.ImGuiPipeline.destroy pipeline vulkanGlobal.Device
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =
