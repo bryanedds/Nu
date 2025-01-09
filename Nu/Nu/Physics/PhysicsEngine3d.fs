@@ -640,21 +640,21 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match bodyJointProperties.BodyJoint with
             | EmptyJoint ->
                 None
-            | AetherOneBodyJoint _ | AetherTwoBodyJoint _ ->
+            | OneBodyJoint2d _ | TwoBodyJoint2d _ ->
                 Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine3d.")
                 None
-            | JoltOneBodyJoint joltJoint ->
+            | OneBodyJoint3d oneBodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 match physicsEngine.Bodies.TryGetValue bodyId with
                 | (true, bodyID) ->
                     let mutable bodyLockWrite = BodyLockWrite ()
                     try physicsEngine.PhysicsContext.BodyLockInterface.LockWrite (&bodyID, &bodyLockWrite) // NOTE: assuming that jolt needs write capabilities for these.
                         let body = bodyLockWrite.Body
-                        let joint = joltJoint.CreateOneBodyJoint body
+                        let joint = oneBodyJoint.CreateOneBodyJoint body
                         Some (joint, bodyID, None)
                     finally physicsEngine.PhysicsContext.BodyLockInterface.UnlockWrite &bodyLockWrite
                 | (false, _) -> None
-            | JoltTwoBodyJoint joltJoint ->
+            | TwoBodyJoint3d twoBodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2IdOpt = bodyJointProperties.BodyJointTarget2Opt
                 match body2IdOpt with
@@ -664,7 +664,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                         use lockMultiWrite = physicsEngine.PhysicsContext.BodyLockInterface.LockMultiWrite ([|bodyID; body2ID|].AsSpan ()) // NOTE: assuming that jolt needs write capabilities for these.
                         let body = lockMultiWrite.GetBody 0u
                         let body2 = lockMultiWrite.GetBody 1u
-                        let joint = joltJoint.CreateTwoBodyJoint body body2
+                        let joint = twoBodyJoint.CreateTwoBodyJoint body body2
                         Some (joint, bodyID, Some body2ID)
                     | _ -> None
                 | None -> None

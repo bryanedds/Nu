@@ -476,34 +476,34 @@ type BodyJointId =
       BodyJointIndex : int }
 
 /// Allows users to create their own one-body 2D joints.
-type AetherOneBodyJoint =
+type OneBodyJoint2d =
     { CreateOneBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own two-body 2D joints.
-type AetherTwoBodyJoint =
+type TwoBodyJoint2d =
     { CreateTwoBodyJoint : nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Body -> nkast.Aether.Physics2D.Dynamics.Joints.Joint }
 
 /// Allows users to create their own one-body 3D joints.
-type JoltOneBodyJoint =
+type OneBodyJoint3d =
     { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// Allows users to create their own two-body 3D joints.
-type JoltTwoBodyJoint =
+type TwoBodyJoint3d =
     { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
 
 /// A joint on physics bodies.
 /// Because physics joints don't generalize well across 2D and 3D - or even across different 3D physics engines, we're
-/// currently only providing joint creation via the user-defined cases of AetherJoint and JoltJoint.
+/// currently only providing joint creation via the user-defined cases.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.DetailedThresholdMax)>]
 type BodyJoint =
     | EmptyJoint
-    | AetherOneBodyJoint of AetherOneBodyJoint
-    | AetherTwoBodyJoint of AetherTwoBodyJoint
-    | JoltOneBodyJoint of JoltOneBodyJoint
-    | JoltTwoBodyJoint of JoltTwoBodyJoint
+    | OneBodyJoint2d of OneBodyJoint2d
+    | TwoBodyJoint2d of TwoBodyJoint2d
+    | OneBodyJoint3d of OneBodyJoint3d
+    | TwoBodyJoint3d of TwoBodyJoint3d
 
 /// Describes the universal properties of a body joint.
 type BodyJointProperties =

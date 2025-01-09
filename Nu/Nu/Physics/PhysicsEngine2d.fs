@@ -359,25 +359,25 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             match bodyJointProperties.BodyJoint with
             | EmptyJoint ->
                 None
-            | AetherOneBodyJoint aetherJoint ->
+            | OneBodyJoint2d oneBodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 match physicsEngine.Bodies.TryGetValue bodyId with
                 | (true, (_, body)) ->
-                    let joint = aetherJoint.CreateOneBodyJoint body
+                    let joint = oneBodyJoint.CreateOneBodyJoint body
                     Some (joint, body, None)
                 | (false, _) -> None
-            | AetherTwoBodyJoint aetherJoint ->
+            | TwoBodyJoint2d twoBodyJoint ->
                 let bodyId = bodyJointProperties.BodyJointTarget
                 let body2IdOpt = bodyJointProperties.BodyJointTarget2Opt
                 match body2IdOpt with
                 | Some body2Id ->
                     match (physicsEngine.Bodies.TryGetValue bodyId, physicsEngine.Bodies.TryGetValue body2Id) with
                     | ((true, (_, body)), (true, (_, body2))) ->
-                        let joint = aetherJoint.CreateTwoBodyJoint body body2
+                        let joint = twoBodyJoint.CreateTwoBodyJoint body body2
                         Some (joint, body, Some body2)
                     | _ -> None
                 | None -> None
-            | JoltOneBodyJoint _ | JoltTwoBodyJoint _ ->
+            | OneBodyJoint3d _ | TwoBodyJoint3d _ ->
                 Log.warn ("Joint type '" + getCaseName bodyJointProperties.BodyJoint + "' not implemented for PhysicsEngine2d.")
                 None
         match resultOpt with
