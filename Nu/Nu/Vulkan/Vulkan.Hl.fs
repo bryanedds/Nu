@@ -43,7 +43,7 @@ module Hl =
         if result.Status <> CompilationStatus.Success then
             
             // TODO: DJL: review multiple reporting.
-            Log.error result.ErrorMessage
+            Log.error ("Vulkan shader compiler errors:\n" + result.ErrorMessage)
             failwith ("Vulkan shader compilation failed due to: " + result.ErrorMessage)
         let shaderCode = result.GetBytecode().ToArray()
         shaderCode

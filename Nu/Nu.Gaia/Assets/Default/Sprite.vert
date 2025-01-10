@@ -22,7 +22,7 @@ layout (binding = 1) uniform Tc4 {
 layout (location = 0) out vec2 texCoords;
 void main()
 {
-    int vertexId = gl_VertexID % VERTS;
+    int vertexId = gl_VertexIndex % VERTS;
     vec4 filt = FILTERS[vertexId];
     gl_Position = mvp.modelViewProjection * vec4(position.x, position.y, 0, 1);
     texCoords = vec2(tc4.texCoords4.x * filt.x + tc4.texCoords4.z * filt.z, tc4.texCoords4.y * filt.y + tc4.texCoords4.w * filt.w);
