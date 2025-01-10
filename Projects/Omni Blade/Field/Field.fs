@@ -1339,7 +1339,7 @@ module Field =
           FieldState_ = Quit
           SaveSlot_ = Slot1
           OmniSeedState_ = OmniSeedState.make ()
-          Avatar_ = Avatar.empty ()
+          Avatar_ = Avatar.empty
           AvatarCollidedPropIds_ = []
           AvatarSeparatedPropIds_ = []
           AvatarIntersectedPropIds_ = []
@@ -1366,10 +1366,10 @@ module Field =
           FieldType_ = EmptyField }
 
     let initial time saveSlot =
-        make time TombOuter saveSlot (max 1UL Gen.randomul) (Avatar.initial ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
+        make time TombOuter saveSlot (max 1UL Gen.randomul) Avatar.initial (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
 
     let debug time =
-        make time DebugField Slot1 Rand.DefaultSeedState (Avatar.empty ()) (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
+        make time DebugField Slot1 Rand.DefaultSeedState Avatar.empty (Map.singleton 0 (Teammate.make 3 0 Jinn)) Advents.initial Inventory.initial
 
     let tryLoad time saveSlot =
         try let saveFilePath =

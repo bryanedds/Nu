@@ -47,24 +47,24 @@ module Avatar =
     let animate time characterAnimationType avatar =
         mapCharacterAnimationState (fun state -> CharacterAnimationState.setCharacterAnimationType time characterAnimationType state) avatar
 
-    let make bounds animationSheet direction =
+    let make perimeter animationSheet direction =
         let characterAnimationState = { StartTime = 0L; AnimationSheet = animationSheet; CharacterAnimationType = IdleAnimation; MaterializationOpt = None; Direction = direction }
-        { Perimeter = bounds
+        { Perimeter = perimeter
           CharacterAnimationState = characterAnimationState
           CelSize = Constants.Gameplay.CharacterCelSize }
 
-    let empty () =
-        let bounds = box3 v3Zero Constants.Gameplay.CharacterSize
-        { Perimeter = bounds
+    let empty =
+        let perimeter = box3 v3Zero Constants.Gameplay.CharacterSize
+        { Perimeter = perimeter
           CharacterAnimationState = CharacterAnimationState.empty
           CelSize = Constants.Gameplay.CharacterCelSize }
 
-    let initial () =
+    let initial =
         let position = v3 2064.0f 48.0f 0.0f - Constants.Gameplay.CharacterSize.WithY 0.0f * 0.5f
-        let bounds = box3 position Constants.Gameplay.CharacterSize
+        let perimeter = box3 position Constants.Gameplay.CharacterSize
         let characterAnimationState = CharacterAnimationState.initial
-        { empty () with
-            Perimeter = bounds
+        { empty with
+            Perimeter = perimeter
             CharacterAnimationState = characterAnimationState }
 
 type Avatar = Avatar.Avatar
