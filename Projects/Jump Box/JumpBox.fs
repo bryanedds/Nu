@@ -43,7 +43,7 @@ type JumpBoxDispatcher () =
         let world = World.beginPanel "Panel" [Entity.Position .= v3 -128.0f 0.0f 0.0f; Entity.Layout .= Flow (FlowDownward, FlowUnlimited)] world
         let world = World.doText "Collisions" [Entity.Text @= "Collisions: " + string (jumpBox.GetCollisions world)] world
         let (clicked, world) = World.doButton "Jump!" [Entity.EnabledLocal @= World.getBodyGrounded boxBodyId world; Entity.Text .= "Jump!"] world
-        let world = if clicked then World.applyBodyLinearImpulse (v3Up * 256.0f) None boxBodyId world else world
+        let world = if clicked then World.jumpBody false 8.0f boxBodyId world else world
         let world = World.doFillBar "FillBar" [Entity.Fill @= single (jumpBox.GetCollisions world) / 10.0f] world
         let world = if jumpBox.GetCollisions world >= 10 then World.doText "Full!" [Entity.Text .= "Full!"] world else world
         let world = World.endPanel world
