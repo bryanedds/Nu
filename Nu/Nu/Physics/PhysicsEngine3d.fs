@@ -458,7 +458,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             //else physicsEngine.PhysicsContext.BodyInterface.DeactivateBody &innerBodyID
             //physicsEngine.PhysicsContext.BodyInterface.SetFriction (&innerBodyID, bodyProperties.Friction)
             //physicsEngine.PhysicsContext.BodyInterface.SetRestitution (&innerBodyID, bodyProperties.Restitution)
-            //let motionQuality = match bodyProperties.CollisionDetection with Discontinuous -> MotionQuality.Discrete | Continuous (_, _) -> MotionQuality.LinearCast
+            //let motionQuality = match bodyProperties.CollisionDetection with Discontinuous -> MotionQuality.Discrete | Continuous -> MotionQuality.LinearCast
             //physicsEngine.PhysicsContext.BodyInterface.SetMotionQuality (&innerBodyID, motionQuality)
 
             // validate contact with category and mask
@@ -594,7 +594,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             bodyCreationSettings.MotionQuality <-
                 match bodyProperties.CollisionDetection with
                 | Discontinuous -> MotionQuality.Discrete
-                | Continuous (_, _) -> MotionQuality.LinearCast
+                | Continuous -> MotionQuality.LinearCast
             bodyCreationSettings.IsSensor <- bodyProperties.Sensor
             let body = physicsEngine.PhysicsContext.BodyInterface.CreateBody bodyCreationSettings
             let bodyUserData =

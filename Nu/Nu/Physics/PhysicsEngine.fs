@@ -244,7 +244,7 @@ type [<Struct>] Substance =
      Constants.PrettyPrinter.SimpleThresholdMax)>]
 type [<Struct>] CollisionDetection =
     | Discontinuous
-    | Continuous of MotionThreshold : single * SweptSphereRadius : single
+    | Continuous
 
 /// The shape of a physics body box.
 type BoxShape =
