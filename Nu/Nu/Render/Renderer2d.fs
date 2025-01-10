@@ -844,6 +844,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanGlobal : Hl.VulkanGlobal
           SpritePipeline : Pipeline.SpritePipeline
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
+          ModelViewProjectionUniform : Hl.AllocatedBuffer
+          TexCoords4Uniform : Hl.AllocatedBuffer
+          ColorUniform : Hl.AllocatedBuffer
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
@@ -1169,10 +1172,22 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
-//                            let (vertices, indices, vao) = renderer.TextQuad
-//                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader) = renderer.SpriteShader
-//                            OpenGL.Sprite.DrawSprite (vertices, indices, vao, modelViewProjection.ToArray (), ValueNone, Color.White, FlipNone, textSurfaceWidth, textSurfaceHeight, textTexture, modelViewProjectionUniform, texCoords4Uniform, colorUniform, textureUniform, shader)
-//                            OpenGL.Hl.Assert ()
+                            let (vertices, indices) = renderer.TextQuad
+                            Sprite.DrawSprite
+                                (vertices,
+                                 indices,
+                                 modelViewProjection.ToArray (),
+                                 ValueNone,
+                                 Color.White,
+                                 FlipNone,
+                                 textSurfaceWidth,
+                                 textSurfaceHeight,
+                                 textTexture.VulkanTexture,
+                                 renderer.ModelViewProjectionUniform,
+                                 renderer.TexCoords4Uniform,
+                                 renderer.ColorUniform,
+                                 renderer.SpritePipeline,
+                                 renderer.VulkanGlobal)
 
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
@@ -1255,12 +1270,21 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         // make text quad
         let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal.VmaAllocator
+
+        // create uniform buffers
+        // TODO: DJL: make persistent.
+        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform true sizeof<Matrix4x4> vulkanGlobal.VmaAllocator
+        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform true sizeof<Box2> vulkanGlobal.VmaAllocator
+        let colorUniform = Hl.AllocatedBuffer.createUniform true (sizeof<single> * 4) vulkanGlobal.VmaAllocator
         
         // make renderer
         let renderer =
             { VulkanGlobal = vulkanGlobal
               SpritePipeline = spritePipeline
               TextQuad = textQuad
+              ModelViewProjectionUniform = modelViewProjectionUniform
+              TexCoords4Uniform = texCoords4Uniform
+              ColorUniform = colorUniform
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
@@ -1283,10 +1307,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             VulkanRenderer2d.destroyTransientTextures renderer
             renderer.TransientTextures.Clear ()
 
-            // destroy sprite pipeline and text quad
+            // destroy sprite pipeline and buffers
             Pipeline.SpritePipeline.destroy renderer.SpritePipeline renderer.VulkanGlobal.Device
             Hl.AllocatedBuffer.destroy (fst renderer.TextQuad) renderer.VulkanGlobal.VmaAllocator
             Hl.AllocatedBuffer.destroy (snd renderer.TextQuad) renderer.VulkanGlobal.VmaAllocator
+            Hl.AllocatedBuffer.destroy renderer.ModelViewProjectionUniform renderer.VulkanGlobal.VmaAllocator
+            Hl.AllocatedBuffer.destroy renderer.TexCoords4Uniform renderer.VulkanGlobal.VmaAllocator
+            Hl.AllocatedBuffer.destroy renderer.ColorUniform renderer.VulkanGlobal.VmaAllocator
             
             // clean up packages
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

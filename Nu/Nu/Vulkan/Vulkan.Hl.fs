@@ -242,6 +242,15 @@ module Hl =
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
             allocatedBuffer
+
+        /// Create an allocated uniform buffer.
+        static member createUniform uploadEnabled size allocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            allocatedBuffer
         
         /// Create an allocated staging buffer and stage the data.
         static member stageData size ptr allocator =

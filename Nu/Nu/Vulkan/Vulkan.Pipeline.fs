@@ -364,6 +364,25 @@ module Pipeline =
             pipeline
         
         /// Write a texture to the descriptor set.
+        // NOTE: DJL: method added to clone.
+        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.AllocatedBuffer) pipeline device =
+
+            // buffer info
+            let mutable info = VkDescriptorBufferInfo ()
+            info.buffer <- buffer.Buffer
+            info.range <- Vulkan.VK_WHOLE_SIZE
+
+            // write descriptor set
+            let mutable write = VkWriteDescriptorSet ()
+            write.dstSet <- pipeline.DescriptorSet
+            write.dstBinding <- uint binding
+            write.dstArrayElement <- uint arrayIndex
+            write.descriptorCount <- 1u
+            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+            write.pBufferInfo <- asPointer &info
+            Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
+        
+        /// Write a texture to the descriptor set.
         static member writeDescriptorTexture (binding : int) (arrayIndex : int) (texture : Texture.VulkanTexture) pipeline device =
             
             // image info

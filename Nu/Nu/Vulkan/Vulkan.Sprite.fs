@@ -27,6 +27,7 @@ module Sprite =
                   -1.0f; +1.0f|]
 
         // create vertex buffer
+        // TODO: DJL: use staging buffers!
         let vertexSize = sizeof<single> * 2
         let vertexDataSize = vertexSize * 4
         let vertexBuffer = Hl.AllocatedBuffer.createVertex true vertexDataSize allocator
@@ -48,7 +49,21 @@ module Sprite =
         (vertexBuffer, indexBuffer)
 
     /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad using the sprite shader.
-    let DrawSprite (vertices : Hl.AllocatedBuffer, indices : Hl.AllocatedBuffer, modelViewProjection : single array, insetOpt : Box2 ValueOption, color : Color, flip, textureWidth, textureHeight, texture : Texture.Texture, pipeline : Pipeline.SpritePipeline, vulkanGlobal : Hl.VulkanGlobal) =
+    let DrawSprite
+        (vertices : Hl.AllocatedBuffer,
+         indices : Hl.AllocatedBuffer,
+         modelViewProjection : single array,
+         insetOpt : Box2 ValueOption,
+         color : Color,
+         flip,
+         textureWidth,
+         textureHeight,
+         texture : Texture.VulkanTexture,
+         modelViewProjectionUniform : Hl.AllocatedBuffer,
+         texCoords4Uniform : Hl.AllocatedBuffer,
+         colorUniform : Hl.AllocatedBuffer,
+         pipeline : Pipeline.SpritePipeline,
+         vulkanGlobal : Hl.VulkanGlobal) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -92,6 +107,23 @@ module Sprite =
         let allocator = vulkanGlobal.VmaAllocator
         let commandBuffer = vulkanGlobal.RenderCommandBuffer
         
+        // update uniform buffers
+        // TODO: DJL: see what can be done about this mess.
+        let texCoordsArray = [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|]
+        let colorArray = [|color.R; color.G; color.B; color.A|]
+        use modelViewProjectionPin = new ArrayPin<_> (modelViewProjection)
+        use texCoordsArrayPin = new ArrayPin<_> (texCoordsArray)
+        use colorArrayPin = new ArrayPin<_> (colorArray)
+        Hl.AllocatedBuffer.upload 0 (modelViewProjection.Length * sizeof<single>) modelViewProjectionPin.NativeInt modelViewProjectionUniform allocator
+        Hl.AllocatedBuffer.upload 0 (4 * sizeof<single>) texCoordsArrayPin.NativeInt texCoords4Uniform allocator
+        Hl.AllocatedBuffer.upload 0 (4 * sizeof<single>) colorArrayPin.NativeInt colorUniform allocator
+
+        // write descriptor set
+        Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vulkanGlobal.Device
+        Pipeline.SpritePipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vulkanGlobal.Device
+        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline vulkanGlobal.Device
+        Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform pipeline vulkanGlobal.Device
+        
         // bind pipeline
         Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
 
@@ -124,7 +156,8 @@ module Sprite =
              1u, asPointer &descriptorSet,
              0u, nullPtr)
         
-
+        // draw
+        Vulkan.vkCmdDrawIndexed (commandBuffer, 6u, 1u, 0u, 0, 0u)
         
         // reset scissor
         let mutable scissor = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
