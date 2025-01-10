@@ -17,7 +17,7 @@ type CharacterMessage =
 
 type CharacterCommand =
     | Register
-    | UpdateTransform of Either<Vector3, Vector3> * Quaternion
+    | UpdateNavigation of Vector3 * Quaternion
     | UpdateAnimations of Vector3 * Quaternion * Animation array * bool
     | SyncWeaponTransform
     | PublishAttacks of Entity Set
@@ -76,7 +76,7 @@ type CharacterDispatcher (character : Character) =
 
             // deploy signals from update
             let signals = if jump then [Jump :> Signal] else []
-            let signals = UpdateTransform (navigation, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
+            let signals = UpdateNavigation (navigation, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
             let signals = match character.ActionState with WoundState wound when wound.WoundTime = world.UpdateTime - 60L -> PublishDie :> Signal :: signals | _ -> signals
             let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
             withSignals signals character
@@ -141,16 +141,10 @@ type CharacterDispatcher (character : Character) =
             let world = weapon.AutoBounds world
             withSignal SyncWeaponTransform world
 
-        | UpdateTransform (navigation, rotation) ->
-            match navigation with
-            | Right linearVelocity ->
-                let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + linearVelocity) world
-                let world = entity.SetRotation rotation world
-                just world
-            | Left position ->
-                let world = entity.SetPosition position world
-                let world = entity.SetRotation rotation world
-                just world
+        | UpdateNavigation (linearVelocity, rotation) ->
+            let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + linearVelocity) world
+            let world = entity.SetRotation rotation world
+            just world
 
         | UpdateAnimations (position, rotation, animations, invisible) ->
             let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName

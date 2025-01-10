@@ -221,9 +221,9 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                     (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
                 let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
-                (jump, None, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
+                (jump, rotation, walkVelocity, v3 0.0f turnVelocity 0.0f, character)
 
-            else (jump, None, rotation, v3Zero, v3Zero, character)
+            else (jump, rotation, v3Zero, v3Zero, character)
 
         | Enemy ->
             
@@ -279,8 +279,8 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
                     else Sphere (playerPosition, 0.7f) // when at or below player
                 let nearest = sphere.Nearest position
                 let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world
-                (false, None, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
-            | None -> (false, None, rotation, v3Zero, v3Zero, character)
+                (false, followOutput.NavRotation, followOutput.NavLinearVelocity, followOutput.NavAngularVelocity, character)
+            | None -> (false, rotation, v3Zero, v3Zero, character)
 
     static member private updateActionState time character =
         match character.ActionState with
@@ -329,12 +329,11 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
     static member update time position rotation linearVelocity angularVelocity grounded playerPosition character world =
         let character = Character.updateInterps position rotation linearVelocity angularVelocity character
         let character = Character.updateJumpState time grounded character
-        let (jump, positionOpt, rotation, linearVelocity, angularVelocity, character) = Character.updateInput time position rotation grounded playerPosition character world
+        let (jump, rotation, linearVelocity, angularVelocity, character) = Character.updateInput time position rotation grounded playerPosition character world
         let character = Character.updateActionState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
         let (animations, invisible) = Character.updateAnimations time rotation linearVelocity angularVelocity character world
-        let navigation = match positionOpt with Some position -> Left position | None -> Right linearVelocity
-        (animations, invisible, attackedCharacters, jump, navigation, rotation, character)
+        (animations, invisible, attackedCharacters, jump, linearVelocity, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType
