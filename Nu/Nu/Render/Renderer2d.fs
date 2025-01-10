@@ -843,6 +843,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
           SpritePipeline : Pipeline.SpritePipeline
+          TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
@@ -1252,10 +1253,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                   Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
                 [||] vulkanGlobal.RenderPass vulkanGlobal.Device
         
+        // make text quad
+        let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal.VmaAllocator
+        
         // make renderer
         let renderer =
             { VulkanGlobal = vulkanGlobal
               SpritePipeline = spritePipeline
+              TextQuad = textQuad
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
@@ -1278,8 +1283,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             VulkanRenderer2d.destroyTransientTextures renderer
             renderer.TransientTextures.Clear ()
 
-            // destroy sprite pipeline
+            // destroy sprite pipeline and text quad
             Pipeline.SpritePipeline.destroy renderer.SpritePipeline renderer.VulkanGlobal.Device
+            Hl.AllocatedBuffer.destroy (fst renderer.TextQuad) renderer.VulkanGlobal.VmaAllocator
+            Hl.AllocatedBuffer.destroy (snd renderer.TextQuad) renderer.VulkanGlobal.VmaAllocator
             
             // clean up packages
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
