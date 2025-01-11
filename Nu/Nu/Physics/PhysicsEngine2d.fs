@@ -513,17 +513,17 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             else Log.info ("Applying invalid torque '" + scstring applyBodyTorqueMessage.Torque + "'; this may destabilize Aether.")
         | (false, _) -> ()
 
-    static member getBodyContactNormals bodyId physicsEngine =
+    static member private getBodyContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContacts bodyId physicsEngine |>
         Array.map (fun (contact : Contact) -> let normal = fst (contact.GetWorldManifold ()) in Vector3 (normal.X, normal.Y, 0.0f))
 
-    static member getBodyToGroundContactNormals bodyId physicsEngine =
+    static member private getBodyToGroundContactNormals bodyId physicsEngine =
         PhysicsEngine2d.getBodyContactNormals bodyId physicsEngine |>
         Array.filter (fun normal ->
             let theta = normal.V2.Dot Vector2.UnitY |> acos |> abs
             theta < Constants.Physics.GroundAngleMax)
  
-    static member getBodyToGroundContactNormalOpt bodyId physicsEngine =
+    static member private getBodyToGroundContactNormalOpt bodyId physicsEngine =
         match PhysicsEngine2d.getBodyToGroundContactNormals bodyId physicsEngine with
         | [||] -> None
         | groundNormals ->

@@ -1077,11 +1077,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           BodyConstraints = dictPlus HashIdentity.Structural []
           IntegrationMessages = List () }
 
-    static member cleanUp physicsEngine =
-        physicsEngine.JobSystem.Dispose ()
-        physicsEngine.PhysicsContext.Dispose ()
-        Foundation.Shutdown ()
-
     interface PhysicsEngine with
 
         member physicsEngine.GetBodyExists bodyId =
@@ -1312,4 +1307,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             affected
 
         member physicsEngine.CleanUp () =
-            PhysicsEngine3d.cleanUp physicsEngine
+            physicsEngine.JobSystem.Dispose ()
+            physicsEngine.PhysicsContext.Dispose ()
+            Foundation.Shutdown ()
