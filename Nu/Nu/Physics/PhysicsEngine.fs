@@ -485,11 +485,11 @@ type TwoBodyJoint2d =
 
 /// Allows users to create their own one-body 3D joints.
 type OneBodyJoint3d =
-    { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
+    { CreateOneBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Constraint }
 
 /// Allows users to create their own two-body 3D joints.
 type TwoBodyJoint3d =
-    { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.TwoBodyConstraint }
+    { CreateTwoBodyJoint : JoltPhysicsSharp.Body -> JoltPhysicsSharp.Body -> JoltPhysicsSharp.Constraint }
 
 /// A joint on physics bodies.
 /// Because physics joints don't generalize well across 2D and 3D - or even across different 3D physics engines, we're

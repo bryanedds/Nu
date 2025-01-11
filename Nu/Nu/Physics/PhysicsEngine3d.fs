@@ -96,7 +96,7 @@ type [<ReferenceEquality>] PhysicsEngine3d =
           CreateBodyJointMessages : Dictionary<BodyId, CreateBodyJointMessage List>
           BodyConstraintEvents : BodyConstraintEvent List
           BodyConstraintUserData : Dictionary<BodyJointId, BodyConstraintUserData>
-          BodyConstraints : Dictionary<BodyJointId, TwoBodyConstraint>
+          BodyConstraints : Dictionary<BodyJointId, Constraint>
           IntegrationMessages : IntegrationMessage List }
 
     static member private handleBodyPenetration (bodyId : BodyId) (body2Id : BodyId) (contactNormal : Vector3) physicsEngine =
