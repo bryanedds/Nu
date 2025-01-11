@@ -363,7 +363,7 @@ module Pipeline =
             // fin
             pipeline
         
-        /// Write a texture to the descriptor set.
+        /// Write a uniform to the descriptor set.
         // NOTE: DJL: method added to clone.
         static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.AllocatedBuffer) pipeline device =
 

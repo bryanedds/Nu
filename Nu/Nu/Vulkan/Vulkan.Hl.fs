@@ -216,6 +216,12 @@ module Hl =
             then Vma.vmaCopyMemoryToAllocation (allocator, NativePtr.nativeintToVoidPtr ptr, buffer.Allocation, uint64 offset, uint64 size) |> check
             else failwith "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
+        /// Upload an array to buffer if upload is enabled.
+        static member uploadArray offset (array : 'a array) buffer allocator =
+            use arrayPin = new ArrayPin<_> (array)
+            let size = array.Length * sizeof<'a>
+            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer allocator
+        
         /// Create an allocated staging buffer.
         static member createStaging size allocator =
             let mutable info = VkBufferCreateInfo ()

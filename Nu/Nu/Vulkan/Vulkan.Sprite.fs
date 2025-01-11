@@ -104,25 +104,18 @@ module Sprite =
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
         // commonly used handles
+        let device = vulkanGlobal.Device
         let allocator = vulkanGlobal.VmaAllocator
         let commandBuffer = vulkanGlobal.RenderCommandBuffer
         
         // update uniform buffers
-        // TODO: DJL: see what can be done about this mess.
-        let texCoordsArray = [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|]
-        let colorArray = [|color.R; color.G; color.B; color.A|]
-        use modelViewProjectionPin = new ArrayPin<_> (modelViewProjection)
-        use texCoordsArrayPin = new ArrayPin<_> (texCoordsArray)
-        use colorArrayPin = new ArrayPin<_> (colorArray)
-        Hl.AllocatedBuffer.upload 0 (modelViewProjection.Length * sizeof<single>) modelViewProjectionPin.NativeInt modelViewProjectionUniform allocator
-        Hl.AllocatedBuffer.upload 0 (4 * sizeof<single>) texCoordsArrayPin.NativeInt texCoords4Uniform allocator
-        Hl.AllocatedBuffer.upload 0 (4 * sizeof<single>) colorArrayPin.NativeInt colorUniform allocator
+        Hl.AllocatedBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform allocator
+        Hl.AllocatedBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform allocator
+        Hl.AllocatedBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform allocator
 
-        // write descriptor set
-        Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vulkanGlobal.Device
-        Pipeline.SpritePipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vulkanGlobal.Device
-        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline vulkanGlobal.Device
-        Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform pipeline vulkanGlobal.Device
+        // write texture to descriptor set
+        // TODO: DJL: find out what's going on with updating texture.
+        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline device
         
         // bind pipeline
         Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
