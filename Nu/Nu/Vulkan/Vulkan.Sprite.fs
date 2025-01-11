@@ -114,7 +114,6 @@ module Sprite =
         Hl.AllocatedBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform allocator
 
         // write texture to descriptor set
-        // TODO: DJL: find out what's going on with updating texture.
         Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline device
         
         // bind pipeline
