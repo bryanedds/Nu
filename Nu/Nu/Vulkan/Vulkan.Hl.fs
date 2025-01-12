@@ -161,139 +161,6 @@ module Hl =
         Vulkan.vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
         commandBuffer
     
-    /// Abstraction for vma allocated buffer.
-    type AllocatedBuffer =
-        { Buffer : VkBuffer
-          Allocation : VmaAllocation
-          UploadEnabled : bool }
-
-        static member private createInternal uploadEnabled bufferInfo allocator =
-            
-            // handles
-            let mutable buffer = Unchecked.defaultof<VkBuffer>
-            let mutable allocation = Unchecked.defaultof<VmaAllocation>
-
-            // allocation create info
-            let mutable allocInfo = VmaAllocationCreateInfo ()
-            allocInfo.usage <- VmaMemoryUsage.Auto
-            if uploadEnabled then allocInfo.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite
-
-            // create vma buffer
-            Vma.vmaCreateBuffer (allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullPtr) |> check
-
-            // make AllocatedBuffer
-            let allocatedBuffer =
-                { Buffer = buffer
-                  Allocation = allocation
-                  UploadEnabled = uploadEnabled }
-
-            // fin
-            allocatedBuffer
-
-        (*
-        TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
-
-        /// Map pointer to buffer if upload is enabled.
-        static member tryMap buffer =
-            let mutable memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
-            if buffer.UploadEnabled then
-                Vma.vmaMapMemory (buffer.VmaAllocator, buffer.VmaAllocation, memoryPtrPtr) |> check
-                Vma.vmaInvalidateAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
-            else Log.info "Mapping to Vulkan buffer failed because upload was not enabled for that buffer."
-            memoryPtrPtr
-
-        /// Unmap buffer.
-        static member unmap buffer =
-
-            // no point checking UploadEnabled because success or failure simply depends on calling context
-            Vma.vmaFlushAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
-            Vma.vmaUnmapMemory (buffer.VmaAllocator, buffer.VmaAllocation)
-        *)
-        
-        /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer allocator =
-            if buffer.UploadEnabled
-            then Vma.vmaCopyMemoryToAllocation (allocator, NativePtr.nativeintToVoidPtr ptr, buffer.Allocation, uint64 offset, uint64 size) |> check
-            else failwith "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
-
-        /// Upload an array to buffer if upload is enabled.
-        static member uploadArray offset (array : 'a array) buffer allocator =
-            use arrayPin = new ArrayPin<_> (array)
-            let size = array.Length * sizeof<'a>
-            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer allocator
-        
-        /// Create an allocated staging buffer.
-        static member createStaging size allocator =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal true info allocator
-            allocatedBuffer
-
-        /// Create an allocated vertex buffer.
-        static member createVertex uploadEnabled size allocator =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
-            allocatedBuffer
-
-        /// Create an allocated index buffer.
-        static member createIndex uploadEnabled size allocator =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
-            allocatedBuffer
-
-        /// Create an allocated uniform buffer.
-        static member createUniform uploadEnabled size allocator =
-            let mutable info = VkBufferCreateInfo ()
-            info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
-            allocatedBuffer
-        
-        /// Create an allocated staging buffer and stage the data.
-        static member stageData size ptr allocator =
-            let buffer = AllocatedBuffer.createStaging size allocator
-            AllocatedBuffer.upload 0 size ptr buffer allocator
-            buffer
-        
-        /// Destroy buffer and allocation.
-        static member destroy buffer allocator =
-            Vma.vmaDestroyBuffer (allocator, buffer.Buffer, buffer.Allocation)
-    
-    /// Abstraction for vma allocated image.
-    type AllocatedImage =
-        { Image : VkImage
-          Allocation : VmaAllocation }
-
-        /// Destroy image and allocation.
-        static member destroy allocatedImage allocator =
-            Vma.vmaDestroyImage (allocator, allocatedImage.Image, allocatedImage.Allocation)
-
-        /// Create an AllocatedImage.
-        static member create imageInfo allocator =
-            
-            // handles
-            let mutable image = Unchecked.defaultof<VkImage>
-            let mutable allocation = Unchecked.defaultof<VmaAllocation>
-
-            // allocation create info
-            let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
-
-            // create vma image
-            Vma.vmaCreateImage (allocator, &imageInfo, &allocInfo, &image, &allocation, nullPtr) |> check
-
-            // fin
-            let allocatedImage = { Image = image; Allocation = allocation }
-            allocatedImage
-    
     /// A physical device and associated data.
     type PhysicalDeviceData =
         { PhysicalDevice : VkPhysicalDevice
@@ -944,3 +811,136 @@ module Hl =
 
             // failure
             | None -> None
+
+    /// Abstraction for vma allocated buffer.
+    type AllocatedBuffer =
+        { Buffer : VkBuffer
+          Allocation : VmaAllocation
+          UploadEnabled : bool }
+
+        static member private createInternal uploadEnabled bufferInfo allocator =
+            
+            // handles
+            let mutable buffer = Unchecked.defaultof<VkBuffer>
+            let mutable allocation = Unchecked.defaultof<VmaAllocation>
+
+            // allocation create info
+            let mutable allocInfo = VmaAllocationCreateInfo ()
+            allocInfo.usage <- VmaMemoryUsage.Auto
+            if uploadEnabled then allocInfo.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite
+
+            // create vma buffer
+            Vma.vmaCreateBuffer (allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullPtr) |> check
+
+            // make AllocatedBuffer
+            let allocatedBuffer =
+                { Buffer = buffer
+                  Allocation = allocation
+                  UploadEnabled = uploadEnabled }
+
+            // fin
+            allocatedBuffer
+
+        (*
+        TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
+
+        /// Map pointer to buffer if upload is enabled.
+        static member tryMap buffer =
+            let mutable memoryPtrPtr = Unchecked.defaultof<nativeptr<voidptr>>
+            if buffer.UploadEnabled then
+                Vma.vmaMapMemory (buffer.VmaAllocator, buffer.VmaAllocation, memoryPtrPtr) |> check
+                Vma.vmaInvalidateAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
+            else Log.info "Mapping to Vulkan buffer failed because upload was not enabled for that buffer."
+            memoryPtrPtr
+
+        /// Unmap buffer.
+        static member unmap buffer =
+
+            // no point checking UploadEnabled because success or failure simply depends on calling context
+            Vma.vmaFlushAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
+            Vma.vmaUnmapMemory (buffer.VmaAllocator, buffer.VmaAllocation)
+        *)
+        
+        /// Upload data to buffer if upload is enabled.
+        static member upload offset size ptr buffer allocator =
+            if buffer.UploadEnabled
+            then Vma.vmaCopyMemoryToAllocation (allocator, NativePtr.nativeintToVoidPtr ptr, buffer.Allocation, uint64 offset, uint64 size) |> check
+            else failwith "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+
+        /// Upload an array to buffer if upload is enabled.
+        static member uploadArray offset (array : 'a array) buffer allocator =
+            use arrayPin = new ArrayPin<_> (array)
+            let size = array.Length * sizeof<'a>
+            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer allocator
+        
+        /// Create an allocated staging buffer.
+        static member createStaging size allocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.createInternal true info allocator
+            allocatedBuffer
+
+        /// Create an allocated vertex buffer.
+        static member createVertex uploadEnabled size allocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            allocatedBuffer
+
+        /// Create an allocated index buffer.
+        static member createIndex uploadEnabled size allocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            allocatedBuffer
+
+        /// Create an allocated uniform buffer.
+        static member createUniform uploadEnabled size allocator =
+            let mutable info = VkBufferCreateInfo ()
+            info.size <- uint64 size
+            info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+            info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
+            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            allocatedBuffer
+        
+        /// Create an allocated staging buffer and stage the data.
+        static member stageData size ptr allocator =
+            let buffer = AllocatedBuffer.createStaging size allocator
+            AllocatedBuffer.upload 0 size ptr buffer allocator
+            buffer
+        
+        /// Destroy buffer and allocation.
+        static member destroy buffer allocator =
+            Vma.vmaDestroyBuffer (allocator, buffer.Buffer, buffer.Allocation)
+    
+    /// Abstraction for vma allocated image.
+    type AllocatedImage =
+        { Image : VkImage
+          Allocation : VmaAllocation }
+
+        /// Destroy image and allocation.
+        static member destroy allocatedImage allocator =
+            Vma.vmaDestroyImage (allocator, allocatedImage.Image, allocatedImage.Allocation)
+
+        /// Create an AllocatedImage.
+        static member create imageInfo allocator =
+            
+            // handles
+            let mutable image = Unchecked.defaultof<VkImage>
+            let mutable allocation = Unchecked.defaultof<VmaAllocation>
+
+            // allocation create info
+            let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+
+            // create vma image
+            Vma.vmaCreateImage (allocator, &imageInfo, &allocInfo, &image, &allocation, nullPtr) |> check
+
+            // fin
+            let allocatedImage = { Image = image; Allocation = allocation }
+            allocatedImage
