@@ -131,6 +131,20 @@ type Gameplay =
             Tiles = List.concat rows
             Score = score }
 
+    static member shift direction gameplay =
+        let gameplay' =
+            match direction with
+            | Upward -> Gameplay.shiftUp gameplay
+            | Rightward -> Gameplay.shiftRight gameplay
+            | Downward -> Gameplay.shiftDown gameplay
+            | Leftward -> Gameplay.shiftLeft gameplay
+        if Gameplay.detectTileChange gameplay gameplay' then
+            let gameplay = Gameplay.addTile gameplay'
+            if not (Gameplay.detectMoveAvailability gameplay)
+            then { gameplay with GameplayState = Playing true }
+            else gameplay
+        else gameplay
+
     static member addTile (gameplay : Gameplay) =
         let position = Gen.randomItem gameplay.PositionsUnoccupied
         { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }

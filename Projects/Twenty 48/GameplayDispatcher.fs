@@ -68,18 +68,8 @@ type GameplayDispatcher () =
 
         | TryShift direction ->
             if world.Advancing && gameplay.GameplayState = Playing false then
-                let gameplay' =
-                    match direction with
-                    | Upward -> Gameplay.shiftUp gameplay
-                    | Rightward -> Gameplay.shiftRight gameplay
-                    | Downward -> Gameplay.shiftDown gameplay
-                    | Leftward -> Gameplay.shiftLeft gameplay
-                if Gameplay.detectTileChange gameplay gameplay' then
-                    let gameplay = Gameplay.addTile gameplay'
-                    if not (Gameplay.detectMoveAvailability gameplay)
-                    then just { gameplay with GameplayState = Playing true }
-                    else just gameplay
-                else just gameplay
+                let gameplay = Gameplay.shift direction gameplay
+                just gameplay
             else just gameplay
 
         | Nil ->
