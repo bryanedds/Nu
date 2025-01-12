@@ -841,6 +841,29 @@ module Hl =
             // fin
             allocatedBuffer
 
+        /// Copy data from the source buffer to the destination buffer.
+        static member private copyData size source destination vulkanGlobal =
+            
+            // create command buffer for transfer
+            let mutable commandBuffer = allocateCommandBuffer vulkanGlobal.TransferCommandPool vulkanGlobal.Device
+
+            // reset command buffer and begin recording
+            Vulkan.vkResetCommandPool (vulkanGlobal.Device, vulkanGlobal.TransferCommandPool, VkCommandPoolResetFlags.None) |> check
+            let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+            Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+
+            // copy data
+            let mutable region = VkBufferCopy (size = uint64 size)
+            Vulkan.vkCmdCopyBuffer (commandBuffer, source.Buffer, destination.Buffer, 1u, asPointer &region)
+
+            // execute command
+            Vulkan.vkEndCommandBuffer commandBuffer |> check
+            let mutable sInfo = VkSubmitInfo ()
+            sInfo.commandBufferCount <- 1u
+            sInfo.pCommandBuffers <- asPointer &commandBuffer
+            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> check
+            Vulkan.vkQueueWaitIdle vulkanGlobal.GraphicsQueue |> check
+
         (*
         TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
 
@@ -884,29 +907,45 @@ module Hl =
 
         /// Create an allocated vertex buffer.
         static member createVertex uploadEnabled size allocator =
+            
+            // data can and must be transferred from a staging buffer if upload is not enabled
+            let usage =
+                if uploadEnabled
+                then Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+                else Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+            
+            // create buffer
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+            info.usage <- usage
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
             allocatedBuffer
 
         /// Create an allocated index buffer.
         static member createIndex uploadEnabled size allocator =
+            
+            // data can and must be transferred from a staging buffer if upload is not enabled
+            let usage =
+                if uploadEnabled
+                then Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+                else Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
+            
+            // create buffer
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
-            info.usage <- Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+            info.usage <- usage
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
             allocatedBuffer
 
         /// Create an allocated uniform buffer.
-        static member createUniform uploadEnabled size allocator =
+        static member createUniform size allocator =
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
             info.usage <- Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
-            let allocatedBuffer = AllocatedBuffer.createInternal uploadEnabled info allocator
+            let allocatedBuffer = AllocatedBuffer.createInternal true info allocator
             allocatedBuffer
         
         /// Create an allocated staging buffer and stage the data.
@@ -914,6 +953,22 @@ module Hl =
             let buffer = AllocatedBuffer.createStaging size allocator
             AllocatedBuffer.upload 0 size ptr buffer allocator
             buffer
+        
+        /// Create an allocated vertex buffer with data uploaded via staging buffer.
+        static member createVertexStaged size ptr vulkanGlobal =
+            let stagingBuffer = AllocatedBuffer.stageData size ptr vulkanGlobal.VmaAllocator
+            let vertexBuffer = AllocatedBuffer.createVertex false size vulkanGlobal.VmaAllocator
+            AllocatedBuffer.copyData size stagingBuffer vertexBuffer vulkanGlobal
+            AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
+            vertexBuffer
+
+        /// Create an allocated index buffer with data uploaded via staging buffer.
+        static member createIndexStaged size ptr vulkanGlobal =
+            let stagingBuffer = AllocatedBuffer.stageData size ptr vulkanGlobal.VmaAllocator
+            let indexBuffer = AllocatedBuffer.createIndex false size vulkanGlobal.VmaAllocator
+            AllocatedBuffer.copyData size stagingBuffer indexBuffer vulkanGlobal
+            AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
+            indexBuffer
         
         /// Destroy buffer and allocation.
         static member destroy buffer allocator =

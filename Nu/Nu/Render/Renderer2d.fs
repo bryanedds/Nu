@@ -1157,7 +1157,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelViewProjection = modelMatrix * viewProjection
 
                             // create texture
-                            // TODO: DJL: try a non-staged texture upload and compare performance.
+                            // TODO: DJL: investigate non-staged texture upload and its performance.
                             let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                             let textVulkanTexture =
                                 Texture.VulkanTexture.createBgra
@@ -1267,9 +1267,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         // create sprite uniform buffers
         // TODO: DJL: make persistent.
-        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform true (sizeof<single> * 16) allocator
-        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform true (sizeof<single> * 4) allocator
-        let colorUniform = Hl.AllocatedBuffer.createUniform true (sizeof<single> * 4) allocator
+        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
+        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
+        let colorUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
 
         // write sprite descriptor set
         Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform spritePipeline device
@@ -1277,7 +1277,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform spritePipeline device
 
         // create text quad and texture
-        let textQuad = Sprite.CreateSpriteQuad true allocator
+        let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal
         let textTexture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; VulkanTexture = Texture.VulkanTexture.createEmpty vulkanGlobal }
         
         // make renderer

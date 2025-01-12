@@ -11,8 +11,12 @@ open Nu
 module Sprite =
 
     /// Create a sprite quad for rendering to the sprite shader.
-    let CreateSpriteQuad onlyUpperRightQuadrant allocator =
+    let CreateSpriteQuad onlyUpperRightQuadrant vulkanGlobal =
 
+        // buffers
+        let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
+        let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
+        
         // build vertex data
         let vertexData =
             if onlyUpperRightQuadrant then
@@ -27,22 +31,19 @@ module Sprite =
                   -1.0f; +1.0f|]
 
         // create vertex buffer
-        // TODO: DJL: use staging buffers!
         let vertexSize = sizeof<single> * 2
         let vertexDataSize = vertexSize * 4
-        let vertexBuffer = Hl.AllocatedBuffer.createVertex true vertexDataSize allocator
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         
         // TODO: DJL: confirm that this try block and the one for index buffer are still appropriate.
-        try Hl.AllocatedBuffer.upload 0 vertexDataSize (vertexDataPtr.AddrOfPinnedObject ()) vertexBuffer allocator
+        try vertexBuffer <- Hl.AllocatedBuffer.createVertexStaged vertexDataSize (vertexDataPtr.AddrOfPinnedObject ()) vulkanGlobal
         finally vertexDataPtr.Free ()
 
         // create index buffer
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         let indexDataSize = indexData.Length * sizeof<uint>
-        let indexBuffer = Hl.AllocatedBuffer.createIndex true indexDataSize allocator
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        try Hl.AllocatedBuffer.upload 0 indexDataSize (indexDataPtr.AddrOfPinnedObject ()) indexBuffer allocator
+        try indexBuffer <- Hl.AllocatedBuffer.createIndexStaged indexDataSize (indexDataPtr.AddrOfPinnedObject ()) vulkanGlobal
         finally indexDataPtr.Free ()
 
         // fin
