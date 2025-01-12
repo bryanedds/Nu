@@ -314,7 +314,27 @@ module Texture =
         static member createRgba minFilter magFilter metadata pixels vulkanGlobal =
             VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vulkanGlobal
 
+        /// Create an empty VulkanTexture.
+        static member createEmpty (vulkanGlobal : Hl.VulkanGlobal) =
+            
+            // create components
+            let image = VulkanTexture.createImage Vulkan.VK_FORMAT_R8G8B8A8_UNORM (VkExtent3D (1, 1, 1)) vulkanGlobal.VmaAllocator
+            let imageView = Hl.createImageView Vulkan.VK_FORMAT_R8G8B8A8_UNORM 1u image.Image vulkanGlobal.Device
+            let sampler = VulkanTexture.createSampler Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST vulkanGlobal.Device
+            
+            // make VulkanTexture
+            let vulkanTexture =
+                { Image = image
+                  ImageView = imageView
+                  Sampler = sampler }
+
+            // fin
+            vulkanTexture
+        
         /// Unpopulated VulkanTexture.
+        // TODO: DJL: if default values are undesirable, make mutable to allow proper creation and destruction,
+        // either by moving outside VulkanTexture as 'let mutable emptyVulkanTexture', or by converting VulkanTexture
+        // to a class and using a static field.
         static member empty =
             { Image = Unchecked.defaultof<Hl.AllocatedImage>
               ImageView = Unchecked.defaultof<VkImageView>
