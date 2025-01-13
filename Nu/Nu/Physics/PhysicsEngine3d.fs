@@ -170,8 +170,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match boxShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
-            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
+            | None when bodyProperties.Scale <> v3One ->
+                let shapeScale = bodyProperties.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
+                new ScaledShapeSettings (shapeSettings, &shapeScale)
             | None -> shapeSettings
         let bodyShapeId = match boxShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
         scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
@@ -193,8 +197,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match sphereShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
-            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
+            | None when bodyProperties.Scale <> v3One ->
+                let shapeScale = bodyProperties.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
+                new ScaledShapeSettings (shapeSettings, &shapeScale)
             | None -> shapeSettings
         let bodyShapeId = match sphereShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
         scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
@@ -216,8 +224,12 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match capsuleShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings
-            | None when bodyProperties.Scale <> v3One -> new ScaledShapeSettings (shapeSettings, &bodyProperties.Scale)
+            | None when bodyProperties.Scale <> v3One ->
+                let shapeScale = bodyProperties.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
+                new ScaledShapeSettings (shapeSettings, &shapeScale)
             | None -> shapeSettings
         let bodyShapeId = match capsuleShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
         scShapeSettings.AddShape (&center, &rotation, shapeSettings, uint bodyShapeId)
@@ -260,9 +272,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match pointsShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
             | None when bodyProperties.Scale <> v3One ->
                 let shapeScale = bodyProperties.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match pointsShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
@@ -294,9 +308,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             match geometryShape.TransformOpt with
             | Some transform ->
                 let shapeScale = bodyProperties.Scale * transform.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 (shapeScale, (new ScaledShapeSettings (shapeSettings, &shapeScale) : ShapeSettings))
             | None when bodyProperties.Scale <> v3One ->
                 let shapeScale = bodyProperties.Scale
+                let shapeScale = Vector3.Max (shapeScale, v3Dup 0.001f) // prevent having near zero or negative size
                 (shapeScale, new ScaledShapeSettings (shapeSettings, &shapeScale))
             | None -> (v3One, shapeSettings)
         let bodyShapeId = match geometryShape.PropertiesOpt with Some properties -> properties.BodyShapeIndex | None -> bodyProperties.BodyIndex
