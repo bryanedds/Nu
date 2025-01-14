@@ -371,10 +371,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                         let drawList = let range = drawData.CmdListsRange in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        
-                        // TODO: DJL: try a persistently mapped buffer and compare performance
-                        Hl.AllocatedBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer allocator
-                        Hl.AllocatedBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer allocator
+                        Hl.AllocatedBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer
+                        Hl.AllocatedBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 

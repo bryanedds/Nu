@@ -67,6 +67,13 @@ module NativePtr =
     let spanToString (span : ReadOnlySpan<byte>) =
         Encoding.UTF8.GetString span
 
+    /// Copy data of the given size from source to destination at the given offset.
+    let memCopy offset size source dest =
+        let sourcePtr = NativePtr.ofVoidPtr<byte> source
+        let destPtr = NativePtr.ofVoidPtr<byte> dest
+        let offsetPtr = NativePtr.add destPtr offset
+        NativePtr.copyBlock offsetPtr sourcePtr size
+
 [<AutoOpen>]
 module NativePtrOperators =
 

@@ -1266,7 +1266,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                 [||] vulkanGlobal.RenderPass device
         
         // create sprite uniform buffers
-        // TODO: DJL: make persistent.
         let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
         let texCoords4Uniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
         let colorUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator

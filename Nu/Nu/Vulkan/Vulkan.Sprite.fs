@@ -110,9 +110,9 @@ module Sprite =
         let commandBuffer = vulkanGlobal.RenderCommandBuffer
         
         // update uniform buffers
-        Hl.AllocatedBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform allocator
-        Hl.AllocatedBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform allocator
-        Hl.AllocatedBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform allocator
+        Hl.AllocatedBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform
+        Hl.AllocatedBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform
+        Hl.AllocatedBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform
 
         // write texture to descriptor set
         Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline device

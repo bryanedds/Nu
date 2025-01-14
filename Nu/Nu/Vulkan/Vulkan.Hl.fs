@@ -816,6 +816,7 @@ module Hl =
     type AllocatedBuffer =
         { Buffer : VkBuffer
           Allocation : VmaAllocation
+          AllocationInfo : VmaAllocationInfo
           UploadEnabled : bool }
 
         static member private createInternal uploadEnabled bufferInfo allocator =
@@ -823,19 +824,21 @@ module Hl =
             // handles
             let mutable buffer = Unchecked.defaultof<VkBuffer>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
+            let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
 
             // allocation create info
-            let mutable allocInfo = VmaAllocationCreateInfo ()
-            allocInfo.usage <- VmaMemoryUsage.Auto
-            if uploadEnabled then allocInfo.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite
+            let mutable info = VmaAllocationCreateInfo ()
+            info.usage <- VmaMemoryUsage.Auto
+            if uploadEnabled then info.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite ||| VmaAllocationCreateFlags.Mapped
 
             // create vma buffer
-            Vma.vmaCreateBuffer (allocator, &bufferInfo, &allocInfo, &buffer, &allocation, nullPtr) |> check
+            Vma.vmaCreateBuffer (allocator, &bufferInfo, &info, &buffer, &allocation, asPointer &allocationInfo) |> check
 
             // make AllocatedBuffer
             let allocatedBuffer =
                 { Buffer = buffer
                   Allocation = allocation
+                  AllocationInfo = allocationInfo
                   UploadEnabled = uploadEnabled }
 
             // fin
@@ -885,16 +888,16 @@ module Hl =
         *)
         
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size ptr buffer allocator =
+        static member upload offset size nint buffer =
             if buffer.UploadEnabled
-            then Vma.vmaCopyMemoryToAllocation (allocator, NativePtr.nativeintToVoidPtr ptr, buffer.Allocation, uint64 offset, uint64 size) |> check
+            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr nint) buffer.AllocationInfo.pMappedData
             else failwith "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
-        static member uploadArray offset (array : 'a array) buffer allocator =
+        static member uploadArray offset (array : 'a array) buffer =
             use arrayPin = new ArrayPin<_> (array)
             let size = array.Length * sizeof<'a>
-            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer allocator
+            AllocatedBuffer.upload offset size arrayPin.NativeInt buffer
         
         /// Create an allocated staging buffer.
         static member createStaging size allocator =
@@ -951,7 +954,7 @@ module Hl =
         /// Create an allocated staging buffer and stage the data.
         static member stageData size ptr allocator =
             let buffer = AllocatedBuffer.createStaging size allocator
-            AllocatedBuffer.upload 0 size ptr buffer allocator
+            AllocatedBuffer.upload 0 size ptr buffer
             buffer
         
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
@@ -991,10 +994,10 @@ module Hl =
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
 
             // allocation create info
-            let allocInfo = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
+            let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
 
             // create vma image
-            Vma.vmaCreateImage (allocator, &imageInfo, &allocInfo, &image, &allocation, nullPtr) |> check
+            Vma.vmaCreateImage (allocator, &imageInfo, &info, &image, &allocation, nullPtr) |> check
 
             // fin
             let allocatedImage = { Image = image; Allocation = allocation }
