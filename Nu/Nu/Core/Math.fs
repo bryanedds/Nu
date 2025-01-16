@@ -979,6 +979,88 @@ type Box3iConverter () =
         | :? Box3 -> source
         | _ -> failconv "Invalid Box3iConverter conversion from source." None
 
+/// Converts Matrix3x2 types.
+type Matrix3x2Converter () =
+    inherit TypeConverter ()
+
+    override this.CanConvertTo (_, destType) =
+        destType = typeof<Symbol> ||
+        destType = typeof<Matrix3x2>
+
+    override this.ConvertTo (_, _, source, destType) =
+        if destType = typeof<Symbol> then
+            let v3x2 = source :?> Matrix3x2
+            Symbols
+                ([Number (string v3x2.M11, ValueNone); Number (string v3x2.M12, ValueNone)
+                  Number (string v3x2.M21, ValueNone); Number (string v3x2.M22, ValueNone)
+                  Number (string v3x2.M31, ValueNone); Number (string v3x2.M32, ValueNone)],
+                 ValueNone) :> obj
+        elif destType = typeof<Matrix3x2> then source
+        else failconv "Invalid Matrix3x2Converter conversion to source." None
+
+    override this.CanConvertFrom (_, sourceType) =
+        sourceType = typeof<Symbol> ||
+        sourceType = typeof<Matrix3x2>
+
+    override this.ConvertFrom (_, _, source) =
+        match source with
+        | :? Symbol as symbol ->
+            match symbol with
+            | Symbols
+                ([Number (m11, _); Number (m12, _)
+                  Number (m21, _); Number (m22, _)
+                  Number (m31, _); Number (m32, _)],
+                 _) ->
+                Matrix3x2
+                    (Single.Parse m11, Single.Parse m12,
+                     Single.Parse m21, Single.Parse m22,
+                     Single.Parse m31, Single.Parse m32) :> obj
+            | _ -> failconv "Invalid Matrix3x2Converter conversion from source." (Some symbol)
+        | :? Matrix3x2 -> source
+        | _ -> failconv "Invalid Matrix3x2Converter conversion from source." None
+
+[<AutoOpen>]
+module Matrix3x2 =
+
+    type Matrix3x2 with
+
+        member inline this.IsZero =
+            this.M11 = 0.0f && this.M12 = 0.0f &&
+            this.M21 = 0.0f && this.M22 = 0.0f &&
+            this.M31 = 0.0f && this.M32 = 0.0f
+
+        /// Create a matrix from an array of 16 single values.
+        static member CreateFromArray (arr : single array) =
+            Matrix3x2
+                (arr.[00], arr.[01],
+                 arr.[02], arr.[03],
+                 arr.[04], arr.[05])
+
+        /// Convert a Matrix3x2 to an array.
+        member this.ToArray () =
+            let value = Array.zeroCreate 6
+            value.[00] <- this.M11; value.[01] <- this.M12
+            value.[02] <- this.M21; value.[03] <- this.M22
+            value.[04] <- this.M31; value.[05] <- this.M32
+            value
+
+        /// Convert a Matrix3x2 to an array.
+        member this.ToArray (value : single array, offset) =
+            value.[offset+00] <- this.M11; value.[offset+01] <- this.M12
+            value.[offset+02] <- this.M21; value.[offset+03] <- this.M22
+            value.[offset+04] <- this.M31; value.[offset+05] <- this.M32
+
+    let inline m3x2 (r0 : Vector2) (r1 : Vector2) (r2 : Vector2) =
+        Matrix3x2
+            (r0.X, r0.Y,
+             r1.X, r1.Y,
+             r2.X, r2.Y)
+
+    let inline m3x2Eq (x : Matrix3x2) (y : Matrix3x2) = x.Equals y
+    let inline m3x2Neq (x : Matrix3x2) (y : Matrix3x2) = not (x.Equals y)
+    let m3x2Identity = Matrix3x2.Identity
+    let m3x2Zero = Unchecked.defaultof<Matrix3x2>
+
 /// Converts Matrix4x4 types.
 type Matrix4x4Converter () =
     inherit TypeConverter ()
@@ -1373,6 +1455,8 @@ module Math =
             assignTypeConverter<Box2, Box2Converter> ()
             assignTypeConverter<Box3, Box3Converter> ()
             assignTypeConverter<Box2i, Box2iConverter> ()
+            assignTypeConverter<Box3i, Box3iConverter> ()
+            assignTypeConverter<Matrix3x2, Matrix3x2Converter> ()
             assignTypeConverter<Matrix4x4, Matrix4x4Converter> ()
             assignTypeConverter<Color, ColorConverter> ()
             Initialized <- true
