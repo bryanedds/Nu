@@ -87,9 +87,7 @@ module Engine =
 [<RequireQualifiedAccess>]
 module Render =
 
-    /// The vendor names for which we have not yet experienced a need to call glFinish before swapping.
-    /// More info here - https://github.com/bryanedds/Nu/wiki/Why-GlFinish-for-Some-Drivers-or-Vendors
-    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."]
+    let [<Uniform>] VendorNamesExceptedFromSwapGlFinishRequirement = ["NVIDIA Corporation"; "AMD"; "ATI Technologies Inc."] // see https://github.com/bryanedds/Nu/wiki/Why-GlFinish-for-Some-Drivers-or-Vendors
     let [<Literal>] IgnoreLightMapsName = "IgnoreLightMaps"
     let [<Literal>] OpaqueDistanceName = "OpaqueDistance"
     let [<Literal>] TwoSidedName = "TwoSided"
