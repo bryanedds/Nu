@@ -80,9 +80,7 @@ module internal Octnode =
               Comparer_ : 'e OctelementEqualityComparer
               Leaves_ : Dictionary<Vector3, 'e Octnode> }
 
-        override this.ToString () =
-            ""
-
+        override this.ToString () = ""
         member this.Id = this.Id_
 
     let internal makeChildren<'e when 'e : equality> node =
