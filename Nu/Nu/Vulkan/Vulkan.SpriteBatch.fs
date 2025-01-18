@@ -1,7 +1,7 @@
 ﻿// Nu Game Engine.
 // Copyright (C) Bryan Edds, 2013-2023.
 
-namespace OpenGL
+namespace Vortice.Vulkan
 open System
 open System.Numerics
 open Prime
@@ -12,27 +12,22 @@ module SpriteBatch =
 
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
-          BlendingFactorSrc : BlendingFactor
-          BlendingFactorDst : BlendingFactor
-          BlendingEquation : BlendEquationMode
           TextureOpt : Texture.Texture ValueOption }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
-            state.BlendingFactorSrc <> state2.BlendingFactorSrc ||
-            state.BlendingFactorDst <> state2.BlendingFactorDst ||
-            state.BlendingEquation <> state2.BlendingEquation ||
             (match struct (state.TextureOpt, state2.TextureOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
-             | struct (ValueSome t, ValueSome t2) -> t.TextureId <> t2.TextureId) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
+             // TODO: DJL: figure out how this works with VulkanTexture.
+             | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
 
         static member make absolute bfs bfd beq texture =
-            { Absolute = absolute; BlendingFactorSrc = bfs; BlendingFactorDst = bfd; BlendingEquation = beq; TextureOpt = ValueSome texture }
+            { Absolute = absolute; TextureOpt = ValueSome texture }
 
         static member defaultState =
-            { Absolute = false; BlendingFactorSrc = BlendingFactor.SrcAlpha; BlendingFactorDst = BlendingFactor.OneMinusSrcAlpha; BlendingEquation = BlendEquationMode.FuncAdd; TextureOpt = ValueNone }
+            { Absolute = false; TextureOpt = ValueNone }
 
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
@@ -40,41 +35,12 @@ module SpriteBatch =
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
-              PerimetersUniform : int
-              TexCoordsesUniform : int
-              PivotsUniform : int
-              RotationsUniform : int
-              ColorsUniform : int
-              ViewProjectionUniform : int
-              TexUniform : int
-              Shader : uint
               Perimeters : single array
               Pivots : single array
               Rotations : single array
               TexCoordses : single array
               Colors : single array
-              Vao : uint
               mutable State : SpriteBatchState }
-              
-    /// Create a sprite batch shader.
-    let CreateSpriteBatchShader (shaderFilePath : string) =
-
-        // create shader
-        let shader = Shader.CreateShaderFromFilePath shaderFilePath
-        Hl.Assert ()
-
-        // retrieve uniforms
-        let perimetersUniform = Gl.GetUniformLocation (shader, "perimeters")
-        let pivotsUniform = Gl.GetUniformLocation (shader, "pivots")
-        let rotationsUniform = Gl.GetUniformLocation (shader, "rotations")
-        let texCoordsesUniform = Gl.GetUniformLocation (shader, "texCoordses")
-        let colorsUniform = Gl.GetUniformLocation (shader, "colors")
-        let viewProjectionUniform = Gl.GetUniformLocation (shader, "viewProjection")
-        let texUniform = Gl.GetUniformLocation (shader, "tex")
-        Hl.Assert ()
-
-        // make sprite batch shader tuple
-        (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader)
 
     let private BeginSpriteBatch state env =
         env.State <- state
@@ -85,49 +51,6 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // setup state
-            Gl.BlendEquation env.State.BlendingEquation
-            Gl.BlendFunc (env.State.BlendingFactorSrc, env.State.BlendingFactorDst)
-            Gl.Enable EnableCap.Blend
-            Gl.Enable EnableCap.CullFace
-            Hl.Assert ()
-
-            // setup vao
-            Gl.BindVertexArray env.Vao
-            Hl.Assert ()
-
-            // setup shader
-            Gl.UseProgram env.Shader
-            Gl.Uniform4 (env.PerimetersUniform, env.Perimeters)
-            Gl.Uniform4 (env.TexCoordsesUniform, env.TexCoordses)
-            Gl.Uniform2 (env.PivotsUniform, env.Pivots)
-            Gl.Uniform1 (env.RotationsUniform, env.Rotations)
-            Gl.Uniform4 (env.ColorsUniform, env.Colors)
-            Gl.UniformMatrix4 (env.ViewProjectionUniform, false, if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ())
-            Gl.Uniform1 (env.TexUniform, 0)
-            Gl.ActiveTexture TextureUnit.Texture0
-            Gl.BindTexture (TextureTarget.Texture2d, texture.TextureId)
-            Hl.Assert ()
-
-            // draw geometry
-            Gl.DrawArrays (PrimitiveType.Triangles, 0, 6 * env.SpriteIndex)
-            Hl.ReportDrawCall env.SpriteIndex
-            Hl.Assert ()
-
-            // teardown shader
-            Gl.BindTexture (TextureTarget.Texture2d, 0u)
-            Gl.UseProgram 0u
-            Hl.Assert ()
-        
-            // teardown vao
-            Gl.BindVertexArray 0u
-            Hl.Assert ()
-
-            // teardown state
-            Gl.BlendEquation BlendEquationMode.FuncAdd
-            Gl.BlendFunc (BlendingFactor.One, BlendingFactor.Zero)
-            Gl.Disable EnableCap.Blend
-            Gl.Disable EnableCap.CullFace
 
             // next batch
             env.SpriteIndex <- 0
@@ -136,10 +59,10 @@ module SpriteBatch =
         | ValueSome _ | ValueNone -> ()
 
     let private RestartSpriteBatch state env =
-        Hl.Assert (EndSpriteBatch env)
+        EndSpriteBatch env
         BeginSpriteBatch state env
 
-    /// Beging a new sprite batch frame3.
+    /// Begin a new sprite batch frame.
     let BeginSpriteBatchFrame (viewProjectionAbsolute : Matrix4x4 inref, viewProjectionRelative : Matrix4x4 inref, env) =
         env.ViewProjectionAbsolute <- viewProjectionAbsolute
         env.ViewProjectionRelative <- viewProjectionRelative
@@ -152,8 +75,8 @@ module SpriteBatch =
     /// Forcibly end the current sprite batch frame, if any, run the given fn, then restart the sprite batch frame.
     let InterruptSpriteBatchFrame fn env =
         let state = env.State
-        Hl.Assert (EndSpriteBatch env)
-        Hl.Assert (fn ())
+        EndSpriteBatch env
+        fn ()
         BeginSpriteBatch state env
 
     let
@@ -189,7 +112,6 @@ module SpriteBatch =
         let state = SpriteBatchState.make absolute bfs bfd beq texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state env
-            Hl.Assert ()
 
         // populate vertices
         let perimeter = box2 min size
@@ -201,25 +123,14 @@ module SpriteBatch =
     /// Destroy the given sprite batch environment.
     let CreateSpriteBatchEnv shaderFilePath =
 
-        // create vao
-        let vao = Gl.GenVertexArray ()
-        Hl.Assert ()
-
-        // create shader
-        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, texUniform, shader) = CreateSpriteBatchShader shaderFilePath
-        Hl.Assert ()
 
         // create env
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity
-          PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
-          TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
-          TexUniform = texUniform; Shader = shader
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
           TexCoordses = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Colors = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
-          Vao = vao
           State = SpriteBatchState.defaultState }
 
     /// Destroy the given sprite batch environment.

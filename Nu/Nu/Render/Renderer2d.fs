@@ -846,6 +846,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           SpriteUniforms : Hl.AllocatedBuffer * Hl.AllocatedBuffer * Hl.AllocatedBuffer
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
           mutable TextTexture : Texture.Texture
+          SpriteBatchEnv : Vortice.Vulkan.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
@@ -1063,8 +1064,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if color.A8 <> 0uy then
             let transform = transform // copy to local to make visible from lambda
             
-            // TODO: DJL: don't forget to restore this once sprite batch environment is setup.
-            do //flip OpenGL.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
+            flip Vortice.Vulkan.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
                 let mutable transform = transform
@@ -1279,6 +1279,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal
         let textTexture = Texture.EagerTexture { TextureMetadata = Texture.TextureMetadata.empty; VulkanTexture = Texture.VulkanTexture.createEmpty vulkanGlobal }
         
+        // create sprite batch env
+        let spriteBatchEnv = Vortice.Vulkan.SpriteBatch.CreateSpriteBatchEnv Constants.Paths.SpriteBatchShaderFilePath
+        
         // make renderer
         let renderer =
             { VulkanGlobal = vulkanGlobal
@@ -1286,6 +1289,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               SpriteUniforms = (modelViewProjectionUniform, texCoords4Uniform, colorUniform)
               TextQuad = textQuad
               TextTexture = textTexture
+              SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
