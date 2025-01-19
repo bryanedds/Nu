@@ -17,7 +17,7 @@ type CharacterMessage =
 
 type CharacterCommand =
     | Register
-    | UpdateNavigation of Vector3 * Quaternion
+    | UpdateNavigation of Vector3 * Vector3 * Quaternion
     | UpdateAnimations of Vector3 * Quaternion * Animation array * bool
     | SyncWeaponTransform
     | PublishAttacks of Entity Set
@@ -71,12 +71,12 @@ type CharacterDispatcher (character : Character) =
             let bodyId = entity.GetBodyId world
             let grounded = World.getBodyGrounded bodyId world
             let playerPosition = Simulants.GameplayPlayer.GetPosition world
-            let (animations, invisible, attackedCharacters, jump, navigation, rotation, character) =
+            let (animations, invisible, attackedCharacters, jump, navigation, angularVelocity, rotation, character) =
                 Character.update time position rotation linearVelocity angularVelocity grounded playerPosition character world
 
             // deploy signals from update
             let signals = if jump then [Jump :> Signal] else []
-            let signals = UpdateNavigation (navigation, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
+            let signals = UpdateNavigation (navigation, angularVelocity, rotation) :> Signal :: UpdateAnimations (position, rotation, Array.ofList animations, invisible) :: signals
             let signals = match character.ActionState with WoundState wound when wound.WoundTime = world.UpdateTime - 60L -> PublishDie :> Signal :: signals | _ -> signals
             let signals = if attackedCharacters.Count > 0 then PublishAttacks attackedCharacters :> Signal :: signals else signals
             withSignals signals character
@@ -141,8 +141,9 @@ type CharacterDispatcher (character : Character) =
             let world = weapon.AutoBounds world
             withSignal SyncWeaponTransform world
 
-        | UpdateNavigation (linearVelocity, rotation) ->
-            let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + linearVelocity) world
+        | UpdateNavigation (navigation, angularVelocity, rotation) ->
+            let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + navigation) world
+            let world = entity.SetAngularVelocity angularVelocity world
             let world = entity.SetRotation rotation world
             just world
 

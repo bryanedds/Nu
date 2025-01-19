@@ -333,7 +333,7 @@ type [<ReferenceEquality; SymbolicExpansion>] Character =
         let character = Character.updateActionState time character
         let (attackedCharacters, character) = Character.updateAttackedCharacters time character
         let (animations, invisible) = Character.updateAnimations time rotation linearVelocity angularVelocity character world
-        (animations, invisible, attackedCharacters, jump, linearVelocity, rotation, character)
+        (animations, invisible, attackedCharacters, jump, linearVelocity, angularVelocity, rotation, character)
 
     static member initial characterType =
         { CharacterType = characterType
