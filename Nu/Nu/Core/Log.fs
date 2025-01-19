@@ -19,7 +19,7 @@ module Log =
         let now = DateTimeOffset.Now
         now.ToString "yyyy-MM-dd HH\:mm\:ss.fff zzz"
 
-    /// Log a purely informational message with Trace.TraceInformation.
+    /// Log a purely informational message with Trace.WriteLine.
     /// Thread-safe.
     let info message =
         Trace.WriteLine (getDateTimeNowStr () + "|Info|" + message)
@@ -29,7 +29,7 @@ module Log =
     let infoOnce (message : string) =
         if InfoOnceMessages.TryAdd (message, 0) then info message
 
-    /// Log a warning message with Trace.TraceWarning.
+    /// Log a warning message with Trace.WriteLine.
     /// Thread-safe.
     let warn message =
         Trace.WriteLine (getDateTimeNowStr () + "|Warning|" + message)
@@ -39,7 +39,7 @@ module Log =
     let warnOnce (message : string) =
         if WarnOnceMessages.TryAdd (message, 0) then warn message
 
-    /// Log an error message with Trace.TraceError.
+    /// Log an error message with Trace.WriteLine.
     /// Thread-safe.
     let error message =
         Trace.WriteLine (getDateTimeNowStr () + "|Error|" + message)
@@ -55,7 +55,7 @@ module Log =
         Trace.Fail (getDateTimeNowStr () + "|Fatal|" + message)
         failwith "Log.fail exception."
 
-    /// Log an custom log type with Trace.TraceInformation.
+    /// Log an custom log type with Trace.WriteLine.
     /// Thread-safe.
     let custom header message =
         Trace.WriteLine (getDateTimeNowStr () + "|" + header + "|" + message)
