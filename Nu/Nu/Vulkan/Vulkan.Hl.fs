@@ -164,6 +164,51 @@ module Hl =
         Vulkan.vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
         commandBuffer
     
+    /// Begin command buffer recording and render pass.
+    let initRender commandBuffer renderPass framebuffer renderArea clearValues =
+        
+        // reset command buffer and begin recording
+        Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
+        let mutable cbInfo = VkCommandBufferBeginInfo ()
+        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+
+        // begin render pass
+        use clearValuesPin = new ArrayPin<_> (clearValues)
+        let mutable rpInfo = VkRenderPassBeginInfo ()
+        rpInfo.renderPass <- renderPass
+        rpInfo.framebuffer <- framebuffer
+        rpInfo.renderArea <- renderArea
+        rpInfo.clearValueCount <- uint clearValues.Length
+        rpInfo.pClearValues <- clearValuesPin.Pointer
+        Vulkan.vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
+    
+    /// End command buffer recording and render pass and submit for execution.
+    let submitRender commandBuffer commandQueue waitSemaphoresStages signalSemaphores fenceOpt =
+        
+        // end render pass
+        Vulkan.vkCmdEndRenderPass commandBuffer
+        
+        // end command buffer recording
+        Vulkan.vkEndCommandBuffer commandBuffer |> check
+
+        // unpack and pin arrays
+        let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
+        use waitSemaphoresPin = new ArrayPin<_> (waitSemaphores)
+        use waitStagesPin = new ArrayPin<_> (waitStages)
+        use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
+
+        // submit commands
+        let mutable commandBuffer = commandBuffer
+        let mutable info = VkSubmitInfo ()
+        info.waitSemaphoreCount <- uint waitSemaphores.Length
+        info.pWaitSemaphores <- waitSemaphoresPin.Pointer
+        info.pWaitDstStageMask <- waitStagesPin.Pointer
+        info.commandBufferCount <- 1u
+        info.pCommandBuffers <- asPointer &commandBuffer
+        info.signalSemaphoreCount <- uint signalSemaphores.Length
+        info.pSignalSemaphores <- signalSemaphoresPin.Pointer
+        Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, match fenceOpt with Some fence -> fence | None -> VkFence.Null) |> check
+    
     /// A physical device and associated data.
     type PhysicalDeviceData =
         { PhysicalDevice : VkPhysicalDevice
@@ -630,7 +675,6 @@ module Hl =
             // handles
             let device = vulkanGlobal.Device
             let swapchain = vulkanGlobal.Swapchain
-            let commandBuffer = vulkanGlobal.RenderCommandBuffer
             let imageAvailable = vulkanGlobal.ImageAvailableSemaphore
             let mutable inFlight = vulkanGlobal.InFlightFence
 
@@ -641,49 +685,31 @@ module Hl =
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
 
-            // reset command buffer and begin recording
-            Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
-            let mutable cbInfo = VkCommandBufferBeginInfo ()
-            Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
-
             // set color for screen clear
             // TODO: P0: change to proper color once the testing utility of white is no longer needed.
-            let mutable clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)
+            let clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)
 
-            // begin render pass
-            let mutable rpInfo = VkRenderPassBeginInfo ()
-            rpInfo.renderPass <- vulkanGlobal.RenderPass
-            rpInfo.framebuffer <- vulkanGlobal.SwapchainFramebuffers[int imageIndex]
-            rpInfo.renderArea <- VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            rpInfo.clearValueCount <- 1u
-            rpInfo.pClearValues <- asPointer &clearColor
-            Vulkan.vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
+            // init render
+            initRender
+                vulkanGlobal.RenderCommandBuffer
+                vulkanGlobal.RenderPass
+                vulkanGlobal.SwapchainFramebuffers[int imageIndex]
+                (VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent))
+                [|clearColor|]
 
         /// End the frame.
         static member endFrame vulkanGlobal =
             
-            // handles
-            let mutable commandBuffer = vulkanGlobal.RenderCommandBuffer
-            let mutable imageAvailable = vulkanGlobal.ImageAvailableSemaphore
-            let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
-
-            // end render pass
-            Vulkan.vkCmdEndRenderPass commandBuffer
+            // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
+            let mutable waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
             
-            // end command buffer recording
-            Vulkan.vkEndCommandBuffer commandBuffer |> check
-            
-            // submit commands
-            let mutable waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
-            let mutable info = VkSubmitInfo ()
-            info.waitSemaphoreCount <- 1u
-            info.pWaitSemaphores <- asPointer &imageAvailable
-            info.pWaitDstStageMask <- asPointer &waitStage
-            info.commandBufferCount <- 1u
-            info.pCommandBuffers <- asPointer &commandBuffer
-            info.signalSemaphoreCount <- 1u
-            info.pSignalSemaphores <- asPointer &renderFinished
-            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &info, vulkanGlobal.InFlightFence) |> check
+            // submit render
+            submitRender
+                vulkanGlobal.RenderCommandBuffer
+                vulkanGlobal.GraphicsQueue
+                [|vulkanGlobal.ImageAvailableSemaphore, waitStage|]
+                [|vulkanGlobal.RenderFinishedSemaphore|]
+                (Some vulkanGlobal.InFlightFence)
 
         /// Present the image back to the swapchain to appear on screen.
         static member present vulkanGlobal =
