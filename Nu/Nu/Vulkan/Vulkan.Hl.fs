@@ -21,6 +21,9 @@ module Hl =
         false
 #endif
     
+    /// Index of the current Swapchain image.
+    let mutable imageIndex = 0u
+    
     /// Convert VkExtensionProperties.extensionName to a string.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
         NativePtr.fixedBufferToString extensionProps.extensionName
@@ -624,8 +627,7 @@ module Hl =
         /// Begin the frame (clearing the screen in the process).
         static member beginFrame vulkanGlobal =
 
-            // swapchain image index and handles
-            let mutable imageIndex = 0u
+            // handles
             let device = vulkanGlobal.Device
             let swapchain = vulkanGlobal.Swapchain
             let commandBuffer = vulkanGlobal.RenderCommandBuffer
@@ -657,9 +659,6 @@ module Hl =
             rpInfo.pClearValues <- asPointer &clearColor
             Vulkan.vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
 
-            // fin
-            imageIndex
-
         /// End the frame.
         static member endFrame vulkanGlobal =
             
@@ -687,10 +686,9 @@ module Hl =
             Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &info, vulkanGlobal.InFlightFence) |> check
 
         /// Present the image back to the swapchain to appear on screen.
-        static member present imageIndex vulkanGlobal =
+        static member present vulkanGlobal =
 
-            // swapchain image index and handles
-            let mutable imageIndex = imageIndex
+            // handles
             let mutable swapchain = vulkanGlobal.Swapchain
             let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
             

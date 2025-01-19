@@ -67,7 +67,7 @@ type RendererInline () =
                 | Some window ->
                 
                     // create gl context
-                    let (glFinishRequired', glContext) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
+                    let (glFinishRequired', _) = match window with SglWindow window -> OpenGL.Hl.CreateSglContextInitial window.SglWindow
                     OpenGL.Hl.Assert ()
                     glFinishRequired <- glFinishRequired'
 
@@ -354,10 +354,6 @@ type RendererThread () =
         // mark as started
         started <- true
 
-        // vulkan swapchain image index
-        // TODO: consider other ways to track this
-        let mutable imageIndex = 0u
-        
         // loop until terminated
         while not terminated do
 
@@ -372,7 +368,7 @@ type RendererThread () =
                 submissionOpt <- None
 
                 // begin frame
-                match vulkanGlobalOpt with Some vulkanGlobal -> imageIndex <- Hl.VulkanGlobal.beginFrame vulkanGlobal | None -> ()
+                match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.beginFrame vulkanGlobal | None -> ()
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
@@ -398,7 +394,7 @@ type RendererThread () =
                 if not terminated then
 
                     // present image to screen
-                    match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.present imageIndex vulkanGlobal | None -> ()
+                    match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.present vulkanGlobal | None -> ()
                     
                     // acknowledge swap request
                     swap <- false
