@@ -255,6 +255,8 @@ module Texture =
             sInfo.commandBufferCount <- 1u
             sInfo.pCommandBuffers <- asPointer &commandBuffer
             Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> Hl.check
+            
+            // TODO: DJL: use fence!
             Vulkan.vkQueueWaitIdle vulkanGlobal.GraphicsQueue |> Hl.check
         
         /// Create the sampler.
