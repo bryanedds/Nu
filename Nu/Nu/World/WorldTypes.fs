@@ -935,6 +935,10 @@ and [<ReferenceEquality; CLIMutable>] GameState =
       Order : int64
       Id : uint64 }
 
+    /// Copy a game state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+    static member copy this =
+        { this with GameState.Dispatcher = this.Dispatcher }
+
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, gameState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, gameState.Xtension, &propertyRef)
@@ -961,10 +965,6 @@ and [<ReferenceEquality; CLIMutable>] GameState =
     static member detachProperty name gameState =
         let xtension = Xtension.detachProperty name gameState.Xtension
         { gameState with GameState.Xtension = xtension }
-
-    /// Copy a game state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-    static member copy this =
-        { this with GameState.Dispatcher = this.Dispatcher }
 
     /// Make a game state value.
     static member make (dispatcher : GameDispatcher) =
@@ -1013,6 +1013,10 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
       Id : uint64
       Name : string }
 
+    /// Copy a screen state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+    static member copy this =
+        { this with ScreenState.Dispatcher = this.Dispatcher }
+
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, screenState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, screenState.Xtension, &propertyRef)
@@ -1039,10 +1043,6 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
     static member detachProperty name screenState =
         let xtension = Xtension.detachProperty name screenState.Xtension
         { screenState with ScreenState.Xtension = xtension }
-
-    /// Copy a screen state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-    static member copy this =
-        { this with ScreenState.Dispatcher = this.Dispatcher }
 
     /// Make a screen state value.
     static member make time nameOpt (dispatcher : ScreenDispatcher) =
@@ -1079,6 +1079,10 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
       Id : uint64
       Name : string }
 
+    /// Copy a group state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
+    static member copy this =
+        { this with GroupState.Dispatcher = this.Dispatcher }
+
     /// Try to get an xtension property and its type information.
     static member tryGetProperty (propertyName, groupState, propertyRef : Property outref) =
         Xtension.tryGetProperty (propertyName, groupState.Xtension, &propertyRef)
@@ -1105,10 +1109,6 @@ and [<ReferenceEquality; CLIMutable>] GroupState =
     static member detachProperty name groupState =
         let xtension = Xtension.detachProperty name groupState.Xtension
         { groupState with GroupState.Xtension = xtension }
-
-    /// Copy a group state such as when, say, you need it to be mutated with reflection but you need to preserve persistence.
-    static member copy this =
-        { this with GroupState.Dispatcher = this.Dispatcher }
 
     /// Make a group state value.
     static member make nameOpt (dispatcher : GroupDispatcher) =
@@ -1204,6 +1204,18 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
     member internal this.StaticSpatial with get () = this.Static && not this.AlwaysUpdate
     member internal this.PresenceSpatial with get () = if this.Absolute then Omnipresent else this.Presence
 
+    /// Copy an entity state.
+    /// This is used when we want to retain an old version of an entity state in face of mutation.
+    static member inline copy (entityState : EntityState) =
+        { entityState with EntityState.Dispatcher = entityState.Dispatcher }
+
+    /// Copy an entity state, invalidating the incoming reference.
+    /// This is used when we want to retain an old version of an entity state in face of mutation.
+    static member inline diverge (entityState : EntityState) =
+        let entityState' = EntityState.copy entityState
+        Transform.invalidateFastInternal &entityState.Transform // OPTIMIZATION: invalidate fast.
+        entityState'
+
     /// Check that there exists an xtenstion property that is a runtime property.
     static member inline containsRuntimeProperties entityState =
         Xtension.containsRuntimeProperties entityState.Xtension
@@ -1245,18 +1257,6 @@ and [<ReferenceEquality; CLIMutable>] EntityState =
         let xtension = Xtension.detachProperty name entityState.Xtension
         entityState.Xtension <- xtension // redundant if xtension is imperative
         entityState
-
-    /// Copy an entity state.
-    /// This is used when we want to retain an old version of an entity state in face of mutation.
-    static member inline copy (entityState : EntityState) =
-        { entityState with EntityState.Dispatcher = entityState.Dispatcher }
-
-    /// Copy an entity state, invalidating the incoming reference.
-    /// This is used when we want to retain an old version of an entity state in face of mutation.
-    static member inline diverge (entityState : EntityState) =
-        let entityState' = EntityState.copy entityState
-        Transform.invalidateFastInternal &entityState.Transform // OPTIMIZATION: invalidate fast.
-        entityState'
 
     /// Make an entity state value.
     static member make imperative surnamesOpt overlayNameOpt (dispatcher : EntityDispatcher) =
