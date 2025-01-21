@@ -254,10 +254,8 @@ module Texture =
             let mutable sInfo = VkSubmitInfo ()
             sInfo.commandBufferCount <- 1u
             sInfo.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> Hl.check
-            
-            // TODO: DJL: use fence!
-            Vulkan.vkQueueWaitIdle vulkanGlobal.GraphicsQueue |> Hl.check
+            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, vulkanGlobal.ResourceReadyFence) |> Hl.check
+            Hl.awaitFence vulkanGlobal.ResourceReadyFence vulkanGlobal.Device
         
         /// Create the sampler.
         static member private createSampler minFilter magFilter device =

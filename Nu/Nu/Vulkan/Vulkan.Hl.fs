@@ -164,16 +164,17 @@ module Hl =
         Vulkan.vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
         commandBuffer
     
+    /// Wait for a fence to signal and reset it for reuse.
+    let awaitFence fence device =
+        let mutable fence = fence
+        Vulkan.vkWaitForFences (device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
+        Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
+    
     /// Begin command buffer recording and render pass.
-    let initRender commandBuffer renderPass framebuffer renderArea clearValues fenceOpt =
+    let initRender commandBuffer renderPass framebuffer renderArea clearValues waitFence device =
         
-        // wait for and reset fence if provided
-        match fenceOpt with
-        | Some (fence, device) ->
-            let mutable fence = fence
-            Vulkan.vkWaitForFences (device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
-            Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
-        | None -> ()
+        // await fence if not null
+        if waitFence <> VkFence.Null then awaitFence waitFence device
         
         // reset command buffer and begin recording
         Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
@@ -191,7 +192,7 @@ module Hl =
         Vulkan.vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
     
     /// End command buffer recording and render pass and submit for execution.
-    let submitRender commandBuffer commandQueue waitSemaphoresStages signalSemaphores fenceOpt =
+    let submitRender commandBuffer commandQueue waitSemaphoresStages signalSemaphores signalFence =
         
         // end render pass
         Vulkan.vkCmdEndRenderPass commandBuffer
@@ -215,7 +216,7 @@ module Hl =
         info.pCommandBuffers <- asPointer &commandBuffer
         info.signalSemaphoreCount <- uint signalSemaphores.Length
         info.pSignalSemaphores <- signalSemaphoresPin.Pointer
-        Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, match fenceOpt with Some fence -> fence | None -> VkFence.Null) |> check
+        Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
     
     /// A physical device and associated data.
     type PhysicalDeviceData =
@@ -330,6 +331,7 @@ module Hl =
           ImageAvailableSemaphore : VkSemaphore
           RenderFinishedSemaphore : VkSemaphore
           InFlightFence : VkFence
+          ResourceReadyFence : VkFence
           RenderPass : VkRenderPass
           ScreenClearRenderPass : VkRenderPass
           PresentLayoutRenderPass : VkRenderPass
@@ -615,9 +617,11 @@ module Hl =
             semaphore
         
         /// Create a fence.
-        static member private createFence device =
+        static member private createFence createSignaled device =
             let mutable fence = Unchecked.defaultof<VkFence>
-            let info = VkFenceCreateInfo (flags = Vulkan.VK_FENCE_CREATE_SIGNALED_BIT)
+            let info =
+                if createSignaled then VkFenceCreateInfo (flags = Vulkan.VK_FENCE_CREATE_SIGNALED_BIT)
+                else VkFenceCreateInfo ()
             Vulkan.vkCreateFence (device, &info, nullPtr, &fence) |> check
             fence
         
@@ -687,11 +691,10 @@ module Hl =
             let swapchain = vulkanGlobal.Swapchain
             let commandBuffer = vulkanGlobal.RenderCommandBuffer
             let imageAvailable = vulkanGlobal.ImageAvailableSemaphore
-            let mutable inFlight = vulkanGlobal.InFlightFence
+            let inFlight = vulkanGlobal.InFlightFence
 
             // wait for previous cycle to finish
-            Vulkan.vkWaitForFences (device, 1u, asPointer &inFlight, VkBool32.True, UInt64.MaxValue) |> check
-            Vulkan.vkResetFences (device, 1u, asPointer &inFlight) |> check
+            awaitFence inFlight device
 
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
@@ -708,11 +711,11 @@ module Hl =
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
             // clear screen
-            initRender commandBuffer vulkanGlobal.ScreenClearRenderPass frameBuffer renderArea [|clearColor|] None
-            submitRender commandBuffer vulkanGlobal.GraphicsQueue [|imageAvailable, waitStage|] [||] (Some inFlight)
+            initRender commandBuffer vulkanGlobal.ScreenClearRenderPass frameBuffer renderArea [|clearColor|] VkFence.Null device
+            submitRender commandBuffer vulkanGlobal.GraphicsQueue [|imageAvailable, waitStage|] [||] inFlight
 
             // init general rendering
-            initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] (Some (inFlight, device))
+            initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] inFlight device
 
         /// End the frame.
         static member endFrame vulkanGlobal =
@@ -722,15 +725,15 @@ module Hl =
             let inFlight = vulkanGlobal.InFlightFence
             
             // submit general rendering
-            submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] (Some inFlight)
+            submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] inFlight
             
             // the render surface
             let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int imageIndex]
             let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
             
             // run an empty render pass to transition image layout for presentation
-            initRender commandBuffer vulkanGlobal.PresentLayoutRenderPass frameBuffer renderArea [||] (Some (inFlight, vulkanGlobal.Device))
-            submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [|vulkanGlobal.RenderFinishedSemaphore|] (Some inFlight)
+            initRender commandBuffer vulkanGlobal.PresentLayoutRenderPass frameBuffer renderArea [||] inFlight vulkanGlobal.Device
+            submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [|vulkanGlobal.RenderFinishedSemaphore|] inFlight
 
         /// Present the image back to the swapchain to appear on screen.
         static member present vulkanGlobal =
@@ -766,9 +769,10 @@ module Hl =
             Vulkan.vkDestroyRenderPass (device, vulkanGlobal.RenderPass, nullPtr)
             Vulkan.vkDestroyRenderPass (device, vulkanGlobal.ScreenClearRenderPass, nullPtr)
             Vulkan.vkDestroyRenderPass (device, vulkanGlobal.PresentLayoutRenderPass, nullPtr)
-            Vulkan.vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
-            Vulkan.vkDestroySemaphore (device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
             Vulkan.vkDestroySemaphore (device, vulkanGlobal.ImageAvailableSemaphore, nullPtr)
+            Vulkan.vkDestroySemaphore (device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
+            Vulkan.vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
+            Vulkan.vkDestroyFence (device, vulkanGlobal.ResourceReadyFence, nullPtr)
             Vulkan.vkDestroyCommandPool (device, vulkanGlobal.RenderCommandPool, nullPtr)
             Vulkan.vkDestroyCommandPool (device, vulkanGlobal.TransferCommandPool, nullPtr)
             for i in 0 .. dec imageViews.Length do Vulkan.vkDestroyImageView (device, imageViews.[i], nullPtr)
@@ -825,7 +829,8 @@ module Hl =
                 // create sync objects
                 let imageAvailableSemaphore = VulkanGlobal.createSemaphore device
                 let renderFinishedSemaphore = VulkanGlobal.createSemaphore device
-                let inFlightFence = VulkanGlobal.createFence device
+                let inFlightFence = VulkanGlobal.createFence true device
+                let resourceReadyFence = VulkanGlobal.createFence false device
 
                 // render actual content; clear the screen; transition layout for presentation
                 let renderPass = VulkanGlobal.createRenderPass false false surfaceFormat.format device
@@ -851,6 +856,7 @@ module Hl =
                       ImageAvailableSemaphore = imageAvailableSemaphore
                       RenderFinishedSemaphore = renderFinishedSemaphore
                       InFlightFence = inFlightFence
+                      ResourceReadyFence = resourceReadyFence
                       RenderPass = renderPass
                       ScreenClearRenderPass = screenClearRenderPass
                       PresentLayoutRenderPass = presentLayoutRenderPass
@@ -915,10 +921,8 @@ module Hl =
             let mutable sInfo = VkSubmitInfo ()
             sInfo.commandBufferCount <- 1u
             sInfo.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, VkFence.Null) |> check
-            
-            // TODO: DJL: use fence!
-            Vulkan.vkQueueWaitIdle vulkanGlobal.GraphicsQueue |> check
+            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, vulkanGlobal.ResourceReadyFence) |> check
+            awaitFence vulkanGlobal.ResourceReadyFence vulkanGlobal.Device
 
         (*
         TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
