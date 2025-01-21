@@ -346,6 +346,11 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             // only proceed if window is not minimized
             if int framebufferWidth > 0 && int framebufferHeight > 0 then
 
+                // init render
+                let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
+                let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
+                Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+                
                 if drawData.TotalVtxCount > 0 then
                     
                     // get data size for vertices and indices
@@ -467,6 +472,9 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                 // reset scissor
                 let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
                 Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+
+                // submit render
+                Hl.submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] vulkanGlobal.InFlightFence
         
         member this.CleanUp () =
             Hl.AllocatedBuffer.destroy indexBuffer vulkanGlobal.VmaAllocator

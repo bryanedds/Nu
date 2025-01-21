@@ -714,18 +714,12 @@ module Hl =
             initRender commandBuffer vulkanGlobal.ScreenClearRenderPass frameBuffer renderArea [|clearColor|] VkFence.Null device
             submitRender commandBuffer vulkanGlobal.GraphicsQueue [|imageAvailable, waitStage|] [||] inFlight
 
-            // init general rendering
-            initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] inFlight device
-
         /// End the frame.
         static member endFrame vulkanGlobal =
             
             // handles
             let commandBuffer = vulkanGlobal.RenderCommandBuffer
             let inFlight = vulkanGlobal.InFlightFence
-            
-            // submit general rendering
-            submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] inFlight
             
             // the render surface
             let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int imageIndex]
