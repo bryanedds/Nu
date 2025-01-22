@@ -331,11 +331,11 @@ module Texture =
             // fin
             vulkanTexture
         
-        /// Unpopulated VulkanTexture.
-        // TODO: DJL: if default values are undesirable, make mutable to allow proper creation and destruction,
-        // either by moving outside VulkanTexture as 'let mutable emptyVulkanTexture', or by converting VulkanTexture
-        // to a class and using a static field.
-        static member empty =
+    [<RequireQualifiedAccess>]
+    module VulkanTexture =
+        
+        /// Empty VulkanTexture.
+        let mutable empty =
             { Image = Unchecked.defaultof<Hl.AllocatedImage>
               ImageView = Unchecked.defaultof<VkImageView>
               Sampler = Unchecked.defaultof<VkSampler> }

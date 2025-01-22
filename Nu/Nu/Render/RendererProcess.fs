@@ -329,6 +329,9 @@ type RendererThread () =
                 match Hl.VulkanGlobal.tryCreate window with
                 | Some vulkanGlobal ->
 
+                    // create empty VulkanTexture
+                    Texture.VulkanTexture.empty <- Texture.VulkanTexture.createEmpty vulkanGlobal
+                    
                     // create 3d renderer
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
 
@@ -403,6 +406,7 @@ type RendererThread () =
         match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.waitIdle vulkanGlobal | None -> ()
         
         // clean up
+        match vulkanGlobalOpt with Some vulkanGlobal -> Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vulkanGlobal | None -> ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
         match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.cleanup vulkanGlobal | None -> ()
