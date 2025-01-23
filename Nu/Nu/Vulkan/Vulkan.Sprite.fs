@@ -10,7 +10,40 @@ open Nu
 [<RequireQualifiedAccess>]
 module Sprite =
 
-    /// Create a sprite quad for rendering to the sprite shader.
+    /// Create a sprite pipeline.
+    let CreateSpritePipeline (vulkanGlobal : Hl.VulkanGlobal) =
+        
+        // commonly used handles
+        let device = vulkanGlobal.Device
+        let allocator = vulkanGlobal.VmaAllocator
+        
+        // create sprite pipeline
+        let pipeline =
+            Pipeline.SpritePipeline.create
+                Constants.Paths.SpriteShaderFilePath
+                true (Hl.makeBlendAttachmentAlpha ())
+                [|Hl.makeVertexBindingVertex 0 (sizeof<single> * 2)|]
+                [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT 0|]
+                [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
+                  Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
+                  Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
+                  Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
+                [||] vulkanGlobal.RenderPass device
+        
+        // create sprite uniform buffers
+        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
+        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
+        let colorUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
+
+        // write sprite descriptor set
+        Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline device
+        Pipeline.SpritePipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline device
+        Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform pipeline device
+
+        // fin
+        (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
+    
+    /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
     let CreateSpriteQuad onlyUpperRightQuadrant vulkanGlobal =
 
         // buffers
@@ -49,7 +82,7 @@ module Sprite =
         // fin
         (vertexBuffer, indexBuffer)
 
-    /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad using the sprite shader.
+    /// Draw a sprite whose indices and vertices were created by Vulkan.CreateSpriteQuad and whose uniforms and pipeline match those of CreateSpritePipeline.
     let DrawSprite
         (vertices : Hl.AllocatedBuffer,
          indices : Hl.AllocatedBuffer,
@@ -106,7 +139,6 @@ module Sprite =
 
         // commonly used handles
         let device = vulkanGlobal.Device
-        let allocator = vulkanGlobal.VmaAllocator
         let commandBuffer = vulkanGlobal.RenderCommandBuffer
         
         // update uniform buffers

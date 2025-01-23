@@ -1265,34 +1265,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     /// Make a VulkanRenderer2d.
     static member make (vulkanGlobal : Hl.VulkanGlobal) =
         
-        // commonly used handles
-        let device = vulkanGlobal.Device
-        let allocator = vulkanGlobal.VmaAllocator
-        
-        // create sprite pipeline
-        let spritePipeline =
-            Pipeline.SpritePipeline.create
-                Constants.Paths.SpriteShaderFilePath
-                true (Hl.makeBlendAttachmentAlpha ())
-                [|Hl.makeVertexBindingVertex 0 (sizeof<single> * 2)|]
-                [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT 0|]
-                [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
-                  Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
-                  Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
-                [||] vulkanGlobal.RenderPass device
-        
-        // create sprite uniform buffers
-        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
-        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
-        let colorUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
-
-        // write sprite descriptor set
-        Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform spritePipeline device
-        Pipeline.SpritePipeline.writeDescriptorUniform 1 0 texCoords4Uniform spritePipeline device
-        Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform spritePipeline device
-
-        // create text quad
+        // create text resources
+        let spritePipeline = Sprite.CreateSpritePipeline vulkanGlobal
         let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal
         
         // create sprite batch env
@@ -1301,7 +1275,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // make renderer
         let renderer =
             { VulkanGlobal = vulkanGlobal
-              SpritePipeline = (modelViewProjectionUniform, texCoords4Uniform, colorUniform, spritePipeline)
+              SpritePipeline = spritePipeline
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
