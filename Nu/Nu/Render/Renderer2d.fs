@@ -842,8 +842,7 @@ type [<ReferenceEquality>] GlRenderer2d =
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
-          SpritePipeline : Pipeline.SpritePipeline
-          SpriteUniforms : Hl.AllocatedBuffer * Hl.AllocatedBuffer * Hl.AllocatedBuffer
+          SpritePipeline : Hl.AllocatedBuffer * Hl.AllocatedBuffer * Hl.AllocatedBuffer * Pipeline.SpritePipeline
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
           SpriteBatchEnv : Vortice.Vulkan.SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -1180,7 +1179,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
-                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform) = renderer.SpriteUniforms
+                            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
                             Sprite.DrawSprite
                                 (vertices,
                                  indices,
@@ -1194,7 +1193,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  modelViewProjectionUniform,
                                  texCoords4Uniform,
                                  colorUniform,
-                                 renderer.SpritePipeline,
+                                 pipeline,
                                  vulkanGlobal)
 
                             // submit render
@@ -1302,8 +1301,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // make renderer
         let renderer =
             { VulkanGlobal = vulkanGlobal
-              SpritePipeline = spritePipeline
-              SpriteUniforms = (modelViewProjectionUniform, texCoords4Uniform, colorUniform)
+              SpritePipeline = (modelViewProjectionUniform, texCoords4Uniform, colorUniform, spritePipeline)
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
@@ -1333,9 +1331,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.TransientTextures.Clear ()
             
             // destroy Vulkan resources
-            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform) = renderer.SpriteUniforms
+            let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Pipeline.SpritePipeline.destroy renderer.SpritePipeline device
+            Pipeline.SpritePipeline.destroy pipeline device
             Hl.AllocatedBuffer.destroy modelViewProjectionUniform allocator
             Hl.AllocatedBuffer.destroy texCoords4Uniform allocator
             Hl.AllocatedBuffer.destroy colorUniform allocator
