@@ -1,5 +1,4 @@
-#shader vertex
-#version 410
+#version 450 core
 
 const int VERTS = 6;
 const int SPRITE_BATCH_SIZE = 192;
@@ -13,14 +12,14 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-uniform vec4 perimeters[SPRITE_BATCH_SIZE];
-uniform vec2 pivots[SPRITE_BATCH_SIZE];
-uniform float rotations[SPRITE_BATCH_SIZE];
-uniform vec4 texCoordses[SPRITE_BATCH_SIZE];
-uniform vec4 colors[SPRITE_BATCH_SIZE];
-uniform mat4 viewProjection;
-out vec2 texCoords;
-out vec4 color;
+layout (binding = 0) uniform pr { vec4 perimeters[SPRITE_BATCH_SIZE]; };
+layout (binding = 1) uniform pv { vec2 pivots[SPRITE_BATCH_SIZE]; };
+layout (binding = 2) uniform r { float rotations[SPRITE_BATCH_SIZE]; };
+layout (binding = 3) uniform tc { vec4 texCoordses[SPRITE_BATCH_SIZE]; };
+layout (binding = 4) uniform c { vec4 colors[SPRITE_BATCH_SIZE]; };
+layout (binding = 5) uniform vp { mat4 viewProjection; };
+layout (location = 0) out vec2 texCoords;
+layout (location = 1) out vec4 color;
 
 vec2 rotate(vec2 v, float a)
 {
@@ -33,8 +32,8 @@ vec2 rotate(vec2 v, float a)
 void main()
 {
     // compute ids
-    int spriteId = gl_VertexID / VERTS;
-    int vertexId = gl_VertexID % VERTS;
+    int spriteId = gl_VertexIndex / VERTS;
+    int vertexId = gl_VertexIndex % VERTS;
 
     // compute position
     vec4 filt = FILTERS[vertexId];
@@ -42,7 +41,8 @@ void main()
     vec2 position = vec2(perimeter.x + perimeter.z, perimeter.y + perimeter.w);
     vec2 pivot = pivots[spriteId];
     vec2 positionRotated = rotate(position + pivot, rotations[spriteId]) - pivot;
-    gl_Position = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
+    vec4 prePosition = viewProjection * vec4(positionRotated.x, positionRotated.y, 0, 1);
+    gl_Position = vec4(prePosition.x, -prePosition.y, prePosition.z, prePosition.w);
 
     // compute tex coords
     vec4 texCoords4 = texCoordses[spriteId] * filt;
