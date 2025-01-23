@@ -160,7 +160,7 @@ module Gen =
         /// Thread-safe.
         static member id32 =
             lock Lock (fun () ->
-                if Id32 = UInt32.MaxValue then failwith "Overflowed Gen.Id32."
+                if Id32 = UInt32.MaxValue then Log.fail "Overflowed Gen.Id32."
                 Id32 <- inc Id32; Id32)
 
         /// Generate a unique non-zero 64-bit id.

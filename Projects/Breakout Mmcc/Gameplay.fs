@@ -235,37 +235,38 @@ type GameplayDispatcher () =
     // here we describe the content of the game including the hud, the scene, and the player
     override this.Content (gameplay, _) =
 
-        [// the scene group
-         Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
-            [Content.staticModel "StaticModel"
-                [Entity.Position == v3 0.0f 0.0f -2.0f
-                 Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
-             Content.staticSprite "LeftWall"
-                [Entity.Position == v3 -164.0f 0.0f 0.0f
-                 Entity.Size == v3 8.0f 360.0f 0.0f
-                 Entity.StaticImage == Assets.Default.Black]
-             Content.staticSprite "RightWall"
-                [Entity.Position == v3 164.0f 0.0f 0.0f
-                 Entity.Size == v3 8.0f 360.0f 0.0f
-                 Entity.StaticImage == Assets.Default.Black]
-             Content.staticSprite "TopWall"
-                [Entity.Position == v3 0.0f 176.0f 0.0f
-                 Entity.Size == v3 320.0f 8.0f 0.0f
-                 Entity.StaticImage == Assets.Default.Black]
-             Content.staticSprite "Paddle"
-                [Entity.Position := gameplay.Paddle.Position
-                 Entity.Size == gameplay.Paddle.Size
-                 Entity.StaticImage == Assets.Default.Paddle]
-             Content.staticSprite "Ball"
-                [Entity.Position := gameplay.Ball.Position
-                 Entity.Size == gameplay.Ball.Size
-                 Entity.StaticImage == Assets.Default.Ball]
-             for (brickName, brick) in gameplay.Bricks.Pairs do
-                Content.staticSprite brickName
-                    [Entity.Position == brick.Position
-                     Entity.Size == brick.Size
-                     Entity.Color := brick.Color
-                     Entity.StaticImage == Assets.Default.Brick]]
+        [// the scene group while playing
+         if gameplay.GameplayState = Playing then
+            Content.groupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" []
+                [Content.staticModel "StaticModel"
+                    [Entity.Position == v3 0.0f 0.0f -2.0f
+                     Entity.Rotation := Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, gameplay.GameplayTime % 360L |> single |> Math.DegreesToRadians)]
+                 Content.staticSprite "LeftWall"
+                    [Entity.Position == v3 -164.0f 0.0f 0.0f
+                     Entity.Size == v3 8.0f 360.0f 0.0f
+                     Entity.StaticImage == Assets.Default.Black]
+                 Content.staticSprite "RightWall"
+                    [Entity.Position == v3 164.0f 0.0f 0.0f
+                     Entity.Size == v3 8.0f 360.0f 0.0f
+                     Entity.StaticImage == Assets.Default.Black]
+                 Content.staticSprite "TopWall"
+                    [Entity.Position == v3 0.0f 176.0f 0.0f
+                     Entity.Size == v3 320.0f 8.0f 0.0f
+                     Entity.StaticImage == Assets.Default.Black]
+                 Content.staticSprite "Paddle"
+                    [Entity.Position := gameplay.Paddle.Position
+                     Entity.Size == gameplay.Paddle.Size
+                     Entity.StaticImage == Assets.Default.Paddle]
+                 Content.staticSprite "Ball"
+                    [Entity.Position := gameplay.Ball.Position
+                     Entity.Size == gameplay.Ball.Size
+                     Entity.StaticImage == Assets.Default.Ball]
+                 for (brickName, brick) in gameplay.Bricks.Pairs do
+                    Content.staticSprite brickName
+                        [Entity.Position == brick.Position
+                         Entity.Size == brick.Size
+                         Entity.Color := brick.Color
+                         Entity.StaticImage == Assets.Default.Brick]]
 
          // the gui group
          Content.group Simulants.GameplayGui.Name []

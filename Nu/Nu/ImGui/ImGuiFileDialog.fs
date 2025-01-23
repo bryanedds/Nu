@@ -53,12 +53,11 @@ module ImGui =
     let mutable private TypeSortOrderCopy = ImGuiFileSortOrder.Unsorted
 
     let private refreshInfo (dialogInfo : ImGuiFileDialogState) =
+        let directory = DirectoryInfo dialogInfo.DirectoryPath.FullName
         dialogInfo.RefreshInfo <- false
         dialogInfo.CurrentDirectories <- []
         dialogInfo.CurrentFiles <- []
         dialogInfo.CurrentIndex <- 0UL
-
-        let directory = DirectoryInfo dialogInfo.DirectoryPath.FullName
         dialogInfo.CurrentDirectories <- directory.GetDirectories () |> Seq.toList
         dialogInfo.CurrentFiles <- directory.GetFiles (dialogInfo.FilePattern) |> Seq.toList
 

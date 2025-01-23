@@ -7,6 +7,7 @@ open System.Numerics
 open Prime
 
 /// Describes the bounds of a viewport.
+/// TODO: add missing doc comments to this type's functions.
 type [<StructuralEquality; NoComparison>] Viewport =
     { DistanceNear : single
       DistanceFar : single
@@ -14,10 +15,16 @@ type [<StructuralEquality; NoComparison>] Viewport =
       DisplayScalar : int
       SsaoResolutionDivisor : int }
 
+    /// The aspect ratio of this viewport.
     member this.AspectRatio = single this.Bounds.Size.X / single this.Bounds.Size.Y
+
+    /// The shadow texture buffer resolution appropriate for this viewport.
     member this.ShadowResolution = v2iDup (Constants.Render.ShadowVirtualResolution * Globals.Render.ShadowScalar * this.DisplayScalar)
+
+    /// The screen-space ambient occlusion texture buffer resolution appropriate for this viewport.
     member this.SsaoResolution = this.Bounds.Size / this.SsaoResolutionDivisor
 
+    /// The shadow texture buffer resolution appropriate for this viewport and shadow buffer index.
     static member getShadowTextureBufferResolution shadowBufferIndex (viewport : Viewport) =
         let scalar = if shadowBufferIndex = 0 then Constants.Render.ShadowDetailedResolutionScalar else 1
         viewport.ShadowResolution * scalar

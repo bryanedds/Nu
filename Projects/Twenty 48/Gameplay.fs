@@ -83,7 +83,19 @@ type Gameplay =
                 else step (neck :: tail) (compacted @ [head], score)
         step line ([], score)
 
-    static member shiftLeft gameplay =
+    static member private addTile (gameplay : Gameplay) =
+        let position = Gen.randomItem gameplay.PositionsUnoccupied
+        { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }
+
+    static member private detectTileChange (gameplay : Gameplay) (gameplay2 : Gameplay) =
+         gameplay.TilesOrdered <> gameplay2.TilesOrdered
+
+    static member private detectMoveAvailability gameplay =
+        let movesPossible = [Gameplay.shiftUp; Gameplay.shiftRight; Gameplay.shiftDown; Gameplay.shiftLeft]
+        let movesAvailable = List.filter (fun shift -> Gameplay.detectTileChange gameplay (shift gameplay)) movesPossible
+        List.notEmpty movesAvailable
+
+    static member private shiftLeft gameplay =
         let (rows, score) =
             List.foldMap (fun row score ->
                 let (row, score) = Gameplay.compact row score
@@ -95,7 +107,7 @@ type Gameplay =
             Tiles = List.concat rows
             Score = score }
 
-    static member shiftRight gameplay =
+    static member private shiftRight gameplay =
         let (rows, score) =
             List.foldMap (fun row score ->
                 let (row, score) = Gameplay.compact (List.rev row) score
@@ -107,7 +119,7 @@ type Gameplay =
             Tiles = List.concat rows
             Score = score }
 
-    static member shiftUp gameplay =
+    static member private shiftUp gameplay =
         let (rows, score) =
             List.foldMap (fun row score ->
                 let (row, score) = Gameplay.compact row score
@@ -119,7 +131,7 @@ type Gameplay =
             Tiles = List.concat rows
             Score = score }
 
-    static member shiftDown gameplay =
+    static member private shiftDown gameplay =
         let (rows, score) =
             List.foldMap (fun row score ->
                 let (row, score) = Gameplay.compact (List.rev row) score
@@ -131,17 +143,19 @@ type Gameplay =
             Tiles = List.concat rows
             Score = score }
 
-    static member addTile (gameplay : Gameplay) =
-        let position = Gen.randomItem gameplay.PositionsUnoccupied
-        { gameplay with Tiles = Tile.make position (if Gen.random1 10 = 0 then 4 else 2) :: gameplay.Tiles }
-
-    static member detectTileChange (gameplay : Gameplay) (gameplay2 : Gameplay) =
-         gameplay.TilesOrdered <> gameplay2.TilesOrdered
-
-    static member detectMoveAvailability gameplay =
-        let movesPossible = [Gameplay.shiftUp; Gameplay.shiftRight; Gameplay.shiftDown; Gameplay.shiftLeft]
-        let movesAvailable = List.filter (fun shift -> Gameplay.detectTileChange gameplay (shift gameplay)) movesPossible
-        List.notEmpty movesAvailable
+    static member shift direction gameplay =
+        let gameplay' =
+            match direction with
+            | Upward -> Gameplay.shiftUp gameplay
+            | Rightward -> Gameplay.shiftRight gameplay
+            | Downward -> Gameplay.shiftDown gameplay
+            | Leftward -> Gameplay.shiftLeft gameplay
+        if Gameplay.detectTileChange gameplay gameplay' then
+            let gameplay = Gameplay.addTile gameplay'
+            if not (Gameplay.detectMoveAvailability gameplay)
+            then { gameplay with GameplayState = Playing true }
+            else gameplay
+        else gameplay
 
     // this represents the gameplay model in an unutilized state, such as when the gameplay screen is not selected.
     static member empty =

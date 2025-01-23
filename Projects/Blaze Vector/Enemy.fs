@@ -53,7 +53,6 @@ type EnemyDispatcher () =
          Entity.BodyPenetrationEvent =|> fun evt -> Penetration evt.Data]
 
     override this.Message (enemy, message, _, world) =
-
         match message with
         | Penetration penetration ->
             match penetration.BodyShapePenetratee.BodyId.BodySource with
@@ -63,7 +62,6 @@ type EnemyDispatcher () =
             | _ -> just enemy
 
     override this.Command (enemy, command, entity, world) =
-
         match command with
         | Update ->
             let world =
@@ -78,7 +76,6 @@ type EnemyDispatcher () =
                     world
                 else world
             just world
-
         | Hit ->
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
             just world
