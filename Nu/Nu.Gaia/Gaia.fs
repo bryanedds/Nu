@@ -3158,6 +3158,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 "#r \"FSharp.Core.dll\"\n" +
                                 "#r \"FSharp.Compiler.Service.dll\"\n" +
                                 "#r \"Aether.Physics2D.dll\"\n" +
+                                "#r \"JoltPhysicsSharp.dll\"\n" +
                                 "#r \"AssimpNet.dll\"\n" +
                                 "#r \"BulletSharp.dll\"\n" +
                                 "#r \"Csv.dll\"\n" +
@@ -3168,9 +3169,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 "#r \"Pfim.dll\"\n" +
                                 "#r \"SDL2-CS.dll\"\n" +
                                 "#r \"TiledSharp.dll\"\n" +
-                                "#r \"ImGui.NET.dll\"\n" +
-                                "#r \"ImGuizmo.NET.dll\"\n" +
-                                "#r \"ImPlot.NET.dll\"\n" +
+                                "#r \"Twizzle.ImGui-Bundle.NET.dll\"\n" +
                                 "#r \"Prime.dll\"\n" +
                                 "#r \"Nu.Math.dll\"\n" +
                                 "#r \"Nu.dll\"\n" +
