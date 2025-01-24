@@ -42,15 +42,17 @@ module Hl =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
         let shaderStr = shaderStream.ReadToEnd ()
         
-        // TODO: DJL: update vortice compiler and get invert y working.
+        // TODO: DJL: get invert y working.
         use compiler = new Compiler ()
-        use result = compiler.Compile (shaderStr, shaderPath, shaderKind)
+        let options = new CompilerOptions ()
+        options.ShaderStage <- shaderKind
+        let result = compiler.Compile (shaderStr, shaderPath, options)
         if result.Status <> CompilationStatus.Success then
             
             // TODO: DJL: review multiple reporting.
             Log.error ("Vulkan shader compiler errors:\n" + result.ErrorMessage)
             failwith ("Vulkan shader compilation failed due to: " + result.ErrorMessage)
-        let shaderCode = result.GetBytecode().ToArray()
+        let shaderCode = result.Bytecode
         shaderCode
     
     /// Create a shader module from a GLSL file.
