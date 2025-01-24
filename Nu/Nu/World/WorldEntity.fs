@@ -749,8 +749,8 @@ module WorldEntityModule =
                 Set.ofSeq
             World.generateEntitySequentialName2 dispatcherName existingEntityNames
 
-        /// Clear the content of the clipboard.
-        static member clearClipboard (_ : World) =
+        /// Clear any entity on the world's clipboard.
+        static member clearEntityFromClipboard (_ : World) =
             Clipboard <- None
 
         /// Copy an entity to the world's clipboard.
@@ -763,6 +763,10 @@ module WorldEntityModule =
             let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
             Clipboard <- Some (true, entityDescriptor, entity)
             World.destroyEntityImmediate entity world
+
+        /// Check that there's an entity on the world's clipboard to paste.
+        static member canPasteEntityFromClipboard (_ : World) =
+            Clipboard.IsSome
 
         /// Paste an entity from the world's clipboard.
         static member pasteEntityFromClipboard tryForwardPropagationSource (distance : single) rightClickPosition positionSnapEir pasteType (parent : Simulant) world =
