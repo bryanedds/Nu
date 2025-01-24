@@ -41,6 +41,8 @@ module Hl =
     let compileShader shaderPath shaderKind =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
         let shaderStr = shaderStream.ReadToEnd ()
+        
+        // TODO: DJL: update vortice compiler and get invert y working.
         use compiler = new Compiler ()
         use result = compiler.Compile (shaderStr, shaderPath, shaderKind)
         if result.Status <> CompilationStatus.Success then

@@ -12,12 +12,12 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 0.0));
 
-layout (binding = 0) uniform pr { vec4 perimeters[SPRITE_BATCH_SIZE]; };
-layout (binding = 1) uniform pv { vec2 pivots[SPRITE_BATCH_SIZE]; };
-layout (binding = 2) uniform r { float rotations[SPRITE_BATCH_SIZE]; };
-layout (binding = 3) uniform tc { vec4 texCoordses[SPRITE_BATCH_SIZE]; };
-layout (binding = 4) uniform c { vec4 colors[SPRITE_BATCH_SIZE]; };
-layout (binding = 5) uniform vp { mat4 viewProjection; };
+layout (binding = 0) uniform a { vec4 perimeters[SPRITE_BATCH_SIZE]; };
+layout (binding = 1) uniform b { vec2 pivots[SPRITE_BATCH_SIZE]; };
+layout (binding = 2) uniform c { float rotations[SPRITE_BATCH_SIZE]; };
+layout (binding = 3) uniform d { vec4 texCoordses[SPRITE_BATCH_SIZE]; };
+layout (binding = 4) uniform e { vec4 colors[SPRITE_BATCH_SIZE]; };
+layout (binding = 5) uniform f { mat4 viewProjection; };
 layout (location = 0) out vec2 texCoords;
 layout (location = 1) out vec4 color;
 

@@ -10,8 +10,8 @@ const vec4 FILTERS[VERTS] =
         vec4(1.0, 1.0, 0.0, 1.0));
 
 layout (location = 0) in vec2 position;
-layout (binding = 0) uniform mvp { mat4 modelViewProjection; };
-layout (binding = 1) uniform tc4 { vec4 texCoords4; };
+layout (binding = 0) uniform a { mat4 modelViewProjection; };
+layout (binding = 1) uniform b { vec4 texCoords4; };
 layout (location = 0) out vec2 texCoords;
 void main()
 {
