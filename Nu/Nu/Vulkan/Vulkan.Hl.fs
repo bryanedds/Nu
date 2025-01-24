@@ -704,8 +704,7 @@ module Hl =
             let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
             
             // set color for screen clear
-            // TODO: P0: change to proper color once the testing utility of white is no longer needed.
-            let clearColor = VkClearValue (1.0f, 1.0f, 1.0f, 1.0f)
+            let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
 
             // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
