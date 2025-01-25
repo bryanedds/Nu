@@ -257,7 +257,13 @@ module WorldModuleScreen =
                 match valueObj with
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
-                | value -> value |> valueToSymbol |> symbolToValue
+                | value ->
+                    let value' = value |> valueToSymbol |> symbolToValue
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? ComputedProperty -> () // nothing to do
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
+                    value'
             else
                 let definitions = Reflection.getPropertyDefinitions (getType screenState.Dispatcher)
                 let value =

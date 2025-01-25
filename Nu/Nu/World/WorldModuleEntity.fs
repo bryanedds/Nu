@@ -1812,7 +1812,13 @@ module WorldModuleEntity =
                     match valueObj with
                     | :? 'a as value -> value
                     | null -> null :> obj :?> 'a
-                    | value -> value |> valueToSymbol |> symbolToValue
+                    | value ->
+                        let value' = value |> valueToSymbol |> symbolToValue
+                        match property.PropertyValue with
+                        | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                        | :? ComputedProperty -> () // nothing to do
+                        | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
+                        value'
                 else
                     let value =
                         match entityStateOpt.OverlayNameOpt with
