@@ -77,7 +77,14 @@ module SpriteBatch =
         let texCoordsesUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) allocator
         let colorsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) allocator
         let viewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
-        
+
+        // write sprite batch descriptor set
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 0 0 perimetersUniform pipeline device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 1 0 pivotsUniform pipeline device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 2 0 rotationsUniform pipeline device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 3 0 texCoordsesUniform pipeline device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 4 0 colorsUniform pipeline device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 5 0 viewProjectionUniform pipeline device
         
         // fin
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline)
