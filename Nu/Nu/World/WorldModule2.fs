@@ -1061,10 +1061,8 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImNui (world : World) =
-            if world.Advancing then
-                WorldImNui.Reinitializing <- false
-                World.sweepSimulants world
-            else world
+            WorldImNui.Reinitializing <- false
+            World.sweepSimulants world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
