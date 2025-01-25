@@ -1270,7 +1270,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal
         
         // create sprite batch env
-        let spriteBatchEnv = Vortice.Vulkan.SpriteBatch.CreateSpriteBatchEnv Constants.Paths.SpriteBatchShaderFilePath
+        let spriteBatchEnv = Vortice.Vulkan.SpriteBatch.CreateSpriteBatchEnv vulkanGlobal
         
         // make renderer
         let renderer =

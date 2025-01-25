@@ -714,6 +714,7 @@ module Hl =
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
             // clear screen
+            // TODO: DJL: clear viewport as well, as applicable.
             initRender commandBuffer vulkanGlobal.ScreenClearRenderPass frameBuffer renderArea [|clearColor|] VkFence.Null device
             submitRender commandBuffer vulkanGlobal.GraphicsQueue [|imageAvailable, waitStage|] [||] inFlight
 

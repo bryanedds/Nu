@@ -42,6 +42,12 @@ module SpriteBatch =
               Colors : single array
               mutable State : SpriteBatchState }
 
+    /// Create a sprite batch pipeline.
+    let CreateSpriteBatchPipeline vulkanGlobal =
+        
+
+        ()
+    
     let private BeginSpriteBatch state env =
         env.State <- state
 
@@ -121,7 +127,10 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv shaderFilePath =
+    let CreateSpriteBatchEnv vulkanGlobal =
+        
+        // create pipeline
+        let pipeline = CreateSpriteBatchPipeline vulkanGlobal
 
 
         // create env
