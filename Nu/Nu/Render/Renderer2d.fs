@@ -1313,6 +1313,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             Hl.AllocatedBuffer.destroy colorUniform allocator
             Hl.AllocatedBuffer.destroy vertices allocator
             Hl.AllocatedBuffer.destroy indices allocator
+
+            // destroy sprite batch environment
+            Vortice.Vulkan.SpriteBatch.DestroySpriteBatchEnv renderer.VulkanGlobal renderer.SpriteBatchEnv
             
             // clean up packages
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)

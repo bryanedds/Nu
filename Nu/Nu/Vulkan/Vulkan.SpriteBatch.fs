@@ -35,6 +35,7 @@ module SpriteBatch =
             { mutable SpriteIndex : int
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
+              Pipeline : Pipeline.SpriteBatchPipeline
               Perimeters : single array
               Pivots : single array
               Rotations : single array
@@ -43,10 +44,29 @@ module SpriteBatch =
               mutable State : SpriteBatchState }
 
     /// Create a sprite batch pipeline.
-    let CreateSpriteBatchPipeline vulkanGlobal =
+    let CreateSpriteBatchPipeline (vulkanGlobal : Hl.VulkanGlobal) =
         
-
-        ()
+        // commonly used handles
+        let device = vulkanGlobal.Device
+        let allocator = vulkanGlobal.VmaAllocator
+        
+        // create sprite batch pipeline
+        let pipeline =
+            Pipeline.SpriteBatchPipeline.create
+                Constants.Paths.SpriteBatchShaderFilePath
+                true (Hl.makeBlendAttachmentAlpha ()) [||] [||] // TODO: DJL: integrate actual blend values.
+                [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER Constants.Render.SpriteBatchSize
+                  Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER Constants.Render.SpriteBatchSize
+                  Hl.makeDescriptorBindingVertex 2 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER Constants.Render.SpriteBatchSize
+                  Hl.makeDescriptorBindingVertex 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER Constants.Render.SpriteBatchSize
+                  Hl.makeDescriptorBindingVertex 4 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER Constants.Render.SpriteBatchSize
+                  Hl.makeDescriptorBindingVertex 5 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
+                  Hl.makeDescriptorBindingFragment 6 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
+                [||] vulkanGlobal.RenderPass device
+        
+        
+        // fin
+        (pipeline)
     
     let private BeginSpriteBatch state env =
         env.State <- state
@@ -130,11 +150,12 @@ module SpriteBatch =
     let CreateSpriteBatchEnv vulkanGlobal =
         
         // create pipeline
-        let pipeline = CreateSpriteBatchPipeline vulkanGlobal
+        let (pipeline) = CreateSpriteBatchPipeline vulkanGlobal
 
 
         // create env
         { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity
+          Pipeline = pipeline
           Perimeters = Array.zeroCreate (Constants.Render.SpriteBatchSize * 4)
           Pivots = Array.zeroCreate (Constants.Render.SpriteBatchSize * 2)
           Rotations = Array.zeroCreate (Constants.Render.SpriteBatchSize)
@@ -143,5 +164,6 @@ module SpriteBatch =
           State = SpriteBatchState.defaultState }
 
     /// Destroy the given sprite batch environment.
-    let DestroySpriteBatchEnv env =
+    let DestroySpriteBatchEnv (vulkanGlobal : Hl.VulkanGlobal) env =
+        Pipeline.SpriteBatchPipeline.destroy env.Pipeline vulkanGlobal.Device
         env.SpriteIndex <- 0
