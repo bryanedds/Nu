@@ -204,7 +204,7 @@ module Audio =
     let [<Uniform>] SongResumptionMax = GameTime.ofSeconds 90.0f // HACK: prevents songs from starting over too often due to hack in SdlAudioPlayer.playSong.
     let [<Literal>] Frequency = 44100
     let [<Literal>] BufferSizeDefault = 1024
-    let [<Literal>] FadeInSecondsMin = 0.1f // NOTE: Mix_PlayMusic seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
+    let [<Literal>] FadeInSecondsMin = 0.1f // NOTE: Mix_FadeInMusicPos seems to sometimes cause audio 'popping' when starting a song, so a minimum fade is used instead.
 
 [<RequireQualifiedAccess>]
 module Physics =
