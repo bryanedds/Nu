@@ -178,10 +178,22 @@ module Texture =
               TextureTexelHeight = 0.0f }
 
     /// An abstraction of a texture as managed by Vulkan.
-    type VulkanTexture =
+    /// TODO: extract sampler out of here.
+    type [<CustomEquality; NoComparison>] VulkanTexture =
         { Image : Hl.AllocatedImage
           ImageView : VkImageView
           Sampler : VkSampler }
+
+        override this.Equals thatObj =
+            match thatObj with
+            | :? VulkanTexture as that ->
+                this.Image.Image.Handle = that.Image.Image.Handle &&
+                this.ImageView.Handle = that.ImageView.Handle
+            | _ -> false
+
+        override this.GetHashCode () = 
+            hash this.Image.Image.Handle ^^^
+            hash this.ImageView.Handle
 
         /// Create the image.
         static member private createImage format extent allocator =
