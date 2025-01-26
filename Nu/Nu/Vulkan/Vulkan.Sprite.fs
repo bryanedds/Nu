@@ -151,19 +151,11 @@ module Sprite =
         // bind pipeline
         Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
 
-        // set viewport
-        let mutable viewport = VkViewport ()
-        viewport.x <- 0.0f
-        viewport.y <- 0.0f
-        viewport.width <- single vulkanGlobal.SwapExtent.width
-        viewport.height <- single vulkanGlobal.SwapExtent.height
-        viewport.minDepth <- 0.0f
-        viewport.maxDepth <- 1.0f
+        // set viewport and scissor
+        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
+        let mutable viewport = Hl.makeViewport renderArea
         Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &viewport)
-        
-        // set scissor
-        let mutable scissor = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-        Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+        Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
         
         // bind vertex and index buffer
         let mutable vertexBuffer = vertices.Buffer
@@ -185,5 +177,4 @@ module Sprite =
         Hl.ReportDrawCall 1
         
         // reset scissor
-        let mutable scissor = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-        Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+        Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)

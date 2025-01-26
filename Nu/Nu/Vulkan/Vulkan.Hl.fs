@@ -91,6 +91,17 @@ module Hl =
         Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
         shaderModule
     
+    /// Make a VkViewport.
+    let makeViewport (rect : VkRect2D) =
+        let mutable viewport = VkViewport ()
+        viewport.x <- single rect.offset.x
+        viewport.y <- single rect.offset.y
+        viewport.width <- single rect.extent.width
+        viewport.height <- single rect.extent.height
+        viewport.minDepth <- 0.0f
+        viewport.maxDepth <- 1.0f
+        viewport
+    
     /// Make a VkPipelineColorBlendAttachmentState for alpha based color blending.
     let makeBlendAttachmentAlpha () =
         let mutable blendAttachment = VkPipelineColorBlendAttachmentState ()
@@ -728,8 +739,8 @@ module Hl =
             Vulkan.vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
 
             // the render surface
-            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int imageIndex]
             let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
+            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int imageIndex]
             
             // set color for screen clear
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
@@ -750,8 +761,8 @@ module Hl =
             let inFlight = vulkanGlobal.InFlightFence
             
             // the render surface
-            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int imageIndex]
             let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
+            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int imageIndex]
             
             // run an empty render pass to transition image layout for presentation
             initRender commandBuffer vulkanGlobal.PresentLayoutRenderPass frameBuffer renderArea [||] inFlight vulkanGlobal.Device

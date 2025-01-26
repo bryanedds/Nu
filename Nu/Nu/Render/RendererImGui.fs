@@ -347,8 +347,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             if int framebufferWidth > 0 && int framebufferHeight > 0 then
 
                 // init render
+                let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
                 let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
-                let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
                 Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
                 
                 if drawData.TotalVtxCount > 0 then
@@ -392,13 +392,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                     Vulkan.vkCmdBindIndexBuffer (commandBuffer, indexBuffer.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
 
                 // set up viewport
-                let mutable viewport = VkViewport ()
-                viewport.x <- 0.0f
-                viewport.y <- 0.0f
-                viewport.width <- framebufferWidth
-                viewport.height <- framebufferHeight
-                viewport.minDepth <- 0.0f
-                viewport.maxDepth <- 1.0f
+                let mutable viewport = Hl.makeViewport renderArea
                 Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &viewport)
 
                 // set up scale and translation
@@ -471,8 +465,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                     globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
                 // reset scissor
-                let mutable scissor = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+                Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
 
                 // submit render
                 Hl.submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] vulkanGlobal.InFlightFence

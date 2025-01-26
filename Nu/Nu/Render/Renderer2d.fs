@@ -1269,8 +1269,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
 
                             // init render
-                            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
                             let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
+                            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
                             Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
                             
                             // draw text sprite

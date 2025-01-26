@@ -104,8 +104,8 @@ module SpriteBatch =
             let pipeline = env.Pipeline
 
             // init render
+            let mutable renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
             let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
-            let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
             Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
 
             // update uniform buffers
@@ -122,19 +122,10 @@ module SpriteBatch =
             // bind pipeline
             Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
 
-            // set viewport
-            let mutable viewport = VkViewport ()
-            viewport.x <- 0.0f
-            viewport.y <- 0.0f
-            viewport.width <- single vulkanGlobal.SwapExtent.width
-            viewport.height <- single vulkanGlobal.SwapExtent.height
-            viewport.minDepth <- 0.0f
-            viewport.maxDepth <- 1.0f
+            // set viewport and scissor
+            let mutable viewport = Hl.makeViewport renderArea
             Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &viewport)
-            
-            // set scissor
-            let mutable scissor = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
 
             // bind descriptor set
             let mutable descriptorSet = pipeline.DescriptorSet
@@ -150,8 +141,7 @@ module SpriteBatch =
             Hl.ReportDrawCall env.SpriteIndex
             
             // reset scissor
-            let mutable scissor = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
             
             // submit render
             Hl.submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] vulkanGlobal.InFlightFence
