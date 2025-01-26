@@ -13,6 +13,10 @@ open Nu
 [<RequireQualifiedAccess>]
 module Hl =
 
+    let mutable private DrawReportLock = obj ()
+    let mutable private DrawCallCount = 0
+    let mutable private DrawInstanceCount = 0
+    
     // enable validation layers in debug mode
     let private ValidationLayersEnabled =
 #if DEBUG
@@ -23,6 +27,26 @@ module Hl =
     
     /// Index of the current Swapchain image.
     let mutable imageIndex = 0u
+    
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let ReportDrawCall drawInstances =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- inc DrawCallCount
+            DrawInstanceCount <- DrawInstanceCount + drawInstances)
+
+    /// Reset the running number of draw calls.
+    let ResetDrawCalls () =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- 0
+            DrawInstanceCount <- 0)
+
+    /// Get the running number of draw calls.
+    let GetDrawCallCount () =
+        lock DrawReportLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let GetDrawInstanceCount () =
+        lock DrawReportLock (fun () -> DrawInstanceCount)
     
     /// Convert VkExtensionProperties.extensionName to a string.
     let private getExtensionName (extensionProps : VkExtensionProperties) =

@@ -137,8 +137,7 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // commonly used handles
-        let device = vulkanGlobal.Device
+        // commonly used handle
         let commandBuffer = vulkanGlobal.RenderCommandBuffer
         
         // update uniform buffers
@@ -147,7 +146,7 @@ module Sprite =
         Hl.AllocatedBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform
 
         // write texture to descriptor set
-        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline device
+        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline vulkanGlobal.Device
         
         // bind pipeline
         Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
@@ -183,6 +182,7 @@ module Sprite =
         
         // draw
         Vulkan.vkCmdDrawIndexed (commandBuffer, 6u, 1u, 0u, 0, 0u)
+        Hl.ReportDrawCall 1
         
         // reset scissor
         let mutable scissor = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)

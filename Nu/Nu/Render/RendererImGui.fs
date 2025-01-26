@@ -463,6 +463,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                                      pcmd.ElemCount, 1u,
                                      pcmd.IdxOffset + uint globalIdxOffset,
                                      int pcmd.VtxOffset + globalVtxOffset, 0u)
+                                Hl.ReportDrawCall 1
 
                         else raise (NotImplementedException ())
 
