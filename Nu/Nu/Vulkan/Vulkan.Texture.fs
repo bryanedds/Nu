@@ -333,6 +333,7 @@ module Texture =
             VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vulkanGlobal
 
         /// Create an empty VulkanTexture.
+        /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f).
         static member createEmpty (vulkanGlobal : Hl.VulkanGlobal) =
             
             // create components

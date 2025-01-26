@@ -844,13 +844,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanGlobal : Hl.VulkanGlobal
           SpritePipeline : Hl.AllocatedBuffer * Hl.AllocatedBuffer * Hl.AllocatedBuffer * Pipeline.SpritePipeline
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
-          SpriteBatchEnv : Vortice.Vulkan.SpriteBatch.SpriteBatchEnv
+          SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List
-          TransientTextures : Vortice.Vulkan.Texture.Texture List }
+          TransientTextures : Texture.Texture List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -1045,6 +1045,103 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     static member private sortLayeredOperations renderer =
         renderer.LayeredOperations.Sort (LayeredOperation2dComparer ())
     
+    static member
+#if !DEBUG
+        inline
+#endif
+        private batchSprite
+        absolute
+        min
+        size
+        pivot
+        rotation
+        (insetOpt : Box2 voption)
+        (texture : Texture.Texture)
+        (color : Color)
+        blend
+        (emission : Color)
+        flip
+        renderer =
+
+        // compute unflipped tex coords
+        let texCoordsUnflipped =
+            let textureMetadata = texture.TextureMetadata
+            let texelWidth = textureMetadata.TextureTexelWidth
+            let texelHeight = textureMetadata.TextureTexelHeight
+            let borderWidth = texelWidth * Constants.Render.SpriteBorderTexelScalar
+            let borderHeight = texelHeight * Constants.Render.SpriteBorderTexelScalar
+            match insetOpt with
+            | ValueSome inset ->
+                let mx = inset.Min.X * texelWidth + borderWidth
+                let my = (inset.Min.Y + inset.Size.Y) * texelHeight - borderHeight
+                let sx = inset.Size.X * texelWidth - borderWidth * 2.0f
+                let sy = -inset.Size.Y * texelHeight + borderHeight * 2.0f
+                Box2 (mx, my, sx, sy)
+            | ValueNone ->
+                let mx = borderWidth
+                let my = 1.0f - borderHeight
+                let sx = 1.0f - borderWidth * 2.0f
+                let sy = -1.0f + borderHeight * 2.0f
+                Box2 (mx, my, sx, sy)
+
+        // compute a flipping flags
+        let struct (flipH, flipV) =
+            match flip with
+            | FlipNone -> struct (false, false)
+            | FlipH -> struct (true, false)
+            | FlipV -> struct (false, true)
+            | FlipHV -> struct (true, true)
+
+        // compute tex coords
+        let texCoords =
+            box2
+                (v2
+                    (if flipH then texCoordsUnflipped.Min.X + texCoordsUnflipped.Size.X else texCoordsUnflipped.Min.X)
+                    (if flipV then texCoordsUnflipped.Min.Y + texCoordsUnflipped.Size.Y else texCoordsUnflipped.Min.Y))
+                (v2
+                    (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
+                    (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
+
+        // compute blending instructions
+        let struct (bfs, bfd, beq) =
+            match blend with
+            | Transparent -> struct (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha, OpenGL.BlendEquationMode.FuncAdd)
+            | Additive -> struct (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
+            | Overwrite -> struct (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero, OpenGL.BlendEquationMode.FuncAdd)
+
+        // attempt to draw normal sprite
+        if color.A <> 0.0f then
+            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.SpriteBatchEnv)
+
+        // attempt to draw emission sprite
+        if emission.A <> 0.0f then
+            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.SpriteBatchEnv)
+
+    /// Render sprite.
+    static member renderSprite
+        (transform : Transform byref,
+         insetOpt : Box2 ValueOption inref,
+         image : Image AssetTag,
+         color : Color inref,
+         blend : Blend,
+         emission : Color inref,
+         flip : Flip,
+         renderer) =
+        let absolute = transform.Absolute
+        let perimeter = transform.Perimeter
+        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+        let min = perimeter.Min.V2 * virtualScalar
+        let size = perimeter.Size.V2 * virtualScalar
+        let pivot = transform.PerimeterPivot.V2 * virtualScalar
+        let rotation = -transform.Angles.Z
+        match VulkanRenderer2d.tryGetRenderAsset image renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | TextureAsset texture ->
+                VulkanRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
+            | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
+        | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
+    
     /// Render text.
     static member renderText
         (transform : Transform byref,
@@ -1063,7 +1160,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         if color.A8 <> 0uy then
             let transform = transform // copy to local to make visible from lambda
             
-            flip Vortice.Vulkan.SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
+            flip SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text
                 let mutable transform = transform
@@ -1226,8 +1323,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 //                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
         | RenderSpriteParticles descriptor -> ()
 //            GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
-        | RenderCachedSprite descriptor -> ()
-//            GlRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
+        | RenderCachedSprite descriptor ->
+            VulkanRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             VulkanRenderer2d.renderText
                 (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
@@ -1251,12 +1348,21 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         VulkanRenderer2d.destroyTransientTextures renderer
         renderer.TransientTextures.Clear ()
         
+        // begin sprite batch frame
+        let viewport = Constants.Render.Viewport
+        let viewProjectionAbsolute = viewport.ViewProjection2d (true, eyeCenter, eyeSize)
+        let viewProjectionRelative = viewport.ViewProjection2d (false, eyeCenter, eyeSize)
+        SpriteBatch.BeginSpriteBatchFrame (&viewProjectionAbsolute, &viewProjectionRelative, renderer.SpriteBatchEnv)
+        
         // render frame
         VulkanRenderer2d.handleRenderMessages renderMessages renderer
         VulkanRenderer2d.sortLayeredOperations renderer
         VulkanRenderer2d.renderLayeredOperations eyeCenter eyeSize renderer
         renderer.LayeredOperations.Clear ()
 
+        // end sprite batch frame
+        SpriteBatch.EndSpriteBatchFrame renderer.SpriteBatchEnv
+        
         // reload render assets upon request
         if renderer.ReloadAssetsRequested then
             VulkanRenderer2d.handleReloadRenderAssets renderer
@@ -1270,7 +1376,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal
         
         // create sprite batch env
-        let spriteBatchEnv = Vortice.Vulkan.SpriteBatch.CreateSpriteBatchEnv vulkanGlobal
+        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vulkanGlobal
         
         // make renderer
         let renderer =
@@ -1315,7 +1421,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             Hl.AllocatedBuffer.destroy indices allocator
 
             // destroy sprite batch environment
-            Vortice.Vulkan.SpriteBatch.DestroySpriteBatchEnv renderer.VulkanGlobal renderer.SpriteBatchEnv
+            SpriteBatch.DestroySpriteBatchEnv renderer.VulkanGlobal renderer.SpriteBatchEnv
             
             // clean up packages
             let renderPackages = renderer.RenderPackages |> Seq.map (fun entry -> entry.Value)
