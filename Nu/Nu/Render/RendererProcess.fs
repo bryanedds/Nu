@@ -330,7 +330,7 @@ type RendererThread () =
                 | Some vulkanGlobal ->
 
                     // create empty VulkanTexture
-                    Texture.VulkanTexture.empty <- Texture.VulkanTexture.createEmpty vulkanGlobal
+                    Texture.EmptyOpt <- Some (Texture.VulkanTexture.createEmpty vulkanGlobal)
                     
                     // create 3d renderer
                     let renderer3d = StubRenderer3d.make () :> Renderer3d

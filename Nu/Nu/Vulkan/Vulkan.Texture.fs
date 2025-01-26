@@ -22,6 +22,12 @@ open Nu
 [<RequireQualifiedAccess>]
 module Texture =
 
+    /// The forward-declared empty texture value.
+    /// Initialized in RendererProcesses.
+    /// NOTE: if performance issues arise from checking / casting this, maybe use ValueOption or null directly.
+    /// TODO: see if instead of exposing this directly, we should define Init and CleanUp fns.
+    let mutable internal EmptyOpt : obj option = None
+
     /// Check that an asset with the given file path can utilize block compression (IE, it's not a normal map,
     /// blend map, or specified as uncompressed).
     /// TODO: move this somewhere more general?
@@ -330,15 +336,12 @@ module Texture =
 
             // fin
             vulkanTexture
-        
-    [<RequireQualifiedAccess>]
-    module VulkanTexture =
-        
-        /// Empty VulkanTexture.
-        let mutable empty =
-            { Image = Unchecked.defaultof<Hl.AllocatedImage>
-              ImageView = Unchecked.defaultof<VkImageView>
-              Sampler = Unchecked.defaultof<VkSampler> }
+
+        /// Represents the empty texture used in Vulkan.
+        static member empty =
+            match EmptyOpt with
+            | Some (:? VulkanTexture as empty) -> empty
+            | Some _ | None -> failwith "VulkanTexture.empty not initialized properly."
     
     /// Describes data loaded from a texture.
     type TextureData =
