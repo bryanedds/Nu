@@ -246,13 +246,13 @@ module Hl =
         use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
 
         // submit commands
-        let mutable commandBuffer = cb
+        let mutable cb = cb
         let mutable info = VkSubmitInfo ()
         info.waitSemaphoreCount <- uint waitSemaphores.Length
         info.pWaitSemaphores <- waitSemaphoresPin.Pointer
         info.pWaitDstStageMask <- waitStagesPin.Pointer
         info.commandBufferCount <- 1u
-        info.pCommandBuffers <- asPointer &commandBuffer
+        info.pCommandBuffers <- asPointer &cb
         info.signalSemaphoreCount <- uint signalSemaphores.Length
         info.pSignalSemaphores <- signalSemaphoresPin.Pointer
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check

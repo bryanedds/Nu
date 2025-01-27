@@ -317,7 +317,7 @@ type RendererThread () =
     member private this.Run fonts windowOpt =
 
         // create renderers
-        let (vulkanGlobalOpt, renderer3d, renderer2d, rendererImGui) =
+        let (vkgOpt, renderer3d, renderer2d, rendererImGui) =
             match windowOpt with
             | Some window ->
                 
@@ -327,22 +327,22 @@ type RendererThread () =
 
                 // attempt to create global vulkan object
                 match Hl.VulkanGlobal.tryCreate window with
-                | Some vulkanGlobal ->
+                | Some vkg ->
 
                     // create empty VulkanTexture
-                    Texture.EmptyOpt <- Some (Texture.VulkanTexture.createEmpty vulkanGlobal)
+                    Texture.EmptyOpt <- Some (Texture.VulkanTexture.createEmpty vkg)
                     
                     // create 3d renderer
                     let renderer3d = StubRenderer3d.make () :> Renderer3d
 
                     // create 2d renderer
-                    let renderer2d = VulkanRenderer2d.make vulkanGlobal :> Renderer2d
+                    let renderer2d = VulkanRenderer2d.make vkg :> Renderer2d
 
                     // create imgui renderer
-                    let rendererImGui = VulkanRendererImGui.make fonts vulkanGlobal :> RendererImGui
+                    let rendererImGui = VulkanRendererImGui.make fonts vkg :> RendererImGui
 
                     // fin
-                    (Some vulkanGlobal, renderer3d, renderer2d, rendererImGui)
+                    (Some vkg, renderer3d, renderer2d, rendererImGui)
 
                 // fail
                 | None -> Log.fail "Could not create VulkanGlobal instance."
@@ -371,7 +371,7 @@ type RendererThread () =
                 submissionOpt <- None
 
                 // begin frame
-                match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.beginFrame vulkanGlobal | None -> ()
+                match vkgOpt with Some vkg -> Hl.VulkanGlobal.beginFrame vkg | None -> ()
 
                 // render 3d
                 renderer3d.Render frustumInterior frustumExterior frustumImposter lightBox eye3dCenter eye3dRotation windowSize messages3d
@@ -388,7 +388,7 @@ type RendererThread () =
                 rendererImGui.Render drawData
 
                 // end frame
-                match vulkanGlobalOpt with Some _ -> Hl.VulkanGlobal.endFrame () | None -> ()
+                match vkgOpt with Some _ -> Hl.VulkanGlobal.endFrame () | None -> ()
 
                 // loop until swap is requested
                 while not terminated && not swap do Thread.Sleep 1
@@ -397,19 +397,19 @@ type RendererThread () =
                 if not terminated then
 
                     // present image to screen
-                    match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.present vulkanGlobal | None -> ()
+                    match vkgOpt with Some vkg -> Hl.VulkanGlobal.present vkg | None -> ()
                     
                     // acknowledge swap request
                     swap <- false
 
         // wait for finish
-        match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.waitIdle vulkanGlobal | None -> ()
+        match vkgOpt with Some vkg -> Hl.VulkanGlobal.waitIdle vkg | None -> ()
         
         // clean up
-        match vulkanGlobalOpt with Some vulkanGlobal -> Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vulkanGlobal | None -> ()
+        match vkgOpt with Some vkg -> Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vkg | None -> ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()
-        match vulkanGlobalOpt with Some vulkanGlobal -> Hl.VulkanGlobal.cleanup vulkanGlobal | None -> ()
+        match vkgOpt with Some vkg -> Hl.VulkanGlobal.cleanup vkg | None -> ()
 
     interface RendererProcess with
 

@@ -1252,9 +1252,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // Vulkan handles
-                            let vulkanGlobal = renderer.VulkanGlobal
-                            let commandBuffer = vulkanGlobal.RenderCommandBuffer
+                            // handles
+                            let vkg = renderer.VulkanGlobal
+                            let cb = vkg.RenderCommandBuffer
                             
                             // create texture
                             // TODO: DJL: investigate non-staged texture upload and its performance.
@@ -1264,13 +1264,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     Vulkan.VK_FILTER_NEAREST
                                     Vulkan.VK_FILTER_NEAREST
                                     textTextureMetadata
-                                    textSurface.pixels
-                                    vulkanGlobal
+                                    textSurface.pixels vkg
                             let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
 
                             // init render
-                            let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-                            Hl.initRender commandBuffer vulkanGlobal.RenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+                            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+                            Hl.initRender cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
                             
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
@@ -1290,10 +1289,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  texCoords4Uniform,
                                  colorUniform,
                                  pipeline,
-                                 vulkanGlobal)
+                                 vkg)
 
                             // submit render
-                            Hl.submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] vulkanGlobal.InFlightFence
+                            Hl.submitRender cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
@@ -1368,18 +1367,18 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             renderer.ReloadAssetsRequested <- false
     
     /// Make a VulkanRenderer2d.
-    static member make (vulkanGlobal : Hl.VulkanGlobal) =
+    static member make (vkg : Hl.VulkanGlobal) =
         
         // create text resources
-        let spritePipeline = Sprite.CreateSpritePipeline vulkanGlobal
-        let textQuad = Sprite.CreateSpriteQuad true vulkanGlobal
+        let spritePipeline = Sprite.CreateSpritePipeline vkg
+        let textQuad = Sprite.CreateSpriteQuad true vkg
         
         // create sprite batch env
-        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vulkanGlobal
+        let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkg
         
         // make renderer
         let renderer =
-            { VulkanGlobal = vulkanGlobal
+            { VulkanGlobal = vkg
               SpritePipeline = spritePipeline
               TextQuad = textQuad
               SpriteBatchEnv = spriteBatchEnv

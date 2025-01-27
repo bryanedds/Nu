@@ -269,7 +269,7 @@ module GlRendererImGui =
         rendererImGui
 
 /// Renders an imgui view via Vulkan.
-type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
+type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
     
     let mutable pipeline = Unchecked.defaultof<Pipeline.ImGuiPipeline>
     let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
@@ -291,7 +291,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
 
             // create the font atlas texture
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
-            fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR metadata pixels vulkanGlobal
+            fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR metadata pixels vkg
             
             // blending info
             // TODO: DJL: find out if these alpha blend factors are appropriate.
@@ -316,11 +316,11 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                       Hl.makeVertexAttribute 2 0 Vulkan.VK_FORMAT_R8G8B8A8_UNORM (NativePtr.offsetOf<ImDrawVert> "col")|]
                     [|Hl.makeDescriptorBindingFragment 0 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
                     [|Hl.makePushConstantRange Vulkan.VK_SHADER_STAGE_VERTEX_BIT 0 (sizeof<Single> * 4)|]
-                    vulkanGlobal.RenderPass
-                    vulkanGlobal.Device
+                    vkg.RenderPass
+                    vkg.Device
 
             // load font atlas texture to descriptor set
-            Pipeline.ImGuiPipeline.writeDescriptorTexture 0 0 fontTexture pipeline vulkanGlobal.Device
+            Pipeline.ImGuiPipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkg.Device
 
             // store identifier
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
@@ -329,14 +329,13 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize vulkanGlobal.VmaAllocator
-            indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize vulkanGlobal.VmaAllocator
+            vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize vkg.VmaAllocator
+            indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize vkg.VmaAllocator
         
         member this.Render (drawData : ImDrawDataPtr) =
             
             // commonly used handles
-            let allocator = vulkanGlobal.VmaAllocator
-            let commandBuffer = vulkanGlobal.RenderCommandBuffer
+            let cb = vkg.RenderCommandBuffer
             
             // get total resolution from imgui
             // NOTE: DJL: if this ever differs from the swapchain then something is wrong.
@@ -348,7 +347,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
 
                 // init render
                 let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                Hl.initRender commandBuffer vulkanGlobal.RenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+                Hl.initRender cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
                 
                 if drawData.TotalVtxCount > 0 then
                     
@@ -359,14 +358,14 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                     // enlarge vertex buffer if needed
                     if vertexSize > vertexBufferSize then
                         while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                        Hl.AllocatedBuffer.destroy vertexBuffer allocator
-                        vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize allocator
+                        Hl.AllocatedBuffer.destroy vertexBuffer vkg.VmaAllocator
+                        vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize vkg.VmaAllocator
 
                     // enlarge index buffer if needed
                     if indexSize > indexBufferSize then
                         while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                        Hl.AllocatedBuffer.destroy indexBuffer allocator
-                        indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize allocator
+                        Hl.AllocatedBuffer.destroy indexBuffer vkg.VmaAllocator
+                        indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize vkg.VmaAllocator
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -381,18 +380,18 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
+                Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
 
                 // bind vertex and index buffer
                 if drawData.TotalVtxCount > 0 then
                     let mutable vertexBuffer = vertexBuffer.Buffer
                     let mutable vertexOffset = 0UL
-                    Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-                    Vulkan.vkCmdBindIndexBuffer (commandBuffer, indexBuffer.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
+                    Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+                    Vulkan.vkCmdBindIndexBuffer (cb, indexBuffer.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT16)
 
                 // set up viewport
                 let mutable viewport = Hl.makeViewport renderArea
-                Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &viewport)
+                Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
 
                 // set up scale and translation
                 let scale = Array.zeroCreate<single> 2
@@ -403,8 +402,8 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                 translate[0] <- -1.0f - drawData.DisplayPos.X * scale[0]
                 translate[1] <- -1.0f - drawData.DisplayPos.Y * scale[1]
                 use translatePin = new ArrayPin<_> (translate)
-                Vulkan.vkCmdPushConstants (commandBuffer, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
-                Vulkan.vkCmdPushConstants (commandBuffer, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 0u, 8u, scalePin.VoidPtr)
+                Vulkan.vkCmdPushConstants (cb, pipeline.PipelineLayout, Vulkan.VK_SHADER_STAGE_VERTEX_BIT, 8u, 8u, translatePin.VoidPtr)
 
                 // draw command lists
                 let mutable globalVtxOffset = 0
@@ -439,23 +438,18 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                                 let width = uint (clipMax.X - clipMin.X)
                                 let height = uint (clipMax.Y - clipMin.Y)
                                 let mutable scissor = VkRect2D (int clipMin.X, int clipMin.Y, width, height)
-                                Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &scissor)
+                                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &scissor)
 
                                 // bind font descriptor set
                                 let mutable descriptorSet = VkDescriptorSet (uint64 pcmd.TextureId)
                                 Vulkan.vkCmdBindDescriptorSets
-                                    (commandBuffer,
-                                     Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
                                      pipeline.PipelineLayout, 0u,
                                      1u, asPointer &descriptorSet,
                                      0u, nullPtr)
 
                                 // draw
-                                Vulkan.vkCmdDrawIndexed
-                                    (commandBuffer,
-                                     pcmd.ElemCount, 1u,
-                                     pcmd.IdxOffset + uint globalIdxOffset,
-                                     int pcmd.VtxOffset + globalVtxOffset, 0u)
+                                Vulkan.vkCmdDrawIndexed (cb, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
                                 Hl.ReportDrawCall 1
 
                         else raise (NotImplementedException ())
@@ -464,22 +458,22 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
                     globalVtxOffset <- globalVtxOffset + drawList.VtxBuffer.Size
 
                 // reset scissor
-                Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+                Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
 
                 // submit render
-                Hl.submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] vulkanGlobal.InFlightFence
+                Hl.submitRender cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
         
         member this.CleanUp () =
-            Hl.AllocatedBuffer.destroy indexBuffer vulkanGlobal.VmaAllocator
-            Hl.AllocatedBuffer.destroy vertexBuffer vulkanGlobal.VmaAllocator
-            Texture.VulkanTexture.destroy fontTexture vulkanGlobal
-            Pipeline.ImGuiPipeline.destroy pipeline vulkanGlobal.Device
+            Hl.AllocatedBuffer.destroy indexBuffer vkg.VmaAllocator
+            Hl.AllocatedBuffer.destroy vertexBuffer vkg.VmaAllocator
+            Texture.VulkanTexture.destroy fontTexture vkg
+            Pipeline.ImGuiPipeline.destroy pipeline vkg.Device
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =
 
     /// Make a Vulkan imgui renderer.
-    let make fonts vulkanGlobal =
-        let rendererImGui = VulkanRendererImGui vulkanGlobal
+    let make fonts vkg =
+        let rendererImGui = VulkanRendererImGui vkg
         (rendererImGui :> RendererImGui).Initialize fonts
         rendererImGui

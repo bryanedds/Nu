@@ -11,11 +11,7 @@ open Nu
 module Sprite =
 
     /// Create a sprite pipeline.
-    let CreateSpritePipeline (vulkanGlobal : Hl.VulkanGlobal) =
-        
-        // commonly used handles
-        let device = vulkanGlobal.Device
-        let allocator = vulkanGlobal.VmaAllocator
+    let CreateSpritePipeline (vkg : Hl.VulkanGlobal) =
         
         // create sprite pipeline
         let pipeline =
@@ -28,23 +24,23 @@ module Sprite =
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 2 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1
                   Hl.makeDescriptorBindingFragment 3 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1|]
-                [||] vulkanGlobal.RenderPass device
+                [||] vkg.RenderPass vkg.Device
         
         // create sprite uniform buffers
-        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
-        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
-        let colorUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) allocator
+        let modelViewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) vkg.VmaAllocator
+        let texCoords4Uniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) vkg.VmaAllocator
+        let colorUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4) vkg.VmaAllocator
 
         // write sprite descriptor set
-        Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline device
-        Pipeline.SpritePipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline device
-        Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform pipeline device
+        Pipeline.SpritePipeline.writeDescriptorUniform 0 0 modelViewProjectionUniform pipeline vkg.Device
+        Pipeline.SpritePipeline.writeDescriptorUniform 1 0 texCoords4Uniform pipeline vkg.Device
+        Pipeline.SpritePipeline.writeDescriptorUniform 3 0 colorUniform pipeline vkg.Device
 
         // fin
         (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline)
     
     /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
-    let CreateSpriteQuad onlyUpperRightQuadrant vulkanGlobal =
+    let CreateSpriteQuad onlyUpperRightQuadrant vkg =
 
         // buffers
         let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
@@ -69,14 +65,14 @@ module Sprite =
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         
         // TODO: DJL: confirm that this try block and the one for index buffer are still appropriate.
-        try vertexBuffer <- Hl.AllocatedBuffer.createVertexStaged vertexDataSize (vertexDataPtr.AddrOfPinnedObject ()) vulkanGlobal
+        try vertexBuffer <- Hl.AllocatedBuffer.createVertexStaged vertexDataSize (vertexDataPtr.AddrOfPinnedObject ()) vkg
         finally vertexDataPtr.Free ()
 
         // create index buffer
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         let indexDataSize = indexData.Length * sizeof<uint>
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        try indexBuffer <- Hl.AllocatedBuffer.createIndexStaged indexDataSize (indexDataPtr.AddrOfPinnedObject ()) vulkanGlobal
+        try indexBuffer <- Hl.AllocatedBuffer.createIndexStaged indexDataSize (indexDataPtr.AddrOfPinnedObject ()) vkg
         finally indexDataPtr.Free ()
 
         // fin
@@ -97,7 +93,7 @@ module Sprite =
          texCoords4Uniform : Hl.AllocatedBuffer,
          colorUniform : Hl.AllocatedBuffer,
          pipeline : Pipeline.SpritePipeline,
-         vulkanGlobal : Hl.VulkanGlobal) =
+         vkg : Hl.VulkanGlobal) =
 
         // compute unflipped tex coords
         let texCoordsUnflipped =
@@ -137,8 +133,8 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // commonly used handle
-        let commandBuffer = vulkanGlobal.RenderCommandBuffer
+        // handle
+        let cb = vkg.RenderCommandBuffer
         
         // update uniform buffers
         Hl.AllocatedBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform
@@ -146,35 +142,34 @@ module Sprite =
         Hl.AllocatedBuffer.uploadArray 0 [|color.R; color.G; color.B; color.A|] colorUniform
 
         // write texture to descriptor set
-        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline vulkanGlobal.Device
+        Pipeline.SpritePipeline.writeDescriptorTexture 2 0 texture pipeline vkg.Device
         
         // bind pipeline
-        Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
+        Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
 
         // set viewport and scissor
-        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
+        let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
         let mutable viewport = Hl.makeViewport renderArea
-        Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &viewport)
-        Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+        Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
+        Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
         
         // bind vertex and index buffer
         let mutable vertexBuffer = vertices.Buffer
         let mutable vertexOffset = 0UL
-        Vulkan.vkCmdBindVertexBuffers (commandBuffer, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
-        Vulkan.vkCmdBindIndexBuffer (commandBuffer, indices.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT32)
+        Vulkan.vkCmdBindVertexBuffers (cb, 0u, 1u, asPointer &vertexBuffer, asPointer &vertexOffset)
+        Vulkan.vkCmdBindIndexBuffer (cb, indices.Buffer, 0UL, Vulkan.VK_INDEX_TYPE_UINT32)
 
         // bind descriptor set
         let mutable descriptorSet = pipeline.DescriptorSet
         Vulkan.vkCmdBindDescriptorSets
-            (commandBuffer,
-             Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
+            (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
              pipeline.PipelineLayout, 0u,
              1u, asPointer &descriptorSet,
              0u, nullPtr)
         
         // draw
-        Vulkan.vkCmdDrawIndexed (commandBuffer, 6u, 1u, 0u, 0, 0u)
+        Vulkan.vkCmdDrawIndexed (cb, 6u, 1u, 0u, 0, 0u)
         Hl.ReportDrawCall 1
         
         // reset scissor
-        Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+        Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)

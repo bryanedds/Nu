@@ -50,11 +50,7 @@ module SpriteBatch =
               mutable State : SpriteBatchState }
 
     /// Create a sprite batch pipeline.
-    let CreateSpriteBatchPipeline (vulkanGlobal : Hl.VulkanGlobal) =
-        
-        // commonly used handles
-        let device = vulkanGlobal.Device
-        let allocator = vulkanGlobal.VmaAllocator
+    let CreateSpriteBatchPipeline (vkg : Hl.VulkanGlobal) =
         
         // create sprite batch pipeline
         let pipeline =
@@ -68,23 +64,23 @@ module SpriteBatch =
                   Hl.makeDescriptorBindingVertex 4 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 5 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingFragment 6 Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER 1|]
-                [||] vulkanGlobal.RenderPass device
+                [||] vkg.RenderPass vkg.Device
 
         // create sprite batch uniform buffers
-        let perimetersUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) allocator
-        let pivotsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 2 * Constants.Render.SpriteBatchSize) allocator
-        let rotationsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 1 * Constants.Render.SpriteBatchSize) allocator
-        let texCoordsesUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) allocator
-        let colorsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) allocator
-        let viewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) allocator
+        let perimetersUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
+        let pivotsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 2 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
+        let rotationsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 1 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
+        let texCoordsesUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
+        let colorsUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 4 * Constants.Render.SpriteBatchSize) vkg.VmaAllocator
+        let viewProjectionUniform = Hl.AllocatedBuffer.createUniform (sizeof<single> * 16) vkg.VmaAllocator
 
         // write sprite batch descriptor set
-        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 0 0 perimetersUniform pipeline device
-        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 1 0 pivotsUniform pipeline device
-        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 2 0 rotationsUniform pipeline device
-        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 3 0 texCoordsesUniform pipeline device
-        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 4 0 colorsUniform pipeline device
-        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 5 0 viewProjectionUniform pipeline device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 0 0 perimetersUniform pipeline vkg.Device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 1 0 pivotsUniform pipeline vkg.Device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 2 0 rotationsUniform pipeline vkg.Device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 3 0 texCoordsesUniform pipeline vkg.Device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 4 0 colorsUniform pipeline vkg.Device
+        Pipeline.SpriteBatchPipeline.writeDescriptorUniform 5 0 viewProjectionUniform pipeline vkg.Device
         
         // fin
         (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline)
@@ -98,14 +94,13 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // Vulkan handles
-            let vulkanGlobal = env.VulkanGlobal
-            let commandBuffer = vulkanGlobal.RenderCommandBuffer
-            let pipeline = env.Pipeline
+            // handles
+            let vkg = env.VulkanGlobal
+            let cb = vkg.RenderCommandBuffer
 
             // init render
-            let mutable renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            Hl.initRender commandBuffer vulkanGlobal.RenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+            let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+            Hl.initRender cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
 
             // update uniform buffers
             Hl.AllocatedBuffer.uploadArray 0 env.Perimeters env.PerimetersUniform
@@ -116,34 +111,33 @@ module SpriteBatch =
             Hl.AllocatedBuffer.uploadArray 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform
 
             // write texture to descriptor set
-            Pipeline.SpriteBatchPipeline.writeDescriptorTexture 6 0 texture.VulkanTexture pipeline vulkanGlobal.Device
+            Pipeline.SpriteBatchPipeline.writeDescriptorTexture 6 0 texture.VulkanTexture env.Pipeline vkg.Device
 
             // bind pipeline
-            Vulkan.vkCmdBindPipeline (commandBuffer, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
+            Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, env.Pipeline.Pipeline)
 
             // set viewport and scissor
             let mutable viewport = Hl.makeViewport renderArea
-            Vulkan.vkCmdSetViewport (commandBuffer, 0u, 1u, asPointer &viewport)
-            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+            Vulkan.vkCmdSetViewport (cb, 0u, 1u, asPointer &viewport)
+            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
 
             // bind descriptor set
-            let mutable descriptorSet = pipeline.DescriptorSet
+            let mutable descriptorSet = env.Pipeline.DescriptorSet
             Vulkan.vkCmdBindDescriptorSets
-                (commandBuffer,
-                 Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
-                 pipeline.PipelineLayout, 0u,
+                (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS,
+                 env.Pipeline.PipelineLayout, 0u,
                  1u, asPointer &descriptorSet,
                  0u, nullPtr)
 
             // draw
-            Vulkan.vkCmdDraw (commandBuffer, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
+            Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
             Hl.ReportDrawCall env.SpriteIndex
             
             // reset scissor
-            Vulkan.vkCmdSetScissor (commandBuffer, 0u, 1u, asPointer &renderArea)
+            Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
             
             // submit render
-            Hl.submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [||] vulkanGlobal.InFlightFence
+            Hl.submitRender cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
             
             // next batch
             env.SpriteIndex <- 0
@@ -214,13 +208,13 @@ module SpriteBatch =
         env.SpriteIndex <- inc env.SpriteIndex
 
     /// Destroy the given sprite batch environment.
-    let CreateSpriteBatchEnv vulkanGlobal =
+    let CreateSpriteBatchEnv vkg =
         
         // create pipeline
-        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vulkanGlobal
+        let (perimetersUniform, pivotsUniform, rotationsUniform, texCoordsesUniform, colorsUniform, viewProjectionUniform, pipeline) = CreateSpriteBatchPipeline vkg
 
         // create env
-        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vulkanGlobal
+        { SpriteIndex = 0; ViewProjectionAbsolute = m4Identity; ViewProjectionRelative = m4Identity; VulkanGlobal = vkg
           PerimetersUniform = perimetersUniform; PivotsUniform = pivotsUniform; RotationsUniform = rotationsUniform
           TexCoordsesUniform = texCoordsesUniform; ColorsUniform = colorsUniform; ViewProjectionUniform = viewProjectionUniform
           Pipeline = pipeline

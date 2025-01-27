@@ -21,7 +21,7 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
     member this.SceneClient = sceneClient
 
     /// Preload assets.
-    member this.PreloadAssets (is2d, assets : Asset seq, vulkanGlobal) =
+    member this.PreloadAssets (is2d, assets : Asset seq, vkg) =
 
         // collect loadable assets
         let textureAssets = List ()
@@ -67,7 +67,7 @@ type AssetClient (textureClient : Vortice.Vulkan.Texture.TextureClient, cubeMapC
                         Vortice.Vulkan.Texture.CreateTextureVulkanFromData
                             (Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
                              Vortice.Vulkan.Vulkan.VK_FILTER_NEAREST,
-                             false, false, false, textureData, vulkanGlobal)
+                             false, false, false, textureData, vkg)
                     
                     Vortice.Vulkan.Texture.EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture }
 
