@@ -423,6 +423,11 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         // create either a character or a non-character body
         use scShapeSettings = new StaticCompoundShapeSettings ()
+        if scShapeSettings.NumSubShapes = 0u then // have to create a default empty shape child in order to avoid jolt error
+            let position = v3Zero
+            let rotation = quatIdentity
+            let centerOfMass = v3Zero
+            scShapeSettings.AddShape (&position, &rotation, new EmptyShapeSettings (&centerOfMass))
         let masses = PhysicsEngine3d.attachBodyShape bodyProperties bodyProperties.BodyShape scShapeSettings [] physicsEngine
         let mass = List.sum masses
         let (motionType, isCharacter) =
