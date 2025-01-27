@@ -212,15 +212,15 @@ module Texture =
             allocatedImage
         
         /// Copy the pixels from the staging buffer to the image.
-        static member private copyBufferToImage extent buffer image (vulkanGlobal : Hl.VulkanGlobal) =
+        static member private copyBufferToImage extent buffer image (vkg : Hl.VulkanGlobal) =
             
             // create command buffer for transfer
-            let mutable commandBuffer = Hl.allocateCommandBuffer vulkanGlobal.TransferCommandPool vulkanGlobal.Device
+            let mutable cb = Hl.allocateCommandBuffer vkg.TransferCommandPool vkg.Device
 
             // reset command buffer and begin recording
-            Vulkan.vkResetCommandPool (vulkanGlobal.Device, vulkanGlobal.TransferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
+            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
             let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-            Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> Hl.check
+            Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
 
             // transition image layout for data transfer
             let mutable copyBarrier = VkImageMemoryBarrier ()
@@ -232,8 +232,7 @@ module Texture =
             copyBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             copyBarrier.image <- image
             Vulkan.vkCmdPipelineBarrier
-                (commandBuffer,
-                 Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
+                (cb, Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
                  Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
@@ -244,8 +243,7 @@ module Texture =
             region.imageSubresource <- Hl.makeSubresourceLayersColor ()
             region.imageExtent <- extent
             Vulkan.vkCmdCopyBufferToImage
-                (commandBuffer,
-                 buffer, image,
+                (cb, buffer, image,
                  Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                  1u, asPointer &region)
 
@@ -260,20 +258,19 @@ module Texture =
             useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             useBarrier.image <- image
             Vulkan.vkCmdPipelineBarrier
-                (commandBuffer,
-                 Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                (cb, Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
                  Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &useBarrier)
 
             // execute commands
-            Vulkan.vkEndCommandBuffer commandBuffer |> Hl.check
+            Vulkan.vkEndCommandBuffer cb |> Hl.check
             let mutable sInfo = VkSubmitInfo ()
             sInfo.commandBufferCount <- 1u
-            sInfo.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, vulkanGlobal.ResourceReadyFence) |> Hl.check
-            Hl.awaitFence vulkanGlobal.ResourceReadyFence vulkanGlobal.Device
+            sInfo.pCommandBuffers <- asPointer &cb
+            Vulkan.vkQueueSubmit (vkg.GraphicsQueue, 1u, asPointer &sInfo, vkg.ResourceReadyFence) |> Hl.check
+            Hl.awaitFence vkg.ResourceReadyFence vkg.Device
         
         /// Create the sampler.
         static member private createSampler minFilter magFilter device =
@@ -289,31 +286,31 @@ module Texture =
             sampler
         
         /// Destroy VulkanTexture.
-        static member destroy vulkanTexture (vulkanGlobal : Hl.VulkanGlobal) =
-            Vulkan.vkDestroySampler (vulkanGlobal.Device, vulkanTexture.Sampler, nullPtr)
-            Vulkan.vkDestroyImageView (vulkanGlobal.Device, vulkanTexture.ImageView, nullPtr)
-            Hl.AllocatedImage.destroy vulkanTexture.Image vulkanGlobal.VmaAllocator
+        static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
+            Vulkan.vkDestroySampler (vkg.Device, vulkanTexture.Sampler, nullPtr)
+            Vulkan.vkDestroyImageView (vkg.Device, vulkanTexture.ImageView, nullPtr)
+            Hl.AllocatedImage.destroy vulkanTexture.Image vkg.VmaAllocator
         
         /// Create a VulkanTexture.
-        static member private createInternal format bytesPerPixel minFilter magFilter metadata pixels (vulkanGlobal : Hl.VulkanGlobal) =
+        static member private createInternal format bytesPerPixel minFilter magFilter metadata pixels (vkg : Hl.VulkanGlobal) =
 
             // general data
             let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
 
             // upload pixels to staging buffer
-            let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vulkanGlobal.VmaAllocator
+            let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg.VmaAllocator
 
             // create image and copy pixels to it
-            let image = VulkanTexture.createImage format extent vulkanGlobal.VmaAllocator
-            VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vulkanGlobal
+            let image = VulkanTexture.createImage format extent vkg.VmaAllocator
+            VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
 
             // create image view and sampler
-            let imageView = Hl.createImageView format 1u image.Image vulkanGlobal.Device
-            let sampler = VulkanTexture.createSampler minFilter magFilter vulkanGlobal.Device
+            let imageView = Hl.createImageView format 1u image.Image vkg.Device
+            let sampler = VulkanTexture.createSampler minFilter magFilter vkg.Device
 
             // destroy staging buffer
-            Hl.AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
+            Hl.AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
 
             // make VulkanTexture
             let vulkanTexture =
@@ -325,21 +322,21 @@ module Texture =
             vulkanTexture
 
         /// Create a VulkanTexture with Bgra format.
-        static member createBgra minFilter magFilter metadata pixels vulkanGlobal =
-            VulkanTexture.createInternal Vulkan.VK_FORMAT_B8G8R8A8_UNORM 4 minFilter magFilter metadata pixels vulkanGlobal
+        static member createBgra minFilter magFilter metadata pixels vkg =
+            VulkanTexture.createInternal Vulkan.VK_FORMAT_B8G8R8A8_UNORM 4 minFilter magFilter metadata pixels vkg
 
         /// Create a VulkanTexture with Rgba format.
-        static member createRgba minFilter magFilter metadata pixels vulkanGlobal =
-            VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vulkanGlobal
+        static member createRgba minFilter magFilter metadata pixels vkg =
+            VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vkg
 
         /// Create an empty VulkanTexture.
         /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f).
-        static member createEmpty (vulkanGlobal : Hl.VulkanGlobal) =
+        static member createEmpty (vkg : Hl.VulkanGlobal) =
             
             // create components
-            let image = VulkanTexture.createImage Vulkan.VK_FORMAT_R8G8B8A8_UNORM (VkExtent3D (1, 1, 1)) vulkanGlobal.VmaAllocator
-            let imageView = Hl.createImageView Vulkan.VK_FORMAT_R8G8B8A8_UNORM 1u image.Image vulkanGlobal.Device
-            let sampler = VulkanTexture.createSampler Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST vulkanGlobal.Device
+            let image = VulkanTexture.createImage Vulkan.VK_FORMAT_R8G8B8A8_UNORM (VkExtent3D (1, 1, 1)) vkg.VmaAllocator
+            let imageView = Hl.createImageView Vulkan.VK_FORMAT_R8G8B8A8_UNORM 1u image.Image vkg.Device
+            let sampler = VulkanTexture.createSampler Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST vkg.Device
             
             // make VulkanTexture
             let vulkanTexture =
@@ -383,7 +380,7 @@ module Texture =
     /// Create a Vulkan texture from existing texture data.
     /// NOTE: this function will dispose textureData.
     /// NOTE: the parameters may no longer be adequate for filtered texturing because VkFilter does not include LinearMipmapLinear.
-    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vulkanGlobal) =
+    let CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vkg) =
 
         // upload data to vulkan as appropriate
         match textureData with
@@ -404,7 +401,7 @@ module Texture =
 //                if mipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
 //                Gl.BindTexture (TextureTarget.Texture2d, 0u)
                 
-                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata (bytesPtr.AddrOfPinnedObject ()) vulkanGlobal
+                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata (bytesPtr.AddrOfPinnedObject ()) vkg
                 (metadata, vulkanTexture)
             finally bytesPtr.Free ()
 
@@ -483,7 +480,7 @@ module Texture =
 //                Gl.GenerateMipmap TextureTarget.Texture2d
 //            Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
-            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata bytesPtr vulkanGlobal
+            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata bytesPtr vkg
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.
@@ -547,10 +544,10 @@ module Texture =
         else None
 
     /// Attempt to create a Vulkan texture from a file.
-    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vulkanGlobal) =
+    let TryCreateTextureVulkan (minimal, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vkg) =
         match TryCreateTextureData (minimal, filePath) with
         | Some textureData ->
-            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vulkanGlobal)
+            let (metadata, vulkanTexture) = CreateTextureVulkanFromData (minFilter, magFilter, anisoFilter, mipmaps, blockCompress, textureData, vkg)
             Right (metadata, vulkanTexture)
         | None -> Left ("Missing file or unloadable texture data '" + filePath + "'.")
 
@@ -558,8 +555,8 @@ module Texture =
     type [<Struct>] EagerTexture =
         { TextureMetadata : TextureMetadata
           VulkanTexture : VulkanTexture }
-        member this.Destroy vulkanGlobal =
-            VulkanTexture.destroy this.VulkanTexture vulkanGlobal
+        member this.Destroy vkg =
+            VulkanTexture.destroy this.VulkanTexture vkg
 
     /// A texture that can be loaded from another thread.
     type LazyTexture (filePath : string, minimalMetadata : TextureMetadata, minimalId : uint, fullMinFilter : TextureMinFilter, fullMagFilter : TextureMagFilter, fullAnisoFilter) =
@@ -642,10 +639,10 @@ module Texture =
             | EmptyTexture -> VulkanTexture.empty
             | EagerTexture eagerTexture -> eagerTexture.VulkanTexture
             | LazyTexture lazyTexture -> VulkanTexture.empty
-        member this.Destroy vulkanGlobal =
+        member this.Destroy vkg =
             match this with
             | EmptyTexture -> ()
-            | EagerTexture eagerTexture -> eagerTexture.Destroy vulkanGlobal
+            | EagerTexture eagerTexture -> eagerTexture.Destroy vkg
             | LazyTexture lazyTexture -> lazyTexture.Destroy ()
 
     /// Memoizes and optionally threads texture loads.
@@ -663,14 +660,14 @@ module Texture =
         member this.LazyTextureQueue = lazyTextureQueue
 
         /// Attempt to create a memoized texture from a file.
-        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath : string, vulkanGlobal) =
+        member this.TryCreateTexture (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath : string, vkg) =
 
             // memoize texture
             match textures.TryGetValue filePath with
             | (false, _) ->
 
                 // attempt to create texture
-                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vulkanGlobal) with
+                match TryCreateTextureVulkan (desireLazy, minFilter, magFilter, anisoFilter, mipmaps, blockCompress, filePath, vkg) with
                 | Right (metadata, vulkanTexture) ->
                     let texture = EagerTexture { TextureMetadata = metadata; VulkanTexture = vulkanTexture}
 
@@ -692,8 +689,8 @@ module Texture =
 //            this.TryCreateTexture (desireLazy, TextureMinFilter.LinearMipmapLinear, TextureMagFilter.Linear, true, true, blockCompress, filePath)
 
         /// Attempt to create an unfiltered memoized texture from a file.
-        member this.TryCreateTextureUnfiltered (desireLazy, filePath, vulkanGlobal) =
-            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vulkanGlobal)
+        member this.TryCreateTextureUnfiltered (desireLazy, filePath, vkg) =
+            this.TryCreateTexture (desireLazy, Vulkan.VK_FILTER_NEAREST, Vulkan.VK_FILTER_NEAREST, false, false, false, filePath, vkg)
 
 //    /// Populated the texture ids and handles of lazy textures in a threaded manner.
 //    /// TODO: abstract this to interface that can represent either inline or threaded implementation.

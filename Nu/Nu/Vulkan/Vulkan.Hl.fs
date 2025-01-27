@@ -210,15 +210,15 @@ module Hl =
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
     
     /// Begin command buffer recording and render pass.
-    let initRender commandBuffer renderPass framebuffer renderArea clearValues waitFence device =
+    let initRender cb renderPass framebuffer renderArea clearValues waitFence device =
         
         // await fence if not null
         if waitFence <> VkFence.Null then awaitFence waitFence device
         
         // reset command buffer and begin recording
-        Vulkan.vkResetCommandBuffer (commandBuffer, VkCommandBufferResetFlags.None) |> check
+        Vulkan.vkResetCommandBuffer (cb, VkCommandBufferResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo ()
-        Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+        Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
 
         // begin render pass
         use clearValuesPin = new ArrayPin<_> (clearValues)
@@ -228,16 +228,16 @@ module Hl =
         rpInfo.renderArea <- renderArea
         rpInfo.clearValueCount <- uint clearValues.Length
         rpInfo.pClearValues <- clearValuesPin.Pointer
-        Vulkan.vkCmdBeginRenderPass (commandBuffer, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
+        Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
     
     /// End command buffer recording and render pass and submit for execution.
-    let submitRender commandBuffer commandQueue waitSemaphoresStages signalSemaphores signalFence =
+    let submitRender cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
         
         // end render pass
-        Vulkan.vkCmdEndRenderPass commandBuffer
+        Vulkan.vkCmdEndRenderPass cb
         
         // end command buffer recording
-        Vulkan.vkEndCommandBuffer commandBuffer |> check
+        Vulkan.vkEndCommandBuffer cb |> check
 
         // unpack and pin arrays
         let (waitSemaphores, waitStages) = Array.unzip waitSemaphoresStages
@@ -246,7 +246,7 @@ module Hl =
         use signalSemaphoresPin = new ArrayPin<_> (signalSemaphores)
 
         // submit commands
-        let mutable commandBuffer = commandBuffer
+        let mutable commandBuffer = cb
         let mutable info = VkSubmitInfo ()
         info.waitSemaphoreCount <- uint waitSemaphores.Length
         info.pWaitSemaphores <- waitSemaphoresPin.Pointer
@@ -355,6 +355,7 @@ module Hl =
             | (_, _) -> None
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
+    /// TODO: DJL: make props private.
     type [<ReferenceEquality>] VulkanGlobal =
         { Instance : VkInstance
           Surface : VkSurfaceKHR
@@ -726,50 +727,39 @@ module Hl =
             framebuffers
         
         /// Begin the frame.
-        static member beginFrame vulkanGlobal =
-
-            // handles
-            let device = vulkanGlobal.Device
-            let swapchain = vulkanGlobal.Swapchain
-            let commandBuffer = vulkanGlobal.RenderCommandBuffer
-            let imageAvailable = vulkanGlobal.ImageAvailableSemaphore
-            let inFlight = vulkanGlobal.InFlightFence
+        static member beginFrame vkg =
 
             // wait for previous cycle to finish
-            awaitFence inFlight device
+            awaitFence vkg.InFlightFence vkg.Device
 
             // acquire image from swapchain to draw onto
-            Vulkan.vkAcquireNextImageKHR (device, swapchain, UInt64.MaxValue, imageAvailable, VkFence.Null, &imageIndex) |> check
-
-            // set color for screen clear
-            let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &imageIndex) |> check
 
             // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
 
             // clear screen
             // TODO: DJL: clear viewport as well, as applicable.
-            let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            initRender commandBuffer vulkanGlobal.ClearRenderPass vulkanGlobal.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null device
-            submitRender commandBuffer vulkanGlobal.GraphicsQueue [|imageAvailable, waitStage|] [||] inFlight
+            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+            let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
+            initRender vkg.RenderCommandBuffer vkg.ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
+            submitRender vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] vkg.InFlightFence
 
         /// End the frame.
         static member endFrame () =
             () // nothing to do
 
         /// Present the image back to the swapchain to appear on screen.
-        static member present vulkanGlobal =
+        static member present vkg =
 
             // handles
-            let mutable swapchain = vulkanGlobal.Swapchain
-            let mutable renderFinished = vulkanGlobal.RenderFinishedSemaphore
-            let commandBuffer = vulkanGlobal.RenderCommandBuffer
-            let inFlight = vulkanGlobal.InFlightFence
+            let mutable swapchain = vkg.Swapchain
+            let mutable renderFinished = vkg.RenderFinishedSemaphore
             
-            // run an empty render pass to transition image layout for presentation
-            let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            initRender commandBuffer vulkanGlobal.PresentRenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] inFlight vulkanGlobal.Device
-            submitRender commandBuffer vulkanGlobal.GraphicsQueue [||] [|renderFinished|] inFlight
+            // transition image layout for presentation
+            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+            initRender vkg.RenderCommandBuffer vkg.PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+            submitRender vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
             
             // present image
             let mutable info = VkPresentInfoKHR ()
@@ -778,38 +768,30 @@ module Hl =
             info.swapchainCount <- 1u
             info.pSwapchains <- asPointer &swapchain
             info.pImageIndices <- asPointer &imageIndex
-            Vulkan.vkQueuePresentKHR (vulkanGlobal.PresentQueue, asPointer &info) |> check
+            Vulkan.vkQueuePresentKHR (vkg.PresentQueue, asPointer &info) |> check
         
         /// Wait for all device operations to complete before cleaning up resources.
-        static member waitIdle vulkanGlobal =
-            Vulkan.vkDeviceWaitIdle vulkanGlobal.Device |> check
+        static member waitIdle vkg =
+            Vulkan.vkDeviceWaitIdle vkg.Device |> check
         
         /// Destroy the Vulkan handles.
-        static member cleanup vulkanGlobal =
-            
-            // commonly used handles
-            let instance = vulkanGlobal.Instance
-            let device = vulkanGlobal.Device
-            let framebuffers = vulkanGlobal.SwapchainFramebuffers
-            let imageViews = vulkanGlobal.SwapchainImageViews
-            
-            //
-            for i in 0 .. dec framebuffers.Length do Vulkan.vkDestroyFramebuffer (device, framebuffers.[i], nullPtr)
-            Vulkan.vkDestroyRenderPass (device, vulkanGlobal.RenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (device, vulkanGlobal.ClearRenderPass, nullPtr)
-            Vulkan.vkDestroyRenderPass (device, vulkanGlobal.PresentRenderPass, nullPtr)
-            Vulkan.vkDestroySemaphore (device, vulkanGlobal.ImageAvailableSemaphore, nullPtr)
-            Vulkan.vkDestroySemaphore (device, vulkanGlobal.RenderFinishedSemaphore, nullPtr)
-            Vulkan.vkDestroyFence (device, vulkanGlobal.InFlightFence, nullPtr)
-            Vulkan.vkDestroyFence (device, vulkanGlobal.ResourceReadyFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (device, vulkanGlobal.RenderCommandPool, nullPtr)
-            Vulkan.vkDestroyCommandPool (device, vulkanGlobal.TransferCommandPool, nullPtr)
-            for i in 0 .. dec imageViews.Length do Vulkan.vkDestroyImageView (device, imageViews.[i], nullPtr)
-            Vulkan.vkDestroySwapchainKHR (device, vulkanGlobal.Swapchain, nullPtr)
-            Vma.vmaDestroyAllocator vulkanGlobal.VmaAllocator
-            Vulkan.vkDestroyDevice (device, nullPtr)
-            Vulkan.vkDestroySurfaceKHR (instance, vulkanGlobal.Surface, nullPtr)
-            Vulkan.vkDestroyInstance (instance, nullPtr)
+        static member cleanup vkg =
+            for i in 0 .. dec vkg.SwapchainFramebuffers.Length do Vulkan.vkDestroyFramebuffer (vkg.Device, vkg.SwapchainFramebuffers.[i], nullPtr)
+            Vulkan.vkDestroyRenderPass (vkg.Device, vkg.RenderPass, nullPtr)
+            Vulkan.vkDestroyRenderPass (vkg.Device, vkg.ClearRenderPass, nullPtr)
+            Vulkan.vkDestroyRenderPass (vkg.Device, vkg.PresentRenderPass, nullPtr)
+            Vulkan.vkDestroySemaphore (vkg.Device, vkg.ImageAvailableSemaphore, nullPtr)
+            Vulkan.vkDestroySemaphore (vkg.Device, vkg.RenderFinishedSemaphore, nullPtr)
+            Vulkan.vkDestroyFence (vkg.Device, vkg.InFlightFence, nullPtr)
+            Vulkan.vkDestroyFence (vkg.Device, vkg.ResourceReadyFence, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.RenderCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransferCommandPool, nullPtr)
+            for i in 0 .. dec vkg.SwapchainImageViews.Length do Vulkan.vkDestroyImageView (vkg.Device, vkg.SwapchainImageViews.[i], nullPtr)
+            Vulkan.vkDestroySwapchainKHR (vkg.Device, vkg.Swapchain, nullPtr)
+            Vma.vmaDestroyAllocator vkg.VmaAllocator
+            Vulkan.vkDestroyDevice (vkg.Device, nullPtr)
+            Vulkan.vkDestroySurfaceKHR (vkg.Instance, vkg.Surface, nullPtr)
+            Vulkan.vkDestroyInstance (vkg.Instance, nullPtr)
 
         /// Attempt to create a VulkanGlobal.
         static member tryCreate window =
@@ -931,27 +913,27 @@ module Hl =
             allocatedBuffer
 
         /// Copy data from the source buffer to the destination buffer.
-        static member private copyData size source destination vulkanGlobal =
+        static member private copyData size source destination vkg =
             
             // create command buffer for transfer
-            let mutable commandBuffer = allocateCommandBuffer vulkanGlobal.TransferCommandPool vulkanGlobal.Device
+            let mutable cb = allocateCommandBuffer vkg.TransferCommandPool vkg.Device
 
             // reset command buffer and begin recording
-            Vulkan.vkResetCommandPool (vulkanGlobal.Device, vulkanGlobal.TransferCommandPool, VkCommandPoolResetFlags.None) |> check
+            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransferCommandPool, VkCommandPoolResetFlags.None) |> check
             let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-            Vulkan.vkBeginCommandBuffer (commandBuffer, asPointer &cbInfo) |> check
+            Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
 
             // copy data
             let mutable region = VkBufferCopy (size = uint64 size)
-            Vulkan.vkCmdCopyBuffer (commandBuffer, source.Buffer, destination.Buffer, 1u, asPointer &region)
+            Vulkan.vkCmdCopyBuffer (cb, source.Buffer, destination.Buffer, 1u, asPointer &region)
 
             // execute command
-            Vulkan.vkEndCommandBuffer commandBuffer |> check
+            Vulkan.vkEndCommandBuffer cb |> check
             let mutable sInfo = VkSubmitInfo ()
             sInfo.commandBufferCount <- 1u
-            sInfo.pCommandBuffers <- asPointer &commandBuffer
-            Vulkan.vkQueueSubmit (vulkanGlobal.GraphicsQueue, 1u, asPointer &sInfo, vulkanGlobal.ResourceReadyFence) |> check
-            awaitFence vulkanGlobal.ResourceReadyFence vulkanGlobal.Device
+            sInfo.pCommandBuffers <- asPointer &cb
+            Vulkan.vkQueueSubmit (vkg.GraphicsQueue, 1u, asPointer &sInfo, vkg.ResourceReadyFence) |> check
+            awaitFence vkg.ResourceReadyFence vkg.Device
 
         (*
         TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
@@ -1044,19 +1026,19 @@ module Hl =
             buffer
         
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
-        static member createVertexStaged size ptr vulkanGlobal =
-            let stagingBuffer = AllocatedBuffer.stageData size ptr vulkanGlobal.VmaAllocator
-            let vertexBuffer = AllocatedBuffer.createVertex false size vulkanGlobal.VmaAllocator
-            AllocatedBuffer.copyData size stagingBuffer vertexBuffer vulkanGlobal
-            AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
+        static member createVertexStaged size ptr vkg =
+            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg.VmaAllocator
+            let vertexBuffer = AllocatedBuffer.createVertex false size vkg.VmaAllocator
+            AllocatedBuffer.copyData size stagingBuffer vertexBuffer vkg
+            AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
             vertexBuffer
 
         /// Create an allocated index buffer with data uploaded via staging buffer.
-        static member createIndexStaged size ptr vulkanGlobal =
-            let stagingBuffer = AllocatedBuffer.stageData size ptr vulkanGlobal.VmaAllocator
-            let indexBuffer = AllocatedBuffer.createIndex false size vulkanGlobal.VmaAllocator
-            AllocatedBuffer.copyData size stagingBuffer indexBuffer vulkanGlobal
-            AllocatedBuffer.destroy stagingBuffer vulkanGlobal.VmaAllocator
+        static member createIndexStaged size ptr vkg =
+            let stagingBuffer = AllocatedBuffer.stageData size ptr vkg.VmaAllocator
+            let indexBuffer = AllocatedBuffer.createIndex false size vkg.VmaAllocator
+            AllocatedBuffer.copyData size stagingBuffer indexBuffer vkg
+            AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
             indexBuffer
         
         /// Destroy buffer and allocation.
