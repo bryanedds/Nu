@@ -68,7 +68,7 @@
 			<HintPath>..\..\Nu\Nu.Dependencies\TiledSharp\lib\netstandard2.0\TiledSharp.dll</HintPath>
 		</Reference>
 		<PackageReference Include="Csv" Version="2.0.93" />
-		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.3.1" />
+		<PackageReference Include="DotRecast.Recast.Toolset" Version="2024.4.1" />
 		<PackageReference Include="FParsec" Version="1.1.1" />
 		<PackageReference Include="Aether.Physics2D" Version="2.1.0" />
 		<PackageReference Include="JoltPhysicsSharp" Version="2.13.0" />
