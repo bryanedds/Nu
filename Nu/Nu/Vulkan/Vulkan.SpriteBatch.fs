@@ -105,8 +105,7 @@ module SpriteBatch =
 
             // init render
             let mutable renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
-            Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+            Hl.initRender commandBuffer vulkanGlobal.RenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
 
             // update uniform buffers
             Hl.AllocatedBuffer.uploadArray 0 env.Perimeters env.PerimetersUniform

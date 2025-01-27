@@ -1270,8 +1270,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // init render
                             let renderArea = VkRect2D (VkOffset2D.Zero, vulkanGlobal.SwapExtent)
-                            let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
-                            Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+                            Hl.initRender commandBuffer vulkanGlobal.RenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
                             
                             // draw text sprite
                             // NOTE: we allocate an array here, too.

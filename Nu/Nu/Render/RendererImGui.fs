@@ -348,8 +348,7 @@ type VulkanRendererImGui (vulkanGlobal : Hl.VulkanGlobal) =
 
                 // init render
                 let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                let frameBuffer = vulkanGlobal.SwapchainFramebuffers[int Hl.imageIndex]
-                Hl.initRender commandBuffer vulkanGlobal.RenderPass frameBuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
+                Hl.initRender commandBuffer vulkanGlobal.RenderPass vulkanGlobal.SwapchainFramebuffer renderArea [||] vulkanGlobal.InFlightFence vulkanGlobal.Device
                 
                 if drawData.TotalVtxCount > 0 then
                     
