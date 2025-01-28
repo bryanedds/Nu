@@ -248,6 +248,7 @@ module Gui =
 
     let [<Uniform>] mutable SliceMarginDefault = match ConfigurationManager.AppSettings.["SliceMarginDefault"] with null -> Vector2 (4.0f, 4.0f) | marginDefault -> scvalue marginDefault
     let [<Uniform>] ColorDisabledDefault = Color (0.75f, 0.75f, 0.75f, 0.75f)
+    let [<Literal>] TextShiftDefault = 0.5f
 
 [<RequireQualifiedAccess>]
 module TileMap =

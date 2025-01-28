@@ -440,7 +440,7 @@ type TextFacet () =
          define Entity.TextColor Color.White
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
-         define Entity.TextShift 0.5f]
+         define Entity.TextShift Constants.Gui.TextShiftDefault]
 
     override this.Render (_, entity, world) =
         let mutable transform = entity.GetTransform world
@@ -1090,7 +1090,7 @@ type TextBoxFacet () =
          define Entity.TextColor Color.White
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
-         define Entity.TextShift 0.5f
+         define Entity.TextShift Constants.Gui.TextShiftDefault
          define Entity.TextCapacity 14
          define Entity.Focused false
          nonPersistent Entity.Cursor 0]
