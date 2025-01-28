@@ -365,6 +365,9 @@ module WorldImNui =
         /// ImNui declare an empty association of gui entities with the given arguments.
         static member doAssociation name args world = World.doEntity<GuiDispatcher> name args world
 
+        /// ImNui declare a basic static sprite emitter with the given arguments.
+        static member doBasicStaticSpriteEmitter name args world = World.doEntity<BasicStaticSpriteEmitterDispatcher> name args world
+
         /// ImNui declare a 2d effect with the given arguments.
         static member doEffect2d name args world = World.doEntity<Effect2dDispatcher> name args world
 
@@ -373,9 +376,6 @@ module WorldImNui =
 
         /// ImNui declare an animated sprite with the given arguments.
         static member doAnimatedSprite name args world = World.doEntity<AnimatedSpriteDispatcher> name args world
-
-        /// ImNui declare a basic static sprite emitter with the given arguments.
-        static member doBasicStaticSpriteEmitter name args world = World.doEntity<BasicStaticSpriteEmitterDispatcher> name args world
 
         /// ImNui declare a text entity with the given arguments.
         static member doText name args world = World.doEntity<TextDispatcher> name args world
