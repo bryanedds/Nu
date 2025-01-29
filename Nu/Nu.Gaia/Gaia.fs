@@ -1618,8 +1618,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode); world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen); world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then setCaptureMode (not CaptureMode); world
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -2404,6 +2404,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiFullScreenWindow () =
         if not CaptureMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
+                ImGui.Text "Capture Mode (F10)"
+                ImGui.SameLine ()
+                let mutable captureMode = CaptureMode
+                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+                setCaptureMode captureMode
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode (F10 to toggle)."
+                    ImGui.EndTooltip ()
                 ImGui.Text "Full Screen (F11)"
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
@@ -2411,14 +2419,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 setFullScreen fullScreen
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = CaptureMode
-                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2664,6 +2664,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 ImGui.Text "|"
                 ImGui.SameLine ()
+                ImGui.Text "Capture Mode"
+                ImGui.SameLine ()
+                let mutable captureMode = CaptureMode
+                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+                setCaptureMode captureMode
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode view (F10 to toggle)."
+                    ImGui.EndTooltip ()
+                ImGui.SameLine ()
                 ImGui.Text "Full Screen"
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
@@ -2671,15 +2680,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 setFullScreen fullScreen
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.SameLine ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = CaptureMode
-                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode view (F12 to toggle)."
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 world
