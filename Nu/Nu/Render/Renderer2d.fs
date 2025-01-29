@@ -1102,20 +1102,20 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // compute blending instructions
-        let struct (bfs, bfd, beq) =
+        // prepare blending info for pipeline
+        let pipelineBlend =
             match blend with
-            | Transparent -> struct (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.OneMinusSrcAlpha, OpenGL.BlendEquationMode.FuncAdd)
-            | Additive -> struct (OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd)
-            | Overwrite -> struct (OpenGL.BlendingFactor.One, OpenGL.BlendingFactor.Zero, OpenGL.BlendEquationMode.FuncAdd)
+            | Transparent -> Pipeline.Transparent
+            | Additive -> Pipeline.Additive
+            | Overwrite -> Pipeline.Overwrite
 
         // attempt to draw normal sprite
         if color.A <> 0.0f then
-            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, bfs, bfd, beq, texture, renderer.SpriteBatchEnv)
+            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, pipelineBlend, texture, renderer.SpriteBatchEnv)
 
         // attempt to draw emission sprite
         if emission.A <> 0.0f then
-            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &emission, OpenGL.BlendingFactor.SrcAlpha, OpenGL.BlendingFactor.One, OpenGL.BlendEquationMode.FuncAdd, texture, renderer.SpriteBatchEnv)
+            SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &emission, Pipeline.Additive, texture, renderer.SpriteBatchEnv)
 
     /// Render sprite.
     static member renderSprite

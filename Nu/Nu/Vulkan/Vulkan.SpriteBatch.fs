@@ -12,21 +12,23 @@ module SpriteBatch =
 
     type [<Struct>] private SpriteBatchState =
         { Absolute : bool
+          Blend : Pipeline.Blend
           TextureOpt : Texture.Texture ValueOption }
 
         static member inline changed state state2 =
             state.Absolute <> state2.Absolute ||
+            state.Blend <> state2.Blend ||
             (match struct (state.TextureOpt, state2.TextureOpt) with
              | struct (ValueSome _, ValueNone) -> true
              | struct (ValueNone, ValueSome _) -> true
              | struct (ValueNone, ValueNone) -> true
              | struct (ValueSome t, ValueSome t2) -> t.VulkanTexture <> t2.VulkanTexture) // TODO: consider implementing Texture.equals and maybe texEq / texNeq.
 
-        static member make absolute bfs bfd beq texture =
-            { Absolute = absolute; TextureOpt = ValueSome texture }
+        static member make absolute blend texture =
+            { Absolute = absolute; Blend = blend; TextureOpt = ValueSome texture }
 
         static member defaultState =
-            { Absolute = false; TextureOpt = ValueNone }
+            { Absolute = false; Blend = Pipeline.Transparent; TextureOpt = ValueNone }
 
     /// The environment that contains the internal state required for batching sprites.
     type [<ReferenceEquality>] SpriteBatchEnv =
@@ -56,7 +58,7 @@ module SpriteBatch =
         let pipeline =
             Pipeline.SpriteBatchPipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
-                true (Hl.makeBlendAttachmentAlpha ()) [||] [||] // TODO: DJL: integrate actual blend values.
+                true (Hl.makeBlendAttachmentTransparent ()) [||] [||] // TODO: DJL: integrate actual blend values.
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 2 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
@@ -193,10 +195,10 @@ module SpriteBatch =
         env.Colors.[colorOffset + 3] <- color.A
 
     /// Submit a sprite to the appropriate sprite batch.
-    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, bfs, bfd, beq, texture : Texture.Texture, env) =
+    let SubmitSpriteBatchSprite (absolute, min : Vector2, size : Vector2, pivot : Vector2, rotation, texCoords : Box2 inref, color : Color inref, blend, texture : Texture.Texture, env) =
 
         // adjust to potential sprite batch state changes
-        let state = SpriteBatchState.make absolute bfs bfd beq texture
+        let state = SpriteBatchState.make absolute blend texture
         if SpriteBatchState.changed state env.State || env.SpriteIndex = Constants.Render.SpriteBatchSize then
             RestartSpriteBatch state env
 
