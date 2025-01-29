@@ -37,10 +37,10 @@
 	<ItemGroup>
 		<Compile Include="Program.fs" />
 		<Content Include="AssetGraph.nuag">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Overlayer.nuol">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<None Include="App.config" />
 	</ItemGroup>
