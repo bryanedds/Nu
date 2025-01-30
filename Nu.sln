@@ -20,7 +20,7 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Nu.Pipe", "Nu\Nu.Pipe\Nu.Pi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nu.Spine", "Nu\Nu.Spine\Nu.Spine.csproj", "{0B4656BB-6912-4F65-BC87-564D43D492AD}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Blaze Vector", "Projects\Blaze Vector\Blaze Vector.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Blaze Vector Mmcc", "Projects\Blaze Vector Mmcc\Blaze Vector Mmcc.fsproj", "{516010F3-7BDC-4D92-A4B3-38ECFEC429A8}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Breakout ImNui", "Projects\Breakout ImNui\Breakout ImNui.fsproj", "{2F02F282-5B5E-4C8D-A096-9BEEA41CF6D1}"
 EndProject
