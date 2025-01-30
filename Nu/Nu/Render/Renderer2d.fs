@@ -1142,6 +1142,132 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             | _ -> Log.infoOnce ("Cannot render sprite with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite failed to render due to unloadable asset for '" + scstring image + "'.")
     
+    /// Render sprite particles.
+    static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
+        match GlRenderer2d.tryGetRenderAsset image renderer with
+        | ValueSome renderAsset ->
+            match renderAsset with
+            | TextureAsset texture ->
+                let mutable index = 0
+                while index < particles.Length do
+                    let particle = &particles.[index]
+                    let transform = &particle.Transform
+                    let absolute = transform.Absolute
+                    let perimeter = transform.Perimeter
+                    let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+                    let min = perimeter.Min.V2 * virtualScalar
+                    let size = perimeter.Size.V2 * virtualScalar
+                    let pivot = transform.PerimeterPivot.V2 * virtualScalar
+                    let rotation = -transform.Angles.Z
+                    let color = &particle.Color
+                    let emission = &particle.Emission
+                    let flip = particle.Flip
+                    let insetOpt = &particle.InsetOpt
+                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
+                    index <- inc index
+            | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
+        | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
+
+    /// Render tiles.
+    static member renderTiles
+        (transform : Transform byref,
+         color : Color inref,
+         emission : Color inref,
+         mapSize : Vector2i,
+         tiles : TmxLayerTile SList,
+         tileSourceSize : Vector2i,
+         tileSize : Vector2,
+         tileAssets : struct (TmxTileset * Image AssetTag) array,
+         eyeCenter : Vector2,
+         eyeSize : Vector2,
+         renderer) =
+
+        // gather context for rendering tiles
+        let absolute = transform.Absolute
+        let perimeter = transform.Perimeter
+        let virtualScalar = (v2iDup Constants.Render.VirtualScalar).V2
+        let min = perimeter.Min.V2 * virtualScalar
+        let size = perimeter.Size.V2 * virtualScalar
+        let eyeCenter = eyeCenter * virtualScalar
+        let eyeSize = eyeSize * virtualScalar
+        let tileSize = tileSize * virtualScalar
+        let tilePivot = tileSize * 0.5f // just rotate around center
+        let mutable tileSetTexturesAllFound = true
+        let tileSetTextures =
+            tileAssets |>
+            Array.map (fun struct (tileSet, tileSetImage) ->
+                match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
+                | ValueSome asset ->
+                    match asset with
+                    | TextureAsset tileSetTexture -> ValueSome struct (tileSet, tileSetImage, tileSetTexture)
+                    | _ -> tileSetTexturesAllFound <- false; ValueNone
+                | ValueNone -> tileSetTexturesAllFound <- false; ValueNone) |>
+            Array.filter ValueOption.isSome |>
+            Array.map ValueOption.get
+
+        // render only when all needed textures are found
+        if tileSetTexturesAllFound then
+
+            // OPTIMIZATION: allocating refs in a tight-loop is problematic, so pulled out here
+            let tilesLength = tiles.Length
+            let mutable tileIndex = 0
+            while tileIndex < tilesLength do
+
+                // gather context for rendering tile
+                let tile = tiles.[tileIndex]
+                if tile.Gid <> 0 then // not the empty tile
+                    let mapRun = mapSize.X
+                    let i = tileIndex % mapRun
+                    let j = tileIndex / mapRun
+                    let tileMin =
+                        v2
+                            (min.X + tileSize.X * single i)
+                            (min.Y - tileSize.Y - tileSize.Y * single j + size.Y)
+                    let tileBounds = box2 tileMin tileSize
+                    let viewBounds = box2 (eyeCenter - eyeSize * 0.5f) eyeSize
+                    if tileBounds.Intersects viewBounds then
+        
+                        // compute tile flip
+                        let flip =
+                            match struct (tile.HorizontalFlip, tile.VerticalFlip) with
+                            | struct (false, false) -> FlipNone
+                            | struct (true, false) -> FlipH
+                            | struct (false, true) -> FlipV
+                            | struct (true, true) -> FlipHV
+        
+                        // attempt to compute tile set texture
+                        let mutable tileOffset = 1 // gid 0 is the empty tile
+                        let mutable tileSetIndex = 0
+                        let mutable tileSetWidth = 0
+                        let mutable tileSetTextureOpt = ValueNone
+                        for struct (set, _, texture) in tileSetTextures do
+                            let tileCountOpt = set.TileCount
+                            let tileCount = if tileCountOpt.HasValue then tileCountOpt.Value else 0
+                            if  tile.Gid >= set.FirstGid && tile.Gid < set.FirstGid + tileCount ||
+                                not tileCountOpt.HasValue then // HACK: when tile count is missing, assume we've found the tile...?
+                                tileSetWidth <- let width = set.Image.Width in width.Value
+#if DEBUG
+                                if tileSetWidth % tileSourceSize.X <> 0 then Log.infoOnce ("Tile set '" + set.Name + "' width is not evenly divided by tile width.")
+#endif
+                                tileSetTextureOpt <- ValueSome texture
+                            if tileSetTextureOpt.IsNone then
+                                tileSetIndex <- inc tileSetIndex
+                                tileOffset <- tileOffset + tileCount
+
+                        // attempt to render tile
+                        match tileSetTextureOpt with
+                        | ValueSome texture ->
+                            let tileId = tile.Gid - tileOffset
+                            let tileIdPosition = tileId * tileSourceSize.X
+                            let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
+                            let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
+                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) texture color Transparent emission flip renderer
+                        | ValueNone -> ()
+
+                // fin
+                tileIndex <- inc tileIndex
+        else Log.infoOnce ("TileLayerDescriptor failed due to unloadable or non-texture assets for one or more of '" + scstring tileAssets + "'.")
+    
     /// Render text.
     static member renderText
         (transform : Transform byref,
