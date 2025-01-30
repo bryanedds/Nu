@@ -1144,7 +1144,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     /// Render sprite particles.
     static member renderSpriteParticles (blend : Blend, image : Image AssetTag, particles : Particle SArray, renderer) =
-        match GlRenderer2d.tryGetRenderAsset image renderer with
+        match VulkanRenderer2d.tryGetRenderAsset image renderer with
         | ValueSome renderAsset ->
             match renderAsset with
             | TextureAsset texture ->
@@ -1163,7 +1163,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                     let emission = &particle.Emission
                     let flip = particle.Flip
                     let insetOpt = &particle.InsetOpt
-                    GlRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
+                    VulkanRenderer2d.batchSprite absolute min size pivot rotation insetOpt texture color blend emission flip renderer
                     index <- inc index
             | _ -> Log.infoOnce ("Cannot render sprite particle with a non-texture asset for '" + scstring image + "'.")
         | ValueNone -> Log.infoOnce ("Sprite particles failed to render due to unloadable asset for '" + scstring image + "'.")
@@ -1196,7 +1196,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         let tileSetTextures =
             tileAssets |>
             Array.map (fun struct (tileSet, tileSetImage) ->
-                match GlRenderer2d.tryGetRenderAsset tileSetImage renderer with
+                match VulkanRenderer2d.tryGetRenderAsset tileSetImage renderer with
                 | ValueSome asset ->
                     match asset with
                     | TextureAsset tileSetTexture -> ValueSome struct (tileSet, tileSetImage, tileSetTexture)
@@ -1261,7 +1261,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let tileIdPosition = tileId * tileSourceSize.X
                             let tileSourcePosition = v2 (single (tileIdPosition % tileSetWidth)) (single (tileIdPosition / tileSetWidth * tileSourceSize.Y))
                             let inset = box2 tileSourcePosition (v2 (single tileSourceSize.X) (single tileSourceSize.Y))
-                            GlRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) texture color Transparent emission flip renderer
+                            VulkanRenderer2d.batchSprite absolute tileMin tileSize tilePivot 0.0f (ValueSome inset) texture color Transparent emission flip renderer
                         | ValueNone -> ()
 
                 // fin
@@ -1433,30 +1433,30 @@ type [<ReferenceEquality>] VulkanRenderer2d =
     
     static member private renderDescriptor descriptor eyeCenter eyeSize renderer =
         match descriptor with
-        | RenderSprite descriptor -> ()
-//            GlRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
-        | RenderSprites descriptor -> ()
-//            let sprites = descriptor.Sprites
-//            for index in 0 .. sprites.Length - 1 do
-//                let sprite = &sprites.[index]
-//                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
-        | RenderSpriteDescriptors descriptor -> ()
-//            let sprites = descriptor.SpriteDescriptors
-//            for index in 0 .. sprites.Length - 1 do
-//                let sprite = sprites.[index]
-//                GlRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
-        | RenderSpriteParticles descriptor -> ()
-//            GlRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
+        | RenderSprite descriptor ->
+            VulkanRenderer2d.renderSprite (&descriptor.Transform, &descriptor.InsetOpt, descriptor.Image, &descriptor.Color, descriptor.Blend, &descriptor.Emission, descriptor.Flip, renderer)
+        | RenderSprites descriptor ->
+            let sprites = descriptor.Sprites
+            for index in 0 .. sprites.Length - 1 do
+                let sprite = &sprites.[index]
+                VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+        | RenderSpriteDescriptors descriptor ->
+            let sprites = descriptor.SpriteDescriptors
+            for index in 0 .. sprites.Length - 1 do
+                let sprite = sprites.[index]
+                VulkanRenderer2d.renderSprite (&sprite.Transform, &sprite.InsetOpt, sprite.Image, &sprite.Color, sprite.Blend, &sprite.Emission, sprite.Flip, renderer)
+        | RenderSpriteParticles descriptor ->
+            VulkanRenderer2d.renderSpriteParticles (descriptor.Blend, descriptor.Image, descriptor.Particles, renderer)
         | RenderCachedSprite descriptor ->
             VulkanRenderer2d.renderSprite (&descriptor.CachedSprite.Transform, &descriptor.CachedSprite.InsetOpt, descriptor.CachedSprite.Image, &descriptor.CachedSprite.Color, descriptor.CachedSprite.Blend, &descriptor.CachedSprite.Emission, descriptor.CachedSprite.Flip, renderer)
         | RenderText descriptor ->
             VulkanRenderer2d.renderText
                 (&descriptor.Transform, descriptor.Text, descriptor.Font, descriptor.FontSizing, descriptor.FontStyling, &descriptor.Color, descriptor.Justification, eyeCenter, eyeSize, renderer)
-        | RenderTiles descriptor -> ()
-//            GlRenderer2d.renderTiles
-//                (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
-//                 descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
-//                 eyeCenter, eyeSize, renderer)
+        | RenderTiles descriptor ->
+            VulkanRenderer2d.renderTiles
+                (&descriptor.Transform, &descriptor.Color, &descriptor.Emission,
+                 descriptor.MapSize, descriptor.Tiles, descriptor.TileSourceSize, descriptor.TileSize, descriptor.TileAssets,
+                 eyeCenter, eyeSize, renderer)
 
     static member private renderLayeredOperations eyeCenter eyeSize renderer =
         for operation in renderer.LayeredOperations do

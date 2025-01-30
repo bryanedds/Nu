@@ -643,7 +643,7 @@ module Texture =
             match this with
             | EmptyTexture -> ()
             | EagerTexture eagerTexture -> eagerTexture.Destroy vkg
-            | LazyTexture lazyTexture -> lazyTexture.Destroy ()
+            | LazyTexture lazyTexture -> lazyTexture.Destroy () // TODO: DJL: protect VulkanTexture.empty from premature destruction.
 
     /// Memoizes and optionally threads texture loads.
     type TextureClient (lazyTextureQueuesOpt : ConcurrentDictionary<_, _> option) =
