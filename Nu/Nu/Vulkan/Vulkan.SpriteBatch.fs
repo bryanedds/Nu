@@ -58,7 +58,7 @@ module SpriteBatch =
         let pipeline =
             Pipeline.SpriteBatchPipeline.create
                 Constants.Paths.SpriteBatchShaderFilePath
-                true (Hl.makeBlendAttachmentTransparent ()) [||] [||] // TODO: DJL: integrate actual blend values.
+                true [|Pipeline.Transparent; Pipeline.Additive; Pipeline.Overwrite|] [||] [||]
                 [|Hl.makeDescriptorBindingVertex 0 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 1 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
                   Hl.makeDescriptorBindingVertex 2 Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER 1
@@ -116,7 +116,8 @@ module SpriteBatch =
             Pipeline.SpriteBatchPipeline.writeDescriptorTexture 6 0 texture.VulkanTexture env.Pipeline vkg.Device
 
             // bind pipeline
-            Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, env.Pipeline.Pipeline)
+            let vkPipeline = Pipeline.SpriteBatchPipeline.getPipeline env.State.Blend env.Pipeline
+            Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
             // set viewport and scissor
             let mutable viewport = Hl.makeViewport renderArea
