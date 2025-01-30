@@ -2201,9 +2201,6 @@ module EntityDispatcherModule2 =
     type [<AbstractClass>] EntityDispatcherImNui (is2d, physical, lightProbe, light) =
         inherit EntityDispatcher (is2d, physical, lightProbe, light)
 
-        static member Properties =
-            [define Entity.Presence Omnipresent]
-
         override this.TryProcess (entity, world) =
             let context = world.ContextImNui
             let world = World.scopeEntity entity [] world
