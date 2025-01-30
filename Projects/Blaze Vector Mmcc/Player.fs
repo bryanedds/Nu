@@ -33,12 +33,6 @@ module PlayerExtensions =
 type PlayerDispatcher () =
     inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
-    static let [<Literal>] WalkForce = 700.0f
-    static let [<Literal>] FallForce = -2500.0f
-    static let [<Literal>] ClimbForce = 1500.0f
-    static let [<Literal>] JumpForce = 1200.0f
-    static let [<Literal>] BulletForce = 25.0f
-
     static member Facets =
         [typeof<RigidBodyFacet>
          typeof<AnimatedSpriteFacet>]
@@ -108,15 +102,15 @@ type PlayerDispatcher () =
                 let force =
                     match groundTangentOpt with
                     | Some groundTangent ->
-                        let downForce = if groundTangent.Y > 0.0f then ClimbForce else 0.0f
-                        Vector3.Multiply (groundTangent, v3 WalkForce downForce 0.0f)
-                    | None -> v3 WalkForce FallForce 0.0f
+                        let downForce = if groundTangent.Y > 0.0f then Constants.Gameplay.PlayerClimbForce else 0.0f
+                        Vector3.Multiply (groundTangent, v3 Constants.Gameplay.PlayerWalkForce downForce 0.0f)
+                    | None -> v3 Constants.Gameplay.PlayerWalkForce Constants.Gameplay.PlayerFallForce 0.0f
                 let world = World.applyBodyForce force None bodyId world
                 just world
             else just world
 
         | Jump ->
-            let world = World.applyBodyLinearImpulse (v3 0.0f JumpForce 0.0f) None (entity.GetBodyId world) world
+            let world = World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
             just world
 
@@ -124,7 +118,7 @@ type PlayerDispatcher () =
             let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
             let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
             let world = bullet.SetElevation (entity.GetElevation world) world
-            let world = World.applyBodyLinearImpulse (v3 BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
+            let world = World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
             just world
 

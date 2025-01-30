@@ -28,8 +28,6 @@ module EnemyExtensions =
 type EnemyDispatcher () =
     inherit Entity2dDispatcher<Enemy, EnemyMessage, EnemyCommand> (true, false, false, { Health = 7 })
 
-    static let WalkForce = v3 -300.0f -1500.0f 0.0f
-
     static member Facets =
         [typeof<RigidBodyFacet>
          typeof<AnimatedSpriteFacet>]
@@ -66,7 +64,7 @@ type EnemyDispatcher () =
         | Update ->
             let world =
                 if entity.GetInView2dRelative world
-                then World.applyBodyForce WalkForce None (entity.GetBodyId world) world
+                then World.applyBodyForce Constants.Gameplay.EnemyWalkForce None (entity.GetBodyId world) world
                 else world
             let world =
                 if enemy.Health <= 0 then

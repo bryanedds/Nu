@@ -13,8 +13,6 @@ type BulletCommand =
 type BulletDispatcher () =
     inherit Entity2dDispatcher<int64, Message, BulletCommand> (true, false, false, fun world -> world.UpdateTime)
 
-    static let [<Literal>] BulletLifeTime = 27L
-
     static member Facets =
         [typeof<RigidBodyFacet>
          typeof<StaticSpriteFacet>]
@@ -38,7 +36,7 @@ type BulletDispatcher () =
         match command with
         | Update ->
             let localTime = world.UpdateTime - startTime
-            let world = if localTime = BulletLifeTime then World.destroyEntity entity world else world
+            let world = if localTime = Constants.Gameplay.BulletLifeTime then World.destroyEntity entity world else world
             just world
         | Penetration ->
             let world = World.destroyEntity entity world
