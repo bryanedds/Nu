@@ -5,6 +5,16 @@ open Prime
 open Nu
 open BlazeVector
 
+[<AutoOpen>]
+module PlayerExtensions =
+    type Entity with
+        member this.GetLastTimeOnGround world : int64 = this.Get (nameof this.LastTimeOnGround) world
+        member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof this.LastTimeOnGround) value world
+        member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
+        member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
+        member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
+        member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
+
 type PlayerDispatcher () =
     inherit Entity2dDispatcherImNui (true, false, false)
 
@@ -26,7 +36,9 @@ type PlayerDispatcher () =
          define Entity.CelRun 4
          define Entity.CelSize (v2 48.0f 96.0f)
          define Entity.AnimationDelay (UpdateTime 3L)
-         define Entity.AnimationSheet Assets.Gameplay.PlayerImage]
+         define Entity.AnimationSheet Assets.Gameplay.PlayerImage
+         define Entity.LastTimeOnGround Int64.MinValue
+         define Entity.LastTimeJump Int64.MinValue]
 
     override this.Process (entity, world) =
 
@@ -42,10 +54,19 @@ type PlayerDispatcher () =
                 | None -> v3 Constants.Gameplay.PlayerWalkForce Constants.Gameplay.PlayerFallForce 0.0f
             World.applyBodyForce force None bodyId world
 
+        // last time on ground
+        let world =
+            if World.getBodyGrounded bodyId world
+            then entity.SetLastTimeOnGround world.UpdateTime world
+            else world
+
         // jump
         let world =
-            if World.getBodyGrounded bodyId world && World.isKeyboardKeyPressed KeyboardKey.Space world then
-                let world = World.jumpBody true Constants.Gameplay.PlayerJumpSpeed bodyId world
+            if  world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
+                world.UpdateTime <= entity.GetLastTimeOnGround world + 10L &&
+                World.isKeyboardKeyPressed KeyboardKey.Space world then
+                let world = entity.SetLastTimeJump world.UpdateTime world
+                let world = World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
                 World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.JumpSound world
                 world
             else world

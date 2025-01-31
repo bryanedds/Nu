@@ -16,4 +16,4 @@ module Constants =
         let [<Literal>] PlayerWalkForce = 700.0f
         let [<Literal>] PlayerFallForce = -2500.0f
         let [<Literal>] PlayerClimbForce = 1500.0f
-        let [<Literal>] PlayerJumpSpeed = 23.0f
+        let [<Literal>] PlayerJumpForce = 1250.0f
