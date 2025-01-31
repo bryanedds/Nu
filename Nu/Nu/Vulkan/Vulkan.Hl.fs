@@ -544,7 +544,7 @@ module Hl =
             
             // specify preferred format and color space
             let isPreferred (format : VkSurfaceFormatKHR) =
-                format.format = Vulkan.VK_FORMAT_B8G8R8A8_SRGB &&
+                format.format = Vulkan.VK_FORMAT_B8G8R8A8_UNORM &&
                 format.colorSpace = Vulkan.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
 
             // default to first format if preferred is unavailable
