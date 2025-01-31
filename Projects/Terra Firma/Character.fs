@@ -229,8 +229,8 @@ type CharacterDispatcher () =
                 let sinceJump = world.UpdateTime - jumpState.LastTimeJump
                 let sinceOnGround = world.UpdateTime - jumpState.LastTimeOnGround
                 if sinceJump >= 12L && sinceOnGround < 10L && actionState = NormalState then
+                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3 0.0f (entity.GetJumpSpeed world) 0.0f) world
                     let world = entity.SetJumpState { jumpState with LastTimeJump = world.UpdateTime } world
-                    let world = World.jumpBody true (entity.GetJumpSpeed world) (entity.GetBodyId world) world
                     world
                 else world
 
@@ -270,7 +270,7 @@ type CharacterDispatcher () =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
             let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
-            
+
             // apply changes
             let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + walkVelocity) world
             let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
