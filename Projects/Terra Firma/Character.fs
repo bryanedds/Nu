@@ -589,8 +589,7 @@ type EnemyDispatcher () =
         [typeof<FollowerFacet>]
 
     static member Properties =
-        [//define Entity.Static false // TODO: P0: fix the seeming property layering bug that requires us to set static to false here.
-         define Entity.HitPoints 3]
+        [define Entity.HitPoints 3]
 
 type PlayerDispatcher () =
     inherit CharacterDispatcher ()

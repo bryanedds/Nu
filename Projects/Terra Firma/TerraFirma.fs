@@ -59,14 +59,8 @@ type TerraFirmaDispatcher () =
         // selecting gameplay screen
         let world =
             if FQueue.contains Select results then
-
-                // reset score
                 let world = Simulants.Gameplay.SetScore 0 world
-
-                // synchronize nav
                 let world = World.synchronizeNav3d gameplayScreen world
-
-                // set state as playing
                 Simulants.Gameplay.SetGameplayState Playing world
             else world
 
