@@ -2284,7 +2284,7 @@ module WorldModuleEntity =
             let entityState =
                 dispatcherTypes |>
                 List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
-                List.fold (fun entityState (facetNames, ty) -> 
+                List.fold (fun entityState (facetNames, ty) ->
                     let entityState = Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
                     let definitions = Reflection.getPropertyDefinitionsNoInherit ty
                     Reflection.attachPropertiesViaDefinitions id definitions entityState world)

@@ -2955,6 +2955,7 @@ module AnimatedModelFacetExtensions =
                 Some transform
             | (_, _) -> None
 
+        ///
         member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
@@ -2962,6 +2963,7 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
+        ///
         member this.AnimateBones (world : World) =
             let time = world.GameTime
             let animations = this.GetAnimations world
