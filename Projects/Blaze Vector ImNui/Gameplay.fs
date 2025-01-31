@@ -24,8 +24,6 @@ module GameplayExtensions =
 type GameplayDispatcher () =
     inherit ScreenDispatcherImNui ()
 
-    static let [<Literal>] SectionCount = 16
-
     // here we define default property values
     static member Properties =
         [define Screen.GameplayState Quit
@@ -41,12 +39,12 @@ type GameplayDispatcher () =
         let (died, world) =
             Seq.fold (fun (died, world) section ->
                 let (died', world) = World.doSubscription ("Die" + string section) (Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
-                (Seq.append died died', world))
-                (Seq.empty, world)
-                [0 .. dec SectionCount]
+                (FQueue.append died died', world))
+                (FQueue.empty, world)
+                [0 .. dec Constants.Gameplay.SectionCount]
 
         // apply scoring
-        let world = gameplay.Score.Map (fun score -> score + Seq.length died * 100) world
+        let world = gameplay.Score.Map (fun score -> score + died.Length * 100) world
 
         // declare player
         let world = World.doEntity<PlayerDispatcher> "Player" [Entity.Position .= v3 -390.0f -50.0f 0.0f; Entity.Elevation .= 1.0f] world
