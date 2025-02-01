@@ -34,6 +34,8 @@ type BulletDispatcher () =
          define Entity.CreationTime 0L]
 
     override this.Process (entity, world) =
+
+        // process impact
         let localTime = world.UpdateTime - entity.GetCreationTime world
         let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
         if localTime = Constants.Gameplay.BulletLifeTime || FQueue.notEmpty penetrations

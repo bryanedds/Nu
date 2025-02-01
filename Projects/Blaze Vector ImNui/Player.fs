@@ -42,27 +42,32 @@ type PlayerDispatcher () =
 
     override this.Process (entity, world) =
 
-        // walk
+        // grab body id
         let bodyId = entity.GetBodyId world
-        let world =
-            let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
-            let force =
-                match groundTangentOpt with
-                | Some groundTangent ->
-                    let downForce = if groundTangent.Y > 0.0f then Constants.Gameplay.PlayerClimbForce else 0.0f
-                    Vector3.Multiply (groundTangent, v3 Constants.Gameplay.PlayerWalkForce downForce 0.0f)
-                | None -> v3 Constants.Gameplay.PlayerWalkForce Constants.Gameplay.PlayerFallForce 0.0f
-            World.applyBodyForce force None bodyId world
 
-        // last time on ground
+        // process walking
+        let world =
+            if world.Advancing then
+                let groundTangentOpt = World.getBodyToGroundContactTangentOpt bodyId world
+                let force =
+                    match groundTangentOpt with
+                    | Some groundTangent ->
+                        let downForce = if groundTangent.Y > 0.0f then Constants.Gameplay.PlayerClimbForce else 0.0f
+                        Vector3.Multiply (groundTangent, v3 Constants.Gameplay.PlayerWalkForce downForce 0.0f)
+                    | None -> v3 Constants.Gameplay.PlayerWalkForce Constants.Gameplay.PlayerFallForce 0.0f
+                World.applyBodyForce force None bodyId world
+            else world
+
+        // process last time on ground
         let world =
             if World.getBodyGrounded bodyId world
             then entity.SetLastTimeOnGround world.UpdateTime world
             else world
 
-        // jump
+        // process jumping
         let world =
-            if  world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
+            if  world.Advancing && 
+                world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
                 world.UpdateTime <= entity.GetLastTimeOnGround world + 10L &&
                 World.isKeyboardKeyPressed KeyboardKey.Space world then
                 let world = entity.SetLastTimeJump world.UpdateTime world
@@ -71,9 +76,9 @@ type PlayerDispatcher () =
                 world
             else world
 
-        // shoot when above fall height every 5 updates
+        // process shooting
         let world =
-            if (entity.GetPosition world).Y > -320.0f && world.UpdateTime % 5L = 0L then
+            if world.Advancing && (entity.GetPosition world).Y > -320.0f && world.UpdateTime % 5L = 0L then
                 let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
                 let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
                 let world = bullet.SetElevation (entity.GetElevation world) world
