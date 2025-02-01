@@ -415,10 +415,10 @@ type CharacterDispatcher () =
          define Entity.Substance (Mass 50.0f)
          define Entity.Observable true
          define Entity.CharacterType Enemy
-         define Entity.PositionHistory FQueue.empty
-         define Entity.RotationHistory FQueue.empty
-         define Entity.LinearVelocityHistory FQueue.empty
-         define Entity.AngularVelocityHistory FQueue.empty
+         nonPersistent Entity.PositionHistory FQueue.empty
+         nonPersistent Entity.RotationHistory FQueue.empty
+         nonPersistent Entity.LinearVelocityHistory FQueue.empty
+         nonPersistent Entity.AngularVelocityHistory FQueue.empty
          define Entity.HitPoints 5
          define Entity.ActionState NormalState
          define Entity.JumpState JumpState.initial
@@ -532,7 +532,8 @@ type CharacterDispatcher () =
                  Entity.Animations @= animations
                  Entity.AnimatedModel .= Assets.Gameplay.JoanModel
                  Entity.Visible @= visible
-                 Entity.Pickable .= false]
+                 Entity.Pickable .= false
+                 Entity.MountOpt .= None]
                 world
         let animatedModel = world.RecentEntity
 
@@ -555,7 +556,8 @@ type CharacterDispatcher () =
                  Entity.Sensor .= true
                  Entity.NavShape .= EmptyNavShape
                  Entity.Visible @= visible
-                 Entity.Pickable .= false]
+                 Entity.Pickable .= false
+                 Entity.MountOpt .= None]
                 world
 
         // hearts
