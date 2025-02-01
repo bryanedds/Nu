@@ -335,7 +335,7 @@ type CharacterDispatcher () =
          nonPersistent Entity.AngularVelocityHistory FQueue.empty
          define Entity.LastTimeOnGround Int64.MinValue
          define Entity.LastTimeJump Int64.MinValue
-         define Entity.HitPoints 5
+         define Entity.HitPoints 3
          define Entity.ActionState NormalState
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
@@ -471,7 +471,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world weaponPenetrations
 
-        // weapon separation explicit
+        // process weapon separation explicit
         let (weaponSeparationExplicit, world) = World.doSubscription "WeaponSeparationExplicit" entity.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
@@ -532,18 +532,19 @@ type CharacterDispatcher () =
                  Entity.NavShape .= EmptyNavShape]
                 world
 
-        // declare hearts
+        // declare player hearts
         let world =
             match entity.GetCharacterType world with
             | Player ->
                 let hitPoints = entity.GetHitPoints world
-                (world, [0 .. dec 5]) ||> Seq.fold (fun world i ->
+                Seq.fold (fun world i ->
                     World.doStaticSprite ("Heart+" + string i)
                         [Entity.Position .= v3 (-284.0f + single i * 32.0f) -144.0f 0.0f
                          Entity.Size .= v3 32.0f 32.0f 0.0f
                          Entity.MountOpt .= None
                          Entity.StaticImage @= if hitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty]
                         world)
+                    world [0 .. dec Constants.Gameplay.PlayerHitPoints]
             | Enemy -> world
 
         // fin
@@ -560,14 +561,12 @@ type CharacterDispatcher () =
 type EnemyDispatcher () =
     inherit CharacterDispatcher ()
 
-    static member Properties =
-        [define Entity.HitPoints 3]
-
 type PlayerDispatcher () =
     inherit CharacterDispatcher ()
 
     static member Properties =
         [define Entity.Persistent false
          define Entity.CharacterType Player
+         define Entity.HitPoints Constants.Gameplay.PlayerHitPoints
          define Entity.WalkSpeed 1.0f
          define Entity.TurnSpeed 0.05f]
