@@ -55,7 +55,7 @@ type BlazeVectorDispatcher () =
         let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DeadBlazeSong)
         let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame.GetGameState world = Gameplay) behavior [] world
 
-        // selecting gameplay screen
+        // process gameplay screen selection
         let world =
             if FQueue.contains Select results then
 
@@ -81,7 +81,7 @@ type BlazeVectorDispatcher () =
                 Simulants.Gameplay.SetGameplayState Playing world
             else world
 
-        // deselecting gameplay screen
+        // process gameplay screen deselection
         let world =
             if FQueue.contains Deselecting results then
                 
@@ -94,7 +94,7 @@ type BlazeVectorDispatcher () =
                 Simulants.Gameplay.SetGameplayState Quit world
             else world
 
-        // to title
+        // process gameplay screen transition to title
         let world =
             if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit
             then myGame.SetGameState Title world

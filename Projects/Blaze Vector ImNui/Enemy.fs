@@ -39,15 +39,15 @@ type EnemyDispatcher () =
 
     override this.Process (entity, world) =
 
-        // walk
+        // process walking
         let world =
             let eyeBounds = World.getEye2dBounds world
             let entityBounds = entity.GetBounds world
-            if entityBounds.Box2.Intersects eyeBounds
+            if world.Advancing && entityBounds.Box2.Intersects eyeBounds
             then World.applyBodyForce Constants.Gameplay.EnemyWalkForce None (entity.GetBodyId world) world
             else world
 
-        // hit detection
+        // process hits
         let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
         let hits =
             Seq.filter (fun penetration ->

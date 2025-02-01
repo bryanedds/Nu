@@ -35,22 +35,26 @@ type GameplayDispatcher () =
         // declare scene group
         let world = World.beginGroup Simulants.Gameplay.Name [] world
 
-        // collect enemy die event data for each section
-        let (died, world) =
-            Seq.fold (fun (died, world) section ->
-                let (died', world) = World.doSubscription ("Die" + string section) (Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
-                (FQueue.append died died', world))
-                (FQueue.empty, world)
-                [0 .. dec Constants.Gameplay.SectionCount]
-
-        // apply scoring
-        let world = gameplay.Score.Map (fun score -> score + died.Length * 100) world
-
         // declare player
         let world = World.doEntity<PlayerDispatcher> "Player" [Entity.Position .= v3 -390.0f -50.0f 0.0f; Entity.Elevation .= 1.0f] world
         let player = World.getRecentEntity world
+
+        // process scoring
+        let world =
+            Seq.fold (fun world section ->
+                let (died, world) = World.doSubscription ("Die" + string section) (Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
+                gameplay.Score.Map (fun score -> score + died.Length * 100) world)
+                world [0 .. dec Constants.Gameplay.SectionCount]
+
+        // process player death
+        let world =
+            if (player.GetPosition world).Y <= -320.0f && gameplay.GetGameplayState world = Playing then
+                let world = gameplay.SetGameplayState Quit world
+                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
+                world
+            else world
         
-        // update eye to look at player while game is advancing
+        // process eye look
         let world =
             if world.Advancing then
                 let playerPosition = player.GetPosition world
@@ -59,14 +63,6 @@ type GameplayDispatcher () =
                 let eyeSize = World.getEye2dSize world
                 let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
                 World.setEye2dCenter eyeCenter world
-            else world
-
-        // handle player death
-        let world =
-            if (player.GetPosition world).Y <= -320.0f && gameplay.GetGameplayState world = Playing then
-                let world = gameplay.SetGameplayState Quit world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.DeathSound world
-                world
             else world
 
         // finish declaring scene group
