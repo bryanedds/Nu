@@ -64,6 +64,19 @@ type PlayerDispatcher () =
             then entity.SetLastTimeOnGround world.UpdateTime world
             else world
 
+        // process shooting
+        let fallen = (entity.GetPosition world).Y <= -320.0f
+        let world =
+            if world.Advancing && not fallen && world.UpdateTime % 5L = 0L then
+                let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
+                let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
+                let world = bullet.SetElevation (entity.GetElevation world) world
+                let world = bullet.SetCreationTime world.UpdateTime world
+                let world = World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
+                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
+                world
+            else world
+
         // process jumping
         let world =
             if  world.Advancing && 
@@ -76,17 +89,8 @@ type PlayerDispatcher () =
                 world
             else world
 
-        // process shooting
-        let world =
-            if world.Advancing && (entity.GetPosition world).Y > -320.0f && world.UpdateTime % 5L = 0L then
-                let (bullet, world) = World.createEntity<BulletDispatcher> NoOverlay None entity.Group world // OPTIMIZATION: NoOverlay to avoid reflection.
-                let world = bullet.SetPosition (entity.GetPosition world + v3 24.0f 1.0f 0.0f) world
-                let world = bullet.SetElevation (entity.GetElevation world) world
-                let world = bullet.SetCreationTime world.UpdateTime world
-                let world = World.applyBodyLinearImpulse (v3 Constants.Gameplay.BulletForce 0.0f 0.0f) None (bullet.GetBodyId world) world
-                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.ShotSound world
-                world
-            else world
+        // process death
+        let world = if fallen then World.publish entity entity.DieEvent entity world else world
 
         // fin
         world
