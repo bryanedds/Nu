@@ -281,7 +281,7 @@ type CharacterDispatcher () =
                     entity.GetCharacterCollisions world |>
                     Array.ofSeq |>
                     Array.map (fun entity -> (false, entity.GetPosition world)) |>
-                    Array.cons (true, entity.GetPosition world) |> // TODO: figure out if we need an historical position value instead.
+                    Array.cons (true, entity.GetPosition world) |>
                     Array.sortBy (fun (_, position) -> Vector3.DistanceSquared (position, playerPosition)) |>
                     Array.findIndex fst
                 let canUnobstruct =
@@ -368,34 +368,6 @@ type CharacterDispatcher () =
             then entity.SetLastTimeOnGround world.UpdateTime world
             else world
 
-        // process input
-        let world =
-            match entity.GetCharacterType world with
-            | Player -> updatePlayerInput entity world
-            | Enemy ->
-                if Simulants.GameplayPlayer.GetExists world
-                then updateEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
-                else world
-
-        // process action state
-        let world =
-            entity.ActionState.Map (fun actionState ->
-                match actionState with
-                | NormalState | ObstructedState _ | WoundState _ ->
-                    actionState
-                | AttackState attack ->
-                    let localTime = world.UpdateTime - attack.AttackTime
-                    if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
-                    then AttackState attack
-                    else NormalState
-                | InjuryState injury ->
-                    let localTime = world.UpdateTime - injury.InjuryTime
-                    let injuryTime = match entity.GetCharacterType world with Player -> 30 | Enemy -> 40
-                    if localTime < injuryTime
-                    then InjuryState injury
-                    else NormalState)
-                world
-
         // process character penetration
         let (characterPenetrations, world) = World.doSubscription "CharacterPenetration" entity.BodyPenetrationEvent world
         let world =
@@ -426,6 +398,36 @@ type CharacterDispatcher () =
                 | :? Entity as separatee -> entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
                 world characterSeparationImplicit
+
+        // process input
+        let world =
+            if world.Advancing then
+                match entity.GetCharacterType world with
+                | Player -> updatePlayerInput entity world
+                | Enemy ->
+                    if Simulants.GameplayPlayer.GetExists world
+                    then updateEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
+                    else world
+            else world
+
+        // process action state
+        let world =
+            let actionState =
+                match entity.GetActionState world with
+                | NormalState | ObstructedState _ | WoundState _ as actionState ->
+                    actionState
+                | AttackState attack ->
+                    let localTime = world.UpdateTime - attack.AttackTime
+                    if localTime < 55 || localTime < 130 && attack.FollowUpBuffered
+                    then AttackState attack
+                    else NormalState
+                | InjuryState injury ->
+                    let localTime = world.UpdateTime - injury.InjuryTime
+                    let injuryTime = match entity.GetCharacterType world with Player -> 30 | Enemy -> 40
+                    if localTime < injuryTime
+                    then InjuryState injury
+                    else NormalState
+            entity.SetActionState actionState world
 
         // declare animated model
         let animations = computeTraversalAnimations entity world
