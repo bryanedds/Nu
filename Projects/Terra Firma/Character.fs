@@ -373,9 +373,9 @@ type CharacterDispatcher () =
             match entity.GetCharacterType world with
             | Player -> updatePlayerInput entity world
             | Enemy ->
-                let playerPosition = Simulants.GameplayPlayer.GetPosition world
-                let world = entity.SetFollowTargetOpt (Some Simulants.GameplayPlayer) world
-                updateEnemyInput playerPosition entity world
+                if Simulants.GameplayPlayer.GetExists world
+                then updateEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
+                else world
 
         // process action state
         let world =
@@ -559,9 +559,6 @@ type CharacterDispatcher () =
 
 type EnemyDispatcher () =
     inherit CharacterDispatcher ()
-
-    static member Facets =
-        [typeof<FollowerFacet>]
 
     static member Properties =
         [define Entity.HitPoints 3]
