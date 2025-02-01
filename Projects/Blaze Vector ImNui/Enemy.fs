@@ -47,7 +47,7 @@ type EnemyDispatcher () =
             then World.applyBodyForce Constants.Gameplay.EnemyWalkForce None (entity.GetBodyId world) world
             else world
 
-        // process damage
+        // process hits
         let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
         let hits =
             Seq.filter (fun penetration ->
