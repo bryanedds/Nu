@@ -519,15 +519,15 @@ module WorldScreenModule =
                 | (None, None) -> nav3d.Nav3dBodies.Count <> 0
             if rebuild then
                 let bodies = nav3d.Nav3dBodies.Values
-                match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
-                | Some navMesh ->
-                    let nav3d =
+                let nav3d =
+                    match World.tryBuildNav3dMesh bodies nav3d.Nav3dConfig with
+                    | Some navMesh ->
                         { nav3d with
                             Nav3dBodiesOldOpt = Some nav3d.Nav3dBodies
                             Nav3dConfigOldOpt = Some nav3d.Nav3dConfig
                             Nav3dMeshOpt = Some navMesh }
-                    World.setScreenNav3d nav3d screen world |> snd'
-                | None -> Log.error "Unable to build 3d navigation mesh."; world
+                    | None -> Nav3d.makeEmpty ()
+                World.setScreenNav3d nav3d screen world |> snd'
             else world
 
         /// Query the given screen's 3d navigation information if it exists.

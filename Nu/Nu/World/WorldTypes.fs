@@ -414,7 +414,7 @@ and [<ReferenceEquality; NoComparison>] Nav3d =
       Nav3dMeshOpt : (NavBuilderResultData * DtNavMesh * DtNavMeshQuery) option }
 
     // Make an empty 3d navigation service.
-    static member make () =
+    static member makeEmpty () =
         { Nav3dContext = RcContext ()
           Nav3dBodies = Map.empty
           Nav3dBodiesOldOpt = None
@@ -1056,7 +1056,7 @@ and [<ReferenceEquality; CLIMutable>] ScreenState =
           Outgoing = Transition.make Outgoing
           RequestedSong = RequestIgnore
           SlideOpt = None
-          Nav3d = Nav3d.make ()
+          Nav3d = Nav3d.makeEmpty ()
           Protected = false
           Persistent = true
           Order = Core.getTimeStampUnique ()

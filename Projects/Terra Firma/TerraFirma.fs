@@ -60,8 +60,8 @@ type TerraFirmaDispatcher () =
         let world =
             if FQueue.contains Select results then
                 let world = Simulants.Gameplay.SetScore 0 world
-                let world = World.synchronizeNav3d gameplayScreen world
-                Simulants.Gameplay.SetGameplayState Playing world
+                let world = Simulants.Gameplay.SetGameplayState Playing world
+                World.synchronizeNav3d gameplayScreen world
             else world
 
         // process deselecting gameplay screen
