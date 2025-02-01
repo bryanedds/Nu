@@ -1012,23 +1012,22 @@ module WorldModule2 =
             let world = World.rebuildOctree world
             let world = World.rebuildQuadtree world
 
-            // clear existing physics, then register them again if any physics objects were present
-            if World.clearPhysics world then
-                match World.getSelectedScreenOpt world with
-                | Some screen ->
-                    let groups = World.getGroups screen world
-                    Seq.fold (fun world (group : Group) ->
-                        if group.GetExists world then
-                            let entities = World.getEntities group world
-                            Seq.fold (fun world (entity : Entity) ->
-                                if entity.GetExists world
-                                then World.registerEntityPhysics entity world
-                                else world)
-                                world entities
+            // clear existing physics, then register them again
+            World.clearPhysics world
+            match World.getSelectedScreenOpt world with
+            | Some screen ->
+                let groups = World.getGroups screen world
+                Seq.fold (fun world (group : Group) ->
+                    if group.GetExists world then
+                        let entities = World.getEntities group world
+                        Seq.fold (fun world (entity : Entity) ->
+                            if entity.GetExists world
+                            then World.registerEntityPhysics entity world
                             else world)
-                        world groups
-                | None -> world
-            else world
+                            world entities
+                        else world)
+                    world groups
+            | None -> world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =

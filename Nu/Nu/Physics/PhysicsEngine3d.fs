@@ -1265,15 +1265,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
         member physicsEngine.ClearInternal () =
 
-            // compute whether the physics engine will be affected by this clear request
-            let affected =
-                physicsEngine.Characters.Count > 0 ||
-                physicsEngine.BodyConstraints.Count > 0 ||
-                physicsEngine.Bodies.Count > 0 ||
-                physicsEngine.CreateBodyJointMessages.Count > 0 ||
-                physicsEngine.BodyConstraints.Count > 0 ||
-                physicsEngine.IntegrationMessages.Count > 0
-
             // clear any in-flight character contacts
             lock physicsEngine.CharacterContactLock $ fun () ->
                 physicsEngine.CharacterContactEvents.Clear ()
@@ -1320,9 +1311,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
 
             // clear integration messages
             physicsEngine.IntegrationMessages.Clear ()
-
-            // fin
-            affected
 
         member physicsEngine.CleanUp () =
             physicsEngine.JobSystem.Dispose ()
