@@ -61,7 +61,8 @@ type TerraFirmaDispatcher () =
             if FQueue.contains Select results then
                 let world = Simulants.Gameplay.SetScore 0 world
                 let world = Simulants.Gameplay.SetGameplayState Playing world
-                World.synchronizeNav3d gameplayScreen world
+                let world = World.frame (World.synchronizeNav3d gameplayScreen) myGame world // sync nav at end of frame to ensure scene is loaded first
+                world
             else world
 
         // process deselecting gameplay screen
