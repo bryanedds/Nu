@@ -251,14 +251,14 @@ module WorldModuleGame =
             World.setGameEye2dSize value Game.Handle world |> snd'
 
         /// Get the current 2d eye bounds.
-        static member getEyeBounds2d world =
+        static member getEye2dBounds world =
             let eyeCenter = World.getGameEye2dCenter Game.Handle world
             let eyeSize = World.getGameEye2dSize Game.Handle world
             box2 (eyeCenter - eyeSize * 0.5f) eyeSize
 
         /// Constrain the eye to the given 2d bounds.
-        static member constrainEyeBounds2d (bounds : Box2) world =
-            let mutable eyeBounds = World.getEyeBounds2d world
+        static member constrainEye2dBounds (bounds : Box2) world =
+            let mutable eyeBounds = World.getEye2dBounds world
             eyeBounds.Min <-
                 v2
                     (if eyeBounds.Min.X < bounds.Min.X then bounds.Min.X
