@@ -563,7 +563,7 @@ type CharacterDispatcher () =
             match entity.GetCharacterType world with
             | Player ->
                 let hitPoints = entity.GetHitPoints world
-                (world, [0 .. dec hitPoints]) ||> Seq.fold (fun world i ->
+                (world, [0 .. dec 5]) ||> Seq.fold (fun world i ->
                     World.doStaticSprite ("Heart+" + string i)
                         [Entity.Position .= v3 (-284.0f + single i * 32.0f) -144.0f 0.0f
                          Entity.Size .= v3 32.0f 32.0f 0.0f
