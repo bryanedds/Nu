@@ -280,7 +280,8 @@ type CharacterDispatcher () =
                 let order =
                     entity.GetCharacterCollisions world |>
                     Array.ofSeq |>
-                    Array.map (fun entity -> (false, entity.GetPosition world)) |>
+                    Array.filter (fun character -> character.GetExists world) |>
+                    Array.map (fun character -> (false, character.GetPosition world)) |>
                     Array.cons (true, entity.GetPosition world) |>
                     Array.sortBy (fun (_, position) -> Vector3.DistanceSquared (position, playerPosition)) |>
                     Array.findIndex fst
