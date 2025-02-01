@@ -408,7 +408,6 @@ type CharacterDispatcher () =
     static member Properties =
         [define Entity.Size (v3Dup 2.0f)
          define Entity.Offset (v3 0.0f 1.0f 0.0f)
-         define Entity.Presence Omnipresent
          define Entity.Static false
          define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
@@ -528,12 +527,12 @@ type CharacterDispatcher () =
                  Entity.Rotation @= entity.GetRotationInterp world
                  Entity.Size .= v3Dup 2.0f
                  Entity.Offset .= v3 0.0f 1.0f 0.0f
-                 Entity.MaterialProperties .= MaterialProperties.defaultProperties
-                 Entity.Animations @= animations
-                 Entity.AnimatedModel .= Assets.Gameplay.JoanModel
+                 Entity.MountOpt .= None
                  Entity.Visible @= visible
                  Entity.Pickable .= false
-                 Entity.MountOpt .= None]
+                 Entity.MaterialProperties .= MaterialProperties.defaultProperties
+                 Entity.Animations @= animations
+                 Entity.AnimatedModel .= Assets.Gameplay.JoanModel]
                 world
         let animatedModel = world.RecentEntity
 
@@ -550,14 +549,14 @@ type CharacterDispatcher () =
                 [Entity.Position @= weaponTransform.Translation
                  Entity.Rotation @= weaponTransform.Rotation
                  Entity.Offset .= v3 0.0f 0.5f 0.0f
+                 Entity.MountOpt .= None
+                 Entity.Visible @= visible
+                 Entity.Pickable .= false
                  Entity.StaticModel @= entity.GetWeaponModel world
                  Entity.BodyType .= Static
                  Entity.BodyShape .= BoxShape { Size = v3 0.3f 1.2f 0.3f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.6f 0.0f)); PropertiesOpt = None }
                  Entity.Sensor .= true
-                 Entity.NavShape .= EmptyNavShape
-                 Entity.Visible @= visible
-                 Entity.Pickable .= false
-                 Entity.MountOpt .= None]
+                 Entity.NavShape .= EmptyNavShape]
                 world
 
         // hearts
