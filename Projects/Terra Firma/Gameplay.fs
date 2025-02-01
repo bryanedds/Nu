@@ -44,19 +44,17 @@ type GameplayDispatcher () =
             FQueue.fold (fun world (attacked : Entity) ->
                 let world = attacked.HitPoints.Map (dec >> max 0) world
                 if attacked.GetHitPoints world > 0 then
-                    match attacked.GetActionState world with
-                    | InjuryState _ -> world
-                    | _ ->
+                    if not (attacked.GetActionState world).IsInjuryState then
                         let world = attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                         world
+                    else world
                 else
-                    match attacked.GetActionState world with
-                    | WoundState _ -> world
-                    | _ ->
+                    if not (attacked.GetActionState world).IsWoundState then
                         let world = attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
                         World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                        world)
+                        world
+                    else world)
                 world attackeds
 
         // process enemy deaths
@@ -68,16 +66,6 @@ type GameplayDispatcher () =
         // process player death
         let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
         let world = if FQueue.notEmpty playerDeaths then gameplay.SetGameplayState Quit world else world
-        
-        // update eye to look at player while game is advancing
-        let world =
-            if world.Advancing then
-                let positionInterp = Simulants.GameplayPlayer.GetPositionInterp world
-                let rotationInterp = Simulants.GameplayPlayer.GetRotationInterp world * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
-                let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
-                let world = World.setEye3dRotation rotationInterp world
-                world
-            else world
 
         // update sun to shine over player as snapped to shadow map's texel grid in shadow space. This is similar
         // in concept to - https://learn.microsoft.com/en-us/windows/win32/dxtecharts/common-techniques-to-improve-shadow-depth-maps?redirectedfrom=MSDN#moving-the-light-in-texel-sized-increments
@@ -97,6 +85,16 @@ type GameplayDispatcher () =
                 (floor (positionShadow.Z / shadowTexelSize) * shadowTexelSize)
         let position = positionSnapped.Transform shadowViewInverse
         let world = sun.SetPosition position world
+        
+        // update eye to look at player while game is advancing
+        let world =
+            if world.Advancing then
+                let positionInterp = Simulants.GameplayPlayer.GetPositionInterp world
+                let rotationInterp = Simulants.GameplayPlayer.GetRotationInterp world * Quaternion.CreateFromAxisAngle (v3Right, -0.1f)
+                let world = World.setEye3dCenter (positionInterp + v3Up * 1.75f - rotationInterp.Forward * 3.0f) world
+                let world = World.setEye3dRotation rotationInterp world
+                world
+            else world
 
         // finish declaring scene group
         let world = World.endGroup world

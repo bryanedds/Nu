@@ -56,7 +56,7 @@ type TerraFirmaDispatcher () =
         let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (myGame.GetGameState world = Gameplay) behavior [] world
         let gameplayScreen = world.ContextScreen
 
-        // selecting gameplay screen
+        // process selecting gameplay screen
         let world =
             if FQueue.contains Select results then
                 let world = Simulants.Gameplay.SetScore 0 world
@@ -64,13 +64,13 @@ type TerraFirmaDispatcher () =
                 Simulants.Gameplay.SetGameplayState Playing world
             else world
 
-        // deselecting gameplay screen
+        // process deselecting gameplay screen
         let world =
             if FQueue.contains Deselecting results
             then Simulants.Gameplay.SetGameplayState Quit world
             else world
 
-        // to title
+        // process quitting to title
         let world =
             if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit
             then myGame.SetGameState Title world

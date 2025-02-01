@@ -368,7 +368,7 @@ type CharacterDispatcher () =
             then entity.SetLastTimeOnGround world.UpdateTime world
             else world
 
-        // process character penetration
+        // process character penetrations
         let (characterPenetrations, world) = World.doSubscription "CharacterPenetration" entity.BodyPenetrationEvent world
         let world =
             FQueue.fold (fun world penetration ->
@@ -380,7 +380,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world characterPenetrations
 
-        // process character separation explicit
+        // process character separations (explicit)
         let (characterSeparationExplicit, world) = World.doSubscription "CharacterSeparationExplicit" entity.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
@@ -390,7 +390,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world characterSeparationExplicit
 
-        // process character separation implicit
+        // process character separations (implicit)
         let (characterSeparationImplicit, world) = World.doSubscription "CharacterSeparationImplicit" entity.BodySeparationImplicitEvent world
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
@@ -471,7 +471,7 @@ type CharacterDispatcher () =
                 world
         let weapon = world.RecentEntity
 
-        // process weapon penetration
+        // process weapon penetrations
         let (weaponPenetrations, world) = World.doSubscription "WeaponPenetration" weapon.BodyPenetrationEvent world
         let world =
             FQueue.fold (fun world penetration ->
@@ -483,7 +483,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world weaponPenetrations
 
-        // process weapon separation explicit
+        // process weapon separations (explicit)
         let (weaponSeparationExplicit, world) = World.doSubscription "WeaponSeparationExplicit" weapon.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
@@ -493,7 +493,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world weaponSeparationExplicit
 
-        // process weapon separation implicit
+        // process weapon separations (implicit)
         let (weaponSeparationImplicit, world) = World.doSubscription "WeaponSeparationImplicit" weapon.BodySeparationImplicitEvent world
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
@@ -551,6 +551,7 @@ type CharacterDispatcher () =
         // fin
         world
 
+    // custom definition of ray cast to utilize animated model and weapon
     override this.RayCast (ray, entity, world) =
         let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
         match animatedModel.RayCast ray world with
