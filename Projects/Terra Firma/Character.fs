@@ -423,8 +423,7 @@ type CharacterDispatcher () =
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
                 match separation.BodyId.BodySource with
-                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                    entity.CharacterCollisions.Map (Set.remove separatee) world
+                | :? Entity as separatee -> entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
                 world characterSeparationImplicit
 
@@ -497,8 +496,7 @@ type CharacterDispatcher () =
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
                 match separation.BodyId.BodySource with
-                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                    entity.WeaponCollisions.Map (Set.remove separatee) world
+                | :? Entity as separatee -> entity.WeaponCollisions.Map (Set.remove separatee) world
                 | _ -> world)
                 world weaponSeparationImplicit
 
