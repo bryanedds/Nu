@@ -61,6 +61,8 @@ type EnemyDispatcher () =
                 World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.HitSound world
                 world
             else world
+
+        // process death
         let world =
             if entity.GetHealth world <= 0 then
                 let world = World.publish entity entity.DieEvent entity world
