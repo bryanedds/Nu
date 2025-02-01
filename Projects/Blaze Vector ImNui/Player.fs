@@ -37,8 +37,8 @@ type PlayerDispatcher () =
          define Entity.CelSize (v2 48.0f 96.0f)
          define Entity.AnimationDelay (UpdateTime 3L)
          define Entity.AnimationSheet Assets.Gameplay.PlayerImage
-         define Entity.LastTimeOnGround Int64.MinValue
-         define Entity.LastTimeJump Int64.MinValue]
+         define Entity.LastTimeOnGround 0L
+         define Entity.LastTimeJump 0L]
 
     override this.Process (entity, world) =
 

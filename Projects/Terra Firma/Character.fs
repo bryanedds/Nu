@@ -333,8 +333,8 @@ type CharacterDispatcher () =
          nonPersistent Entity.RotationHistory FQueue.empty
          nonPersistent Entity.LinearVelocityHistory FQueue.empty
          nonPersistent Entity.AngularVelocityHistory FQueue.empty
-         define Entity.LastTimeOnGround Int64.MinValue
-         define Entity.LastTimeJump Int64.MinValue
+         define Entity.LastTimeOnGround 0L
+         define Entity.LastTimeJump 0L
          define Entity.HitPoints Constants.Gameplay.EnemyHitPoints
          define Entity.ActionState NormalState
          define Entity.CharacterCollisions Set.empty
