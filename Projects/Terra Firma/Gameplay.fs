@@ -59,11 +59,15 @@ type GameplayDispatcher () =
                         world)
                 world attackeds
 
-        // process deaths
-        let (dead, world) = World.doSubscription "Die" (Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard) world
-        let deadEnemies = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) dead
-        let world = FQueue.fold (fun world death -> World.destroyEntity death world) world deadEnemies
-        let world = gameplay.Score.Map (fun score -> score + deadEnemies.Length * 100) world
+        // process enemy deaths
+        let (deaths, world) = World.doSubscription "Die" (Events.DieEvent --> Simulants.GameplayScene --> Address.Wildcard) world
+        let enemyDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Enemy) deaths
+        let world = FQueue.fold (fun world death -> World.destroyEntity death world) world enemyDeaths
+        let world = gameplay.Score.Map (fun score -> score + enemyDeaths.Length * 100) world
+        
+        // process player death
+        let playerDeaths = FQueue.filter (fun (death : Entity) -> death.GetCharacterType world = Player) deaths
+        let world = if FQueue.notEmpty playerDeaths then gameplay.SetGameplayState Quit world else world
         
         // update eye to look at player while game is advancing
         let world =

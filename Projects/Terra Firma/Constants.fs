@@ -13,4 +13,5 @@ module Constants =
         let [<Literal>] CharacterAnimatedModelName = "AnimatedModel"
         let [<Literal>] CharacterWeaponName = "Weapon"
         let [<Literal>] CharacterWeaponHandBoneName = "mixamorig:RightHand"
+        let [<Literal>] EnemyHitPoints = 3
         let [<Literal>] PlayerHitPoints = 5

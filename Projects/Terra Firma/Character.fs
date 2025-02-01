@@ -335,7 +335,7 @@ type CharacterDispatcher () =
          nonPersistent Entity.AngularVelocityHistory FQueue.empty
          define Entity.LastTimeOnGround Int64.MinValue
          define Entity.LastTimeJump Int64.MinValue
-         define Entity.HitPoints 3
+         define Entity.HitPoints Constants.Gameplay.EnemyHitPoints
          define Entity.ActionState NormalState
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
@@ -396,37 +396,6 @@ type CharacterDispatcher () =
                     else NormalState)
                 world
 
-        // process attacks
-        let (attackeds, world) =
-            match entity.GetActionState world with
-            | AttackState attack ->
-                let localTime = world.UpdateTime - attack.AttackTime
-                let attack =
-                    match localTime with
-                    | 55L -> { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
-                    | _ -> attack
-                if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
-                    let weaponCollisions = entity.GetWeaponCollisions world
-                    let attackeds = Set.difference weaponCollisions attack.AttackedCharacters
-                    let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters weaponCollisions }
-                    let world = entity.SetActionState (AttackState attack) world
-                    (attackeds, world)
-                else
-                    let world = entity.SetActionState (AttackState attack) world
-                    (Set.empty, world)
-            | _ -> (Set.empty, world)
-        let world =
-            Set.fold (fun world attacked ->
-                World.publish attacked entity.AttackEvent entity world)
-                world attackeds
-
-        // process death
-        let world =
-            match entity.GetActionState world with
-            | WoundState wound when wound.WoundTime = world.UpdateTime - 60L ->
-                World.publish entity entity.DieEvent entity world
-            | _ -> world
-
         // process character penetration
         let (characterPenetrations, world) = World.doSubscription "CharacterPenetration" entity.BodyPenetrationEvent world
         let world =
@@ -458,38 +427,6 @@ type CharacterDispatcher () =
                     entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
                 world characterSeparationImplicit
-
-        // process weapon penetration
-        let (weaponPenetrations, world) = World.doSubscription "WeaponPenetration" entity.BodyPenetrationEvent world
-        let world =
-            FQueue.fold (fun world penetration ->
-                match penetration.BodyShapePenetratee.BodyId.BodySource with
-                | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
-                    if entity.GetCharacterType world <> penetratee.GetCharacterType world then
-                        entity.WeaponCollisions.Map (Set.add penetratee) world
-                    else world
-                | _ -> world)
-                world weaponPenetrations
-
-        // process weapon separation explicit
-        let (weaponSeparationExplicit, world) = World.doSubscription "WeaponSeparationExplicit" entity.BodySeparationExplicitEvent world
-        let world =
-            FQueue.fold (fun world separation ->
-                match separation.BodyShapeSeparatee.BodyId.BodySource with
-                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                    entity.WeaponCollisions.Map (Set.remove separatee) world
-                | _ -> world)
-                world weaponSeparationExplicit
-
-        // process weapon separation implicit
-        let (weaponSeparationImplicit, world) = World.doSubscription "WeaponSeparationImplicit" entity.BodySeparationImplicitEvent world
-        let world =
-            FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
-                match separation.BodyId.BodySource with
-                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                    entity.WeaponCollisions.Map (Set.remove separatee) world
-                | _ -> world)
-                world weaponSeparationImplicit
 
         // declare animated model
         let animations = computeTraversalAnimations entity world
@@ -531,6 +468,63 @@ type CharacterDispatcher () =
                  Entity.Sensor .= true
                  Entity.NavShape .= EmptyNavShape]
                 world
+        let weapon = world.RecentEntity
+
+        // process weapon penetration
+        let (weaponPenetrations, world) = World.doSubscription "WeaponPenetration" weapon.BodyPenetrationEvent world
+        let world =
+            FQueue.fold (fun world penetration ->
+                match penetration.BodyShapePenetratee.BodyId.BodySource with
+                | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
+                    if entity.GetCharacterType world <> penetratee.GetCharacterType world then
+                        entity.WeaponCollisions.Map (Set.add penetratee) world
+                    else world
+                | _ -> world)
+                world weaponPenetrations
+
+        // process weapon separation explicit
+        let (weaponSeparationExplicit, world) = World.doSubscription "WeaponSeparationExplicit" weapon.BodySeparationExplicitEvent world
+        let world =
+            FQueue.fold (fun world separation ->
+                match separation.BodyShapeSeparatee.BodyId.BodySource with
+                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                    entity.WeaponCollisions.Map (Set.remove separatee) world
+                | _ -> world)
+                world weaponSeparationExplicit
+
+        // process weapon separation implicit
+        let (weaponSeparationImplicit, world) = World.doSubscription "WeaponSeparationImplicit" weapon.BodySeparationImplicitEvent world
+        let world =
+            FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
+                match separation.BodyId.BodySource with
+                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                    entity.WeaponCollisions.Map (Set.remove separatee) world
+                | _ -> world)
+                world weaponSeparationImplicit
+
+        // process attacks
+        let (attackeds, world) =
+            match entity.GetActionState world with
+            | AttackState attack ->
+                let localTime = world.UpdateTime - attack.AttackTime
+                let attack =
+                    match localTime with
+                    | 55L -> { attack with AttackedCharacters = Set.empty } // reset attack tracking at start of buffered attack
+                    | _ -> attack
+                if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
+                    let weaponCollisions = entity.GetWeaponCollisions world
+                    let attackeds = Set.difference weaponCollisions attack.AttackedCharacters
+                    let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters weaponCollisions }
+                    let world = entity.SetActionState (AttackState attack) world
+                    (attackeds, world)
+                else
+                    let world = entity.SetActionState (AttackState attack) world
+                    (Set.empty, world)
+            | _ -> (Set.empty, world)
+        let world =
+            Set.fold (fun world attacked ->
+                World.publish attacked entity.AttackEvent entity world)
+                world attackeds
 
         // declare player hearts
         let world =
@@ -546,6 +540,13 @@ type CharacterDispatcher () =
                         world)
                     world [0 .. dec Constants.Gameplay.PlayerHitPoints]
             | Enemy -> world
+
+        // process death
+        let world =
+            match entity.GetActionState world with
+            | WoundState wound when wound.WoundTime = world.UpdateTime - 60L ->
+                World.publish entity entity.DieEvent entity world
+            | _ -> world
 
         // fin
         world
@@ -565,7 +566,7 @@ type PlayerDispatcher () =
     inherit CharacterDispatcher ()
 
     static member Properties =
-        [define Entity.Persistent false
+        [define Entity.Persistent false // don't serialize player when saving scene
          define Entity.CharacterType Player
          define Entity.HitPoints Constants.Gameplay.PlayerHitPoints
          define Entity.WalkSpeed 1.0f
