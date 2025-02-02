@@ -161,7 +161,7 @@ module Content =
                 let propertyContent = propertyContents.[i]
                 if not propertyContent.PropertyStatic || initializing then
                     let lens = propertyContent.PropertyLens
-                    if strEq lens.Name "MountOpt" then mountOptFound <- true
+                    if strEq lens.Name Constants.Engine.MountOptPropertyName then mountOptFound <- true
                     match lens.This :> obj with
                     | null -> world <- World.setEntityPropertyFast lens.Name { PropertyType = lens.Type; PropertyValue = propertyContent.PropertyValue } entity world
                     | _ -> world <- lens.TrySet propertyContent.PropertyValue world |> snd'

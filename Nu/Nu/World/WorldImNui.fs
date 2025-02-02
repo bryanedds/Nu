@@ -278,15 +278,17 @@ module WorldImNui =
                         World.tryMapSimulantImNui mapEntityImNui entity.EntityAddress world
                     (true, init mapResult entity world)
             let initializing = initializing || Reinitializing
+            let mutable mountArgApplied = false
             let world =
                 Seq.fold
                     (fun world arg ->
-                        if (initializing || not arg.ArgStatic) && entity.GetExists world
-                        then entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
+                        if (initializing || not arg.ArgStatic) && entity.GetExists world then
+                            mountArgApplied <- mountArgApplied || arg.ArgLens.Name = Constants.Engine.MountOptPropertyName
+                            entity.TrySetProperty arg.ArgLens.Name { PropertyType = arg.ArgLens.Type; PropertyValue = arg.ArgValue } world |> __c'
                         else world)
                     world args
             let world =
-                if initializing && entity.GetExists world && entity.Surnames.Length > 1
+                if initializing && not mountArgApplied && entity.GetExists world && entity.Surnames.Length > 1
                 then entity.SetMountOpt (Some (Relation.makeParent ())) world
                 else world
             let result = match (World.getSimulantImNui entity.EntityAddress world).Result with :? 'r as r -> r | _ -> zero
