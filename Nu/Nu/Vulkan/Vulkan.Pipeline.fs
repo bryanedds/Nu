@@ -612,9 +612,15 @@ module Pipeline =
         
         /// Get the Vulkan Pipeline built for the given blend.
         /// NOTE: DJL: method added to clone.
-        /// TODO: DJL: decide how to deal with failed search, if at all.
         static member getPipeline blend pipeline =
-            Array.find (fun x -> snd x = blend) pipeline.Pipelines |> fst
+            match Array.tryFind (fun x -> snd x = blend) pipeline.Pipelines with
+            | Some result -> fst result
+            | None ->
+                
+                // fallback to first available blend
+                let defaultBlendStr = (snd pipeline.Pipelines.[0]).ToString ()
+                Log.warnOnce ("Requested blend " + blend.ToString () + " was not specified at pipeline creation. Defaulting to " + defaultBlendStr + ".")
+                fst pipeline.Pipelines.[0]
         
         /// Write a uniform to the descriptor set.
         static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.AllocatedBuffer) pipeline device =
@@ -662,7 +668,12 @@ module Pipeline =
         
         /// Create a SpriteBatchPipeline.
         /// NOTE: DJL: method modified from clone.
-        static member create shaderPath cullFace blends vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
+        static member create shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes resourceBindings pushConstantRanges renderPass device =
+            
+            // ensure at least one pipeline is created
+            let blends =
+                if blends.Length > 0 then blends
+                else Log.warn "No pipeline blend was specified, defaulting to Transparent."; [|Transparent|]
             
             // create everything
             let descriptorSetLayout = SpriteBatchPipeline.createDescriptorSetLayout resourceBindings device

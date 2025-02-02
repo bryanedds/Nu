@@ -65,17 +65,12 @@ module Hl =
     let compileShader shaderPath shaderKind =
         use shaderStream = new StreamReader (File.OpenRead shaderPath)
         let shaderStr = shaderStream.ReadToEnd ()
-        
-        // TODO: DJL: get invert y working.
         use compiler = new Compiler ()
         let options = new CompilerOptions ()
         options.ShaderStage <- shaderKind
         let result = compiler.Compile (shaderStr, shaderPath, options)
         if result.Status <> CompilationStatus.Success then
-            
-            // TODO: DJL: review multiple reporting.
-            Log.error ("Vulkan shader compiler errors:\n" + result.ErrorMessage)
-            failwith ("Vulkan shader compilation failed due to: " + result.ErrorMessage)
+            Log.fail ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
         let shaderCode = result.Bytecode
         shaderCode
     

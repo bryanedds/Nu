@@ -49,10 +49,11 @@ module Log =
         ignore message
 #endif
 
-    /// Log an error message with Trace.TraceError.
+    /// Log an error message with Trace.WriteLine.
     /// Thread-safe.
     let error message =
         Trace.WriteLine (getDateTimeNowStr () + "|Error|" + message)
+        try failwith "Throwaway exception." with _ -> ()
 
     /// Log an error message once with Trace.WriteLine.
     /// Thread-safe.
