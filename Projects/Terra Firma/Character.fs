@@ -369,7 +369,7 @@ type CharacterDispatcher () =
             then entity.SetLastTimeOnGround world.UpdateTime world
             else world
 
-        // process character penetrations
+        // process character penetration
         let (characterPenetrations, world) = World.doSubscription "CharacterPenetration" entity.BodyPenetrationEvent world
         let world =
             FQueue.fold (fun world penetration ->
@@ -381,7 +381,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world characterPenetrations
 
-        // process character separations (explicit)
+        // process character separation (explicit)
         let (characterSeparationExplicit, world) = World.doSubscription "CharacterSeparationExplicit" entity.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
@@ -391,7 +391,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world characterSeparationExplicit
 
-        // process character separations (implicit)
+        // process character separation (implicit)
         let (characterSeparationImplicit, world) = World.doSubscription "CharacterSeparationImplicit" entity.BodySeparationImplicitEvent world
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
@@ -472,7 +472,7 @@ type CharacterDispatcher () =
                 world
         let weapon = world.RecentEntity
 
-        // process weapon penetrations
+        // process weapon penetration
         let (weaponPenetrations, world) = World.doSubscription "WeaponPenetration" weapon.BodyPenetrationEvent world
         let world =
             FQueue.fold (fun world penetration ->
@@ -484,7 +484,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world weaponPenetrations
 
-        // process weapon separations (explicit)
+        // process weapon separation (explicit)
         let (weaponSeparationExplicit, world) = World.doSubscription "WeaponSeparationExplicit" weapon.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
@@ -494,7 +494,7 @@ type CharacterDispatcher () =
                 | _ -> world)
                 world weaponSeparationExplicit
 
-        // process weapon separations (implicit)
+        // process weapon separation (implicit)
         let (weaponSeparationImplicit, world) = World.doSubscription "WeaponSeparationImplicit" weapon.BodySeparationImplicitEvent world
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
@@ -514,10 +514,10 @@ type CharacterDispatcher () =
                     | _ -> attack
                 if localTime >= 20 && localTime < 30 || localTime >= 78 && localTime < 88 then
                     let weaponCollisions = entity.GetWeaponCollisions world
-                    let attackeds = Set.difference weaponCollisions attack.AttackedCharacters
+                    let attacks = Set.difference weaponCollisions attack.AttackedCharacters
                     let attack = { attack with AttackedCharacters = Set.union attack.AttackedCharacters weaponCollisions }
                     let world = entity.SetActionState (AttackState attack) world
-                    (attackeds, world)
+                    (attacks, world)
                 else
                     let world = entity.SetActionState (AttackState attack) world
                     (Set.empty, world)

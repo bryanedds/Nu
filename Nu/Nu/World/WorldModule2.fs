@@ -1592,8 +1592,9 @@ module WorldModule2 =
                 world.Timers.UpdateGatherTimer.Restart ()
                 let game = Nu.Game.Handle
                 let advancing = world.Advancing
-                let screenOpt = World.getSelectedScreenOpt world
-                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
+                let screens = World.getScreens world
+                let selectedScreenOpt = World.getSelectedScreenOpt world
+                let groups = match selectedScreenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
                 World.getElements3dInPlay HashSet3dNormalCached world
                 World.getElements2dInPlay HashSet2dNormalCached world
                 world.Timers.UpdateGatherTimer.Stop ()
@@ -1604,14 +1605,14 @@ module WorldModule2 =
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
-                // update screen if any
+                // process screens
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
-                    Option.fold (fun world (screen : Screen) ->
+                    Seq.fold (fun world (screen : Screen) ->
                         let world = if screen.GetExists world then World.tryProcessScreen screen world else world
-                        let world = if advancing && screen.GetExists world then World.updateScreen screen world else world
+                        let world = if advancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world else world
                         world)
-                        world screenOpt
+                        world screens
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
