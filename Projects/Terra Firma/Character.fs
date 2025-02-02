@@ -504,7 +504,7 @@ type CharacterDispatcher () =
                 world weaponSeparationImplicit
 
         // process attacks
-        let (attackeds, world) =
+        let (attacks, world) =
             match entity.GetActionState world with
             | AttackState attack ->
                 let localTime = world.UpdateTime - attack.AttackTime
@@ -522,10 +522,7 @@ type CharacterDispatcher () =
                     let world = entity.SetActionState (AttackState attack) world
                     (Set.empty, world)
             | _ -> (Set.empty, world)
-        let world =
-            Set.fold (fun world attacked ->
-                World.publish attacked entity.AttackEvent entity world)
-                world attackeds
+        let world = Set.fold (fun world attack -> World.publish attack entity.AttackEvent entity world) world attacks
 
         // declare player hearts
         let world =
