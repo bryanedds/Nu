@@ -366,7 +366,7 @@ type RendererThread () =
             // guard against early termination
             if not terminated then
 
-                // receie submission
+                // receive submission
                 let (frustumInterior, frustumExterior, frustumImposter, lightBox, messages3d, messages2d, eye3dCenter, eye3dRotation, eye2dCenter, eye2dSize, windowSize, drawData) = Option.get submissionOpt
                 submissionOpt <- None
 

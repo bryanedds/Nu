@@ -850,7 +850,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
           LayeredOperations : LayeredOperation2d List
-          TransientTextures : Texture.Texture List }
+          mutable TextTextureOpt : Texture.Texture option }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -1109,7 +1109,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             | Additive -> Pipeline.Additive
             | Overwrite -> Pipeline.Overwrite
 
-        // attempt to draw normal sprite
+        // attempt to draw regular sprite
         if color.A <> 0.0f then
             SpriteBatch.SubmitSpriteBatchSprite (absolute, min, size, pivot, rotation, &texCoords, &color, pipelineBlend, texture, renderer.SpriteBatchEnv)
 
@@ -1423,8 +1423,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
 
-                            // mark texture for destruction later because draw command hasn't been executed yet!
-                            renderer.TransientTextures.Add textTexture
+                            // destroy previous texture and store current texture for destruction later because draw command hasn't been executed yet!
+                            match renderer.TextTextureOpt with Some texture -> texture.Destroy vkg | None -> ()
+                            renderer.TextTextureOpt <- Some textTexture
 
                     // fin
                     | _ -> Log.infoOnce ("Cannot render text with a non-font asset for '" + scstring font + "'.")
@@ -1462,15 +1463,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         for operation in renderer.LayeredOperations do
             VulkanRenderer2d.renderDescriptor operation.RenderOperation2d eyeCenter eyeSize renderer
     
-    static member private destroyTransientTextures renderer =
-        for texture in renderer.TransientTextures do
-            texture.Destroy renderer.VulkanGlobal
-    
     static member private render eyeCenter eyeSize renderMessages renderer =
-        
-        // destroy textures created and used (*after* renderer2d.render at command execution) in the previous frame
-        VulkanRenderer2d.destroyTransientTextures renderer
-        renderer.TransientTextures.Clear ()
         
         // begin sprite batch frame
         let viewport = Constants.Render.Viewport
@@ -1513,7 +1506,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
               LayeredOperations = List ()
-              TransientTextures = List () }
+              TextTextureOpt = None }
 
         // fin
         renderer
@@ -1530,9 +1523,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let device = renderer.VulkanGlobal.Device
             let allocator = renderer.VulkanGlobal.VmaAllocator
             
-            // destroy transient textures left by the last frame
-            VulkanRenderer2d.destroyTransientTextures renderer
-            renderer.TransientTextures.Clear ()
+            // destroy last used text texture
+            match renderer.TextTextureOpt with Some texture -> texture.Destroy renderer.VulkanGlobal | None -> ()
+            renderer.TextTextureOpt <- None
             
             // destroy Vulkan resources
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
