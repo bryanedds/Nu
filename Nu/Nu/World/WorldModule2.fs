@@ -2798,7 +2798,14 @@ module ScreenDispatcherModule =
         override this.TryProcess (screen, world) =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
-            let world = this.Process (screen, world)
+            let (selectResults, world) = World.doSubscription "@SelectResults" screen.SelectEvent world |> mapFst (FQueue.map (constant Select))
+            let (incomingStartResults, world) = World.doSubscription "@IncomingStartResults" screen.IncomingStartEvent world |> mapFst (FQueue.map (constant IncomingStart))
+            let (incomingFinishResults, world) = World.doSubscription "@IncomingFinishResults" screen.IncomingFinishEvent world |> mapFst (FQueue.map (constant IncomingFinish))
+            let (outgoingStartResults, world) = World.doSubscription "@OutgoingStartResults" screen.OutgoingStartEvent world |> mapFst (FQueue.map (constant OutgoingStart))
+            let (outgoingFinishResults, world) = World.doSubscription "@OutgoingFinishResults" screen.OutgoingFinishEvent world |> mapFst (FQueue.map (constant OutgoingFinish))
+            let (deselectingResults, world) = World.doSubscription "@DeselectingResults" screen.DeselectingEvent world |> mapFst (FQueue.map (constant Deselecting))
+            let results = seq { yield! selectResults; yield! incomingStartResults; yield! incomingFinishResults; yield! outgoingStartResults; yield! outgoingFinishResults; yield! deselectingResults }
+            let world = this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImNui <> screen.ScreenAddress then
                 Log.warnOnce
@@ -2809,8 +2816,8 @@ module ScreenDispatcherModule =
             World.advanceContext screen.ScreenAddress context world
 
         /// ImNui process a screen.
-        abstract Process : Screen * World -> World
-        default this.Process (_, world) = world
+        abstract Process : ScreenResult FQueue * Screen * World -> World
+        default this.Process (_, _, world) = world
 
     type World with
 

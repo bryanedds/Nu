@@ -30,16 +30,52 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (gameplay, world) =
+    override this.Process (screenResults, gameplay, world) =
 
-        // only process when selected
+        // process initialization
+        let initializing = FQueue.contains Select screenResults
+        let world =
+            if initializing then
+
+                // reset score
+                let world = Simulants.Gameplay.SetScore 0 world
+
+                // create stage sections from random section files
+                (world, [0 .. dec Constants.Gameplay.SectionCount]) ||> List.fold (fun world sectionIndex ->
+
+                    // load a random section from file (except the first section which is always 0)
+                    let section = Simulants.GameplaySection sectionIndex
+                    let sectionFilePath = if sectionIndex = 0 then Assets.Gameplay.SectionFilePaths.[0] else Gen.randomItem Assets.Gameplay.SectionFilePaths
+                    let world = World.readGroupFromFile sectionFilePath (Some section.Name) section.Screen world |> snd
+
+                    // shift all entities in the loaded section so that they go after the previously loaded section
+                    let sectionXShift = 1024.0f * single sectionIndex
+                    let sectionEntities = World.getEntities section world
+                    Seq.fold (fun world (sectionEntity : Entity) ->
+                        sectionEntity.SetPosition (sectionEntity.GetPosition world + v3 sectionXShift 0.0f 0.0f) world)
+                        world sectionEntities)
+
+            else world
+
+        // process section destruction
+        let world =
+            if FQueue.contains Deselecting screenResults then
+
+                // destroy stage sections that were created from section files
+                (world, [0 .. dec Constants.Gameplay.SectionCount]) ||> List.fold (fun world sectionIndex ->
+                    let section = Simulants.GameplaySection sectionIndex
+                    World.destroyGroup section world)
+
+            else world
+
+        // process gameplay when selected
         if gameplay.GetSelected world then
 
             // declare scene group
             let world = World.beginGroup Simulants.Gameplay.Name [] world
 
             // declare player
-            let world = World.doEntity<PlayerDispatcher> "Player" [Entity.Position .= v3 -390.0f -50.0f 0.0f; Entity.Elevation .= 1.0f] world
+            let world = World.doEntity<PlayerDispatcher> "Player" [if initializing then Entity.Position .= v3 -390.0f -50.0f 0.0f; Entity.Elevation .= 1.0f] world
             let player = World.getRecentEntity world
 
             // process scoring
@@ -80,7 +116,7 @@ type GameplayDispatcher () =
             let world = World.endGroup world
             world
 
-        // otherwise, no processing
+        // otherwise, no gameplay
         else world
 
     // this is a semantic fix-up that allows the editor to avoid creating an unused group. This is specific to the

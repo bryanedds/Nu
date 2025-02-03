@@ -30,10 +30,19 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (gameplay, world) =
+    override this.Process (results, gameplay, world) =
 
         // only process when selected
         if gameplay.GetSelected world then
+
+            // process scene initialization
+            let initializing = FQueue.contains Select results
+            let world =
+                if initializing then
+                    let world = Simulants.Gameplay.SetScore 0 world
+                    let world = Simulants.Gameplay.SetGameplayState Playing world
+                    world
+                else world
 
             // declare scene group
             let world = World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
@@ -100,6 +109,9 @@ type GameplayDispatcher () =
                     let world = World.setEye3dRotation rotationInterp world
                     world
                 else world
+
+            // process nav sync
+            let world = if initializing then World.synchronizeNav3d gameplay world else world
 
             // finish declaring scene group
             let world = World.endGroup world

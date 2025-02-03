@@ -26,7 +26,7 @@ type GameplayDispatcher () =
         [define Screen.GameplayState Quit]
 
     // here we define the behavior of our gameplay
-    override this.Process (gameplay, world) =
+    override this.Process (_, gameplay, world) =
 
         // declare scene group
         let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world

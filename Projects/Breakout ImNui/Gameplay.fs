@@ -55,7 +55,22 @@ type GameplayDispatcher () =
          define Screen.Lives 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (gameplay, world) =
+    override this.Process (results, gameplay, world) =
+
+        // initialize upon selection
+        let world =
+            if FQueue.contains Select results then
+                let world = Simulants.Gameplay.SetGameplayState Playing world
+                let bricks =
+                    Map.ofList
+                        [for i in 0 .. dec 5 do
+                            for j in 0 .. dec 6 do
+                                (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))]
+                let world = Simulants.Gameplay.SetBricks bricks world
+                let world = Simulants.Gameplay.SetScore 0 world
+                let world = Simulants.Gameplay.SetLives 5 world
+                world
+            else world
 
         // declare scene group
         let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
