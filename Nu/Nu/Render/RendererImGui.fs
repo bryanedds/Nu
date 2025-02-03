@@ -450,7 +450,7 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
 
                                 // draw
                                 Vulkan.vkCmdDrawIndexed (cb, pcmd.ElemCount, 1u, pcmd.IdxOffset + uint globalIdxOffset, int pcmd.VtxOffset + globalVtxOffset, 0u)
-                                Hl.ReportDrawCall 1
+                                Hl.reportDrawCall 1
 
                         else raise (NotImplementedException ())
 

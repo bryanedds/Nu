@@ -16,76 +16,26 @@ module Hl =
     let mutable private DrawReportLock = obj ()
     let mutable private DrawCallCount = 0
     let mutable private DrawInstanceCount = 0
-    
-    // enable validation layers in debug mode
+
+    /// Validation layers enabled.
     let private ValidationLayersEnabled =
 #if DEBUG
         true
 #else
         false
 #endif
-    
+
     /// Index of the current Swapchain image.
-    let mutable imageIndex = 0u
-    
-    /// Report the fact that a draw call has just been made with the given number of instances.
-    let ReportDrawCall drawInstances =
-        lock DrawReportLock (fun () ->
-            DrawCallCount <- inc DrawCallCount
-            DrawInstanceCount <- DrawInstanceCount + drawInstances)
+    let mutable private ImageIndex = 0u
 
-    /// Reset the running number of draw calls.
-    let ResetDrawCalls () =
-        lock DrawReportLock (fun () ->
-            DrawCallCount <- 0
-            DrawInstanceCount <- 0)
-
-    /// Get the running number of draw calls.
-    let GetDrawCallCount () =
-        lock DrawReportLock (fun () -> DrawCallCount)
-
-    /// Get the running number of draw calls.
-    let GetDrawInstanceCount () =
-        lock DrawReportLock (fun () -> DrawInstanceCount)
-    
     /// Convert VkExtensionProperties.extensionName to a string.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
         NativePtr.fixedBufferToString extensionProps.extensionName
-    
+
     /// Convert VkLayerProperties.layerName to a string.
     let private getLayerName (layerProps : VkLayerProperties) =
         NativePtr.fixedBufferToString layerProps.layerName
-    
-    /// Check the given Vulkan operation result, logging on non-Success.
-    let check (result : VkResult) =
-        if int result > 0 then Log.info ("Vulkan info: " + string result)
-        elif int result < 0 then Log.error ("Vulkan assertion failed due to: " + string result)
 
-    /// Compile GLSL file to SPIR-V code.
-    let compileShader shaderPath shaderKind =
-        use shaderStream = new StreamReader (File.OpenRead shaderPath)
-        let shaderStr = shaderStream.ReadToEnd ()
-        use compiler = new Compiler ()
-        let options = new CompilerOptions ()
-        options.ShaderStage <- shaderKind
-        let result = compiler.Compile (shaderStr, shaderPath, options)
-        if result.Status <> CompilationStatus.Success then
-            Log.fail ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
-        let shaderCode = result.Bytecode
-        shaderCode
-    
-    /// Create a shader module from a GLSL file.
-    let createShaderModuleFromGlsl shaderPath shaderKind device =
-        
-        // handle and shader
-        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
-        let shader = compileShader shaderPath shaderKind
-
-        // NOTE: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
-        // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
-        Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
-        shaderModule
-    
     /// Make a VkViewport.
     let makeViewport (rect : VkRect2D) =
         let mutable viewport = VkViewport ()
@@ -96,7 +46,7 @@ module Hl =
         viewport.minDepth <- 0.0f
         viewport.maxDepth <- 1.0f
         viewport
-    
+
     /// Make a VkPipelineColorBlendAttachmentState.
     let makeBlendAttachment srcFactor dstFactor =
         let mutable blendAttachment = VkPipelineColorBlendAttachmentState ()
@@ -121,7 +71,7 @@ module Hl =
     /// Make a VkPipelineColorBlendAttachmentState for overwrite color blending.
     let makeBlendAttachmentOverwrite () =
         makeBlendAttachment Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
-    
+
     /// Make a VkImageSubresourceRange representing a color image.
     let makeSubresourceRangeColor mips =
         let mutable subresourceRange = VkImageSubresourceRange ()
@@ -129,14 +79,14 @@ module Hl =
         subresourceRange.levelCount <- mips
         subresourceRange.layerCount <- 1u
         subresourceRange
-    
+
     /// Make a VkImageSubresourceLayers representing a color image.
     let makeSubresourceLayersColor () =
         let mutable subresourceLayers = VkImageSubresourceLayers ()
         subresourceLayers.aspectMask <- Vulkan.VK_IMAGE_ASPECT_COLOR_BIT
         subresourceLayers.layerCount <- 1u
         subresourceLayers
-    
+
     /// Make a VkVertexInputBindingDescription with vertex input rate.
     let makeVertexBindingVertex (bindingIndex : int) (stride : int) =
         let mutable binding = VkVertexInputBindingDescription ()
@@ -162,7 +112,7 @@ module Hl =
         binding.descriptorCount <- uint descriptorCount
         binding.stageFlags <- Vulkan.VK_SHADER_STAGE_VERTEX_BIT
         binding
-    
+
     /// Make a VkDescriptorSetLayoutBinding for the fragment stage.
     let makeDescriptorBindingFragment (bindingIndex : int) descriptorType (descriptorCount : int) =
         let mutable binding = VkDescriptorSetLayoutBinding ()
@@ -188,7 +138,57 @@ module Hl =
         range.offset <- uint offset
         range.size <- uint size
         range
-    
+
+    /// Check the given Vulkan operation result, logging on non-Success.
+    let check (result : VkResult) =
+        if int result > 0 then Log.info ("Vulkan info: " + string result)
+        elif int result < 0 then Log.error ("Vulkan assertion failed due to: " + string result)
+
+    /// Report the fact that a draw call has just been made with the given number of instances.
+    let reportDrawCall drawInstances =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- inc DrawCallCount
+            DrawInstanceCount <- DrawInstanceCount + drawInstances)
+
+    /// Reset the running number of draw calls.
+    let resetDrawCalls () =
+        lock DrawReportLock (fun () ->
+            DrawCallCount <- 0
+            DrawInstanceCount <- 0)
+
+    /// Get the running number of draw calls.
+    let getDrawCallCount () =
+        lock DrawReportLock (fun () -> DrawCallCount)
+
+    /// Get the running number of draw calls.
+    let getDrawInstanceCount () =
+        lock DrawReportLock (fun () -> DrawInstanceCount)
+
+    /// Compile GLSL file to SPIR-V code.
+    let compileShader shaderPath shaderKind =
+        use shaderStream = new StreamReader (File.OpenRead shaderPath)
+        let shaderStr = shaderStream.ReadToEnd ()
+        use compiler = new Compiler ()
+        let options = CompilerOptions ()
+        options.ShaderStage <- shaderKind
+        let result = compiler.Compile (shaderStr, shaderPath, options)
+        if result.Status <> CompilationStatus.Success then
+            Log.fail ("Vulkan shader compilation failed due to:\n" + result.ErrorMessage)
+        let shaderCode = result.Bytecode
+        shaderCode
+
+    /// Create a shader module from a GLSL file.
+    let createShaderModuleFromGlsl shaderPath shaderKind device =
+
+        // handle and shader
+        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
+        let shader = compileShader shaderPath shaderKind
+
+        // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
+        // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
+        Vulkan.vkCreateShaderModule (device, shader, nullPtr, &shaderModule) |> check
+        shaderModule
+
     /// Create an image view.
     let createImageView format mips image device =
         let mutable imageView = Unchecked.defaultof<VkImageView>
@@ -199,7 +199,7 @@ module Hl =
         info.subresourceRange <- makeSubresourceRangeColor mips
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
         imageView
-    
+
     /// Allocate a command buffer.
     let allocateCommandBuffer commandPool device =
         let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
@@ -209,19 +209,19 @@ module Hl =
         info.commandBufferCount <- 1u
         Vulkan.vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
         commandBuffer
-    
+
     /// Wait for a fence to signal and reset it for reuse.
     let awaitFence fence device =
         let mutable fence = fence
         Vulkan.vkWaitForFences (device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
-    
+
     /// Begin command buffer recording and render pass.
     let initRender cb renderPass framebuffer renderArea clearValues waitFence device =
-        
+
         // await fence if not null
         if waitFence <> VkFence.Null then awaitFence waitFence device
-        
+
         // reset command buffer and begin recording
         Vulkan.vkResetCommandBuffer (cb, VkCommandBufferResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo ()
@@ -236,13 +236,13 @@ module Hl =
         rpInfo.clearValueCount <- uint clearValues.Length
         rpInfo.pClearValues <- clearValuesPin.Pointer
         Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
-    
+
     /// End command buffer recording and render pass and submit for execution.
     let submitRender cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
-        
+
         // end render pass
         Vulkan.vkCmdEndRenderPass cb
-        
+
         // end command buffer recording
         Vulkan.vkEndCommandBuffer cb |> check
 
@@ -263,7 +263,7 @@ module Hl =
         info.signalSemaphoreCount <- uint signalSemaphores.Length
         info.pSignalSemaphores <- signalSemaphoresPin.Pointer
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
-    
+
     /// A physical device and associated data.
     type PhysicalDeviceData =
         { PhysicalDevice : VkPhysicalDevice
@@ -279,7 +279,7 @@ module Hl =
             let mutable properties = Unchecked.defaultof<VkPhysicalDeviceProperties>
             Vulkan.vkGetPhysicalDeviceProperties (physicalDevice, &properties)
             properties
-        
+
         /// Get available extensions.
         static member private getExtensions physicalDevice =
             let mutable extensionCount = 0u
@@ -294,7 +294,7 @@ module Hl =
             let mutable capabilities = Unchecked.defaultof<VkSurfaceCapabilitiesKHR>
             Vulkan.vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physicalDevice, surface, &capabilities) |> check
             capabilities
-        
+
         /// Get available surface formats.
         static member private getSurfaceFormats physicalDevice surface =
             let mutable formatCount = 0u
@@ -303,10 +303,10 @@ module Hl =
             use formatsPin = new ArrayPin<_> (formats)
             Vulkan.vkGetPhysicalDeviceSurfaceFormatsKHR (physicalDevice, surface, asPointer &formatCount, formatsPin.Pointer) |> check
             formats
-        
+
         /// Attempt to get the queue families.
         static member private tryGetQueueFamilies physicalDevice surface =
-            
+
             // get queue families' properties
             let mutable queueFamilyCount = 0u
             Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, asPointer &queueFamilyCount, nullPtr)
@@ -314,14 +314,14 @@ module Hl =
             use queueFamilyPropsPin = new ArrayPin<_> (queueFamilyProps)
             Vulkan.vkGetPhysicalDeviceQueueFamilyProperties (physicalDevice, asPointer &queueFamilyCount, queueFamilyPropsPin.Pointer)
 
-            // NOTE: It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
+            // NOTE: DJL: It is *essential* to use the *first* compatible queue families in the array, *not* the last, as per the tutorial and vortice vulkan sample.
             // I discovered this by accident because the queue families on my AMD behaved exactly the same as the queue families on this one:
             // https://computergraphics.stackexchange.com/questions/9707/queue-from-a-family-queue-that-supports-presentation-doesnt-work-vulkan
             // general lesson: trust level for vendors is too low for deviation from common practices to be advisable.
             let mutable graphicsQueueFamilyOpt = None
             let mutable presentQueueFamilyOpt = None
             for i in 0 .. dec queueFamilyProps.Length do
-                
+
                 // try get graphics queue family
                 match graphicsQueueFamilyOpt with
                 | None ->
@@ -341,7 +341,7 @@ module Hl =
 
             // fin
             (graphicsQueueFamilyOpt, presentQueueFamilyOpt)
-        
+
         /// Attempt to construct PhysicalDeviceData.
         static member tryCreate physicalDevice surface =
             let properties = PhysicalDeviceData.getProperties physicalDevice
@@ -386,8 +386,8 @@ module Hl =
           SwapExtent : VkExtent2D }
 
         /// The current swapchain framebuffer.
-        member this.SwapchainFramebuffer = this.SwapchainFramebuffers[int imageIndex]
-        
+        member this.SwapchainFramebuffer = this.SwapchainFramebuffers[int ImageIndex]
+
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
 
@@ -404,9 +404,9 @@ module Hl =
             let sdlExtensions = Array.zeroCreate<nativeptr<byte>> (int sdlExtensionCount)
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
             use sdlExtensionsPin = new ArrayPin<_> (sdlExtensions)
-            
-            // TODO: setup message callback with debug utils *if* motivation arises.
-            
+
+            // TODO: DJL: setup message callback with debug utils *if* motivation arises.
+
             // get available instance layers
             let mutable layerCount = 0u
             Vulkan.vkEnumerateInstanceLayerProperties (asPointer &layerCount, nullPtr) |> check
@@ -418,14 +418,14 @@ module Hl =
             let validationLayer = "VK_LAYER_KHRONOS_validation"
             let validationLayerExists = Array.exists (fun x -> getLayerName x = validationLayer) layers
             if ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
-            
-            // TODO: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
+
+            // TODO: DJL: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
             // and check for available vulkan version as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
 
             // must be assigned outside conditional to remain in scope until vkCreateInstance
             use layerWrap = new StringArrayWrap ([|validationLayer|])
-            
+
             // create instance
             let mutable info = VkInstanceCreateInfo ()
             info.enabledExtensionCount <- sdlExtensionCount
@@ -435,17 +435,17 @@ module Hl =
                 info.ppEnabledLayerNames <- layerWrap.Pointer
             Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> check
             instance
-        
+
         /// Create vulkan surface.
         static member private createVulkanSurface window instance =
             let mutable surface = Unchecked.defaultof<VkSurfaceKHR>
             let result = SDL.SDL_Vulkan_CreateSurface (window, instance, &(NativePtr.reinterpretRef<VkSurfaceKHR, uint64> &surface))
             if int result = 0 then Log.error "SDL error, SDL_Vulkan_CreateSurface failed."
             surface
-        
+
         /// Select compatible physical device if available.
         static member private trySelectPhysicalDevice surface instance =
-            
+
             // get available physical devices
             let mutable deviceCount = 0u
             Vulkan.vkEnumeratePhysicalDevices (instance, asPointer &deviceCount, nullPtr) |> check
@@ -469,7 +469,7 @@ module Hl =
             // preferability criteria: device ought to be discrete
             let isPreferable physicalDeviceData =
                 physicalDeviceData.Properties.deviceType = Vulkan.VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-            
+
             // filter and order candidates according to criteria
             let candidatesFiltered = List.filter isCompatible candidates
             let (fstChoice, sndChoice) = List.partition isPreferable candidatesFiltered
@@ -512,9 +512,9 @@ module Hl =
             let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
             use extensionArrayWrap = new StringArrayWrap ([|swapchainExtensionName|])
 
-            // NOTE: for particularly dated implementations of Vulkan, validation depends on device layers which are
-            // deprecated. These must be enabled if validation support for said implementations is desired.
-            
+            // NOTE: DJL: for particularly dated implementations of Vulkan, validation depends on device layers which
+            // are deprecated. These must be enabled if validation support for said implementations is desired.
+
             // create device
             let mutable info = VkDeviceCreateInfo ()
             info.queueCreateInfoCount <- uint queueCreateInfos.Length
@@ -533,10 +533,10 @@ module Hl =
             info.instance <- instance
             Vma.vmaCreateAllocator (&info, &allocator) |> check
             allocator
-        
+
         /// Get surface format.
         static member private getSurfaceFormat formats =
-            
+
             // specify preferred format and color space
             let isPreferred (format : VkSurfaceFormatKHR) =
                 format.format = Vulkan.VK_FORMAT_B8G8R8A8_UNORM &&
@@ -553,12 +553,12 @@ module Hl =
 
         /// Get swap extent.
         static member private getSwapExtent (surfaceCapabilities : VkSurfaceCapabilitiesKHR) window =
-            
+
             // swap extent
             if surfaceCapabilities.currentExtent.width <> UInt32.MaxValue
             then surfaceCapabilities.currentExtent
             else
-                    
+
                 // get pixel resolution from sdl
                 let mutable width = Unchecked.defaultof<int>
                 let mutable height = Unchecked.defaultof<int>
@@ -572,14 +572,14 @@ module Hl =
 
                 // fin
                 VkExtent2D (width, height)
-        
+
         /// Create the swapchain.
         static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
-            
+
             // handles
             let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
             let capabilities = physicalDeviceData.SurfaceCapabilities
-            
+
             // present mode; VK_PRESENT_MODE_FIFO_KHR is guaranteed by the spec and seems most appropriate for nu
             let presentMode = Vulkan.VK_PRESENT_MODE_FIFO_KHR
 
@@ -627,7 +627,7 @@ module Hl =
             use imagesPin = new ArrayPin<_> (images)
             Vulkan.vkGetSwapchainImagesKHR (device, swapchain, asPointer &imageCount, imagesPin.Pointer) |> check
             images
-        
+
         /// Create swapchain image views.
         static member private createSwapchainImageViews format (images : VkImage array) device =
             let imageViews = Array.zeroCreate<VkImageView> images.Length
@@ -639,13 +639,13 @@ module Hl =
             
             // handle
             let mutable commandPool = Unchecked.defaultof<VkCommandPool>
-            
+
             // apply transient flag if desired
             let flags =
                 if transient
                 then Vulkan.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT ||| Vulkan.VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
                 else Vulkan.VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-            
+
             // create command pool
             let mutable info = VkCommandPoolCreateInfo ()
             info.flags <- flags
@@ -658,14 +658,14 @@ module Hl =
             let mutable queue = Unchecked.defaultof<VkQueue>
             Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
             queue
-        
+
         /// Create a semaphore.
         static member private createSemaphore device =
             let mutable semaphore = Unchecked.defaultof<VkSemaphore>
             let info = VkSemaphoreCreateInfo ()
             Vulkan.vkCreateSemaphore (device, &info, nullPtr, &semaphore) |> check
             semaphore
-        
+
         /// Create a fence.
         static member private createFence createSignaled device =
             let mutable fence = Unchecked.defaultof<VkFence>
@@ -674,13 +674,13 @@ module Hl =
                 else VkFenceCreateInfo ()
             Vulkan.vkCreateFence (device, &info, nullPtr, &fence) |> check
             fence
-        
+
         /// Create a renderpass.
         static member private createRenderPass clear presentLayout format device =
-            
+
             // handle
             let mutable renderPass = Unchecked.defaultof<VkRenderPass>
-            
+
             // attachment
             let mutable attachment = VkAttachmentDescription ()
             attachment.format <- format
@@ -711,10 +711,10 @@ module Hl =
             info.pSubpasses <- asPointer &subpass
             Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
             renderPass
-        
+
         /// Create the swapchain framebuffers.
         static member private createSwapchainFramebuffers (extent : VkExtent2D) renderPass (imageViews : VkImageView array) device =
-            
+
             // handle array
             let framebuffers = Array.zeroCreate<VkFramebuffer> imageViews.Length
 
@@ -732,7 +732,7 @@ module Hl =
             
             // fin
             framebuffers
-        
+
         /// Begin the frame.
         static member beginFrame vkg =
 
@@ -740,7 +740,7 @@ module Hl =
             awaitFence vkg.InFlightFence vkg.Device
 
             // acquire image from swapchain to draw onto
-            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &imageIndex) |> check
+            Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
 
             // the *simple* solution: https://vulkan-tutorial.com/Drawing_a_triangle/Drawing/Rendering_and_presentation#page_Subpass-dependencies
             let waitStage = Vulkan.VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
@@ -774,13 +774,13 @@ module Hl =
             info.pWaitSemaphores <- asPointer &renderFinished
             info.swapchainCount <- 1u
             info.pSwapchains <- asPointer &swapchain
-            info.pImageIndices <- asPointer &imageIndex
+            info.pImageIndices <- asPointer &ImageIndex
             Vulkan.vkQueuePresentKHR (vkg.PresentQueue, asPointer &info) |> check
-        
+
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle vkg =
             Vulkan.vkDeviceWaitIdle vkg.Device |> check
-        
+
         /// Destroy the Vulkan handles.
         static member cleanup vkg =
             for i in 0 .. dec vkg.SwapchainFramebuffers.Length do Vulkan.vkDestroyFramebuffer (vkg.Device, vkg.SwapchainFramebuffers.[i], nullPtr)
@@ -814,7 +814,7 @@ module Hl =
 
             // create surface
             let surface = VulkanGlobal.createVulkanSurface window instance
-            
+
             // attempt to select physical device
             match VulkanGlobal.trySelectPhysicalDevice surface instance with
             | Some physicalDeviceData ->
@@ -857,7 +857,7 @@ module Hl =
 
                 // create swapchain framebuffers
                 let swapchainFramebuffers = VulkanGlobal.createSwapchainFramebuffers swapExtent renderPass swapchainImageViews device
-                
+
                 // make VulkanGlobal
                 let vulkanGlobal =
                     { Instance = instance
@@ -895,7 +895,7 @@ module Hl =
           UploadEnabled : bool }
 
         static member private createInternal uploadEnabled bufferInfo allocator =
-            
+
             // handles
             let mutable buffer = Unchecked.defaultof<VkBuffer>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
@@ -921,7 +921,7 @@ module Hl =
 
         /// Copy data from the source buffer to the destination buffer.
         static member private copyData size source destination vkg =
-            
+
             // create command buffer for transfer
             let mutable cb = allocateCommandBuffer vkg.TransferCommandPool vkg.Device
 
@@ -943,7 +943,7 @@ module Hl =
             awaitFence vkg.ResourceReadyFence vkg.Device
 
         (*
-        TODO: *maybe* try and get vmaMapMemory fixed to enable these methods.
+        TODO: DJL: *maybe* try and get vmaMapMemory fixed to enable these methods.
 
         /// Map pointer to buffer if upload is enabled.
         static member tryMap buffer =
@@ -961,7 +961,7 @@ module Hl =
             Vma.vmaFlushAllocation (buffer.VmaAllocator, buffer.VmaAllocation, 0UL, Vulkan.VK_WHOLE_SIZE) |> check
             Vma.vmaUnmapMemory (buffer.VmaAllocator, buffer.VmaAllocation)
         *)
-        
+
         /// Upload data to buffer if upload is enabled.
         static member upload offset size nint buffer =
             if buffer.UploadEnabled
@@ -973,7 +973,7 @@ module Hl =
             use arrayPin = new ArrayPin<_> (array)
             let size = array.Length * sizeof<'a>
             AllocatedBuffer.upload offset size arrayPin.NativeInt buffer
-        
+
         /// Create an allocated staging buffer.
         static member createStaging size allocator =
             let mutable info = VkBufferCreateInfo ()
@@ -985,13 +985,13 @@ module Hl =
 
         /// Create an allocated vertex buffer.
         static member createVertex uploadEnabled size allocator =
-            
+
             // data can and must be transferred from a staging buffer if upload is not enabled
             let usage =
                 if uploadEnabled
                 then Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
                 else Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
-            
+
             // create buffer
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
@@ -1002,13 +1002,13 @@ module Hl =
 
         /// Create an allocated index buffer.
         static member createIndex uploadEnabled size allocator =
-            
+
             // data can and must be transferred from a staging buffer if upload is not enabled
             let usage =
                 if uploadEnabled
                 then Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT
                 else Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT ||| Vulkan.VK_BUFFER_USAGE_TRANSFER_DST_BIT
-            
+
             // create buffer
             let mutable info = VkBufferCreateInfo ()
             info.size <- uint64 size
@@ -1025,13 +1025,13 @@ module Hl =
             info.sharingMode <- Vulkan.VK_SHARING_MODE_EXCLUSIVE
             let allocatedBuffer = AllocatedBuffer.createInternal true info allocator
             allocatedBuffer
-        
+
         /// Create an allocated staging buffer and stage the data.
         static member stageData size ptr allocator =
             let buffer = AllocatedBuffer.createStaging size allocator
             AllocatedBuffer.upload 0 size ptr buffer
             buffer
-        
+
         /// Create an allocated vertex buffer with data uploaded via staging buffer.
         static member createVertexStaged size ptr vkg =
             let stagingBuffer = AllocatedBuffer.stageData size ptr vkg.VmaAllocator
@@ -1047,11 +1047,11 @@ module Hl =
             AllocatedBuffer.copyData size stagingBuffer indexBuffer vkg
             AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
             indexBuffer
-        
+
         /// Destroy buffer and allocation.
         static member destroy buffer allocator =
             Vma.vmaDestroyBuffer (allocator, buffer.Buffer, buffer.Allocation)
-    
+
     /// Abstraction for vma allocated image.
     type AllocatedImage =
         { Image : VkImage
@@ -1063,17 +1063,9 @@ module Hl =
 
         /// Create an AllocatedImage.
         static member create imageInfo allocator =
-            
-            // handles
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
-
-            // allocation create info
             let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
-
-            // create vma image
             Vma.vmaCreateImage (allocator, &imageInfo, &info, &image, &allocation, nullPtr) |> check
-
-            // fin
             let allocatedImage = { Image = image; Allocation = allocation }
             allocatedImage

@@ -134,7 +134,7 @@ module SpriteBatch =
 
             // draw
             Vulkan.vkCmdDraw (cb, uint (6 * env.SpriteIndex), 1u, 0u, 0u)
-            Hl.ReportDrawCall env.SpriteIndex
+            Hl.reportDrawCall env.SpriteIndex
             
             // reset scissor
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
