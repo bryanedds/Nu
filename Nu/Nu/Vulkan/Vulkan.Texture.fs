@@ -232,7 +232,8 @@ module Texture =
             copyBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             copyBarrier.image <- image
             Vulkan.vkCmdPipelineBarrier
-                (cb, Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
+                (cb,
+                 Vulkan.VK_PIPELINE_STAGE_HOST_BIT,
                  Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
@@ -258,7 +259,8 @@ module Texture =
             useBarrier.newLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
             useBarrier.image <- image
             Vulkan.vkCmdPipelineBarrier
-                (cb, Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
+                (cb,
+                 Vulkan.VK_PIPELINE_STAGE_TRANSFER_BIT,
                  Vulkan.VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
@@ -330,9 +332,9 @@ module Texture =
             VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vkg
 
         /// Create an empty VulkanTexture.
-        /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f).
+        /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f), perhaps just loading up the Assets.Default.Image asset.
         static member createEmpty (vkg : Hl.VulkanGlobal) =
-            
+
             // create components
             let image = VulkanTexture.createImage Vulkan.VK_FORMAT_R8G8B8A8_UNORM (VkExtent3D (1, 1, 1)) vkg.VmaAllocator
             let imageView = Hl.createImageView Vulkan.VK_FORMAT_R8G8B8A8_UNORM 1u image.Image vkg.Device
@@ -634,7 +636,7 @@ module Texture =
             | EmptyTexture -> TextureMetadata.empty
             | EagerTexture eagerTexture -> eagerTexture.TextureMetadata
             | LazyTexture lazyTexture -> lazyTexture.TextureMetadata
-        member this.VulkanTexture =
+        member this.VulkanTexture = // TODO: BGE: maybe we can come up with a better name for this?
             match this with
             | EmptyTexture -> VulkanTexture.empty
             | EagerTexture eagerTexture -> eagerTexture.VulkanTexture
