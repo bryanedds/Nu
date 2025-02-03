@@ -57,7 +57,7 @@ type GameplayDispatcher () =
 
             else world
 
-        // process section destruction
+        // process clean-up
         let world =
             if FQueue.contains Deselecting screenResults then
 

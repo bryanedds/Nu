@@ -39,8 +39,8 @@ type GameplayDispatcher () =
             let initializing = FQueue.contains Select results
             let world =
                 if initializing then
-                    let world = Simulants.Gameplay.SetScore 0 world
                     let world = Simulants.Gameplay.SetGameplayState Playing world
+                    let world = Simulants.Gameplay.SetScore 0 world
                     world
                 else world
 
