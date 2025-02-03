@@ -369,8 +369,8 @@ type CharacterDispatcher () =
             then entity.SetLastTimeOnGround world.UpdateTime world
             else world
 
-        // process character penetration
-        let (characterPenetrations, world) = World.doSubscription "CharacterPenetration" entity.BodyPenetrationEvent world
+        // process penetration
+        let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
         let world =
             FQueue.fold (fun world penetration ->
                 match penetration.BodyShapePenetratee.BodyId.BodySource with
@@ -379,26 +379,26 @@ type CharacterDispatcher () =
                     | (Enemy, Enemy) -> entity.CharacterCollisions.Map (Set.add penetratee) world
                     | (_, _) -> world
                 | _ -> world)
-                world characterPenetrations
+                world penetrations
 
-        // process character separation (explicit)
-        let (characterSeparationExplicit, world) = World.doSubscription "CharacterSeparationExplicit" entity.BodySeparationExplicitEvent world
+        // process separation (explicit)
+        let (separationExplicit, world) = World.doSubscription "SeparationExplicit" entity.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
                 match separation.BodyShapeSeparatee.BodyId.BodySource with
                 | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
                     entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
-                world characterSeparationExplicit
+                world separationExplicit
 
-        // process character separation (implicit)
-        let (characterSeparationImplicit, world) = World.doSubscription "CharacterSeparationImplicit" entity.BodySeparationImplicitEvent world
+        // process separation (implicit)
+        let (separationImplicit, world) = World.doSubscription "SeparationImplicit" entity.BodySeparationImplicitEvent world
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
                 match separation.BodyId.BodySource with
                 | :? Entity as separatee -> entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
-                world characterSeparationImplicit
+                world separationImplicit
 
         // process input
         let world =
@@ -456,8 +456,8 @@ type CharacterDispatcher () =
                 Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
                 weaponHandBoneTransform
             | None -> m4Identity
-        let world =
-            World.doEntity<RigidModelDispatcher> Constants.Gameplay.CharacterWeaponName
+        let (_, results, world) =
+            World.doRigidModel Constants.Gameplay.CharacterWeaponName
                 [Entity.Position @= weaponTransform.Translation
                  Entity.Rotation @= weaponTransform.Rotation
                  Entity.Offset .= v3 0.0f 0.5f 0.0f
@@ -470,38 +470,29 @@ type CharacterDispatcher () =
                  Entity.Sensor .= true
                  Entity.NavShape .= EmptyNavShape]
                 world
-        let weapon = world.RecentEntity
 
-        // process weapon penetration
-        let (weaponPenetrations, world) = World.doSubscription "WeaponPenetration" weapon.BodyPenetrationEvent world
+        // process weapon collisions
         let world =
-            FQueue.fold (fun world penetration ->
-                match penetration.BodyShapePenetratee.BodyId.BodySource with
-                | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
-                    if entity.GetCharacterType world <> penetratee.GetCharacterType world then
-                        entity.WeaponCollisions.Map (Set.add penetratee) world
-                    else world
-                | _ -> world)
-                world weaponPenetrations
-
-        // process weapon separation (explicit)
-        let (weaponSeparationExplicit, world) = World.doSubscription "WeaponSeparationExplicit" weapon.BodySeparationExplicitEvent world
-        let world =
-            FQueue.fold (fun world separation ->
-                match separation.BodyShapeSeparatee.BodyId.BodySource with
-                | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
-                    entity.WeaponCollisions.Map (Set.remove separatee) world
-                | _ -> world)
-                world weaponSeparationExplicit
-
-        // process weapon separation (implicit)
-        let (weaponSeparationImplicit, world) = World.doSubscription "WeaponSeparationImplicit" weapon.BodySeparationImplicitEvent world
-        let world =
-            FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
-                match separation.BodyId.BodySource with
-                | :? Entity as separatee -> entity.WeaponCollisions.Map (Set.remove separatee) world
-                | _ -> world)
-                world weaponSeparationImplicit
+            FQueue.fold (fun world result ->
+                match result with
+                | BodyPenetration penetration ->
+                    match penetration.BodyShapePenetratee.BodyId.BodySource with
+                    | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
+                        if entity.GetCharacterType world <> penetratee.GetCharacterType world then
+                            entity.WeaponCollisions.Map (Set.add penetratee) world
+                        else world
+                    | _ -> world
+                | BodySeparationExplicit separation ->
+                    match separation.BodyShapeSeparatee.BodyId.BodySource with
+                    | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
+                        entity.WeaponCollisions.Map (Set.remove separatee) world
+                    | _ -> world
+                | BodySeparationImplicit separation ->
+                    match separation.BodyId.BodySource with
+                    | :? Entity as separatee -> entity.WeaponCollisions.Map (Set.remove separatee) world
+                    | _ -> world
+                | BodyTransform _ -> world)
+                world results
 
         // process attacks
         let (attacks, world) =

@@ -76,8 +76,4 @@ type BreakoutDispatcher () =
         let world = if clicked then breakout.SetGameState Title world else world
         let world = World.endGroup world
         let world = World.endScreen world
-
-        // handle Alt+F4 when not in editor
-        if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
+        world

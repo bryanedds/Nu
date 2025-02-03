@@ -57,7 +57,7 @@ type GameplayDispatcher () =
     // here we define the behavior of our gameplay
     override this.Process (results, gameplay, world) =
 
-        // initialize upon selection
+        // process initialization
         let world =
             if FQueue.contains Select results then
                 let world = Simulants.Gameplay.SetGameplayState Playing world
@@ -75,11 +75,11 @@ type GameplayDispatcher () =
         // declare scene group
         let world = World.beginGroupFromFile "Scene" "Assets/Gameplay/Scene.nugroup" [] world
 
-        // background model
+        // declare background model
         let rotation = Quaternion.CreateFromAxisAngle ((v3 1.0f 0.75f 0.5f).Normalized, world.UpdateTime % 360L |> single |> Math.DegreesToRadians)
         let world = World.doStaticModel "StaticModel" [Entity.Scale .= v3Dup 0.5f; Entity.Rotation @= rotation] world
 
-        // left wall
+        // declare left wall
         let (leftWallBodyId, _, world) =
             World.doBlock2d "LeftWall"
                 [Entity.Position .= v3 -164.0f 0.0f 0.0f
@@ -87,7 +87,7 @@ type GameplayDispatcher () =
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
 
-        // right wall
+        // declare right wall
         let (rightWallBodyId, _, world) =
             World.doBlock2d "RightWall"
                 [Entity.Position .= v3 164.0f 0.0f 0.0f
@@ -95,7 +95,7 @@ type GameplayDispatcher () =
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
 
-        // top wall
+        // declare top wall
         let (topWallBodyId, _, world) =
             World.doBlock2d "TopWall"
                 [Entity.Position .= v3 0.0f 176.0f 0.0f
@@ -103,7 +103,7 @@ type GameplayDispatcher () =
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Black] world
 
-        // paddle
+        // declare paddle
         let (paddleBodyId, _, world) =
             World.doBlock2d "Paddle"
                 [Entity.Position .= PaddleOrigin
@@ -112,7 +112,7 @@ type GameplayDispatcher () =
                  Entity.StaticImage .= Assets.Default.Paddle] world
         let paddle = world.RecentEntity
 
-        // move paddle while game is playing / playable
+        // process paddle movement
         let world =
             if  world.Advancing &&
                 gameplay.GetGameplayState world = Playing &&
@@ -126,7 +126,7 @@ type GameplayDispatcher () =
                 else world
             else world
 
-        // ball
+        // declare ball
         let (ballBodyId, ballResults, world) =
             World.doBall2d "Ball"
                 [Entity.Position .= BallOrigin
@@ -139,7 +139,7 @@ type GameplayDispatcher () =
                  Entity.StaticImage .= Assets.Default.Ball] world
         let ball = world.RecentEntity
 
-        // ball life cycle
+        // process ball life cycle
         let world =
             if (ball.GetPosition world).Y < -180.0f then
                 let world = gameplay.Lives.Map dec world
@@ -153,7 +153,7 @@ type GameplayDispatcher () =
                 World.setBodyLinearVelocity ((v3 (0.5f - Gen.randomf) -1.0f 0.0f).Normalized * BallSpeed) ballBodyId world
             else world
 
-        // ball collision
+        // process ball collision
         let world =
             FQueue.fold (fun world result ->
                 match result with
@@ -196,7 +196,7 @@ type GameplayDispatcher () =
                 | _ -> world)
                 world ballResults
 
-        // bricks
+        // declare bricks
         let world =
             Seq.fold (fun world (brickName, brick) ->
                 World.doBlock2d brickName
