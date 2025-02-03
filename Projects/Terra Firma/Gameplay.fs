@@ -54,21 +54,19 @@ type GameplayDispatcher () =
             let (attacks, world) = World.doSubscription "Attack" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world
             let world =
                 FQueue.fold (fun world (attacked : Entity) ->
-                    if attacked.GetExists world then
-                        let world = attacked.HitPoints.Map (dec >> max 0) world
-                        if attacked.GetHitPoints world > 0 then
-                            if not (attacked.GetActionState world).IsInjuryState then
-                                let world = attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
-                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                                world
-                            else world
-                        else
-                            if not (attacked.GetActionState world).IsWoundState then
-                                let world = attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
-                                World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
-                                world
-                            else world
-                    else world)
+                    let world = attacked.HitPoints.Map (dec >> max 0) world
+                    if attacked.GetHitPoints world > 0 then
+                        if not (attacked.GetActionState world).IsInjuryState then
+                            let world = attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                            world
+                        else world
+                    else
+                        if not (attacked.GetActionState world).IsWoundState then
+                            let world = attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
+                            world
+                        else world)
                     world attacks
 
             // process enemy deaths
