@@ -347,7 +347,7 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
 
                 // init render
                 let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
-                Hl.initRender cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+                Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
                 
                 if drawData.TotalVtxCount > 0 then
                     
@@ -460,8 +460,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                 // reset scissor
                 Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
 
-                // submit render
-                Hl.submitRender cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
+                // flush render commands
+                Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
         
         member this.CleanUp () =
             Hl.AllocatedBuffer.destroy indexBuffer vkg.VmaAllocator

@@ -709,7 +709,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
 
                             // init render
                             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-                            Hl.initRender cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+                            Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
                             
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
@@ -731,8 +731,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  pipeline,
                                  vkg)
 
-                            // submit render
-                            Hl.submitRender cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
+                            // flush render commands
+                            Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr

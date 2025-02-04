@@ -29,6 +29,7 @@ module Hl =
     let mutable private ImageIndex = 0u
 
     /// Convert VkExtensionProperties.extensionName to a string.
+    /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
         NativePtr.fixedBufferToString extensionProps.extensionName
 
@@ -180,7 +181,7 @@ module Hl =
     /// Create a shader module from a GLSL file.
     let createShaderModuleFromGlsl shaderPath shaderKind device =
 
-        // handle and shader
+        // compile shader
         let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
         let shader = compileShader shaderPath shaderKind
 
@@ -217,9 +218,11 @@ module Hl =
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
     /// Begin command buffer recording and render pass.
-    let initRender cb renderPass framebuffer renderArea clearValues waitFence device =
+    let beginRenderBlock cb renderPass framebuffer renderArea clearValues waitFence device =
 
         // await fence if not null
+        // TODO: investigate if passing the null fence into awaitFence performs a no-op as expected and if so, don't
+        // bother to check for it here :)
         if waitFence <> VkFence.Null then awaitFence waitFence device
 
         // reset command buffer and begin recording
@@ -238,7 +241,7 @@ module Hl =
         Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
 
     /// End command buffer recording and render pass and submit for execution.
-    let submitRender cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
+    let endRenderBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
 
         // end render pass
         Vulkan.vkCmdEndRenderPass cb
@@ -265,6 +268,7 @@ module Hl =
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
 
     /// A physical device and associated data.
+    /// TODO: rename to PhysicalDeviceContext or something that doesn't imply this is mere dumb data.
     type PhysicalDeviceData =
         { PhysicalDevice : VkPhysicalDevice
           Properties : VkPhysicalDeviceProperties
@@ -362,6 +366,7 @@ module Hl =
             | (_, _) -> None
     
     /// Exposes the vulkan handles that must be globally accessible within the renderer.
+    /// TODO: maybe rename this to VulkanContext.
     /// TODO: DJL: make props private.
     type [<ReferenceEquality>] VulkanGlobal =
         { Instance : VkInstance
@@ -386,7 +391,7 @@ module Hl =
           SwapExtent : VkExtent2D }
 
         /// The current swapchain framebuffer.
-        member this.SwapchainFramebuffer = this.SwapchainFramebuffers[int ImageIndex]
+        member this.SwapchainFramebuffer = this.SwapchainFramebuffers.[int ImageIndex]
 
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
@@ -405,7 +410,7 @@ module Hl =
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
             use sdlExtensionsPin = new ArrayPin<_> (sdlExtensions)
 
-            // TODO: DJL: setup message callback with debug utils *if* motivation arises.
+            // TODO: P0: DJL: setup message callback with debug utils *if* motivation arises.
 
             // get available instance layers
             let mutable layerCount = 0u
@@ -419,7 +424,7 @@ module Hl =
             let validationLayerExists = Array.exists (fun x -> getLayerName x = validationLayer) layers
             if ValidationLayersEnabled && not validationLayerExists then Log.info (validationLayer + " is not available. Vulkan programmers must install the Vulkan SDK to enable validation.")
 
-            // TODO: DJL: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
+            // TODO: P1: DJL: apply VkApplicationInfo once all compulsory fields have been decided (e.g. engineVersion)
             // and check for available vulkan version as described in 
             // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/chap4.html#VkApplicationInfo.
 
@@ -487,15 +492,12 @@ module Hl =
         /// Create the logical device.
         static member private createLogicalDevice (physicalDeviceData : PhysicalDeviceData) =
 
-            // handle
-            let mutable device = Unchecked.defaultof<VkDevice>
-
             // get unique queue family array
             let uniqueQueueFamiliesSet = new HashSet<uint> ()
             uniqueQueueFamiliesSet.Add physicalDeviceData.GraphicsQueueFamily |> ignore
             uniqueQueueFamiliesSet.Add physicalDeviceData.PresentQueueFamily |> ignore
             let uniqueQueueFamilies = Array.zeroCreate<uint> uniqueQueueFamiliesSet.Count
-            uniqueQueueFamiliesSet.CopyTo (uniqueQueueFamilies)
+            uniqueQueueFamiliesSet.CopyTo uniqueQueueFamilies
 
             // queue create infos
             let mutable queuePriority = 1.0f
@@ -521,6 +523,7 @@ module Hl =
             info.pQueueCreateInfos <- queueCreateInfosPin.Pointer
             info.enabledExtensionCount <- 1u
             info.ppEnabledExtensionNames <- extensionArrayWrap.Pointer
+            let mutable device = Unchecked.defaultof<VkDevice>
             Vulkan.vkCreateDevice (physicalDeviceData.PhysicalDevice, &info, nullPtr, &device) |> check
             device
 
@@ -580,9 +583,6 @@ module Hl =
             let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
             let capabilities = physicalDeviceData.SurfaceCapabilities
 
-            // present mode; VK_PRESENT_MODE_FIFO_KHR is guaranteed by the spec and seems most appropriate for nu
-            let presentMode = Vulkan.VK_PRESENT_MODE_FIFO_KHR
-
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
             // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
@@ -613,7 +613,7 @@ module Hl =
                 info.pQueueFamilyIndices <- indicesArrayPin.Pointer
             info.preTransform <- capabilities.currentTransform
             info.compositeAlpha <- Vulkan.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR
-            info.presentMode <- presentMode
+            info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
             info.clipped <- true
             info.oldSwapchain <- VkSwapchainKHR.Null
             Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &swapchain) |> check
@@ -749,8 +749,8 @@ module Hl =
             // TODO: DJL: clear viewport as well, as applicable.
             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
             let clearColor = VkClearValue (Constants.Render.WindowClearColor.R, Constants.Render.WindowClearColor.G, Constants.Render.WindowClearColor.B, Constants.Render.WindowClearColor.A)
-            initRender vkg.RenderCommandBuffer vkg.ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
-            submitRender vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] vkg.InFlightFence
+            beginRenderBlock vkg.RenderCommandBuffer vkg.ClearRenderPass vkg.SwapchainFramebuffer renderArea [|clearColor|] VkFence.Null vkg.Device
+            endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [|vkg.ImageAvailableSemaphore, waitStage|] [||] vkg.InFlightFence
 
         /// End the frame.
         static member endFrame () =
@@ -765,8 +765,8 @@ module Hl =
             
             // transition image layout for presentation
             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-            initRender vkg.RenderCommandBuffer vkg.PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
-            submitRender vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
+            beginRenderBlock vkg.RenderCommandBuffer vkg.PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+            endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
             
             // present image
             let mutable info = VkPresentInfoKHR ()
@@ -896,17 +896,15 @@ module Hl =
 
         static member private createInternal uploadEnabled bufferInfo allocator =
 
-            // handles
-            let mutable buffer = Unchecked.defaultof<VkBuffer>
-            let mutable allocation = Unchecked.defaultof<VmaAllocation>
-            let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
-
             // allocation create info
             let mutable info = VmaAllocationCreateInfo ()
             info.usage <- VmaMemoryUsage.Auto
             if uploadEnabled then info.flags <- VmaAllocationCreateFlags.HostAccessSequentialWrite ||| VmaAllocationCreateFlags.Mapped
 
             // create vma buffer
+            let mutable buffer = Unchecked.defaultof<VkBuffer>
+            let mutable allocation = Unchecked.defaultof<VmaAllocation>
+            let mutable allocationInfo = Unchecked.defaultof<VmaAllocationInfo>
             Vma.vmaCreateBuffer (allocator, &bufferInfo, &info, &buffer, &allocation, asPointer &allocationInfo) |> check
 
             // make AllocatedBuffer

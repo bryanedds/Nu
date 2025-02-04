@@ -102,7 +102,7 @@ module SpriteBatch =
 
             // init render
             let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-            Hl.initRender cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+            Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
 
             // update uniform buffers
             Hl.AllocatedBuffer.uploadArray 0 env.Perimeters env.PerimetersUniform
@@ -140,7 +140,7 @@ module SpriteBatch =
             Vulkan.vkCmdSetScissor (cb, 0u, 1u, asPointer &renderArea)
             
             // submit render
-            Hl.submitRender cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
+            Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
             
             // next batch
             env.SpriteIndex <- 0
