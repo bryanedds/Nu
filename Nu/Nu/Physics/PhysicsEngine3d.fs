@@ -473,55 +473,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
             //physicsEngine.PhysicsContext.BodyInterface.SetMotionQuality (&innerBodyID, motionQuality)
 
             // validate contact with category and mask
-            character.add_OnContactValidate (fun character body2 _ ->
-                let characterID = character.ID
-                let body2ID = body2.ID
-                lock physicsEngine.CharacterContactLock $ fun () ->
-                    // TODO: P1: optimize collision mask and categories check with in-place body user data.
-                    match physicsEngine.CharacterUserData.TryGetValue characterID with
-                    | (true, characterUserData) ->
-                        match physicsEngine.CharacterUserData.TryGetValue body2ID with
-                        | (true, character2UserData) ->
-                            if characterUserData.CharacterCollisionCategories &&& character2UserData.CharacterCollisionMask <> 0
-                            then Bool8.True
-                            else Bool8.False
-                        | (false, _) -> Bool8.True
-                    | (false, _) -> Bool8.True)
-
-            // create character body contact add events
-            character.add_OnContactAdded (fun character body2ID subShape2ID contactPosition contactNormal _ ->
-                let body2ID = body2ID
-                let contactPosition = contactPosition
-                let contactNormal = contactNormal
-                lock physicsEngine.CharacterContactLock $ fun () ->
-
-                    // track character collision normals
-                    match physicsEngine.CharacterCollisions.TryGetValue character with
-                    | (true, collisions) -> collisions.[subShape2ID] <- contactNormal
-                    | (false, _) -> physicsEngine.CharacterCollisions.[character] <- dictPlus HashIdentity.Structural [(subShape2ID, contactNormal)]
-
-                    // create character contact add event
-                    let character2Identifier = ValueRight body2ID
-                    let contactPosition = v3 (single contactPosition.X) (single contactPosition.Y) (single contactPosition.Z)
-                    physicsEngine.CharacterContactEvents.Add (CharacterContactAdded (character, character2Identifier, subShape2ID, contactPosition, contactNormal)) |> ignore<bool>)
-
-            // create character body contact remove events
-            character.add_OnContactRemoved (fun character body2ID subShape2ID ->
-                let body2ID = body2ID
-                lock physicsEngine.CharacterContactLock $ fun () ->
-
-                    // track character collision normals
-                    match physicsEngine.CharacterCollisions.TryGetValue character with
-                    | (true, collisions) ->
-                        collisions.Remove subShape2ID |> ignore<bool>
-                        if collisions.Count = 0 then physicsEngine.CharacterCollisions.Remove character |> ignore<bool>
-                    | (false, _) -> ()
-
-                    // create character contact remove event
-                    let character2Identifier = ValueRight body2ID
-                    physicsEngine.CharacterContactEvents.Add (CharacterContactRemoved (character, character2Identifier, subShape2ID)) |> ignore<bool>)
-
-            // validate contact with category and mask
             character.add_OnCharacterContactValidate (fun character character2 _ ->
                 let characterID = character.ID
                 let character2ID = character2.ID
