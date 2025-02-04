@@ -500,8 +500,8 @@ and ScreenDispatcher () =
     default this.Unregister (_, world) = world
 
     /// Attempt to ImNui process a screen.
-    abstract TryProcess : Screen * World -> World
-    default this.TryProcess (_, world) = world
+    abstract TryProcess : bool * Screen * World -> World
+    default this.TryProcess (_, _, world) = world
 
     /// Pre-update a screen.
     abstract PreUpdate : Screen * World -> World

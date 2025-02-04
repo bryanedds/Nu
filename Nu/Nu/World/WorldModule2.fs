@@ -1467,7 +1467,7 @@ module WorldModule2 =
         /// Process ImNui for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
         /// meaningful time. Do NOT call this in the course of normal operations!
-        static member tryProcessSimulants (world : World) =
+        static member tryProcessSimulants firstFrame (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1488,7 +1488,7 @@ module WorldModule2 =
 
                 // attempt to process screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen firstFrame screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // attempt to process groups
@@ -1583,7 +1583,7 @@ module WorldModule2 =
             // fin
             world
 
-        static member private updateSimulants (world : World) =
+        static member private updateSimulants firstFrame (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1609,7 +1609,7 @@ module WorldModule2 =
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
                     Seq.fold (fun world (screen : Screen) ->
-                        let world = if screen.GetExists world then World.tryProcessScreen screen world else world
+                        let world = if screen.GetExists world then World.tryProcessScreen firstFrame screen world else world
                         let world = if advancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world else world
                         world)
                         world screens
@@ -2005,7 +2005,7 @@ module WorldModule2 =
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
                                     WorldModule.UpdatingSimulants <- true
-                                    let world = World.updateSimulants world
+                                    let world = World.updateSimulants firstFrame world
                                     WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
                                     match World.getLiveness world with
@@ -2795,10 +2795,11 @@ module ScreenDispatcherModule =
     type [<AbstractClass>] ScreenDispatcherImNui () =
         inherit ScreenDispatcher ()
 
-        override this.TryProcess (screen, world) =
+        override this.TryProcess (firstFrame, screen, world) =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
             let (selectResults, world) = World.doSubscription "@SelectResults" screen.SelectEvent world |> mapFst (FQueue.map (constant Select))
+            let selectResults = if firstFrame then FQueue.conj Select selectResults else selectResults // HACK: add in Select result manually when this is first frame as it is otherwise missed.
             let (incomingStartResults, world) = World.doSubscription "@IncomingStartResults" screen.IncomingStartEvent world |> mapFst (FQueue.map (constant IncomingStart))
             let (incomingFinishResults, world) = World.doSubscription "@IncomingFinishResults" screen.IncomingFinishEvent world |> mapFst (FQueue.map (constant IncomingFinish))
             let (outgoingStartResults, world) = World.doSubscription "@OutgoingStartResults" screen.OutgoingStartEvent world |> mapFst (FQueue.map (constant OutgoingStart))
@@ -2968,7 +2969,7 @@ module ScreenPropertyDescriptor =
 
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        if propertyName = "Name" || propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 

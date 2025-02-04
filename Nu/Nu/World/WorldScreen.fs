@@ -227,7 +227,7 @@ module WorldScreenModule =
             let world = World.addScreen false screenState screen world
             let world =
                 if WorldModule.UpdatingSimulants && screen.GetSelected world
-                then WorldModule.tryProcessScreen screen world
+                then WorldModule.tryProcessScreen true screen world
                 else world
             (screen, world)
 
@@ -326,7 +326,7 @@ module WorldScreenModule =
             // attempt to process ImNui screen first time if in the middle of simulant update phase
             let world =
                 if WorldModule.UpdatingSimulants && screen.GetSelected world
-                then WorldModule.tryProcessScreen screen world
+                then WorldModule.tryProcessScreen true screen world
                 else world
             (screen, world)
 

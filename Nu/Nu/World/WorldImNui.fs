@@ -56,9 +56,9 @@ module WorldImNui =
             let dispatcher = game.GetDispatcher world
             dispatcher.TryProcess (game, world)
 
-        static member internal tryProcessScreen (screen : Screen) (world : World) =
+        static member internal tryProcessScreen firstFrame (screen : Screen) (world : World) =
             let dispatcher = World.getScreenDispatcher screen world
-            dispatcher.TryProcess (screen, world)
+            dispatcher.TryProcess (firstFrame, screen, world)
 
         static member internal tryProcessGroup (group : Group) (world : World) =
             let dispatcher = group.GetDispatcher world
