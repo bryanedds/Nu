@@ -272,7 +272,8 @@ type CharacterDispatcher () =
         | None -> world
 
     static member Facets =
-        [typeof<RigidBodyFacet>]
+        [typeof<RigidBodyFacet>
+         typeof<AnimatedModelFacet>]
 
     static member Properties =
         [define Entity.Size (v3Dup 2.0f)
@@ -282,6 +283,8 @@ type CharacterDispatcher () =
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
          define Entity.Substance (Mass 50.0f)
          define Entity.Observable true
+         define Entity.MaterialProperties MaterialProperties.defaultProperties
+         define Entity.AnimatedModel Assets.Gameplay.JoanModel
          define Entity.CharacterType Enemy
          define Entity.LastTimeOnGround 0L
          define Entity.LastTimeJump 0L
@@ -364,27 +367,15 @@ type CharacterDispatcher () =
                     else NormalState
             entity.SetActionState actionState world
 
-        // declare animated model
+        // process animations model
         let animations = computeTraversalAnimations entity world
         let (visible, animations, world) = tryComputeActionAnimation animations entity world
-        let world =
-            World.doEntity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
-                [Entity.Position @= entity.GetPosition world
-                 Entity.Rotation @= entity.GetRotation world
-                 Entity.Size .= v3Dup 2.0f
-                 Entity.Offset .= v3 0.0f 1.0f 0.0f
-                 Entity.MountOpt .= None
-                 Entity.Visible @= visible
-                 Entity.Pickable .= false
-                 Entity.MaterialProperties .= MaterialProperties.defaultProperties
-                 Entity.Animations @= animations
-                 Entity.AnimatedModel .= Assets.Gameplay.JoanModel]
-                world
-        let animatedModel = world.RecentEntity
+        let world = entity.SetVisible visible world
+        let world = entity.SetAnimations animations world
 
         // declare weapon
         let weaponTransform =
-            match animatedModel.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
+            match entity.TryGetBoneTransformByName Constants.Gameplay.CharacterWeaponHandBoneName world with
             | Some weaponHandBoneTransform ->
                 Matrix4x4.CreateTranslation (v3 -0.1f 0.0f 0.02f) *
                 Matrix4x4.CreateFromAxisAngle (v3Forward, MathF.PI_OVER_2) *
@@ -474,10 +465,9 @@ type CharacterDispatcher () =
         // fin
         world
 
-    // custom definition of ray cast to utilize animated model and weapon
+    // custom definition of ray cast to utilize weapon
     override this.RayCast (ray, entity, world) =
-        let animatedModel = entity / Constants.Gameplay.CharacterAnimatedModelName
-        match animatedModel.RayCast ray world with
+        match base.RayCast (ray, entity, world) with
         | [||] ->
             let weapon = entity / Constants.Gameplay.CharacterWeaponName
             weapon.RayCast ray world

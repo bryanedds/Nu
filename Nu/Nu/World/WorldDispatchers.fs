@@ -590,8 +590,8 @@ type Character3dDispatcher () =
     inherit Entity3dDispatcher (true, false, false)
 
     static member Facets =
-        [typeof<AnimatedModelFacet>
-         typeof<RigidBodyFacet>]
+        [typeof<RigidBodyFacet>
+         typeof<AnimatedModelFacet>]
 
     static member Properties =
         [define Entity.Static false
