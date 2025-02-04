@@ -41,18 +41,6 @@ module CharacterExtensions =
         member this.GetCharacterType world : CharacterType = this.Get (nameof this.CharacterType) world
         member this.SetCharacterType (value : CharacterType) world = this.Set (nameof this.CharacterType) value world
         member this.CharacterType = lens (nameof this.CharacterType) this this.GetCharacterType this.SetCharacterType
-        member this.GetPositionHistory world : Vector3 FQueue = this.Get (nameof this.PositionHistory) world
-        member this.SetPositionHistory (value : Vector3 FQueue) world = this.Set (nameof this.PositionHistory) value world
-        member this.PositionHistory = lens (nameof this.PositionHistory) this this.GetPositionHistory this.SetPositionHistory
-        member this.GetRotationHistory world : Quaternion FQueue = this.Get (nameof this.RotationHistory) world
-        member this.SetRotationHistory (value : Quaternion FQueue) world = this.Set (nameof this.RotationHistory) value world
-        member this.RotationHistory = lens (nameof this.RotationHistory) this this.GetRotationHistory this.SetRotationHistory
-        member this.GetLinearVelocityHistory world : Vector3 FQueue = this.Get (nameof this.LinearVelocityHistory) world
-        member this.SetLinearVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.LinearVelocityHistory) value world
-        member this.LinearVelocityHistory = lens (nameof this.LinearVelocityHistory) this this.GetLinearVelocityHistory this.SetLinearVelocityHistory
-        member this.GetAngularVelocityHistory world : Vector3 FQueue = this.Get (nameof this.AngularVelocityHistory) world
-        member this.SetAngularVelocityHistory (value : Vector3 FQueue) world = this.Set (nameof this.AngularVelocityHistory) value world
-        member this.AngularVelocityHistory = lens (nameof this.AngularVelocityHistory) this this.GetAngularVelocityHistory this.SetAngularVelocityHistory
         member this.GetLastTimeOnGround world : int64 = this.Get (nameof this.LastTimeOnGround) world
         member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof this.LastTimeOnGround) value world
         member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
@@ -86,41 +74,6 @@ module CharacterExtensions =
         member this.AttackEvent = Events.AttackEvent --> this
         member this.DieEvent = Events.DieEvent --> this
 
-        member this.GetPositionInterp world =
-            let position = this.GetPosition world
-            let positionHistory = this.GetPositionHistory world
-            if FQueue.notEmpty positionHistory then
-                let positions = FQueue.conj position positionHistory
-                Seq.sum positions / single positions.Length
-            else position
-
-        member this.GetRotationInterp world =
-            let rotation = this.GetRotation world
-            let rotationHistory = this.GetRotationHistory world
-            if FQueue.notEmpty rotationHistory then
-                let rotations = FQueue.conj rotation rotationHistory
-                if rotations.Length > 1 then
-                    let unnormalized = Quaternion.Slerp (Seq.head rotations, Seq.last rotations, 0.5f)
-                    unnormalized.Normalized
-                else rotation
-            else rotation
-
-        member this.GetLinearVelocityInterp world =
-            let linearVelocity = this.GetLinearVelocity world
-            let linearVelocityHistory = this.GetLinearVelocityHistory world
-            if FQueue.notEmpty linearVelocityHistory then
-                let linearVelocities = FQueue.conj linearVelocity linearVelocityHistory
-                Seq.sum linearVelocities / single linearVelocities.Length
-            else linearVelocity
-
-        member this.GetAngularVelocityInterp world =
-            let angularVelocity = this.GetAngularVelocity world
-            let angularVelocityHistory = this.GetAngularVelocityHistory world
-            if FQueue.notEmpty angularVelocityHistory then
-                let angularVelocities = FQueue.conj angularVelocity angularVelocityHistory
-                Seq.sum angularVelocities / single angularVelocities.Length
-            else angularVelocity
-
         member this.GetCharacterProperties world =
             match this.GetCharacterType world with
             | Player -> CharacterProperties.defaultProperties
@@ -132,15 +85,15 @@ type CharacterDispatcher () =
     static let computeTraversalAnimations (entity : Entity) world =
         match entity.GetActionState world with
         | NormalState ->
-            let rotationInterp = entity.GetRotationInterp world
-            let linearVelocityInterp = entity.GetLinearVelocityInterp world
-            let angularVelocityInterp = entity.GetAngularVelocityInterp world
-            let forwardness = (linearVelocityInterp * 32.0f).Dot rotationInterp.Forward
-            let backness = (linearVelocityInterp * 32.0f).Dot -rotationInterp.Forward
-            let rightness = (linearVelocityInterp * 32.0f).Dot rotationInterp.Right
-            let leftness = (linearVelocityInterp * 32.0f).Dot -rotationInterp.Right
-            let turnRightness = if angularVelocityInterp.Y < 0.0f then -angularVelocityInterp.Y * 48.0f else 0.0f
-            let turnLeftness = if angularVelocityInterp.Y > 0.0f then angularVelocityInterp.Y * 48.0f else 0.0f
+            let rotation = entity.GetRotation world
+            let linearVelocity = entity.GetLinearVelocity world
+            let angularVelocity = entity.GetAngularVelocity world
+            let forwardness = (linearVelocity * 32.0f).Dot rotation.Forward
+            let backness = (linearVelocity * 32.0f).Dot -rotation.Forward
+            let rightness = (linearVelocity * 32.0f).Dot rotation.Right
+            let leftness = (linearVelocity * 32.0f).Dot -rotation.Right
+            let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 48.0f else 0.0f
+            let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 48.0f else 0.0f
             let animations =
                 [Animation.make 0L None "Armature|Idle" Loop 1.0f 0.5f None]
             let animations =
@@ -330,10 +283,6 @@ type CharacterDispatcher () =
          define Entity.Substance (Mass 50.0f)
          define Entity.Observable true
          define Entity.CharacterType Enemy
-         nonPersistent Entity.PositionHistory FQueue.empty
-         nonPersistent Entity.RotationHistory FQueue.empty
-         nonPersistent Entity.LinearVelocityHistory FQueue.empty
-         nonPersistent Entity.AngularVelocityHistory FQueue.empty
          define Entity.LastTimeOnGround 0L
          define Entity.LastTimeJump 0L
          define Entity.HitPoints Constants.Gameplay.EnemyHitPoints
@@ -346,21 +295,6 @@ type CharacterDispatcher () =
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
 
     override this.Process (entity, world) =
-
-        // process history for the frame
-        let world = entity.PositionHistory.Map (fun history -> (if history.Length >= Constants.Gameplay.CharacterInterpolationSteps then FQueue.tail history else history) |> FQueue.conj (entity.GetPosition world)) world
-        let world = entity.RotationHistory.Map (fun history -> (if history.Length >= Constants.Gameplay.CharacterInterpolationSteps then FQueue.tail history else history) |> FQueue.conj (entity.GetRotation world)) world
-        let world = entity.LinearVelocityHistory.Map (fun history -> (if history.Length >= Constants.Gameplay.CharacterInterpolationSteps then FQueue.tail history else history) |> FQueue.conj (entity.GetLinearVelocity world)) world
-        let world = entity.AngularVelocityHistory.Map (fun history -> (if history.Length >= Constants.Gameplay.CharacterInterpolationSteps then FQueue.tail history else history) |> FQueue.conj (entity.GetAngularVelocity world)) world
-
-        // ensure position history isn't stale (such as when an entity is moved in the editor)
-        let world =
-            let position = entity.GetPosition world
-            let positionInterp = entity.GetPositionInterp world
-            if Vector3.Distance (positionInterp, position) > Constants.Gameplay.CharacterPositionInterpDistanceMax then
-                let positionHistory = List.init Constants.Gameplay.CharacterInterpolationSteps (fun _ -> position) |> FQueue.ofList
-                entity.SetPositionHistory positionHistory world
-            else world
 
         // process last time on ground
         let bodyId = entity.GetBodyId world
@@ -435,8 +369,8 @@ type CharacterDispatcher () =
         let (visible, animations, world) = tryComputeActionAnimation animations entity world
         let world =
             World.doEntity<AnimatedModelDispatcher> Constants.Gameplay.CharacterAnimatedModelName
-                [Entity.Position @= entity.GetPositionInterp world
-                 Entity.Rotation @= entity.GetRotationInterp world
+                [Entity.Position @= entity.GetPosition world
+                 Entity.Rotation @= entity.GetRotation world
                  Entity.Size .= v3Dup 2.0f
                  Entity.Offset .= v3 0.0f 1.0f 0.0f
                  Entity.MountOpt .= None
