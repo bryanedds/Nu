@@ -319,23 +319,23 @@ type CharacterDispatcher () =
                 world penetrations
 
         // process separation (explicit)
-        let (separationExplicit, world) = World.doSubscription "SeparationExplicit" entity.BodySeparationExplicitEvent world
+        let (separationsExplicit, world) = World.doSubscription "SeparationExplicit" entity.BodySeparationExplicitEvent world
         let world =
             FQueue.fold (fun world separation ->
                 match separation.BodyShapeSeparatee.BodyId.BodySource with
                 | :? Entity as separatee when separatee.Is<CharacterDispatcher> world && separatee <> entity ->
                     entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
-                world separationExplicit
+                world separationsExplicit
 
         // process separation (implicit)
-        let (separationImplicit, world) = World.doSubscription "SeparationImplicit" entity.BodySeparationImplicitEvent world
+        let (separationsImplicit, world) = World.doSubscription "SeparationImplicit" entity.BodySeparationImplicitEvent world
         let world =
             FQueue.fold (fun world (separation : BodySeparationImplicitData) ->
                 match separation.BodyId.BodySource with
                 | :? Entity as separatee -> entity.CharacterCollisions.Map (Set.remove separatee) world
                 | _ -> world)
-                world separationImplicit
+                world separationsImplicit
 
         // process input
         let world =

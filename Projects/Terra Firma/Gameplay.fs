@@ -30,13 +30,13 @@ type GameplayDispatcher () =
          define Screen.Score 0]
 
     // here we define the behavior of our gameplay
-    override this.Process (results, gameplay, world) =
+    override this.Process (screenResults, gameplay, world) =
 
         // only process when selected
         if gameplay.GetSelected world then
 
             // process scene initialization
-            let initializing = FQueue.contains Select results
+            let initializing = FQueue.contains Select screenResults
             let world =
                 if initializing then
                     let world = Simulants.Gameplay.SetGameplayState Playing world
