@@ -37,13 +37,13 @@ module SpriteBatch =
               mutable ViewProjectionAbsolute : Matrix4x4
               mutable ViewProjectionRelative : Matrix4x4
               VulkanGlobal : Hl.VulkanGlobal
+              Pipeline : Pipeline.SpriteBatchPipeline
               PerimetersUniform : Hl.AllocatedBuffer
               TexCoordsesUniform : Hl.AllocatedBuffer
               PivotsUniform : Hl.AllocatedBuffer
               RotationsUniform : Hl.AllocatedBuffer
               ColorsUniform : Hl.AllocatedBuffer
               ViewProjectionUniform : Hl.AllocatedBuffer
-              Pipeline : Pipeline.SpriteBatchPipeline
               Perimeters : single array
               Pivots : single array
               Rotations : single array
@@ -238,9 +238,9 @@ module SpriteBatch =
         // destroy Vulkan resources
         Pipeline.SpriteBatchPipeline.destroy env.Pipeline device
         Hl.AllocatedBuffer.destroy env.PerimetersUniform allocator
+        Hl.AllocatedBuffer.destroy env.TexCoordsesUniform allocator
         Hl.AllocatedBuffer.destroy env.PivotsUniform allocator
         Hl.AllocatedBuffer.destroy env.RotationsUniform allocator
-        Hl.AllocatedBuffer.destroy env.TexCoordsesUniform allocator
         Hl.AllocatedBuffer.destroy env.ColorsUniform allocator
         Hl.AllocatedBuffer.destroy env.ViewProjectionUniform allocator
         

@@ -598,8 +598,8 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // render only when color isn't fully transparent because SDL_TTF doesn't handle zero alpha text as expected.
         let color = color // copy to local for proprety access
         if color.A8 <> 0uy then
+
             let transform = transform // copy to local to make visible from lambda
-            
             flip SpriteBatch.InterruptSpriteBatchFrame renderer.SpriteBatchEnv $ fun () ->
 
                 // gather context for rendering text

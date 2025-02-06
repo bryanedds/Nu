@@ -941,7 +941,7 @@ module Hl =
             awaitFence vkg.ResourceReadyFence vkg.Device
 
         (*
-        TODO: DJL: *maybe* try and get vmaMapMemory fixed to enable these methods.
+        TODO: DJL: *maybe* try and get vmaMapMemory by way of the vortice wrapper fixed to enable these methods.
 
         /// Map pointer to buffer if upload is enabled.
         static member tryMap buffer =

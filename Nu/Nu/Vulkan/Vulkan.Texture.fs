@@ -287,12 +287,6 @@ module Texture =
             Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
-        /// Destroy VulkanTexture.
-        static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
-            Vulkan.vkDestroySampler (vkg.Device, vulkanTexture.Sampler, nullPtr)
-            Vulkan.vkDestroyImageView (vkg.Device, vulkanTexture.ImageView, nullPtr)
-            Hl.AllocatedImage.destroy vulkanTexture.Image vkg.VmaAllocator
-        
         /// Create a VulkanTexture.
         static member private createInternal format bytesPerPixel minFilter magFilter metadata pixels (vkg : Hl.VulkanGlobal) =
 
@@ -348,6 +342,12 @@ module Texture =
 
             // fin
             vulkanTexture
+        
+        /// Destroy VulkanTexture.
+        static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
+            Vulkan.vkDestroySampler (vkg.Device, vulkanTexture.Sampler, nullPtr)
+            Vulkan.vkDestroyImageView (vkg.Device, vulkanTexture.ImageView, nullPtr)
+            Hl.AllocatedImage.destroy vulkanTexture.Image vkg.VmaAllocator
 
         /// Represents the empty texture used in Vulkan.
         static member empty =
