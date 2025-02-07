@@ -271,7 +271,7 @@ module GlRendererImGui =
 /// Renders an imgui view via Vulkan.
 type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
     
-    let mutable pipeline = Unchecked.defaultof<Pipeline.ImGuiPipeline>
+    let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
     let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
     let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
     let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
@@ -295,9 +295,9 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
             
             // create pipeline
             pipeline <-
-                Pipeline.ImGuiPipeline.create
+                Pipeline.Pipeline.create
                     Constants.Paths.ImGuiShaderFilePath
-                    false (Hl.makeBlendAttachmentImGui ())
+                    false [|Pipeline.ImGui|]
                     [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
                     [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "pos")
                       Hl.makeVertexAttribute 1 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "uv")
@@ -308,7 +308,7 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                     vkg.Device
 
             // load font atlas texture to descriptor set
-            Pipeline.ImGuiPipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkg.Device
+            Pipeline.Pipeline.writeDescriptorTexture 0 0 fontTexture pipeline vkg.Device
 
             // store identifier
             fonts.SetTexID (nativeint pipeline.DescriptorSet.Handle)
@@ -368,7 +368,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                         indexOffset <- indexOffset + indexSize
 
                 // bind pipeline
-                Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.Pipeline)
+                let vkPipeline = Pipeline.Pipeline.getPipeline Pipeline.ImGui pipeline
+                Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 
                 // bind vertex and index buffer
                 if drawData.TotalVtxCount > 0 then
@@ -455,7 +456,7 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
             Hl.AllocatedBuffer.destroy indexBuffer vkg.VmaAllocator
             Hl.AllocatedBuffer.destroy vertexBuffer vkg.VmaAllocator
             Texture.VulkanTexture.destroy fontTexture vkg
-            Pipeline.ImGuiPipeline.destroy pipeline vkg.Device
+            Pipeline.Pipeline.destroy pipeline vkg.Device
 
 [<RequireQualifiedAccess>]
 module VulkanRendererImGui =

@@ -156,7 +156,7 @@ type [<ReferenceEquality>] StubRenderer2d =
 type [<ReferenceEquality>] VulkanRenderer2d =
     private
         { VulkanGlobal : Hl.VulkanGlobal
-          SpritePipeline : Hl.AllocatedBuffer * Hl.AllocatedBuffer * Hl.AllocatedBuffer * Pipeline.SpritePipeline
+          SpritePipeline : Hl.AllocatedBuffer * Hl.AllocatedBuffer * Hl.AllocatedBuffer * Pipeline.Pipeline
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
@@ -844,7 +844,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             // destroy Vulkan resources
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Pipeline.SpritePipeline.destroy pipeline device
+            Pipeline.Pipeline.destroy pipeline device
             Hl.AllocatedBuffer.destroy modelViewProjectionUniform allocator
             Hl.AllocatedBuffer.destroy texCoords4Uniform allocator
             Hl.AllocatedBuffer.destroy colorUniform allocator
