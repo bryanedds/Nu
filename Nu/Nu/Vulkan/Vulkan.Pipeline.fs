@@ -17,6 +17,26 @@ module Pipeline =
         | Overwrite
         | ImGui
 
+        /// Make blend attachment.
+        static member makeAttachment blend =
+            match blend with
+            | Transparent ->
+                Hl.makeBlendAttachment
+                    Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+            | Additive ->
+                Hl.makeBlendAttachment
+                    Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE
+                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+            | Overwrite ->
+                Hl.makeBlendAttachment
+                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
+            | ImGui ->
+                Hl.makeBlendAttachment
+                    Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+                    Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+
     /// An abstraction of a rendering pipeline.
     type Pipeline =
         { Pipelines : (VkPipeline * Blend) array
@@ -146,12 +166,7 @@ module Pipeline =
                 let mutable pipeline = Unchecked.defaultof<VkPipeline>
                 
                 // make blend attachment
-                let blend =
-                    match blends.[i] with
-                    | Transparent -> Hl.makeBlendAttachmentTransparent ()
-                    | Additive -> Hl.makeBlendAttachmentAdditive ()
-                    | Overwrite -> Hl.makeBlendAttachmentOverwrite ()
-                    | ImGui -> Hl.makeBlendAttachmentImGui ()
+                let blend = Blend.makeAttachment blends.[i]
                 
                 // depth and blend info
                 let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()

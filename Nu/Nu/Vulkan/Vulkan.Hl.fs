@@ -49,39 +49,14 @@ module Hl =
         viewport
 
     /// Make a VkPipelineColorBlendAttachmentState.
-    let makeBlendAttachment srcFactor dstFactor =
+    let makeBlendAttachment srcColor dstColor srcAlpha dstAlpha =
         let mutable blendAttachment = VkPipelineColorBlendAttachmentState ()
         blendAttachment.blendEnable <- true
-        blendAttachment.srcColorBlendFactor <- srcFactor
-        blendAttachment.dstColorBlendFactor <- dstFactor
+        blendAttachment.srcColorBlendFactor <- srcColor
+        blendAttachment.dstColorBlendFactor <- dstColor
         blendAttachment.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
-        blendAttachment.srcAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE
-        blendAttachment.dstAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ZERO
-        blendAttachment.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
-        blendAttachment.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
-        blendAttachment
-
-    /// Make a VkPipelineColorBlendAttachmentState for transparent color blending.
-    let makeBlendAttachmentTransparent () =
-        makeBlendAttachment Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-
-    /// Make a VkPipelineColorBlendAttachmentState for additive color blending.
-    let makeBlendAttachmentAdditive () =
-        makeBlendAttachment Vulkan.VK_BLEND_FACTOR_SRC_ALPHA Vulkan.VK_BLEND_FACTOR_ONE
-
-    /// Make a VkPipelineColorBlendAttachmentState for overwrite color blending.
-    let makeBlendAttachmentOverwrite () =
-        makeBlendAttachment Vulkan.VK_BLEND_FACTOR_ONE Vulkan.VK_BLEND_FACTOR_ZERO
-
-    /// Make a VkPipelineColorBlendAttachmentState for ImGui color blending.
-    let makeBlendAttachmentImGui () =
-        let mutable blendAttachment = VkPipelineColorBlendAttachmentState ()
-        blendAttachment.blendEnable <- true
-        blendAttachment.srcColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_SRC_ALPHA
-        blendAttachment.dstColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-        blendAttachment.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
-        blendAttachment.srcAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE
-        blendAttachment.dstAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
+        blendAttachment.srcAlphaBlendFactor <- srcAlpha
+        blendAttachment.dstAlphaBlendFactor <- dstAlpha
         blendAttachment.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
         blendAttachment.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
         blendAttachment
