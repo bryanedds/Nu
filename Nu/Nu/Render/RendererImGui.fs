@@ -293,23 +293,11 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
             let metadata = Texture.TextureMetadata.make fontWidth fontHeight
             fontTexture <- Texture.VulkanTexture.createRgba Vulkan.VK_FILTER_LINEAR Vulkan.VK_FILTER_LINEAR metadata pixels vkg
             
-            // blending info
-            // TODO: DJL: find out if these alpha blend factors are appropriate.
-            let mutable blend = VkPipelineColorBlendAttachmentState ()
-            blend.blendEnable <- true
-            blend.srcColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_SRC_ALPHA
-            blend.dstColorBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-            blend.colorBlendOp <- Vulkan.VK_BLEND_OP_ADD
-            blend.srcAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE
-            blend.dstAlphaBlendFactor <- Vulkan.VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA
-            blend.alphaBlendOp <- Vulkan.VK_BLEND_OP_ADD
-            blend.colorWriteMask <- Vulkan.VK_COLOR_COMPONENT_R_BIT ||| Vulkan.VK_COLOR_COMPONENT_G_BIT ||| Vulkan.VK_COLOR_COMPONENT_B_BIT ||| Vulkan.VK_COLOR_COMPONENT_A_BIT
-            
             // create pipeline
             pipeline <-
                 Pipeline.ImGuiPipeline.create
                     Constants.Paths.ImGuiShaderFilePath
-                    false blend
+                    false (Hl.makeBlendAttachmentImGui ())
                     [|Hl.makeVertexBindingVertex 0 sizeof<ImDrawVert>|]
                     [|Hl.makeVertexAttribute 0 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "pos")
                       Hl.makeVertexAttribute 1 0 Vulkan.VK_FORMAT_R32G32_SFLOAT (NativePtr.offsetOf<ImDrawVert> "uv")

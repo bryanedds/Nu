@@ -10,11 +10,11 @@ open Nu
 module Pipeline =
 
     /// A blend setting for a Vulkan pipeline.
-    /// NOTE: DJL: not just mirror to higher level Blend but expandible to *any* Vulkan blend setting e.g. ImGui.
     type Blend =
         | Transparent
         | Additive
         | Overwrite
+        | ImGui
     
     /// An abstraction of a rendering pipeline for ImGui.
     type ImGuiPipeline =
