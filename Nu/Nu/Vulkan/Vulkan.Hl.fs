@@ -937,9 +937,9 @@ module Hl =
         *)
 
         /// Upload data to buffer if upload is enabled.
-        static member upload offset size nint buffer =
+        static member upload offset size ptr buffer =
             if buffer.UploadEnabled
-            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr nint) buffer.AllocationInfo.pMappedData
+            then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr ptr) buffer.AllocationInfo.pMappedData
             else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
