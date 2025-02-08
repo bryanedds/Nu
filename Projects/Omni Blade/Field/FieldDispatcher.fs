@@ -758,7 +758,7 @@ type FieldDispatcher () =
                 let tileMapPerimeter2d = (Simulants.FieldTileMap.GetPerimeter world).Box2
                 let eyeBounds = tileMapPerimeter2d.WithMin (tileMapPerimeter2d.Min + v2 48.0f 48.0f)
                 let eyeBounds = eyeBounds.WithSize (tileMapPerimeter2d.Size - v2 96.0f 96.0f)
-                let world = World.constrainEyeBounds2d eyeBounds world
+                let world = World.constrainEye2dBounds eyeBounds world
                 just world
             else just world
 
