@@ -1828,7 +1828,13 @@ module WorldModuleEntity =
                     match valueObj with
                     | :? 'a as value -> value
                     | null -> null :> obj :?> 'a
-                    | value -> value |> valueToSymbol |> symbolToValue
+                    | value ->
+                        let value' = value |> valueToSymbol |> symbolToValue
+                        match property.PropertyValue with
+                        | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                        | :? ComputedProperty -> () // nothing to do
+                        | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
+                        value'
                 else
                     let value =
                         match entityStateOpt.OverlayNameOpt with
@@ -2294,7 +2300,7 @@ module WorldModuleEntity =
             let entityState =
                 dispatcherTypes |>
                 List.map (fun ty -> (Reflection.getIntrinsicFacetNamesNoInherit ty, ty)) |>
-                List.fold (fun entityState (facetNames, ty) -> 
+                List.fold (fun entityState (facetNames, ty) ->
                     let entityState = Reflection.attachIntrinsicFacetsViaNames id dispatcherMap facetMap facetNames entityState world
                     let definitions = Reflection.getPropertyDefinitionsNoInherit ty
                     Reflection.attachPropertiesViaDefinitions id definitions entityState world)

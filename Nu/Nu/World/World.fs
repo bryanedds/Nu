@@ -74,7 +74,7 @@ type Nu () =
             WorldModule.register <- fun simulant world -> World.register simulant world
             WorldModule.unregister <- fun simulant world -> World.unregister simulant world
             WorldModule.tryProcessGame <- fun game world -> World.tryProcessGame game world
-            WorldModule.tryProcessScreen <- fun screen world -> World.tryProcessScreen screen world
+            WorldModule.tryProcessScreen <- fun firstFrame screen world -> World.tryProcessScreen firstFrame screen world
             WorldModule.tryProcessGroup <- fun group world -> World.tryProcessGroup group world
             WorldModule.tryProcessEntity <- fun entity world -> World.tryProcessEntity entity world
             WorldModule.signal <- Nu.worldModuleSignal
@@ -218,7 +218,7 @@ module WorldModule3 =
         static member updateLateBindings (assemblies : Assembly array) world =
             WorldImNui.Reinitializing <- true
             Content.UpdateLateBindingsCount <- inc Content.UpdateLateBindingsCount
-            World.clearClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
+            World.clearEntityFromClipboard world // HACK: clear what's on the clipboard rather than changing its dispatcher instance.
             world.WorldExtension.Plugin.CleanUp ()
             let pluginType =
                 assemblies |>

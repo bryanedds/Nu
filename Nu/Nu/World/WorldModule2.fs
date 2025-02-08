@@ -1016,23 +1016,22 @@ module WorldModule2 =
             let world = World.rebuildOctree world
             let world = World.rebuildQuadtree world
 
-            // clear existing physics, then register them again if any physics objects were present
-            if World.clearPhysics world then
-                match World.getSelectedScreenOpt world with
-                | Some screen ->
-                    let groups = World.getGroups screen world
-                    Seq.fold (fun world (group : Group) ->
-                        if group.GetExists world then
-                            let entities = World.getEntities group world
-                            Seq.fold (fun world (entity : Entity) ->
-                                if entity.GetExists world
-                                then World.registerEntityPhysics entity world
-                                else world)
-                                world entities
+            // clear existing physics, then register them again
+            World.clearPhysics world
+            match World.getSelectedScreenOpt world with
+            | Some screen ->
+                let groups = World.getGroups screen world
+                Seq.fold (fun world (group : Group) ->
+                    if group.GetExists world then
+                        let entities = World.getEntities group world
+                        Seq.fold (fun world (entity : Entity) ->
+                            if entity.GetExists world
+                            then World.registerEntityPhysics entity world
                             else world)
-                        world groups
-                | None -> world
-            else world
+                            world entities
+                        else world)
+                    world groups
+            | None -> world
 
         static member private processTasklet simulant tasklet (taskletsNotRun : OMap<Simulant, World Tasklet UList>) (world : World) =
             let shouldRun =
@@ -1065,10 +1064,8 @@ module WorldModule2 =
             World.restoreTasklets taskletsNotRun world
 
         static member private processImNui (world : World) =
-            if world.Advancing then
-                WorldImNui.Reinitializing <- false
-                World.sweepSimulants world
-            else world
+            WorldImNui.Reinitializing <- false
+            World.sweepSimulants world
 
         static member private destroySimulants world =
             let destructionListRev = World.getDestructionListRev world
@@ -1474,7 +1471,7 @@ module WorldModule2 =
         /// Process ImNui for a single frame.
         /// HACK: needed only as a hack for Gaia and other accompanying programs to ensure ImGui simulants are created at a
         /// meaningful time. Do NOT call this in the course of normal operations!
-        static member tryProcessSimulants (world : World) =
+        static member tryProcessSimulants firstFrame (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1483,7 +1480,7 @@ module WorldModule2 =
                 world.Timers.UpdateGatherTimer.Restart ()
                 let game = Nu.Game.Handle
                 let screenOpt = World.getSelectedScreenOpt world
-                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
+                let groups = World.getGroups1 world
                 World.getElements3dInPlay HashSet3dNormalCached world
                 World.getElements2dInPlay HashSet2dNormalCached world
                 world.Timers.UpdateGatherTimer.Stop ()
@@ -1495,7 +1492,7 @@ module WorldModule2 =
 
                 // attempt to process screen if any
                 world.Timers.UpdateScreensTimer.Restart ()
-                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen screen world else world) world screenOpt
+                let world = Option.fold (fun world (screen : Screen) -> if screen.GetExists world then World.tryProcessScreen firstFrame screen world else world) world screenOpt
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // attempt to process groups
@@ -1590,7 +1587,7 @@ module WorldModule2 =
             // fin
             world
 
-        static member private updateSimulants (world : World) =
+        static member private updateSimulants firstFrame (world : World) =
 
             // use a finally block to free cached values
             try
@@ -1599,8 +1596,9 @@ module WorldModule2 =
                 world.Timers.UpdateGatherTimer.Restart ()
                 let game = Nu.Game.Handle
                 let advancing = world.Advancing
-                let screenOpt = World.getSelectedScreenOpt world
-                let groups = match screenOpt with Some screen -> World.getGroups screen world | None -> Seq.empty
+                let screens = World.getScreens world
+                let selectedScreenOpt = World.getSelectedScreenOpt world
+                let groups = World.getGroups1 world
                 World.getElements3dInPlay HashSet3dNormalCached world
                 World.getElements2dInPlay HashSet2dNormalCached world
                 world.Timers.UpdateGatherTimer.Stop ()
@@ -1611,14 +1609,14 @@ module WorldModule2 =
                 let world = if advancing then World.updateGame game world else world
                 world.Timers.UpdateGameTimer.Stop ()
 
-                // update screen if any
+                // process screens
                 world.Timers.UpdateScreensTimer.Restart ()
                 let world =
-                    Option.fold (fun world (screen : Screen) ->
-                        let world = if screen.GetExists world then World.tryProcessScreen screen world else world
-                        let world = if advancing && screen.GetExists world then World.updateScreen screen world else world
+                    Seq.fold (fun world (screen : Screen) ->
+                        let world = if screen.GetExists world then World.tryProcessScreen firstFrame screen world else world
+                        let world = if advancing && screen.GetExists world && Option.contains screen selectedScreenOpt then World.updateScreen screen world else world
                         world)
-                        world screenOpt
+                        world screens
                 world.Timers.UpdateScreensTimer.Stop ()
 
                 // update groups
@@ -1626,7 +1624,7 @@ module WorldModule2 =
                 let world =
                     Seq.fold (fun world (group : Group) ->
                         let world = if group.GetExists world then World.tryProcessGroup group world else world
-                        let world = if advancing && group.GetExists world then World.updateGroup group world else world
+                        let world = if advancing && Option.contains group.Screen selectedScreenOpt && group.GetExists world then World.updateGroup group world else world
                         world)
                         world groups
                 world.Timers.UpdateGroupsTimer.Stop ()
@@ -2013,7 +2011,7 @@ module WorldModule2 =
                                     // update simulants
                                     world.Timers.UpdateTimer.Restart ()
                                     WorldModule.UpdatingSimulants <- true
-                                    let world = World.updateSimulants world
+                                    let world = World.updateSimulants firstFrame world
                                     WorldModule.UpdatingSimulants <- false
                                     world.Timers.UpdateTimer.Stop ()
                                     match World.getLiveness world with
@@ -2812,10 +2810,18 @@ module ScreenDispatcherModule =
     type [<AbstractClass>] ScreenDispatcherImNui () =
         inherit ScreenDispatcher ()
 
-        override this.TryProcess (screen, world) =
+        override this.TryProcess (firstFrame, screen, world) =
             let context = world.ContextImNui
             let world = World.scopeScreen screen [] world
-            let world = this.Process (screen, world)
+            let (selectResults, world) = World.doSubscription "@SelectResults" screen.SelectEvent world |> mapFst (FQueue.map (constant Select))
+            let selectResults = if firstFrame then FQueue.conj Select selectResults else selectResults // HACK: add in Select result manually when this is first frame as it is otherwise missed.
+            let (incomingStartResults, world) = World.doSubscription "@IncomingStartResults" screen.IncomingStartEvent world |> mapFst (FQueue.map (constant IncomingStart))
+            let (incomingFinishResults, world) = World.doSubscription "@IncomingFinishResults" screen.IncomingFinishEvent world |> mapFst (FQueue.map (constant IncomingFinish))
+            let (outgoingStartResults, world) = World.doSubscription "@OutgoingStartResults" screen.OutgoingStartEvent world |> mapFst (FQueue.map (constant OutgoingStart))
+            let (outgoingFinishResults, world) = World.doSubscription "@OutgoingFinishResults" screen.OutgoingFinishEvent world |> mapFst (FQueue.map (constant OutgoingFinish))
+            let (deselectingResults, world) = World.doSubscription "@DeselectingResults" screen.DeselectingEvent world |> mapFst (FQueue.map (constant Deselecting))
+            let results = seq { yield! selectResults; yield! incomingStartResults; yield! incomingFinishResults; yield! outgoingStartResults; yield! outgoingFinishResults; yield! deselectingResults }
+            let world = this.Process (FQueue.ofSeq results, screen, world)
 #if DEBUG
             if world.ContextImNui <> screen.ScreenAddress then
                 Log.warnOnce
@@ -2826,8 +2832,8 @@ module ScreenDispatcherModule =
             World.advanceContext screen.ScreenAddress context world
 
         /// ImNui process a screen.
-        abstract Process : Screen * World -> World
-        default this.Process (_, world) = world
+        abstract Process : ScreenResult FQueue * Screen * World -> World
+        default this.Process (_, _, world) = world
 
     type World with
 
@@ -2978,7 +2984,7 @@ module ScreenPropertyDescriptor =
 
     let getCategory propertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
-        if propertyName = "Name" ||  propertyName.EndsWith "Model" then "Ambient Properties"
+        if propertyName = "Name" || propertyName.EndsWith "Model" then "Ambient Properties"
         elif propertyName = "Persistent" || propertyName = "Incoming" || propertyName = "Outgoing" || propertyName = "SlideOpt" then "Built-In Properties"
         else "Xtension Properties"
 

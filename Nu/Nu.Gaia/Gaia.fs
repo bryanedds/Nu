@@ -1057,17 +1057,19 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Some _ | None -> (false, world)
 
     let private tryPaste tryForwardPropagationSource atMouse parentOpt world =
-        let world = snapshot PasteEntity world
-        let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
-        let parent = match parentOpt with Some parent -> parent | None -> SelectedGroup :> Simulant
-        let (entityOpt, world) = World.pasteEntityFromClipboard tryForwardPropagationSource NewEntityDistance RightClickPosition positionSnapEir atMouse parent world
-        match entityOpt with
-        | Some entity ->
-            selectEntityOpt (Some entity) world
-            ImGui.SetWindowFocus "Viewport"
-            ShowSelectedEntity <- true
-            (true, world)
-        | None -> (false, world)
+        if World.canPasteEntityFromClipboard world then
+            let world = snapshot PasteEntity world
+            let positionSnapEir = if Snaps2dSelected then Left (a__ Snaps2d) else Right (a__ Snaps3d)
+            let parent = match parentOpt with Some parent -> parent | None -> SelectedGroup :> Simulant
+            let (entityOpt, world) = World.pasteEntityFromClipboard tryForwardPropagationSource NewEntityDistance RightClickPosition positionSnapEir atMouse parent world
+            match entityOpt with
+            | Some entity ->
+                selectEntityOpt (Some entity) world
+                ImGui.SetWindowFocus "Viewport"
+                ShowSelectedEntity <- true
+                (true, world)
+            | None -> (false, world)
+        else (false, world)
 
     let private trySetSelectedEntityFamilyStatic static_ world =
         let rec setEntityFamilyStatic static_ (entity : Entity) world =
@@ -1336,7 +1338,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             let world = World.setEventFilter Constants.Gaia.EventFilter world
 
             // attempt to process ImNui once to make sure initial simulants are created
-            let world = World.tryProcessSimulants world
+            let world = World.tryProcessSimulants true world
 
             // apply any selected mode
             let world =
@@ -1348,7 +1350,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 | None -> world
 
             // attempt to process ImNui again to ensure simulants in new mode are created
-            let world = World.tryProcessSimulants world
+            let world = World.tryProcessSimulants false world
 
             // figure out which screen to use
             let (screen, world) =
@@ -1616,8 +1618,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.F7 then createRestorePoint world
             elif ImGui.IsKeyPressed ImGuiKey.F8 then ReloadAssetsRequested <- 1; world
             elif ImGui.IsKeyPressed ImGuiKey.F9 then ReloadCodeRequested <- 1; world
+            elif ImGui.IsKeyPressed ImGuiKey.F10 then setCaptureMode (not CaptureMode); world
             elif ImGui.IsKeyPressed ImGuiKey.F11 then setFullScreen (not FullScreen); world
-            elif ImGui.IsKeyPressed ImGuiKey.F12 then setCaptureMode (not CaptureMode); world
             elif ImGui.IsKeyPressed ImGuiKey.Enter && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then World.tryToggleWindowFullScreen world
             elif ImGui.IsKeyPressed ImGuiKey.UpArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity true world
             elif ImGui.IsKeyPressed ImGuiKey.DownArrow && ImGui.IsCtrlUp () && ImGui.IsShiftUp () && ImGui.IsAltDown () then tryReorderSelectedEntity false world
@@ -2402,6 +2404,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private imGuiFullScreenWindow () =
         if not CaptureMode then
             if ImGui.Begin ("Full Screen Enabled", ImGuiWindowFlags.NoNav) then
+                ImGui.Text "Capture Mode (F10)"
+                ImGui.SameLine ()
+                let mutable captureMode = CaptureMode
+                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+                setCaptureMode captureMode
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode (F10 to toggle)."
+                    ImGui.EndTooltip ()
                 ImGui.Text "Full Screen (F11)"
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
@@ -2409,14 +2419,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 setFullScreen fullScreen
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = CaptureMode
-                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode (F12 to toggle)."
                     ImGui.EndTooltip ()
             ImGui.End ()
 
@@ -2625,7 +2627,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                         let world = snapshot (SetEditMode 0) world // snapshot before mode change
                                         selectEntityOpt None world
                                         let world = editModeFn world
-                                        let world = World.tryProcessSimulants world
+                                        let world = World.tryProcessSimulants false world
                                         let world = snapshot (SetEditMode 1) world // snapshot before after change
                                         world
                                     else world
@@ -2662,6 +2664,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 ImGui.Text "|"
                 ImGui.SameLine ()
+                ImGui.Text "Capture Mode"
+                ImGui.SameLine ()
+                let mutable captureMode = CaptureMode
+                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
+                setCaptureMode captureMode
+                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
+                    ImGui.Text "Toggle capture mode view (F10 to toggle)."
+                    ImGui.EndTooltip ()
+                ImGui.SameLine ()
                 ImGui.Text "Full Screen"
                 ImGui.SameLine ()
                 let mutable fullScreen = FullScreen
@@ -2669,15 +2680,6 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 setFullScreen fullScreen
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
                     ImGui.Text "Toggle full screen view (F11 to toggle)."
-                    ImGui.EndTooltip ()
-                ImGui.SameLine ()
-                ImGui.Text "Capture Mode (F12)"
-                ImGui.SameLine ()
-                let mutable captureMode = CaptureMode
-                ImGui.Checkbox ("##captureMode", &captureMode) |> ignore<bool>
-                setCaptureMode captureMode
-                if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    ImGui.Text "Toggle capture mode view (F12 to toggle)."
                     ImGui.EndTooltip ()
                 ImGui.SameLine ()
                 world

@@ -9,7 +9,7 @@
 #r "nuget: Twizzle.ImGuizmo.NET, 1.89.4.1"
 #r "nuget: Magick.NET-Q8-AnyCpu, 13.5.0"
 #r "nuget: Pfim, 0.11.3"
-#r "nuget: Prime, 10.0.0"
+#r "nuget: Prime, 10.1.0"
 #r "nuget: System.Configuration.ConfigurationManager, 9.0.0"
 #r "nuget: System.Drawing.Common, 9.0.0"
 #r "../../../Nu/Nu.Dependencies/AssimpNet/netstandard2.1/AssimpNet.dll"

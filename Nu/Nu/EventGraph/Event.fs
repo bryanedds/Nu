@@ -18,6 +18,14 @@ and Event<'a, 's when 's :> Simulant> =
 [<RequireQualifiedAccess>]
 module Event =
 
+    /// Make an event value.
+    let make<'a, 's when 's :> Simulant> (data : 'a) (subscriber : 's) publisher (address : 'a Address) trace =
+        { Data = data
+          Subscriber = subscriber
+          Publisher = publisher
+          Address = address
+          Trace = trace }
+
     /// Specialize an event.
     let specialize<'a, 's when 's :> Simulant> (evt : Event) : Event<'a, 's> =
         { Data = evt.Data :?> 'a

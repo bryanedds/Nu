@@ -440,7 +440,7 @@ type TextFacet () =
          define Entity.TextColor Color.White
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
-         define Entity.TextShift 0.5f]
+         define Entity.TextShift Constants.Gui.TextShiftDefault]
 
     override this.Render (_, entity, world) =
         let text = entity.GetText world
@@ -1107,7 +1107,7 @@ type TextBoxFacet () =
          define Entity.TextColor Color.White
          define Entity.TextColorDisabled Constants.Gui.ColorDisabledDefault
          define Entity.TextOffset v2Zero
-         define Entity.TextShift 0.5f
+         define Entity.TextShift Constants.Gui.TextShiftDefault
          define Entity.TextCapacity 14
          define Entity.Focused false
          nonPersistent Entity.Cursor 0]
@@ -2996,6 +2996,7 @@ module AnimatedModelFacetExtensions =
                 Some transform
             | (_, _) -> None
 
+        ///
         member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
@@ -3003,6 +3004,7 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
+        ///
         member this.AnimateBones (world : World) =
             let time = world.GameTime
             let animations = this.GetAnimations world

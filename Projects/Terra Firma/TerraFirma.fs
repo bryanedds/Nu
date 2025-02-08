@@ -5,77 +5,75 @@ open Prime
 open Nu
 open TerraFirma
 
-// this is our top-level MMCC model type. It determines what state the game is in. To learn about MMCC in Nu, see -
-// https://github.com/bryanedds/Nu/wiki/Model-View-Update-for-Games-via-MMCC
-type TerraFirma =
+// this determines what state the game is in. To learn about ImNui in Nu, see -
+// https://github.com/bryanedds/Nu/wiki/Immediate-Mode-for-Games-via-ImNui
+type GameState =
     | Splash
     | Title
     | Credits
     | Gameplay
 
-// this is our top-level MMCC message type.
-type TerraFirmaMessage =
-    | ShowTitle
-    | ShowCredits
-    | ShowGameplay
-    interface Message
-
-// this is our top-level MMCC command type. Commands are used instead of messages when the world is to be transformed.
-type TerraFirmaCommand =
-    | Register
-    | Exit
-    interface Command
-
-// this extends the Game API to expose the above MMCC model as a property.
+// this extends the Game API to expose the above ImNui model as a property.
 [<AutoOpen>]
-module TerraFirma =
+module TerraFirmaExtensions =
     type Game with
-        member this.GetTerraFirma world = this.GetModelGeneric<TerraFirma> world
-        member this.SetTerraFirma value world = this.SetModelGeneric<TerraFirma> value world
-        member this.TerraFirma = this.ModelGeneric<TerraFirma> ()
+        member this.GetGameState world : GameState = this.Get (nameof Game.GameState) world
+        member this.SetGameState (value : GameState) world = this.Set (nameof Game.GameState) value world
+        member this.GameState = lens (nameof Game.GameState) this this.GetGameState this.SetGameState
 
-// this is the dispatcher that customizes the top-level behavior of our game. In here, we create screens as content and
-// bind them up with events and properties.
-type MyGameDispatcher () =
-    inherit GameDispatcher<TerraFirma, TerraFirmaMessage, TerraFirmaCommand> (Splash)
+// this is the dispatcher that customizes the top-level behavior of our game.
+type TerraFirmaDispatcher () =
+    inherit GameDispatcherImNui ()
 
-    // here we define the game's properties and event handling
-    override this.Definitions (terraFirma, _) =
-        [Game.DesiredScreen :=
-            match terraFirma with
-            | Splash -> Desire Simulants.Splash
-            | Title -> Desire Simulants.Title
-            | Credits -> Desire Simulants.Credits
-            | Gameplay -> Desire Simulants.Gameplay
-         Game.RegisterEvent => Register
-         if terraFirma = Splash then Simulants.Splash.DeselectingEvent => ShowTitle
-         Simulants.TitleCredits.ClickEvent => ShowCredits
-         Simulants.TitlePlay.ClickEvent => ShowGameplay
-         Simulants.TitleExit.ClickEvent => Exit
-         Simulants.CreditsBack.ClickEvent => ShowTitle
-         Simulants.Gameplay.QuitEvent => ShowTitle]
+    // here we define default property values
+    static member Properties =
+        [define Game.GameState Splash]
 
-    // here we handle the above messages
-    override this.Message (_, message, _, _) =
-        match message with
-        | ShowTitle -> just Title
-        | ShowCredits -> just Credits
-        | ShowGameplay -> just Gameplay
+    // here we define the game's top-level behavior
+    override this.Process (terraFirma, world) =
 
-    // here we handle the above commands
-    override this.Command (_, command, _, world) =
-        match command with
-        | Register ->
-            let world = World.setRenderer3dConfig { Renderer3dConfig.defaultConfig with SsvfEnabled = true; SsrEnabled = true } world
-            just world
-        | Exit ->
-            if world.Unaccompanied
-            then just (World.exit world)
-            else just world
+        // declare splash screen
+        let behavior = Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)
+        let (results, world) = World.beginScreen Simulants.Splash.Name (terraFirma.GetGameState world = Splash) behavior [] world
+        let world = if FQueue.contains Deselecting results && not world.ContextInitializing then terraFirma.SetGameState Title world else world
+        let world = World.endScreen world
 
-    // here we describe the content of the game, including all of its screens.
-    override this.Content (_, _) =
-        [Content.screen Simulants.Splash.Name (Slide (Constants.Dissolve.Default, Constants.Slide.Default, None, Simulants.Title)) [] []
-         Content.screenWithGroupFromFile Simulants.Title.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.GuiSong)) "Assets/Gui/Title.nugroup" [] []
-         Content.screenWithGroupFromFile Simulants.Credits.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gui.GuiSong)) "Assets/Gui/Credits.nugroup" [] []
-         Content.screen<GameplayDispatcher> Simulants.Gameplay.Name (Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DesertSong)) [] []]
+        // declare title screen
+        let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gui.GuiSong)
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Title.Name (terraFirma.GetGameState world = Title) behavior "Assets/Gui/Title.nugroup" [] world
+        let world = World.beginGroup "Gui" [] world
+        let (clicked, world) = World.doButton "Play" [] world
+        let world = if clicked then terraFirma.SetGameState Gameplay world else world
+        let (clicked, world) = World.doButton "Credits" [] world
+        let world = if clicked then terraFirma.SetGameState Credits world else world
+        let (clicked, world) = World.doButton "Exit" [] world
+        let world = if clicked && world.Unaccompanied then World.exit world else world
+        let world = World.endGroup world
+        let world = World.endScreen world
+
+        // declare gameplay screen
+        let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gameplay.DesertSong)
+        let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (terraFirma.GetGameState world = Gameplay) behavior [] world
+        let world =
+            if FQueue.contains Select results
+            then Simulants.Gameplay.SetGameplayState Playing world
+            else world
+        let world =
+            if FQueue.contains Deselecting results
+            then Simulants.Gameplay.SetGameplayState Quit world
+            else world
+        let world =
+            if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit
+            then terraFirma.SetGameState Title world
+            else world
+        let world = World.endScreen world
+
+        // declare credits screen
+        let behavior = Dissolve (Constants.Dissolve.Default, Some Assets.Gui.GuiSong)
+        let (_, world) = World.beginScreenWithGroupFromFile Simulants.Credits.Name (terraFirma.GetGameState world = Credits) behavior "Assets/Gui/Credits.nugroup" [] world
+        let world = World.beginGroup "Gui" [] world
+        let (clicked, world) = World.doButton "Back" [] world
+        let world = if clicked then terraFirma.SetGameState Title world else world
+        let world = World.endGroup world
+        let world = World.endScreen world
+        world

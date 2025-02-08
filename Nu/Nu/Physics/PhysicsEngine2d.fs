@@ -683,17 +683,11 @@ type [<ReferenceEquality>] PhysicsEngine2d =
             else None
 
         member physicsEngine.ClearInternal () =
-            let affected =
-                physicsEngine.Joints.Count > 0 ||
-                physicsEngine.Bodies.Count > 0 ||
-                physicsEngine.CreateBodyJointMessages.Count > 0 ||
-                physicsEngine.IntegrationMessages.Count > 0
             physicsEngine.Joints.Clear ()
             physicsEngine.Bodies.Clear ()
             physicsEngine.CreateBodyJointMessages.Clear ()
             physicsEngine.IntegrationMessages.Clear ()
             physicsEngine.PhysicsContext.Clear ()
-            affected
 
         member physicsEngine.CleanUp () =
             ()

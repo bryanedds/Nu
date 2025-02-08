@@ -32,6 +32,11 @@ module WorldInputModule =
             ignore (world : World)
             MouseState.isButtonUp mouseButton
 
+        /// Check that the given mouse button was just pressed.
+        static member isMouseButtonPressed mouseButton world =
+            ignore (world : World)
+            MouseState.isButtonPressed mouseButton
+
         /// Check that the given mouse button was just clicked.
         static member isMouseButtonClicked mouseButton world =
             ignore (world : World)

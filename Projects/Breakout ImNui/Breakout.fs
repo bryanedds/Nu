@@ -55,25 +55,12 @@ type BreakoutDispatcher () =
         let behavior = Dissolve (Constants.Dissolve.Default, None)
         let (results, world) = World.beginScreen<GameplayDispatcher> Simulants.Gameplay.Name (breakout.GetGameState world = Gameplay) behavior [] world
         let world =
-            if FQueue.contains Select results then
-                let world = Simulants.Gameplay.SetGameplayState Playing world
-                let bricks =
-                    Map.ofList
-                        [for i in 0 .. dec 5 do
-                            for j in 0 .. dec 6 do
-                                (Gen.name, Brick.make (v3 (single i * 64.0f - 128.0f) (single j * 16.0f + 64.0f) 0.0f))]
-                let world = Simulants.Gameplay.SetBricks bricks world
-                let world = Simulants.Gameplay.SetScore 0 world
-                let world = Simulants.Gameplay.SetLives 5 world
-                world
+            if FQueue.contains Select results
+            then Simulants.Gameplay.SetGameplayState Playing world
             else world
         let world =
-            if FQueue.contains Deselecting results then
-                let world = Simulants.Gameplay.SetGameplayState Quit world
-                let world = Simulants.Gameplay.SetBricks Map.empty world
-                let world = Simulants.Gameplay.SetScore 0 world
-                let world = Simulants.Gameplay.SetLives 0 world
-                world
+            if FQueue.contains Deselecting results
+            then Simulants.Gameplay.SetGameplayState Quit world
             else world
         let world =
             if Simulants.Gameplay.GetSelected world && Simulants.Gameplay.GetGameplayState world = Quit
@@ -89,8 +76,4 @@ type BreakoutDispatcher () =
         let world = if clicked then breakout.SetGameState Title world else world
         let world = World.endGroup world
         let world = World.endScreen world
-
-        // handle Alt+F4 when not in editor
-        if world.Unaccompanied && World.isKeyboardAltDown world && World.isKeyboardKeyDown KeyboardKey.F4 world
-        then World.exit world
-        else world
+        world

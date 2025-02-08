@@ -1,0 +1,125 @@
+[GroupDispatcher
+ [[Model ["Microsoft.FSharp.Core.Unit, FSharp.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" []]]
+  [Name Group]
+  [Persistent True]
+  [Visible True]]
+ [[TileMapDispatcher
+   [[Elevation -4]
+    [Presence Omnipresent]
+    [Size [1024 416 0]]
+    [TileMap [Gameplay BackgroundB]]
+    [TileSizeDivisor 2]]
+   []]
+  [TileMapDispatcher
+   [[Elevation -8]
+    [Presence Omnipresent]
+    [Size [1024 416 0]]
+    [TileMap [Gameplay BackgroundA]]
+    [TileSizeDivisor 2]]
+   []]
+  [TileMapDispatcher
+   [[Presence Omnipresent]
+    [Size [1024 416 0]]
+    [TileMap [Gameplay Section0TileMap]]
+    [TileSizeDivisor 2]]
+   []]
+  [EnemyDispatcher
+   [[AngularFactor [0 0 0]]
+    [AnimationDelay 8]
+    [AnimationSheet [Gameplay Enemy]]
+    [BodyShape
+     [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
+    [CelCount 6]
+    [CelSize [48 96]]
+    [Elevation 4]
+    [Friction 0]
+    [GravityOverride
+     [Some [0 0 0]]]
+    [LinearDamping 3]
+    [Model
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[Health 7]]]]
+    [Position [-336 24 0]]
+    [Size [24 48 0]]]
+   []]
+  [EnemyDispatcher
+   [[AngularFactor [0 0 0]]
+    [AnimationDelay 8]
+    [AnimationSheet [Gameplay Enemy]]
+    [BodyShape
+     [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
+    [CelCount 6]
+    [CelSize [48 96]]
+    [Elevation 4]
+    [Friction 0]
+    [GravityOverride
+     [Some [0 0 0]]]
+    [LinearDamping 3]
+    [Model
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[Health 7]]]]
+    [Position [90.55058 -16.73351 0]]
+    [Size [24 48 0]]]
+   []]
+  [EnemyDispatcher
+   [[AngularFactor [0 0 0]]
+    [AnimationDelay 8]
+    [AnimationSheet [Gameplay Enemy]]
+    [BodyShape
+     [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
+    [CelCount 6]
+    [CelSize [48 96]]
+    [Elevation 4]
+    [Friction 0]
+    [GravityOverride
+     [Some [0 0 0]]]
+    [LinearDamping 3]
+    [Model
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[Health 7]]]]
+    [Position [336 84 0]]
+    [Size [24 48 0]]]
+   []]
+  [EnemyDispatcher
+   [[AngularFactor [0 0 0]]
+    [AnimationDelay 8]
+    [AnimationSheet [Gameplay Enemy]]
+    [BodyShape
+     [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
+    [CelCount 6]
+    [CelSize [48 96]]
+    [Elevation 4]
+    [Friction 0]
+    [GravityOverride
+     [Some [0 0 0]]]
+    [LinearDamping 3]
+    [Model
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[Health 7]]]]
+    [Position [398.00003 -50.66667 0]]
+    [Size [24 48 0]]]
+   []]
+  [EnemyDispatcher
+   [[AngularFactor [0 0 0]]
+    [AnimationDelay 8]
+    [AnimationSheet [Gameplay Enemy]]
+    [BodyShape
+     [CapsuleShape [0.5 0.25 None None]]]
+    [BodyType Dynamic]
+    [CelCount 6]
+    [CelSize [48 96]]
+    [Elevation 4]
+    [Friction 0]
+    [GravityOverride
+     [Some [0 0 0]]]
+    [LinearDamping 3]
+    [Model
+     ["BlazeVector.Enemy, Blaze Vector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+      [[Health 7]]]]
+    [Position [-204 60 0]]
+    [Size [24 48 0]]]
+   []]]]

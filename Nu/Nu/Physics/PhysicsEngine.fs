@@ -430,8 +430,8 @@ type [<SymbolicExpansion>] CharacterProperties =
           CollisionPadding = 0.02f
           CollisionTolerance = 0.001f
           SlopeMax = Math.DegreesToRadians 45.0f
-          StairStepUp = v3 0.0f 0.2f 0.0f
-          StairStepDownStickToFloor = v3 0.0f -0.5f 0.0f
+          StairStepUp = v3 0.0f 0.25f 0.0f
+          StairStepDownStickToFloor = v3 0.0f -0.25f 0.0f
           StairStepDownExtra = v3Zero
           StairStepForwardTest = 0.15f
           StairStepForwardMin = 0.02f
@@ -677,7 +677,7 @@ type PhysicsEngine =
     /// Attempt to integrate the physics system one step.
     abstract TryIntegrate : GameTime -> IntegrationMessage SArray option
     /// Clear the physics simulation, returning false if no physics objects existed to begin with. For internal use only.
-    abstract ClearInternal : unit -> bool
+    abstract ClearInternal : unit -> unit
     /// Handle physics clean up by freeing all created resources.
     abstract CleanUp : unit -> unit
 
@@ -697,7 +697,7 @@ type [<ReferenceEquality>] StubPhysicsEngine =
         member physicsEngine.RayCast (_, _, _) = failwith "No bodies in StubPhysicsEngine"
         member physicsEngine.HandleMessage _ = ()
         member physicsEngine.TryIntegrate _ = None
-        member physicsEngine.ClearInternal () = false
+        member physicsEngine.ClearInternal () = ()
         member physicsEngine.CleanUp () = ()
 
 [<RequireQualifiedAccess>]

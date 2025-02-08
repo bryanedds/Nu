@@ -43,11 +43,12 @@ module Log =
     /// Thread-safe.
     let error message =
         Trace.WriteLine (getDateTimeNowStr () + "|Error|" + message)
+        try failwith "Log.error exception." with _ -> ()
 
     /// Log an error message once with Trace.WriteLine.
     /// Thread-safe.
     let errorOnce (message : string) =
-        if ErrorOnceMessages.TryAdd (message, 0) then warn message
+        if ErrorOnceMessages.TryAdd (message, 0) then error message
 
     /// Log a failure message using Trace.Fail.
     /// Thread-safe.

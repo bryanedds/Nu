@@ -3,16 +3,19 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
+open System.Collections.Frozen
 open Prime
 
 [<AutoOpen>]
 module WorldModuleGroup =
 
+    /// Dynamic property getter and setter.
+    type private PropertyGetter = Group -> World -> Property
+    type private PropertySetter = Property -> Group -> World -> struct (bool * World)
+
     /// Dynamic property getters / setters.
-    /// TODO: make these FrozenDictionaries.
-    let private GroupGetters = Dictionary<string, Group -> World -> Property> StringComparer.Ordinal
-    let private GroupSetters = Dictionary<string, Property -> Group -> World -> struct (bool * World)> StringComparer.Ordinal
+    let mutable private GroupGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
+    let mutable private GroupSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
     type World with
     
@@ -220,7 +223,13 @@ module WorldModuleGroup =
                 match valueObj with
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
-                | value -> value |> valueToSymbol |> symbolToValue
+                | value ->
+                    let value' = value |> valueToSymbol |> symbolToValue
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? ComputedProperty -> () // nothing to do
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
+                    value'
             else
                 let definitions = Reflection.getPropertyDefinitions (getType groupState.Dispatcher)
                 let value =
@@ -419,21 +428,27 @@ module WorldModuleGroup =
 
     /// Initialize property getters.
     let private initGetters () =
-        GroupGetters.Add ("Dispatcher", fun group world -> { PropertyType = typeof<GroupDispatcher>; PropertyValue = World.getGroupDispatcher group world })
-        GroupGetters.Add ("Model", fun group world -> let designerProperty = World.getGroupModelProperty group world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        GroupGetters.Add ("Visible", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupVisible group world })
-        GroupGetters.Add ("Protected", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupProtected group world })
-        GroupGetters.Add ("Persistent", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupPersistent group world })
-        GroupGetters.Add ("Destroying", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupDestroying group world })
-        GroupGetters.Add ("Order", fun group world -> { PropertyType = typeof<int64>; PropertyValue = World.getGroupOrder group world })
-        GroupGetters.Add ("Id", fun group world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGroupId group world })
-        GroupGetters.Add ("Name", fun group world -> { PropertyType = typeof<string>; PropertyValue = World.getGroupName group world })
+        let groupGetters =
+            dictPlus StringComparer.Ordinal
+                [("Dispatcher", fun group world -> { PropertyType = typeof<GroupDispatcher>; PropertyValue = World.getGroupDispatcher group world })
+                 ("Model", fun group world -> let designerProperty = World.getGroupModelProperty group world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+                 ("Visible", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupVisible group world })
+                 ("Protected", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupProtected group world })
+                 ("Persistent", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupPersistent group world })
+                 ("Destroying", fun group world -> { PropertyType = typeof<bool>; PropertyValue = World.getGroupDestroying group world })
+                 ("Order", fun group world -> { PropertyType = typeof<int64>; PropertyValue = World.getGroupOrder group world })
+                 ("Id", fun group world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGroupId group world })
+                 ("Name", fun group world -> { PropertyType = typeof<string>; PropertyValue = World.getGroupName group world })]
+        GroupGetters <- groupGetters.ToFrozenDictionary ()
 
     /// Initialize property setters.
     let private initSetters () =
-        GroupSetters.Add ("Model", fun property group world -> World.setGroupModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
-        GroupSetters.Add ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
-        GroupSetters.Add ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)
+        let groupSetters =
+            dictPlus StringComparer.Ordinal
+                [("Model", fun property group world -> World.setGroupModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } group world)
+                 ("Visible", fun property group world -> World.setGroupVisible (property.PropertyValue :?> bool) group world)
+                 ("Persistent", fun property group world -> World.setGroupPersistent (property.PropertyValue :?> bool) group world)]
+        GroupSetters <- groupSetters.ToFrozenDictionary ()
 
     /// Initialize getters and setters
     let internal init () =

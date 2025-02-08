@@ -3,17 +3,20 @@
 
 namespace Nu
 open System
-open System.Collections.Generic
+open System.Collections.Frozen
 open System.Numerics
 open Prime
 
 [<AutoOpen>]
 module WorldModuleGame =
 
+    /// Dynamic property getter and setter.
+    type private PropertyGetter = Game -> World -> Property
+    type private PropertySetter = Property -> Game -> World -> struct (bool * World)
+
     /// Dynamic property getters / setters.
-    /// TODO: make these FrozenDictionaries.
-    let private GameGetters = Dictionary<string, Game -> World -> Property> StringComparer.Ordinal
-    let private GameSetters = Dictionary<string, Property -> Game -> World -> struct (bool * World)> StringComparer.Ordinal
+    let mutable private GameGetters = Unchecked.defaultof<FrozenDictionary<string, PropertyGetter>>
+    let mutable private GameSetters = Unchecked.defaultof<FrozenDictionary<string, PropertySetter>>
 
     type World with
 
@@ -248,14 +251,14 @@ module WorldModuleGame =
             World.setGameEye2dSize value Game.Handle world |> snd'
 
         /// Get the current 2d eye bounds.
-        static member getEyeBounds2d world =
+        static member getEye2dBounds world =
             let eyeCenter = World.getGameEye2dCenter Game.Handle world
             let eyeSize = World.getGameEye2dSize Game.Handle world
             box2 (eyeCenter - eyeSize * 0.5f) eyeSize
 
         /// Constrain the eye to the given 2d bounds.
-        static member constrainEyeBounds2d (bounds : Box2) world =
-            let mutable eyeBounds = World.getEyeBounds2d world
+        static member constrainEye2dBounds (bounds : Box2) world =
+            let mutable eyeBounds = World.getEye2dBounds world
             eyeBounds.Min <-
                 v2
                     (if eyeBounds.Min.X < bounds.Min.X then bounds.Min.X
@@ -506,7 +509,13 @@ module WorldModuleGame =
                 match valueObj with
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
-                | value -> value |> valueToSymbol |> symbolToValue
+                | value ->
+                    let value' = value |> valueToSymbol |> symbolToValue
+                    match property.PropertyValue with
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? ComputedProperty -> () // nothing to do
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
+                    value'
             else
                 let definitions = Reflection.getPropertyDefinitions (getType gameState.Dispatcher)
                 let value =
@@ -661,29 +670,35 @@ module WorldModuleGame =
 
     /// Initialize property getters.
     let private initGetters () =
-        GameGetters.Add ("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
-        GameGetters.Add ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
-        GameGetters.Add ("SelectedScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameSelectedScreenOpt game world })
-        GameGetters.Add ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
-        GameGetters.Add ("ScreenTransitionDestinationOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameScreenTransitionDestinationOpt game world })
-        GameGetters.Add ("Eye2dCenter", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dCenter game world })
-        GameGetters.Add ("Eye2dSize", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dSize game world })
-        GameGetters.Add ("Eye3dCenter", fun game world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getGameEye3dCenter game world })
-        GameGetters.Add ("Eye3dRotation", fun game world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getGameEye3dRotation game world })
-        GameGetters.Add ("Eye3dFieldOfView", fun game world -> { PropertyType = typeof<single>; PropertyValue = World.getGameEye3dFieldOfView game world })
-        GameGetters.Add ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
-        GameGetters.Add ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })
+        let gameGetters =
+            dictPlus StringComparer.Ordinal
+                [("Dispatcher", fun game world -> { PropertyType = typeof<GameDispatcher>; PropertyValue = World.getGameDispatcher game world })
+                 ("Model", fun game world -> let designerProperty = World.getGameModelProperty game world in { PropertyType = designerProperty.DesignerType; PropertyValue = designerProperty.DesignerValue })
+                 ("SelectedScreenOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameSelectedScreenOpt game world })
+                 ("DesiredScreen", fun game world -> { PropertyType = typeof<DesiredScreen>; PropertyValue = World.getGameDesiredScreen game world })
+                 ("ScreenTransitionDestinationOpt", fun game world -> { PropertyType = typeof<Screen option>; PropertyValue = World.getGameScreenTransitionDestinationOpt game world })
+                 ("Eye2dCenter", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dCenter game world })
+                 ("Eye2dSize", fun game world -> { PropertyType = typeof<Vector2>; PropertyValue = World.getGameEye2dSize game world })
+                 ("Eye3dCenter", fun game world -> { PropertyType = typeof<Vector3>; PropertyValue = World.getGameEye3dCenter game world })
+                 ("Eye3dRotation", fun game world -> { PropertyType = typeof<Quaternion>; PropertyValue = World.getGameEye3dRotation game world })
+                 ("Eye3dFieldOfView", fun game world -> { PropertyType = typeof<single>; PropertyValue = World.getGameEye3dFieldOfView game world })
+                 ("Order", fun game world -> { PropertyType = typeof<int64>; PropertyValue = World.getGameOrder game world })
+                 ("Id", fun game world -> { PropertyType = typeof<Guid>; PropertyValue = World.getGameId game world })]
+        GameGetters <- gameGetters.ToFrozenDictionary ()
 
     /// Initialize property setters.
     let private initSetters () =
-        GameSetters.Add ("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
-        GameSetters.Add ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
-        GameSetters.Add ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
-        GameSetters.Add ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)
-        GameSetters.Add ("Eye2dSize", fun property game world -> World.setGameEye2dSize (property.PropertyValue :?> Vector2) game world)
-        GameSetters.Add ("Eye3dCenter", fun property game world -> World.setGameEye3dCenter (property.PropertyValue :?> Vector3) game world)
-        GameSetters.Add ("Eye3dRotation", fun property game world -> World.setGameEye3dRotation (property.PropertyValue :?> Quaternion) game world)
-        GameSetters.Add ("Eye3dFieldOfView", fun property game world -> World.setGameEye3dFieldOfView (property.PropertyValue :?> single) game world)
+        let gameSetters =
+            dictPlus StringComparer.Ordinal
+                [("Model", fun property game world -> World.setGameModelProperty false { DesignerType = property.PropertyType; DesignerValue = property.PropertyValue } game world)
+                 ("DesiredScreen", fun property game world -> World.setGameDesiredScreen (property.PropertyValue :?> DesiredScreen) game world)
+                 ("ScreenTransitionDestinationOpt", fun property game world -> World.setGameScreenTransitionDestinationOpt (property.PropertyValue :?> Screen option) game world)
+                 ("Eye2dCenter", fun property game world -> World.setGameEye2dCenter (property.PropertyValue :?> Vector2) game world)
+                 ("Eye2dSize", fun property game world -> World.setGameEye2dSize (property.PropertyValue :?> Vector2) game world)
+                 ("Eye3dCenter", fun property game world -> World.setGameEye3dCenter (property.PropertyValue :?> Vector3) game world)
+                 ("Eye3dRotation", fun property game world -> World.setGameEye3dRotation (property.PropertyValue :?> Quaternion) game world)
+                 ("Eye3dFieldOfView", fun property game world -> World.setGameEye3dFieldOfView (property.PropertyValue :?> single) game world)]
+        GameSetters <- gameSetters.ToFrozenDictionary ()
 
     /// Initialize getters and setters
     let internal init () =
