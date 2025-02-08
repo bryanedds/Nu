@@ -39,7 +39,7 @@ module Pipeline =
 
     /// An abstraction of a rendering pipeline.
     type Pipeline =
-        { Pipelines : (VkPipeline * Blend) array
+        { Pipelines : Map<Blend, VkPipeline>
           DescriptorPool : VkDescriptorPool
           DescriptorSet : VkDescriptorSet
           PipelineLayout : VkPipelineLayout
@@ -196,7 +196,7 @@ module Pipeline =
                 pipelines.[i] <- pipeline
             
             // pack pipelines with blend parameters
-            let pipelinesPacked = Array.zip pipelines blends
+            let pipelinesPacked = Array.zip blends pipelines |> Map.ofArray
             
             // destroy shader modules
             Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
@@ -207,7 +207,7 @@ module Pipeline =
         
         /// Get the Vulkan Pipeline built for the given blend.
         static member getPipeline blend pipeline =
-            Array.find (fun pipeline -> snd pipeline = blend) pipeline.Pipelines |> fst
+            Map.find blend pipeline.Pipelines
         
         /// Write a uniform to the descriptor set.
         static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.AllocatedBuffer) pipeline device =
@@ -248,7 +248,7 @@ module Pipeline =
         
         /// Destroy a Pipeline.
         static member destroy pipeline device =
-            for i in 0 .. dec pipeline.Pipelines.Length do Vulkan.vkDestroyPipeline (device, fst pipeline.Pipelines.[i], nullPtr)
+            Map.iter (fun _ pipeline -> Vulkan.vkDestroyPipeline (device, pipeline, nullPtr)) pipeline.Pipelines
             Vulkan.vkDestroyDescriptorPool (device, pipeline.DescriptorPool, nullPtr)
             Vulkan.vkDestroyPipelineLayout (device, pipeline.PipelineLayout, nullPtr)
             Vulkan.vkDestroyDescriptorSetLayout (device, pipeline.DescriptorSetLayout, nullPtr)
