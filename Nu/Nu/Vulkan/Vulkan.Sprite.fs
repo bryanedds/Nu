@@ -55,24 +55,13 @@ module Sprite =
                   +1.0f; +1.0f
                   -1.0f; +1.0f|]
 
-        // create vertex buffer
-        let vertexSize = sizeof<single> * 2
-        let vertexDataSize = vertexSize * 4
-        let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
-        
-        // TODO: DJL: confirm that this try block and the one for index buffer are still appropriate.
-        let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
-        try vertexBuffer <- Hl.AllocatedBuffer.createVertexStaged vertexDataSize (vertexDataPtr.AddrOfPinnedObject ()) vkg
-        finally vertexDataPtr.Free ()
-
-        // create index buffer
+        // build index data
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
-        let indexDataSize = indexData.Length * sizeof<uint>
-        let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
-        let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
-        try indexBuffer <- Hl.AllocatedBuffer.createIndexStaged indexDataSize (indexDataPtr.AddrOfPinnedObject ()) vkg
-        finally indexDataPtr.Free ()
-
+        
+        // create buffers
+        let vertexBuffer = Hl.AllocatedBuffer.createVertexStagedFromArray vertexData vkg
+        let indexBuffer = Hl.AllocatedBuffer.createIndexStagedFromArray indexData vkg
+        
         // fin
         (vertexBuffer, indexBuffer)
 

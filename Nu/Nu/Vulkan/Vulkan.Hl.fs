@@ -944,8 +944,8 @@ module Hl =
 
         /// Upload an array to buffer if upload is enabled.
         static member uploadArray offset (array : 'a array) buffer =
-            use arrayPin = new ArrayPin<_> (array)
             let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
             AllocatedBuffer.upload offset size arrayPin.NativeInt buffer
 
         /// Create an allocated staging buffer.
@@ -1022,6 +1022,18 @@ module Hl =
             AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
             indexBuffer
 
+        /// Create an allocated vertex buffer with data uploaded via staging buffer from an array.
+        static member createVertexStagedFromArray (array : 'a array) vkg =
+            let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
+            AllocatedBuffer.createVertexStaged size arrayPin.NativeInt vkg
+
+        /// Create an allocated index buffer with data uploaded via staging buffer from an array.
+        static member createIndexStagedFromArray (array : 'a array) vkg =
+            let size = array.Length * sizeof<'a>
+            use arrayPin = new ArrayPin<_> (array)
+            AllocatedBuffer.createIndexStaged size arrayPin.NativeInt vkg
+        
         /// Destroy buffer and allocation.
         static member destroy buffer allocator =
             Vma.vmaDestroyBuffer (allocator, buffer.Buffer, buffer.Allocation)
