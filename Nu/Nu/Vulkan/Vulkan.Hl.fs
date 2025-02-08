@@ -168,10 +168,8 @@ module Hl =
 
     /// Create a shader module from a GLSL file.
     let createShaderModuleFromGlsl shaderPath shaderKind device =
-
-        // compile shader
-        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
         let shader = compileShader shaderPath shaderKind
+        let mutable shaderModule = Unchecked.defaultof<VkShaderModule>
 
         // NOTE: DJL: using a high level overload here to avoid questions about reinterpret casting and memory alignment,
         // see https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Shader_modules#page_Creating-shader-modules.
@@ -180,22 +178,22 @@ module Hl =
 
     /// Create an image view.
     let createImageView format mips image device =
-        let mutable imageView = Unchecked.defaultof<VkImageView>
         let mutable info = VkImageViewCreateInfo ()
         info.image <- image
         info.viewType <- Vulkan.VK_IMAGE_VIEW_TYPE_2D
         info.format <- format
         info.subresourceRange <- makeSubresourceRangeColor mips
+        let mutable imageView = Unchecked.defaultof<VkImageView>
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
         imageView
 
     /// Allocate a command buffer.
     let allocateCommandBuffer commandPool device =
-        let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
         let mutable info = VkCommandBufferAllocateInfo ()
         info.commandPool <- commandPool
         info.level <- Vulkan.VK_COMMAND_BUFFER_LEVEL_PRIMARY
         info.commandBufferCount <- 1u
+        let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
         Vulkan.vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
         commandBuffer
 
@@ -384,9 +382,6 @@ module Hl =
         /// Create the Vulkan instance.
         static member private createVulkanInstance window =
 
-            // handle
-            let mutable instance = Unchecked.defaultof<VkInstance>
-
             // get sdl extensions
             let mutable sdlExtensionCount = 0u
             let result = SDL.SDL_Vulkan_GetInstanceExtensions (window, &sdlExtensionCount, null)
@@ -398,7 +393,7 @@ module Hl =
             for i in 0 .. dec (int sdlExtensionCount) do sdlExtensions.[i] <- NativePtr.nativeintToBytePtr sdlExtensionsOut.[i]
             use sdlExtensionsPin = new ArrayPin<_> (sdlExtensions)
 
-            // TODO: P0: DJL: setup message callback with debug utils *if* motivation arises.
+            // TODO: P0: DJL: setup message callback with debug utils.
 
             // get available instance layers
             let mutable layerCount = 0u
@@ -426,6 +421,7 @@ module Hl =
             if ValidationLayersEnabled && validationLayerExists then
                 info.enabledLayerCount <- 1u
                 info.ppEnabledLayerNames <- layerWrap.Pointer
+            let mutable instance = Unchecked.defaultof<VkInstance>
             Vulkan.vkCreateInstance (&info, nullPtr, &instance) |> check
             instance
 
@@ -453,7 +449,7 @@ module Hl =
                     | Some pdd -> pdd
                     | None -> ()]
 
-            // compatibility criteria: device must support essential rendering components and Vulkan 1.3
+            // compatibility criteria: device must support essential rendering components
             let isCompatible physicalDeviceData =
                 let swapchainExtensionName = NativePtr.spanToString Vulkan.VK_KHR_SWAPCHAIN_EXTENSION_NAME
                 let swapchainSupported = Array.exists (fun ext -> getExtensionName ext = swapchainExtensionName) physicalDeviceData.Extensions
@@ -517,11 +513,11 @@ module Hl =
 
         /// Create the VMA allocator.
         static member private createVmaAllocator physicalDeviceData device instance =
-            let mutable allocator = Unchecked.defaultof<VmaAllocator>
             let mutable info = VmaAllocatorCreateInfo ()
             info.physicalDevice <- physicalDeviceData.PhysicalDevice
             info.device <- device
             info.instance <- instance
+            let mutable allocator = Unchecked.defaultof<VmaAllocator>
             Vma.vmaCreateAllocator (&info, &allocator) |> check
             allocator
 
@@ -567,13 +563,10 @@ module Hl =
         /// Create the swapchain.
         static member private createSwapchain (surfaceFormat : VkSurfaceFormatKHR) swapExtent physicalDeviceData surface device =
 
-            // handles
-            let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
-            let capabilities = physicalDeviceData.SurfaceCapabilities
-
             // decide the minimum number of images in the swapchain. Sellers, Vulkan Programming Guide p. 144, recommends
             // at least 3 for performance, but to keep latency low let's start with the more conservative recommendation of
             // https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Swap_chain#page_Creating-the-swap-chain.
+            let capabilities = physicalDeviceData.SurfaceCapabilities
             let minImageCount =
                 if capabilities.maxImageCount = 0u
                 then capabilities.minImageCount + 1u
@@ -604,6 +597,7 @@ module Hl =
             info.presentMode <- Vulkan.VK_PRESENT_MODE_FIFO_KHR // NOTE: guaranteed by the spec and seems most appropriate for Nu.
             info.clipped <- true
             info.oldSwapchain <- VkSwapchainKHR.Null
+            let mutable swapchain = Unchecked.defaultof<VkSwapchainKHR>
             Vulkan.vkCreateSwapchainKHR (device, &info, nullPtr, &swapchain) |> check
             swapchain
 
@@ -625,9 +619,6 @@ module Hl =
         /// Create a command pool.
         static member private createCommandPool transient queueFamilyIndex device =
             
-            // handle
-            let mutable commandPool = Unchecked.defaultof<VkCommandPool>
-
             // apply transient flag if desired
             let flags =
                 if transient
@@ -638,6 +629,7 @@ module Hl =
             let mutable info = VkCommandPoolCreateInfo ()
             info.flags <- flags
             info.queueFamilyIndex <- queueFamilyIndex
+            let mutable commandPool = Unchecked.defaultof<VkCommandPool>
             Vulkan.vkCreateCommandPool (device, &info, nullPtr, &commandPool) |> check
             commandPool
 
@@ -649,25 +641,22 @@ module Hl =
 
         /// Create a semaphore.
         static member private createSemaphore device =
-            let mutable semaphore = Unchecked.defaultof<VkSemaphore>
             let info = VkSemaphoreCreateInfo ()
+            let mutable semaphore = Unchecked.defaultof<VkSemaphore>
             Vulkan.vkCreateSemaphore (device, &info, nullPtr, &semaphore) |> check
             semaphore
 
         /// Create a fence.
         static member private createFence createSignaled device =
-            let mutable fence = Unchecked.defaultof<VkFence>
             let info =
                 if createSignaled then VkFenceCreateInfo (flags = Vulkan.VK_FENCE_CREATE_SIGNALED_BIT)
                 else VkFenceCreateInfo ()
+            let mutable fence = Unchecked.defaultof<VkFence>
             Vulkan.vkCreateFence (device, &info, nullPtr, &fence) |> check
             fence
 
         /// Create a renderpass.
         static member private createRenderPass clear presentLayout format device =
-
-            // handle
-            let mutable renderPass = Unchecked.defaultof<VkRenderPass>
 
             // attachment
             let mutable attachment = VkAttachmentDescription ()
@@ -697,6 +686,7 @@ module Hl =
             info.pAttachments <- asPointer &attachment
             info.subpassCount <- 1u
             info.pSubpasses <- asPointer &subpass
+            let mutable renderPass = Unchecked.defaultof<VkRenderPass>
             Vulkan.vkCreateRenderPass (device, &info, nullPtr, &renderPass) |> check
             renderPass
 
@@ -747,16 +737,14 @@ module Hl =
         /// Present the image back to the swapchain to appear on screen.
         static member present vkg =
 
-            // handles
-            let mutable swapchain = vkg.Swapchain
-            let mutable renderFinished = vkg.RenderFinishedSemaphore
-            
             // transition image layout for presentation
+            let mutable renderFinished = vkg.RenderFinishedSemaphore
             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
             beginRenderBlock vkg.RenderCommandBuffer vkg.PresentRenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
             endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [|renderFinished|] vkg.InFlightFence
             
             // present image
+            let mutable swapchain = vkg.Swapchain
             let mutable info = VkPresentInfoKHR ()
             info.waitSemaphoreCount <- 1u
             info.pWaitSemaphores <- asPointer &renderFinished
@@ -952,7 +940,7 @@ module Hl =
         static member upload offset size nint buffer =
             if buffer.UploadEnabled
             then NativePtr.memCopy offset size (NativePtr.nativeintToVoidPtr nint) buffer.AllocationInfo.pMappedData
-            else failwith "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
+            else Log.fail "Data upload to Vulkan buffer failed because upload was not enabled for that buffer."
 
         /// Upload an array to buffer if upload is enabled.
         static member uploadArray offset (array : 'a array) buffer =
@@ -1049,9 +1037,9 @@ module Hl =
 
         /// Create an AllocatedImage.
         static member create imageInfo allocator =
+            let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             let mutable image = Unchecked.defaultof<VkImage>
             let mutable allocation = Unchecked.defaultof<VmaAllocation>
-            let info = VmaAllocationCreateInfo (usage = VmaMemoryUsage.Auto)
             Vma.vmaCreateImage (allocator, &imageInfo, &info, &image, &allocation, nullPtr) |> check
             let allocatedImage = { Image = image; Allocation = allocation }
             allocatedImage
