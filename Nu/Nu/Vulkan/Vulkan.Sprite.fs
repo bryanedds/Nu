@@ -42,10 +42,6 @@ module Sprite =
     /// Create a sprite quad for rendering to a pipeline matching the one created with CreateSpritePipeline.
     let CreateSpriteQuad onlyUpperRightQuadrant vkg =
 
-        // buffers
-        let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
-        let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
-        
         // build vertex data
         let vertexData =
             if onlyUpperRightQuadrant then
@@ -65,6 +61,7 @@ module Sprite =
         let vertexDataPtr = GCHandle.Alloc (vertexData, GCHandleType.Pinned)
         
         // TODO: DJL: confirm that this try block and the one for index buffer are still appropriate.
+        let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
         try vertexBuffer <- Hl.AllocatedBuffer.createVertexStaged vertexDataSize (vertexDataPtr.AddrOfPinnedObject ()) vkg
         finally vertexDataPtr.Free ()
 
@@ -72,6 +69,7 @@ module Sprite =
         let indexData = [|0u; 1u; 2u; 2u; 3u; 0u|]
         let indexDataSize = indexData.Length * sizeof<uint>
         let indexDataPtr = GCHandle.Alloc (indexData, GCHandleType.Pinned)
+        let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
         try indexBuffer <- Hl.AllocatedBuffer.createIndexStaged indexDataSize (indexDataPtr.AddrOfPinnedObject ()) vkg
         finally indexDataPtr.Free ()
 
@@ -133,9 +131,6 @@ module Sprite =
                     (if flipH then -texCoordsUnflipped.Size.X else texCoordsUnflipped.Size.X)
                     (if flipV then -texCoordsUnflipped.Size.Y else texCoordsUnflipped.Size.Y))
 
-        // handle
-        let cb = vkg.RenderCommandBuffer
-        
         // update uniform buffers
         Hl.AllocatedBuffer.uploadArray 0 modelViewProjection modelViewProjectionUniform
         Hl.AllocatedBuffer.uploadArray 0 [|texCoords.Min.X; texCoords.Min.Y; texCoords.Size.X; texCoords.Size.Y|] texCoords4Uniform
@@ -145,6 +140,7 @@ module Sprite =
         Pipeline.Pipeline.writeDescriptorTexture 2 0 texture pipeline vkg.Device
         
         // bind pipeline
+        let cb = vkg.RenderCommandBuffer
         let vkPipeline = Pipeline.Pipeline.getPipeline Pipeline.Transparent pipeline
         Vulkan.vkCmdBindPipeline (cb, Vulkan.VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline)
 

@@ -402,10 +402,8 @@ type RendererThread () =
                     // acknowledge swap request
                     swap <- false
 
-        // wait for finish
-        match vkgOpt with Some vkg -> Hl.VulkanGlobal.waitIdle vkg | None -> ()
-        
         // clean up
+        match vkgOpt with Some vkg -> Hl.VulkanGlobal.waitIdle vkg | None -> ()
         match vkgOpt with Some vkg -> Texture.VulkanTexture.destroy Texture.VulkanTexture.empty vkg | None -> ()
         renderer2d.CleanUp ()
         rendererImGui.CleanUp ()

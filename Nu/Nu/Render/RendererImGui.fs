@@ -322,9 +322,6 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
         
         member this.Render (drawData : ImDrawDataPtr) =
             
-            // commonly used handles
-            let cb = vkg.RenderCommandBuffer
-            
             // get total resolution from imgui
             // NOTE: DJL: if this ever differs from the swapchain then something is wrong.
             let framebufferWidth = drawData.DisplaySize.X * drawData.FramebufferScale.X
@@ -334,6 +331,7 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
             if int framebufferWidth > 0 && int framebufferHeight > 0 then
 
                 // init render
+                let cb = vkg.RenderCommandBuffer
                 let mutable renderArea = VkRect2D (0, 0, uint framebufferWidth, uint framebufferHeight)
                 Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
                 

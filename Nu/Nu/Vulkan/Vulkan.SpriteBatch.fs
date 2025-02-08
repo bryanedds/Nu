@@ -96,11 +96,9 @@ module SpriteBatch =
         match env.State.TextureOpt with
         | ValueSome texture when env.SpriteIndex > 0 ->
 
-            // handles
+            // init render
             let vkg = env.VulkanGlobal
             let cb = vkg.RenderCommandBuffer
-
-            // init render
             let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
             Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
 
@@ -231,11 +229,9 @@ module SpriteBatch =
     /// Destroy the given sprite batch environment.
     let DestroySpriteBatchEnv env =
         
-        // common handles
+        // destroy Vulkan resources
         let device = env.VulkanGlobal.Device
         let allocator = env.VulkanGlobal.VmaAllocator
-
-        // destroy Vulkan resources
         Pipeline.Pipeline.destroy env.Pipeline device
         Hl.AllocatedBuffer.destroy env.PerimetersUniform allocator
         Hl.AllocatedBuffer.destroy env.TexCoordsesUniform allocator

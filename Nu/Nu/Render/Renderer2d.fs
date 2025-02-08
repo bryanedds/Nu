@@ -692,12 +692,9 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // handles
-                            let vkg = renderer.VulkanGlobal
-                            let cb = vkg.RenderCommandBuffer
-                            
                             // create texture
                             // TODO: DJL: investigate non-staged texture upload and its performance.
+                            let vkg = renderer.VulkanGlobal
                             let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                             let textVulkanTexture =
                                 Texture.VulkanTexture.createBgra
@@ -708,6 +705,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
 
                             // init render
+                            let cb = vkg.RenderCommandBuffer
                             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
                             Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
                             
@@ -833,15 +831,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         member renderer.CleanUp () =
             
-            // commonly used handles
-            let device = renderer.VulkanGlobal.Device
-            let allocator = renderer.VulkanGlobal.VmaAllocator
-            
             // destroy last used text texture
             match renderer.TextTextureOpt with Some texture -> texture.Destroy renderer.VulkanGlobal | None -> ()
             renderer.TextTextureOpt <- None
             
             // destroy Vulkan resources
+            let device = renderer.VulkanGlobal.Device
+            let allocator = renderer.VulkanGlobal.VmaAllocator
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
             Pipeline.Pipeline.destroy pipeline device

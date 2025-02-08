@@ -47,17 +47,16 @@ module Pipeline =
 
         /// Create the descriptor set layout.
         static member private createDescriptorSetLayout resourceBindings device =
-            let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
             use resourceBindingsPin = new ArrayPin<_> (resourceBindings)
             let mutable info = VkDescriptorSetLayoutCreateInfo ()
             info.bindingCount <- uint resourceBindings.Length
             info.pBindings <- resourceBindingsPin.Pointer
+            let mutable descriptorSetLayout = Unchecked.defaultof<VkDescriptorSetLayout>
             Vulkan.vkCreateDescriptorSetLayout (device, &info, nullPtr, &descriptorSetLayout) |> Hl.check
             descriptorSetLayout
 
         /// Create the pipeline layout.
         static member private createPipelineLayout descriptorSetLayout pushConstantRanges device =
-            let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
             let mutable descriptorSetLayout = descriptorSetLayout
             use pushConstantRangesPin = new ArrayPin<_> (pushConstantRanges)
             let mutable info = VkPipelineLayoutCreateInfo ()
@@ -65,14 +64,12 @@ module Pipeline =
             info.pSetLayouts <- asPointer &descriptorSetLayout
             info.pushConstantRangeCount <- uint pushConstantRanges.Length
             info.pPushConstantRanges <- pushConstantRangesPin.Pointer
+            let mutable pipelineLayout = Unchecked.defaultof<VkPipelineLayout>
             Vulkan.vkCreatePipelineLayout (device, &info, nullPtr, &pipelineLayout) |> Hl.check
             pipelineLayout
         
         /// Create the descriptor pool.
         static member private createDescriptorPool (resourceBindings : VkDescriptorSetLayoutBinding array) device =
-            
-            // handle
-            let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
             
             // derive pool sizes from layout bindings
             let poolSizes = Array.zeroCreate<VkDescriptorPoolSize> resourceBindings.Length
@@ -88,26 +85,24 @@ module Pipeline =
             info.maxSets <- 1u
             info.poolSizeCount <- uint poolSizes.Length
             info.pPoolSizes <- poolSizesPin.Pointer
+            let mutable descriptorPool = Unchecked.defaultof<VkDescriptorPool>
             Vulkan.vkCreateDescriptorPool (device, &info, nullPtr, &descriptorPool) |> Hl.check
             descriptorPool
 
         /// Create the descriptor set.
         static member private createDescriptorSet descriptorSetLayout descriptorPool device =
-            let mutable descriptorSet = Unchecked.defaultof<VkDescriptorSet>
             let mutable descriptorSetLayout = descriptorSetLayout
             let mutable info = VkDescriptorSetAllocateInfo ()
             info.descriptorPool <- descriptorPool
             info.descriptorSetCount <- 1u
             info.pSetLayouts <- asPointer &descriptorSetLayout
+            let mutable descriptorSet = Unchecked.defaultof<VkDescriptorSet>
             Vulkan.vkAllocateDescriptorSets (device, asPointer &info, asPointer &descriptorSet) |> Hl.check
             descriptorSet
 
         /// Create the Vulkan pipelines themselves.
         static member private createPipelines shaderPath cullFace (blends : Blend array) vertexBindings vertexAttributes pipelineLayout renderPass device =
             
-            // handles
-            let pipelines = Array.zeroCreate<VkPipeline> blends.Length
-        
             // create shader modules
             let vertModule = Hl.createShaderModuleFromGlsl (shaderPath + ".vert") ShaderKind.VertexShader device
             let fragModule = Hl.createShaderModuleFromGlsl (shaderPath + ".frag") ShaderKind.FragmentShader device
@@ -134,9 +129,6 @@ module Pipeline =
             viInfo.vertexAttributeDescriptionCount <- uint vertexAttributes.Length
             viInfo.pVertexAttributeDescriptions <- vertexAttributesPin.Pointer
 
-            // input assembly info
-            let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-
             // viewport info
             let mutable vInfo = VkPipelineViewportStateCreateInfo ()
             vInfo.viewportCount <- 1u
@@ -149,8 +141,10 @@ module Pipeline =
             rInfo.frontFace <- Vulkan.VK_FRONT_FACE_COUNTER_CLOCKWISE
             rInfo.lineWidth <- 1.0f
 
-            // multisample info
+            // input assembly; multisample; depth-stencil
+            let mutable iaInfo = VkPipelineInputAssemblyStateCreateInfo (topology = Vulkan.VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
             let mutable mInfo = VkPipelineMultisampleStateCreateInfo (rasterizationSamples = Vulkan.VK_SAMPLE_COUNT_1_BIT)
+            let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
 
             // dynamic state info
             let dynamicStates = [|Vulkan.VK_DYNAMIC_STATE_VIEWPORT; Vulkan.VK_DYNAMIC_STATE_SCISSOR|]
@@ -160,22 +154,17 @@ module Pipeline =
             dsInfo.pDynamicStates <- dynamicStatesPin.Pointer
 
             // create pipelines
+            let pipelines = Array.zeroCreate<VkPipeline> blends.Length
             for i in 0 .. dec pipelines.Length do
             
-                // local handle
-                let mutable pipeline = Unchecked.defaultof<VkPipeline>
-                
-                // make blend attachment
-                let blend = Blend.makeAttachment blends.[i]
-                
-                // depth and blend info
-                let mutable dInfo = VkPipelineDepthStencilStateCreateInfo ()
-                let mutable blend = blend
+                // blend info
+                let mutable blend = Blend.makeAttachment blends.[i]
                 let mutable bInfo = VkPipelineColorBlendStateCreateInfo ()
                 bInfo.attachmentCount <- 1u
                 bInfo.pAttachments <- asPointer &blend
 
                 // create pipeline
+                // TODO: DJL: create pipelines with single call outside loop.
                 let mutable info = VkGraphicsPipelineCreateInfo ()
                 info.stageCount <- uint ssInfos.Length
                 info.pStages <- ssInfosPin.Pointer
@@ -190,19 +179,16 @@ module Pipeline =
                 info.layout <- pipelineLayout
                 info.renderPass <- renderPass
                 info.subpass <- 0u
-                
-                // TODO: DJL: create pipelines with single call outside loop.
+                let mutable pipeline = Unchecked.defaultof<VkPipeline>
                 Vulkan.vkCreateGraphicsPipelines (device, VkPipelineCache.Null, 1u, &info, nullPtr, asPointer &pipeline) |> Hl.check
                 pipelines.[i] <- pipeline
-            
-            // pack pipelines with blend parameters
-            let pipelinesPacked = Array.zip blends pipelines |> Map.ofArray
             
             // destroy shader modules
             Vulkan.vkDestroyShaderModule (device, vertModule, nullPtr)
             Vulkan.vkDestroyShaderModule (device, fragModule, nullPtr)
-
-            // fin
+            
+            // pack pipelines with blend parameters
+            let pipelinesPacked = Array.zip blends pipelines |> Map.ofArray
             pipelinesPacked
         
         /// Get the Vulkan Pipeline built for the given blend.

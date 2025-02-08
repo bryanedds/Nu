@@ -276,7 +276,6 @@ module Texture =
         
         /// Create the sampler.
         static member private createSampler minFilter magFilter device =
-            let mutable sampler = Unchecked.defaultof<VkSampler>
             let mutable info = VkSamplerCreateInfo ()
             info.magFilter <- magFilter
             info.minFilter <- minFilter
@@ -284,20 +283,19 @@ module Texture =
             info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
             info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            let mutable sampler = Unchecked.defaultof<VkSampler>
             Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
             sampler
         
         /// Create a VulkanTexture.
         static member private createInternal format bytesPerPixel minFilter magFilter metadata pixels (vkg : Hl.VulkanGlobal) =
 
-            // general data
-            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
-            let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
-
             // upload pixels to staging buffer
+            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
             let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg.VmaAllocator
 
             // create image and copy pixels to it
+            let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let image = VulkanTexture.createImage format extent vkg.VmaAllocator
             VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
 
