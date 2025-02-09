@@ -34,13 +34,13 @@ type ImGui (stub : bool, displaySize : Vector2i) =
         // make context current
         ImGui.SetCurrentContext context
 
+        // set guizmo context
+        ImGuizmo.SetImGuiContext context
+
         // configure guizmo settings
         ImGuizmo.AllowAxisFlip false
         ImGuizmo.SetAxisLimit 0.001f
         ImGuizmo.SetPlaneLimit 0.001f
-
-        // set guizmo context
-        ImGuizmo.SetImGuiContext context
 
         // enable guizmo
         ImGuizmo.Enable true
