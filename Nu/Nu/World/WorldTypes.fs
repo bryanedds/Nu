@@ -107,6 +107,7 @@ and SnapshotType =
         | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
         | Evaluate _ -> "Evaluate F# Expression"
         | RestorePoint -> (scstringMemo this).Spaced
+        | NormalizeAttenuation -> (scstringMemo this).Spaced
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
         | ResetProbeBounds -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced
