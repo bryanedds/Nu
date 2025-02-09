@@ -2454,8 +2454,9 @@ type Light3dFacet () =
 
     override this.Edit (op, entity, world) =
         match op with
-        | AppendProperties _ ->
+        | AppendProperties ap ->
             if ImGuiNET.ImGui.Button "Normalize Attenutation" then
+                let world = ap.EditContext.Snapshot NormalizeAttenuation world
                 let brightness = entity.GetBrightness world
                 let lightCutoff = entity.GetLightCutoff world
                 let world = entity.SetAttenuationLinear (1.0f / (brightness * lightCutoff)) world

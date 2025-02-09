@@ -71,6 +71,7 @@ and SnapshotType =
     | ChangeProperty of int64 option * string
     | Evaluate of string
     | RestorePoint
+    | NormalizeAttenuation
     | RencenterInProbeBounds
     | ResetProbeBounds
     | ReregisterPhysics
