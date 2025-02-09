@@ -1628,6 +1628,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowOpenGroupDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ShowSaveGroupDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.B && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then tryAutoBoundsSelectedEntity world |> snd
+            elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then NewEntityParentOpt <- SelectedEntityOpt; world
+            elif ImGui.IsKeyPressed ImGuiKey.P && ImGui.IsCtrlDown () && ImGui.IsShiftDown () && ImGui.IsAltUp () then NewEntityParentOpt <- None; world
             elif ImGui.IsKeyPressed ImGuiKey.O && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowOpenEntityDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.S && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltDown () then ShowSaveEntityDialog <- true; world
             elif ImGui.IsKeyPressed ImGuiKey.R && ImGui.IsCtrlDown () && ImGui.IsShiftUp () && ImGui.IsAltUp () then ReloadAllRequested <- 1; world
@@ -1715,11 +1717,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     | Some _ | None -> ()
                 ImGui.Separator ()
                 if NewEntityParentOpt = Some entity then
-                    if ImGui.MenuItem "Reset Creation Parent" then
+                    if ImGui.MenuItem ("Reset Creation Parent", "Ctrl+Shift+P") then
                         NewEntityParentOpt <- None
                         ShowEntityContextMenu <- false
                 else
-                    if ImGui.MenuItem "Set as Creation Parent" then
+                    if ImGui.MenuItem ("Set as Creation Parent", "Ctrl+P") then
                         NewEntityParentOpt <- SelectedEntityOpt
                         ShowEntityContextMenu <- false
                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
@@ -2532,11 +2534,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     | Some _ | None -> ()
                                 ImGui.Separator ()
                                 if SelectedEntityOpt.IsSome && NewEntityParentOpt = SelectedEntityOpt then
-                                    if ImGui.MenuItem "Reset Creation Parent" then
+                                    if ImGui.MenuItem ("Reset Creation Parent", "Ctrl+Shift+P") then
                                         NewEntityParentOpt <- None
                                         ShowEntityContextMenu <- false
                                 else
-                                    if ImGui.MenuItem "Set as Creation Parent" then
+                                    if ImGui.MenuItem ("Set as Creation Parent", "Ctrl+P") then
                                         NewEntityParentOpt <- SelectedEntityOpt
                                         ShowEntityContextMenu <- false
                                 let world = if ImGui.MenuItem ("Auto Bounds Entity", "Ctrl+B") then tryAutoBoundsSelectedEntity world |> snd else world
