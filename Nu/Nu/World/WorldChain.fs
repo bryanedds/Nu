@@ -31,7 +31,7 @@ type ChainBuilder () =
     /// Applicative apply for the chain monad.
     /// TODO: Implement!
     [<DebuggerHidden; DebuggerStepThrough>]
-    member this.Apply (c : Chain<'e, ('a -> 'b)>) (_ : Chain<'e, 'a>) : Chain<'e, 'b> =
+    member this.Apply (c : Chain<'e, 'a -> 'b>) (_ : Chain<'e, 'a>) : Chain<'e, 'b> =
         Chain (fun world ->
             match (match c with Chain f -> f world) with
             //                             ^--- NOTE: unbounded recursion here
@@ -152,11 +152,11 @@ module WorldChain =
 
     type World with
 
-        /// Run a chain to its end, providing 'k' for all its steps.
+        /// Run a chain to its end, providing 'e' for all its steps.
         [<DebuggerHidden; DebuggerStepThrough>] 
-        static member chainConstant (c : Chain<'e, 'a>) (k : 'e) (world : World) : ('a * World) =
+        static member chainConstant (c : Chain<'e, 'a>) (e : 'e) (world : World) : ('a * World) =
             match Chain.step c world with
-            | (Left chain, world) -> World.chainConstant (chain k) k world
+            | (Left chain, world) -> World.chainConstant (chain e) e world
             | (Right v, world) -> (v, world)
 
         /// Run a chain to its end, providing unit for all its steps.
