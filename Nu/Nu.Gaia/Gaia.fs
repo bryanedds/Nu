@@ -2253,11 +2253,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             match ManipulationOperation with
                             | OPERATION.ROTATE | OPERATION.ROTATE_X | OPERATION.ROTATE_Y | OPERATION.ROTATE_Z -> r
                             | _ -> 0.0f // NOTE: doing other snapping ourselves since I don't like guizmo's implementation.
-                        let deltaMatrix = m4Identity.ToArray ()
+                        let delta = m4Identity.ToArray ()
                         let manipulationResult =
                             if snap = 0.0f
-                            then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0])
-                            else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &deltaMatrix.[0], &snap)
+                            then ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0])
+                            else ImGuizmo.Manipulate (&view.[0], &projection.[0], ManipulationOperation, MODE.WORLD, &affine.[0], &delta.[0], &snap)
                         let world =
                             if manipulationResult then
                                 let (manipulationAwaken, world) =
@@ -2268,7 +2268,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let affine' = Matrix4x4.CreateFromArray affine
                                 let mutable (position, rotation, degrees, scale) = (v3Zero, quatIdentity, v3Zero, v3One)
                                 if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
-                                    position <- Math.SnapF3d p position
+                                    let delta = Matrix4x4.CreateFromArray delta
+                                    let translation = delta.Translation
+                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, 0.005f)) then position.X <- Math.SnapF p position.X
+                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, 0.005f)) then position.Y <- Math.SnapF p position.Y
+                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, 0.005f)) then position.Z <- Math.SnapF p position.Z
                                     rotation <- rotation.Normalized // try to avoid weird angle combinations
                                     let rollPitchYaw = rotation.RollPitchYaw
                                     degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
@@ -2277,7 +2281,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     degrees <- if degrees.X = 180.0f && degrees.Z = 180.0f then v3 0.0f (180.0f - degrees.Y) 0.0f else degrees
                                     degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
                                     degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
-                                    scale <- Math.SnapF3d s scale
+                                    let scaling = delta.Scale
+                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, 0.0005f)) then scale.X <- Math.SnapF s scale.X
+                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, 0.0005f)) then scale.Y <- Math.SnapF s scale.Y
+                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, 0.0005f)) then scale.Z <- Math.SnapF s scale.Z
                                     if scale.X < 0.01f then scale.X <- 0.01f
                                     if scale.Y < 0.01f then scale.Y <- 0.01f
                                     if scale.Z < 0.01f then scale.Z <- 0.01f

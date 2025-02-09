@@ -363,71 +363,6 @@ namespace Nu
         }
 
         /// <summary>
-        /// Approximates single-precision floating point equality by an epsilon (maximum error) value.
-        /// This method is designed as a "fits-all" solution and attempts to handle as many cases as possible.
-        /// </summary>
-        /// <param name="a">The first float.</param>
-        /// <param name="b">The second float.</param>
-        /// <param name="epsilon">The maximum error between the two.</param>
-        /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        public static bool ApproximatelyEqualEpsilon(float a, float b, float epsilon)
-        {
-            const float floatNormal = (1 << 23) * float.Epsilon;
-            float absA = System.Math.Abs(a);
-            float absB = System.Math.Abs(b);
-            float diff = System.Math.Abs(a - b);
-
-            if (a == b)
-            {
-                // Shortcut, handles infinities
-                return true;
-            }
-
-            if (a == 0.0f || b == 0.0f || diff < floatNormal)
-            {
-                // a or b is zero, or both are extremely close to it.
-                // relative error is less meaningful here
-                return diff < (epsilon * floatNormal);
-            }
-
-            // use relative error
-            float relativeError = diff / System.Math.Min((absA + absB), float.MaxValue);
-            return relativeError < epsilon;
-        }
-
-        /// <summary>
-        /// Approximates double-precision floating point equality by an epsilon (maximum error) value.
-        /// This method is designed as a "fits-all" solution and attempts to handle as many cases as possible.
-        /// </summary>
-        /// <param name="a">The first float.</param>
-        /// <param name="b">The second float.</param>
-        /// <param name="epsilon">The maximum error between the two.</param>
-        /// <returns><value>true</value> if the values are approximately equal within the error margin; otherwise, <value>false</value>.</returns>
-        public static bool ApproximatelyEqualEpsilon(double a, double b, double epsilon)
-        {
-            const double doubleNormal = (1L << 52) * double.Epsilon;
-            double absA = System.Math.Abs(a);
-            double absB = System.Math.Abs(b);
-            double diff = System.Math.Abs(a - b);
-
-            if (a == b)
-            {
-                // Shortcut, handles infinities
-                return true;
-            }
-
-            if (a == 0.0f || b == 0.0f || diff < doubleNormal)
-            {
-                // a or b is zero, or both are extremely close to it.
-                // relative error is less meaningful here
-                return diff < (epsilon * doubleNormal);
-            }
-
-            // use relative error
-            return diff / System.Math.Min((absA + absB), double.MaxValue) < epsilon;
-        }
-
-        /// <summary>
         /// Approximates equivalence between two single-precision floating-point numbers on a direct human scale.
         /// It is important to note that this does not approximate equality - instead, it merely checks whether or not
         /// two numbers could be considered equivalent to each other within a certain tolerance. The tolerance is
@@ -437,7 +372,7 @@ namespace Nu
         /// <param name="b">The second value to compare·</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        public static bool ApproximatelyEquivalent(float a, float b, float tolerance)
+        public static bool ApproximatelyEqual(float a, float b, float tolerance)
         {
             if (a == b)
             {
@@ -459,7 +394,7 @@ namespace Nu
         /// <param name="b">The second value to compare·</param>
         /// <param name="tolerance">The tolerance within which the two values would be considered equivalent.</param>
         /// <returns>Whether or not the values can be considered equivalent within the tolerance.</returns>
-        public static bool ApproximatelyEquivalent(double a, double b, double tolerance)
+        public static bool ApproximatelyEqual(double a, double b, double tolerance)
         {
             if (a == b)
             {
