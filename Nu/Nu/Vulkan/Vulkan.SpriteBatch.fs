@@ -39,9 +39,9 @@ module SpriteBatch =
               VulkanGlobal : Hl.VulkanGlobal
               Pipeline : Pipeline.Pipeline
               PerimetersUniform : Hl.AllocatedBuffer
-              TexCoordsesUniform : Hl.AllocatedBuffer
               PivotsUniform : Hl.AllocatedBuffer
               RotationsUniform : Hl.AllocatedBuffer
+              TexCoordsesUniform : Hl.AllocatedBuffer
               ColorsUniform : Hl.AllocatedBuffer
               ViewProjectionUniform : Hl.AllocatedBuffer
               Perimeters : single array
@@ -102,12 +102,19 @@ module SpriteBatch =
             let mutable renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
             Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
 
+            // pin uniform arrays
+            use perimetersPin = new ArrayPin<_> (env.Perimeters)
+            use pivotsPin = new ArrayPin<_> (env.Pivots)
+            use rotationsPin = new ArrayPin<_> (env.Rotations)
+            use texCoordsesPin = new ArrayPin<_> (env.TexCoordses)
+            use colorsPin = new ArrayPin<_> (env.Colors)
+            
             // update uniform buffers
-            Hl.AllocatedBuffer.uploadArray 0 env.Perimeters env.PerimetersUniform
-            Hl.AllocatedBuffer.uploadArray 0 env.TexCoordses env.TexCoordsesUniform
-            Hl.AllocatedBuffer.uploadArray 0 env.Pivots env.PivotsUniform
-            Hl.AllocatedBuffer.uploadArray 0 env.Rotations env.RotationsUniform
-            Hl.AllocatedBuffer.uploadArray 0 env.Colors env.ColorsUniform
+            Hl.AllocatedBuffer.upload 0 (sizeof<single> * 4 * env.SpriteIndex) perimetersPin.NativeInt env.PerimetersUniform
+            Hl.AllocatedBuffer.upload 0 (sizeof<single> * 2 * env.SpriteIndex) pivotsPin.NativeInt env.PivotsUniform
+            Hl.AllocatedBuffer.upload 0 (sizeof<single> * 1 * env.SpriteIndex) rotationsPin.NativeInt env.RotationsUniform
+            Hl.AllocatedBuffer.upload 0 (sizeof<single> * 4 * env.SpriteIndex) texCoordsesPin.NativeInt env.TexCoordsesUniform
+            Hl.AllocatedBuffer.upload 0 (sizeof<single> * 4 * env.SpriteIndex) colorsPin.NativeInt env.ColorsUniform
             Hl.AllocatedBuffer.uploadArray 0 (if env.State.Absolute then env.ViewProjectionAbsolute.ToArray () else env.ViewProjectionRelative.ToArray ()) env.ViewProjectionUniform
 
             // write texture to descriptor set
@@ -234,9 +241,9 @@ module SpriteBatch =
         let allocator = env.VulkanGlobal.VmaAllocator
         Pipeline.Pipeline.destroy env.Pipeline device
         Hl.AllocatedBuffer.destroy env.PerimetersUniform allocator
-        Hl.AllocatedBuffer.destroy env.TexCoordsesUniform allocator
         Hl.AllocatedBuffer.destroy env.PivotsUniform allocator
         Hl.AllocatedBuffer.destroy env.RotationsUniform allocator
+        Hl.AllocatedBuffer.destroy env.TexCoordsesUniform allocator
         Hl.AllocatedBuffer.destroy env.ColorsUniform allocator
         Hl.AllocatedBuffer.destroy env.ViewProjectionUniform allocator
         
