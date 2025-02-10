@@ -3356,7 +3356,7 @@ type FollowerFacet () =
 
     static member Properties =
         [define Entity.Following true
-         define Entity.FollowMoveSpeed 2.0f
+         define Entity.FollowMoveSpeed 1.0f
          define Entity.FollowTurnSpeed 3.0f
          define Entity.FollowDistanceMinOpt None
          define Entity.FollowDistanceMaxOpt None
