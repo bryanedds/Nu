@@ -2272,9 +2272,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 if Matrix4x4.Decompose (affine', &scale, &rotation, &position) then
                                     let delta = Matrix4x4.CreateFromArray delta
                                     let translation = delta.Translation
-                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, 0.005f)) then position.X <- Math.SnapF p position.X
-                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, 0.005f)) then position.Y <- Math.SnapF p position.Y
-                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, 0.005f)) then position.Z <- Math.SnapF p position.Z
+                                    let epsilon = 0.0001f // NOTE: making this any higher can create false negatives and leave entities positioned at random offsets.
+                                    if not (Math.ApproximatelyEqual (translation.X, 0.0f, epsilon)) then position.X <- Math.SnapF p position.X
+                                    if not (Math.ApproximatelyEqual (translation.Y, 0.0f, epsilon)) then position.Y <- Math.SnapF p position.Y
+                                    if not (Math.ApproximatelyEqual (translation.Z, 0.0f, epsilon)) then position.Z <- Math.SnapF p position.Z
                                     rotation <- rotation.Normalized // try to avoid weird angle combinations
                                     let rollPitchYaw = rotation.RollPitchYaw
                                     degrees.X <- Math.RadiansToDegrees rollPitchYaw.X
@@ -2284,9 +2285,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     degrees <- v3 degrees.X (if degrees.Y > 180.0f then degrees.Y - 360.0f else degrees.Y) degrees.Z
                                     degrees <- v3 degrees.X (if degrees.Y < -180.0f then degrees.Y + 360.0f else degrees.Y) degrees.Z
                                     let scaling = delta.Scale
-                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, 0.0005f)) then scale.X <- Math.SnapF s scale.X
-                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, 0.0005f)) then scale.Y <- Math.SnapF s scale.Y
-                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, 0.0005f)) then scale.Z <- Math.SnapF s scale.Z
+                                    if not (Math.ApproximatelyEqual (scaling.X, 0.0f, epsilon)) then scale.X <- Math.SnapF s scale.X
+                                    if not (Math.ApproximatelyEqual (scaling.Y, 0.0f, epsilon)) then scale.Y <- Math.SnapF s scale.Y
+                                    if not (Math.ApproximatelyEqual (scaling.Z, 0.0f, epsilon)) then scale.Z <- Math.SnapF s scale.Z
                                     if scale.X < 0.01f then scale.X <- 0.01f
                                     if scale.Y < 0.01f then scale.Y <- 0.01f
                                     if scale.Z < 0.01f then scale.Z <- 0.01f
