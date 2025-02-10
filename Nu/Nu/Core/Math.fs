@@ -1484,7 +1484,7 @@ module Math =
             (DegreesToRadians degrees.Z)
 
     /// Snap an int value to an offset.
-    let SnapI offset (value : int) =
+    let SnapI (offset, value : int) =
         if offset <> 0 then
             let (div, rem) = Math.DivRem (value, offset)
             let rem = if single rem < single offset * 0.5f then 0 else offset
@@ -1493,26 +1493,26 @@ module Math =
 
     /// Snap a single value to an offset.
     /// Has a minimum granularity of 0.01f.
-    let SnapF (offset : single) (value : single) =
-        single (SnapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) / 100.0f
+    let SnapF (offset : single, value : single) =
+        single (SnapI (int (round (offset * 100.0f)), int (round (value * 100.0f)))) / 100.0f
 
     /// Snap a Vector3 value to an offset.
     /// Has a minimum granularity of 0.001f.
-    let SnapF3d offset (v3 : Vector3) =
-        Vector3 (SnapF offset v3.X, SnapF offset v3.Y, SnapF offset v3.Z)
+    let SnapF3d (offset, v3 : Vector3) =
+        Vector3 (SnapF (offset, v3.X), SnapF (offset, v3.Y), SnapF (offset, v3.Z))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree (offset : single) (value : single) =
-        single (SnapI (int (round offset)) (int (round value)))
+    let SnapDegree (offset : single, value : single) =
+        single (SnapI (int (round offset), int (round value)))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree3d offset (v3 : Vector3) =
-        Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
+    let SnapDegree3d (offset, v3 : Vector3) =
+        Vector3 (SnapDegree (offset, v3.X), SnapDegree (offset, v3.Y), SnapDegree (offset, v3.Z))
 
     /// Find the the union of a line segment and a frustum if one exists.
-    let TryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then

@@ -103,7 +103,7 @@ module WorldImGui =
             let projection = Viewport.getProjection3d eyeFieldOfView world.RasterViewport
             let viewProjection = view * projection
             for segment in segments do
-                match Math.TryUnionSegmentAndFrustum segment.A segment.B eyeFrustum with
+                match Math.TryUnionSegmentAndFrustum (segment.A, segment.B, eyeFrustum) with
                 | Some (start, stop) ->
                     let color = computeColor segment
                     let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)

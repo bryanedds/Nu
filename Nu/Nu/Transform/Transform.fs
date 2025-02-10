@@ -296,7 +296,7 @@ type [<NoEquality; NoComparison>] Transform =
         this.Flags_ <- this.Flags_ ||| TransformMasks.InvalidatedMask
 
     static member snapPosition (positionSnap, transform : Transform byref) =
-        transform.Position <- Math.SnapF3d positionSnap transform.Position
+        transform.Position <- Math.SnapF3d (positionSnap, transform.Position)
 
     /// Test transforms for equality.
     static member equalsByRef (left : Transform inref, right : Transform inref) =
