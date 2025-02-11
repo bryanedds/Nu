@@ -538,7 +538,7 @@ module AmbientState =
         let tickDelta =
             if Constants.Engine.TickDeltaAveraging
             then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
-            else tickDeltaCurrent + state.TickDeltaPrevious
+            else tickDeltaCurrent
         state.TickWatch.Restart ()
         let tickTime = state.TickTime + tickDelta
         let dateTime = DateTimeOffset.Now
