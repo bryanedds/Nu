@@ -206,6 +206,13 @@ module Hl =
     /// Begin command buffer recording and render pass.
     let beginRenderBlock cb renderPass framebuffer renderArea clearValues waitFence device =
 
+#if DEBUG
+        // show whether fence is signalled during debugging
+        if waitFence <> VkFence.Null then
+            let status = Vulkan.vkGetFenceStatus(device, waitFence)
+            ()
+#endif
+        
         // await fence if not null
         // TODO: investigate if passing the null fence into awaitFence performs a no-op as expected and if so, don't
         // bother to check for it here :)
