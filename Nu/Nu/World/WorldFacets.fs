@@ -2935,6 +2935,9 @@ module AnimatedModelFacetExtensions =
         member this.GetBoneTransformsOpt world : Matrix4x4 array option = this.Get (nameof this.BoneTransformsOpt) world
         member this.SetBoneTransformsOpt (value : Matrix4x4 array option) world = this.Set (nameof this.BoneTransformsOpt) value world
         member this.BoneTransformsOpt = lens (nameof this.BoneTransformsOpt) this this.GetBoneTransformsOpt this.SetBoneTransformsOpt
+        member this.GetUseJobGraph world : bool = this.Get (nameof this.UseJobGraph) world
+        member this.SetUseJobGraph (value : bool) world = this.Set (nameof this.UseJobGraph) value world
+        member this.UseJobGraph = lens (nameof this.UseJobGraph) this this.GetUseJobGraph this.SetUseJobGraph
 
         /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
         member this.TryGetBoneTransformByName boneName world =
@@ -2990,7 +2993,8 @@ type AnimatedModelFacet () =
          define Entity.AnimatedModel Assets.Default.AnimatedModel
          nonPersistent Entity.BoneIdsOpt None
          nonPersistent Entity.BoneOffsetsOpt None
-         nonPersistent Entity.BoneTransformsOpt None]
+         nonPersistent Entity.BoneTransformsOpt None
+         define Entity.UseJobGraph true]
 
     override this.Register (entity, world) =
         let world = entity.AnimateBones world
@@ -3018,20 +3022,22 @@ type AnimatedModelFacet () =
         let animatedModel = entity.GetAnimatedModel world
         let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
         let resultOpt =
-            match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
-            | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
-            | _ -> None
-        let world =
-            match resultOpt with
-            | Some (boneIds, boneOffsets, boneTransforms) ->
-                let world = entity.SetBoneIdsOpt (Some boneIds) world
-                let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
-                let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
-                world
-            | None -> world
-        let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
-        World.enqueueJob 1.0f job world
-        world
+            if entity.GetUseJobGraph world then
+                let resultOpt =
+                    match World.tryAwaitJob (world.DateTime + TimeSpan.FromSeconds 0.001) (entity, nameof AnimatedModelFacet) world with
+                    | Some (JobCompletion (_, _, (:? ((Dictionary<string, int> * Matrix4x4 array * Matrix4x4 array) option) as boneOffsetsAndTransformsOpt))) -> boneOffsetsAndTransformsOpt
+                    | _ -> None
+                let job = Job.make (entity, nameof AnimatedModelFacet) (fun () -> entity.TryComputeBoneTransforms time animations sceneOpt)
+                World.enqueueJob 1.0f job world
+                resultOpt
+            else entity.TryComputeBoneTransforms time animations sceneOpt
+        match resultOpt with
+        | Some (boneIds, boneOffsets, boneTransforms) ->
+            let world = entity.SetBoneIdsOpt (Some boneIds) world
+            let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
+            let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
+            world
+        | None -> world
 
     override this.Render (renderPass, entity, world) =
         let mutable transform = entity.GetTransform world
