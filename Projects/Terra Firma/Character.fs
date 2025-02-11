@@ -193,7 +193,7 @@ type CharacterDispatcher () =
             let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
 
             // apply changes
-            let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + walkVelocity) world
+            let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
             let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
             let world = entity.SetRotation rotation world
             world
@@ -483,5 +483,5 @@ type PlayerDispatcher () =
         [define Entity.Persistent false // don't serialize player when saving scene
          define Entity.CharacterType Player
          define Entity.HitPoints Constants.Gameplay.PlayerHitPoints
-         define Entity.WalkSpeed 1.0f
+         define Entity.WalkSpeed 3.0f
          define Entity.TurnSpeed 0.05f]
