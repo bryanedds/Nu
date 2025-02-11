@@ -21,6 +21,7 @@ module Configure =
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
                 | nameof Constants.OpenGL.HlAssert -> Constants.OpenGL.HlAssert <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
+                | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.QuadnodeSize -> Constants.Engine.QuadnodeSize <- scvalue value
                 | nameof Constants.Engine.QuadtreeDepth -> Constants.Engine.QuadtreeDepth <- scvalue value
