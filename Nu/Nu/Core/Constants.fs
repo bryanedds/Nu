@@ -16,7 +16,7 @@ module OpenGL =
     let [<Uniform>] GlslVersionPragma = "#version " + string VersionMajor + string VersionMinor + "0"
     let [<Literal>] UncompressedTextureFormat = OpenGL.InternalFormat.Rgba8
     let [<Literal>] BlockCompressedTextureFormat = OpenGL.InternalFormat.CompressedRgbaS3tcDxt5Ext
-    let [<Uniform>] mutable HlAssert = match ConfigurationManager.AppSettings.["HlAssert"] with null -> false | value -> scvalue value
+    let [<Uniform>] mutable HlDebug = match ConfigurationManager.AppSettings.["HlDebug"] with null -> false | value -> scvalue value
 
 [<RequireQualifiedAccess>]
 module Assimp =

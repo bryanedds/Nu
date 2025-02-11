@@ -89,12 +89,7 @@ type Nu () =
             Vsync.Init Constants.Engine.RunSynchronously
 
             // init OpenGL assert mechanism
-            OpenGL.Hl.InitAssert
-#if DEBUG
-                Constants.OpenGL.HlAssert
-#else
-                false
-#endif
+            OpenGL.Hl.InitAssert Constants.OpenGL.HlDebug
 
             // mark init flag
             Initialized <- true
