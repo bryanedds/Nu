@@ -79,7 +79,7 @@ type RendererInline () =
                     glFinishRequired <- glFinishRequired'
 
                     // initialize gl context
-                    OpenGL.Hl.InitContext ()
+                    OpenGL.Hl.InitContext Constants.OpenGL.HlDebug
                     OpenGL.Hl.Assert ()
 
                     // create 3d renderer
@@ -340,7 +340,7 @@ type RendererThread () =
         OpenGL.Hl.Assert ()
 
         // initialize gl context
-        OpenGL.Hl.InitContext ()
+        OpenGL.Hl.InitContext Constants.OpenGL.HlDebug
         OpenGL.Hl.Assert ()
 
         // create 3d renderer

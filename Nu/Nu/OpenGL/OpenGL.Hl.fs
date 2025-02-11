@@ -104,10 +104,10 @@ module Hl =
         glContext
 
     /// Initialize OpenGL context once created.
-    let InitContext () =
+    let InitContext attach =
 
         // potentially listen to debug messages
-        if Constants.OpenGL.HlDebug then AttachDebugMessageCallback ()
+        if attach then AttachDebugMessageCallback ()
         Assert ()
         
         // globally configure opengl for physically-based rendering
