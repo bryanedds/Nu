@@ -3362,8 +3362,8 @@ type FollowerFacet () =
 
     static member Properties =
         [define Entity.Following true
-         define Entity.FollowMoveSpeed 1.0f
-         define Entity.FollowTurnSpeed 3.0f
+         define Entity.FollowMoveSpeed 0.01f
+         define Entity.FollowTurnSpeed 0.03f
          define Entity.FollowDistanceMinOpt None
          define Entity.FollowDistanceMaxOpt None
          define Entity.FollowTargetOpt None]
@@ -3374,8 +3374,8 @@ type FollowerFacet () =
                 let targetOpt = entity.GetFollowTargetOpt world
                 match targetOpt with
                 | Some target when target.GetExists world ->
-                    let moveSpeed = entity.GetFollowMoveSpeed world * (let gd = world.GameDelta in gd.Seconds)
-                    let turnSpeed = entity.GetFollowTurnSpeed world * (let gd = world.GameDelta in gd.Seconds)
+                    let moveSpeed = entity.GetFollowMoveSpeed world
+                    let turnSpeed = entity.GetFollowTurnSpeed world
                     let distanceMinOpt = entity.GetFollowDistanceMinOpt world
                     let distanceMaxOpt = entity.GetFollowDistanceMaxOpt world
                     let position = entity.GetPosition world
