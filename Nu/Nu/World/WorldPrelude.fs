@@ -535,11 +535,11 @@ module AmbientState =
     let updateTime (state : 'w AmbientState) =
         let updateDelta = if state.Advancing then 1L else 0L
         let tickDeltaCurrent = min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
+        state.TickWatch.Restart ()
         let tickDelta =
             if Constants.Engine.TickDeltaAveraging
             then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
             else tickDeltaCurrent
-        state.TickWatch.Restart ()
         let tickTime = state.TickTime + tickDelta
         let dateTime = DateTimeOffset.Now
         { state with
