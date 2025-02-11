@@ -3369,33 +3369,37 @@ type FollowerFacet () =
          define Entity.FollowTargetOpt None]
 
     override this.Update (entity, world) =
-        let following = entity.GetFollowing world
-        if following then
-            let targetOpt = entity.GetFollowTargetOpt world
-            match targetOpt with
-            | Some target when target.GetExists world ->
-                let moveSpeed = entity.GetFollowMoveSpeed world * (let gd = world.GameDelta in gd.Seconds)
-                let turnSpeed = entity.GetFollowTurnSpeed world * (let gd = world.GameDelta in gd.Seconds)
-                let distanceMinOpt = entity.GetFollowDistanceMinOpt world
-                let distanceMaxOpt = entity.GetFollowDistanceMaxOpt world
-                let position = entity.GetPosition world
-                let destination = target.GetPosition world
-                let distance = (destination - position).Magnitude
-                let rotation = entity.GetRotation world
-                if  (distanceMinOpt.IsNone || distance > distanceMinOpt.Value) &&
-                    (distanceMaxOpt.IsNone || distance <= distanceMaxOpt.Value) then
-                    if entity.GetIs2d world
-                    then world // TODO: implement for 2d navigation when it's available.
-                    else
-                        // TODO: consider doing an offset physics ray cast to align nav position with near
-                        // ground. Additionally, consider removing the CellHeight offset in the above query so
-                        // that we don't need to do an offset here at all.
-                        let followOutput = World.nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
-                        let world = entity.SetPosition followOutput.NavPosition world
-                        let world = entity.SetRotation followOutput.NavRotation world
-                        let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
-                        let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
-                        world
-                else world
-            | _ -> world
-        else world
+        if entity.Has<RigidBodyFacet> world then
+            if entity.GetFollowing world then
+                let targetOpt = entity.GetFollowTargetOpt world
+                match targetOpt with
+                | Some target when target.GetExists world ->
+                    let moveSpeed = entity.GetFollowMoveSpeed world * (let gd = world.GameDelta in gd.Seconds)
+                    let turnSpeed = entity.GetFollowTurnSpeed world * (let gd = world.GameDelta in gd.Seconds)
+                    let distanceMinOpt = entity.GetFollowDistanceMinOpt world
+                    let distanceMaxOpt = entity.GetFollowDistanceMaxOpt world
+                    let position = entity.GetPosition world
+                    let destination = target.GetPosition world
+                    let distance = (destination - position).Magnitude
+                    let rotation = entity.GetRotation world
+                    if  (distanceMinOpt.IsNone || distance > distanceMinOpt.Value) &&
+                        (distanceMaxOpt.IsNone || distance <= distanceMaxOpt.Value) then
+                        if entity.GetIs2d world
+                        then world // TODO: implement for 2d navigation when it's available.
+                        else
+                            // TODO: consider doing an offset physics ray cast to align nav position with near
+                            // ground. Additionally, consider removing the CellHeight offset in the above query so
+                            // that we don't need to do an offset here at all.
+                            let followOutput = World.nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
+                            let world = entity.SetPosition followOutput.NavPosition world
+                            let world = entity.SetRotation followOutput.NavRotation world
+                            let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
+                            let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
+                            world
+                    else world
+                | _ -> world
+            else world
+        else
+            // warn that this is currently only support for rigid bodies
+            Log.warnOnce ("Entity " + scstring entity + " using " + nameof FollowerFacet + " doesn't have a RigidBodyFacet required for following")
+            world
