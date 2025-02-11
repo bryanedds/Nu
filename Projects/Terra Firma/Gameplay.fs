@@ -111,7 +111,7 @@ type GameplayDispatcher () =
             // process nav sync
             let world = if initializing then World.synchronizeNav3d gameplay world else world
 
-            // finish declaring scene group
+            // end scene declaration
             let world = World.endGroup world
 
             // declare gui group

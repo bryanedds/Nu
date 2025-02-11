@@ -105,7 +105,7 @@ type GameplayDispatcher () =
                     World.setEye2dCenter eyeCenter world
                 else world
 
-            // finish declaring scene group
+            // end scene declaration
             let world = World.endGroup world
 
             // declare gui group
