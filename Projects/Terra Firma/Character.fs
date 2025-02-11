@@ -92,8 +92,8 @@ type CharacterDispatcher () =
             let backness = (linearVelocity * 32.0f).Dot -rotation.Forward
             let rightness = (linearVelocity * 32.0f).Dot rotation.Right
             let leftness = (linearVelocity * 32.0f).Dot -rotation.Right
-            let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 48.0f else 0.0f
-            let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 48.0f else 0.0f
+            let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 16.0f else 0.0f
+            let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 16.0f else 0.0f
             let animations =
                 [Animation.make 0L None "Armature|Idle" Loop 1.0f 0.5f None]
             let animations =
