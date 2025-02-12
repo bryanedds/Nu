@@ -613,16 +613,16 @@ module WorldScreenModule =
                     if navLinearVelocity.WithY(0.0f).Magnitude < 0.0001f then
                         let navDirection = destination - position
                         let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
-                        { NavPosition = position; NavRotation = Quaternion.Slerp (navRotation, rotation, deltaTime); NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                        { NavPosition = position; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
                     else
                         let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
-                        { NavPosition = navPosition * deltaTime; NavRotation = Quaternion.Slerp (navRotation, rotation, deltaTime); NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
+                        { NavPosition = navPosition * deltaTime; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->
                     let navDirection = destination - position
                     let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
-                    { NavPosition = position; NavRotation = Quaternion.Slerp (navRotation, rotation, deltaTime); NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                    { NavPosition = position; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
                 let navDirection = destination - position
                 let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
-                { NavPosition = position; NavRotation = Quaternion.Slerp (navRotation, rotation, deltaTime); NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                { NavPosition = position; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }
