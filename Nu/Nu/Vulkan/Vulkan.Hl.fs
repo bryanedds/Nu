@@ -28,6 +28,9 @@ module Hl =
     /// Index of the current Swapchain image.
     let mutable private ImageIndex = 0u
 
+    /// The current frame within MaxFramesInFlight.
+    let mutable CurrentFrame = 0
+
     /// Convert VkExtensionProperties.extensionName to a string.
     /// TODO: see if we can inline functions like these once F# supports C#'s representation of this fixed buffer type.
     let private getExtensionName (extensionProps : VkExtensionProperties) =
@@ -392,12 +395,12 @@ module Hl =
           SwapchainImageViews : VkImageView array
           TransferCommandPool : VkCommandPool
           RenderCommandPool : VkCommandPool
-          RenderCommandBuffer : VkCommandBuffer
+          RenderCommandBuffers : VkCommandBuffer array
           GraphicsQueue : VkQueue
           PresentQueue : VkQueue
-          ImageAvailableSemaphore : VkSemaphore
-          RenderFinishedSemaphore : VkSemaphore
-          InFlightFence : VkFence
+          ImageAvailableSemaphores : VkSemaphore array
+          RenderFinishedSemaphores : VkSemaphore array
+          InFlightFences : VkFence array
           ResourceReadyFence : VkFence
           RenderPass : VkRenderPass
           ClearRenderPass : VkRenderPass
@@ -405,6 +408,18 @@ module Hl =
           SwapchainFramebuffers : VkFramebuffer array
           SwapExtent : VkExtent2D }
 
+        /// The render command buffer for the current frame.
+        member this.RenderCommandBuffer = this.RenderCommandBuffers.[CurrentFrame]
+
+        /// The image available semaphore for the current frame.
+        member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores.[CurrentFrame]
+
+        /// The render finished semaphore for the current frame.
+        member this.RenderFinishedSemaphore = this.RenderFinishedSemaphores.[CurrentFrame]
+
+        /// The in flight fence for the current frame.
+        member this.InFlightFence = this.InFlightFences.[CurrentFrame]
+        
         /// The current swapchain framebuffer.
         member this.SwapchainFramebuffer = this.SwapchainFramebuffers.[int ImageIndex]
 
@@ -668,6 +683,22 @@ module Hl =
             Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
             queue
 
+        /// Allocate an array of render command buffers for each frame in flight.
+        static member private allocateRenderCommandBuffers commandPool device =
+            allocateCommandBuffers Constants.Vulkan.MaxFramesInFlight commandPool device
+        
+        /// Create an array of semaphores for each frame in flight.
+        static member private createSemaphores device =
+            let semaphores = Array.zeroCreate<VkSemaphore> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec semaphores.Length do semaphores.[i] <- createSemaphore device
+            semaphores
+
+        /// Create an array of fences for each frame in flight.
+        static member private createFences device =
+            let fences = Array.zeroCreate<VkFence> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec fences.Length do fences.[i] <- createFence true device
+            fences
+        
         /// Create a renderpass.
         static member private createRenderPass clear presentLayout format device =
 
@@ -725,7 +756,7 @@ module Hl =
             framebuffers
 
         /// Begin the frame.
-        static member beginFrame vkg =
+        static member beginFrame (vkg : VulkanGlobal) =
 
             // wait for previous cycle to finish
             awaitFence vkg.InFlightFence vkg.Device
@@ -748,7 +779,7 @@ module Hl =
             () // nothing to do
 
         /// Present the image back to the swapchain to appear on screen.
-        static member present vkg =
+        static member present (vkg : VulkanGlobal) =
 
             // transition image layout for presentation
             let mutable renderFinished = vkg.RenderFinishedSemaphore
@@ -776,9 +807,9 @@ module Hl =
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.RenderPass, nullPtr)
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.ClearRenderPass, nullPtr)
             Vulkan.vkDestroyRenderPass (vkg.Device, vkg.PresentRenderPass, nullPtr)
-            Vulkan.vkDestroySemaphore (vkg.Device, vkg.ImageAvailableSemaphore, nullPtr)
-            Vulkan.vkDestroySemaphore (vkg.Device, vkg.RenderFinishedSemaphore, nullPtr)
-            Vulkan.vkDestroyFence (vkg.Device, vkg.InFlightFence, nullPtr)
+            for i in 0 .. dec vkg.ImageAvailableSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg.ImageAvailableSemaphores.[i], nullPtr)
+            for i in 0 .. dec vkg.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg.RenderFinishedSemaphores.[i], nullPtr)
+            for i in 0 .. dec vkg.InFlightFences.Length do Vulkan.vkDestroyFence (vkg.Device, vkg.InFlightFences.[i], nullPtr)
             Vulkan.vkDestroyFence (vkg.Device, vkg.ResourceReadyFence, nullPtr)
             Vulkan.vkDestroyCommandPool (vkg.Device, vkg.RenderCommandPool, nullPtr)
             Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransferCommandPool, nullPtr)
@@ -829,14 +860,14 @@ module Hl =
                 // setup command system
                 let transferCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
                 let renderCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
-                let renderCommandBuffer = allocateCommandBuffer renderCommandPool device
+                let renderCommandBuffers = VulkanGlobal.allocateRenderCommandBuffers renderCommandPool device
                 let graphicsQueue = VulkanGlobal.getQueue physicalDeviceData.GraphicsQueueFamily device
                 let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
 
                 // create sync objects
-                let imageAvailableSemaphore = createSemaphore device
-                let renderFinishedSemaphore = createSemaphore device
-                let inFlightFence = createFence true device
+                let imageAvailableSemaphores = VulkanGlobal.createSemaphores device
+                let renderFinishedSemaphores = VulkanGlobal.createSemaphores device
+                let inFlightFences = VulkanGlobal.createFences device
                 let resourceReadyFence = createFence false device
 
                 // render actual content; clear render area; transition layout for presentation
@@ -857,12 +888,12 @@ module Hl =
                       SwapchainImageViews = swapchainImageViews
                       TransferCommandPool = transferCommandPool
                       RenderCommandPool = renderCommandPool
-                      RenderCommandBuffer = renderCommandBuffer
+                      RenderCommandBuffers = renderCommandBuffers
                       GraphicsQueue = graphicsQueue
                       PresentQueue = presentQueue
-                      ImageAvailableSemaphore = imageAvailableSemaphore
-                      RenderFinishedSemaphore = renderFinishedSemaphore
-                      InFlightFence = inFlightFence
+                      ImageAvailableSemaphores = imageAvailableSemaphores
+                      RenderFinishedSemaphores = renderFinishedSemaphores
+                      InFlightFences = inFlightFences
                       ResourceReadyFence = resourceReadyFence
                       RenderPass = renderPass
                       ClearRenderPass = clearRenderPass

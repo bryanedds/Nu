@@ -9,6 +9,10 @@ open System.Numerics
 open Prime
 open Nu
 
+module Vulkan =
+
+    let [<Literal>] MaxFramesInFlight = 1
+
 module OpenGL =
 
     let [<Literal>] VersionMajor = 4
