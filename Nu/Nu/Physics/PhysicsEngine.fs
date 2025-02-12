@@ -413,8 +413,7 @@ type PhysicsMotion =
 
 /// The properties specific to the utilization of the character body types.
 type [<SymbolicExpansion>] CharacterProperties =
-    { TraversalDamping : single
-      CollisionPadding : single
+    { CollisionPadding : single
       CollisionTolerance : single
       SlopeMax : single
       StairStepUp : Vector3
@@ -426,8 +425,7 @@ type [<SymbolicExpansion>] CharacterProperties =
 
     /// The default character properties.
     static member defaultProperties =
-        { TraversalDamping = 15.0f
-          CollisionPadding = 0.02f
+        { CollisionPadding = 0.02f
           CollisionTolerance = 0.001f
           SlopeMax = Math.DegreesToRadians 45.0f
           StairStepUp = v3 0.0f 0.25f 0.0f

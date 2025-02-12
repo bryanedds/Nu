@@ -150,7 +150,7 @@ type CharacterDispatcher () =
                 let sinceOnGround = world.UpdateTime - entity.GetLastTimeOnGround world
                 let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
                 if sinceJump >= 12L && sinceOnGround < 10L && actionState = NormalState then
-                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3 0.0f (entity.GetJumpSpeed world) 0.0f) world
+                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * entity.GetJumpSpeed world) world
                     let world = entity.SetLastTimeJump world.UpdateTime world
                     world
                 else world
@@ -158,7 +158,9 @@ type CharacterDispatcher () =
             // attacking
             elif World.isKeyboardKeyPressed KeyboardKey.RShift world then
                 match entity.GetActionState world with
-                | NormalState -> entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                | NormalState ->
+                    let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                    entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
                 | AttackState attack ->
                     let localTime = world.UpdateTime - attack.AttackTime
                     if localTime > 10L && not attack.FollowUpBuffered
@@ -215,12 +217,14 @@ type CharacterDispatcher () =
                 if position.Y - playerPosition.Y >= 0.25f then // above player
                     if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.0f &&
                         rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.1f then
-                        entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                        let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                        entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
                     else world
                 elif playerPosition.Y - position.Y < 1.3f then // at or a bit below player
                     if  Vector3.Distance (playerPositionFlat, positionFlat) < 1.75f &&
                         rotationForwardFlat.AngleBetween (playerPositionFlat - positionFlat) < 0.15f then
-                        entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                        let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                        entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
                     else world
                 else world
             | _ -> world
@@ -265,7 +269,7 @@ type CharacterDispatcher () =
                 else Sphere (playerPosition, 0.7f) // when at or below player
             let nearest = sphere.Nearest position
             let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world    
-            let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + followOutput.NavLinearVelocity) world
+            let world = entity.SetLinearVelocity (followOutput.NavLinearVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
             let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
             let world = entity.SetRotation followOutput.NavRotation world
             world
@@ -292,8 +296,8 @@ type CharacterDispatcher () =
          define Entity.ActionState NormalState
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
-         define Entity.WalkSpeed 0.75f
-         define Entity.TurnSpeed 0.1f
+         define Entity.WalkSpeed 2.0f
+         define Entity.TurnSpeed 0.05f
          define Entity.JumpSpeed 5.0f
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
 

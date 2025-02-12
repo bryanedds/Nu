@@ -533,7 +533,10 @@ module AmbientState =
 
     /// Update the update and clock times.
     let updateTime (state : 'w AmbientState) =
-        let tickDeltaCurrent = min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
+        let tickDeltaCurrent =
+            if state.Advancing
+            then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
+            else 0L
         state.TickWatch.Restart ()
         let updateDelta = if state.Advancing then 1L else 0L
         let tickDelta =

@@ -3362,8 +3362,8 @@ type FollowerFacet () =
 
     static member Properties =
         [define Entity.Following true
-         define Entity.FollowMoveSpeed 0.01f
-         define Entity.FollowTurnSpeed 0.03f
+         define Entity.FollowMoveSpeed 1.0f
+         define Entity.FollowTurnSpeed 0.035f
          define Entity.FollowDistanceMinOpt None
          define Entity.FollowDistanceMaxOpt None
          define Entity.FollowTargetOpt None]
@@ -3391,9 +3391,8 @@ type FollowerFacet () =
                             // ground. Additionally, consider removing the CellHeight offset in the above query so
                             // that we don't need to do an offset here at all.
                             let followOutput = World.nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
-                            let world = entity.SetPosition followOutput.NavPosition world
-                            let world = entity.SetRotation followOutput.NavRotation world
                             let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
+                            let world = entity.SetRotation followOutput.NavRotation world
                             let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
                             world
                     else world

@@ -1179,9 +1179,6 @@ type [<ReferenceEquality>] PhysicsEngine3d =
                              WalkStairsMinStepForward = characterProperties.StairStepForwardMin,
                              WalkStairsCosAngleForwardContact = characterProperties.StairCosAngleForwardContact)
                     character.LinearVelocity <-
-                        character.LinearVelocity -
-                        (character.LinearVelocity * (v3Dup characterProperties.TraversalDamping).WithY 0.0f * stepTime.Seconds)
-                    character.LinearVelocity <-
                         if character.GroundState = GroundState.OnGround
                         then character.LinearVelocity.MapY (max 0.0f)
                         else character.LinearVelocity + characterGravity * stepTime.Seconds
