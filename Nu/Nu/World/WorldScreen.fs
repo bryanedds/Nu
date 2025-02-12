@@ -585,17 +585,21 @@ module WorldScreenModule =
                 else None
             else None
 
-        /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
-        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
-            let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let naveSign = (rotation.Forward.Cross navRotation.Forward).Y
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+        /// Compute angular velocity for the given turn speed and navDirection.
+        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
+            let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
             let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navRotation = if navAngleBetween > turnSpeed then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, naveSign)) else navRotation
+            let navRotation =
+                if navAngleBetween > turnSpeed * deltaTime
+                then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed * deltaTime, navSign))
+                else navRotationDesired
             let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
             let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
             let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign) 0.0f
+            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign / deltaTime) 0.0f
             (navRotation, navAngularVelocity)
 
         /// Compute navigation information that results in following the given destination.
@@ -612,17 +616,18 @@ module WorldScreenModule =
                     let navLinearVelocity = navPosition - position
                     if navLinearVelocity.WithY(0.0f).Magnitude < 0.0001f then
                         let navDirection = destination - position
-                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
-                        { NavPosition = position; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
+                        { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
                     else
-                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
-                        { NavPosition = navPosition * deltaTime; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
+                        let navPosition = Vector3.Lerp (position, navPosition, deltaTime)
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity world
+                        { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->
                     let navDirection = destination - position
-                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
-                    { NavPosition = position; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
+                    { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
                 let navDirection = destination - position
-                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
-                { NavPosition = position; NavRotation = Quaternion.Slerp(navRotation, rotation, deltaTime).Normalized; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
+                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
+                { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }

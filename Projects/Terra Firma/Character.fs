@@ -92,10 +92,10 @@ type CharacterDispatcher () =
             let backness = linearVelocity.Dot -rotation.Forward
             let rightness = linearVelocity.Dot rotation.Right
             let leftness = linearVelocity.Dot -rotation.Right
-            let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 16.0f else 0.0f
-            let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 16.0f else 0.0f
+            let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 0.5f else 0.0f
+            let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 0.5f else 0.0f
             let animations =
-                [Animation.make 0L None "Armature|Idle" Loop 1.0f 0.5f None]
+                [Animation.make 0L None "Armature|Idle" Loop 1.0f 1.0f None]
             let animations =
                 if forwardness >= 0.01f then Animation.make 0L None "Armature|WalkForward" Loop 1.0f forwardness None :: animations
                 elif backness >= 0.01f then Animation.make 0L None "Armature|WalkBack" Loop 1.0f backness None :: animations
@@ -192,7 +192,7 @@ type CharacterDispatcher () =
             let turnVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity) else rotation
+            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
 
             // apply changes
             let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
@@ -297,7 +297,7 @@ type CharacterDispatcher () =
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
          define Entity.WalkSpeed 2.0f
-         define Entity.TurnSpeed 0.05f
+         define Entity.TurnSpeed 5.0f
          define Entity.JumpSpeed 5.0f
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
 
@@ -488,4 +488,4 @@ type PlayerDispatcher () =
          define Entity.CharacterType Player
          define Entity.HitPoints Constants.Gameplay.PlayerHitPoints
          define Entity.WalkSpeed 3.0f
-         define Entity.TurnSpeed 0.05f]
+         define Entity.TurnSpeed 3.0f]
