@@ -187,16 +187,38 @@ module Hl =
         Vulkan.vkCreateImageView (device, &info, nullPtr, &imageView) |> check
         imageView
 
-    /// Allocate a command buffer.
-    let allocateCommandBuffer commandPool device =
+    /// Allocate an array of command buffers.
+    let allocateCommandBuffers count commandPool device =
         let mutable info = VkCommandBufferAllocateInfo ()
         info.commandPool <- commandPool
         info.level <- Vulkan.VK_COMMAND_BUFFER_LEVEL_PRIMARY
-        info.commandBufferCount <- 1u
-        let mutable commandBuffer = Unchecked.defaultof<VkCommandBuffer>
-        Vulkan.vkAllocateCommandBuffers (device, asPointer &info, asPointer &commandBuffer) |> check
-        commandBuffer
+        info.commandBufferCount <- uint count
+        let commandBuffers = Array.zeroCreate<VkCommandBuffer> count
+        use commandBuffersPin = new ArrayPin<_> (commandBuffers)
+        Vulkan.vkAllocateCommandBuffers (device, asPointer &info, commandBuffersPin.Pointer) |> check
+        commandBuffers
 
+    /// Allocate a command buffer.
+    let allocateCommandBuffer commandPool device =
+        let commandBuffers = allocateCommandBuffers 1 commandPool device
+        commandBuffers.[0]
+
+    /// Create a semaphore.
+    let createSemaphore device =
+        let info = VkSemaphoreCreateInfo ()
+        let mutable semaphore = Unchecked.defaultof<VkSemaphore>
+        Vulkan.vkCreateSemaphore (device, &info, nullPtr, &semaphore) |> check
+        semaphore
+
+    /// Create a fence.
+    let createFence createSignaled device =
+        let info =
+            if createSignaled then VkFenceCreateInfo (flags = Vulkan.VK_FENCE_CREATE_SIGNALED_BIT)
+            else VkFenceCreateInfo ()
+        let mutable fence = Unchecked.defaultof<VkFence>
+        Vulkan.vkCreateFence (device, &info, nullPtr, &fence) |> check
+        fence
+    
     /// Wait for a fence to signal and reset it for reuse.
     let awaitFence fence device =
         let mutable fence = fence
@@ -646,22 +668,6 @@ module Hl =
             Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
             queue
 
-        /// Create a semaphore.
-        static member private createSemaphore device =
-            let info = VkSemaphoreCreateInfo ()
-            let mutable semaphore = Unchecked.defaultof<VkSemaphore>
-            Vulkan.vkCreateSemaphore (device, &info, nullPtr, &semaphore) |> check
-            semaphore
-
-        /// Create a fence.
-        static member private createFence createSignaled device =
-            let info =
-                if createSignaled then VkFenceCreateInfo (flags = Vulkan.VK_FENCE_CREATE_SIGNALED_BIT)
-                else VkFenceCreateInfo ()
-            let mutable fence = Unchecked.defaultof<VkFence>
-            Vulkan.vkCreateFence (device, &info, nullPtr, &fence) |> check
-            fence
-
         /// Create a renderpass.
         static member private createRenderPass clear presentLayout format device =
 
@@ -828,10 +834,10 @@ module Hl =
                 let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
 
                 // create sync objects
-                let imageAvailableSemaphore = VulkanGlobal.createSemaphore device
-                let renderFinishedSemaphore = VulkanGlobal.createSemaphore device
-                let inFlightFence = VulkanGlobal.createFence true device
-                let resourceReadyFence = VulkanGlobal.createFence false device
+                let imageAvailableSemaphore = createSemaphore device
+                let renderFinishedSemaphore = createSemaphore device
+                let inFlightFence = createFence true device
+                let resourceReadyFence = createFence false device
 
                 // render actual content; clear render area; transition layout for presentation
                 let renderPass = VulkanGlobal.createRenderPass false false surfaceFormat.format device
