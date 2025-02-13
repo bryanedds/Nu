@@ -667,7 +667,7 @@ module WorldImGui =
                 ImGui.PopID ()
                 (changed, animations)
             | _ ->
-                let value = valueToValue ty value
+                let value = objToObj ty value
                 let mutable combo = false
                 let (changed, value) =
                     if FSharpType.IsUnion ty then

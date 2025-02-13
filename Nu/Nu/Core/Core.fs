@@ -41,9 +41,10 @@ module CoreOperators =
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
 
-    /// Dynamically convert a value to the given type using symbolic conversion.
     /// TODO: P1: remove this after updating Prime.
-    let valueToValue (ty : Type) (value : obj) =
+    /// Convert an value to an value of the given type using symbolic conversion.
+    /// Thread-safe.
+    let objToObj (ty : Type) (value : obj) =
         match value with
         | null -> null
         | _ ->
