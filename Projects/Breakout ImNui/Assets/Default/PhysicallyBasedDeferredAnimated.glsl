@@ -107,7 +107,7 @@ void main()
     if (depthCutoff >= 0.0) { if (depth > depthCutoff) discard; }
     else if (depth <= -depthCutoff) discard;
 
-    // forward position, marking w for writter
+    // forward position, marking w for written
     position.xyz = positionOut.xyz;
     position.w = 1.0;
 
