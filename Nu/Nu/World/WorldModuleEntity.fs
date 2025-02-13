@@ -1635,7 +1635,7 @@ module WorldModuleEntity =
                     match entityOpt with
                     | Some entity ->
                         let world = World.setEntityState entityState entity world
-                        let world = facet.Register (entity, world)
+                        let world = facet.Unregister (entity, world)
                         let world =
                             if WorldModule.getSelected entity world
                             then facet.UnregisterPhysics (entity, world)
