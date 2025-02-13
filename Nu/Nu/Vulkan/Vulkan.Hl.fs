@@ -1099,3 +1099,40 @@ module Hl =
             Vma.vmaCreateImage (allocator, &imageInfo, &info, &image, &allocation, nullPtr) |> check
             let allocatedImage = { Image = image; Allocation = allocation }
             allocatedImage
+
+    /// A set of upload enabled allocated buffers for each frame in flight.
+    type FifBuffer =
+        { PerFrameBuffers : AllocatedBuffer array }
+
+        /// The VkBuffer for the current frame.
+        member this.Buffer = this.PerFrameBuffers.[CurrentFrame].Buffer
+
+        /// Upload data to FifBuffer.
+        static member upload offset size ptr fifBuffer =
+            AllocatedBuffer.upload offset size ptr fifBuffer.PerFrameBuffers.[CurrentFrame]
+
+        /// Upload an array to FifBuffer.
+        static member uploadArray offset array fifBuffer =
+            AllocatedBuffer.uploadArray offset array fifBuffer.PerFrameBuffers.[CurrentFrame]
+        
+        /// Create a vertex FifBuffer.
+        static member createVertex size allocator =
+            let perFrameBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec perFrameBuffers.Length do perFrameBuffers.[i] <- AllocatedBuffer.createVertex true size allocator
+            { PerFrameBuffers = perFrameBuffers }
+
+        /// Create an index FifBuffer.
+        static member createIndex size allocator =
+            let perFrameBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec perFrameBuffers.Length do perFrameBuffers.[i] <- AllocatedBuffer.createIndex true size allocator
+            { PerFrameBuffers = perFrameBuffers }
+
+        /// Create a uniform FifBuffer.
+        static member createUniform size allocator =
+            let perFrameBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec perFrameBuffers.Length do perFrameBuffers.[i] <- AllocatedBuffer.createUniform size allocator
+            { PerFrameBuffers = perFrameBuffers }
+
+        /// Destroy FifBuffer.
+        static member destroy fifBuffer allocator =
+            for i in 0 .. dec fifBuffer.PerFrameBuffers.Length do AllocatedBuffer.destroy fifBuffer.PerFrameBuffers.[i] allocator
