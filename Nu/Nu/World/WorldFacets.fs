@@ -3369,7 +3369,6 @@ type FollowerFacet () =
          define Entity.FollowTargetOpt None]
 
     override this.Update (entity, world) =
-        if entity.Has<RigidBodyFacet> world then
             if entity.GetFollowing world then
                 let targetOpt = entity.GetFollowTargetOpt world
                 match targetOpt with
@@ -3384,21 +3383,31 @@ type FollowerFacet () =
                     let rotation = entity.GetRotation world
                     if  (distanceMinOpt.IsNone || distance > distanceMinOpt.Value) &&
                         (distanceMaxOpt.IsNone || distance <= distanceMaxOpt.Value) then
-                        if entity.GetIs2d world
-                        then world // TODO: implement for 2d navigation when it's available.
+                        if entity.GetIs2d world then
+                            // TODO: implement for 2d navigation when it's available.
+                            world
                         else
                             // TODO: consider doing an offset physics ray cast to align nav position with near
                             // ground. Additionally, consider removing the CellHeight offset in the above query so
                             // that we don't need to do an offset here at all.
                             let followOutput = World.nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed position rotation destination entity.Screen world
-                            let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
-                            let world = entity.SetRotation followOutput.NavRotation world
-                            let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
-                            world
+                            let hasLinearVelocity =
+                                match entity.TryGetProperty (nameof entity.LinearVelocity) world with
+                                | Some property -> property.PropertyType = typeof<Vector3>
+                                | None -> false
+                            let hasAngularVelocity =
+                                match entity.TryGetProperty (nameof entity.AngularVelocity) world with
+                                | Some property -> property.PropertyType = typeof<Vector3>
+                                | None -> false
+                            if hasLinearVelocity && hasAngularVelocity then
+                                let world = entity.SetLinearVelocity followOutput.NavLinearVelocity world
+                                let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
+                                let world = entity.SetRotation followOutput.NavRotation world
+                                world
+                            else
+                                let world = entity.SetPosition followOutput.NavPosition world
+                                let world = entity.SetRotation followOutput.NavRotation world
+                                world
                     else world
                 | _ -> world
             else world
-        else
-            // warn that this is currently only support for rigid bodies
-            Log.warnOnce ("Entity " + scstring entity + " using " + nameof FollowerFacet + " doesn't have a RigidBodyFacet required for following")
-            world
