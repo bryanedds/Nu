@@ -2451,12 +2451,11 @@ module WorldModuleEntity =
                 | None -> None
             let shouldWriteProperty = fun propertyName propertyType (propertyValue : obj) ->
                 if propertyName = "Order" then
-                    writeOrder
+                    writeOrder && entityState.Order <> 0
                 elif propertyName = "PropagatedDescriptorOpt" then
-                    writePropagationHistory
+                    writePropagationHistory && entityState.PropagatedDescriptorOpt.IsSome
                 elif propertyName = Constants.Engine.OverlayNameOptPropertyName && propertyType = typeof<string option> then
-                    let defaultOverlayNameOpt = World.getEntityDefaultOverlayName entityDispatcherName world
-                    defaultOverlayNameOpt <> (propertyValue :?> string option)
+                    World.getEntityDefaultOverlayName entityDispatcherName world <> (propertyValue :?> string option)
                 else
                     match overlaySymbolsOpt with
                     | Some overlaySymbols -> Overlayer.shouldPropertySerialize propertyName propertyType entityState overlaySymbols
