@@ -1436,8 +1436,7 @@ type RigidBodyFacet () =
         (Cascade, world)
 
     static member Properties =
-        [define Entity.Static true
-         define Entity.BodyEnabled true
+        [define Entity.BodyEnabled true
          define Entity.BodyType Static
          define Entity.BodyShape (BoxShape { Size = v3One; TransformOpt = None; PropertiesOpt = None })
          define Entity.SleepingAllowed true
