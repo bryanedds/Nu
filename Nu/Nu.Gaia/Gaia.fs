@@ -881,7 +881,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
     let private trySaveSelectedEntity filePath world =
         match SelectedEntityOpt with
         | Some entity when entity.GetExists world ->
-            try World.writeEntityToFile false filePath entity world
+            try World.writeEntityToFile false false filePath entity world
                 try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                     if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                         File.Copy (filePath, deploymentPath, true)
@@ -936,7 +936,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let elevation = entity.GetElevation world
                             let propagatedDescriptorOpt = entity.GetPropagatedDescriptorOpt world
                             let world = World.destroyEntityImmediate entity world
-                            let (entity, world) = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world
+                            let (entity, world) = World.readEntity false true entityDescriptor (Some entity.Name) entity.Parent world
                             let world = entity.SetOrder order world
                             let world = entity.SetPosition position world
                             let world = entity.SetRotation rotation world
@@ -945,7 +945,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             world
                         else
                             let world = snapshot LoadEntity world
-                            let (entity, world) = World.readEntity entityDescriptor (Some entity.Name) entity.Parent world
+                            let (entity, world) = World.readEntity false true entityDescriptor (Some entity.Name) entity.Parent world
                             let world = inductEntity false entity world
                             world
                     SelectedEntityOpt <- Some entity
@@ -1424,10 +1424,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     let (entity, world) =
                                         if ImGui.IsCtrlDown () && not (entity.GetProtected world) then
                                             let world = snapshot DuplicateEntity world
-                                            let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
+                                            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
                                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
                                             let parent = NewEntityParentOpt |> Option.map cast |> Option.defaultValue entity.Group
-                                            let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
+                                            let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
                                             let world =
                                                 if ImGui.IsShiftDown () then
                                                     duplicate.SetPropagationSourceOpt None world
@@ -1758,10 +1758,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                             let sourceEntity = Nu.Entity sourceEntityAddressStr
                             if not (sourceEntity.GetProtected world) then
                                 if ImGui.IsCtrlDown () then
-                                    let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
+                                    let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
                                     let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
                                     let parent = Nu.Entity (SelectedGroup.GroupAddress <-- Address.makeFromArray entity.Surnames)
-                                    let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
+                                    let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
                                     let world =
                                         if ImGui.IsShiftDown () then
                                             duplicate.SetPropagationSourceOpt None world
@@ -2046,7 +2046,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 match pd.PropertyName with
                                 | Constants.Engine.NamePropertyName -> "!00" // put Name first
                                 | Constants.Engine.MountOptPropertyName -> "!01" // and so on...
-                                | Constants.Engine.PropagationSourceOptPropertyName -> "!02"
+                                | nameof Entity.PropagationSourceOpt -> "!02"
                                 | Constants.Engine.ModelPropertyName -> "!03"
                                 | nameof Entity.Position -> "!04"
                                 | nameof Entity.PositionLocal -> "!05"
@@ -2294,10 +2294,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 let (entity, world) =
                                     if copying then
                                         let world = if manipulationAwaken then snapshot DuplicateEntity world else world
-                                        let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
+                                        let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
                                         let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName entity.Group world
                                         let parent = NewEntityParentOpt |> Option.map cast<Simulant> |> Option.defaultValue entity.Group
-                                        let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
+                                        let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
                                         let world =
                                             if ImGui.IsShiftDown () then
                                                 duplicate.SetPropagationSourceOpt None world
@@ -2770,10 +2770,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                     let sourceEntity = Nu.Entity sourceEntityAddressStr
                                     if not (sourceEntity.GetProtected world) then
                                         if ImGui.IsCtrlDown () then
-                                            let entityDescriptor = World.writeEntity false EntityDescriptor.empty sourceEntity world
+                                            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty sourceEntity world
                                             let entityName = World.generateEntitySequentialName entityDescriptor.EntityDispatcherName sourceEntity.Group world
                                             let parent = sourceEntity.Group
-                                            let (duplicate, world) = World.readEntity entityDescriptor (Some entityName) parent world
+                                            let (duplicate, world) = World.readEntity false false entityDescriptor (Some entityName) parent world
                                             let world =
                                                 if ImGui.IsShiftDown () then
                                                     duplicate.SetPropagationSourceOpt None world

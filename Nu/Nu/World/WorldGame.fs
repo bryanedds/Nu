@@ -213,7 +213,7 @@ module WorldGameModule =
             let gameState = World.getGameState game world
             let gameDispatcherName = getTypeName gameState.Dispatcher
             let gameDescriptor = { gameDescriptor with GameDispatcherName = gameDispatcherName }
-            let gameProperties = Reflection.writePropertiesFromTarget tautology3 gameDescriptor.GameProperties gameState
+            let gameProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") gameDescriptor.GameProperties gameState
             let gameDescriptor = { gameDescriptor with GameProperties = gameProperties }
             let screens = World.getScreens world
             { gameDescriptor with ScreenDescriptors = World.writeScreens writePropagationHistory screens world }

@@ -38,7 +38,6 @@ module Reflection =
              ("Dispatcher", true)
              ("Content", true)
              ("Protected", true)
-             ("Order", true)
              ("Id", true)
 
              // game properties

@@ -755,12 +755,12 @@ module WorldEntityModule =
 
         /// Copy an entity to the world's clipboard.
         static member copyEntityToClipboard entity world =
-            let entityDescriptor = World.writeEntity false EntityDescriptor.empty entity world
+            let entityDescriptor = World.writeEntity false false EntityDescriptor.empty entity world
             Clipboard <- Some (false, entityDescriptor, entity)
 
         /// Cut an entity to the world's clipboard.
         static member cutEntityToClipboard (entity : Entity) world =
-            let entityDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+            let entityDescriptor = World.writeEntity false true EntityDescriptor.empty entity world
             Clipboard <- Some (true, entityDescriptor, entity)
             World.destroyEntityImmediate entity world
 
@@ -785,7 +785,7 @@ module WorldEntityModule =
                     else
                         let group = Group (Array.take 3 parent.Names)
                         Some (World.generateEntitySequentialName entityDescriptor.EntityDispatcherName group world) // otherwise use generated name
-                let (entity, world) = World.readEntity entityDescriptor nameOpt parent world
+                let (entity, world) = World.readEntity false false entityDescriptor nameOpt parent world
                 let (position, positionSnapOpt) =
                     let absolute = entity.GetAbsolute world
                     if entity.GetIs2d world then

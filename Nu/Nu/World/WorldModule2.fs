@@ -551,16 +551,16 @@ module WorldModule2 =
 
             // consider using current entity as propagation source at this level
             let propagatedDescriptor =
-                let propagatedDescriptor = { propagatedDescriptor with EntityProperties = Map.remove Constants.Engine.PropagatedDescriptorOptPropertyName propagatedDescriptor.EntityProperties }
+                let propagatedDescriptor = { propagatedDescriptor with EntityProperties = Map.remove "PropagatedDescriptorOpt" propagatedDescriptor.EntityProperties }
                 let considerUsingCurrentEntityAsPropagationSource =
-                    match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.PropagationSourceOptPropertyName with
+                    match currentDescriptor.EntityProperties.TryGetValue "PropagationSourceOpt" with
                     | (true, propagationSourceOptSymbol) -> propagationSourceOptSymbol |> symbolToValue<string option> |> Option.isNone
                     | (false, _) -> true
                 if considerUsingCurrentEntityAsPropagationSource then
                     match currentEntityOpt with
                     | Some currentEntity ->
                         if currentEntity.GetExists world && currentEntity.HasPropagationTargets world
-                        then { propagatedDescriptor with EntityProperties = Map.add Constants.Engine.PropagationSourceOptPropertyName (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
+                        then { propagatedDescriptor with EntityProperties = Map.add "PropagationSourceOpt" (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
                         else propagatedDescriptor
                     | None -> propagatedDescriptor
                 else propagatedDescriptor
@@ -730,18 +730,16 @@ module WorldModule2 =
                     if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
                     targets
-            let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+            let currentDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
                 Seq.fold (fun world target ->
                     if World.getEntityExists target world then
-                        let targetDescriptor = World.writeEntity false EntityDescriptor.empty target world
+                        let targetDescriptor = World.writeEntity true false EntityDescriptor.empty target world
                         let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (Some entity) world
-                        let order = target.GetOrder world
                         let world = World.destroyEntityImmediate target world
-                        let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
+                        let world = World.readEntity true false propagatedDescriptor (Some target.Name) target.Parent world |> snd
                         let world = World.propagateEntityAffineMatrix target world
-                        let world = target.SetOrder order world
                         world
                     else world)
                     world targetsValid
@@ -2515,7 +2513,8 @@ module EntityPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
             propertyName = Constants.Engine.FacetNamesPropertyName ||
-            propertyName = Constants.Engine.PropagatedDescriptorOptPropertyName ||
+            propertyName = "PropagatedDescriptorOpt" ||
+            propertyName = "Order" ||
             propertyName = "Rotation" ||
             propertyName = "RotationLocal" ||
             propertyName = "Angles" ||

@@ -307,7 +307,7 @@ module WorldImNui =
             let entity = Nu.Entity entityAddress
             let world =
                 if not (entity.GetExists world) then
-                    let world = World.readEntity entityDescriptor None entity.Group world |> snd
+                    let world = World.readEntity false true entityDescriptor None entity.Group world |> snd
                     World.setEntityProtected true entity world |> snd'
                 else world
             match world.SimulantImNuis.TryGetValue entity.EntityAddress with

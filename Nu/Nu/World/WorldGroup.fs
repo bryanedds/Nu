@@ -260,10 +260,10 @@ module WorldGroupModule =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.Dispatcher
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
-            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let getGroupProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.getEntitiesSovereign group world
-            { groupDescriptor with EntityDescriptors = World.writeEntities writePropagationHistory entities world }
+            { groupDescriptor with EntityDescriptors = World.writeEntities false writePropagationHistory entities world }
 
         /// Write multiple groups to a screen descriptor.
         static member writeGroups writePropagationHistory groups world =
@@ -312,7 +312,7 @@ module WorldGroupModule =
             let world = World.addGroup true groupState group world
 
             // read the group's entities
-            let world = World.readEntities groupDescriptor.EntityDescriptors group world |> snd
+            let world = World.readEntities false true groupDescriptor.EntityDescriptors group world |> snd
 
             // try to process ImNui group first time if in the middle of simulant update phase
             let world =

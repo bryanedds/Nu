@@ -269,7 +269,7 @@ module WorldScreenModule =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.Dispatcher
             let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
-            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let getScreenProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             let groups = World.getGroups screen world
             { screenDescriptor with GroupDescriptors = World.writeGroups writePropagationHistory groups world }
