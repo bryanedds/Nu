@@ -1083,7 +1083,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Some _ | None -> world
 
     let private trySaveSelectedGroup filePath world =
-        try World.writeGroupToFile true filePath SelectedGroup world
+        try World.writeGroupToFile filePath SelectedGroup world
             try let deploymentPath = PathF.Combine (TargetDir, PathF.GetRelativePath(TargetDir, filePath).Replace("../", ""))
                 if Directory.Exists (PathF.GetDirectoryName deploymentPath) then
                     File.Copy (filePath, deploymentPath, true)

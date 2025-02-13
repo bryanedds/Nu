@@ -2468,22 +2468,22 @@ module WorldModuleEntity =
                 then EntityDescriptor.setNameOpt (Some entity.Name) entityDescriptor
                 else entityDescriptor
             let entities = World.getEntityChildren entity world
-            { entityDescriptor with EntityDescriptors = World.writeEntities writePropagationHistory writeOrder entities world }
+            { entityDescriptor with EntityDescriptors = World.writeEntities writeOrder writePropagationHistory entities world }
 
         /// Write multiple entities to a group descriptor.
-        static member writeEntities writePropagationHistory writeOrder entities world =
+        static member writeEntities writeOrder writePropagationHistory entities world =
             entities |>
             Seq.sortBy (fun (entity : Entity) -> World.getEntityOrder entity world) |>
             Seq.filter (fun (entity : Entity) -> World.getEntityPersistent entity world && not (World.getEntityProtected entity world)) |>
-            Seq.fold (fun entityDescriptors entity -> World.writeEntity writePropagationHistory writeOrder EntityDescriptor.empty entity world :: entityDescriptors) [] |>
+            Seq.fold (fun entityDescriptors entity -> World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty entity world :: entityDescriptors) [] |>
             Seq.rev |>
             Seq.toList
 
         /// Write an entity to a file.
-        static member writeEntityToFile writePropagationHistory writeOrder (filePath : string) enity world =
+        static member writeEntityToFile writeOrder writePropagationHistory (filePath : string) enity world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let enityDescriptor = World.writeEntity writePropagationHistory writeOrder EntityDescriptor.empty enity world
+            let enityDescriptor = World.writeEntity writeOrder writePropagationHistory EntityDescriptor.empty enity world
             let enityDescriptorStr = scstring enityDescriptor
             let enityDescriptorPretty = PrettyPrinter.prettyPrint enityDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, enityDescriptorPretty)
