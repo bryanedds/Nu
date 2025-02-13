@@ -74,6 +74,8 @@ and SnapshotType =
     | NormalizeAttenuation
     | RencenterInProbeBounds
     | ResetProbeBounds
+    | FreezeEntities
+    | ThawEntities
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
@@ -110,6 +112,8 @@ and SnapshotType =
         | NormalizeAttenuation -> (scstringMemo this).Spaced
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
         | ResetProbeBounds -> (scstringMemo this).Spaced
+        | FreezeEntities -> (scstringMemo this).Spaced
+        | ThawEntities -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
         | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"

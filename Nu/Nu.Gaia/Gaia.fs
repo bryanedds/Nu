@@ -629,6 +629,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | (false, world) -> (false, world)
 
     let private freezeEntities world =
+        let world = snapshot FreezeEntities world
         let groups = World.getGroups SelectedScreen world
         groups |>
         Seq.map (fun group -> World.getEntities group world) |>
@@ -637,6 +638,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         Seq.fold (fun world freezer -> freezer.SetFrozen true world) world
 
     let private thawEntities world =
+        let world = snapshot ThawEntities world
         let groups = World.getGroups SelectedScreen world
         groups |>
         Seq.map (fun group -> World.getEntities group world) |>
