@@ -2514,7 +2514,6 @@ module EntityPropertyDescriptor =
         if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
             propertyName = Constants.Engine.FacetNamesPropertyName ||
             propertyName = "PropagatedDescriptorOpt" ||
-            propertyName = "Order" ||
             propertyName = "Rotation" ||
             propertyName = "RotationLocal" ||
             propertyName = "Angles" ||
