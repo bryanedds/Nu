@@ -5146,17 +5146,11 @@
       [StaticModel [Gameplay TireWall]]]
      []]]]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.030118924] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5166,29 +5160,7 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[6.677379 3.431738 -14.550114] [6.672271 3.4235682 -14.519724] [6.66722 3.4124928 -14.489681] [6.662227 3.3983054 -14.459979]]]
-       [RotationPrevious
-        [[0 0.996535 0 0.08317466] [0 0.9965351 0 0.08317253] [0 0.9965349 0 0.0831755] [0 0.9965349 0 0.08317564]]]
-       [LinearVelocityPrevious
-        [[-0.005167961 -0.0059924126 0.030744553] [-0.0051083565 -0.008169651 0.030389786] [-0.005050659 -0.011075497 0.030042648] [-0.004992962 -0.014187336 0.029702187]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0001]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [6.6572905 3.2127838 -14.430612]]
     [PropagatedDescriptorOpt
      [Some
@@ -5240,21 +5212,14 @@
         [Rotation [0 0.9965349 0 0.08317573]]
         [Size [2 2 2]]]
        []]]]
-    [Rotation [0 0.9965349 0 0.08317573]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.9965349 0 0.08317573]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.040099848] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5264,46 +5229,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.036413193 2.3841858E-07 -0.016795158]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[3.762641 1.6399997 -8.429201] [3.7262278 1.64 -8.445996] [3.6898146 1.6399997 -8.462791] [3.6534014 1.64 -8.479587]]]
-       [RotationPrevious
-        [[0 0.5390578 0 0.84226876] [0 0.5390578 0 0.84226876] [0 0.5390578 0 0.84226876] [0 0.5390578 0 0.84226876]]]
-       [LinearVelocityPrevious
-        [[-0.036413193 -2.3841858E-07 -0.016795158] [-0.036413193 2.3841858E-07 -0.016795158] [-0.036413193 -2.3841858E-07 -0.016795158] [-0.036413193 2.3841858E-07 -0.016795158]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0002]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [3.11 4.68 -6.06]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.5390578 0 0.84226876]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.5390578 0 0.84226876]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkRight] [Playback Loop] [Rate 1] [Weight 0.029702183] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5313,46 +5249,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[-10.8 1.6400002 6.8] [-10.8 1.6400002 6.8] [-10.8 1.6400002 6.8] [-10.8 1.6400002 6.8]]]
-       [RotationPrevious
-        [[0 -0.70710665 0 0.7071069] [0 -0.70710665 0 0.7071069] [0 -0.70710665 0 0.7071069] [0 -0.70710665 0 0.7071069]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0003]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [-10.8 1.6400002 6.8]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 -0.70710665 0 0.7071069]]
-    [Size [2 2 2]]]
+    [Rotation [0 -0.70710665 0 0.7071069]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5362,45 +5269,16 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[6.9 1.2999998 17] [6.9 1.2999998 17] [6.9 1.2999998 17] [6.9 1.2999998 17]]]
-       [RotationPrevious
-        [[0 0 0 1] [0 0 0 1] [0 0 0 1] [0 0 0 1]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0004]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [6.9 1.2999998 17]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Size [2 2 2]]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5410,46 +5288,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[-16.1 1.3000001 16.1] [-16.1 1.3000001 16.1] [-16.1 1.3000001 16.1] [-16.1 1.3000001 16.1]]]
-       [RotationPrevious
-        [[0 1 0 -4.371139E-08] [0 1 0 -4.371139E-08] [0 1 0 -4.371139E-08] [0 1 0 -4.371139E-08]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0005]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [-16.1 1.3000001 16.1]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 1 0 -4.371139E-08]]
-    [Size [2 2 2]]]
+    [Rotation [0 1 0 -4.371139E-08]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5459,46 +5308,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[-12.4 4.2177653 19.9] [-12.4 4.2177653 19.9] [-12.4 4.2177653 19.9] [-12.4 4.2177653 19.9]]]
-       [RotationPrevious
-        [[0 1 0 -4.371139E-08] [0 1 0 -4.371139E-08] [0 1 0 -4.371139E-08] [0 1 0 -4.371139E-08]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0006]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [-12.4 4.2177653 19.9]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 1 0 -4.371139E-08]]
-    [Size [2 2 2]]]
+    [Rotation [0 1 0 -4.371139E-08]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5508,45 +5328,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[9.7 4.2999997 36.8]]]
-       [RotationPrevious
-        [[0 0 0 1]]]
-       [LinearVelocityPrevious
-        [[0 -4.7683716E-07 0]]]
-       [AngularVelocityPrevious
-        [[0 0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 1]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0007]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [9.7 4.2999997 36.8]]
-    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Size [2 2 2]]]
+    [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.024533175] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5556,46 +5348,18 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[24.4 2.1 33.6] [24.4 2.1 33.6] [24.4 2.1 33.6] [24.4 2.1 33.6]]]
-       [RotationPrevious
-        [[0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 429]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0008]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [24.4 2.1 33.6]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.38268346 0 0.9238795]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.38268346 0 0.9238795]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkForward] [Playback Loop] [Rate 1] [Weight 0.024533177] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5605,46 +5369,18 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[29.1 2.1 15.3] [29.1 2.1 15.3] [29.1 2.1 15.3] [29.1 2.1 15.3]]]
-       [RotationPrevious
-        [[0 0.92387956 0 0.3826834] [0 0.92387956 0 0.3826834] [0 0.92387956 0 0.3826834] [0 0.92387956 0 0.3826834]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0009]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [29.1 2.1 15.3]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.92387956 0 0.3826834]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.92387956 0 0.3826834]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.024533175] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5654,46 +5390,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[25.4 2.1 -6.9] [25.4 2.1 -6.9] [25.4 2.1 -6.9] [25.4 2.1 -6.9]]]
-       [RotationPrevious
-        [[0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0010]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [25.4 2.1 -6.9]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.38268346 0 0.9238795]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.38268346 0 0.9238795]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5703,46 +5410,17 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[33 2.1 -5.1] [33 2.1 -5.1] [33 2.1 -5.1] [33 2.1 -5.1]]]
-       [RotationPrevious
-        [[0 0.70710665 0 0.7071069] [0 0.70710665 0 0.7071069] [0 0.70710665 0 0.7071069] [0 0.70710665 0 0.7071069]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 611]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0011]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [33 2.1 -5.1]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.70710665 0 0.7071069]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.70710665 0 0.7071069]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.029702187] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5752,46 +5430,18 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[28.7 2.1 -12.9] [28.7 2.1 -12.9] [28.7 2.1 -12.9] [28.7 2.1 -12.9]]]
-       [RotationPrevious
-        [[0 0.70710665 0 0.7071069] [0 0.70710665 0 0.7071069] [0 0.70710665 0 0.7071069] [0 0.70710665 0 0.7071069]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 677]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0012]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [28.7 2.1 -12.9]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.70710665 0 0.7071069]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.70710665 0 0.7071069]]]
    []]
   [EnemyDispatcher
-   [[BodyShape
-     [CapsuleShape
-      [1
-       0.35
-       [Some
-        [[0 0.85 0] [0 0 0 1] [1 1 1]]]
-       None]]]
-    [BodyType KinematicCharacter]
+   [[Animations
+     [[[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkLeft] [Playback Loop] [Rate 1] [Weight 0.024533175] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|WalkBack] [Playback Loop] [Rate 1] [Weight 0.017472057] [BoneFilterOpt None]]
+      [[StartTime 0] [LifeTimeOpt None] [Name Armature|Idle] [Playback Loop] [Rate 1] [Weight 1] [BoneFilterOpt None]]]]
     [CharacterProperties
-     [[TraversalDamping 15]
-      [CollisionPadding 0.02]
+     [[CollisionPadding 0.02]
       [CollisionTolerance 0.005]
       [SlopeMax 0.7853982]
       [StairStepUp [0 0.2 0]]
@@ -5801,31 +5451,8 @@
       [StairStepForwardMin 0.02]
       [StairCosAngleForwardContact 0.25881907]]]
     [LinearVelocity [-0.004992962 -0.014187336 0.029702187]]
-    [Model
-     ["TerraFirma.Character, Terra Firma, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
-      [[CharacterType Enemy]
-       [PositionPrevious
-        [[28.8 5.1 29.4] [28.8 5.1 29.4] [28.8 5.1 29.4] [28.8 5.1 29.4]]]
-       [RotationPrevious
-        [[0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795] [0 0.38268346 0 0.9238795]]]
-       [LinearVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [AngularVelocityPrevious
-        [[0 -0 0] [0 -0 0] [0 -0 0] [0 -0 0]]]
-       [HitPoints 3]
-       [ActionState NormalState]
-       [JumpState [0 486]]
-       [CharacterCollisions []]
-       [WeaponCollisions []]
-       [WalkSpeed 0.75]
-       [TurnSpeed 0.1]
-       [JumpSpeed 5]
-       [WeaponModel [Gameplay GreatSword]]]]]
     [Name Enemy-0013]
-    [Observable True]
-    [Offset [0 1 0]]
     [Position [28.8 5.1 29.4]]
     [PropagationSourceOpt [Some Game/Gameplay/Scene/Enemy-0001]]
-    [Rotation [0 0.38268346 0 0.9238795]]
-    [Size [2 2 2]]]
+    [Rotation [0 0.38268346 0 0.9238795]]]
    []]]]

@@ -58,12 +58,14 @@ type GameplayDispatcher () =
                     if attacked.GetHitPoints world > 0 then
                         if not (attacked.GetActionState world).IsInjuryState then
                             let world = attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            let world = attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                             world
                         else world
                     else
                         if not (attacked.GetActionState world).IsWoundState then
                             let world = attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            let world = attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                             world
                         else world)
