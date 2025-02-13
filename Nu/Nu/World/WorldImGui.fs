@@ -245,7 +245,6 @@ module WorldImGui =
         /// Edit a value via ImGui.
         /// TODO: split up this function.
         static member imGuiEditProperty (name : string) (ty : Type) (value : obj) (context : EditContext) world =
-            let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
             match value with
             | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
             | :? int8 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
@@ -668,6 +667,7 @@ module WorldImGui =
                 ImGui.PopID ()
                 (changed, animations)
             | _ ->
+                let value = valueToValue ty value
                 let mutable combo = false
                 let (changed, value) =
                     if FSharpType.IsUnion ty then
@@ -865,6 +865,7 @@ module WorldImGui =
                             ImGui.Text name
                             (changed, value)
                     elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                        let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
                         let mutable valueStr = converter.ConvertToString value
                         let (changed, value) =
                             if ImGui.InputText ("##text" + name, &valueStr, 4096u) then
@@ -900,11 +901,12 @@ module WorldImGui =
                         ImGui.Text name
                         (changed, value)
                     else
+                        let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
+                        let valueStr = converter.ConvertToString value
+                        let prettyPrinter = (SyntaxAttribute.defaultValue ty).PrettyPrinter
+                        let mutable valueStrPretty = PrettyPrinter.prettyPrint valueStr prettyPrinter
+                        let lines = valueStrPretty |> Seq.filter ((=) '\n') |> Seq.length |> inc
                         let (changed, value) =
-                            let valueStr = converter.ConvertToString value
-                            let prettyPrinter = (SyntaxAttribute.defaultValue ty).PrettyPrinter
-                            let mutable valueStrPretty = PrettyPrinter.prettyPrint valueStr prettyPrinter
-                            let lines = valueStrPretty |> Seq.filter ((=) '\n') |> Seq.length |> inc
                             if lines = 1 then
                                 let mutable valueStr = valueStr
                                 if ImGui.InputText (name, &valueStr, 131072u) then
