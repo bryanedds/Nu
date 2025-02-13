@@ -730,11 +730,11 @@ module WorldModule2 =
                     if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
                     targets |>
-                Seq.toArray // copy references to avoid enumerator invalidation
+                Array.ofSeq // copy references to avoid enumerator invalidation
             let currentDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
-                Seq.fold (fun world target ->
+                Array.fold (fun world target ->
                     if World.getEntityExists target world then
                         let targetDescriptor = World.writeEntity true false EntityDescriptor.empty target world
                         let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (Some entity) world
@@ -761,14 +761,13 @@ module WorldModule2 =
                             linkLastOpt <> Some Current // propagation target is not self
                         if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
-                        targets |>
-                    Seq.toArray // copy references to avoid enumerator invalidation
+                        targets
                 for target in targetsValid do
                     if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
                             if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                                 ancestor } |>
-            Set.ofSeq |>
+            Set.ofSeq |> // also copies references to avoid enumerator invalidation
             Set.fold (fun world ancestor ->
                 if ancestor.GetExists world && ancestor.HasPropagationTargets world
                 then World.propagateEntityStructure ancestor world
