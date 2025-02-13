@@ -729,7 +729,8 @@ module WorldModule2 =
                         linkLastOpt <> Some Current // propagation target is not self
                     if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
-                    targets
+                    targets |>
+                Seq.toArray // copy references to avoid enumerator invalidation
             let currentDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
@@ -760,7 +761,8 @@ module WorldModule2 =
                             linkLastOpt <> Some Current // propagation target is not self
                         if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                         valid)
-                        targets
+                        targets |>
+                    Seq.toArray // copy references to avoid enumerator invalidation
                 for target in targetsValid do
                     if target.GetExists world then
                         for ancestor in World.getEntityAncestors target world do
