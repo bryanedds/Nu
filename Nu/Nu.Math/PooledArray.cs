@@ -169,16 +169,14 @@ namespace Nu
             // add pool A if missing
             if (!poolsA.TryGetValue(length, out var poolA))
             {
-                var comparer = ReferenceEqualityComparer.Instance;
-                poolA = new HashSet<T[]>();
+                poolA = new HashSet<T[]>(ReferenceEqualityComparer.Instance);
                 poolsA.Add(length, poolA);
             }
 
             // add pool B if missing
             if (!poolsB.TryGetValue(length, out var poolB))
             {
-                var comparer = ReferenceEqualityComparer.Instance;
-                poolB = new HashSet<T[]>();
+                poolB = new HashSet<T[]>(ReferenceEqualityComparer.Instance);
                 poolsB.Add(length, poolB);
             }
 
