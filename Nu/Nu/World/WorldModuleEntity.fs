@@ -1887,7 +1887,7 @@ module WorldModuleEntity =
                         else struct (true, false, previous, world)
                 else
                     let previous = propertyOld.PropertyValue
-                    if CoreOperators.(=/=) property.PropertyValue previous then
+                    if property.PropertyValue =/= previous then
                         if entityState.Imperative then
                             propertyOld.PropertyValue <- property.PropertyValue
                             struct (true, true, previous, world)

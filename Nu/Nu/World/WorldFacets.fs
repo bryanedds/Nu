@@ -2966,6 +2966,13 @@ module AnimatedModelFacetExtensions =
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
 
+        member this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world =
+            let entityState = World.getEntityState this world // OPTIMIZATION: setting these properties without comparison or events.
+            let entityState = EntityState.setProperty (nameof Entity.BoneIdsOpt) { PropertyType = typeof<Dictionary<string, int> option>; PropertyValue = Some boneIds } entityState
+            let entityState = EntityState.setProperty (nameof Entity.BoneOffsetsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneOffsets } entityState
+            let entityState = EntityState.setProperty (nameof Entity.BoneTransformsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneTransforms } entityState
+            World.setEntityState entityState this world
+
         ///
         member this.AnimateBones (world : World) =
             let time = world.GameTime
@@ -2973,11 +2980,7 @@ module AnimatedModelFacetExtensions =
             let animatedModel = this.GetAnimatedModel world
             let sceneOpt = match Metadata.tryGetAnimatedModelMetadata animatedModel with ValueSome model -> model.SceneOpt | ValueNone -> None
             match this.TryComputeBoneTransforms time animations sceneOpt with
-            | Some (boneIds, boneOffsets, boneTransforms) ->
-                let world = this.SetBoneIdsOpt (Some boneIds) world
-                let world = this.SetBoneOffsetsOpt (Some boneOffsets) world
-                let world = this.SetBoneTransformsOpt (Some boneTransforms) world
-                world
+            | Some (boneIds, boneOffsets, boneTransforms) -> this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
             | None -> world
 
 /// Augments an entity with an animated model.
@@ -3031,11 +3034,7 @@ type AnimatedModelFacet () =
                 resultOpt
             else entity.TryComputeBoneTransforms time animations sceneOpt
         match resultOpt with
-        | Some (boneIds, boneOffsets, boneTransforms) ->
-            let world = entity.SetBoneIdsOpt (Some boneIds) world
-            let world = entity.SetBoneOffsetsOpt (Some boneOffsets) world
-            let world = entity.SetBoneTransformsOpt (Some boneTransforms) world
-            world
+        | Some (boneIds, boneOffsets, boneTransforms) -> entity.SetBoneTransformsFast boneIds boneOffsets boneTransforms world
         | None -> world
 
     override this.Render (renderPass, entity, world) =
