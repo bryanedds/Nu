@@ -6,8 +6,8 @@ open Nu
 open TerraFirma
 
 type CharacterType =
-    | Player
     | Enemy
+    | Player
 
 type ObstructedState =
     { ObstructedTime : int64 }
@@ -76,8 +76,8 @@ module CharacterExtensions =
 
         member this.GetCharacterProperties world =
             match this.GetCharacterType world with
-            | Player -> CharacterProperties.defaultProperties
             | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
+            | Player -> CharacterProperties.defaultProperties
 
 type CharacterDispatcher () =
     inherit Entity3dDispatcherImNui (true, false, false)
@@ -138,70 +138,6 @@ type CharacterDispatcher () =
             let visible = localTime / 5L % 2L <> 0L
             let animation = Animation.loop wound.WoundTime None "Armature|WalkBack"
             (visible, [|animation|], world)
-
-    static let updatePlayerInput (entity : Entity) world =
-
-        // action
-        let world =
-
-            // jumping
-            if World.isKeyboardKeyPressed KeyboardKey.Space world then
-                let actionState = entity.GetActionState world
-                let sinceOnGround = world.UpdateTime - entity.GetLastTimeOnGround world
-                let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
-                if sinceJump >= 12L && sinceOnGround < 10L && actionState = NormalState then
-                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * entity.GetJumpSpeed world) world
-                    let world = entity.SetLastTimeJump world.UpdateTime world
-                    world
-                else world
-
-            // attacking
-            elif World.isKeyboardKeyPressed KeyboardKey.RShift world then
-                match entity.GetActionState world with
-                | NormalState ->
-                    let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
-                    entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
-                | AttackState attack ->
-                    let localTime = world.UpdateTime - attack.AttackTime
-                    if localTime > 10L && not attack.FollowUpBuffered
-                    then entity.SetActionState (AttackState { attack with FollowUpBuffered = true }) world
-                    else world
-                | ObstructedState _ | InjuryState _ | WoundState _ -> world
-
-            // do nothing
-            else world
-
-        // movement
-        let bodyId = entity.GetBodyId world
-        let grounded = World.getBodyGrounded bodyId world
-        if entity.GetActionState world = NormalState || not grounded then
-
-            // compute new position
-            let rotation = entity.GetRotation world
-            let forward = rotation.Forward
-            let right = rotation.Right
-            let walkSpeed = entity.GetWalkSpeed world * if grounded then 1.0f else 0.75f
-            let walkVelocity =
-                (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
-                (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
-                (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
-                (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
-
-            // compute new rotation
-            let turnSpeed = entity.GetTurnSpeed world * if grounded then 1.0f else 0.75f
-            let turnVelocity =
-                (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
-                (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
-            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
-
-            // apply changes
-            let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
-            let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
-            let world = entity.SetRotation rotation world
-            world
-
-        // no movement
-        else world
 
     static let updateEnemyInput (playerPosition : Vector3) (entity : Entity) world =
 
@@ -275,6 +211,70 @@ type CharacterDispatcher () =
             world
         | None -> world
 
+    static let updatePlayerInput (entity : Entity) world =
+
+        // action
+        let world =
+
+            // jumping
+            if World.isKeyboardKeyPressed KeyboardKey.Space world then
+                let actionState = entity.GetActionState world
+                let sinceOnGround = world.UpdateTime - entity.GetLastTimeOnGround world
+                let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
+                if sinceJump >= 12L && sinceOnGround < 10L && actionState = NormalState then
+                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * entity.GetJumpSpeed world) world
+                    let world = entity.SetLastTimeJump world.UpdateTime world
+                    world
+                else world
+
+            // attacking
+            elif World.isKeyboardKeyPressed KeyboardKey.RShift world then
+                match entity.GetActionState world with
+                | NormalState ->
+                    let world = entity.SetActionState (AttackState (AttackState.make world.UpdateTime)) world
+                    entity.SetLinearVelocity (v3Up * entity.GetLinearVelocity world) world
+                | AttackState attack ->
+                    let localTime = world.UpdateTime - attack.AttackTime
+                    if localTime > 10L && not attack.FollowUpBuffered
+                    then entity.SetActionState (AttackState { attack with FollowUpBuffered = true }) world
+                    else world
+                | ObstructedState _ | InjuryState _ | WoundState _ -> world
+
+            // do nothing
+            else world
+
+        // movement
+        let bodyId = entity.GetBodyId world
+        let grounded = World.getBodyGrounded bodyId world
+        if entity.GetActionState world = NormalState || not grounded then
+
+            // compute new position
+            let rotation = entity.GetRotation world
+            let forward = rotation.Forward
+            let right = rotation.Right
+            let walkSpeed = entity.GetWalkSpeed world * if grounded then 1.0f else 0.75f
+            let walkVelocity =
+                (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
+                (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
+                (if World.isKeyboardKeyDown KeyboardKey.A world then -right * walkSpeed else v3Zero) +
+                (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
+
+            // compute new rotation
+            let turnSpeed = entity.GetTurnSpeed world * if grounded then 1.0f else 0.75f
+            let turnVelocity =
+                (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
+                (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
+            let rotation = if turnVelocity <> 0.0f then rotation * Quaternion.CreateFromAxisAngle (v3Up, turnVelocity * world.GameDelta.Seconds) else rotation
+
+            // apply changes
+            let world = entity.SetLinearVelocity (walkVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
+            let world = entity.SetAngularVelocity (v3 0.0f turnVelocity 0.0f) world
+            let world = entity.SetRotation rotation world
+            world
+
+        // no movement
+        else world
+
     static member Facets =
         [typeof<RigidBodyFacet>
          typeof<AnimatedModelFacet>]
@@ -345,11 +345,11 @@ type CharacterDispatcher () =
         let world =
             if world.Advancing then
                 match entity.GetCharacterType world with
-                | Player -> updatePlayerInput entity world
                 | Enemy ->
                     if Simulants.GameplayPlayer.GetExists world
                     then updateEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
                     else world
+                | Player -> updatePlayerInput entity world
             else world
 
         // process action state
@@ -365,7 +365,7 @@ type CharacterDispatcher () =
                     else NormalState
                 | InjuryState injury ->
                     let localTime = world.UpdateTime - injury.InjuryTime
-                    let injuryTime = match entity.GetCharacterType world with Player -> 30 | Enemy -> 40
+                    let injuryTime = match entity.GetCharacterType world with Enemy -> 40 | Player -> 30
                     if localTime < injuryTime
                     then InjuryState injury
                     else NormalState
@@ -407,8 +407,8 @@ type CharacterDispatcher () =
                 | BodyPenetration penetration ->
                     match penetration.BodyShapePenetratee.BodyId.BodySource with
                     | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
-                        if entity.GetCharacterType world <> penetratee.GetCharacterType world then
-                            entity.WeaponCollisions.Map (Set.add penetratee) world
+                        if entity.GetCharacterType world <> penetratee.GetCharacterType world
+                        then entity.WeaponCollisions.Map (Set.add penetratee) world
                         else world
                     | _ -> world
                 | BodySeparationExplicit separation ->
@@ -446,8 +446,7 @@ type CharacterDispatcher () =
 
         // declare player hearts
         let world =
-            match entity.GetCharacterType world with
-            | Player ->
+            if (entity.GetCharacterType world).IsPlayer then
                 let hitPoints = entity.GetHitPoints world
                 Seq.fold (fun world i ->
                     World.doStaticSprite ("Heart+" + string i)
@@ -457,7 +456,7 @@ type CharacterDispatcher () =
                          Entity.StaticImage @= if hitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty]
                         world)
                     world [0 .. dec Constants.Gameplay.PlayerHitPoints]
-            | Enemy -> world
+            else world
 
         // process death
         let world =
