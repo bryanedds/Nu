@@ -2938,6 +2938,17 @@ module AnimatedModelFacetExtensions =
         member this.SetUseJobGraph (value : bool) world = this.Set (nameof this.UseJobGraph) value world
         member this.UseJobGraph = lens (nameof this.UseJobGraph) this this.GetUseJobGraph this.SetUseJobGraph
 
+        /// Set the bone transforms via a fast path.
+        /// OPTIMIZATION: this function sets these properties without comparison or events. Unfortunately, F# forces
+        /// array value equality on us. Because this function elides change detection and thus the equality check, it
+        /// runs much faster than setting the BoneOffsets and BoneTransform properties normally.
+        member this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world =
+            let entityState = World.getEntityState this world
+            let entityState = EntityState.setProperty (nameof Entity.BoneIdsOpt) { PropertyType = typeof<Dictionary<string, int> option>; PropertyValue = Some boneIds } entityState
+            let entityState = EntityState.setProperty (nameof Entity.BoneOffsetsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneOffsets } entityState
+            let entityState = EntityState.setProperty (nameof Entity.BoneTransformsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneTransforms } entityState
+            World.setEntityState entityState this world
+
         /// Attempt to get the bone ids, offsets, and transforms from an entity that supports boned models.
         member this.TryGetBoneTransformByName boneName world =
             match this.GetBoneIdsOpt world with
@@ -2958,25 +2969,13 @@ module AnimatedModelFacetExtensions =
                 Some transform
             | (_, _) -> None
 
-        ///
+        /// Attempt to compute the bone transforms (and related data) using the given time and animation data.
         member this.TryComputeBoneTransforms time animations (sceneOpt : Assimp.Scene option) =
             match sceneOpt with
             | Some scene when scene.Meshes.Count > 0 ->
                 let (boneIds, boneOffsets, boneTransforms) = scene.ComputeBoneTransforms (time, animations, scene.Meshes.[0])
                 Some (boneIds, boneOffsets, boneTransforms)
             | Some _ | None -> None
-
-        member this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world =
-            
-            // OPTIMIZATION: setting these properties without comparison or events.
-            // Unfortunately, F# forces array value equality on us. Because this function elides change detection and
-            // thus the equality check, it runs much faster than setting the BoneOffsets and BoneTransform properties
-            // normally.
-            let entityState = World.getEntityState this world
-            let entityState = EntityState.setProperty (nameof Entity.BoneIdsOpt) { PropertyType = typeof<Dictionary<string, int> option>; PropertyValue = Some boneIds } entityState
-            let entityState = EntityState.setProperty (nameof Entity.BoneOffsetsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneOffsets } entityState
-            let entityState = EntityState.setProperty (nameof Entity.BoneTransformsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneTransforms } entityState
-            World.setEntityState entityState this world
 
         ///
         member this.AnimateBones (world : World) =
