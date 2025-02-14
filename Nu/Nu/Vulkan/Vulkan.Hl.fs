@@ -760,7 +760,7 @@ module Hl =
 
             // wait for previous cycle to finish
             awaitFence vkg.InFlightFence vkg.Device
-
+            
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
 
@@ -796,6 +796,9 @@ module Hl =
             info.pSwapchains <- asPointer &swapchain
             info.pImageIndices <- asPointer &ImageIndex
             Vulkan.vkQueuePresentKHR (vkg.PresentQueue, asPointer &info) |> check
+
+            // advance frame in flight
+            CurrentFrame <- (inc CurrentFrame) % Constants.Vulkan.MaxFramesInFlight
 
         /// Wait for all device operations to complete before cleaning up resources.
         static member waitIdle vkg =
@@ -1102,37 +1105,40 @@ module Hl =
 
     /// A set of upload enabled allocated buffers for each frame in flight.
     type FifBuffer =
-        { PerFrameBuffers : AllocatedBuffer array }
+        private { AllocatedBuffers : AllocatedBuffer array }
 
         /// The VkBuffer for the current frame.
-        member this.Buffer = this.PerFrameBuffers.[CurrentFrame].Buffer
+        member this.Buffer = this.AllocatedBuffers.[CurrentFrame].Buffer
+
+        /// The VkBuffer for each frame in flight.
+        member this.PerFrameBuffers = Array.map (fun allocatedBuffer -> allocatedBuffer.Buffer) this.AllocatedBuffers
 
         /// Upload data to FifBuffer.
         static member upload offset size ptr fifBuffer =
-            AllocatedBuffer.upload offset size ptr fifBuffer.PerFrameBuffers.[CurrentFrame]
+            AllocatedBuffer.upload offset size ptr fifBuffer.AllocatedBuffers.[CurrentFrame]
 
         /// Upload an array to FifBuffer.
         static member uploadArray offset array fifBuffer =
-            AllocatedBuffer.uploadArray offset array fifBuffer.PerFrameBuffers.[CurrentFrame]
+            AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame]
         
         /// Create a vertex FifBuffer.
         static member createVertex size allocator =
-            let perFrameBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec perFrameBuffers.Length do perFrameBuffers.[i] <- AllocatedBuffer.createVertex true size allocator
-            { PerFrameBuffers = perFrameBuffers }
+            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createVertex true size allocator
+            { AllocatedBuffers = allocatedBuffers }
 
         /// Create an index FifBuffer.
         static member createIndex size allocator =
-            let perFrameBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec perFrameBuffers.Length do perFrameBuffers.[i] <- AllocatedBuffer.createIndex true size allocator
-            { PerFrameBuffers = perFrameBuffers }
+            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createIndex true size allocator
+            { AllocatedBuffers = allocatedBuffers }
 
         /// Create a uniform FifBuffer.
         static member createUniform size allocator =
-            let perFrameBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec perFrameBuffers.Length do perFrameBuffers.[i] <- AllocatedBuffer.createUniform size allocator
-            { PerFrameBuffers = perFrameBuffers }
+            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createUniform size allocator
+            { AllocatedBuffers = allocatedBuffers }
 
         /// Destroy FifBuffer.
         static member destroy fifBuffer allocator =
-            for i in 0 .. dec fifBuffer.PerFrameBuffers.Length do AllocatedBuffer.destroy fifBuffer.PerFrameBuffers.[i] allocator
+            for i in 0 .. dec fifBuffer.AllocatedBuffers.Length do AllocatedBuffer.destroy fifBuffer.AllocatedBuffers.[i] allocator

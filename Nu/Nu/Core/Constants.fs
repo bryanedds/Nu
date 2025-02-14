@@ -11,7 +11,7 @@ open Nu
 
 module Vulkan =
 
-    let [<Literal>] MaxFramesInFlight = 1
+    let [<Literal>] MaxFramesInFlight = 2
 
 module OpenGL =
 

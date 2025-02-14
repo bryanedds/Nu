@@ -273,8 +273,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
     
     let mutable pipeline = Unchecked.defaultof<Pipeline.Pipeline>
     let mutable fontTexture = Unchecked.defaultof<Texture.VulkanTexture>
-    let mutable vertexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
-    let mutable indexBuffer = Unchecked.defaultof<Hl.AllocatedBuffer>
+    let mutable vertexBuffer = Unchecked.defaultof<Hl.FifBuffer>
+    let mutable indexBuffer = Unchecked.defaultof<Hl.FifBuffer>
     let mutable vertexBufferSize = 8192
     let mutable indexBufferSize = 1024
     
@@ -317,8 +317,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
             fonts.ClearTexData ()
 
             // create vertex and index buffers
-            vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize vkg.VmaAllocator
-            indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize vkg.VmaAllocator
+            vertexBuffer <- Hl.FifBuffer.createVertex vertexBufferSize vkg.VmaAllocator
+            indexBuffer <- Hl.FifBuffer.createIndex indexBufferSize vkg.VmaAllocator
         
         member this.Render (drawData : ImDrawDataPtr) =
             
@@ -344,14 +344,14 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                     // enlarge vertex buffer if needed
                     if vertexSize > vertexBufferSize then
                         while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                        Hl.AllocatedBuffer.destroy vertexBuffer vkg.VmaAllocator
-                        vertexBuffer <- Hl.AllocatedBuffer.createVertex true vertexBufferSize vkg.VmaAllocator
+                        Hl.FifBuffer.destroy vertexBuffer vkg.VmaAllocator
+                        vertexBuffer <- Hl.FifBuffer.createVertex vertexBufferSize vkg.VmaAllocator
 
                     // enlarge index buffer if needed
                     if indexSize > indexBufferSize then
                         while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                        Hl.AllocatedBuffer.destroy indexBuffer vkg.VmaAllocator
-                        indexBuffer <- Hl.AllocatedBuffer.createIndex true indexBufferSize vkg.VmaAllocator
+                        Hl.FifBuffer.destroy indexBuffer vkg.VmaAllocator
+                        indexBuffer <- Hl.FifBuffer.createIndex indexBufferSize vkg.VmaAllocator
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
@@ -360,8 +360,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                         let drawList = let range = drawData.CmdListsRange in range.[i]
                         let vertexSize = drawList.VtxBuffer.Size * sizeof<ImDrawVert>
                         let indexSize = drawList.IdxBuffer.Size * sizeof<uint16>
-                        Hl.AllocatedBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer
-                        Hl.AllocatedBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer
+                        Hl.FifBuffer.upload vertexOffset vertexSize drawList.VtxBuffer.Data vertexBuffer
+                        Hl.FifBuffer.upload indexOffset indexSize drawList.IdxBuffer.Data indexBuffer
                         vertexOffset <- vertexOffset + vertexSize
                         indexOffset <- indexOffset + indexSize
 
@@ -451,8 +451,8 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                 Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
         
         member this.CleanUp () =
-            Hl.AllocatedBuffer.destroy indexBuffer vkg.VmaAllocator
-            Hl.AllocatedBuffer.destroy vertexBuffer vkg.VmaAllocator
+            Hl.FifBuffer.destroy indexBuffer vkg.VmaAllocator
+            Hl.FifBuffer.destroy vertexBuffer vkg.VmaAllocator
             Texture.VulkanTexture.destroy fontTexture vkg
             Pipeline.Pipeline.destroy pipeline vkg.Device
 

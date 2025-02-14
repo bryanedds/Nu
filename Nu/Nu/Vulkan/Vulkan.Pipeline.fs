@@ -202,27 +202,51 @@ module Pipeline =
         static member getPipeline blend pipeline =
             Map.find blend pipeline.Pipelines
         
-        /// Write a uniform to the descriptor set.
-        /// TODO: DJL: finish switching to frames in flight.
-        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.AllocatedBuffer) (pipeline : Pipeline) device =
+        /// Write a uniform to the descriptor set for each frame in flight.
+        static member writeDescriptorUniform (binding : int) (arrayIndex : int) (buffer : Hl.FifBuffer) (pipeline : Pipeline) device =
 
-            // buffer info
-            let mutable info = VkDescriptorBufferInfo ()
-            info.buffer <- buffer.Buffer
-            info.range <- Vulkan.VK_WHOLE_SIZE
+            let buffers = buffer.PerFrameBuffers
+            for i in 0 .. dec pipeline.DescriptorSets.Length do
+            
+                // buffer info
+                let mutable info = VkDescriptorBufferInfo ()
+                info.buffer <- buffers.[i]
+                info.range <- Vulkan.VK_WHOLE_SIZE
 
-            // write descriptor set
-            let mutable write = VkWriteDescriptorSet ()
-            write.dstSet <- pipeline.DescriptorSet
-            write.dstBinding <- uint binding
-            write.dstArrayElement <- uint arrayIndex
-            write.descriptorCount <- 1u
-            write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
-            write.pBufferInfo <- asPointer &info
-            Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
+                // write descriptor set
+                let mutable write = VkWriteDescriptorSet ()
+                write.dstSet <- pipeline.DescriptorSets.[i]
+                write.dstBinding <- uint binding
+                write.dstArrayElement <- uint arrayIndex
+                write.descriptorCount <- 1u
+                write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
+                write.pBufferInfo <- asPointer &info
+                Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
         
-        /// Write a texture to the descriptor set.
+        /// Write a texture to the descriptor set for each frame in flight.
         static member writeDescriptorTexture (binding : int) (arrayIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) device =
+            
+            for i in 0 .. dec pipeline.DescriptorSets.Length do
+            
+                // image info
+                let mutable info = VkDescriptorImageInfo ()
+                info.sampler <- texture.Sampler
+                info.imageView <- texture.ImageView
+                info.imageLayout <- Vulkan.VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+
+                // write descriptor set
+                let mutable write = VkWriteDescriptorSet ()
+                write.dstSet <- pipeline.DescriptorSets.[i]
+                write.dstBinding <- uint binding
+                write.dstArrayElement <- uint arrayIndex
+                write.descriptorCount <- 1u
+                write.descriptorType <- Vulkan.VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+                write.pImageInfo <- asPointer &info
+                Vulkan.vkUpdateDescriptorSets (device, 1u, asPointer &write, 0u, nullPtr)
+
+        /// Write a texture to the descriptor set for a single frame in flight.
+        /// TODO: DJL: try to figure out more explicit naming for non-single frame variants.
+        static member writeDescriptorTextureSingleFrame (binding : int) (arrayIndex : int) (texture : Texture.VulkanTexture) (pipeline : Pipeline) device =
             
             // image info
             let mutable info = VkDescriptorImageInfo ()
