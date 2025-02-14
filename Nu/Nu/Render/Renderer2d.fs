@@ -701,7 +701,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     Vulkan.VK_FILTER_NEAREST
                                     Vulkan.VK_FILTER_NEAREST
                                     textTextureMetadata
-                                    textSurface.pixels vkg
+                                    (Some textSurface.pixels) vkg
                             let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
 
                             // init render

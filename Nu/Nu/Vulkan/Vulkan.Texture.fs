@@ -211,17 +211,22 @@ module Texture =
             let allocatedImage = Hl.AllocatedImage.create info allocator
             allocatedImage
         
-        /// Copy the pixels from the staging buffer to the image.
-        static member private copyBufferToImage extent buffer image (vkg : Hl.VulkanGlobal) =
+        /// Create the sampler.
+        static member private createSampler minFilter magFilter device =
+            let mutable info = VkSamplerCreateInfo ()
+            info.magFilter <- magFilter
+            info.minFilter <- minFilter
+            info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
+            info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
+            let mutable sampler = Unchecked.defaultof<VkSampler>
+            Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
+            sampler
+        
+        /// Record commands to copy from buffer to image.
+        static member recordBufferToImageCopy cb extent buffer image =
             
-            // create command buffer for transfer
-            let mutable cb = Hl.allocateCommandBuffer vkg.TransferCommandPool vkg.Device
-
-            // reset command buffer and begin recording
-            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
-            let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-            Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
-
             // transition image layout for data transfer
             let mutable copyBarrier = VkImageMemoryBarrier ()
             copyBarrier.srcQueueFamilyIndex <- Vulkan.VK_QUEUE_FAMILY_IGNORED
@@ -265,8 +270,20 @@ module Texture =
                  VkDependencyFlags.None,
                  0u, nullPtr, 0u, nullPtr,
                  1u, asPointer &useBarrier)
+        
+        /// Copy the pixels from the staging buffer to the image.
+        static member private copyBufferToImage extent buffer image (vkg : Hl.VulkanGlobal) =
+            
+            // setup command buffer for copy
+            let mutable cb = Hl.allocateCommandBuffer vkg.TransferCommandPool vkg.Device
+            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
+            let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
+            Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
 
-            // execute commands
+            // record copy
+            VulkanTexture.recordBufferToImageCopy cb extent buffer image
+
+            // execute copy
             Vulkan.vkEndCommandBuffer cb |> Hl.check
             let mutable sInfo = VkSubmitInfo ()
             sInfo.commandBufferCount <- 1u
@@ -274,37 +291,23 @@ module Texture =
             Vulkan.vkQueueSubmit (vkg.GraphicsQueue, 1u, asPointer &sInfo, vkg.ResourceReadyFence) |> Hl.check
             Hl.awaitFence vkg.ResourceReadyFence vkg.Device
         
-        /// Create the sampler.
-        static member private createSampler minFilter magFilter device =
-            let mutable info = VkSamplerCreateInfo ()
-            info.magFilter <- magFilter
-            info.minFilter <- minFilter
-            info.mipmapMode <- Vulkan.VK_SAMPLER_MIPMAP_MODE_LINEAR
-            info.addressModeU <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            info.addressModeV <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            info.addressModeW <- Vulkan.VK_SAMPLER_ADDRESS_MODE_REPEAT
-            let mutable sampler = Unchecked.defaultof<VkSampler>
-            Vulkan.vkCreateSampler (device, &info, nullPtr, &sampler) |> Hl.check
-            sampler
-        
         /// Create a VulkanTexture.
-        static member private createInternal format bytesPerPixel minFilter magFilter metadata pixels (vkg : Hl.VulkanGlobal) =
+        static member private createInternal format bytesPerPixel minFilter magFilter metadata pixelsOpt (vkg : Hl.VulkanGlobal) =
 
-            // upload pixels to staging buffer
-            let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
-            let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg.VmaAllocator
-
-            // create image and copy pixels to it
+            // create image, image view and sampler
             let extent = VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             let image = VulkanTexture.createImage format extent vkg.VmaAllocator
-            VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
-
-            // create image view and sampler
             let imageView = Hl.createImageView format 1u image.Image vkg.Device
             let sampler = VulkanTexture.createSampler minFilter magFilter vkg.Device
-
-            // destroy staging buffer
-            Hl.AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
+            
+            // upload pixels to image if provided
+            match pixelsOpt with
+            | Some pixels ->
+                let uploadSize = metadata.TextureWidth * metadata.TextureHeight * bytesPerPixel
+                let stagingBuffer = Hl.AllocatedBuffer.stageData uploadSize pixels vkg.VmaAllocator
+                VulkanTexture.copyBufferToImage extent stagingBuffer.Buffer image.Image vkg
+                Hl.AllocatedBuffer.destroy stagingBuffer vkg.VmaAllocator
+            | None -> ()
 
             // make VulkanTexture
             let vulkanTexture =
@@ -316,15 +319,16 @@ module Texture =
             vulkanTexture
 
         /// Create a VulkanTexture with Bgra format.
-        static member createBgra minFilter magFilter metadata pixels vkg =
-            VulkanTexture.createInternal Vulkan.VK_FORMAT_B8G8R8A8_UNORM 4 minFilter magFilter metadata pixels vkg
+        static member createBgra minFilter magFilter metadata pixelsOpt vkg =
+            VulkanTexture.createInternal Vulkan.VK_FORMAT_B8G8R8A8_UNORM 4 minFilter magFilter metadata pixelsOpt vkg
 
         /// Create a VulkanTexture with Rgba format.
-        static member createRgba minFilter magFilter metadata pixels vkg =
-            VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixels vkg
+        static member createRgba minFilter magFilter metadata pixelsOpt vkg =
+            VulkanTexture.createInternal Vulkan.VK_FORMAT_R8G8B8A8_UNORM 4 minFilter magFilter metadata pixelsOpt vkg
 
         /// Create an empty VulkanTexture.
         /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f), perhaps just loading up the Assets.Default.Image asset.
+        /// TODO: DJL: try to leverage new structure
         static member createEmpty (vkg : Hl.VulkanGlobal) =
 
             // create components
@@ -401,7 +405,7 @@ module Texture =
 //                if mipmaps then Gl.GenerateMipmap TextureTarget.Texture2d
 //                Gl.BindTexture (TextureTarget.Texture2d, 0u)
                 
-                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata (bytesPtr.AddrOfPinnedObject ()) vkg
+                let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata (Some (bytesPtr.AddrOfPinnedObject ())) vkg
                 (metadata, vulkanTexture)
             finally bytesPtr.Free ()
 
@@ -480,7 +484,7 @@ module Texture =
 //                Gl.GenerateMipmap TextureTarget.Texture2d
 //            Gl.BindTexture (TextureTarget.Texture2d, 0u)
 
-            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata bytesPtr vkg
+            let vulkanTexture = VulkanTexture.createBgra minFilter magFilter metadata (Some bytesPtr) vkg
             (metadata, vulkanTexture)
 
     /// Attempt to create uploadable texture data from the given file path.
