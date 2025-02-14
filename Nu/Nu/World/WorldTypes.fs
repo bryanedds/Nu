@@ -1354,7 +1354,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
     /// Derive a screen from the game.
     static member (/) (game : Game, screenName) = let _ = game in Screen (rtoa [|Constants.Engine.GameName; screenName|])
 
-    /// Concatenate an address with a game's address, taking the type of first address.
+    /// Concatenate an address with a game's address.
     static member (-->) (address : 'a Address, game : Game) =
         // HACK: anonymizes address when entity is null due to internal engine trickery.
         if isNull (game :> obj) then Address.anonymize address else acatf address game.GameAddress
@@ -1453,7 +1453,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
     /// Derive a group from its screen.
     static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
 
-    /// Concatenate an address with a screen's address, taking the type of first address.
+    /// Concatenate an address with a screen's address.
     static member (-->) (address : 'a Address, screen : Screen) =
         // HACK: anonymizes address when screen is null due to internal engine trickery.
         if isNull (screen :> obj) then Address.anonymize address else acatf address screen.ScreenAddress
@@ -1554,7 +1554,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
     /// Derive an entity from its group.
     static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
 
-    /// Concatenate an address with a group's address, taking the type of first address.
+    /// Concatenate an address with a group's address.
     static member (-->) (address : 'a Address, group : Group) =
         // HACK: anonymizes address when group is null due to internal engine trickery.
         if isNull (group :> obj) then Address.anonymize address else acatf address group.GroupAddress
@@ -1678,7 +1678,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
     /// Derive an entity from its parent entity.
     static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
-    /// Concatenate an address with an entity, taking the type of first address.
+    /// Concatenate an address with an entity.
     static member (-->) (address : 'a Address, entity : Entity) =
         // HACK: anonymizes address when entity is null due to internal engine trickery.
         if isNull (entity :> obj) then Address.anonymize address else acatf address entity.EntityAddress

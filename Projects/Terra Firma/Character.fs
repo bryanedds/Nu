@@ -139,7 +139,7 @@ type CharacterDispatcher () =
             let animation = Animation.loop wound.WoundTime None "Armature|WalkBack"
             (visible, [|animation|], world)
 
-    static let updateEnemyInput (playerPosition : Vector3) (entity : Entity) world =
+    static let processEnemyInput (playerPosition : Vector3) (entity : Entity) world =
 
         // attacking
         let world =
@@ -211,7 +211,7 @@ type CharacterDispatcher () =
             world
         | None -> world
 
-    static let updatePlayerInput (entity : Entity) world =
+    static let processPlayerInput (entity : Entity) world =
 
         // action
         let world =
@@ -347,9 +347,9 @@ type CharacterDispatcher () =
                 match entity.GetCharacterType world with
                 | Enemy ->
                     if Simulants.GameplayPlayer.GetExists world
-                    then updateEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
+                    then processEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
                     else world
-                | Player -> updatePlayerInput entity world
+                | Player -> processPlayerInput entity world
             else world
 
         // process action state
@@ -371,7 +371,7 @@ type CharacterDispatcher () =
                     else NormalState
             entity.SetActionState actionState world
 
-        // process animations model
+        // process model animations
         let animations = computeTraversalAnimations entity world
         let (visible, animations, world) = tryComputeActionAnimation animations entity world
         let world = entity.SetVisible visible world
