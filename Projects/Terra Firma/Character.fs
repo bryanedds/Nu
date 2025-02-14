@@ -55,15 +55,6 @@ module CharacterExtensions =
         member this.GetWeaponCollisions world : Entity Set = this.Get (nameof this.WeaponCollisions) world
         member this.SetWeaponCollisions (value : Entity Set) world = this.Set (nameof this.WeaponCollisions) value world
         member this.WeaponCollisions = lens (nameof this.WeaponCollisions) this this.GetWeaponCollisions this.SetWeaponCollisions
-        member this.GetWalkSpeed world : single = this.Get (nameof this.WalkSpeed) world
-        member this.SetWalkSpeed (value : single) world = this.Set (nameof this.WalkSpeed) value world
-        member this.WalkSpeed = lens (nameof this.WalkSpeed) this this.GetWalkSpeed this.SetWalkSpeed
-        member this.GetTurnSpeed world : single = this.Get (nameof this.TurnSpeed) world
-        member this.SetTurnSpeed (value : single) world = this.Set (nameof this.TurnSpeed) value world
-        member this.TurnSpeed = lens (nameof this.TurnSpeed) this this.GetTurnSpeed this.SetTurnSpeed
-        member this.GetJumpSpeed world : single = this.Get (nameof this.JumpSpeed) world
-        member this.SetJumpSpeed (value : single) world = this.Set (nameof this.JumpSpeed) value world
-        member this.JumpSpeed = lens (nameof this.JumpSpeed) this this.GetJumpSpeed this.SetJumpSpeed
         member this.GetWeaponModel world : StaticModel AssetTag = this.Get (nameof this.WeaponModel) world
         member this.SetWeaponModel (value : StaticModel AssetTag) world = this.Set (nameof this.WeaponModel) value world
         member this.WeaponModel = lens (nameof this.WeaponModel) this this.GetWeaponModel this.SetWeaponModel
@@ -163,15 +154,13 @@ type CharacterDispatcher () =
             let actionState = entity.GetActionState world
             match actionState with
             | NormalState ->
-                let navSpeed =
-                    if actionState = NormalState
-                    then (entity.GetWalkSpeed world, entity.GetTurnSpeed world)
-                    else (0.0f, entity.GetTurnSpeed world * 3.0f)
+                let walkSpeed = Constants.Gameplay.EnemyWalkSpeed * if actionState.IsNormalState then 1.0f else 0.0f
+                let turnSpeed = Constants.Gameplay.EnemyTurnSpeed * if actionState.IsNormalState then 1.0f else 3.0f
                 let world = entity.SetActionState actionState world
-                (Some navSpeed, world)
+                (Some (walkSpeed, turnSpeed), world)
             | _ -> (None, world)
         match navSpeedsOpt with
-        | Some (moveSpeed, turnSpeed) ->
+        | Some (walkSpeed, turnSpeed) ->
             let position = entity.GetPosition world
             let rotation = entity.GetRotation world
             let sphere =
@@ -179,7 +168,7 @@ type CharacterDispatcher () =
                 then Sphere (playerPosition, 0.1f) // when above player
                 else Sphere (playerPosition, 0.7f) // when at or below player
             let nearest = sphere.Nearest position
-            let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) moveSpeed turnSpeed position rotation nearest Simulants.Gameplay world    
+            let followOutput = World.nav3dFollow (Some 1.0f) (Some 12.0f) walkSpeed turnSpeed position rotation nearest Simulants.Gameplay world    
             let world = entity.SetLinearVelocity (followOutput.NavLinearVelocity.WithY 0.0f + v3Up * entity.GetLinearVelocity world) world
             let world = entity.SetAngularVelocity followOutput.NavAngularVelocity world
             let world = entity.SetRotation followOutput.NavRotation world
@@ -197,7 +186,7 @@ type CharacterDispatcher () =
                 let sinceOnGround = world.UpdateTime - entity.GetLastTimeOnGround world
                 let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
                 if sinceJump >= 12L && sinceOnGround < 10L && actionState = NormalState then
-                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * entity.GetJumpSpeed world) world
+                    let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world
                     let world = entity.SetLastTimeJump world.UpdateTime world
                     world
                 else world
@@ -221,13 +210,14 @@ type CharacterDispatcher () =
         // movement
         let bodyId = entity.GetBodyId world
         let grounded = World.getBodyGrounded bodyId world
-        if entity.GetActionState world = NormalState || not grounded then
+        let actionState = entity.GetActionState world
+        if actionState.IsNormalState || not grounded then
 
             // compute new position
             let rotation = entity.GetRotation world
             let forward = rotation.Forward
             let right = rotation.Right
-            let walkSpeed = entity.GetWalkSpeed world * if grounded then 1.0f else 0.75f
+            let walkSpeed = Constants.Gameplay.PlayerWalkSpeed * if grounded then 1.0f else 0.75f
             let walkVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
@@ -235,7 +225,7 @@ type CharacterDispatcher () =
                 (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
 
             // compute new rotation
-            let turnSpeed = entity.GetTurnSpeed world * if grounded then 1.0f else 0.75f
+            let turnSpeed = Constants.Gameplay.PlayerTurnSpeed * if grounded then 1.0f else 0.75f
             let turnVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
@@ -263,13 +253,10 @@ type CharacterDispatcher () =
          define Entity.CharacterType Enemy
          define Entity.LastTimeOnGround 0L
          define Entity.LastTimeJump 0L
-         define Entity.HitPoints Constants.Gameplay.EnemyHitPoints
+         define Entity.HitPoints 1
          define Entity.ActionState NormalState
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
-         define Entity.WalkSpeed 2.0f
-         define Entity.TurnSpeed 5.0f
-         define Entity.JumpSpeed 5.0f
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
 
     override this.Process (entity, world) =
@@ -437,7 +424,7 @@ type CharacterDispatcher () =
                          Entity.MountOpt .= None
                          Entity.StaticImage @= if hitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty]
                         world)
-                    world [0 .. dec Constants.Gameplay.PlayerHitPoints]
+                    world [0 .. dec Constants.Gameplay.PlayerHitPointsMax]
             else world
 
         // process death
@@ -462,12 +449,14 @@ type CharacterDispatcher () =
 type EnemyDispatcher () =
     inherit CharacterDispatcher ()
 
+    static member Properties =
+        [define Entity.CharacterType Enemy
+         define Entity.HitPoints Constants.Gameplay.EnemyHitPointsMax]
+
 type PlayerDispatcher () =
     inherit CharacterDispatcher ()
 
     static member Properties =
         [define Entity.Persistent false // don't serialize player when saving scene
          define Entity.CharacterType Player
-         define Entity.HitPoints Constants.Gameplay.PlayerHitPoints
-         define Entity.WalkSpeed 3.0f
-         define Entity.TurnSpeed 3.0f]
+         define Entity.HitPoints Constants.Gameplay.PlayerHitPointsMax]
