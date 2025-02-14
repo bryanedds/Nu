@@ -2967,7 +2967,12 @@ module AnimatedModelFacetExtensions =
             | Some _ | None -> None
 
         member this.SetBoneTransformsFast boneIds boneOffsets boneTransforms world =
-            let entityState = World.getEntityState this world // OPTIMIZATION: setting these properties without comparison or events.
+            
+            // OPTIMIZATION: setting these properties without comparison or events.
+            // Unfortunately, F# forces array value equality on us. Because this function elides change detection and
+            // thus the equality check, it runs much faster than setting the BoneOffsets and BoneTransform properties
+            // normally.
+            let entityState = World.getEntityState this world
             let entityState = EntityState.setProperty (nameof Entity.BoneIdsOpt) { PropertyType = typeof<Dictionary<string, int> option>; PropertyValue = Some boneIds } entityState
             let entityState = EntityState.setProperty (nameof Entity.BoneOffsetsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneOffsets } entityState
             let entityState = EntityState.setProperty (nameof Entity.BoneTransformsOpt) { PropertyType = typeof<Matrix4x4 array option>; PropertyValue = Some boneTransforms } entityState
