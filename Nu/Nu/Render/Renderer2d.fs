@@ -692,9 +692,14 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
+                            // init render
+                            let vkg = renderer.VulkanGlobal
+                            let cb = vkg.RenderCommandBuffer
+                            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+                            Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+                            
                             // create texture
                             // TODO: DJL: investigate non-staged texture upload and its performance.
-                            let vkg = renderer.VulkanGlobal
                             let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                             let textVulkanTexture =
                                 Texture.VulkanTexture.createBgra
@@ -704,11 +709,10 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                     (Some textSurface.pixels) vkg
                             let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
 
-                            // init render
-                            let cb = vkg.RenderCommandBuffer
-                            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-                            Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
-                            
+                            // destroy previous texture and store current texture for destruction later because draw command hasn't been executed yet!
+                            match renderer.TextTextureOpt with Some texture -> texture.Destroy vkg | None -> ()
+                            renderer.TextTextureOpt <- Some textTexture
+
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
@@ -734,10 +738,6 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
-
-                            // destroy previous texture and store current texture for destruction later because draw command hasn't been executed yet!
-                            match renderer.TextTextureOpt with Some texture -> texture.Destroy vkg | None -> ()
-                            renderer.TextTextureOpt <- Some textTexture
 
                     // fin
                     | _ -> Log.infoOnce ("Cannot render text with a non-font asset for '" + scstring font + "'.")

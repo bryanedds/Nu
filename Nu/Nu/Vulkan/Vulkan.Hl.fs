@@ -1121,6 +1121,12 @@ module Hl =
         static member uploadArray offset array fifBuffer =
             AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame]
         
+        /// Create a staging FifBuffer.
+        static member createStaging size allocator =
+            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createStaging size allocator
+            { AllocatedBuffers = allocatedBuffers }
+        
         /// Create a vertex FifBuffer.
         static member createVertex size allocator =
             let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight

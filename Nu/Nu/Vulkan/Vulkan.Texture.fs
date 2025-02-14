@@ -328,22 +328,8 @@ module Texture =
 
         /// Create an empty VulkanTexture.
         /// TODO: DJL: make size 32x32 and color (1.0f, 0.0f, 1.0f, 1.0f), perhaps just loading up the Assets.Default.Image asset.
-        /// TODO: DJL: try to leverage new structure
         static member createEmpty (vkg : Hl.VulkanGlobal) =
-
-            // create components
-            let image = VulkanTexture.createImage Vulkan.VK_FORMAT_R8G8B8A8_UNORM (VkExtent3D (1, 1, 1)) vkg.VmaAllocator
-            let imageView = Hl.createImageView Vulkan.VK_FORMAT_R8G8B8A8_UNORM 1u image.Image vkg.Device
-            let sampler = VulkanTexture.createSampler Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST vkg.Device
-            
-            // make VulkanTexture
-            let vulkanTexture =
-                { Image = image
-                  ImageView = imageView
-                  Sampler = sampler }
-
-            // fin
-            vulkanTexture
+            VulkanTexture.createRgba Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST (TextureMetadata.make 1 1) None vkg
         
         /// Destroy VulkanTexture.
         static member destroy vulkanTexture (vkg : Hl.VulkanGlobal) =
@@ -356,6 +342,42 @@ module Texture =
             match EmptyOpt with
             | Some (:? VulkanTexture as empty) -> empty
             | Some _ | None -> failwith "VulkanTexture.empty not initialized properly."
+    
+    /// A VulkanTexture that can be spontaneously recreated with automatic staging to load the data at render time.
+    /// TODO: DJL: determine relationship with Texture.Texture.
+    type TransientTexture =
+        private
+            { mutable _VulkanTexture : VulkanTexture
+              mutable _StagingBuffer : Hl.FifBuffer
+              mutable _Extent : VkExtent3D
+              mutable _StagingBufferSize : int }
+
+        /// The VulkanTexture.
+        member this.VulkanTexture = this._VulkanTexture
+
+        /// Create TransientTexture.
+        static member create vkg =
+            
+            // create the resources
+            let extent = VkExtent3D (32, 32, 1)
+            let stagingBufferSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
+            let vulkanTexture = VulkanTexture.createEmpty vkg
+            let stagingBuffer = Hl.FifBuffer.createStaging stagingBufferSize vkg.VmaAllocator
+
+            // make TransientTexture
+            let transientTexture =
+                { _VulkanTexture = vulkanTexture
+                  _StagingBuffer = stagingBuffer
+                  _Extent = extent
+                  _StagingBufferSize = stagingBufferSize }
+
+            // fin
+            transientTexture
+        
+        /// Destroy TransientTexture.
+        static member destroy transientTexture vkg =
+            VulkanTexture.destroy transientTexture._VulkanTexture vkg
+            Hl.FifBuffer.destroy transientTexture._StagingBuffer vkg.VmaAllocator
     
     /// Describes data loaded from a texture.
     type TextureData =
