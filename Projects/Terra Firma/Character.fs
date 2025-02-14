@@ -37,18 +37,18 @@ module CharacterExtensions =
         member this.GetCharacterType world : CharacterType = this.Get (nameof this.CharacterType) world
         member this.SetCharacterType (value : CharacterType) world = this.Set (nameof this.CharacterType) value world
         member this.CharacterType = lens (nameof this.CharacterType) this this.GetCharacterType this.SetCharacterType
+        member this.GetActionState world : ActionState = this.Get (nameof this.ActionState) world
+        member this.SetActionState (value : ActionState) world = this.Set (nameof this.ActionState) value world
+        member this.ActionState = lens (nameof this.ActionState) this this.GetActionState this.SetActionState
+        member this.GetHitPoints world : int = this.Get (nameof this.HitPoints) world
+        member this.SetHitPoints (value : int) world = this.Set (nameof this.HitPoints) value world
+        member this.HitPoints = lens (nameof this.HitPoints) this this.GetHitPoints this.SetHitPoints
         member this.GetLastTimeOnGround world : int64 = this.Get (nameof this.LastTimeOnGround) world
         member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof this.LastTimeOnGround) value world
         member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
         member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
         member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
-        member this.GetHitPoints world : int = this.Get (nameof this.HitPoints) world
-        member this.SetHitPoints (value : int) world = this.Set (nameof this.HitPoints) value world
-        member this.HitPoints = lens (nameof this.HitPoints) this this.GetHitPoints this.SetHitPoints
-        member this.GetActionState world : ActionState = this.Get (nameof this.ActionState) world
-        member this.SetActionState (value : ActionState) world = this.Set (nameof this.ActionState) value world
-        member this.ActionState = lens (nameof this.ActionState) this this.GetActionState this.SetActionState
         member this.GetCharacterCollisions world : Entity Set = this.Get (nameof this.CharacterCollisions) world
         member this.SetCharacterCollisions (value : Entity Set) world = this.Set (nameof this.CharacterCollisions) value world
         member this.CharacterCollisions = lens (nameof this.CharacterCollisions) this this.GetCharacterCollisions this.SetCharacterCollisions
@@ -251,10 +251,10 @@ type CharacterDispatcher () =
          define Entity.Substance (Mass 50.0f)
          define Entity.Observable true
          define Entity.CharacterType Enemy
+         define Entity.ActionState NormalState
+         define Entity.HitPoints 1
          define Entity.LastTimeOnGround 0L
          define Entity.LastTimeJump 0L
-         define Entity.HitPoints 1
-         define Entity.ActionState NormalState
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
          define Entity.WeaponModel Assets.Gameplay.GreatSwordModel]
