@@ -760,7 +760,7 @@ module Hl =
 
             // wait for previous cycle to finish
             awaitFence vkg.InFlightFence vkg.Device
-            
+
             // acquire image from swapchain to draw onto
             Vulkan.vkAcquireNextImageKHR (vkg.Device, vkg.Swapchain, UInt64.MaxValue, vkg.ImageAvailableSemaphore, VkFence.Null, &ImageIndex) |> check
 
