@@ -24,7 +24,6 @@ type PlayerDispatcher () =
 
     static member Properties =
         [define Entity.Size (v3 24.0f 48.0f 0.0f)
-         define Entity.Static false
          define Entity.BodyType Dynamic
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Friction 0.0f

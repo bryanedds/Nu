@@ -20,7 +20,6 @@ type BulletDispatcher () =
     override this.Definitions (_, _) =
         [Entity.Size == v3 16.0f 16.0f 0.0f
          Entity.Presence == Omnipresent
-         Entity.Static == false
          Entity.BodyType == Dynamic
          Entity.BodyShape == SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None }
          Entity.Restitution == 0.5f
