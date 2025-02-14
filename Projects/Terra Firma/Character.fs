@@ -9,9 +9,6 @@ type CharacterType =
     | Enemy
     | Player
 
-type ObstructedState =
-    { ObstructedTime : int64 }
-
 type AttackState =
     { AttackTime : int64
       FollowUpBuffered : bool
@@ -30,7 +27,6 @@ type WoundState =
 
 type ActionState =
     | NormalState
-    | ObstructedState of ObstructedState
     | AttackState of AttackState
     | InjuryState of InjuryState
     | WoundState of WoundState
@@ -115,9 +111,6 @@ type CharacterDispatcher () =
         match entity.GetActionState world with
         | NormalState ->
             (true, animations, world)
-        | ObstructedState obstructed ->
-            let animation = Animation.loop obstructed.ObstructedTime None "Armature|Idle"
-            (true, [|animation|], world)
         | AttackState attack ->
             let localTime = world.UpdateTime - attack.AttackTime
             match localTime with
@@ -169,25 +162,7 @@ type CharacterDispatcher () =
         let (navSpeedsOpt, world) =
             let actionState = entity.GetActionState world
             match actionState with
-            | NormalState | ObstructedState _ ->
-                let order =
-                    entity.GetCharacterCollisions world |>
-                    Array.ofSeq |>
-                    Array.filter (fun character -> character.GetExists world) |>
-                    Array.map (fun character -> (false, character.GetPosition world)) |>
-                    Array.cons (true, entity.GetPosition world) |>
-                    Array.sortBy (fun (_, position) -> Vector3.DistanceSquared (position, playerPosition)) |>
-                    Array.findIndex fst
-                let canUnobstruct =
-                    match actionState with
-                    | ObstructedState obstructed ->
-                        let localTime = world.UpdateTime - obstructed.ObstructedTime
-                        order = 0 && localTime >= 10L
-                    | _ -> order = 0
-                let actionState =
-                    if canUnobstruct then NormalState
-                    elif actionState = NormalState then ObstructedState { ObstructedTime = world.UpdateTime }
-                    else actionState
+            | NormalState ->
                 let navSpeed =
                     if actionState = NormalState
                     then (entity.GetWalkSpeed world, entity.GetTurnSpeed world)
@@ -238,7 +213,7 @@ type CharacterDispatcher () =
                     if localTime > 10L && not attack.FollowUpBuffered
                     then entity.SetActionState (AttackState { attack with FollowUpBuffered = true }) world
                     else world
-                | ObstructedState _ | InjuryState _ | WoundState _ -> world
+                | InjuryState _ | WoundState _ -> world
 
             // do nothing
             else world
@@ -352,7 +327,7 @@ type CharacterDispatcher () =
         let world =
             let actionState =
                 match entity.GetActionState world with
-                | NormalState | ObstructedState _ | WoundState _ as actionState ->
+                | NormalState | WoundState _ as actionState ->
                     actionState
                 | AttackState attack ->
                     let localTime = world.UpdateTime - attack.AttackTime
