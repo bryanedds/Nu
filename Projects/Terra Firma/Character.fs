@@ -5,28 +5,6 @@ open Prime
 open Nu
 open TerraFirma
 
-type AttackState =
-    { AttackTime : int64
-      FollowUpBuffered : bool
-      AttackedCharacters : Entity Set }
-
-    static member make time =
-        { AttackTime = time
-          FollowUpBuffered = false
-          AttackedCharacters = Set.empty }
-
-type InjuryState =
-    { InjuryTime : int64 }
-
-type WoundState =
-    { WoundTime : int64 }
-
-type ActionState =
-    | NormalState
-    | AttackState of AttackState
-    | InjuryState of InjuryState
-    | WoundState of WoundState
-
 type CharacterType =
     | Enemy
     | Player
@@ -58,6 +36,28 @@ type CharacterType =
         match this with
         | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
         | Player -> CharacterProperties.defaultProperties
+
+type AttackState =
+    { AttackTime : int64
+      FollowUpBuffered : bool
+      AttackedCharacters : Entity Set }
+
+    static member make time =
+        { AttackTime = time
+          FollowUpBuffered = false
+          AttackedCharacters = Set.empty }
+
+type InjuryState =
+    { InjuryTime : int64 }
+
+type WoundState =
+    { WoundTime : int64 }
+
+type ActionState =
+    | NormalState
+    | AttackState of AttackState
+    | InjuryState of InjuryState
+    | WoundState of WoundState
 
 [<AutoOpen>]
 module CharacterExtensions =
