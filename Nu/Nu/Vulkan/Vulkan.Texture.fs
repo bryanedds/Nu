@@ -347,37 +347,69 @@ module Texture =
     /// TODO: DJL: determine relationship with Texture.Texture.
     type TransientTexture =
         private
-            { mutable _VulkanTexture : VulkanTexture
-              mutable _StagingBuffer : Hl.FifBuffer
-              mutable _Extent : VkExtent3D
-              mutable _StagingBufferSize : int }
+            { VulkanTextures : VulkanTexture array
+              StagingBuffers : Hl.FifBuffer array
+              mutable Extent : VkExtent3D
+              mutable StagingBufferSize : int
+              mutable TextureIndex : int }
 
         /// The VulkanTexture.
-        member this.VulkanTexture = this._VulkanTexture
+        member this.VulkanTexture = this.VulkanTextures.[this.TextureIndex]
 
+        member private this.ImageSize = (int this.Extent.width) * (int this.Extent.height) * 4
+
+        member private this.NewCycle metadata pixels (vkg : Hl.VulkanGlobal) =
+            
+            // advance index
+            this.TextureIndex <- (inc this.TextureIndex) % 2
+
+            // enlarge staging buffer size if needed
+            this.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
+            while this.ImageSize > this.StagingBufferSize do this.StagingBufferSize <- this.StagingBufferSize * 2
+            this.StagingBuffers.[this.TextureIndex].UpdateSize this.StagingBufferSize vkg.VmaAllocator
+
+            // stage pixels
+            Hl.FifBuffer.upload 0 this.ImageSize pixels this.StagingBuffers.[this.TextureIndex]
+
+            // destroy expired VulkanTexture
+            VulkanTexture.destroy this.VulkanTextures.[this.TextureIndex] vkg
+
+        /// Add a new bgra VulkanTexture. Can only be called once per render block.
+        member this.AddBgra minFilter magFilter metadata pixels vkg =
+            this.NewCycle metadata pixels vkg
+            this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createBgra minFilter magFilter metadata None vkg
+
+        /// Add a new rgba VulkanTexture. Can only be called once per render block.
+        member this.AddRgba minFilter magFilter metadata pixels vkg =
+            this.NewCycle metadata pixels vkg
+            this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter metadata None vkg
+        
         /// Create TransientTexture.
         static member create vkg =
             
             // create the resources
             let extent = VkExtent3D (32, 32, 1)
-            let stagingBufferSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
-            let vulkanTexture = VulkanTexture.createEmpty vkg
-            let stagingBuffer = Hl.FifBuffer.createStaging stagingBufferSize vkg.VmaAllocator
+            let sbSize = 4096 // TODO: DJL: choose appropriate starting size to minimize most probable upsizing.
+            let vulkanTextures = [|VulkanTexture.createEmpty vkg; VulkanTexture.createEmpty vkg|]
+            let stagingBuffers = [|Hl.FifBuffer.createStaging sbSize vkg.VmaAllocator; Hl.FifBuffer.createStaging sbSize vkg.VmaAllocator|]
 
             // make TransientTexture
             let transientTexture =
-                { _VulkanTexture = vulkanTexture
-                  _StagingBuffer = stagingBuffer
-                  _Extent = extent
-                  _StagingBufferSize = stagingBufferSize }
+                { VulkanTextures = vulkanTextures
+                  StagingBuffers = stagingBuffers
+                  Extent = extent
+                  StagingBufferSize = sbSize
+                  TextureIndex = 1 }
 
             // fin
             transientTexture
         
         /// Destroy TransientTexture.
         static member destroy transientTexture vkg =
-            VulkanTexture.destroy transientTexture._VulkanTexture vkg
-            Hl.FifBuffer.destroy transientTexture._StagingBuffer vkg.VmaAllocator
+            VulkanTexture.destroy transientTexture.VulkanTextures.[0] vkg
+            VulkanTexture.destroy transientTexture.VulkanTextures.[1] vkg
+            Hl.FifBuffer.destroy transientTexture.StagingBuffers.[0] vkg.VmaAllocator
+            Hl.FifBuffer.destroy transientTexture.StagingBuffers.[1] vkg.VmaAllocator
     
     /// Describes data loaded from a texture.
     type TextureData =

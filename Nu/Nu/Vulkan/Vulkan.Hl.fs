@@ -1134,7 +1134,7 @@ module Hl =
             // fin
             fifBuffer
         
-        /// Check that the current buffer is at least as big as the given size, resizing if necessary.
+        /// Check that the current buffer is at least as big as the given size, resizing if necessary. If used, must be called every frame.
         member this.UpdateSize size allocator =
             if size > this.BufferSizes.[CurrentFrame] then
                 AllocatedBuffer.destroy this.AllocatedBuffers.[CurrentFrame] allocator
