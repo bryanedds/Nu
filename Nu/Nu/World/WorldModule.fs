@@ -259,46 +259,46 @@ module WorldModule =
         static member getContextInitializing (world : World) =
             world.ContextInitializing
 
-        /// Get the most recent ImNui context.
-        static member getRecentImNui (world : World) =
-            world.RecentImNui
+        /// Get the recent ImNui declaration.
+        static member getDeclaredImNui (world : World) =
+            world.DeclaredImNui
 
-        /// Get the most recent ImNui context translated to a Game handle (throwing upon failure).
-        static member getRecentGame (world : World) =
-            world.RecentGame
+        /// Get the recent ImNui declaration translated to a Game handle (throwing upon failure).
+        static member getDeclaredGame (world : World) =
+            world.DeclaredGame
 
-        /// Get the most recent ImNui context translated to a Screen handle (throwing upon failure).
-        static member getRecentScreen (world : World) =
-            world.RecentScreen
+        /// Get the recent ImNui declaration translated to a Screen handle (throwing upon failure).
+        static member getDeclaredScreen (world : World) =
+            world.DeclaredScreen
 
-        /// Get the most recent ImNui context translated to a Group handle (throwing upon failure).
-        static member getRecentGroup (world : World) =
-            world.RecentGroup
+        /// Get the recent ImNui declaration translated to a Group handle (throwing upon failure).
+        static member getDeclaredGroup (world : World) =
+            world.DeclaredGroup
 
-        /// Get the most recent ImNui context translated to a Entity handle (throwing upon failure).
-        static member getRecentEntity (world : World) =
-            world.RecentEntity
+        /// Get the recent ImNui declaration translated to a Entity handle (throwing upon failure).
+        static member getDeclaredEntity (world : World) =
+            world.DeclaredEntity
 
-        /// Check that the recent ImNui context is initializing this frame.
-        static member getRecentInitializing (world : World) =
-            world.RecentInitializing
+        /// Check that the recent ImNui declaration is initializing this frame.
+        static member getDeclaredInitializing (world : World) =
+            world.DeclaredInitializing
 
         static member internal setContext context (world : World) =
             if world.Imperative then
-                world.WorldExtension.RecentImNui <- world.WorldExtension.ContextImNui
+                world.WorldExtension.DeclaredImNui <- world.WorldExtension.ContextImNui
                 world.WorldExtension.ContextImNui <- context
                 world
             else
-                let worldExtension = { world.WorldExtension with RecentImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
+                let worldExtension = { world.WorldExtension with DeclaredImNui = world.WorldExtension.ContextImNui; ContextImNui = context }
                 World.choose { world with WorldExtension = worldExtension }
 
-        static member internal advanceContext recent context (world : World) =
+        static member internal advanceContext declared context (world : World) =
             if world.Imperative then
-                world.WorldExtension.RecentImNui <- recent
+                world.WorldExtension.DeclaredImNui <- declared
                 world.WorldExtension.ContextImNui <- context
                 world
             else
-                let worldExtension = { world.WorldExtension with RecentImNui = recent; ContextImNui = context }
+                let worldExtension = { world.WorldExtension with DeclaredImNui = declared; ContextImNui = context }
                 World.choose { world with WorldExtension = worldExtension }
 
         static member internal getSimulantImNuis (world : World) =

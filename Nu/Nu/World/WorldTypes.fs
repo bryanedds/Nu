@@ -1833,7 +1833,7 @@ and [<ReferenceEquality>] internal Subsystems =
 and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImNui : Address
-      mutable RecentImNui : Address
+      mutable DeclaredImNui : Address
       mutable SimulantImNuis : SUMap<Address, SimulantImNui>
       mutable SubscriptionImNuis : SUMap<string * Address * Address, SubscriptionImNui>
       GeometryViewport : Viewport
@@ -1971,40 +1971,40 @@ and [<ReferenceEquality>] World =
         | (true, simulantImNui) -> simulantImNui.SimulantInitializing
         | (false, _) -> false
 
-    /// Get the most recent ImNui context.
-    member this.RecentImNui =
-        this.WorldExtension.RecentImNui
+    /// Get the recent ImNui declaration.
+    member this.DeclaredImNui =
+        this.WorldExtension.DeclaredImNui
 
-    /// Get the most recent ImNui Game context (throwing upon failure).
-    member this.RecentGame =
-        if this.WorldExtension.RecentImNui.Names.Length > 0
+    /// Get the recent ImNui Game declaration (throwing upon failure).
+    member this.DeclaredGame =
+        if this.WorldExtension.DeclaredImNui.Names.Length > 0
         then Game.Handle
-        else raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        else raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Get the most recent ImNui Screen context (throwing upon failure).
-    member this.RecentScreen =
-        match this.WorldExtension.RecentImNui with
+    /// Get the recent ImNui Screen declaration (throwing upon failure).
+    member this.DeclaredScreen =
+        match this.WorldExtension.DeclaredImNui with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
         | :? (Group Address) as groupAddress -> Screen (Array.take 2 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Screen (Array.take 2 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Get the most recent ImNui Group context (throwing upon failure).
-    member this.RecentGroup =
-        match this.WorldExtension.RecentImNui with
+    /// Get the recent ImNui Group declaration (throwing upon failure).
+    member this.DeclaredGroup =
+        match this.WorldExtension.DeclaredImNui with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Group (Array.take 3 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Get the most recent ImNui Entity context (throwing upon failure).
-    member this.RecentEntity =
-        match this.WorldExtension.RecentImNui with
+    /// Get the recent ImNui Entity declaration (throwing upon failure).
+    member this.DeclaredEntity =
+        match this.WorldExtension.DeclaredImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Check that the recent ImNui context is initializing this frame.
-    member this.RecentInitializing =
-        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.RecentImNui with
+    /// Check that the recent ImNui declaration is initializing this frame.
+    member this.DeclaredInitializing =
+        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.DeclaredImNui with
         | (true, simulantImNui) -> simulantImNui.SimulantInitializing
         | (false, _) -> false
 

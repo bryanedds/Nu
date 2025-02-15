@@ -344,7 +344,7 @@ type CharacterDispatcher () =
                  Entity.Animations @= animations
                  Entity.AnimatedModel .= Assets.Gameplay.JoanModel]
                 world
-        let animatedModel = world.RecentEntity
+        let animatedModel = world.DeclaredEntity
 
         // declare weapon
         let weaponTransform =
