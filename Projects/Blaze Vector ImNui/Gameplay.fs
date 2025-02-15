@@ -104,8 +104,8 @@ type GameplayDispatcher () =
                 if world.Advancing then
                     let playerPosition = player.GetPosition world
                     let playerSize = player.GetSize world
-                    let eyeCenter = World.getEye2dCenter world
-                    let eyeSize = World.getEye2dSize world
+                    let eyeCenter = world.Eye2dCenter
+                    let eyeSize = world.Eye2dSize
                     let eyeCenter = v2 (playerPosition.X + playerSize.X * 0.5f + eyeSize.X * 0.33f) eyeCenter.Y
                     World.setEye2dCenter eyeCenter world
                 else world

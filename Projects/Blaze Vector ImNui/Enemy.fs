@@ -40,7 +40,7 @@ type EnemyDispatcher () =
 
         // process walking
         let world =
-            let eyeBounds = World.getEye2dBounds world
+            let eyeBounds = world.Eye2dBounds
             let entityBounds = entity.GetBounds world
             if world.Advancing && entityBounds.Box2.Intersects eyeBounds then
                 let bodyId = entity.GetBodyId world

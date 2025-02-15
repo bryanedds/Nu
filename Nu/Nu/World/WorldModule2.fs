@@ -487,7 +487,6 @@ module WorldModule2 =
             let world = World.destroyGroupImmediate slideGroup world
 
             // create slide group
-            let eyeSize = World.getEye2dSize world
             let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
             let world = World.setGroupProtected true slideGroup world |> snd'
@@ -497,7 +496,7 @@ module WorldModule2 =
             let world = World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> snd
             let world = World.setEntityProtected true slideSprite world |> snd'
             let world = slideSprite.SetPersistent false world
-            let world = slideSprite.SetSize eyeSize.V3 world
+            let world = slideSprite.SetSize world.Eye2dSize.V3 world
             let world = slideSprite.SetAbsolute true world
             let world =
                 match slideDescriptor.SlideImageOpt with
@@ -1379,12 +1378,9 @@ module WorldModule2 =
             Octree.getElementsInViewBox box set octree
 
         static member private getElements3dInView set world =
-            let interior = World.getEye3dFrustumInterior world
-            let exterior = World.getEye3dFrustumExterior world
-            let imposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
-            Octree.getElementsInView interior exterior imposter lightBox set octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =
@@ -1407,12 +1403,9 @@ module WorldModule2 =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set world =
-            let interior = World.getEye3dFrustumInterior world
-            let exterior = World.getEye3dFrustumExterior world
-            let imposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
-            Octree.getElementsInView interior exterior imposter lightBox set octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
@@ -1729,8 +1722,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition renderPass (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal renderPass (world : World) =
@@ -1832,9 +1825,9 @@ module WorldModule2 =
                     else world
 
                 // create shadow pass descriptors
+                let eyeCenter = World.getEye3dCenter world
                 let lightBox = World.getLight3dBox world
                 let lights = World.getLights3dInBox lightBox HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
-                let eyeCenter = World.getEye3dCenter world
                 let shadowPassDescriptorsSortable =
                     [|for light in lights do
                         if light.GetDesireShadows world then
@@ -1866,9 +1859,9 @@ module WorldModule2 =
                             let shadowFrustum =
                                 Frustum (shadowView * shadowProjection)
                             let shadowInView =
-                                let frustumInterior = World.getEye3dFrustumInterior world
-                                let frustumExterior = World.getEye3dFrustumExterior world
-                                let frustumImposter = World.getEye3dFrustumImposter world
+                                let frustumInterior = world.Eye3dFrustumInterior
+                                let frustumExterior = world.Eye3dFrustumExterior
+                                let frustumImposter = world.Eye3dFrustumImposter
                                 match light.GetPresence world with
                                 | Interior -> frustumInterior.Intersects shadowFrustum
                                 | Exterior -> frustumExterior.Intersects shadowFrustum || frustumInterior.Intersects shadowFrustum
@@ -2126,19 +2119,19 @@ module WorldModule2 =
 
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
-                                                                    (World.getEye3dFrustumInterior world)
-                                                                    (World.getEye3dFrustumExterior world)
-                                                                    (World.getEye3dFrustumImposter world)
+                                                                    world.Eye3dFrustumInterior
+                                                                    world.Eye3dFrustumExterior
+                                                                    world.Eye3dFrustumImposter
                                                                     (World.getLight3dBox world)
-                                                                    (World.getEye3dCenter world)
-                                                                    (World.getEye3dRotation world)
-                                                                    (World.getEye3dFieldOfView world)
-                                                                    (World.getEye2dCenter world)
-                                                                    (World.getEye2dSize world)
+                                                                    world.Eye3dCenter
+                                                                    world.Eye3dRotation
+                                                                    world.Eye3dFieldOfView
+                                                                    world.Eye2dCenter
+                                                                    world.Eye2dSize
                                                                     (World.getWindowSize world)
-                                                                    (World.getGeometryViewport world)
-                                                                    (World.getRasterViewport world)
-                                                                    (World.getOuterViewport world)
+                                                                    world.GeometryViewport
+                                                                    world.RasterViewport
+                                                                    world.OuterViewport
                                                                     drawData
 
                                                                 // post-process imgui frame

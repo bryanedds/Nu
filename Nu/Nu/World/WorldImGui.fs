@@ -24,13 +24,11 @@ module WorldImGui =
             rendererProcess.TryGetImGuiTextureId assetTag
 
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
-        static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) world =
+        static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let eyeSize = World.getEye2dSize world
-            let eyeCenter = World.getEye2dCenter world
             for position in positions do
                 let color = computeColor position
-                let positionWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.RasterViewport, position)
+                let positionWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
                 if filled
                 then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
                 else drawList.AddCircle (positionWindow, radius, color.Abgr)
@@ -44,14 +42,12 @@ module WorldImGui =
             World.imGuiCircles2d absolute (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 2d space, computing color as specified.
-        static member imGuiSegments2dPlus absolute (segments : struct (Vector2 * Vector2) seq) thickness (computeColor : struct (Vector2 * Vector2) -> Color) world =
+        static member imGuiSegments2dPlus absolute (segments : struct (Vector2 * Vector2) seq) thickness (computeColor : struct (Vector2 * Vector2) -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let eyeSize = World.getEye2dSize world
-            let eyeCenter = World.getEye2dCenter world
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.RasterViewport, start)
-                let stopWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.RasterViewport, stop)
+                let startWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
+                let stopWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
                 drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
@@ -63,19 +59,15 @@ module WorldImGui =
             World.imGuiSegments2d absolute (SArray.singleton segment) thickness color world
 
         /// Render circles via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiCircles3dPlus (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) world =
+        static member imGuiCircles3dPlus (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
-            let eyeCenter = World.getEye3dCenter world
-            let eyeRotation = World.getEye3dRotation world
-            let eyeFieldOfView = World.getEye3dFieldOfView world
-            let eyeFrustum = World.getEye3dFrustumView world
-            let view = Viewport.getView3d eyeCenter eyeRotation
-            let projection = Viewport.getProjection3d eyeFieldOfView world.RasterViewport
+            let view = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             for position in positions do
-                if eyeFrustum.Contains position = ContainmentType.Contains then
+                if world.Eye3dFrustumView.Contains position = ContainmentType.Contains then
                     let color = computeColor position
                     let positionWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, position)
                     if filled
@@ -91,19 +83,15 @@ module WorldImGui =
             World.imGuiCircles3d (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiSegments3dPlus (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) world =
+        static member imGuiSegments3dPlus (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
-            let eyeCenter = World.getEye3dCenter world
-            let eyeRotation = World.getEye3dRotation world
-            let eyeFieldOfView = World.getEye3dFieldOfView world
-            let eyeFrustum = World.getEye3dFrustumView world
-            let view = Viewport.getView3d eyeCenter eyeRotation
-            let projection = Viewport.getProjection3d eyeFieldOfView world.RasterViewport
+            let view = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             for segment in segments do
-                match Math.TryUnionSegmentAndFrustum (segment.A, segment.B, eyeFrustum) with
+                match Math.TryUnionSegmentAndFrustum (segment.A, segment.B, world.Eye3dFrustumView) with
                 | Some (start, stop) ->
                     let color = computeColor segment
                     let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)

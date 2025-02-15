@@ -808,11 +808,10 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let mutable entityTransform = entity.GetTransform world
         let world =
             if entity.GetIs2d world then
-                let eyeCenter = World.getEye2dCenter world
-                let eyeSize = World.getEye2dSize world
+                let absolute = entity.GetAbsolute world
                 let entityPosition =
-                    if atMouse then Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize RightClickPosition world.RasterViewport
-                    elif not (entity.GetAbsolute world) then eyeCenter
+                    if atMouse then Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize RightClickPosition world.RasterViewport
+                    elif not absolute then world.Eye2dCenter
                     else v2Zero
                 let attributes = entity.GetAttributesInferred world
                 entityTransform.Position <- entityPosition.V3
@@ -823,9 +822,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 then entity.SetTransformPositionSnapped positionSnap entityTransform world
                 else entity.SetTransform entityTransform world
             else
-                let eyeCenter = World.getEye3dCenter world
-                let eyeRotation = World.getEye3dRotation world
-                let eyeFieldOfView = World.getEye3dFieldOfView world
+                let eyeCenter = world.Eye3dCenter
+                let eyeRotation = world.Eye3dRotation
+                let eyeFieldOfView = world.Eye3dFieldOfView
                 let entityPosition =
                     if atMouse then
                         let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView RightClickPosition world.RasterViewport
@@ -1416,9 +1415,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         | Some (_, entity) ->
                             if entity.GetIs2d world then
                                 if World.isKeyboardAltDown world then
-                                    let eyeCenter = World.getEye2dCenter world
-                                    let eyeSize = World.getEye2dSize world
-                                    let mousePositionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize mousePosition world.RasterViewport
+                                    let absolute = entity.GetAbsolute world
+                                    let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.RasterViewport
                                     let entityDegrees = if entity.MountExists world then entity.GetDegreesLocal world else entity.GetDegrees world
                                     DragEntityState <- DragEntityRotation2d (world.DateTime, ref false, mousePositionWorld, entityDegrees.Z + mousePositionWorld.Y, entity)
                                     world
@@ -1455,9 +1453,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             ShowSelectedEntity <- true
                                             (duplicate, world)
                                         else (entity, world)
-                                    let eyeCenter = World.getEye2dCenter world
-                                    let eyeSize = World.getEye2dSize world
-                                    let mousePositionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize mousePosition world.RasterViewport
+                                    let absolute = entity.GetAbsolute world
+                                    let mousePositionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize mousePosition world.RasterViewport
                                     let entityPosition = entity.GetPosition world
                                     DragEntityState <- DragEntityPosition2d (world.DateTime, ref false, mousePositionWorld, entityPosition.V2 + mousePositionWorld, entity)
                                     world
@@ -1552,7 +1549,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if canEditWithMouse world then
             if ImGui.IsMouseClicked ImGuiMouseButton.Middle then
                 let mousePositionScreen = World.getMousePosition2dScreen world
-                let dragState = DragEye2dCenter (World.getEye2dCenter world + mousePositionScreen, mousePositionScreen)
+                let dragState = DragEye2dCenter (world.Eye2dCenter + mousePositionScreen, mousePositionScreen)
                 DragEyeState <- dragState
             match DragEyeState with
             | DragEye2dCenter (entityDragOffset, mousePositionScreenOrig) ->
@@ -1569,8 +1566,8 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         if canEditWithKeyboard world then
             let delta = world.DateDelta
             let seconds = single delta.TotalSeconds
-            let position = World.getEye3dCenter world
-            let rotation = World.getEye3dRotation world
+            let center = world.Eye3dCenter
+            let rotation = world.Eye3dRotation
             let moveSpeed =
                 if ImGui.IsEnterDown () && ImGui.IsShiftDown () then 512.0f * seconds
                 elif ImGui.IsEnterDown () then 64.0f * seconds
@@ -1580,13 +1577,13 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if ImGui.IsShiftDown () && ImGui.IsEnterUp () then 1.5f * seconds
                 else 3.0f * seconds
             if ImGui.IsKeyDown ImGuiKey.W && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + v3Forward.Transform rotation * moveSpeed
+                DesiredEye3dCenter <- center + v3Forward.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.S && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + v3Back.Transform rotation * moveSpeed
+                DesiredEye3dCenter <- center + v3Back.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.A && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + v3Left.Transform rotation * moveSpeed
+                DesiredEye3dCenter <- center + v3Left.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.D && ImGui.IsCtrlUp () then
-                DesiredEye3dCenter <- position + v3Right.Transform rotation * moveSpeed
+                DesiredEye3dCenter <- center + v3Right.Transform rotation * moveSpeed
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.UpArrow else ImGuiKey.E) && ImGui.IsCtrlUp () then
                 let rotation' = rotation * Quaternion.CreateFromAxisAngle (v3Right, turnSpeed)
                 DesiredEye3dRotation <-
@@ -1602,9 +1599,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         Quaternion.CreateFromAxisAngle (v3Up, 2.0f * MathF.Atan2(rotation.Z, rotation.W)) *
                         Quaternion.CreateFromAxisAngle (v3Right, -MathF.PI_OVER_2)
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.E else ImGuiKey.UpArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- position + v3Up.Transform rotation * moveSpeed
+                DesiredEye3dCenter <- center + v3Up.Transform rotation * moveSpeed
             if ImGui.IsKeyDown (if AlternativeEyeTravelInput then ImGuiKey.Q else ImGuiKey.DownArrow) && ImGui.IsAltUp () then
-                DesiredEye3dCenter <- position + v3Down.Transform rotation * moveSpeed
+                DesiredEye3dCenter <- center + v3Down.Transform rotation * moveSpeed
             if ImGui.IsKeyDown ImGuiKey.LeftArrow && ImGui.IsAltUp () then
                 DesiredEye3dRotation <- Quaternion.CreateFromAxisAngle (v3Up, turnSpeed) * rotation
             if ImGui.IsKeyDown ImGuiKey.RightArrow && ImGui.IsAltUp () then
@@ -1691,8 +1688,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if entity.GetIs2d world then
                     DesiredEye2dCenter <- (entity.GetPerimeterCenter world).V2
                 else
-                    let eyeRotation = World.getEye3dRotation world
-                    let eyeCenterOffset = (v3Back * NewEntityDistance).Transform eyeRotation
+                    let eyeCenterOffset = (v3Back * NewEntityDistance).Transform world.Eye3dRotation
                     DesiredEye3dCenter <- entity.GetPosition world + eyeCenterOffset
         let popupContextItemTitle = "##popupContextItem" + scstringMemo entity
         let mutable openPopupContextItemWhenUnselected = false
@@ -2184,11 +2180,11 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // user-defined viewport manipulation
                 let rasterViewport = world.RasterViewport
-                let projectionMatrix = Viewport.getProjection3d (World.getEye3dFieldOfView world) rasterViewport
+                let projectionMatrix = Viewport.getProjection3d world.Eye3dFieldOfView rasterViewport
                 let projection = projectionMatrix.ToArray ()
                 let operation =
                     ViewportOverlay
-                        { ViewportView = Viewport.getView3d (World.getEye3dCenter world) (World.getEye3dRotation world)
+                        { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
                           ViewportProjection = projectionMatrix
                           ViewportBounds = box2 v2Zero io.DisplaySize
                           EditContext = makeContext None None }
@@ -2200,7 +2196,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                     | Some entity when entity.GetExists world && entity.GetIs3d world ->
                         let operation =
                             ViewportOverlay
-                                { ViewportView = Viewport.getView3d (World.getEye3dCenter world) (World.getEye3dRotation world)
+                                { ViewportView = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
                                   ViewportProjection = projectionMatrix
                                   ViewportBounds = box2 v2Zero io.DisplaySize
                                   EditContext = makeContext None None }
@@ -2214,9 +2210,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                         let mutable lightProbeBounds = entity.GetProbeBounds world
                         let manipulationResult =
                             ImGuizmo.ManipulateBox3
-                                (World.getEye3dCenter world,
-                                 World.getEye3dRotation world,
-                                 World.getEye3dFieldOfView world,
+                                (world.Eye3dCenter,
+                                 world.Eye3dRotation,
+                                 world.Eye3dFieldOfView,
                                  rasterViewport,
                                  (if not Snaps2dSelected && ImGui.IsCtrlUp () then Triple.fst Snaps3d else 0.0f),
                                  &lightProbeBounds)
@@ -2236,7 +2232,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 let world =
                     match SelectedEntityOpt with
                     | Some entity when entity.GetExists world && entity.GetIs3d world && not io.WantCaptureMouseLocal && not (ImGuizmo.IsViewManipulateHovered ()) ->
-                        let viewMatrix = Viewport.getView3d (World.getEye3dCenter world) (World.getEye3dRotation world)
+                        let viewMatrix = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
                         let view = viewMatrix.ToArray ()
                         let affineMatrix = entity.GetAffineMatrix world
                         let affine = affineMatrix.ToArray ()
@@ -2400,7 +2396,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
                 // view manipulation
                 if not CaptureMode && not ManipulationActive && DragEntityState = DragEntityInactive then
-                    let eyeRotationOld = World.getEye3dRotation world
+                    let eyeRotationOld = world.Eye3dRotation
                     let eyeRotationArray = Matrix4x4.CreateFromQuaternion(eyeRotationOld).Transposed.ToArray()
                     ImGuizmo.ViewManipulate (&eyeRotationArray.[0], 1.0f, v2 (single rasterViewport.Bounds.Size.X - 525.0f) 100.0f, v2 128.0f 128.0f, uint 0x00000000)
                     let eyeRotation = Matrix4x4.CreateFromArray(eyeRotationArray).Transposed.Rotation
@@ -2607,9 +2603,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 ImGui.SameLine ()
                 if ImGui.Button "Reset" then resetEye ()
                 if ImGui.IsItemHovered ImGuiHoveredFlags.DelayNormal && ImGui.BeginTooltip () then
-                    let mutable eye2dCenter = World.getEye2dCenter world
-                    let mutable eye3dCenter = World.getEye3dCenter world
-                    let mutable eye3dDegrees = Math.RadiansToDegrees3d (World.getEye3dRotation world).RollPitchYaw
+                    let mutable eye2dCenter = world.Eye2dCenter
+                    let mutable eye3dCenter = world.Eye3dCenter
+                    let mutable eye3dDegrees = Math.RadiansToDegrees3d world.Eye3dRotation.RollPitchYaw
                     ImGui.InputFloat2 ("Eye 2d Center", &eye2dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
                     ImGui.InputFloat3 ("Eye 3d Center", &eye3dCenter, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
                     ImGui.InputFloat3 ("Eye 3d Degrees", &eye3dDegrees, "%3.3f", ImGuiInputTextFlags.ReadOnly) |> ignore
@@ -4134,15 +4130,15 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             world
         else world
 
-    let private imGuiProcess world =
+    let private imGuiProcess (world : World) =
 
         // store old world
         let worldOld = world
 
         // detect if eyes were changed somewhere other than in the editor (such as in gameplay code)
-        if  World.getEye2dCenter world <> DesiredEye2dCenter ||
-            World.getEye3dCenter world <> DesiredEye3dCenter ||
-            World.getEye3dRotation world <> DesiredEye3dRotation then
+        if  world.Eye2dCenter <> DesiredEye2dCenter ||
+            world.Eye3dCenter <> DesiredEye3dCenter ||
+            world.Eye3dRotation <> DesiredEye3dRotation then
             EyeChangedElsewhere <- true
 
         // enable global docking
@@ -4318,14 +4314,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         // fin
         world
 
-    let private imGuiPostProcess wtemp =
+    let private imGuiPostProcess (wtemp : World) =
 
         // override local desired eye changes if eye was changed elsewhere
         let mutable world = wtemp
         if EyeChangedElsewhere then
-            DesiredEye2dCenter <- World.getEye2dCenter world
-            DesiredEye3dCenter <- World.getEye3dCenter world
-            DesiredEye3dRotation <- World.getEye3dRotation world
+            DesiredEye2dCenter <- world.Eye2dCenter
+            DesiredEye3dCenter <- world.Eye3dCenter
+            DesiredEye3dRotation <- world.Eye3dRotation
             EyeChangedElsewhere <- false
         else
             world <- World.setEye2dCenter DesiredEye2dCenter world

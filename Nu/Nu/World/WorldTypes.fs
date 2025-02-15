@@ -2014,14 +2014,62 @@ and [<ReferenceEquality>] World =
     member internal this.SubscriptionImNuis =
         this.WorldExtension.SubscriptionImNuis
 
+    /// The viewport of the geometry buffer.
     member this.GeometryViewport =
         this.WorldExtension.GeometryViewport
 
+    /// The viewport of the rasterization buffer.
     member this.RasterViewport =
         this.WorldExtension.RasterViewport
 
+    /// The viewport of the outer (full screen) buffer.
     member this.OuterViewport =
         this.WorldExtension.OuterViewport
+
+    /// Get the center of the 2D eye.
+    member this.Eye2dCenter =
+        this.GameState.Eye2dCenter
+
+    /// Get the size of the 2D eye.
+    member this.Eye2dSize =
+        this.GameState.Eye2dSize
+
+    /// Get the bounds of the 2D eye.
+    member this.Eye2dBounds =
+        let eyeCenter = this.Eye2dCenter
+        let eyeSize = this.Eye2dSize
+        box2 (eyeCenter - eyeSize * 0.5f) eyeSize
+
+    /// Get the center of the 3D eye.
+    member this.Eye3dCenter =
+        this.GameState.Eye3dCenter
+
+    /// Get the rotation of the 3D eye.
+    member this.Eye3dRotation =
+        this.GameState.Eye3dRotation
+
+    /// Get the field of view of the 3D eye.
+    member this.Eye3dFieldOfView =
+        this.GameState.Eye3dFieldOfView
+
+    /// Get the interior frustum of the 3D eye.
+    member this.Eye3dFrustumInterior =
+        this.GameState.Eye3dFrustumInterior
+
+    /// Get the exterior frustum of the 3D eye.
+    member this.Eye3dFrustumExterior =
+        this.GameState.Eye3dFrustumExterior
+
+    /// Get the exterior frustum of the 3D eye.
+    member this.Eye3dFrustumImposter =
+        this.GameState.Eye3dFrustumImposter
+
+    /// Get the view frustum of the 3D eye.
+    member this.Eye3dFrustumView =
+        let eyeCenter = this.Eye3dCenter
+        let eyeRotation = this.Eye3dRotation
+        let eyeFieldOfView = this.Eye3dFieldOfView
+        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
 #if DEBUG
     member internal this.Choose () =

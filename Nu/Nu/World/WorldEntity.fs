@@ -644,12 +644,10 @@ module WorldEntityModule =
         /// Attempt to pick an entity at the given position.
         static member tryPickEntity2d position entities world =
             let entitiesSorted = World.sortEntities2d entities world
-            let viewport = world.RasterViewport
-            let eyeCenter = World.getEye2dCenter world
-            let eyeSize = World.getEye2dSize world
             Array.tryFind (fun (entity : Entity) ->
                 if entity.GetPickable world then
-                    let positionWorld = Viewport.mouseToWorld2d (entity.GetAbsolute world) eyeCenter eyeSize position viewport
+                    let absolute = entity.GetAbsolute world
+                    let positionWorld = Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize position world.RasterViewport
                     let bounds = (entity.GetBounds world).Box2
                     bounds.Intersects positionWorld
                 else false)
@@ -657,14 +655,10 @@ module WorldEntityModule =
 
         /// Attempt to pick a 3d entity with the given ray.
         static member tryPickEntity3d position entities (world : World) =
-            let viewport = world.RasterViewport
-            let eyeCenter = World.getEye3dCenter world
-            let eyeRotation = World.getEye3dRotation world
-            let eyeFieldOfView = World.getEye3dFieldOfView world
             let intersectionses =
                 Seq.map (fun (entity : Entity) ->
                     if entity.GetPickable world then
-                        let rayWorld = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView position viewport
+                        let rayWorld = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView position world.RasterViewport
                         let bounds = entity.GetBounds world
                         let intersectionOpt = rayWorld.Intersects bounds
                         if intersectionOpt.HasValue then
@@ -789,29 +783,24 @@ module WorldEntityModule =
                 let (position, positionSnapOpt) =
                     let absolute = entity.GetAbsolute world
                     if entity.GetIs2d world then
-                        let eyeCenter = World.getEye2dCenter world
-                        let eyeSize = World.getEye2dSize world
                         let position =
                             match pasteType with
-                            | PasteAtMouse -> (Viewport.mouseToWorld2d absolute eyeCenter eyeSize rightClickPosition world.RasterViewport).V3
-                            | PasteAtLook -> eyeCenter.V3
+                            | PasteAtMouse -> (Viewport.mouseToWorld2d absolute world.Eye2dCenter world.Eye2dSize rightClickPosition world.RasterViewport).V3
+                            | PasteAtLook -> world.Eye2dCenter.V3
                             | PasteAt position -> position
                         match positionSnapEir with
                         | Left positionSnap -> (position, Some positionSnap)
                         | Right _ -> (position, None)
                     else
-                        let eyeCenter = World.getEye3dCenter world
-                        let eyeRotation = World.getEye3dRotation world
-                        let eyeFieldOfView = World.getEye3dFieldOfView world
                         let position =
                             match pasteType with
                             | PasteAtMouse ->
-                                let ray = Viewport.mouseToWorld3d eyeCenter eyeRotation eyeFieldOfView rightClickPosition world.RasterViewport
-                                let forward = eyeRotation.Forward
-                                let plane = plane3 (eyeCenter + forward * distance) -forward
+                                let ray = Viewport.mouseToWorld3d world.Eye3dCenter world.Eye3dRotation world.Eye3dFieldOfView rightClickPosition world.RasterViewport
+                                let forward = world.Eye3dRotation.Forward
+                                let plane = plane3 (world.Eye3dCenter + forward * distance) -forward
                                 let intersectionOpt = ray.Intersection plane
                                 intersectionOpt.Value
-                            | PasteAtLook -> eyeCenter + v3Forward.Transform eyeRotation * distance
+                            | PasteAtLook -> world.Eye3dCenter + v3Forward.Transform world.Eye3dRotation * distance
                             | PasteAt position -> position
                         match positionSnapEir with
                         | Right positionSnap -> (position, Some positionSnap)
