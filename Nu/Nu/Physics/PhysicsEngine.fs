@@ -652,21 +652,21 @@ type PhysicsMessage =
 /// TODO: investigate if we'll ever have to handle enough physics or integration messages to necessitate the use of
 /// SList instead of List.
 type PhysicsEngine =
-    /// Check that the physics engine contain the body with the given physics id.
+    /// Check that the physics engine contain the body with the given body id.
     abstract GetBodyExists : BodyId -> bool
-    /// Get the contact normals of the body with the given physics id.
+    /// Get the contact normals of the body with the given body id.
     abstract GetBodyContactNormals : BodyId -> Vector3 array
-    /// Get the linear velocity of the body with the given physics id.
+    /// Get the linear velocity of the body with the given body id.
     abstract GetBodyLinearVelocity : BodyId -> Vector3
-    /// Get the angular velocity of the body with the given physics id.
+    /// Get the angular velocity of the body with the given body id.
     abstract GetBodyAngularVelocity : BodyId -> Vector3
-    /// Get the contact normals where the body with the given physics id is touching the ground.
+    /// Get the contact normals where the body with the given body id is touching the ground.
     abstract GetBodyToGroundContactNormals : BodyId -> Vector3 array
-    /// Get a contact normal where the body with the given physics id is touching the ground (if one exists).
+    /// Get a contact normal where the body with the given body id is touching the ground (if one exists).
     abstract GetBodyToGroundContactNormalOpt : BodyId -> Vector3 option
-    /// Get a contact tangent where the body with the given physics id is touching the ground (if one exists).
+    /// Get a contact tangent where the body with the given body id is touching the ground (if one exists).
     abstract GetBodyToGroundContactTangentOpt : BodyId -> Vector3 option
-    /// Check that the body with the given physics id is on the ground.
+    /// Check that the body with the given body id is on the ground.
     abstract GetBodyGrounded : BodyId -> bool
     /// Cast a ray into the physics bodies.
     abstract RayCast : Segment3 * int * bool -> BodyIntersection array
