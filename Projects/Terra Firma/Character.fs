@@ -5,6 +5,28 @@ open Prime
 open Nu
 open TerraFirma
 
+type AttackState =
+    { AttackTime : int64
+      FollowUpBuffered : bool
+      AttackedCharacters : Entity Set }
+
+    static member make time =
+        { AttackTime = time
+          FollowUpBuffered = false
+          AttackedCharacters = Set.empty }
+
+type InjuryState =
+    { InjuryTime : int64 }
+
+type WoundState =
+    { WoundTime : int64 }
+
+type ActionState =
+    | NormalState
+    | AttackState of AttackState
+    | InjuryState of InjuryState
+    | WoundState of WoundState
+
 type CharacterType =
     | Enemy
     | Player
@@ -36,28 +58,6 @@ type CharacterType =
         match this with
         | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
         | Player -> CharacterProperties.defaultProperties
-
-type AttackState =
-    { AttackTime : int64
-      FollowUpBuffered : bool
-      AttackedCharacters : Entity Set }
-
-    static member make time =
-        { AttackTime = time
-          FollowUpBuffered = false
-          AttackedCharacters = Set.empty }
-
-type InjuryState =
-    { InjuryTime : int64 }
-
-type WoundState =
-    { WoundTime : int64 }
-
-type ActionState =
-    | NormalState
-    | AttackState of AttackState
-    | InjuryState of InjuryState
-    | WoundState of WoundState
 
 [<AutoOpen>]
 module CharacterExtensions =
@@ -265,15 +265,18 @@ type CharacterDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
+        let characterType = Enemy
         [define Entity.Size (v3Dup 2.0f)
          define Entity.Offset (v3 0.0f 1.0f 0.0f)
+         define Entity.Persistent characterType.Persistent
          define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })
          define Entity.Substance (Mass 50.0f)
+         define Entity.CharacterProperties characterType.CharacterProperties
          define Entity.Observable true
-         define Entity.CharacterType Enemy
+         define Entity.CharacterType characterType
          define Entity.ActionState NormalState
-         define Entity.HitPoints 1
+         define Entity.HitPoints characterType.HitPointsMax
          define Entity.LastTimeGrounded 0L
          define Entity.LastTimeJump 0L
          define Entity.CharacterCollisions Set.empty
@@ -475,9 +478,9 @@ type EnemyDispatcher () =
     static member Properties =
         let characterType = Enemy
         [define Entity.Persistent characterType.Persistent
+         define Entity.CharacterProperties characterType.CharacterProperties
          define Entity.CharacterType characterType
-         define Entity.HitPoints characterType.HitPointsMax
-         define Entity.CharacterProperties characterType.CharacterProperties]
+         define Entity.HitPoints characterType.HitPointsMax]
 
 type PlayerDispatcher () =
     inherit CharacterDispatcher ()
@@ -485,6 +488,6 @@ type PlayerDispatcher () =
     static member Properties =
         let characterType = Player
         [define Entity.Persistent characterType.Persistent
+         define Entity.CharacterProperties characterType.CharacterProperties
          define Entity.CharacterType characterType
-         define Entity.HitPoints characterType.HitPointsMax
-         define Entity.CharacterProperties characterType.CharacterProperties]
+         define Entity.HitPoints characterType.HitPointsMax]
