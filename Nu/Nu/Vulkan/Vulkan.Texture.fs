@@ -356,6 +356,7 @@ module Texture =
         /// The VulkanTexture.
         member this.VulkanTexture = this.VulkanTextures.[this.TextureIndex]
 
+        member private this.CurrentStagingBuffer = this.StagingBuffers.[this.TextureIndex]
         member private this.ImageSize = (int this.Extent.width) * (int this.Extent.height) * 4
 
         member private this.NewCycle metadata pixels (vkg : Hl.VulkanGlobal) =
@@ -366,13 +367,13 @@ module Texture =
             // enlarge staging buffer size if needed
             this.Extent <- VkExtent3D (metadata.TextureWidth, metadata.TextureHeight, 1)
             while this.ImageSize > this.StagingBufferSize do this.StagingBufferSize <- this.StagingBufferSize * 2
-            this.StagingBuffers.[this.TextureIndex].UpdateSize this.StagingBufferSize vkg.VmaAllocator
+            this.CurrentStagingBuffer.UpdateSize this.StagingBufferSize vkg.VmaAllocator
 
             // stage pixels
-            Hl.FifBuffer.upload 0 this.ImageSize pixels this.StagingBuffers.[this.TextureIndex]
+            Hl.FifBuffer.upload 0 this.ImageSize pixels this.CurrentStagingBuffer
 
             // destroy expired VulkanTexture
-            VulkanTexture.destroy this.VulkanTextures.[this.TextureIndex] vkg
+            VulkanTexture.destroy this.VulkanTexture vkg
 
         /// Add a new bgra VulkanTexture. Can only be called once per render block.
         member this.AddBgra minFilter magFilter metadata pixels vkg =
@@ -383,6 +384,10 @@ module Texture =
         member this.AddRgba minFilter magFilter metadata pixels vkg =
             this.NewCycle metadata pixels vkg
             this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter metadata None vkg
+        
+        /// Record the commands to transfer pixels to texture.
+        static member recordTextureLoad cb tt =
+            VulkanTexture.recordBufferToImageCopy cb tt.Extent tt.CurrentStagingBuffer.Buffer tt.VulkanTexture.Image.Image
         
         /// Create TransientTexture.
         static member create vkg =
@@ -405,11 +410,11 @@ module Texture =
             transientTexture
         
         /// Destroy TransientTexture.
-        static member destroy transientTexture vkg =
-            VulkanTexture.destroy transientTexture.VulkanTextures.[0] vkg
-            VulkanTexture.destroy transientTexture.VulkanTextures.[1] vkg
-            Hl.FifBuffer.destroy transientTexture.StagingBuffers.[0] vkg.VmaAllocator
-            Hl.FifBuffer.destroy transientTexture.StagingBuffers.[1] vkg.VmaAllocator
+        static member destroy tt vkg =
+            VulkanTexture.destroy tt.VulkanTextures.[0] vkg
+            VulkanTexture.destroy tt.VulkanTextures.[1] vkg
+            Hl.FifBuffer.destroy tt.StagingBuffers.[0] vkg.VmaAllocator
+            Hl.FifBuffer.destroy tt.StagingBuffers.[1] vkg.VmaAllocator
     
     /// Describes data loaded from a texture.
     type TextureData =

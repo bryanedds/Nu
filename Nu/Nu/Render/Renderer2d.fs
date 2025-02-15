@@ -158,13 +158,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanGlobal : Hl.VulkanGlobal
           SpritePipeline : Hl.FifBuffer * Hl.FifBuffer * Hl.FifBuffer * Pipeline.Pipeline
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
+          TextTexture : Texture.TransientTexture
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
           mutable RenderAssetCached : RenderAssetCached
           mutable ReloadAssetsRequested : bool
-          LayeredOperations : LayeredOperation2d List
-          mutable TextTextureOpt : Texture.Texture option }
+          LayeredOperations : LayeredOperation2d List }
 
     static member private invalidateCaches renderer =
         renderer.RenderPackageCachedOpt <- Unchecked.defaultof<_>
@@ -692,27 +692,19 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // init render
+                            // add texture
                             let vkg = renderer.VulkanGlobal
+                            let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
+                            renderer.TextTexture.AddBgra Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST textTextureMetadata textSurface.pixels vkg
+
+                            // init render
                             let cb = vkg.RenderCommandBuffer
                             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
                             Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
+
+                            // load texture
+                            Texture.TransientTexture.recordTextureLoad cb renderer.TextTexture
                             
-                            // create texture
-                            // TODO: DJL: investigate non-staged texture upload and its performance.
-                            let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
-                            let textVulkanTexture =
-                                Texture.VulkanTexture.createBgra
-                                    Vulkan.VK_FILTER_NEAREST
-                                    Vulkan.VK_FILTER_NEAREST
-                                    textTextureMetadata
-                                    (Some textSurface.pixels) vkg
-                            let textTexture = Texture.EagerTexture { TextureMetadata = textTextureMetadata; VulkanTexture = textVulkanTexture }
-
-                            // destroy previous texture and store current texture for destruction later because draw command hasn't been executed yet!
-                            match renderer.TextTextureOpt with Some texture -> texture.Destroy vkg | None -> ()
-                            renderer.TextTextureOpt <- Some textTexture
-
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
@@ -726,7 +718,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  FlipNone,
                                  textSurfaceWidth,
                                  textSurfaceHeight,
-                                 textTexture.VulkanTexture,
+                                 renderer.TextTexture.VulkanTexture,
                                  modelViewProjectionUniform,
                                  texCoords4Uniform,
                                  colorUniform,
@@ -803,6 +795,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkg
         let textQuad = Sprite.CreateSpriteQuad true vkg
+        let textTexture = Texture.TransientTexture.create vkg
         
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkg
@@ -812,13 +805,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             { VulkanGlobal = vkg
               SpritePipeline = spritePipeline
               TextQuad = textQuad
+              TextTexture = textTexture
               SpriteBatchEnv = spriteBatchEnv
               RenderPackages = dictPlus StringComparer.Ordinal []
               RenderPackageCachedOpt = Unchecked.defaultof<_>
               RenderAssetCached = { CachedAssetTagOpt = Unchecked.defaultof<_>; CachedRenderAsset = Unchecked.defaultof<_> }
               ReloadAssetsRequested = false
-              LayeredOperations = List ()
-              TextTextureOpt = None }
+              LayeredOperations = List () }
 
         // fin
         renderer
@@ -831,15 +824,12 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         
         member renderer.CleanUp () =
             
-            // destroy last used text texture
-            match renderer.TextTextureOpt with Some texture -> texture.Destroy renderer.VulkanGlobal | None -> ()
-            renderer.TextTextureOpt <- None
-            
             // destroy Vulkan resources
             let device = renderer.VulkanGlobal.Device
             let allocator = renderer.VulkanGlobal.VmaAllocator
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
+            Texture.TransientTexture.destroy renderer.TextTexture renderer.VulkanGlobal
             Pipeline.Pipeline.destroy pipeline device
             Hl.FifBuffer.destroy modelViewProjectionUniform allocator
             Hl.FifBuffer.destroy texCoords4Uniform allocator
