@@ -9,6 +9,34 @@ type CharacterType =
     | Enemy
     | Player
 
+    member this.Persistent =
+        not this.IsPlayer
+
+    member this.HitPointsMax =
+        match this with
+        | Enemy -> 3
+        | Player -> 5
+
+    member this.WalkSpeed =
+        match this with
+        | Enemy -> 2.0f
+        | Player -> 3.0f
+
+    member this.TurnSpeed =
+        match this with
+        | Enemy -> 5.0f
+        | Player -> 3.0f
+
+    member this.InjuryTime =
+        match this with
+        | Enemy -> 40
+        | Player -> 30
+
+    member this.CharacterProperties =
+        match this with
+        | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
+        | Player -> CharacterProperties.defaultProperties
+
 type AttackState =
     { AttackTime : int64
       FollowUpBuffered : bool
@@ -60,11 +88,6 @@ module CharacterExtensions =
         member this.WeaponModel = lens (nameof this.WeaponModel) this this.GetWeaponModel this.SetWeaponModel
         member this.AttackEvent = Events.AttackEvent --> this
         member this.DieEvent = Events.DieEvent --> this
-
-        member this.GetCharacterProperties world =
-            match this.GetCharacterType world with
-            | Enemy -> { CharacterProperties.defaultProperties with CollisionTolerance = 0.005f }
-            | Player -> CharacterProperties.defaultProperties
 
 type CharacterDispatcher () =
     inherit Entity3dDispatcherImNui (true, false, false)
@@ -150,15 +173,13 @@ type CharacterDispatcher () =
             | _ -> world
 
         // navigation
-        let (navSpeedsOpt, world) =
-            let actionState = entity.GetActionState world
-            match actionState with
+        let (navSpeedsOpt) =
+            match entity.GetActionState world with
             | NormalState ->
-                let walkSpeed = Constants.Gameplay.EnemyWalkSpeed * if actionState.IsNormalState then 1.0f else 0.0f
-                let turnSpeed = Constants.Gameplay.EnemyTurnSpeed * if actionState.IsNormalState then 1.0f else 3.0f
-                let world = entity.SetActionState actionState world
-                (Some (walkSpeed, turnSpeed), world)
-            | _ -> (None, world)
+                let walkSpeed = Enemy.WalkSpeed
+                let turnSpeed = Enemy.TurnSpeed
+                Some (walkSpeed, turnSpeed)
+            | _ -> None
         match navSpeedsOpt with
         | Some (walkSpeed, turnSpeed) ->
             let position = entity.GetPosition world
@@ -217,7 +238,7 @@ type CharacterDispatcher () =
             let rotation = entity.GetRotation world
             let forward = rotation.Forward
             let right = rotation.Right
-            let walkSpeed = Constants.Gameplay.PlayerWalkSpeed * if grounded then 1.0f else 0.75f
+            let walkSpeed = Player.WalkSpeed * if grounded then 1.0f else 0.75f
             let walkVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.W world || World.isKeyboardKeyDown KeyboardKey.Up world then forward * walkSpeed else v3Zero) +
                 (if World.isKeyboardKeyDown KeyboardKey.S world || World.isKeyboardKeyDown KeyboardKey.Down world then -forward * walkSpeed else v3Zero) +
@@ -225,7 +246,7 @@ type CharacterDispatcher () =
                 (if World.isKeyboardKeyDown KeyboardKey.D world then right * walkSpeed else v3Zero)
 
             // compute new rotation
-            let turnSpeed = Constants.Gameplay.PlayerTurnSpeed * if grounded then 1.0f else 0.75f
+            let turnSpeed = Player.TurnSpeed * if grounded then 1.0f else 0.75f
             let turnVelocity =
                 (if World.isKeyboardKeyDown KeyboardKey.Right world then -turnSpeed else 0.0f) +
                 (if World.isKeyboardKeyDown KeyboardKey.Left world then turnSpeed else 0.0f)
@@ -270,11 +291,12 @@ type CharacterDispatcher () =
 
         // process penetration
         let (penetrations, world) = World.doSubscription "Penetration" entity.BodyPenetrationEvent world
+        let characterType = entity.GetCharacterType world
         let world =
             FQueue.fold (fun world penetration ->
                 match penetration.BodyShapePenetratee.BodyId.BodySource with
                 | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world ->
-                    match (entity.GetCharacterType world, penetratee.GetCharacterType world) with
+                    match (characterType, penetratee.GetCharacterType world) with
                     | (Enemy, Enemy) -> entity.CharacterCollisions.Map (Set.add penetratee) world
                     | (_, _) -> world
                 | _ -> world)
@@ -302,7 +324,7 @@ type CharacterDispatcher () =
         // process input
         let world =
             if world.Advancing then
-                match entity.GetCharacterType world with
+                match characterType with
                 | Enemy ->
                     if Simulants.GameplayPlayer.GetExists world
                     then processEnemyInput (Simulants.GameplayPlayer.GetPosition world) entity world
@@ -323,7 +345,7 @@ type CharacterDispatcher () =
                     else NormalState
                 | InjuryState injury ->
                     let localTime = world.UpdateTime - injury.InjuryTime
-                    let injuryTime = match entity.GetCharacterType world with Enemy -> 40 | Player -> 30
+                    let injuryTime = characterType.InjuryTime
                     if localTime < injuryTime
                     then InjuryState injury
                     else NormalState
@@ -376,7 +398,7 @@ type CharacterDispatcher () =
                 | BodyPenetration penetration ->
                     match penetration.BodyShapePenetratee.BodyId.BodySource with
                     | :? Entity as penetratee when penetratee.Is<CharacterDispatcher> world && penetratee <> entity ->
-                        if entity.GetCharacterType world <> penetratee.GetCharacterType world
+                        if characterType <> penetratee.GetCharacterType world
                         then entity.WeaponCollisions.Map (Set.add penetratee) world
                         else world
                     | _ -> world
@@ -415,7 +437,8 @@ type CharacterDispatcher () =
 
         // declare player hearts
         let world =
-            if (entity.GetCharacterType world).IsPlayer then
+            match characterType with
+            | Player ->
                 let hitPoints = entity.GetHitPoints world
                 Seq.fold (fun world i ->
                     World.doStaticSprite ("Heart+" + string i)
@@ -424,8 +447,8 @@ type CharacterDispatcher () =
                          Entity.MountOpt .= None
                          Entity.StaticImage @= if hitPoints >= inc i then Assets.Gameplay.HeartFull else Assets.Gameplay.HeartEmpty]
                         world)
-                    world [0 .. dec Constants.Gameplay.PlayerHitPointsMax]
-            else world
+                    world [0 .. dec characterType.HitPointsMax]
+            | Enemy -> world
 
         // process death
         let world =
@@ -450,13 +473,18 @@ type EnemyDispatcher () =
     inherit CharacterDispatcher ()
 
     static member Properties =
-        [define Entity.CharacterType Enemy
-         define Entity.HitPoints Constants.Gameplay.EnemyHitPointsMax]
+        let characterType = Enemy
+        [define Entity.Persistent characterType.Persistent
+         define Entity.CharacterType characterType
+         define Entity.HitPoints characterType.HitPointsMax
+         define Entity.CharacterProperties characterType.CharacterProperties]
 
 type PlayerDispatcher () =
     inherit CharacterDispatcher ()
 
     static member Properties =
-        [define Entity.Persistent false // don't serialize player when saving scene
-         define Entity.CharacterType Player
-         define Entity.HitPoints Constants.Gameplay.PlayerHitPointsMax]
+        let characterType = Player
+        [define Entity.Persistent characterType.Persistent
+         define Entity.CharacterType characterType
+         define Entity.HitPoints characterType.HitPointsMax
+         define Entity.CharacterProperties characterType.CharacterProperties]
