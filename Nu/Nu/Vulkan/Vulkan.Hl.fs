@@ -231,13 +231,6 @@ module Hl =
     /// Begin command buffer recording and render pass.
     let beginRenderBlock cb renderPass framebuffer renderArea clearValues waitFence device =
 
-#if DEBUG
-        // show whether fence is signalled during debugging
-        if waitFence <> VkFence.Null then
-            let status = Vulkan.vkGetFenceStatus(device, waitFence)
-            ()
-#endif
-        
         // await fence if not null
         // TODO: investigate if passing the null fence into awaitFence performs a no-op as expected and if so, don't
         // bother to check for it here :)
@@ -1105,13 +1098,48 @@ module Hl =
 
     /// A set of upload enabled allocated buffers for each frame in flight.
     type FifBuffer =
-        private { AllocatedBuffers : AllocatedBuffer array }
+        private { AllocatedBuffers : AllocatedBuffer array
+                  BufferSizes : int array
+                  BufferUsage : VkBufferUsageFlags }
 
         /// The VkBuffer for the current frame.
         member this.Buffer = this.AllocatedBuffers.[CurrentFrame].Buffer
 
         /// The VkBuffer for each frame in flight.
         member this.PerFrameBuffers = Array.map (fun allocatedBuffer -> allocatedBuffer.Buffer) this.AllocatedBuffers
+
+        /// Create an AllocatedBuffer based on usage.
+        static member private createBuffer size usage allocator =
+            match usage with
+            | Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT -> AllocatedBuffer.createStaging size allocator
+            | Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT -> AllocatedBuffer.createVertex true size allocator
+            | Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT -> AllocatedBuffer.createIndex true size allocator
+            | Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT -> AllocatedBuffer.createUniform size allocator
+            | _ -> Log.fail "Invalid VkBufferUsageFlags value for FifBuffer."
+        
+        /// Create a FifBuffer.
+        static member private createInternal size (usage : VkBufferUsageFlags) allocator =
+            
+            // create buffers and sizes
+            let bufferSizes = Array.create Constants.Vulkan.MaxFramesInFlight size
+            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
+            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- FifBuffer.createBuffer size usage allocator
+
+            // make FifBuffer
+            let fifBuffer =
+                { AllocatedBuffers = allocatedBuffers 
+                  BufferSizes = bufferSizes
+                  BufferUsage = usage }
+
+            // fin
+            fifBuffer
+        
+        /// Check that the current buffer is at least as big as the given size, resizing if necessary.
+        member this.UpdateSize size allocator =
+            if size > this.BufferSizes.[CurrentFrame] then
+                AllocatedBuffer.destroy this.AllocatedBuffers.[CurrentFrame] allocator
+                this.AllocatedBuffers.[CurrentFrame] <- FifBuffer.createBuffer size this.BufferUsage allocator
+                this.BufferSizes.[CurrentFrame] <- size
 
         /// Upload data to FifBuffer.
         static member upload offset size ptr fifBuffer =
@@ -1120,30 +1148,22 @@ module Hl =
         /// Upload an array to FifBuffer.
         static member uploadArray offset array fifBuffer =
             AllocatedBuffer.uploadArray offset array fifBuffer.AllocatedBuffers.[CurrentFrame]
-        
+
         /// Create a staging FifBuffer.
         static member createStaging size allocator =
-            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createStaging size allocator
-            { AllocatedBuffers = allocatedBuffers }
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_TRANSFER_SRC_BIT allocator
         
         /// Create a vertex FifBuffer.
         static member createVertex size allocator =
-            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createVertex true size allocator
-            { AllocatedBuffers = allocatedBuffers }
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_VERTEX_BUFFER_BIT allocator
 
         /// Create an index FifBuffer.
         static member createIndex size allocator =
-            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createIndex true size allocator
-            { AllocatedBuffers = allocatedBuffers }
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_INDEX_BUFFER_BIT allocator
 
         /// Create a uniform FifBuffer.
         static member createUniform size allocator =
-            let allocatedBuffers = Array.zeroCreate<AllocatedBuffer> Constants.Vulkan.MaxFramesInFlight
-            for i in 0 .. dec allocatedBuffers.Length do allocatedBuffers.[i] <- AllocatedBuffer.createUniform size allocator
-            { AllocatedBuffers = allocatedBuffers }
+            FifBuffer.createInternal size Vulkan.VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT allocator
 
         /// Destroy FifBuffer.
         static member destroy fifBuffer allocator =

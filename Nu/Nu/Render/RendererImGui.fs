@@ -341,17 +341,11 @@ type VulkanRendererImGui (vkg : Hl.VulkanGlobal) =
                     let vertexSize = drawData.TotalVtxCount * sizeof<ImDrawVert>
                     let indexSize = drawData.TotalIdxCount * sizeof<uint16>
 
-                    // enlarge vertex buffer if needed
-                    if vertexSize > vertexBufferSize then
-                        while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
-                        Hl.FifBuffer.destroy vertexBuffer vkg.VmaAllocator
-                        vertexBuffer <- Hl.FifBuffer.createVertex vertexBufferSize vkg.VmaAllocator
-
-                    // enlarge index buffer if needed
-                    if indexSize > indexBufferSize then
-                        while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
-                        Hl.FifBuffer.destroy indexBuffer vkg.VmaAllocator
-                        indexBuffer <- Hl.FifBuffer.createIndex indexBufferSize vkg.VmaAllocator
+                    // enlarge buffer sizes if needed
+                    while vertexSize > vertexBufferSize do vertexBufferSize <- vertexBufferSize * 2
+                    while indexSize > indexBufferSize do indexBufferSize <- indexBufferSize * 2
+                    vertexBuffer.UpdateSize vertexBufferSize vkg.VmaAllocator
+                    indexBuffer.UpdateSize indexBufferSize vkg.VmaAllocator
 
                     // upload vertices and indices
                     let mutable vertexOffset = 0
