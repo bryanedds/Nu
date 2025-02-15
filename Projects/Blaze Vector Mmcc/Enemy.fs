@@ -64,8 +64,9 @@ type EnemyDispatcher () =
             let world =
                 let eyeBounds = World.getEye2dBounds world
                 let entityBounds = entity.GetBounds world
-                if entityBounds.Box2.Intersects eyeBounds
-                then World.applyBodyForce Constants.Gameplay.EnemyWalkForce None (entity.GetBodyId world) world
+                if entityBounds.Box2.Intersects eyeBounds then
+                    let bodyId = entity.GetBodyId world
+                    World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
                 else world
             let world =
                 if enemy.Health <= 0 then

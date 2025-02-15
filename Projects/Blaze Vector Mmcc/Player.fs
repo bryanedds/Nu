@@ -7,7 +7,7 @@ open BlazeVector
 
 type [<SymbolicExpansion>] Player =
     { Alive : bool
-      LastTimeOnGround : int64
+      LastTimeGrounded : int64
       LastTimeJump : int64 }
 
 type PlayerMessage =
@@ -31,7 +31,7 @@ module PlayerExtensions =
         member this.Player = this.ModelGeneric<Player> ()
 
 type PlayerDispatcher () =
-    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, { Alive = true; LastTimeOnGround = Int64.MinValue; LastTimeJump = Int64.MinValue })
+    inherit Entity2dDispatcher<Player, PlayerMessage, PlayerCommand> (true, false, false, { Alive = true; LastTimeGrounded = Int64.MinValue; LastTimeJump = Int64.MinValue })
 
     static member Facets =
         [typeof<RigidBodyFacet>
@@ -62,7 +62,7 @@ type PlayerDispatcher () =
         | UpdateMessage ->
             let player =
                 if World.getBodyGrounded (entity.GetBodyId world) world
-                then { player with LastTimeOnGround = world.UpdateTime }
+                then { player with LastTimeGrounded = world.UpdateTime }
                 else player
             let (player, dying) =
                 if player.Alive && (entity.GetPosition world).Y <= -320.0f
@@ -75,7 +75,7 @@ type PlayerDispatcher () =
         | TryJumpByMouse ->
             let time = world.UpdateTime
             if  time >= player.LastTimeJump + 12L &&
-                time <= player.LastTimeOnGround + 10L then
+                time <= player.LastTimeGrounded + 10L then
                 let player = { player with LastTimeJump = time }
                 withSignal Jump player
             else just player
@@ -85,7 +85,7 @@ type PlayerDispatcher () =
             | (KeyboardKey.Space, false) ->
                 let time = world.UpdateTime
                 if  time >= player.LastTimeJump + 12L &&
-                    time <= player.LastTimeOnGround + 10L then
+                    time <= player.LastTimeGrounded + 10L then
                     let player = { player with LastTimeJump = time }
                     withSignal Jump player
                 else just player

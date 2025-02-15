@@ -75,13 +75,18 @@ type GameplayDispatcher () =
             let world = World.beginGroup Simulants.Gameplay.Name [] world
 
             // declare player
-            let world = World.doEntity<PlayerDispatcher> "Player" [if initializing then Entity.Position .= v3 -390.0f -50.0f 0.0f; Entity.Elevation .= 1.0f] world
+            let world =
+                World.doEntity<PlayerDispatcher> "Player"
+                    [if initializing then Entity.Position .= v3 -390.0f -50.0f 0.0f
+                     Entity.Elevation .= 1.0f]
+                    world
             let player = World.getRecentEntity world
 
             // process scoring
             let world =
                 Seq.fold (fun world section ->
-                    let (deaths, world) = World.doSubscription ("Die" + string section) (Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard) world
+                    let dieEventsAddress = Events.DieEvent --> Simulants.GameplaySection section --> Address.Wildcard
+                    let (deaths, world) = World.doSubscription ("Die" + string section) dieEventsAddress world
                     gameplay.Score.Map (fun score -> score + deaths.Length * 100) world)
                     world [0 .. dec Constants.Gameplay.SectionCount]
 

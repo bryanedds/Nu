@@ -8,9 +8,9 @@ open BlazeVector
 [<AutoOpen>]
 module PlayerExtensions =
     type Entity with
-        member this.GetLastTimeOnGround world : int64 = this.Get (nameof this.LastTimeOnGround) world
-        member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof this.LastTimeOnGround) value world
-        member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
+        member this.GetLastTimeGrounded world : int64 = this.Get (nameof this.LastTimeGrounded) world
+        member this.SetLastTimeGrounded (value : int64) world = this.Set (nameof this.LastTimeGrounded) value world
+        member this.LastTimeGrounded = lens (nameof this.LastTimeGrounded) this this.GetLastTimeGrounded this.SetLastTimeGrounded
         member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
         member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
@@ -35,7 +35,7 @@ type PlayerDispatcher () =
          define Entity.CelSize (v2 48.0f 96.0f)
          define Entity.AnimationDelay (UpdateTime 3L)
          define Entity.AnimationSheet Assets.Gameplay.PlayerImage
-         define Entity.LastTimeOnGround 0L
+         define Entity.LastTimeGrounded 0L
          define Entity.LastTimeJump 0L]
 
     override this.Process (entity, world) =
@@ -59,7 +59,7 @@ type PlayerDispatcher () =
         // process last time on ground
         let world =
             if World.getBodyGrounded bodyId world
-            then entity.SetLastTimeOnGround world.UpdateTime world
+            then entity.SetLastTimeGrounded world.UpdateTime world
             else world
 
         // process shooting
@@ -79,7 +79,7 @@ type PlayerDispatcher () =
         let world =
             if  world.Advancing && 
                 world.UpdateTime >= entity.GetLastTimeJump world + 12L &&
-                world.UpdateTime <= entity.GetLastTimeOnGround world + 10L &&
+                world.UpdateTime <= entity.GetLastTimeGrounded world + 10L &&
                 World.isKeyboardKeyPressed KeyboardKey.Space world then
                 let world = entity.SetLastTimeJump world.UpdateTime world
                 let world = World.applyBodyLinearImpulse (v3 0.0f Constants.Gameplay.PlayerJumpForce 0.0f) None (entity.GetBodyId world) world
@@ -88,7 +88,10 @@ type PlayerDispatcher () =
             else world
 
         // process death
-        let world = if fallen then World.publish entity entity.DieEvent entity world else world
+        let world =
+            if fallen
+            then World.publish entity entity.DieEvent entity world
+            else world
 
         // fin
         world

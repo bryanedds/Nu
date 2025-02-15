@@ -43,9 +43,9 @@ module CharacterExtensions =
         member this.GetHitPoints world : int = this.Get (nameof this.HitPoints) world
         member this.SetHitPoints (value : int) world = this.Set (nameof this.HitPoints) value world
         member this.HitPoints = lens (nameof this.HitPoints) this this.GetHitPoints this.SetHitPoints
-        member this.GetLastTimeOnGround world : int64 = this.Get (nameof this.LastTimeOnGround) world
-        member this.SetLastTimeOnGround (value : int64) world = this.Set (nameof this.LastTimeOnGround) value world
-        member this.LastTimeOnGround = lens (nameof this.LastTimeOnGround) this this.GetLastTimeOnGround this.SetLastTimeOnGround
+        member this.GetLastTimeGrounded world : int64 = this.Get (nameof this.LastTimeGrounded) world
+        member this.SetLastTimeGrounded (value : int64) world = this.Set (nameof this.LastTimeGrounded) value world
+        member this.LastTimeGrounded = lens (nameof this.LastTimeGrounded) this this.GetLastTimeGrounded this.SetLastTimeGrounded
         member this.GetLastTimeJump world : int64 = this.Get (nameof this.LastTimeJump) world
         member this.SetLastTimeJump (value : int64) world = this.Set (nameof this.LastTimeJump) value world
         member this.LastTimeJump = lens (nameof this.LastTimeJump) this this.GetLastTimeJump this.SetLastTimeJump
@@ -183,9 +183,9 @@ type CharacterDispatcher () =
             // jumping
             if World.isKeyboardKeyPressed KeyboardKey.Space world then
                 let actionState = entity.GetActionState world
-                let sinceOnGround = world.UpdateTime - entity.GetLastTimeOnGround world
+                let sinceGrounded = world.UpdateTime - entity.GetLastTimeGrounded world
                 let sinceJump = world.UpdateTime - entity.GetLastTimeJump world
-                if sinceJump >= 12L && sinceOnGround < 10L && actionState = NormalState then
+                if sinceJump >= 12L && sinceGrounded < 10L && actionState = NormalState then
                     let world = entity.SetLinearVelocity (entity.GetLinearVelocity world + v3Up * 5.0f) world
                     let world = entity.SetLastTimeJump world.UpdateTime world
                     world
@@ -253,7 +253,7 @@ type CharacterDispatcher () =
          define Entity.CharacterType Enemy
          define Entity.ActionState NormalState
          define Entity.HitPoints 1
-         define Entity.LastTimeOnGround 0L
+         define Entity.LastTimeGrounded 0L
          define Entity.LastTimeJump 0L
          define Entity.CharacterCollisions Set.empty
          define Entity.WeaponCollisions Set.empty
@@ -265,7 +265,7 @@ type CharacterDispatcher () =
         let bodyId = entity.GetBodyId world
         let world =
             if World.getBodyGrounded bodyId world
-            then entity.SetLastTimeOnGround world.UpdateTime world
+            then entity.SetLastTimeGrounded world.UpdateTime world
             else world
 
         // process penetration
