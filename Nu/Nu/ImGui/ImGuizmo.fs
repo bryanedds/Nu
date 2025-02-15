@@ -40,7 +40,7 @@ module ImGuizmo =
               (corners.[2], corners.[4])
               (corners.[3], corners.[7])|]
         for (a, b) in segments do
-            match Math.TryUnionSegmentAndFrustum a b eyeFrustum with
+            match Math.TryUnionSegmentAndFrustum (a, b, eyeFrustum) with
             | Some (a', b') ->
                 let aWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, a')
                 let bWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, b')
@@ -76,7 +76,7 @@ module ImGuizmo =
                 let mouse = (ray.Intersection plane).Value
                 let delta = mouse - center
                 let movement = delta * direction
-                let center = Math.SnapF3d snap (centers.[i] + movement)
+                let center = Math.SnapF3d (snap, centers.[i] + movement)
                 centers.[i] <- center
                 io.SwallowMouse ()
                 draggingFound <- true

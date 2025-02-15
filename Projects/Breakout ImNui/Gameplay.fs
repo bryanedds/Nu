@@ -110,7 +110,7 @@ type GameplayDispatcher () =
                  Entity.Size .= v3 64.0f 16.0f 0.0f
                  Entity.Sensor .= true
                  Entity.StaticImage .= Assets.Default.Paddle] world
-        let paddle = world.RecentEntity
+        let paddle = world.DeclaredEntity
 
         // process paddle movement
         let world =
@@ -137,7 +137,7 @@ type GameplayDispatcher () =
                  Entity.CollisionDetection .= Continuous
                  Entity.Observable .= true
                  Entity.StaticImage .= Assets.Default.Ball] world
-        let ball = world.RecentEntity
+        let ball = world.DeclaredEntity
 
         // process ball life cycle
         let world =

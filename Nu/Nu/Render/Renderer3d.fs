@@ -2290,10 +2290,9 @@ type [<ReferenceEquality>] GlRenderer3d =
             let boneArrays = List ()
             let bonesArrays = Array.zeroCreate surfaceKey.BoneTransforms.Length
             for i in 0 .. dec surfaceKey.BoneTransforms.Length do
-                let boneArray = new PooledArray<single> (16, false)
-                surfaceKey.BoneTransforms.[i].ToArray (boneArray.Deref, 0)
+                let boneArray = surfaceKey.BoneTransforms.[i].ToArray ()
                 boneArrays.Add boneArray
-                bonesArrays.[i] <- boneArray.Deref
+                bonesArrays.[i] <- boneArray
             let shadowShader =
                 match lightType with
                 | PointLight -> renderer.PhysicallyBasedShadowAnimatedPointShader
@@ -2302,7 +2301,6 @@ type [<ReferenceEquality>] GlRenderer3d =
             GlRenderer3d.renderPhysicallyBasedDepthSurfaces
                 SingletonPhase lightOrigin lightViewArray lightProjectionArray bonesArrays parameters
                 surfaceKey.AnimatedSurface shadowShader renderer
-            for boneArray in boneArrays do boneArray.Dispose ()
             OpenGL.Hl.Assert ()
 
         // attempt to deferred render terrain shadows

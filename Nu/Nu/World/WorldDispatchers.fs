@@ -228,8 +228,7 @@ type Box2dDispatcher () =
          typeof<StaticSpriteFacet>]
 
     static member Properties =
-        [define Entity.Static false
-         define Entity.BodyType Dynamic
+        [define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })]
 
 /// Gives an entity the base behavior of a rigid 2d sphere using static physics.
@@ -253,8 +252,7 @@ type Ball2dDispatcher () =
          typeof<StaticSpriteFacet>]
 
     static member Properties =
-        [define Entity.Static false
-         define Entity.BodyType Dynamic
+        [define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticImage Assets.Default.Ball]
 
@@ -294,8 +292,7 @@ type Character2dDispatcher () =
         [typeof<RigidBodyFacet>]
 
     static member Properties =
-        [define Entity.Static false
-         define Entity.CelSize (v2 28.0f 28.0f)
+        [define Entity.CelSize (v2 28.0f 28.0f)
          define Entity.CelRun 8
          define Entity.AnimationDelay (GameTime.ofSeconds (1.0f / 15.0f))
          define Entity.BodyType Dynamic
@@ -563,8 +560,7 @@ type Box3dDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.Static false
-         define Entity.BodyType Dynamic]
+        [define Entity.BodyType Dynamic]
 
 /// Gives an entity the base behavior of a rigid 3d sphere using static physics.
 type Sphere3dDispatcher () =
@@ -589,8 +585,7 @@ type Ball3dDispatcher () =
          typeof<NavBodyFacet>]
 
     static member Properties =
-        [define Entity.Static false
-         define Entity.BodyType Dynamic
+        [define Entity.BodyType Dynamic
          define Entity.BodyShape (SphereShape { Radius = 0.5f; TransformOpt = None; PropertiesOpt = None })
          define Entity.StaticModel Assets.Default.BallModel]
 
@@ -603,22 +598,21 @@ type Character3dDispatcher () =
          typeof<AnimatedModelFacet>]
 
     static member Properties =
-        [define Entity.Static false
-         define Entity.BodyType KinematicCharacter
+        [define Entity.BodyType KinematicCharacter
          define Entity.BodyShape (CapsuleShape { Height = 1.0f; Radius = 0.35f; TransformOpt = Some (Affine.makeTranslation (v3 0.0f 0.85f 0.0f)); PropertiesOpt = None })]
 
     override this.Update (entity, world) =
         let rotation = entity.GetRotation world
         let linearVelocity = entity.GetLinearVelocity world
         let angularVelocity = entity.GetAngularVelocity world
-        let forwardness = (linearVelocity * 32.0f).Dot rotation.Forward
-        let backness = (linearVelocity * 32.0f).Dot -rotation.Forward
-        let rightness = (linearVelocity * 32.0f).Dot rotation.Right
-        let leftness = (linearVelocity * 32.0f).Dot -rotation.Right
-        let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 48.0f else 0.0f
-        let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 48.0f else 0.0f
+        let forwardness = linearVelocity.Dot rotation.Forward
+        let backness = linearVelocity.Dot -rotation.Forward
+        let rightness = linearVelocity.Dot rotation.Right
+        let leftness = linearVelocity.Dot -rotation.Right
+        let turnRightness = if angularVelocity.Y < 0.0f then -angularVelocity.Y * 0.5f else 0.0f
+        let turnLeftness = if angularVelocity.Y > 0.0f then angularVelocity.Y * 0.5f else 0.0f
         let animations =
-            [Animation.make GameTime.zero None "Armature|Idle" Loop 1.0f 0.5f None]
+            [Animation.make GameTime.zero None "Armature|Idle" Loop 1.0f 1.0f None]
         let animations =
             if forwardness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkForward" Loop 1.0f (max 0.025f forwardness) None :: animations
             elif backness >= 0.01f then Animation.make GameTime.zero None "Armature|WalkBack" Loop 1.0f (max 0.025f backness) None :: animations

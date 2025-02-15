@@ -455,9 +455,9 @@ module AmbientState =
               // cache line 2
               KeyValueStore : SUMap<string, obj>
               TickTime : int64
-              TickTimeShavings : int64
               TickWatch : Stopwatch
               DateDelta : TimeSpan
+              TickDeltaPrevious : int64
               // cache line 3
               DateTime : DateTimeOffset
               Tasklets : OMap<Simulant, 'w Tasklet UList>
@@ -533,20 +533,25 @@ module AmbientState =
 
     /// Update the update and clock times.
     let updateTime (state : 'w AmbientState) =
+        let tickDeltaCurrent =
+            if state.Advancing
+            then min state.TickWatch.ElapsedTicks Constants.Engine.TickDeltaMax
+            else 0L
+        state.TickWatch.Restart ()
         let updateDelta = if state.Advancing then 1L else 0L
-        let tickTimeShaved = state.TickWatch.ElapsedTicks - state.TickTimeShavings
-        let tickDeltaUnshaved = tickTimeShaved - state.TickTime
-        let tickDelta = min (tickTimeShaved - state.TickTime) Constants.Engine.TickDeltaMax
-        let tickDeltaShavings = max (tickDeltaUnshaved - tickDelta) 0L
-        let tickTime = tickTimeShaved - tickDeltaShavings
+        let tickDelta =
+            if Constants.Engine.TickDeltaAveraging
+            then (tickDeltaCurrent + state.TickDeltaPrevious) / 2L
+            else tickDeltaCurrent
+        let tickTime = state.TickTime + tickDelta
         let dateTime = DateTimeOffset.Now
         { state with
             UpdateTime = state.UpdateTime + updateDelta
             ClockDelta = single tickDelta / single Stopwatch.Frequency
             ClockTime = single tickTime / single Stopwatch.Frequency
-            TickTime = tickTime
-            TickTimeShavings = state.TickTimeShavings + tickDeltaShavings
             TickDelta = tickDelta
+            TickDeltaPrevious = tickDeltaCurrent
+            TickTime = tickTime
             DateTime = dateTime
             DateDelta = dateTime - state.DateTime }
 
@@ -719,10 +724,10 @@ module AmbientState =
           TickDelta = 0L
           KeyValueStore = SUMap.makeEmpty HashIdentity.Structural config
           TickTime = 0L
-          TickTimeShavings = 0L
           TickWatch = if advancing then Stopwatch.StartNew () else Stopwatch ()
-          DateTime = DateTime.Now
           DateDelta = TimeSpan.Zero
+          TickDeltaPrevious = 0L
+          DateTime = DateTime.Now
           Tasklets = OMap.makeEmpty HashIdentity.Structural config
           SdlDepsOpt = sdlDepsOpt
           Symbolics = symbolics

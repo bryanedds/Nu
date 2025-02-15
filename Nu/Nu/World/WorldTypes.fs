@@ -71,8 +71,11 @@ and SnapshotType =
     | ChangeProperty of int64 option * string
     | Evaluate of string
     | RestorePoint
+    | NormalizeAttenuation
     | RencenterInProbeBounds
     | ResetProbeBounds
+    | FreezeEntities
+    | ThawEntities
     | ReregisterPhysics
     | SynchronizeNav
     | SetEditMode of int
@@ -106,8 +109,11 @@ and SnapshotType =
         | ChangeProperty (_, propertyName) -> "Change Property " + propertyName
         | Evaluate _ -> "Evaluate F# Expression"
         | RestorePoint -> (scstringMemo this).Spaced
+        | NormalizeAttenuation -> (scstringMemo this).Spaced
         | RencenterInProbeBounds -> (scstringMemo this).Spaced
         | ResetProbeBounds -> (scstringMemo this).Spaced
+        | FreezeEntities -> (scstringMemo this).Spaced
+        | ThawEntities -> (scstringMemo this).Spaced
         | ReregisterPhysics -> (scstringMemo this).Spaced
         | SynchronizeNav -> (scstringMemo this).Spaced
         | SetEditMode i -> (scstringMemo this).Spaced + " (" + string (inc i) + " of 2)"
@@ -1353,7 +1359,7 @@ and [<TypeConverter (typeof<GameConverter>)>] Game (gameAddress : Game Address) 
     /// Derive a screen from the game.
     static member (/) (game : Game, screenName) = let _ = game in Screen (rtoa [|Constants.Engine.GameName; screenName|])
 
-    /// Concatenate an address with a game's address, taking the type of first address.
+    /// Concatenate an address with a game's address.
     static member (-->) (address : 'a Address, game : Game) =
         // HACK: anonymizes address when entity is null due to internal engine trickery.
         if isNull (game :> obj) then Address.anonymize address else acatf address game.GameAddress
@@ -1452,7 +1458,7 @@ and [<TypeConverter (typeof<ScreenConverter>)>] Screen (screenAddress) =
     /// Derive a group from its screen.
     static member (/) (screen : Screen, groupName) = Group (atoa<Screen, Group> screen.ScreenAddress --> ntoa groupName)
 
-    /// Concatenate an address with a screen's address, taking the type of first address.
+    /// Concatenate an address with a screen's address.
     static member (-->) (address : 'a Address, screen : Screen) =
         // HACK: anonymizes address when screen is null due to internal engine trickery.
         if isNull (screen :> obj) then Address.anonymize address else acatf address screen.ScreenAddress
@@ -1553,7 +1559,7 @@ and [<TypeConverter (typeof<GroupConverter>)>] Group (groupAddress) =
     /// Derive an entity from its group.
     static member (/) (group : Group, entityName) = Entity (atoa<Group, Entity> group.GroupAddress --> ntoa entityName)
 
-    /// Concatenate an address with a group's address, taking the type of first address.
+    /// Concatenate an address with a group's address.
     static member (-->) (address : 'a Address, group : Group) =
         // HACK: anonymizes address when group is null due to internal engine trickery.
         if isNull (group :> obj) then Address.anonymize address else acatf address group.GroupAddress
@@ -1677,7 +1683,7 @@ and [<TypeConverter (typeof<EntityConverter>)>] Entity (entityAddress) =
     /// Derive an entity from its parent entity.
     static member (/) (parentEntity : Entity, entityName) = Entity (parentEntity.EntityAddress --> ntoa entityName)
 
-    /// Concatenate an address with an entity, taking the type of first address.
+    /// Concatenate an address with an entity.
     static member (-->) (address : 'a Address, entity : Entity) =
         // HACK: anonymizes address when entity is null due to internal engine trickery.
         if isNull (entity :> obj) then Address.anonymize address else acatf address entity.EntityAddress
@@ -1832,7 +1838,7 @@ and [<ReferenceEquality>] internal Subsystems =
 and [<ReferenceEquality>] internal WorldExtension =
     { // cache line 1 (assuming 16 byte header)
       mutable ContextImNui : Address
-      mutable RecentImNui : Address
+      mutable DeclaredImNui : Address
       mutable SimulantImNuis : SUMap<Address, SimulantImNui>
       mutable SubscriptionImNuis : SUMap<string * Address * Address, SubscriptionImNui>
       GeometryViewport : Viewport
@@ -1970,40 +1976,40 @@ and [<ReferenceEquality>] World =
         | (true, simulantImNui) -> simulantImNui.SimulantInitializing
         | (false, _) -> false
 
-    /// Get the most recent ImNui context.
-    member this.RecentImNui =
-        this.WorldExtension.RecentImNui
+    /// Get the recent ImNui declaration.
+    member this.DeclaredImNui =
+        this.WorldExtension.DeclaredImNui
 
-    /// Get the most recent ImNui Game context (throwing upon failure).
-    member this.RecentGame =
-        if this.WorldExtension.RecentImNui.Names.Length > 0
+    /// Get the recent ImNui Game declaration (throwing upon failure).
+    member this.DeclaredGame =
+        if this.WorldExtension.DeclaredImNui.Names.Length > 0
         then Game.Handle
-        else raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        else raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Get the most recent ImNui Screen context (throwing upon failure).
-    member this.RecentScreen =
-        match this.WorldExtension.RecentImNui with
+    /// Get the recent ImNui Screen declaration (throwing upon failure).
+    member this.DeclaredScreen =
+        match this.WorldExtension.DeclaredImNui with
         | :? (Screen Address) as screenAddress -> Screen screenAddress
         | :? (Group Address) as groupAddress -> Screen (Array.take 2 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Screen (Array.take 2 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Get the most recent ImNui Group context (throwing upon failure).
-    member this.RecentGroup =
-        match this.WorldExtension.RecentImNui with
+    /// Get the recent ImNui Group declaration (throwing upon failure).
+    member this.DeclaredGroup =
+        match this.WorldExtension.DeclaredImNui with
         | :? (Group Address) as groupAddress -> Group (Array.take 3 groupAddress.Names)
         | :? (Entity Address) as entityAddress -> Group (Array.take 3 entityAddress.Names)
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Get the most recent ImNui Entity context (throwing upon failure).
-    member this.RecentEntity =
-        match this.WorldExtension.RecentImNui with
+    /// Get the recent ImNui Entity declaration (throwing upon failure).
+    member this.DeclaredEntity =
+        match this.WorldExtension.DeclaredImNui with
         | :? (Entity Address) as entityAddress -> Entity entityAddress
-        | _ -> raise (InvalidOperationException "Recent ImNui context not of type needed to construct requested handle.")
+        | _ -> raise (InvalidOperationException "ImNui declaration not of type needed to construct requested handle.")
 
-    /// Check that the recent ImNui context is initializing this frame.
-    member this.RecentInitializing =
-        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.RecentImNui with
+    /// Check that the recent ImNui declaration is initializing this frame.
+    member this.DeclaredInitializing =
+        match this.WorldExtension.SimulantImNuis.TryGetValue this.WorldExtension.DeclaredImNui with
         | (true, simulantImNui) -> simulantImNui.SimulantInitializing
         | (false, _) -> false
 
@@ -2013,14 +2019,62 @@ and [<ReferenceEquality>] World =
     member internal this.SubscriptionImNuis =
         this.WorldExtension.SubscriptionImNuis
 
+    /// The viewport of the geometry buffer.
     member this.GeometryViewport =
         this.WorldExtension.GeometryViewport
 
+    /// The viewport of the rasterization buffer.
     member this.RasterViewport =
         this.WorldExtension.RasterViewport
 
+    /// The viewport of the outer (full screen) buffer.
     member this.OuterViewport =
         this.WorldExtension.OuterViewport
+
+    /// Get the center of the 2D eye.
+    member this.Eye2dCenter =
+        this.GameState.Eye2dCenter
+
+    /// Get the size of the 2D eye.
+    member this.Eye2dSize =
+        this.GameState.Eye2dSize
+
+    /// Get the bounds of the 2D eye.
+    member this.Eye2dBounds =
+        let eyeCenter = this.Eye2dCenter
+        let eyeSize = this.Eye2dSize
+        box2 (eyeCenter - eyeSize * 0.5f) eyeSize
+
+    /// Get the center of the 3D eye.
+    member this.Eye3dCenter =
+        this.GameState.Eye3dCenter
+
+    /// Get the rotation of the 3D eye.
+    member this.Eye3dRotation =
+        this.GameState.Eye3dRotation
+
+    /// Get the field of view of the 3D eye.
+    member this.Eye3dFieldOfView =
+        this.GameState.Eye3dFieldOfView
+
+    /// Get the interior frustum of the 3D eye.
+    member this.Eye3dFrustumInterior =
+        this.GameState.Eye3dFrustumInterior
+
+    /// Get the exterior frustum of the 3D eye.
+    member this.Eye3dFrustumExterior =
+        this.GameState.Eye3dFrustumExterior
+
+    /// Get the exterior frustum of the 3D eye.
+    member this.Eye3dFrustumImposter =
+        this.GameState.Eye3dFrustumImposter
+
+    /// Get the view frustum of the 3D eye.
+    member this.Eye3dFrustumView =
+        let eyeCenter = this.Eye3dCenter
+        let eyeRotation = this.Eye3dRotation
+        let eyeFieldOfView = this.Eye3dFieldOfView
+        Viewport.getFrustum eyeCenter eyeRotation eyeFieldOfView this.RasterViewport
 
 #if DEBUG
     member internal this.Choose () =

@@ -19,8 +19,9 @@ module Configure =
                 let value = settings.[key].Value
                 match key with
                 | nameof Constants.GameTime.DesiredFrameRate -> Constants.GameTime.DesiredFrameRate <- scvalue value
-                | nameof Constants.OpenGL.HlAssert -> Constants.OpenGL.HlAssert <- scvalue value
+                | nameof Constants.OpenGL.HlDebug -> Constants.OpenGL.HlDebug <- scvalue value
                 | nameof Constants.Engine.RunSynchronously -> Constants.Engine.RunSynchronously <- scvalue value
+                | nameof Constants.Engine.TickDeltaAveraging -> Constants.Engine.TickDeltaAveraging <- scvalue value
                 | nameof Constants.Engine.Meter2d -> Constants.Engine.Meter2d <- scvalue value
                 | nameof Constants.Engine.Entity2dPerimeterCenteredDefault -> Constants.Engine.Entity2dPerimeterCenteredDefault <- scvalue value
                 | nameof Constants.Engine.EntityGuiPerimeterCenteredDefault -> Constants.Engine.EntityGuiPerimeterCenteredDefault <- scvalue value
@@ -42,9 +43,17 @@ module Configure =
                 | nameof Constants.Render.TextureAnisotropyMax -> Constants.Render.TextureAnisotropyMax <- scvalue value
                 | nameof Constants.Render.TextureMinimalMipmapIndex -> Constants.Render.TextureMinimalMipmapIndex <- scvalue value
                 | nameof Constants.Render.ShadowVirtualResolution -> Constants.Render.ShadowVirtualResolution <- scvalue value
-                | nameof Constants.Render.ShadowDetailedResolutionScalar -> Constants.Render.ShadowDetailedResolutionScalar <- scvalue value
                 | nameof Constants.Render.ShadowTexturesMax -> Constants.Render.ShadowTexturesMax <- min (scvalue value) Constants.Render.ShadowTexturesMaxShader
                 | nameof Constants.Render.ShadowMapsMax -> Constants.Render.ShadowMapsMax <- min (scvalue value) Constants.Render.ShadowMapsMaxShader
+                | nameof Constants.Render.ShadowDetailedResolutionScalar -> Constants.Render.ShadowDetailedResolutionScalar <- scvalue value
+                | nameof Constants.Physics.AlwaysObserve -> Constants.Physics.AlwaysObserve <- scvalue value
+                | nameof Constants.Physics.Collision3dBodiesMax -> Constants.Physics.Collision3dBodiesMax <- scvalue value
+                | nameof Constants.Physics.Collision3dBodyPairsMax -> Constants.Physics.Collision3dBodyPairsMax <- scvalue value
+                | nameof Constants.Physics.Collision3dContactConstraintsMax -> Constants.Physics.Collision3dContactConstraintsMax <- scvalue value
+                | nameof Constants.Physics.Collision3dSteps -> Constants.Physics.Collision3dSteps <- scvalue value
+                | nameof Constants.Physics.Collision3dThreads -> Constants.Physics.Collision3dThreads <- scvalue value
+                | nameof Constants.Physics.Collision3dBarriersMax -> Constants.Physics.Collision3dBarriersMax <- scvalue value
+                | nameof Constants.Physics.Collision3dJobsMax -> Constants.Physics.Collision3dJobsMax <- scvalue value
                 | nameof Constants.Gui.SliceMarginDefault -> Constants.Gui.SliceMarginDefault <- scvalue value
                 | nameof Globals.Render.DisplayScalar -> Globals.Render.DisplayScalar <- scvalue value
                 | nameof Globals.Render.ShadowScalar -> Globals.Render.ShadowScalar <- scvalue value

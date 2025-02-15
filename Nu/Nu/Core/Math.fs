@@ -57,8 +57,8 @@ module Vector2 =
     let inline v2Eq (v : Vector2) (v2 : Vector2) = v.X = v2.X && v.Y = v2.Y
     let inline v2Neq (v : Vector2) (v2 : Vector2) = v.X <> v2.X || v.Y <> v2.Y
     let v2EqApprox (v : Vector2) (v2 : Vector2) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon)
     let inline v2NeqApprox v v2 epsilon = not (v2EqApprox v v2 epsilon)
     let inline v2Dup (a : single) = v2 a a
     let v2One = Vector2.One
@@ -181,9 +181,9 @@ module Vector3 =
     let inline v3Eq (v : Vector3) (v2 : Vector3) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z
     let inline v3Neq (v : Vector3) (v2 : Vector3) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z
     let v3EqApprox (v : Vector3) (v2 : Vector3) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqual (v.Z, v2.Z, epsilon)
     let inline v3NeqApprox v v2 epsilon = not (v3EqApprox v v2 epsilon)
     let inline v3Dup (a : single) = v3 a a a
     let v3UncenteredOffset = v3Dup 0.5f
@@ -274,10 +274,10 @@ module Vector4 =
     let inline v4Eq (v : Vector4) (v2 : Vector4) = v.X = v2.X && v.Y = v2.Y && v.Z = v2.Z && v.W = v2.W
     let inline v4Neq (v : Vector4) (v2 : Vector4) = v.X <> v2.X || v.Y <> v2.Y || v.Z <> v2.Z || v.W <> v2.W
     let v4EqApprox (v : Vector4) (v2 : Vector4) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqual (v.Z, v2.Z, epsilon) &&
+        Math.ApproximatelyEqual (v.W, v2.W, epsilon)
     let inline v3NeqApprox v v2 epsilon = not (v3EqApprox v v2 epsilon)
     let inline v4Dup (a : single) = v4 a a a a
     let v4One = Vector4.One
@@ -595,10 +595,10 @@ module Quaternion =
     let inline quatEq (q : Quaternion) (q2 : Quaternion) = q.Equals q2
     let inline quatNeq (q : Quaternion) (q2 : Quaternion) = not (q.Equals q2)
     let quatEqApprox (v : Quaternion) (v2 : Quaternion) epsilon =
-        Math.ApproximatelyEqualEpsilon (v.X, v2.X, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Y, v2.Y, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.Z, v2.Z, epsilon) &&
-        Math.ApproximatelyEqualEpsilon (v.W, v2.W, epsilon)
+        Math.ApproximatelyEqual (v.X, v2.X, epsilon) &&
+        Math.ApproximatelyEqual (v.Y, v2.Y, epsilon) &&
+        Math.ApproximatelyEqual (v.Z, v2.Z, epsilon) &&
+        Math.ApproximatelyEqual (v.W, v2.W, epsilon)
     let inline quatNeqApprox v v2 epsilon = not (quatEqApprox v v2 epsilon)
 
 /// Converts Quaternion types.
@@ -1484,7 +1484,7 @@ module Math =
             (DegreesToRadians degrees.Z)
 
     /// Snap an int value to an offset.
-    let SnapI offset (value : int) =
+    let SnapI (offset, value : int) =
         if offset <> 0 then
             let (div, rem) = Math.DivRem (value, offset)
             let rem = if single rem < single offset * 0.5f then 0 else offset
@@ -1493,26 +1493,26 @@ module Math =
 
     /// Snap a single value to an offset.
     /// Has a minimum granularity of 0.01f.
-    let SnapF (offset : single) (value : single) =
-        single (SnapI (int (round (offset * 100.0f))) (int (round (value * 100.0f)))) / 100.0f
+    let SnapF (offset : single, value : single) =
+        single (SnapI (int (round (offset * 100.0f)), int (round (value * 100.0f)))) / 100.0f
 
     /// Snap a Vector3 value to an offset.
     /// Has a minimum granularity of 0.001f.
-    let SnapF3d offset (v3 : Vector3) =
-        Vector3 (SnapF offset v3.X, SnapF offset v3.Y, SnapF offset v3.Z)
+    let SnapF3d (offset, v3 : Vector3) =
+        Vector3 (SnapF (offset, v3.X), SnapF (offset, v3.Y), SnapF (offset, v3.Z))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree (offset : single) (value : single) =
-        single (SnapI (int (round offset)) (int (round value)))
+    let SnapDegree (offset : single, value : single) =
+        single (SnapI (int (round offset), int (round value)))
 
     /// Snap a degree value to an offset.
     /// Has a minimum granularity of 1.0f.
-    let SnapDegree3d offset (v3 : Vector3) =
-        Vector3 (SnapDegree offset v3.X, SnapDegree offset v3.Y, SnapDegree offset v3.Z)
+    let SnapDegree3d (offset, v3 : Vector3) =
+        Vector3 (SnapDegree (offset, v3.X), SnapDegree (offset, v3.Y), SnapDegree (offset, v3.Z))
 
     /// Find the the union of a line segment and a frustum if one exists.
-    let TryUnionSegmentAndFrustum (start : Vector3) (stop : Vector3) (frustum : Frustum) =
+    let TryUnionSegmentAndFrustum (start : Vector3, stop : Vector3, frustum : Frustum) =
         let startContained = frustum.Contains start <> ContainmentType.Disjoint
         let stopContained = frustum.Contains stop <> ContainmentType.Disjoint
         if startContained || stopContained then

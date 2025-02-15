@@ -22,7 +22,6 @@ type EnemyDispatcher () =
 
     static member Properties =
         [define Entity.Size (v3 24.0f 48.0f 0.0f)
-         define Entity.Static false
          define Entity.BodyType Dynamic
          define Entity.BodyShape (CapsuleShape { Height = 0.5f; Radius = 0.25f; TransformOpt = None; PropertiesOpt = None })
          define Entity.Friction 0.0f
@@ -41,10 +40,11 @@ type EnemyDispatcher () =
 
         // process walking
         let world =
-            let eyeBounds = World.getEye2dBounds world
+            let eyeBounds = world.Eye2dBounds
             let entityBounds = entity.GetBounds world
-            if world.Advancing && entityBounds.Box2.Intersects eyeBounds
-            then World.applyBodyForce Constants.Gameplay.EnemyWalkForce None (entity.GetBodyId world) world
+            if world.Advancing && entityBounds.Box2.Intersects eyeBounds then
+                let bodyId = entity.GetBodyId world
+                World.applyBodyForce Constants.Gameplay.EnemyWalkForce None bodyId world
             else world
 
         // process hits

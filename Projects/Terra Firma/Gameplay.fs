@@ -48,7 +48,11 @@ type GameplayDispatcher () =
             let world = World.beginGroupFromFile Simulants.GameplayScene.Name "Assets/Gameplay/Scene.nugroup" [] world
 
             // declare player
-            let world = World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name [Entity.Position .= v3 0.0f 1.65f 0.0f; Entity.Elevation .= 1.0f] world
+            let world =
+                World.doEntity<PlayerDispatcher> Simulants.GameplayPlayer.Name
+                    [if initializing then Entity.Position @= v3 0.0f 1.65f 0.0f
+                     Entity.Elevation .= 1.0f]
+                    world
 
             // process attacks
             let (attacks, world) = World.doSubscription "Attack" (Events.AttackEvent --> Simulants.GameplayScene --> Address.Wildcard) world
@@ -58,12 +62,14 @@ type GameplayDispatcher () =
                     if attacked.GetHitPoints world > 0 then
                         if not (attacked.GetActionState world).IsInjuryState then
                             let world = attacked.SetActionState (InjuryState { InjuryTime = world.UpdateTime }) world
+                            let world = attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                             world
                         else world
                     else
                         if not (attacked.GetActionState world).IsWoundState then
                             let world = attacked.SetActionState (WoundState { WoundTime = world.UpdateTime }) world
+                            let world = attacked.SetLinearVelocity (v3Up * attacked.GetLinearVelocity world) world
                             World.playSound Constants.Audio.SoundVolumeDefault Assets.Gameplay.InjureSound world
                             world
                         else world)
@@ -111,7 +117,7 @@ type GameplayDispatcher () =
             // process nav sync
             let world = if initializing then World.synchronizeNav3d gameplay world else world
 
-            // finish declaring scene group
+            // end scene declaration
             let world = World.endGroup world
 
             // declare gui group

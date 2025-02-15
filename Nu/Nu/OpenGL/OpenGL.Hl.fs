@@ -39,7 +39,6 @@ module Hl =
                 Log.error ("OpenGL assertion failed due to: " + string error)
         a
 
-#if DEBUG
     let private DebugMessageListener (_ : DebugSource) (_ : DebugType) (_ : uint) (severity : DebugSeverity) (length : int) (message : nativeint) (_ : nativeint) =
         match severity with
         | DebugSeverity.DebugSeverityMedium ->
@@ -66,11 +65,6 @@ module Hl =
         Gl.Enable EnableCap.DebugOutputSynchronous
         Gl.DebugMessageControl (DebugSource.DontCare, DebugType.DontCare, DebugSeverity.DontCare, [||], true)
         Gl.DebugMessageCallback (DebugMessageProc, nativeint 0)
-#else
-    /// Listen to the OpenGL error stream.
-    let AttachDebugMessageCallback () =
-        () // nothing to do
-#endif
 
     /// Create an SDL OpenGL context with the given window.
     let CreateSglContextInitial window =
@@ -110,10 +104,10 @@ module Hl =
         glContext
 
     /// Initialize OpenGL context once created.
-    let InitContext () =
+    let InitContext attach =
 
-        // listen to debug messages
-        AttachDebugMessageCallback ()
+        // potentially listen to debug messages
+        if attach then AttachDebugMessageCallback ()
         Assert ()
         
         // globally configure opengl for physically-based rendering

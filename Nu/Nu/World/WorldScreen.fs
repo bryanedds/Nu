@@ -265,29 +265,29 @@ module WorldScreenModule =
             World.createDissolveScreen5 typeof<'d>.Name nameOpt dissolveDescriptor songOpt world
 
         /// Write a screen to a screen descriptor.
-        static member writeScreen writePropagationHistory (screenDescriptor : ScreenDescriptor) screen world =
+        static member writeScreen (screenDescriptor : ScreenDescriptor) screen world =
             let screenState = World.getScreenState screen world
             let screenDispatcherName = getTypeName screenState.Dispatcher
             let screenDescriptor = { screenDescriptor with ScreenDispatcherName = screenDispatcherName }
-            let getScreenProperties = Reflection.writePropertiesFromTarget tautology3 screenDescriptor.ScreenProperties screenState
+            let getScreenProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") screenDescriptor.ScreenProperties screenState
             let screenDescriptor = { screenDescriptor with ScreenProperties = getScreenProperties }
             let groups = World.getGroups screen world
-            { screenDescriptor with GroupDescriptors = World.writeGroups writePropagationHistory groups world }
+            { screenDescriptor with GroupDescriptors = World.writeGroups groups world }
 
         /// Write multiple screens to a game descriptor.
-        static member writeScreens writePropagationHistory screens world =
+        static member writeScreens screens world =
             screens |>
             Seq.sortBy (fun (screen : Screen) -> screen.GetOrder world) |>
             Seq.filter (fun (screen : Screen) -> screen.GetPersistent world && not (screen.GetProtected world)) |>
-            Seq.fold (fun screenDescriptors screen -> World.writeScreen writePropagationHistory ScreenDescriptor.empty screen world :: screenDescriptors) [] |>
+            Seq.fold (fun screenDescriptors screen -> World.writeScreen ScreenDescriptor.empty screen world :: screenDescriptors) [] |>
             Seq.rev |>
             Seq.toList
 
         /// Write a screen to a file.
-        static member writeScreenToFile writePropagationHistory (filePath : string) screen world =
+        static member writeScreenToFile (filePath : string) screen world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let screenDescriptor = World.writeScreen writePropagationHistory ScreenDescriptor.empty screen world
+            let screenDescriptor = World.writeScreen ScreenDescriptor.empty screen world
             let screenDescriptorStr = scstring screenDescriptor
             let screenDescriptorPretty = PrettyPrinter.prettyPrint screenDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, screenDescriptorPretty)
@@ -585,21 +585,26 @@ module WorldScreenModule =
                 else None
             else None
 
-        /// Compute (navRotation, navAngularVelocity) for the given turn speed and navDirection.
-        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) =
-            let navRotation = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
-            let naveSign = (rotation.Forward.Cross navRotation.Forward).Y
-            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
+        /// Compute angular velocity for the given turn speed and navDirection.
+        static member nav3dFace turnSpeed (rotation : Quaternion) (navDirection : Vector3) (world : World) =
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
+            let navRotationDesired = Quaternion.CreateFromAxisAngle (v3Up, atan2 navDirection.X navDirection.Z + MathF.PI)
+            let navSign = (rotation.Forward.Cross navRotationDesired.Forward).Y
+            let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotationDesired.Forward
             let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navRotation = if navAngleBetween > turnSpeed then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed, naveSign)) else navRotation
+            let navRotation =
+                if navAngleBetween > turnSpeed * deltaTime
+                then rotation * Quaternion.CreateFromAxisAngle (v3Up, MathF.CopySign (turnSpeed * deltaTime, navSign))
+                else navRotationDesired
             let navSign = if v3Up.Dot (rotation.Forward.Cross navRotation.Forward) < 0.0f then -1.0f else 1.0f
             let navAngleBetweenOpt = rotation.Forward.AngleBetween navRotation.Forward
             let navAngleBetween = if Single.IsNaN navAngleBetweenOpt then 0.0f else navAngleBetweenOpt
-            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign) 0.0f
+            let navAngularVelocity = v3 0.0f (navAngleBetween * navSign / deltaTime) 0.0f
             (navRotation, navAngularVelocity)
 
         /// Compute navigation information that results in following the given destination.
-        static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen world =
+        static member nav3dFollow distanceMinOpt distanceMaxOpt moveSpeed turnSpeed (position : Vector3) (rotation : Quaternion) (destination : Vector3) screen (world : World) =
+            let deltaTime = let gameDelta = world.GameDelta in gameDelta.Seconds
             let distance = (destination - position).Magnitude
             if  (Option.isNone distanceMinOpt || distance > distanceMinOpt.Value) &&
                 (Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value) then
@@ -611,17 +616,18 @@ module WorldScreenModule =
                     let navLinearVelocity = navPosition - position
                     if navLinearVelocity.WithY(0.0f).Magnitude < 0.0001f then
                         let navDirection = destination - position
-                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                         { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
                     else
-                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity
+                        let navPosition = Vector3.Lerp (position, navPosition, deltaTime)
+                        let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navLinearVelocity world
                         { NavPosition = navPosition; NavRotation = navRotation; NavLinearVelocity = navLinearVelocity; NavAngularVelocity = navAngularVelocity }
                 | _ ->
                     let navDirection = destination - position
-                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                    let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                     { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             elif Option.isNone distanceMaxOpt || distance <= distanceMaxOpt.Value then
                 let navDirection = destination - position
-                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection
+                let (navRotation, navAngularVelocity) = World.nav3dFace turnSpeed rotation navDirection world
                 { NavPosition = position; NavRotation = navRotation; NavLinearVelocity = v3Zero; NavAngularVelocity = navAngularVelocity }
             else { NavPosition = position; NavRotation = rotation; NavLinearVelocity = v3Zero; NavAngularVelocity = v3Zero }

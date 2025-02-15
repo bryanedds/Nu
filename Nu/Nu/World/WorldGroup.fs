@@ -256,29 +256,29 @@ module WorldGroupModule =
             World.frame (World.renameGroupImmediate source destination) Game.Handle world
 
         /// Write a group to a group descriptor.
-        static member writeGroup writePropagationHistory (groupDescriptor : GroupDescriptor) group world =
+        static member writeGroup (groupDescriptor : GroupDescriptor) group world =
             let groupState = World.getGroupState group world
             let groupDispatcherName = getTypeName groupState.Dispatcher
             let groupDescriptor = { groupDescriptor with GroupDispatcherName = groupDispatcherName }
-            let getGroupProperties = Reflection.writePropertiesFromTarget tautology3 groupDescriptor.GroupProperties groupState
+            let getGroupProperties = Reflection.writePropertiesFromTarget (fun name _ _ -> name <> "Order") groupDescriptor.GroupProperties groupState
             let groupDescriptor = { groupDescriptor with GroupProperties = getGroupProperties }
             let entities = World.getEntitiesSovereign group world
-            { groupDescriptor with EntityDescriptors = World.writeEntities writePropagationHistory entities world }
+            { groupDescriptor with EntityDescriptors = World.writeEntities false true entities world }
 
         /// Write multiple groups to a screen descriptor.
-        static member writeGroups writePropagationHistory groups world =
+        static member writeGroups groups world =
             groups |>
             Seq.sortBy (fun (group : Group) -> group.GetOrder world) |>
             Seq.filter (fun (group : Group) -> group.GetPersistent world && not (group.GetProtected world)) |>
-            Seq.fold (fun groupDescriptors group -> World.writeGroup writePropagationHistory GroupDescriptor.empty group world :: groupDescriptors) [] |>
+            Seq.fold (fun groupDescriptors group -> World.writeGroup GroupDescriptor.empty group world :: groupDescriptors) [] |>
             Seq.rev |>
             Seq.toList
 
         /// Write a group to a file.
-        static member writeGroupToFile writePropagationHistory (filePath : string) group world =
+        static member writeGroupToFile (filePath : string) group world =
             let filePathTmp = filePath + ".tmp"
             let prettyPrinter = (SyntaxAttribute.defaultValue typeof<GameDescriptor>).PrettyPrinter
-            let groupDescriptor = World.writeGroup writePropagationHistory GroupDescriptor.empty group world
+            let groupDescriptor = World.writeGroup GroupDescriptor.empty group world
             let groupDescriptorStr = scstring groupDescriptor
             let groupDescriptorPretty = PrettyPrinter.prettyPrint groupDescriptorStr prettyPrinter
             File.WriteAllText (filePathTmp, groupDescriptorPretty)
@@ -312,7 +312,7 @@ module WorldGroupModule =
             let world = World.addGroup true groupState group world
 
             // read the group's entities
-            let world = World.readEntities groupDescriptor.EntityDescriptors group world |> snd
+            let world = World.readEntities false true groupDescriptor.EntityDescriptors group world |> snd
 
             // try to process ImNui group first time if in the middle of simulant update phase
             let world =

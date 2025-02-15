@@ -487,7 +487,6 @@ module WorldModule2 =
             let world = World.destroyGroupImmediate slideGroup world
 
             // create slide group
-            let eyeSize = World.getEye2dSize world
             let world = screen.SetSlideOpt (Some { IdlingTime = slideDescriptor.IdlingTime; Destination = destination }) world
             let world = World.createGroup<GroupDispatcher> (Some slideGroup.Name) screen world |> snd
             let world = World.setGroupProtected true slideGroup world |> snd'
@@ -497,6 +496,7 @@ module WorldModule2 =
             let world = World.createEntity<StaticSpriteDispatcher> DefaultOverlay (Some slideSprite.Surnames) slideGroup world |> snd
             let world = World.setEntityProtected true slideSprite world |> snd'
             let world = slideSprite.SetPersistent false world
+            let eyeSize = world.Eye2dSize
             let world = slideSprite.SetSize eyeSize.V3 world
             let world =
                 if not Constants.Engine.Entity2dPerimeterCenteredDefault
@@ -555,16 +555,16 @@ module WorldModule2 =
 
             // consider using current entity as propagation source at this level
             let propagatedDescriptor =
-                let propagatedDescriptor = { propagatedDescriptor with EntityProperties = Map.remove Constants.Engine.PropagatedDescriptorOptPropertyName propagatedDescriptor.EntityProperties }
+                let propagatedDescriptor = { propagatedDescriptor with EntityProperties = Map.remove "PropagatedDescriptorOpt" propagatedDescriptor.EntityProperties }
                 let considerUsingCurrentEntityAsPropagationSource =
-                    match currentDescriptor.EntityProperties.TryGetValue Constants.Engine.PropagationSourceOptPropertyName with
+                    match currentDescriptor.EntityProperties.TryGetValue "PropagationSourceOpt" with
                     | (true, propagationSourceOptSymbol) -> propagationSourceOptSymbol |> symbolToValue<string option> |> Option.isNone
                     | (false, _) -> true
                 if considerUsingCurrentEntityAsPropagationSource then
                     match currentEntityOpt with
                     | Some currentEntity ->
                         if currentEntity.GetExists world && currentEntity.HasPropagationTargets world
-                        then { propagatedDescriptor with EntityProperties = Map.add Constants.Engine.PropagationSourceOptPropertyName (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
+                        then { propagatedDescriptor with EntityProperties = Map.add "PropagationSourceOpt" (valueToSymbol (Some currentEntity)) propagatedDescriptor.EntityProperties }
                         else propagatedDescriptor
                     | None -> propagatedDescriptor
                 else propagatedDescriptor
@@ -733,19 +733,18 @@ module WorldModule2 =
                         linkLastOpt <> Some Current // propagation target is not self
                     if not valid then Log.warn ("Invalid propagation target '" + scstring target + "' from source '" + scstring entity + "'.")
                     valid)
-                    targets
-            let currentDescriptor = World.writeEntity true EntityDescriptor.empty entity world
+                    targets |>
+                Array.ofSeq // copy references to avoid enumerator invalidation
+            let currentDescriptor = World.writeEntity true true EntityDescriptor.empty entity world
             let previousDescriptor = Option.defaultValue EntityDescriptor.empty (entity.GetPropagatedDescriptorOpt world)
             let world =
-                Seq.fold (fun world target ->
+                Array.fold (fun world target ->
                     if World.getEntityExists target world then
-                        let targetDescriptor = World.writeEntity false EntityDescriptor.empty target world
+                        let targetDescriptor = World.writeEntity true false EntityDescriptor.empty target world
                         let propagatedDescriptor = World.propagateEntityDescriptor previousDescriptor currentDescriptor targetDescriptor (Some entity) world
-                        let order = target.GetOrder world
                         let world = World.destroyEntityImmediate target world
-                        let world = World.readEntity propagatedDescriptor (Some target.Name) target.Parent world |> snd
+                        let world = World.readEntity true false propagatedDescriptor (Some target.Name) target.Parent world |> snd
                         let world = World.propagateEntityAffineMatrix target world
-                        let world = target.SetOrder order world
                         world
                     else world)
                     world targetsValid
@@ -772,7 +771,7 @@ module WorldModule2 =
                         for ancestor in World.getEntityAncestors target world do
                             if ancestor.GetExists world && ancestor.HasPropagationTargets world then
                                 ancestor } |>
-            Set.ofSeq |>
+            Set.ofSeq |> // also copies references to avoid enumerator invalidation
             Set.fold (fun world ancestor ->
                 if ancestor.GetExists world && ancestor.HasPropagationTargets world
                 then World.propagateEntityStructure ancestor world
@@ -1384,12 +1383,9 @@ module WorldModule2 =
             Octree.getElementsInViewBox box set octree
 
         static member private getElements3dInView set world =
-            let interior = World.getEye3dFrustumInterior world
-            let exterior = World.getEye3dFrustumExterior world
-            let imposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
-            Octree.getElementsInView interior exterior imposter lightBox set octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
 
         /// Get all 3d entities in the given bounds, including all uncullable entities.
         static member getEntities3dInBounds bounds set world =
@@ -1412,12 +1408,9 @@ module WorldModule2 =
 
         /// Get all 3d entities in the current 3d view, including all uncullable entities.
         static member getEntities3dInView set world =
-            let interior = World.getEye3dFrustumInterior world
-            let exterior = World.getEye3dFrustumExterior world
-            let imposter = World.getEye3dFrustumImposter world
             let lightBox = World.getLight3dBox world
             let octree = World.getOctree world
-            Octree.getElementsInView interior exterior imposter lightBox set octree
+            Octree.getElementsInView world.Eye3dFrustumInterior world.Eye3dFrustumExterior world.Eye3dFrustumImposter lightBox set octree
             Seq.map (fun (element : Entity Octelement) -> element.Entry) set
 
         /// Get all 3d light probe entities in the current 3d light box, including all uncullable light probes.
@@ -1736,8 +1729,8 @@ module WorldModule2 =
 
         static member private renderScreenTransition renderPass (screen : Screen) world =
             match screen.GetTransitionState world with
-            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetIncoming world) world
-            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime (World.getEye2dSize world) renderPass (screen.GetOutgoing world) world
+            | IncomingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetIncoming world) world
+            | OutgoingState transitionTime -> World.renderScreenTransition5 transitionTime world.Eye2dSize renderPass (screen.GetOutgoing world) world
             | IdlingState _ -> ()
 
         static member private renderSimulantsInternal renderPass (world : World) =
@@ -1839,9 +1832,9 @@ module WorldModule2 =
                     else world
 
                 // create shadow pass descriptors
+                let eyeCenter = World.getEye3dCenter world
                 let lightBox = World.getLight3dBox world
                 let lights = World.getLights3dInBox lightBox HashSet3dShadowCached world // NOTE: this may not be the optimal way to query.
-                let eyeCenter = World.getEye3dCenter world
                 let shadowPassDescriptorsSortable =
                     [|for light in lights do
                         if light.GetDesireShadows world then
@@ -1873,9 +1866,9 @@ module WorldModule2 =
                             let shadowFrustum =
                                 Frustum (shadowView * shadowProjection)
                             let shadowInView =
-                                let frustumInterior = World.getEye3dFrustumInterior world
-                                let frustumExterior = World.getEye3dFrustumExterior world
-                                let frustumImposter = World.getEye3dFrustumImposter world
+                                let frustumInterior = world.Eye3dFrustumInterior
+                                let frustumExterior = world.Eye3dFrustumExterior
+                                let frustumImposter = world.Eye3dFrustumImposter
                                 match light.GetPresence world with
                                 | Interior -> frustumInterior.Intersects shadowFrustum
                                 | Exterior -> frustumExterior.Intersects shadowFrustum || frustumInterior.Intersects shadowFrustum
@@ -2133,19 +2126,19 @@ module WorldModule2 =
 
                                                                 // process rendering (2/2)
                                                                 rendererProcess.SubmitMessages
-                                                                    (World.getEye3dFrustumInterior world)
-                                                                    (World.getEye3dFrustumExterior world)
-                                                                    (World.getEye3dFrustumImposter world)
+                                                                    world.Eye3dFrustumInterior
+                                                                    world.Eye3dFrustumExterior
+                                                                    world.Eye3dFrustumImposter
                                                                     (World.getLight3dBox world)
-                                                                    (World.getEye3dCenter world)
-                                                                    (World.getEye3dRotation world)
-                                                                    (World.getEye3dFieldOfView world)
-                                                                    (World.getEye2dCenter world)
-                                                                    (World.getEye2dSize world)
+                                                                    world.Eye3dCenter
+                                                                    world.Eye3dRotation
+                                                                    world.Eye3dFieldOfView
+                                                                    world.Eye2dCenter
+                                                                    world.Eye2dSize
                                                                     (World.getWindowSize world)
-                                                                    (World.getGeometryViewport world)
-                                                                    (World.getRasterViewport world)
-                                                                    (World.getOuterViewport world)
+                                                                    world.GeometryViewport
+                                                                    world.RasterViewport
+                                                                    world.OuterViewport
                                                                     drawData
 
                                                                 // post-process imgui frame
@@ -2530,7 +2523,7 @@ module EntityPropertyDescriptor =
         let propertyName = propertyDescriptor.PropertyName
         if  propertyName = Constants.Engine.OverlayNameOptPropertyName ||
             propertyName = Constants.Engine.FacetNamesPropertyName ||
-            propertyName = Constants.Engine.PropagatedDescriptorOptPropertyName ||
+            propertyName = "PropagatedDescriptorOpt" ||
             propertyName = "Rotation" ||
             propertyName = "RotationLocal" ||
             propertyName = "Angles" ||

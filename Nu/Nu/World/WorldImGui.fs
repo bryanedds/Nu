@@ -24,13 +24,11 @@ module WorldImGui =
             rendererProcess.TryGetImGuiTextureId assetTag
 
         /// Render circles via ImGui in the current eye 2d space, computing color as specified.
-        static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) world =
+        static member imGuiCircles2dPlus absolute (positions : Vector2 seq) radius filled (computeColor : Vector2 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let eyeSize = World.getEye2dSize world
-            let eyeCenter = World.getEye2dCenter world
             for position in positions do
                 let color = computeColor position
-                let positionWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.RasterViewport, position)
+                let positionWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, position)
                 if filled
                 then drawList.AddCircleFilled (positionWindow, radius, color.Abgr)
                 else drawList.AddCircle (positionWindow, radius, color.Abgr)
@@ -44,14 +42,12 @@ module WorldImGui =
             World.imGuiCircles2d absolute (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 2d space, computing color as specified.
-        static member imGuiSegments2dPlus absolute (segments : struct (Vector2 * Vector2) seq) thickness (computeColor : struct (Vector2 * Vector2) -> Color) world =
+        static member imGuiSegments2dPlus absolute (segments : struct (Vector2 * Vector2) seq) thickness (computeColor : struct (Vector2 * Vector2) -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
-            let eyeSize = World.getEye2dSize world
-            let eyeCenter = World.getEye2dCenter world
             for struct (start, stop) in segments do
                 let color = computeColor struct (start, stop)
-                let startWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.RasterViewport, start)
-                let stopWindow = ImGui.Position2dToWindow (absolute, eyeSize, eyeCenter, world.RasterViewport, stop)
+                let startWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, start)
+                let stopWindow = ImGui.Position2dToWindow (absolute, world.Eye2dCenter, world.Eye2dSize, world.RasterViewport, stop)
                 drawList.AddLine (startWindow, stopWindow, color.Abgr, thickness)
 
         /// Render segments via ImGui in the current eye 2d space.
@@ -63,19 +59,15 @@ module WorldImGui =
             World.imGuiSegments2d absolute (SArray.singleton segment) thickness color world
 
         /// Render circles via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiCircles3dPlus (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) world =
+        static member imGuiCircles3dPlus (positions : Vector3 seq) radius filled (computeColor : Vector3 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
-            let eyeCenter = World.getEye3dCenter world
-            let eyeRotation = World.getEye3dRotation world
-            let eyeFieldOfView = World.getEye3dFieldOfView world
-            let eyeFrustum = World.getEye3dFrustumView world
-            let view = Viewport.getView3d eyeCenter eyeRotation
-            let projection = Viewport.getProjection3d eyeFieldOfView world.RasterViewport
+            let view = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             for position in positions do
-                if eyeFrustum.Contains position = ContainmentType.Contains then
+                if world.Eye3dFrustumView.Contains position = ContainmentType.Contains then
                     let color = computeColor position
                     let positionWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, position)
                     if filled
@@ -91,19 +83,15 @@ module WorldImGui =
             World.imGuiCircles3d (SArray.singleton position) radius filled color world
 
         /// Render segments via ImGui in the current eye 3d space, computing color as specified.
-        static member imGuiSegments3dPlus (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) world =
+        static member imGuiSegments3dPlus (segments : Segment3 seq) thickness (computeColor : Segment3 -> Color) (world : World) =
             let drawList = ImGui.GetBackgroundDrawList ()
             let windowPosition = ImGui.GetWindowPos ()
             let windowSize = ImGui.GetWindowSize ()
-            let eyeCenter = World.getEye3dCenter world
-            let eyeRotation = World.getEye3dRotation world
-            let eyeFieldOfView = World.getEye3dFieldOfView world
-            let eyeFrustum = World.getEye3dFrustumView world
-            let view = Viewport.getView3d eyeCenter eyeRotation
-            let projection = Viewport.getProjection3d eyeFieldOfView world.RasterViewport
+            let view = Viewport.getView3d world.Eye3dCenter world.Eye3dRotation
+            let projection = Viewport.getProjection3d world.Eye3dFieldOfView world.RasterViewport
             let viewProjection = view * projection
             for segment in segments do
-                match Math.TryUnionSegmentAndFrustum segment.A segment.B eyeFrustum with
+                match Math.TryUnionSegmentAndFrustum (segment.A, segment.B, world.Eye3dFrustumView) with
                 | Some (start, stop) ->
                     let color = computeColor segment
                     let startWindow = ImGui.Position3dToWindow (windowPosition, windowSize, viewProjection, start)
@@ -245,7 +233,6 @@ module WorldImGui =
         /// Edit a value via ImGui.
         /// TODO: split up this function.
         static member imGuiEditProperty (name : string) (ty : Type) (value : obj) (context : EditContext) world =
-            let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)
             match value with
             | :? bool as b -> let mutable b = b in (ImGui.Checkbox (name, &b), b :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
             | :? int8 as i -> let mutable i = int32 i in (ImGui.DragInt (name, &i), int8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
@@ -512,8 +499,8 @@ module WorldImGui =
                 let mutable ssrLightBrightness = lighting3dConfig.SsrLightBrightness
                 lighting3dChanged <- ImGui.SliderFloat ("Light Cutoff Margin", &lightCutoffMargin, 0.0f, 1.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderInt ("Light Shadow Samples", &lightShadowSamples, 0, 5) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Bias", &lightShadowBias, 0.0f, 0.02f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
-                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.02f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Bias", &lightShadowBias, 0.0f, 0.05f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
+                lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Sample Scalar", &lightShadowSampleScalar, 0.0f, 0.05f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Exponent", &lightShadowExponent, 0.0f, 90.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Light Shadow Density", &lightShadowDensity, 0.0f, 32.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
                 lighting3dChanged <- ImGui.SliderFloat ("Ssao Intensity", &ssaoIntensity, 0.0f, 10.0f) || lighting3dChanged; if ImGui.IsItemFocused () then context.FocusProperty ()
@@ -668,6 +655,7 @@ module WorldImGui =
                 ImGui.PopID ()
                 (changed, animations)
             | _ ->
+                let value = objToObj ty value
                 let mutable combo = false
                 let (changed, value) =
                     if FSharpType.IsUnion ty then
@@ -865,6 +853,7 @@ module WorldImGui =
                             ImGui.Text name
                             (changed, value)
                     elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
+                        let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
                         let mutable valueStr = converter.ConvertToString value
                         let (changed, value) =
                             if ImGui.InputText ("##text" + name, &valueStr, 4096u) then
@@ -900,11 +889,12 @@ module WorldImGui =
                         ImGui.Text name
                         (changed, value)
                     else
+                        let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
+                        let valueStr = converter.ConvertToString value
+                        let prettyPrinter = (SyntaxAttribute.defaultValue ty).PrettyPrinter
+                        let mutable valueStrPretty = PrettyPrinter.prettyPrint valueStr prettyPrinter
+                        let lines = valueStrPretty |> Seq.filter ((=) '\n') |> Seq.length |> inc
                         let (changed, value) =
-                            let valueStr = converter.ConvertToString value
-                            let prettyPrinter = (SyntaxAttribute.defaultValue ty).PrettyPrinter
-                            let mutable valueStrPretty = PrettyPrinter.prettyPrint valueStr prettyPrinter
-                            let lines = valueStrPretty |> Seq.filter ((=) '\n') |> Seq.length |> inc
                             if lines = 1 then
                                 let mutable valueStr = valueStr
                                 if ImGui.InputText (name, &valueStr, 131072u) then

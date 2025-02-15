@@ -89,12 +89,7 @@ type Nu () =
             Vsync.Init Constants.Engine.RunSynchronously
 
             // init OpenGL assert mechanism
-            OpenGL.Hl.InitAssert
-#if DEBUG
-                Constants.OpenGL.HlAssert
-#else
-                false
-#endif
+            OpenGL.Hl.InitAssert Constants.OpenGL.HlDebug
 
             // mark init flag
             Initialized <- true
@@ -285,7 +280,7 @@ module WorldModule3 =
             let simulants = UMap.singleton HashIdentity.Structural config (Game :> Simulant) None
             let worldExtension =
                 { ContextImNui = Address.empty
-                  RecentImNui = Address.empty
+                  DeclaredImNui = Address.empty
                   SimulantImNuis = SUMap.makeEmpty HashIdentity.Structural config
                   SubscriptionImNuis = SUMap.makeEmpty HashIdentity.Structural config
                   DestructionListRev = []
