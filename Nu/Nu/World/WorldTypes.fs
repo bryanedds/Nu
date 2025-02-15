@@ -37,7 +37,6 @@ module internal WorldTypes =
     let mutable internal handleSubscribeAndUnsubscribeEvent : bool -> Address -> Simulant -> obj -> obj = Unchecked.defaultof<_>
 
     // Simulant F# reach-arounds.
-    let mutable internal createDefaultGroup : obj -> obj -> obj * obj = Unchecked.defaultof<_>
     let mutable internal getEntityIs2d : obj -> obj -> bool = Unchecked.defaultof<_>
 
 /// The type of a subscription callback.
@@ -548,12 +547,6 @@ and ScreenDispatcher () =
     /// Attempt to untruncate a screen model.
     abstract TryUntruncateModel<'a> : 'a * Screen * World -> 'a option
     default this.TryUntruncateModel (_, _, _) = None
-
-    /// Create the default group in the context of this screen dispatcher.
-    abstract CreateDefaultGroup : Screen * World -> Group * World
-    default this.CreateDefaultGroup (screen, world) =
-        let (groupObj, worldObj) = WorldTypes.createDefaultGroup screen world
-        (groupObj :?> Group, worldObj :?> World)
 
 /// The default dispatcher for groups.
 and GroupDispatcher () =

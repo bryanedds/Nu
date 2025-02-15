@@ -513,6 +513,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             else world
         setPropertyValueWithoutUndo value propertyDescriptor simulant world
 
+    let private createGuiGroup screen world =
+        World.createGroup (Some "Gui") screen world
+
     let private selectScreen show screen =
         if screen <> SelectedScreen then
             if show then
@@ -534,7 +537,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let (group, world) =
             match Seq.tryHead groups with
             | Some group -> (group, world)
-            | None -> (SelectedScreen.GetDispatcher world).CreateDefaultGroup (SelectedScreen, world)
+            | None -> createGuiGroup screen world
         selectGroup false group
         world
 
@@ -769,7 +772,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 if SelectedGroup :> Simulant = simulant then
                     let groups = World.getGroups SelectedScreen world
                     if Seq.isEmpty groups then
-                        let (group, world) = (SelectedScreen.GetDispatcher world).CreateDefaultGroup (SelectedScreen, world) // create default group if no group remains
+                        let (group, world) = createGuiGroup SelectedScreen world // create gui group if no group remains
                         SelectedGroup <- group
                         world
                     else
