@@ -664,6 +664,7 @@ module WorldImGui =
                 let (changed, value) =
                     let value' = objToObj ty value
                     let changed = refNeq value' value
+                    let value = value'
                     let (changed2, value) =
                         if FSharpType.IsUnion ty then
                             let cases = FSharpType.GetUnionCases ty
