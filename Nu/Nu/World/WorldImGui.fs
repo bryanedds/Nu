@@ -108,7 +108,8 @@ module WorldImGui =
             World.imGuiSegments3d (SArray.singleton segment) thickness color world
 
         /// Edit an array value via ImGui.
-        static member imGuiEditPropertyArray<'a> (editItem : string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) context =
+        static member imGuiEditPropertyArray<'a> (editItem : string -> 'a -> bool * bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a array) context =
+            let mutable promoted = false
             let mutable edited = false
             let items =
                 if ImGui.SmallButton "+" then
@@ -125,7 +126,8 @@ module WorldImGui =
                     let itemOpt =
                         if not (ImGui.SmallButton "x") then
                             ImGui.SameLine ()
-                            try let (edited2, item) = editItem itemName item
+                            try let (promoted2, edited2, item) = editItem itemName item
+                                if promoted2 then promoted <- true
                                 if edited2 then edited <- true
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
                                 Some item
@@ -137,10 +139,11 @@ module WorldImGui =
                     itemOpt|]
             let items = Array.definitize itemOpts
             ImGui.Unindent ()
-            (edited, items)
+            (promoted, edited, items)
 
         /// Edit a list value via ImGui.
-        static member imGuiEditPropertyList<'a> (editItem : string -> 'a -> bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) context =
+        static member imGuiEditPropertyList<'a> (editItem : string -> 'a -> bool * bool * 'a) (defaultItemValue : 'a) itemsName (items : 'a list) context =
+            let mutable promoted = false
             let mutable edited = false
             let items =
                 if ImGui.SmallButton "+" then
@@ -157,7 +160,8 @@ module WorldImGui =
                     let itemOpt =
                         if not (ImGui.SmallButton "x") then
                             ImGui.SameLine ()
-                            try let (edited2, item) = editItem itemName item
+                            try let (promoted2, edited2, item) = editItem itemName item
+                                if promoted2 then promoted <- true
                                 if edited2 then edited <- true
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
                                 Some item
@@ -221,6 +225,9 @@ module WorldImGui =
 
         /// Select a case name from an F# union via ImGui.
         static member imGuiSelectCase name ty value context =
+            let (promoted, value) =
+                let value' = objToObj ty value
+                (refNeq value' value, value')
             let cases = FSharpType.GetUnionCases ty
             let tag = getCaseTag value
             let case = cases.[tag]
@@ -235,7 +242,7 @@ module WorldImGui =
                             caseName <- caseName'
                 ImGui.EndCombo ()
             if ImGui.IsItemFocused () then context.FocusProperty ()
-            (caseNameEdited, caseName)
+            (promoted, caseNameEdited, caseName)
 
         /// Edit a value via ImGui, also automatically promoting user-defined types for code-reloading.
         /// TODO: split up this function.
@@ -422,7 +429,7 @@ module WorldImGui =
             | :? Material as material ->
                 World.imGuiEditPropertyRecord false name (typeof<Material>) material context world
             | :? FlowLimit as limit ->
-                let (caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
+                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty limit context
                 let limit =
                     if caseNameEdited then
                         match caseName with
@@ -435,10 +442,10 @@ module WorldImGui =
                 | FlowParent -> (false, caseNameEdited, limit)
                 | FlowUnlimited -> (false, caseNameEdited, limit)
                 | FlowTo limit ->
-                    let (_, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
-                    (false, caseNameEdited || edited, FlowTo (limit :?> single))
+                    let (promoted2, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
+                    (promoted || promoted2, caseNameEdited || edited, FlowTo (limit :?> single))
             | :? Layout as layout ->
-                let (caseNameEdited, caseName) = World.imGuiSelectCase name ty layout context
+                let (promoted, caseNameEdited, caseName) = World.imGuiSelectCase name ty layout context
                 let layout =
                     if caseNameEdited then
                         match caseName with
@@ -450,7 +457,7 @@ module WorldImGui =
                     else layout
                 ImGui.Indent ()
                 let (edited, layout) =
-                    match layout with
+                    match layout with // NOTE: we explicitly ignore any promotions that would take place here because we should be safe to presume there are none.
                     | Flow (direction, limit) ->
                         let (_, edited, direction) = World.imGuiEditProperty "FlowDirection" (getType direction) direction context world
                         if direction = FlowLeftward || direction = FlowUpward then ImGui.SameLine (); ImGui.Text "(not implemented)" // TODO: P1: remove this line when implemented.
@@ -470,7 +477,7 @@ module WorldImGui =
                         (caseNameEdited || edited || edited2 || edited3, Grid (dims :?> Vector2i, flowDirectionOpt :?> FlowDirection option, resizeChildren :?> bool))
                     | Manual -> (caseNameEdited, layout)
                 ImGui.Unindent ()
-                (false, edited, layout)
+                (promoted, edited, layout)
             | :? Lighting3dConfig as lighting3dConfig ->
                 let mutable lighting3dEdited = false
                 let mutable lightCutoffMargin = lighting3dConfig.LightCutoffMargin
@@ -639,28 +646,28 @@ module WorldImGui =
                 ImGui.Text name
                 ImGui.SameLine ()
                 ImGui.PushID name
-                let (edited, animations) =
+                let (promoted, edited, animations) =
                     World.imGuiEditPropertyArray
                         (fun name animation ->
-                            let (_, edited, animation) = World.imGuiEditProperty name (typeof<SpineAnimation>) animation context world
-                            (edited, animation :?> SpineAnimation))
+                            let (promoted, edited, animation) = World.imGuiEditProperty name (typeof<SpineAnimation>) animation context world
+                            (promoted, edited, animation :?> SpineAnimation))
                         { SpineAnimationName = ""; SpineAnimationPlayback = Loop }
                         name animations context
                 ImGui.PopID ()
-                (false, edited, animations)
+                (promoted, edited, animations)
             | :? (Animation array) as animations ->
                 ImGui.Text name
                 ImGui.SameLine ()
                 ImGui.PushID name
-                let (edited, animations) =
+                let (promoted, edited, animations) =
                     World.imGuiEditPropertyArray
                         (fun name animation ->
-                            let (_, edited, animation) = World.imGuiEditProperty name (typeof<Animation>) animation context world
-                            (edited, animation :?> Animation))
+                            let (promoted, edited, animation) = World.imGuiEditProperty name (typeof<Animation>) animation context world
+                            (promoted, edited, animation :?> Animation))
                         { StartTime = GameTime.zero; LifeTimeOpt = None; Name = ""; Playback = Loop; Rate = 1.0f; Weight = 1.0f; BoneFilterOpt = None }
                         name animations context
                 ImGui.PopID ()
-                (false, edited, animations)
+                (promoted, edited, animations)
             | _ ->
                 let mutable combo = false
                 let (promoted, value) =
@@ -866,10 +873,8 @@ module WorldImGui =
                         let mutable valueStr = converter.ConvertToString value
                         let (edited2, value) =
                             if ImGui.InputText ("##text" + name, &valueStr, 4096u) then
-                                try let value = converter.ConvertFromString valueStr
-                                    (true, value)
-                                with _ ->
-                                    (false, value)
+                                try (true, converter.ConvertFromString valueStr)
+                                with _ -> (false, value)
                             else (false, value)
                         if ImGui.IsItemFocused () then context.FocusProperty ()
                         let (edited3, value) =
@@ -882,8 +887,7 @@ module WorldImGui =
                                                 let valueStrUnescaped = String.unescape valueStrEscaped
                                                 let value = converter.ConvertFromString valueStrUnescaped
                                                 (true, value)
-                                            with _ ->
-                                                (false, value)
+                                            with _ -> (false, value)
                                         | None -> (false, value)
                                     else (false, value)
                                 ImGui.EndDragDropTarget ()
