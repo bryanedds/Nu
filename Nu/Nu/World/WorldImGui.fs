@@ -247,24 +247,27 @@ module WorldImGui =
         /// Edit a value via ImGui, also automatically promoting user-defined types for code-reloading.
         /// TODO: split up this function.
         static member imGuiEditProperty (name : string) (ty : Type) (value : obj) (context : EditContext) world : bool * bool * obj =
+            let (promoted, value) =
+                let value' = objToObj ty value
+                (refNeq value' value, value')
             match value with
-            | :? bool as b -> let mutable b = b in (false, ImGui.Checkbox (name, &b), b :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? int8 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), int8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? uint8 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), uint8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? int16 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), int16 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? uint16 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), uint16 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? int32 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), int32 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? uint32 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), uint32 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? int64 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), int64 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? uint64 as i -> let mutable i = int32 i in (false, ImGui.DragInt (name, &i), uint64 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? single as f -> let mutable f = single f in (false, ImGui.DragFloat (name, &f, context.SnapDrag), single f :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? double as f -> let mutable f = single f in (false, ImGui.DragFloat (name, &f, context.SnapDrag), double f :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? Vector2 as v -> let mutable v = v in (false, ImGui.DragFloat2 (name, &v, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? Vector3 as v -> let mutable v = v in (false, ImGui.DragFloat3 (name, &v, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? Vector4 as v -> let mutable v = v in (false, ImGui.DragFloat4 (name, &v, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? Vector2i as v -> let mutable v = v in (false, ImGui.DragInt2 (name, &v.X, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? Vector3i as v -> let mutable v = v in (false, ImGui.DragInt3 (name, &v.X, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
-            | :? Vector4i as v -> let mutable v = v in (false, ImGui.DragInt4 (name, &v.X, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? bool as b -> let mutable b = b in (promoted, ImGui.Checkbox (name, &b), b :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? int8 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), int8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? uint8 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), uint8 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? int16 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), int16 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? uint16 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), uint16 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? int32 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), int32 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? uint32 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), uint32 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? int64 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), int64 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? uint64 as i -> let mutable i = int32 i in (promoted, ImGui.DragInt (name, &i), uint64 i :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? single as f -> let mutable f = single f in (promoted, ImGui.DragFloat (name, &f, context.SnapDrag), single f :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? double as f -> let mutable f = single f in (promoted, ImGui.DragFloat (name, &f, context.SnapDrag), double f :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? Vector2 as v -> let mutable v = v in (promoted, ImGui.DragFloat2 (name, &v, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? Vector3 as v -> let mutable v = v in (promoted, ImGui.DragFloat3 (name, &v, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? Vector4 as v -> let mutable v = v in (promoted, ImGui.DragFloat4 (name, &v, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? Vector2i as v -> let mutable v = v in (promoted, ImGui.DragInt2 (name, &v.X, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? Vector3i as v -> let mutable v = v in (promoted, ImGui.DragInt3 (name, &v.X, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
+            | :? Vector4i as v -> let mutable v = v in (promoted, ImGui.DragInt4 (name, &v.X, context.SnapDrag), v :> obj) |> fun result -> (if ImGui.IsItemFocused () then context.FocusProperty ()); result
             | :? Box2 as b ->
                 ImGui.Text name
                 ImGui.PushID name
@@ -277,7 +280,7 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
                 ImGui.PopID ()
-                (false, minEdited || sizeEdited, box2 min size :> obj)
+                (promoted, minEdited || sizeEdited, box2 min size :> obj)
             | :? Box3 as b ->
                 ImGui.Text name
                 ImGui.PushID name
@@ -290,7 +293,7 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
                 ImGui.PopID ()
-                (false, minEdited || sizeEdited, box3 min size :> obj)
+                (promoted, minEdited || sizeEdited, box3 min size :> obj)
             | :? Box2i as b ->
                 ImGui.Text name
                 ImGui.PushID name
@@ -303,7 +306,7 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
                 ImGui.PopID ()
-                (false, minEdited || sizeEdited, box2i min size :> obj)
+                (promoted, minEdited || sizeEdited, box2i min size :> obj)
             | :? Box3i as b ->
                 ImGui.Text name
                 ImGui.PushID name
@@ -316,18 +319,18 @@ module WorldImGui =
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 ImGui.Unindent ()
                 ImGui.PopID ()
-                (false, minEdited || sizeEdited, box3i min size :> obj)
+                (promoted, minEdited || sizeEdited, box3i min size :> obj)
             | :? Quaternion as q ->
                 let mutable v = v4 q.X q.Y q.Z q.W
-                let result = (false, ImGui.DragFloat4 (name, &v, context.SnapDrag), quat v.X v.Y v.Z v.W :> obj)
+                let result = (promoted, ImGui.DragFloat4 (name, &v, context.SnapDrag), quat v.X v.Y v.Z v.W :> obj)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 result
             | :? Frustum as frustum ->
                 let mutable frustumStr = string frustum
-                (false, ImGui.InputText (name, &frustumStr, 4096u, ImGuiInputTextFlags.ReadOnly), frustum :> obj)
+                (promoted, ImGui.InputText (name, &frustumStr, 4096u, ImGuiInputTextFlags.ReadOnly), frustum :> obj)
             | :? Color as c ->
                 let mutable v = v4 c.R c.G c.B c.A
-                let result = (false, ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
+                let result = (promoted, ImGui.ColorEdit4 (name, &v), color v.X v.Y v.Z v.W :> obj)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 result
             | :? Transition as transition ->
@@ -339,7 +342,7 @@ module WorldImGui =
                 let (edited, style) =
                     if ImGui.Combo (name, &index, [|nameof Deferred; nameof Forward|], 2)
                     then (true, match index with 0 -> Deferred | 1 -> Forward (0.0f, 0.0f) | _ -> failwithumf ())
-                    else (false, style)
+                    else (promoted, style)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 let (edited, style) =
                     match index with
@@ -357,7 +360,7 @@ module WorldImGui =
                             ImGui.Unindent ()
                             (edited || subsortEdited || sortEdited, Forward (subsort, sort))
                     | _ -> failwithumf ()
-                (false, edited, style :> obj)
+                (promoted, edited, style :> obj)
             | :? LightType as light ->
                 let mutable index = match light with PointLight -> 0 | DirectionalLight -> 1 | SpotLight _ -> 2
                 let (edited, light) =
@@ -383,7 +386,7 @@ module WorldImGui =
                             ImGui.Unindent ()
                             (edited || innerConeEdited || outerConeEdited, SpotLight (innerCone, outerCone))
                     | _ -> failwithumf ()
-                (false, edited, light :> obj)
+                (promoted, edited, light :> obj)
             | :? Substance as substance ->
                 let mutable scalar = match substance with Mass m -> m | Density d -> d
                 let edited = ImGui.DragFloat ("##scalar via " + name, &scalar, context.SnapDrag)
@@ -393,8 +396,8 @@ module WorldImGui =
                 let result =
                     if ImGui.Combo (name, &index, [|nameof Mass; nameof Density|], 2) || edited then
                         let substance = match index with 0 -> Mass scalar | 1 -> Density scalar | _ -> failwithumf ()
-                        (false, true, substance :> obj)
-                    else (false, false, substance :> obj)
+                        (promoted, true, substance :> obj)
+                    else (promoted, false, substance :> obj)
                 if ImGui.IsItemFocused () then context.FocusProperty ()
                 result
             | :? Animation as animation ->
@@ -439,8 +442,8 @@ module WorldImGui =
                         | _ -> failwithumf ()
                     else limit
                 match limit with
-                | FlowParent -> (false, caseNameEdited, limit)
-                | FlowUnlimited -> (false, caseNameEdited, limit)
+                | FlowParent -> (promoted, caseNameEdited, limit)
+                | FlowUnlimited -> (promoted, caseNameEdited, limit)
                 | FlowTo limit ->
                     let (promoted2, edited, limit) = World.imGuiEditProperty "Limit" (getType limit) limit context world
                     (promoted || promoted2, caseNameEdited || edited, FlowTo (limit :?> single))
@@ -575,8 +578,8 @@ module WorldImGui =
                           SsrEdgeVerticalMargin = ssrEdgeVerticalMargin
                           SsrLightColor = Color ssrLightColor
                           SsrLightBrightness = ssrLightBrightness }
-                    (false, true, lighting3dConfig)
-                else (false, false, lighting3dConfig)
+                    (promoted, true, lighting3dConfig)
+                else (promoted, false, lighting3dConfig)
             | :? Nav3dConfig as nav3dConfig ->
                 let mutable nav3dConfigEdited = false
                 let mutable cellSize = nav3dConfig.CellSize
@@ -640,8 +643,8 @@ module WorldImGui =
                           FilterLedgeSpans = filterLedgeSpans
                           FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans
                           PartitionType = scvalue partitionTypeStr }
-                    (false, true, nav3dConfig)
-                else (false, false, nav3dConfig)
+                    (promoted, true, nav3dConfig)
+                else (promoted, false, nav3dConfig)
             | :? (SpineAnimation array) as animations -> // TODO: P1: implement bepoke individual SpineAnimation editing.
                 ImGui.Text name
                 ImGui.SameLine ()
@@ -670,9 +673,6 @@ module WorldImGui =
                 (promoted, edited, animations)
             | _ ->
                 let mutable combo = false
-                let (promoted, value) =
-                    let value' = objToObj ty value
-                    (refNeq value' value, value')
                 let (edited, value) =
                     if FSharpType.IsUnion ty then
                         let cases = FSharpType.GetUnionCases ty
