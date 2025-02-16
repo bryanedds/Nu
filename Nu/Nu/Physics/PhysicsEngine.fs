@@ -233,7 +233,7 @@ type [<NoEquality; NoComparison>] BodyUserObject =
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
-type [<Struct>] Substance =
+type Substance =
     | Mass of Mass : single
     | Density of Density : single
 
@@ -242,7 +242,7 @@ type [<Struct>] Substance =
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
      Constants.PrettyPrinter.SimpleThresholdMax)>]
-type [<Struct>] CollisionDetection =
+type CollisionDetection =
     | Discontinuous
     | Continuous
 
