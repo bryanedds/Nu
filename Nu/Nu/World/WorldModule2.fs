@@ -2464,9 +2464,9 @@ module EntityDispatcherModule2 =
 [<RequireQualifiedAccess>]
 module EntityPropertyDescriptor =
 
-    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (entity : Entity) world =
-        propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName && propertyDescriptor.PropertyType = typeof<string> ||
-        PropertyDescriptor.containsPropertyDescriptor<EntityState> propertyDescriptor entity world
+    let containsPropertyDescriptor propertyName (entity : Entity) world =
+        propertyName = Constants.Engine.NamePropertyName ||
+        PropertyDescriptor.containsPropertyDescriptor<EntityState> propertyName entity world
 
     let getPropertyDescriptors (entity : Entity) world =
         let nameDescriptor = { PropertyName = Constants.Engine.NamePropertyName; PropertyType = typeof<string> }
@@ -2741,8 +2741,8 @@ module GroupDispatcherModule =
 [<RequireQualifiedAccess>]
 module GroupPropertyDescriptor =
 
-    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (group : Group) world =
-        PropertyDescriptor.containsPropertyDescriptor<GroupState> propertyDescriptor group world
+    let containsPropertyDescriptor propertyName (group : Group) world =
+        PropertyDescriptor.containsPropertyDescriptor<GroupState> propertyName group world
 
     let getPropertyDescriptors (group : Group) world =
         PropertyDescriptor.getPropertyDescriptors<GroupState> (Some group) world
@@ -2953,8 +2953,8 @@ module ScreenDispatcherModule =
 [<RequireQualifiedAccess>]
 module ScreenPropertyDescriptor =
 
-    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (screen : Screen) world =
-        PropertyDescriptor.containsPropertyDescriptor<ScreenState> propertyDescriptor screen world
+    let containsPropertyDescriptor propertyName (screen : Screen) world =
+        PropertyDescriptor.containsPropertyDescriptor<ScreenState> propertyName screen world
 
     let getPropertyDescriptors (screen : Screen) world =
         PropertyDescriptor.getPropertyDescriptors<ScreenState> (Some screen) world
@@ -3158,8 +3158,8 @@ module GameDispatcherModule =
 [<RequireQualifiedAccess>]
 module GamePropertyDescriptor =
 
-    let containsPropertyDescriptor (propertyDescriptor : PropertyDescriptor) (game : Game) world =
-        PropertyDescriptor.containsPropertyDescriptor<GameState> propertyDescriptor game world
+    let containsPropertyDescriptor propertyName (game : Game) world =
+        PropertyDescriptor.containsPropertyDescriptor<GameState> propertyName game world
 
     let getPropertyDescriptors (game : Game) world =
         PropertyDescriptor.getPropertyDescriptors<GameState> (Some game) world

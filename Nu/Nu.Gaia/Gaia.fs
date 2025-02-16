@@ -2060,7 +2060,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                 | nameof Entity.Overflow -> "!12"
                                 | name -> name)
                         Array.fold (fun world propertyDescriptor ->
-                            if containsProperty propertyDescriptor simulant world then
+                            if containsProperty propertyDescriptor.PropertyName simulant world then
                                 if propertyDescriptor.PropertyName = Constants.Engine.NamePropertyName then // NOTE: name edit properties can't be replaced.
                                     match simulant with
                                     | :? Screen as screen ->

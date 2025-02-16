@@ -125,8 +125,8 @@ module WorldImGui =
                     let itemOpt =
                         if not (ImGui.SmallButton "x") then
                             ImGui.SameLine ()
-                            try let (changed', item) = editItem itemName item
-                                if changed' then changed <- true
+                            try let (changed2, item) = editItem itemName item
+                                if changed2 then changed <- true
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
                                 Some item
                             with _ -> Some item
@@ -157,8 +157,8 @@ module WorldImGui =
                     let itemOpt =
                         if not (ImGui.SmallButton "x") then
                             ImGui.SameLine ()
-                            try let (changed', item) = editItem itemName item
-                                if changed' then changed <- true
+                            try let (changed2, item) = editItem itemName item
+                                if changed2 then changed <- true
                                 if ImGui.IsItemFocused () then context.FocusProperty ()
                                 Some item
                             with _ -> Some item
@@ -172,19 +172,24 @@ module WorldImGui =
             (changed, items)
 
         /// Edit a record value via ImGui, optionally replacing the instructed fields.
+        /// This function can also automatically promote user-defined types for code-reloading.
         static member imGuiEditPropertyRecordPlus tryReplaceField headered (name : string) (ty : Type) (value : obj) context world =
             if headered then
                 ImGui.Text name
                 ImGui.Indent ()
             ImGui.PushID name
             let mutable changed = false
+            let value =
+                let value' = objToObj ty value
+                if refNeq value' value then changed <- true
+                value'
             let fields =
                 FSharpType.GetRecordFields (ty, true) |>
                 Array.zip (FSharpValue.GetRecordFields (value, true)) |>
                 Array.map (fun (field, fieldInfo : PropertyInfo) ->
                     match tryReplaceField fieldInfo field with
-                    | Some (changed', field) ->
-                        if changed' then changed <- true
+                    | Some (changed2, field) ->
+                        if changed2 then changed <- true
                         field
                     | None ->
                         let fieldName =
@@ -196,12 +201,12 @@ module WorldImGui =
                                     else String.capitalize fieldInfo.Name
                                 else fieldInfo.Name
                             else fieldInfo.Name
-                        let (changed', field) =
+                        let (changed2, field) =
                             if  fieldInfo.PropertyType.Name <> typedefof<_ AssetTag>.Name &&
                                 (FSharpType.IsRecord fieldInfo.PropertyType || FSharpType.isRecordAbstract fieldInfo.PropertyType) then
                                 World.imGuiEditPropertyRecord true fieldName fieldInfo.PropertyType field context world
                             else World.imGuiEditProperty fieldName fieldInfo.PropertyType field context world
-                        if changed' then changed <- true
+                        if changed2 then changed <- true
                         field)
             let value = FSharpValue.MakeRecord (ty, fields, true)
             if headered then ImGui.Unindent ()
@@ -230,7 +235,7 @@ module WorldImGui =
             if ImGui.IsItemFocused () then context.FocusProperty ()
             (caseNameChanged, caseName)
 
-        /// Edit a value via ImGui.
+        /// Edit a value via ImGui, also automatically promoting user-defined types for code-reloading.
         /// TODO: split up this function.
         static member imGuiEditProperty (name : string) (ty : Type) (value : obj) (context : EditContext) world =
             match value with
@@ -655,24 +660,27 @@ module WorldImGui =
                 ImGui.PopID ()
                 (changed, animations)
             | _ ->
-                let value = objToObj ty value
                 let mutable combo = false
                 let (changed, value) =
-                    if FSharpType.IsUnion ty then
-                        let cases = FSharpType.GetUnionCases ty
-                        if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
-                            combo <- true
-                            let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
-                            let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
-                            let mutable tag = unionCaseInfo.Tag
-                            let (changed, value) =
-                                if ImGui.Combo (name, &tag, caseNames, caseNames.Length) then
-                                    (true, FSharpValue.MakeUnion (cases.[tag], [||]))
-                                else (false, value)
-                            if ImGui.IsItemFocused () then context.FocusProperty ()
-                            (changed, value)
+                    let value' = objToObj ty value
+                    let changed = refNeq value' value
+                    let (changed2, value) =
+                        if FSharpType.IsUnion ty then
+                            let cases = FSharpType.GetUnionCases ty
+                            if Array.forall (fun (case : UnionCaseInfo) -> Array.isEmpty (case.GetFields ())) cases then
+                                combo <- true
+                                let caseNames = Array.map (fun (case : UnionCaseInfo) -> case.Name) cases
+                                let (unionCaseInfo, _) = FSharpValue.GetUnionFields (value, ty)
+                                let mutable tag = unionCaseInfo.Tag
+                                let (changed2, value) =
+                                    if ImGui.Combo (name, &tag, caseNames, caseNames.Length)
+                                    then (true, FSharpValue.MakeUnion (cases.[tag], [||]))
+                                    else (false, value)
+                                if ImGui.IsItemFocused () then context.FocusProperty ()
+                                (changed2, value)
+                            else (false, value)
                         else (false, value)
-                    else (false, value)
+                    (changed || changed2, value)
                 if not combo then
                     if  ty.IsGenericType &&
                         ty.GetGenericTypeDefinition () = typedefof<_ option> &&
@@ -706,7 +714,7 @@ module WorldImGui =
                          (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                          ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(null, [|value|]) :?> bool
-                        let (changed, value) =
+                        let (changed2, value) =
                             if ImGui.Checkbox ("##" + name, &isSome) then
                                 if isSome then
                                     if ty.GenericTypeArguments.[0].IsValueType then
@@ -754,14 +762,14 @@ module WorldImGui =
                         if isSome then
                             ImGui.SameLine ()
                             ImGui.PushID name
-                            let (changed2, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
+                            let (changed3, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
                             ImGui.PopID ()
                             let value = Activator.CreateInstance (ty, [|value'|])
-                            (changed || changed2, value)
+                            (changed || changed2 || changed3, value)
                         else
                             ImGui.SameLine ()
                             ImGui.Text name
-                            (changed, value)
+                            (changed || changed2, value)
                     elif ty.IsGenericType &&
                          ty.GetGenericTypeDefinition () = typedefof<_ voption> &&
                          (not ty.GenericTypeArguments.[0].IsGenericType || ty.GenericTypeArguments.[0].GetGenericTypeDefinition () <> typedefof<_ option>) &&
@@ -794,7 +802,7 @@ module WorldImGui =
                           (ty.GenericTypeArguments.[0].IsGenericType && ty.GenericTypeArguments.[0].GetGenericTypeDefinition () = typedefof<_ Relation>) ||
                           ty.GenericTypeArguments.[0] |> FSharpType.isNullTrueValue) then
                         let mutable isSome = ty.GetProperty("IsSome").GetValue(value, [||]) :?> bool
-                        let (changed, value) =
+                        let (changed2, value) =
                             if ImGui.Checkbox ("##" + name, &isSome) then
                                 let createValueOption value =
                                     ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value :> obj|])
@@ -844,18 +852,18 @@ module WorldImGui =
                         if isSome then
                             ImGui.SameLine ()
                             ImGui.PushID name
-                            let (changed2, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
+                            let (changed3, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
                             ImGui.PopID ()
                             let value = ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value'|])
-                            (changed || changed2, value)
+                            (changed || changed2 || changed3, value)
                         else
                             ImGui.SameLine ()
                             ImGui.Text name
-                            (changed, value)
+                            (changed || changed2, value)
                     elif ty.IsGenericType && ty.GetGenericTypeDefinition () = typedefof<_ AssetTag> then
                         let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
                         let mutable valueStr = converter.ConvertToString value
-                        let (changed, value) =
+                        let (changed2, value) =
                             if ImGui.InputText ("##text" + name, &valueStr, 4096u) then
                                 try let value = converter.ConvertFromString valueStr
                                     (true, value)
@@ -863,9 +871,9 @@ module WorldImGui =
                                     (false, value)
                             else (false, value)
                         if ImGui.IsItemFocused () then context.FocusProperty ()
-                        let (changed, value) =
+                        let (changed3, value) =
                             if ImGui.BeginDragDropTarget () then
-                                let (changed, value) =
+                                let (changed4, value) =
                                     if not (NativePtr.isNullPtr (ImGui.AcceptDragDropPayload "Asset").NativePtr) then
                                         match context.DragDropPayloadOpt with
                                         | Some payload ->
@@ -874,12 +882,12 @@ module WorldImGui =
                                                 let value = converter.ConvertFromString valueStrUnescaped
                                                 (true, value)
                                             with _ ->
-                                                (changed, value)
-                                        | None -> (changed, value)
-                                    else (changed, value)
+                                                (false, value)
+                                        | None -> (false, value)
+                                    else (false, value)
                                 ImGui.EndDragDropTarget ()
-                                (changed, value)
-                            else (changed, value)
+                                (changed4, value)
+                            else (false, value)
                         ImGui.SameLine ()
                         ImGui.PushID ("##pickAsset" + name)
                         if ImGui.Button ("V", v2Dup 19.0f) then context.SearchAssetViewer ()
@@ -887,14 +895,14 @@ module WorldImGui =
                         ImGui.PopID ()
                         ImGui.SameLine ()
                         ImGui.Text name
-                        (changed, value)
+                        (changed || changed2 || changed3, value)
                     else
                         let converter = SymbolicConverter (false, None, ty, context.ToSymbolMemo, context.OfSymbolMemo)                        
                         let valueStr = converter.ConvertToString value
                         let prettyPrinter = (SyntaxAttribute.defaultValue ty).PrettyPrinter
                         let mutable valueStrPretty = PrettyPrinter.prettyPrint valueStr prettyPrinter
                         let lines = valueStrPretty |> Seq.filter ((=) '\n') |> Seq.length |> inc
-                        let (changed, value) =
+                        let (changed2, value) =
                             if lines = 1 then
                                 let mutable valueStr = valueStr
                                 if ImGui.InputText (name, &valueStr, 131072u) then
@@ -908,5 +916,5 @@ module WorldImGui =
                                     with _ -> (false, value)
                                 else (false, value)
                         if ImGui.IsItemFocused () then context.FocusProperty ()
-                        (changed, value)
+                        (changed || changed2, value)
                 else (changed, value)

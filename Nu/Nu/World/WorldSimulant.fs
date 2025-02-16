@@ -291,16 +291,19 @@ module WorldSimulantModule =
                 World.deriveFromNames eventTargetNames
             else failwithumf ()
 
+        /// Get the property definitions of the given simulant.
+        static member getPropertyDefinitions simulant world =
+            let state = World.getState simulant world
+            Reflection.getReflectivePropertyDefinitions state
+
 [<RequireQualifiedAccess>]
 module PropertyDescriptor =
 
     /// Check that an entity contains the given property descriptor.
-    let containsPropertyDescriptor<'s when 's :> SimulantState> (propertyDescriptor : PropertyDescriptor) (simulant : Simulant) world =
+    let containsPropertyDescriptor<'s when 's :> SimulantState> propertyName (simulant : Simulant) world =
         let properties = typeof<'s>.GetProperties true
-        if Seq.exists (fun (property : PropertyInfo) ->
-            property.Name = propertyDescriptor.PropertyName &&
-            (property.PropertyType = propertyDescriptor.PropertyType || property.PropertyType = typeof<DesignerProperty>))
-            properties then true
+        if Seq.exists (fun (property : PropertyInfo) -> property.Name = propertyName) properties then
+            true
         else
             let state = World.getState simulant world
             let xtensionOpt =
@@ -310,8 +313,7 @@ module PropertyDescriptor =
             match xtensionOpt with
             | Some xtension ->
                 let mutable p = Unchecked.defaultof<Property>
-                Xtension.tryGetProperty (propertyDescriptor.PropertyName, xtension, &p) &&
-                p.PropertyType = propertyDescriptor.PropertyType
+                Xtension.tryGetProperty (propertyName, xtension, &p)
             | None -> false
 
     /// Attempt to get the simulant's property value.
@@ -350,15 +352,17 @@ module PropertyDescriptor =
                     let propertyDescriptor = { PropertyType = property.PropertyType; PropertyName = propertyName }
                     propertyDescriptor)
                     properties
+            let propertyDefinitions =
+                World.getPropertyDefinitions simulant world
             let propertyDescriptors =
                 let properties' = World.getXtensionProperties simulant world
                 let propertyDescriptors' =
                     Seq.fold
-                        (fun propertyDescriptors' (propertyName, property : Property) ->
-                            if property.PropertyType = typeof<ComputedProperty> then
+                        (fun propertyDescriptors' (propertyName, _) ->
+                            let propertyType = propertyDefinitions.[propertyName].PropertyType
+                            if propertyType = typeof<ComputedProperty> then
                                 propertyDescriptors'
                             elif not (Reflection.isPropertyNonPersistentByName propertyName) then
-                                let propertyType = property.PropertyType
                                 let propertyDescriptor = { PropertyName = propertyName; PropertyType = propertyType }
                                 propertyDescriptor :: propertyDescriptors'
                             else propertyDescriptors')
