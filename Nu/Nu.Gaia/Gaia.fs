@@ -4117,15 +4117,21 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             ImGui.TextWrapped (scstring exn)
             ImGui.Text "How would you like to handle this exception?"
             let world =
-                if ImGui.Button "Ignore exception and revert to old world." then
+                if ImGui.Button "Soft Rewind: undo the current ImGui frame." then
                     let world = World.switch worldOld
                     RecoverableExceptionOpt <- None
                     world
                 else world
-            if ImGui.Button "Ignore exception and proceed with current world." then
+            let world =
+                if ImGui.Button "Hard Rewind: undo the last edit operation." then
+                    let (_, world) = tryUndo world
+                    RecoverableExceptionOpt <- None
+                    world
+                else world
+            if ImGui.Button "Ignore: proceed with current world as-is." then
                 RecoverableExceptionOpt <- None
             let world =
-                if ImGui.Button "Exit the editor." then
+                if ImGui.Button "Exit: close the editor." then
                     let world = World.exit world
                     RecoverableExceptionOpt <- None
                     world

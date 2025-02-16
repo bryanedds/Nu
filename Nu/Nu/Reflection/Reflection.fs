@@ -597,9 +597,11 @@ module ReflectionOperators =
                 let symbol = converter2.ConvertTo (value, typeof<Symbol>)
                 try converter.ConvertFrom symbol
                 with _ ->
-                    let value = ty.GetDefaultValue ()
-                    Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
-                    value
+                    match ty.TryGetDefaultValue () with
+                    | Some value ->
+                        Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                        value
+                    | None -> failconv "Could not promote or automatically construct a default value to the required type."
             else value
 
 namespace Prime
