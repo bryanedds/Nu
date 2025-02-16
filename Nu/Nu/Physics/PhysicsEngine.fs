@@ -229,6 +229,7 @@ type [<NoEquality; NoComparison>] BodyUserObject =
       Dispose : unit -> unit }
 
 /// Describes the substantial nature of a body in terms of mass or density.
+/// TODO: P1: make this a Struct record again after updating Prime.
 [<Syntax
     ("", "", "", "", "",
      Constants.PrettyPrinter.DefaultThresholdMin,
