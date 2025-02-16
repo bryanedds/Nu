@@ -502,8 +502,9 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         | Right world -> world
         | Left (_, world) -> world
 
-    let private setPropertyValue (value : obj) propertyDescriptor simulant world =
+    let private setPropertyValue skipSnapshot (value : obj) propertyDescriptor simulant world =
         let skipSnapshot =
+            skipSnapshot ||
             match Pasts with
             | (ChangeProperty (mouseLeftIdOpt, _), _) :: _ -> mouseLeftIdOpt = Some ImGui.MouseLeftId
             | _ -> false
@@ -1930,7 +1931,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
 
     let private imGuiEditPropertyRecord
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
-        (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
+        (setProperty : bool -> obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
         (headered : bool)
         (propertyDescriptor : PropertyDescriptor)
@@ -1938,20 +1939,20 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         (world : World) =
         let propertyValue = getProperty propertyDescriptor simulant world
         let context = makeContext (Some focusProperty) None
-        let (changed, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
-        if changed then setProperty propertyValue propertyDescriptor simulant world else world
+        let (promoted, edited, propertyValue) = World.imGuiEditPropertyRecord headered propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
+        if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditProperty
         (getProperty : PropertyDescriptor -> Simulant -> World -> obj)
-        (setProperty : obj -> PropertyDescriptor -> Simulant -> World -> World)
+        (setProperty : bool -> obj -> PropertyDescriptor -> Simulant -> World -> World)
         (focusProperty : unit -> unit)
         (propertyDescriptor : PropertyDescriptor)
         (simulant : Simulant)
         (world : World) =
         let propertyValue = getProperty propertyDescriptor simulant world
         let context = makeContext (Some focusProperty) None
-        let (changed, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
-        if changed then setProperty propertyValue propertyDescriptor simulant world else world
+        let (promoted, edited, propertyValue) = World.imGuiEditProperty propertyDescriptor.PropertyName propertyDescriptor.PropertyType propertyValue context world
+        if promoted || edited then setProperty (not edited) propertyValue propertyDescriptor simulant world else world
 
     let private imGuiEditEntityAppliedTypes (entity : Entity) world =
         let dispatcherNameCurrent = getTypeName (entity.GetDispatcher world)
@@ -1980,7 +1981,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
         let facetNamesSelectable = world |> World.getFacets |> Map.toKeyArray |> Array.append [|facetNameEmpty|]
         let facetNamesPropertyDescriptor = { PropertyName = Constants.Engine.FacetNamesPropertyName; PropertyType = typeof<string Set> }
         let mutable facetNamesValue' = Set.empty
-        let mutable changed = false
+        let mutable edited = false
         ImGui.Indent ()
         for i in 0 .. facetNamesValue.Count do
             let last = i = facetNamesValue.Count
@@ -1990,14 +1991,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                 for facetNameSelectable in facetNamesSelectable do
                     if ImGui.Selectable (facetNameSelectable, strEq facetName NewEntityDispatcherName) then
                         facetName <- facetNameSelectable
-                        changed <- true
+                        edited <- true
                     if Some facetNameSelectable = facetNameSelectablePicked then ImGui.SetScrollHereY Constants.Gaia.HeightRegularPickOffset
                     if facetNameSelectable = facetName then ImGui.SetItemDefaultFocus ()
                 ImGui.EndCombo ()
             if not last && ImGui.IsItemFocused () then focusPropertyOpt (Some (facetNamesPropertyDescriptor, entity :> Simulant)) world
             if facetName <> facetNameEmpty then facetNamesValue' <- Set.add facetName facetNamesValue'
         ImGui.Unindent ()
-        if changed
+        if edited
         then setPropertyValueIgnoreError facetNamesValue' facetNamesPropertyDescriptor entity world
         else world
 
@@ -2093,14 +2094,14 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             | Some truncatedValue -> truncatedValue
                                             | None -> propertyValue
                                         else propertyValue
-                                    let setPropertyValue propertyValue propertyDescriptor simulant world =
+                                    let setPropertyValue skipSnapshot propertyValue propertyDescriptor simulant world =
                                         let propertyValue =
                                             if propertyDescriptor.PropertyName = Constants.Engine.ModelPropertyName then
                                                 match World.tryUntruncateModel propertyValue simulant world with
                                                 | Some untruncatedValue -> untruncatedValue
                                                 | None -> propertyValue
                                             else propertyValue
-                                        setPropertyValue propertyValue propertyDescriptor simulant world
+                                        setPropertyValue skipSnapshot propertyValue propertyDescriptor simulant world
                                     let focusProperty () = focusPropertyOpt (Some (propertyDescriptor, simulant)) world
                                     let mutable replaced = false
                                     let replaceProperty =
@@ -3019,7 +3020,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                                     | Some truncatedValue -> truncatedValue
                                                     | None -> propertyValueTruncated
                                                 else propertyValueTruncated
-                                            setPropertyValue propertyValue propertyDescriptor simulant world
+                                            setPropertyValue false propertyValue propertyDescriptor simulant world
                                         with _ ->
                                             Pasts <- pasts
                                             world
@@ -3035,7 +3036,7 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
                                             try let propertyValueEscaped = payload
                                                 let propertyValueUnescaped = String.unescape propertyValueEscaped
                                                 let propertyValue = converter.ConvertFromString propertyValueUnescaped
-                                                setPropertyValue propertyValue propertyDescriptor simulant world
+                                                setPropertyValue false propertyValue propertyDescriptor simulant world
                                             with _ ->
                                                 Pasts <- pasts
                                                 world
@@ -3323,18 +3324,18 @@ DockSpace           ID=0x7C6B3D9B Window=0xA87D555D Pos=0,0 Size=1920,1080 Split
             if ImGui.Begin (windowName, ImGuiWindowFlags.NoNav) then
                 if ImGui.IsWindowFocused () && SelectedWindowRestoreRequested = 0 then SelectedWindowOpt <- Some windowName
                 let renderer3dConfig = World.getRenderer3dConfig world
-                let mutable renderer3dChanged = false
+                let mutable renderer3dEdited = false
                 let mutable lightMappingEnabled = renderer3dConfig.LightMappingEnabled
                 let mutable ssaoEnabled = renderer3dConfig.SsaoEnabled
                 let mutable ssaoSampleCount = renderer3dConfig.SsaoSampleCount
                 let mutable ssvfEnabled = renderer3dConfig.SsvfEnabled
                 let mutable ssrEnabled = renderer3dConfig.SsrEnabled
-                renderer3dChanged <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dChanged
-                renderer3dChanged <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dChanged
-                renderer3dChanged <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dChanged
-                renderer3dChanged <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dChanged
-                renderer3dChanged <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dChanged
-                if renderer3dChanged then
+                renderer3dEdited <- ImGui.Checkbox ("Light Mapping Enabled", &lightMappingEnabled) || renderer3dEdited
+                renderer3dEdited <- ImGui.Checkbox ("Ssao Enabled", &ssaoEnabled) || renderer3dEdited
+                renderer3dEdited <- ImGui.SliderInt ("Ssao Sample Count", &ssaoSampleCount, 0, Constants.Render.SsaoSampleCountMax) || renderer3dEdited
+                renderer3dEdited <- ImGui.Checkbox ("Ssvf Enabled", &ssvfEnabled) || renderer3dEdited
+                renderer3dEdited <- ImGui.Checkbox ("Ssr Enabled", &ssrEnabled) || renderer3dEdited
+                if renderer3dEdited then
                     let renderer3dConfig =
                         { LightMappingEnabled = lightMappingEnabled
                           SsaoEnabled = ssaoEnabled
