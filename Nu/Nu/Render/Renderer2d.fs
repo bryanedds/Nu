@@ -158,7 +158,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         { VulkanGlobal : Hl.VulkanGlobal
           SpritePipeline : Hl.FifBuffer * Hl.FifBuffer * Hl.FifBuffer * Pipeline.Pipeline
           TextQuad : Hl.AllocatedBuffer * Hl.AllocatedBuffer
-          TextTexture : Texture.TransientTexture
+          TextTexture : Texture.DynamicTexture
           SpriteBatchEnv : SpriteBatch.SpriteBatchEnv
           RenderPackages : Packages<RenderAsset, AssetClient>
           mutable RenderPackageCachedOpt : RenderPackageCached
@@ -697,14 +697,16 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                             renderer.TextTexture.AddBgra Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST textTextureMetadata textSurface.pixels vkg
 
-                            // init render
-                            let cb = vkg.RenderCommandBuffer
-                            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
-                            Hl.beginRenderBlock cb vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] vkg.InFlightFence vkg.Device
-
                             // load texture
-                            Texture.TransientTexture.recordTextureLoad cb renderer.TextTexture
+                            // TODO: DJL: check the spec on this approach just to be sure.
+                            Hl.beginCommandBlock vkg.TextureCommandBuffer vkg.InFlightFence vkg.Device
+                            Texture.DynamicTexture.recordTextureLoad vkg.TextureCommandBuffer renderer.TextTexture
+                            Hl.endCommandBlock vkg.TextureCommandBuffer vkg.GraphicsQueue [||] [||] VkFence.Null
                             
+                            // init render
+                            let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
+                            Hl.beginRenderBlock vkg.RenderCommandBuffer vkg.RenderPass vkg.SwapchainFramebuffer renderArea [||] VkFence.Null vkg.Device
+
                             // draw text sprite
                             // NOTE: we allocate an array here, too.
                             let (vertices, indices) = renderer.TextQuad
@@ -726,7 +728,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                                  vkg)
 
                             // flush render commands
-                            Hl.endRenderBlock cb vkg.GraphicsQueue [||] [||] vkg.InFlightFence
+                            Hl.endRenderBlock vkg.RenderCommandBuffer vkg.GraphicsQueue [||] [||] vkg.InFlightFence
                             
                             // destroy text surface
                             SDL.SDL_FreeSurface textSurfacePtr
@@ -795,7 +797,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
         // create text resources
         let spritePipeline = Sprite.CreateSpritePipeline vkg
         let textQuad = Sprite.CreateSpriteQuad true vkg
-        let textTexture = Texture.TransientTexture.create vkg
+        let textTexture = Texture.DynamicTexture.create vkg
         
         // create sprite batch env
         let spriteBatchEnv = SpriteBatch.CreateSpriteBatchEnv vkg
@@ -829,7 +831,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let allocator = renderer.VulkanGlobal.VmaAllocator
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Texture.TransientTexture.destroy renderer.TextTexture renderer.VulkanGlobal
+            Texture.DynamicTexture.destroy renderer.TextTexture renderer.VulkanGlobal
             Pipeline.Pipeline.destroy pipeline device
             Hl.FifBuffer.destroy modelViewProjectionUniform allocator
             Hl.FifBuffer.destroy texCoords4Uniform allocator

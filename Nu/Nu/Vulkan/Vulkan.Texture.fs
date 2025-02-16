@@ -275,8 +275,8 @@ module Texture =
         static member private copyBufferToImage extent buffer image (vkg : Hl.VulkanGlobal) =
             
             // setup command buffer for copy
-            let mutable cb = Hl.allocateCommandBuffer vkg.TransferCommandPool vkg.Device
-            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransferCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
+            let mutable cb = Hl.allocateCommandBuffer vkg.TransientCommandPool vkg.Device
+            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransientCommandPool, VkCommandPoolResetFlags.None) |> Hl.check
             let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
             Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> Hl.check
 
@@ -345,7 +345,7 @@ module Texture =
     
     /// A VulkanTexture that can be spontaneously recreated with automatic staging to load the data at render time.
     /// TODO: DJL: determine relationship with Texture.Texture.
-    type TransientTexture =
+    type DynamicTexture =
         private
             { VulkanTextures : VulkanTexture array
               StagingBuffers : Hl.FifBuffer array
@@ -389,7 +389,7 @@ module Texture =
         static member recordTextureLoad cb tt =
             VulkanTexture.recordBufferToImageCopy cb tt.Extent tt.CurrentStagingBuffer.Buffer tt.VulkanTexture.Image.Image
         
-        /// Create TransientTexture.
+        /// Create DynamicTexture.
         static member create vkg =
             
             // create the resources
@@ -398,8 +398,8 @@ module Texture =
             let vulkanTextures = [|VulkanTexture.createEmpty vkg; VulkanTexture.createEmpty vkg|]
             let stagingBuffers = [|Hl.FifBuffer.createStaging sbSize vkg.VmaAllocator; Hl.FifBuffer.createStaging sbSize vkg.VmaAllocator|]
 
-            // make TransientTexture
-            let transientTexture =
+            // make DynamicTexture
+            let dynamicTexture =
                 { VulkanTextures = vulkanTextures
                   StagingBuffers = stagingBuffers
                   Extent = extent
@@ -407,9 +407,9 @@ module Texture =
                   TextureIndex = 1 }
 
             // fin
-            transientTexture
+            dynamicTexture
         
-        /// Destroy TransientTexture.
+        /// Destroy DynamicTexture.
         static member destroy tt vkg =
             VulkanTexture.destroy tt.VulkanTextures.[0] vkg
             VulkanTexture.destroy tt.VulkanTextures.[1] vkg

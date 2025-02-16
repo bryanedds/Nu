@@ -228,8 +228,8 @@ module Hl =
         Vulkan.vkWaitForFences (device, 1u, asPointer &fence, VkBool32.True, UInt64.MaxValue) |> check
         Vulkan.vkResetFences (device, 1u, asPointer &fence) |> check
 
-    /// Begin command buffer recording and render pass.
-    let beginRenderBlock cb renderPass framebuffer renderArea clearValues waitFence device =
+    /// Begin command buffer recording.
+    let beginCommandBlock cb waitFence device =
 
         // await fence if not null
         // TODO: investigate if passing the null fence into awaitFence performs a no-op as expected and if so, don't
@@ -240,22 +240,9 @@ module Hl =
         Vulkan.vkResetCommandBuffer (cb, VkCommandBufferResetFlags.None) |> check
         let mutable cbInfo = VkCommandBufferBeginInfo ()
         Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
-
-        // begin render pass
-        use clearValuesPin = new ArrayPin<_> (clearValues)
-        let mutable rpInfo = VkRenderPassBeginInfo ()
-        rpInfo.renderPass <- renderPass
-        rpInfo.framebuffer <- framebuffer
-        rpInfo.renderArea <- renderArea
-        rpInfo.clearValueCount <- uint clearValues.Length
-        rpInfo.pClearValues <- clearValuesPin.Pointer
-        Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
-
-    /// End command buffer recording and render pass and submit for execution.
-    let endRenderBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
-
-        // end render pass
-        Vulkan.vkCmdEndRenderPass cb
+    
+    /// End command buffer recording and submit for execution.
+    let endCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
 
         // end command buffer recording
         Vulkan.vkEndCommandBuffer cb |> check
@@ -277,6 +264,31 @@ module Hl =
         info.signalSemaphoreCount <- uint signalSemaphores.Length
         info.pSignalSemaphores <- signalSemaphoresPin.Pointer
         Vulkan.vkQueueSubmit (commandQueue, 1u, asPointer &info, signalFence) |> check
+    
+    /// Begin command buffer recording and render pass.
+    let beginRenderBlock cb renderPass framebuffer renderArea clearValues waitFence device =
+
+        // begin command buffer recording
+        beginCommandBlock cb waitFence device
+
+        // begin render pass
+        use clearValuesPin = new ArrayPin<_> (clearValues)
+        let mutable rpInfo = VkRenderPassBeginInfo ()
+        rpInfo.renderPass <- renderPass
+        rpInfo.framebuffer <- framebuffer
+        rpInfo.renderArea <- renderArea
+        rpInfo.clearValueCount <- uint clearValues.Length
+        rpInfo.pClearValues <- clearValuesPin.Pointer
+        Vulkan.vkCmdBeginRenderPass (cb, asPointer &rpInfo, Vulkan.VK_SUBPASS_CONTENTS_INLINE)
+
+    /// End command buffer recording and render pass and submit for execution.
+    let endRenderBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence =
+
+        // end render pass
+        Vulkan.vkCmdEndRenderPass cb
+
+        // end command buffer recording and submit for execution
+        endCommandBlock cb commandQueue waitSemaphoresStages signalSemaphores signalFence
 
     /// A physical device and associated data.
     /// TODO: rename to PhysicalDeviceContext or something that doesn't imply this is mere dumb data.
@@ -386,9 +398,10 @@ module Hl =
           VmaAllocator : VmaAllocator
           Swapchain : VkSwapchainKHR
           SwapchainImageViews : VkImageView array
-          TransferCommandPool : VkCommandPool
-          RenderCommandPool : VkCommandPool
+          TransientCommandPool : VkCommandPool
+          MainCommandPool : VkCommandPool
           RenderCommandBuffers : VkCommandBuffer array
+          TextureCommandBuffers : VkCommandBuffer array
           GraphicsQueue : VkQueue
           PresentQueue : VkQueue
           ImageAvailableSemaphores : VkSemaphore array
@@ -403,6 +416,9 @@ module Hl =
 
         /// The render command buffer for the current frame.
         member this.RenderCommandBuffer = this.RenderCommandBuffers.[CurrentFrame]
+
+        /// The texture command buffer for the current frame.
+        member this.TextureCommandBuffer = this.TextureCommandBuffers.[CurrentFrame]
 
         /// The image available semaphore for the current frame.
         member this.ImageAvailableSemaphore = this.ImageAvailableSemaphores.[CurrentFrame]
@@ -676,8 +692,8 @@ module Hl =
             Vulkan.vkGetDeviceQueue (device, queueFamilyIndex, 0u, &queue)
             queue
 
-        /// Allocate an array of render command buffers for each frame in flight.
-        static member private allocateRenderCommandBuffers commandPool device =
+        /// Allocate an array of command buffers for each frame in flight.
+        static member private allocateFifCommandBuffers commandPool device =
             allocateCommandBuffers Constants.Vulkan.MaxFramesInFlight commandPool device
         
         /// Create an array of semaphores for each frame in flight.
@@ -807,8 +823,8 @@ module Hl =
             for i in 0 .. dec vkg.RenderFinishedSemaphores.Length do Vulkan.vkDestroySemaphore (vkg.Device, vkg.RenderFinishedSemaphores.[i], nullPtr)
             for i in 0 .. dec vkg.InFlightFences.Length do Vulkan.vkDestroyFence (vkg.Device, vkg.InFlightFences.[i], nullPtr)
             Vulkan.vkDestroyFence (vkg.Device, vkg.ResourceReadyFence, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.RenderCommandPool, nullPtr)
-            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransferCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.MainCommandPool, nullPtr)
+            Vulkan.vkDestroyCommandPool (vkg.Device, vkg.TransientCommandPool, nullPtr)
             for i in 0 .. dec vkg.SwapchainImageViews.Length do Vulkan.vkDestroyImageView (vkg.Device, vkg.SwapchainImageViews.[i], nullPtr)
             Vulkan.vkDestroySwapchainKHR (vkg.Device, vkg.Swapchain, nullPtr)
             Vma.vmaDestroyAllocator vkg.VmaAllocator
@@ -854,9 +870,10 @@ module Hl =
                 let swapchainImageViews = VulkanGlobal.createSwapchainImageViews surfaceFormat.format swapchainImages device
 
                 // setup command system
-                let transferCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
-                let renderCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
-                let renderCommandBuffers = VulkanGlobal.allocateRenderCommandBuffers renderCommandPool device
+                let transientCommandPool = VulkanGlobal.createCommandPool true physicalDeviceData.GraphicsQueueFamily device
+                let mainCommandPool = VulkanGlobal.createCommandPool false physicalDeviceData.GraphicsQueueFamily device
+                let renderCommandBuffers = VulkanGlobal.allocateFifCommandBuffers mainCommandPool device
+                let textureCommandBuffers = VulkanGlobal.allocateFifCommandBuffers mainCommandPool device
                 let graphicsQueue = VulkanGlobal.getQueue physicalDeviceData.GraphicsQueueFamily device
                 let presentQueue = VulkanGlobal.getQueue physicalDeviceData.PresentQueueFamily device
 
@@ -882,9 +899,10 @@ module Hl =
                       VmaAllocator = allocator
                       Swapchain = swapchain
                       SwapchainImageViews = swapchainImageViews
-                      TransferCommandPool = transferCommandPool
-                      RenderCommandPool = renderCommandPool
+                      TransientCommandPool = transientCommandPool
+                      MainCommandPool = mainCommandPool
                       RenderCommandBuffers = renderCommandBuffers
+                      TextureCommandBuffers = textureCommandBuffers
                       GraphicsQueue = graphicsQueue
                       PresentQueue = presentQueue
                       ImageAvailableSemaphores = imageAvailableSemaphores
@@ -937,10 +955,10 @@ module Hl =
         static member private copyData size source destination vkg =
 
             // create command buffer for transfer
-            let mutable cb = allocateCommandBuffer vkg.TransferCommandPool vkg.Device
+            let mutable cb = allocateCommandBuffer vkg.TransientCommandPool vkg.Device
 
             // reset command buffer and begin recording
-            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransferCommandPool, VkCommandPoolResetFlags.None) |> check
+            Vulkan.vkResetCommandPool (vkg.Device, vkg.TransientCommandPool, VkCommandPoolResetFlags.None) |> check
             let mutable cbInfo = VkCommandBufferBeginInfo (flags = Vulkan.VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
             Vulkan.vkBeginCommandBuffer (cb, asPointer &cbInfo) |> check
 
