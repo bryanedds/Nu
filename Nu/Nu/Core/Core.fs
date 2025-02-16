@@ -40,18 +40,3 @@ module CoreOperators =
     /// Test for object inequality.
     /// Same as the (=/=) operator found in Prime, but placed here to expose it directly from Nu.
     let inline (=/=) (a : obj) (b : obj) = objNeq a b
-
-    /// TODO: P1: remove this after updating Prime.
-    /// Convert an value to an value of the given type using symbolic conversion.
-    /// Thread-safe.
-    let objToObj (ty : Type) (value : obj) =
-        match value with
-        | null -> null
-        | _ ->
-            let ty2 = value.GetType ()
-            if not (ty.IsAssignableFrom ty2) then
-                let converter = SymbolicConverter ty
-                let converter2 = SymbolicConverter ty2
-                let symbol = converter2.ConvertTo (value, typeof<Symbol>)
-                converter.ConvertFrom symbol
-            else value

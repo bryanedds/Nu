@@ -581,6 +581,27 @@ module Reflection =
             for assembly in AppDomain.CurrentDomain.GetAssemblies () do
                 AssembliesLoaded.[assembly.FullName] <- assembly
 
+[<AutoOpen>]
+module ReflectionOperators =
+
+    /// Convert an value to an value of the given type using symbolic conversion.
+    /// Thread-safe.
+    let objToObj (ty : Type) (value : obj) =
+        match value with
+        | null -> null
+        | _ ->
+            let ty2 = value.GetType ()
+            if not (ty.IsAssignableFrom ty2) then
+                let converter = SymbolicConverter ty
+                let converter2 = SymbolicConverter ty2
+                let symbol = converter2.ConvertTo (value, typeof<Symbol>)
+                try converter.ConvertFrom symbol
+                with _ ->
+                    let value = ty.GetDefaultValue ()
+                    Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                    value
+            else value
+
 namespace Prime
 open Nu
     
