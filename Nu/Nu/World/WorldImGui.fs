@@ -770,9 +770,9 @@ module WorldImGui =
                         if isSome then
                             ImGui.SameLine ()
                             ImGui.PushID name
-                            let (promoted2, edited3, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
+                            let (promoted2, edited3, value2) = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
                             ImGui.PopID ()
-                            let value = Activator.CreateInstance (ty, [|value'|])
+                            let value = Activator.CreateInstance (ty, [|value2|])
                             (promoted || promoted2, edited || edited2 || edited3, value)
                         else
                             ImGui.SameLine ()
@@ -860,9 +860,9 @@ module WorldImGui =
                         if isSome then
                             ImGui.SameLine ()
                             ImGui.PushID name
-                            let (promoted2, edited3, value') = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
+                            let (promoted2, edited3, value2) = World.imGuiEditProperty name ty.GenericTypeArguments.[0] (ty.GetProperty("Value").GetValue(value, [||])) context world
                             ImGui.PopID ()
-                            let value = ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value'|])
+                            let value = ty.GetMethod("Some", BindingFlags.Public ||| BindingFlags.Static).Invoke(null, [|value2|])
                             (promoted || promoted2, edited || edited2 || edited3, value)
                         else
                             ImGui.SameLine ()

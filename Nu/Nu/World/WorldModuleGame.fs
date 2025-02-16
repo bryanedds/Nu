@@ -510,12 +510,17 @@ module WorldModuleGame =
                 | :? 'a as value -> value
                 | null -> null :> obj :?> 'a
                 | value ->
-                    let value' = value |> valueToSymbol |> symbolToValue
+                    let value =
+                        try value |> valueToSymbol |> symbolToValue
+                        with _ ->
+                            let value = typeof<'a>.GetDefaultValue ()
+                            Log.warn "Could not gracefully promote value to the required type, so using a default value instead."
+                            value :?> 'a
                     match property.PropertyValue with
-                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value'
+                    | :? DesignerProperty as dp -> dp.DesignerType <- typeof<'a>; dp.DesignerValue <- value
                     | :? ComputedProperty -> () // nothing to do
-                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value'
-                    value'
+                    | _ -> property.PropertyType <- typeof<'a>; property.PropertyValue <- value
+                    value
             else
                 let definitions = Reflection.getPropertyDefinitions (getType gameState.Dispatcher)
                 let value =
