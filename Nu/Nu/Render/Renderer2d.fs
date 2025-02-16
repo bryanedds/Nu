@@ -692,16 +692,13 @@ type [<ReferenceEquality>] VulkanRenderer2d =
                             let modelMatrix = modelScale * modelTranslation
                             let modelViewProjection = modelMatrix * viewProjection
 
-                            // add texture
+                            // add texture (stage pixels)
                             let vkg = renderer.VulkanGlobal
                             let textTextureMetadata = Texture.TextureMetadata.make textSurfaceWidth textSurfaceHeight
                             renderer.TextTexture.AddBgra Vulkan.VK_FILTER_NEAREST Vulkan.VK_FILTER_NEAREST textTextureMetadata textSurface.pixels vkg
 
                             // load texture
-                            // TODO: DJL: check the spec on this approach just to be sure.
-                            Hl.beginCommandBlock vkg.TextureCommandBuffer vkg.InFlightFence vkg.Device
-                            Texture.DynamicTexture.recordTextureLoad vkg.TextureCommandBuffer renderer.TextTexture
-                            Hl.endCommandBlock vkg.TextureCommandBuffer vkg.GraphicsQueue [||] [||] VkFence.Null
+                            renderer.TextTexture.LoadTexture vkg.TextureCommandBuffer vkg.GraphicsQueue vkg.InFlightFence vkg.Device
                             
                             // init render
                             let renderArea = VkRect2D (VkOffset2D.Zero, vkg.SwapExtent)
@@ -831,7 +828,7 @@ type [<ReferenceEquality>] VulkanRenderer2d =
             let allocator = renderer.VulkanGlobal.VmaAllocator
             let (modelViewProjectionUniform, texCoords4Uniform, colorUniform, pipeline) = renderer.SpritePipeline
             let (vertices, indices) = renderer.TextQuad
-            Texture.DynamicTexture.destroy renderer.TextTexture renderer.VulkanGlobal
+            renderer.TextTexture.Destroy  renderer.VulkanGlobal
             Pipeline.Pipeline.destroy pipeline device
             Hl.FifBuffer.destroy modelViewProjectionUniform allocator
             Hl.FifBuffer.destroy texCoords4Uniform allocator

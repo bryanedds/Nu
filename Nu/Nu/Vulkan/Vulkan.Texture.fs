@@ -385,9 +385,12 @@ module Texture =
             this.NewCycle metadata pixels vkg
             this.VulkanTextures.[this.TextureIndex] <- VulkanTexture.createRgba minFilter magFilter metadata None vkg
         
-        /// Record the commands to transfer pixels to texture.
-        static member recordTextureLoad cb tt =
-            VulkanTexture.recordBufferToImageCopy cb tt.Extent tt.CurrentStagingBuffer.Buffer tt.VulkanTexture.Image.Image
+        /// Transfer pixels to texture.
+        /// TODO: DJL: check the spec on this approach just to be sure.
+        member this.LoadTexture cb commandQueue fence device =
+            Hl.beginCommandBlock cb fence device
+            VulkanTexture.recordBufferToImageCopy cb this.Extent this.CurrentStagingBuffer.Buffer this.VulkanTexture.Image.Image
+            Hl.endCommandBlock cb commandQueue [||] [||] VkFence.Null
         
         /// Create DynamicTexture.
         static member create vkg =
@@ -410,11 +413,11 @@ module Texture =
             dynamicTexture
         
         /// Destroy DynamicTexture.
-        static member destroy tt vkg =
-            VulkanTexture.destroy tt.VulkanTextures.[0] vkg
-            VulkanTexture.destroy tt.VulkanTextures.[1] vkg
-            Hl.FifBuffer.destroy tt.StagingBuffers.[0] vkg.VmaAllocator
-            Hl.FifBuffer.destroy tt.StagingBuffers.[1] vkg.VmaAllocator
+        member this.Destroy vkg =
+            VulkanTexture.destroy this.VulkanTextures.[0] vkg
+            VulkanTexture.destroy this.VulkanTextures.[1] vkg
+            Hl.FifBuffer.destroy this.StagingBuffers.[0] vkg.VmaAllocator
+            Hl.FifBuffer.destroy this.StagingBuffers.[1] vkg.VmaAllocator
     
     /// Describes data loaded from a texture.
     type TextureData =
